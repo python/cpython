@@ -1,0 +1,1 @@
+Fix :mod:`time` not checking for errors when initializing.

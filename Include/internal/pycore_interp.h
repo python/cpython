@@ -15,6 +15,7 @@ extern "C" {
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
+#include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -40,28 +41,6 @@ struct _Py_long_state {
 
 
 /* cross-interpreter data registry */
-
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-struct _xidregitem;
-
-struct _xidregitem {
-    struct _xidregitem *prev;
-    struct _xidregitem *next;
-    /* This can be a dangling pointer, but only if weakref is set. */
-    PyTypeObject *cls;
-    /* This is NULL for builtin types. */
-    PyObject *weakref;
-    size_t refcount;
-    crossinterpdatafunc getdata;
-};
-
-struct _xidregistry {
-    PyThread_type_lock mutex;
-    struct _xidregitem *head;
-};
 
 
 /* interpreter state */
@@ -215,6 +194,7 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
+    _PyExecutorObject *executor_list_head;
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
     uint32_t next_func_version;
@@ -233,6 +213,7 @@ struct _is {
 
    /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
+    Py_ssize_t _interactive_src_count;
 };
 
 

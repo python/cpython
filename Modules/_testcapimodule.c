@@ -1445,58 +1445,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
     return PyLong_FromLong(r);
 }
 
-static void
-_xid_capsule_destructor(PyObject *capsule)
-{
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
-    if (data != NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        PyMem_Free(data);
-    }
-}
-
-static PyObject *
-get_crossinterp_data(PyObject *self, PyObject *args)
-{
-    PyObject *obj = NULL;
-    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
-        return NULL;
-    }
-
-    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
-    if (data == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
-        PyMem_Free(data);
-        return NULL;
-    }
-    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
-    if (capsule == NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        PyMem_Free(data);
-    }
-    return capsule;
-}
-
-static PyObject *
-restore_crossinterp_data(PyObject *self, PyObject *args)
-{
-    PyObject *capsule = NULL;
-    if (!PyArg_ParseTuple(args, "O:restore_crossinterp_data", &capsule)) {
-        return NULL;
-    }
-
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
-    if (data == NULL) {
-        return NULL;
-    }
-    return _PyCrossInterpreterData_NewObject(data);
-}
-
 static PyMethodDef ml;
 
 static PyObject *
@@ -2023,10 +1971,10 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
        return repr(self)
 */
 static PyObject*
-bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+bad_get(PyObject *module, PyObject *args)
 {
     PyObject *self, *obj, *cls;
-    if (!_PyArg_UnpackStack(args, nargs, "bad_get", 3, 3, &self, &obj, &cls)) {
+    if (!PyArg_ParseTuple(args, "OOO", &self, &obj, &cls)) {
         return NULL;
     }
 
@@ -3231,35 +3179,6 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
-static PyObject *
-sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
-{
-    const char *name;
-    Py_ssize_t size;
-    if (!PyArg_Parse(arg, "z#", &name, &size)) {
-        return NULL;
-    }
-    PyObject *result = PySys_GetObject(name);
-    if (result == NULL) {
-        result = PyExc_AttributeError;
-    }
-    return Py_NewRef(result);
-}
-
-static PyObject *
-sys_setobject(PyObject *Py_UNUSED(module), PyObject *args)
-{
-    const char *name;
-    Py_ssize_t size;
-    PyObject *value;
-    if (!PyArg_ParseTuple(args, "z#O", &name, &size, &value)) {
-        return NULL;
-    }
-    NULLABLE(value);
-    RETURN_INT(PySys_SetObject(name, value));
-}
-
-
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3311,8 +3230,6 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
-    {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
@@ -3340,7 +3257,7 @@ static PyMethodDef TestMethods[] = {
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
-    {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
+    {"bad_get", bad_get, METH_VARARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
     {"decref_freed_object", decref_freed_object, METH_NOARGS},
@@ -3392,8 +3309,6 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
-    {"sys_getobject", sys_getobject, METH_O},
-    {"sys_setobject", sys_setobject, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3960,7 +3875,9 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
+    PyModule_AddObject(m, "SIZE_MAX", PyLong_FromSize_t(SIZE_MAX));
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
+    PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
@@ -4034,6 +3951,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Sys(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Immortal(m) < 0) {

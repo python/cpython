@@ -1,0 +1,1 @@
+Add error checking during :mod:`!_socket` module init.

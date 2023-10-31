@@ -1,2 +1,0 @@
-Fix :func:`termios.tcsetattr` bug that was overwritting existing errors
-during parsing integers from ``term`` list.

@@ -920,7 +920,7 @@
             break;
         }
 
-        case _SAVE_CURRENT_IP: {
+        case _SAVE_RETURN_OFFSET: {
             break;
         }
 

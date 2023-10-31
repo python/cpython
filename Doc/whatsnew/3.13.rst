@@ -65,6 +65,21 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+Important deprecations, removals or restrictions:
+
+* :ref:`PEP 594 <whatsnew313-pep594>`: The remaining 19 "dead batteries"
+  have been removed from the standard library:
+  :mod:`!aifc`, :mod:`!audioop`, :mod:`!cgi`, :mod:`!cgitb`, :mod:`!chunk`,
+  :mod:`!crypt`, :mod:`!imghdr`, :mod:`!mailcap`, :mod:`!msilib`, :mod:`!nis`,
+  :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`, :mod:`!spwd`,
+  :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
+
+* :pep:`602` ("Annual Release Cycle for Python") has been updated:
+
+  * Python 3.9 - 3.12 have one and a half years of full support,
+    followed by three and a half years of security fixes.
+  * Python 3.13 and later have two years of full support,
+    followed by three years of security fixes.
 
 
 New Features
@@ -100,6 +115,10 @@ Other Language Changes
 * :func:`os.path.realpath` now resolves MS-DOS style file names even if
   the file is not accessible.
   (Contributed by Moonsik Park in :gh:`82367`.)
+
+* Fixed a bug where a :keyword:`global` declaration in an :keyword:`except` block
+  is rejected when the global is used in the :keyword:`else` block.
+  (Contributed by Irit Katriel in :gh:`111123`.)
 
 New Modules
 ===========
@@ -363,6 +382,10 @@ Deprecated
   It was not documented and only supported in the C implementation.
   (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
+* Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
+  and methods that consider plural forms even if the translation was not found.
+  (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -477,6 +500,13 @@ Pending Removal in Python 3.15
   rarely used.  No direct replacement exists.  *Anything* is better than CGI
   to interface a web server with a request handler.
 
+* :class:`locale`: :func:`locale.getdefaultlocale` was deprecated in Python 3.11
+  and originally planned for removal in Python 3.13 (:gh:`90817`),
+  but removal has been postponed to Python 3.15.
+  Use :func:`locale.setlocale()`, :func:`locale.getencoding()` and
+  :func:`locale.getlocale()` instead.
+  (Contributed by Hugo van Kemenade in :gh:`111187`.)
+
 * :class:`typing.NamedTuple`:
 
   * The undocumented keyword argument syntax for creating NamedTuple classes
@@ -574,25 +604,6 @@ although there is currently no date scheduled for their removal.
   * ``EntryPoints`` tuple interface.
   * Implicit ``None`` on return values.
 
-* :mod:`importlib.resources`: First parameter to files is renamed to 'anchor'.
-* :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use ``files()`` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
-  for migration advice.
-
-* :func:`locale.getdefaultlocale`: use :func:`locale.setlocale()`,
-  :func:`locale.getencoding()` and :func:`locale.getlocale()` instead
-  (:gh:`90817`)
-
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
@@ -677,36 +688,210 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
-* :pep:`594`: Remove the :mod:`!telnetlib` module, deprecated in Python 3.11:
-  use the projects `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
-  `Exscript <https://pypi.org/project/Exscript/>`_ instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
+.. _whatsnew313-pep594:
+
+PEP 594: dead batteries
+-----------------------
+
+* :pep:`594` removed 19 modules from the standard library,
+  deprecated in Python 3.11:
+
+  * :mod:`!aifc`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!audioop`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!chunk`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!cgi` and :mod:`!cgitb`.
+
+    * ``cgi.FieldStorage`` can typically be replaced with
+      :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests,
+      and the :mod:`email.message` module or `multipart
+      <https://pypi.org/project/multipart/>`__ PyPI project for ``POST`` and
+      ``PUT``.
+
+    * ``cgi.parse()`` can be replaced by calling :func:`urllib.parse.parse_qs`
+      directly on the desired query string, except for ``multipart/form-data``
+      input, which can be handled as described for ``cgi.parse_multipart()``.
+
+    * ``cgi.parse_header()`` can be replaced with the functionality in the
+      :mod:`email` package, which implements the same MIME RFCs. For example,
+      with :class:`email.message.EmailMessage`::
+
+          from email.message import EmailMessage
+          msg = EmailMessage()
+          msg['content-type'] = 'application/json; charset="utf8"'
+          main, params = msg.get_content_type(), msg['content-type'].params
+
+    * ``cgi.parse_multipart()`` can be replaced with the functionality in the
+      :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
+      :class:`email.message.Message`) which implements the same MIME RFCs, or
+      with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
+
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!crypt` module and its private :mod:`!_crypt` extension.
+    The :mod:`hashlib` module is a potential replacement for certain use cases.
+    Otherwise, the following PyPI projects can be used:
+
+    * `bcrypt <https://pypi.org/project/bcrypt/>`_:
+      Modern password hashing for your software and your servers.
+    * `passlib <https://pypi.org/project/passlib/>`_:
+      Comprehensive password hashing framework supporting over 30 schemes.
+    * `argon2-cffi <https://pypi.org/project/argon2-cffi/>`_:
+      The secure Argon2 password hashing algorithm.
+    * `legacycrypt <https://pypi.org/project/legacycrypt/>`_:
+      Wrapper to the POSIX crypt library call and associated functionality.
+
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!imghdr`: use the projects
+    `filetype <https://pypi.org/project/filetype/>`_,
+    `puremagic <https://pypi.org/project/puremagic/>`_,
+    or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!mailcap`.
+    The :mod:`mimetypes` module provides an alternative.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!msilib`.
+    (Contributed by Zachary Ware in :gh:`104773`.)
+
+  * :mod:`!nis`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!nntplib`:
+    the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_
+    can be used instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!ossaudiodev`: use the
+    `pygame project <https://www.pygame.org/>`_ for audio playback.
+    (Contributed by Victor Stinner in :gh:`104780`.)
+
+  * :mod:`!pipes`: use the :mod:`subprocess` module instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!sndhdr`: use the projects
+    `filetype <https://pypi.org/project/filetype/>`_,
+    `puremagic <https://pypi.org/project/puremagic/>`_, or
+    `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!spwd`:
+    the `python-pam project <https://pypi.org/project/python-pam/>`_
+    can be used instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!sunau`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!telnetlib`, use the projects
+    `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
+    `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!uu`: the :mod:`base64` module is a modern alternative.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!xdrlib`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+2to3
+----
 
 * Remove the ``2to3`` program and the :mod:`!lib2to3` module,
   deprecated in Python 3.11.
   (Contributed by Victor Stinner in :gh:`104780`.)
 
-* Namespaces ``typing.io`` and ``typing.re``, deprecated in Python 3.8,
-  are now removed. The items in those namespaces can be imported directly
-  from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
-
-* Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class,
-  deprecated in Python 3.11.
-  Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
-  (Contributed by Hugo van Kemenade in :gh:`104804`.)
-
-* Remove support for using :class:`pathlib.Path` objects as context managers.
-  This functionality was deprecated and made a no-op in Python 3.9.
+configparser
+------------
 
 * Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
   deprecated in the docstring since Python 3.2,
   and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104886`.)
 
+importlib
+---------
+
+* Remove :mod:`importlib.resources` deprecated methods:
+
+  * ``contents()``
+  * ``is_resource()``
+  * ``open_binary()``
+  * ``open_text()``
+  * ``path()``
+  * ``read_binary()``
+  * ``read_text()``
+
+  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
+  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
+  for migration advice.
+  (Contributed by Jason R. Coombs in :gh:`106532`.)
+
+locale
+------
+
+* Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
+  use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`104783`.)
+
+logging
+-------
+
+* :mod:`logging`: Remove undocumented and untested ``Logger.warn()`` and
+  ``LoggerAdapter.warn()`` methods and ``logging.warn()`` function. Deprecated
+  since Python 3.3, they were aliases to the :meth:`logging.Logger.warning`
+  method, :meth:`!logging.LoggerAdapter.warning` method and
+  :func:`logging.warning` function.
+  (Contributed by Victor Stinner in :gh:`105376`.)
+
+pathlib
+-------
+
+* Remove support for using :class:`pathlib.Path` objects as context managers.
+  This functionality was deprecated and made a no-op in Python 3.9.
+
+re
+--
+
+* Remove undocumented, never working, and deprecated ``re.template`` function
+  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
+  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
+
+tkinter
+-------
+
+* Remove the :mod:`!tkinter.tix` module, deprecated in Python 3.6.  The
+  third-party Tix library which the module wrapped is unmaintained.
+  (Contributed by Zachary Ware in :gh:`75552`.)
+
+turtle
+------
+
 * Remove the :meth:`!turtle.RawTurtle.settiltangle` method,
   deprecated in docs since Python 3.1
   and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104876`.)
+
+typing
+------
+
+* Namespaces ``typing.io`` and ``typing.re``, deprecated in Python 3.8,
+  are now removed. The items in those namespaces can be imported directly
+  from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
+
+* Remove support for the keyword-argument method of creating
+  :class:`typing.TypedDict` types, deprecated in Python 3.11.
+  (Contributed by Tomas Roun in :gh:`104786`.)
+
+unittest
+--------
 
 * Removed the following :mod:`unittest` functions, deprecated in Python 3.11:
 
@@ -722,139 +907,12 @@ Removed
 
   (Contributed by Hugo van Kemenade in :gh:`104835`.)
 
-* :pep:`594`: Remove the :mod:`!cgi` and :mod:`!cgitb` modules,
-  deprecated in Python 3.11.
-
-  * ``cgi.FieldStorage`` can typically be replaced with
-    :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests, and the
-    :mod:`email.message` module or `multipart
-    <https://pypi.org/project/multipart/>`__ PyPI project for ``POST`` and
-    ``PUT``.
-
-  * ``cgi.parse()`` can be replaced by calling :func:`urllib.parse.parse_qs`
-    directly on the desired query string, except for ``multipart/form-data``
-    input, which can be handled as described for ``cgi.parse_multipart()``.
-
-  * ``cgi.parse_multipart()`` can be replaced with the functionality in the
-    :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
-    :class:`email.message.Message`) which implements the same MIME RFCs, or
-    with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
-
-  * ``cgi.parse_header()`` can be replaced with the functionality in the
-    :mod:`email` package, which implements the same MIME RFCs. For example,
-    with :class:`email.message.EmailMessage`::
-
-        from email.message import EmailMessage
-        msg = EmailMessage()
-        msg['content-type'] = 'application/json; charset="utf8"'
-        main, params = msg.get_content_type(), msg['content-type'].params
-
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!sndhdr` module, deprecated in Python 3.11: use
-  the projects `filetype <https://pypi.org/project/filetype/>`_, `puremagic
-  <https://pypi.org/project/puremagic/>`_, or `python-magic
-  <https://pypi.org/project/python-magic/>`_ instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!pipes` module, deprecated in Python 3.11:
-  use the :mod:`subprocess` module instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!ossaudiodev` module, deprecated in Python 3.11:
-  use the `pygame project <https://www.pygame.org/>`_ for audio playback.
-  (Contributed by Victor Stinner in :gh:`104780`.)
-
-* :pep:`594`: Remove the :mod:`!sunau` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!mailcap` module, deprecated in Python 3.11.
-  The :mod:`mimetypes` module provides an alternative.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!spwd` module, deprecated in Python 3.11:
-  the `python-pam project <https://pypi.org/project/python-pam/>`_ can be used
-  instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!nntplib` module, deprecated in Python 3.11:
-  the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_ can be used
-  instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!nis` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!xdrlib` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!msilib` module, deprecated in Python 3.11.
-  (Contributed by Zachary Ware in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!crypt` module and its private :mod:`!_crypt`
-  extension, deprecated in Python 3.11.
-  The :mod:`hashlib` module is a potential replacement for certain use cases.
-  Otherwise, the following PyPI projects can be used:
-
-  * `bcrypt <https://pypi.org/project/bcrypt/>`_:
-    Modern password hashing for your software and your servers.
-  * `passlib <https://pypi.org/project/passlib/>`_:
-    Comprehensive password hashing framework supporting over 30 schemes.
-  * `argon2-cffi <https://pypi.org/project/argon2-cffi/>`_:
-    The secure Argon2 password hashing algorithm.
-  * `legacycrypt <https://pypi.org/project/legacycrypt/>`_:
-    Wrapper to the POSIX crypt library call and associated functionality.
-
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!uu` module, deprecated in Python 3.11:
-  the :mod:`base64` module is a modern alternative.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!aifc` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!audioop` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!chunk` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* Remove support for the keyword-argument method of creating
-  :class:`typing.TypedDict` types, deprecated in Python 3.11.
-  (Contributed by Tomas Roun in :gh:`104786`.)
-
-* :pep:`594`: Remove the :mod:`!imghdr` module, deprecated in Python 3.11:
-  use the projects
-  `filetype <https://pypi.org/project/filetype/>`_,
-  `puremagic <https://pypi.org/project/puremagic/>`_,
-  or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
 * Remove the untested and undocumented :meth:`!unittest.TestProgram.usageExit`
   method, deprecated in Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104992`.)
 
-* Remove the :mod:`!tkinter.tix` module, deprecated in Python 3.6.  The
-  third-party Tix library which the module wrapped is unmaintained.
-  (Contributed by Zachary Ware in :gh:`75552`.)
-
-* Remove the old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and
-  ``Py_TRASHCAN_SAFE_END``.  They should be replaced by the new macros
-  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.  The new macros were
-  added in Python 3.8 and the old macros were deprecated in Python 3.11.
-  (Contributed by Irit Katriel in :gh:`105111`.)
-
-* Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
-  use ``locale.setlocale(locale.LC_ALL, "")`` instead.
-  (Contributed by Victor Stinner in :gh:`104783`.)
-
-* :mod:`logging`: Remove undocumented and untested ``Logger.warn()`` and
-  ``LoggerAdapter.warn()`` methods and ``logging.warn()`` function. Deprecated
-  since Python 3.3, they were aliases to the :meth:`logging.Logger.warning`
-  method, :meth:`!logging.LoggerAdapter.warning` method and
-  :func:`logging.warning` function.
-  (Contributed by Victor Stinner in :gh:`105376`.)
+urllib
+------
 
 * Remove *cafile*, *capath* and *cadefault* parameters of the
   :func:`urllib.request.urlopen` function, deprecated in Python 3.6: use the
@@ -864,15 +922,23 @@ Removed
   certificates for you.
   (Contributed by Victor Stinner in :gh:`105382`.)
 
+webbrowser
+----------
+
+* Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class,
+  deprecated in Python 3.11.
+  Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
+  (Contributed by Hugo van Kemenade in :gh:`104804`.)
+
 * Remove deprecated ``webbrowser.MacOSXOSAScript._name`` attribute.
   Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
-* Remove undocumented, never working, and deprecated ``re.template`` function
-  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
-  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
+Others
+------
 
+* None yet
 
 Porting to Python 3.13
 ======================
@@ -880,34 +946,15 @@ Porting to Python 3.13
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* The old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and ``Py_TRASHCAN_SAFE_END``
-  were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
-  and ``Py_TRASHCAN_END``.
+Changes in the Python API
+-------------------------
 
-  A tp_dealloc function that has the old macros, such as::
-
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_SAFE_BEGIN(p);
-        ...
-        Py_TRASHCAN_SAFE_END
-    }
-
-  should migrate to the new macros as follows::
-
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
-        ...
-        Py_TRASHCAN_END
-    }
-
-  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
-  should be the deallocation function it is in.
+* :meth:`!tkinter.Text.count` now always returns an integer if one or less
+  counting options are specified.
+  Previously it could return a single count as a 1-tuple, an integer (only if
+  option ``"update"`` was specified) or ``None`` if no items found.
+  The result is now the same if ``wantobjects`` is set to ``0``.
+  (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
 
 Build Changes
@@ -928,8 +975,10 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``_stat`` C extension is now built with the :ref:`limited C API
-  <limited-c-api>`.
+* The ``errno``, ``md5``, ``resource``, ``winsound``, ``_ctypes_test``,
+  ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
+  ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
+  :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
 
@@ -1045,6 +1094,23 @@ New Features
   but pass event arguments as a Python :class:`tuple` object.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* :c:func:`PyArg_ParseTupleAndKeywords` now supports non-ASCII keyword
+  parameter names.
+  (Contributed by Serhiy Storchaka in :gh:`110815`.)
+
+* Add :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawCalloc`,
+  :c:func:`PyMem_RawRealloc` and :c:func:`PyMem_RawFree` to the limited C API
+  (version 3.13).
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
+* Add :c:func:`PySys_Audit` and :c:func:`PySys_AuditTuple` functions to the
+  limited C API.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
+* Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
+  (Contributed by Victor Stinner in :gh:`111089`.)
+
+
 Porting to Python 3.13
 ----------------------
 
@@ -1057,7 +1123,8 @@ Porting to Python 3.13
 * ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
   needed, it should now be included explicitly. For example, it provides the
   functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
-  ``getpid()``, ``getcwd()``, ``sysconf()`` and ``getpagesize()``.
+  ``getpid()``, ``getcwd()``, ``sysconf()``, ``getpagesize()``, ``alarm()`` and
+  ``pause()``.
   As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
   longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
   macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
@@ -1083,6 +1150,41 @@ Porting to Python 3.13
   :c:macro:`!Py_BUILD_CORE_BUILTIN` and :c:macro:`!Py_BUILD_CORE_MODULE` macros
   are now undefined by ``<Python.h>``.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* The old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and ``Py_TRASHCAN_SAFE_END``
+  were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
+  and ``Py_TRASHCAN_END``.
+
+  A tp_dealloc function that has the old macros, such as::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_SAFE_BEGIN(p);
+        ...
+        Py_TRASHCAN_SAFE_END
+    }
+
+  should migrate to the new macros as follows::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
+        ...
+        Py_TRASHCAN_END
+    }
+
+  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
+  should be the deallocation function it is in.
+
+* The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
+  contains embedded null characters. To accept embedded null characters and
+  truncate on purpose at the first null byte,
+  ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
+  (Contributed by Victor Stinner in :gh:`111089`.)
 
 Deprecated
 ----------
@@ -1129,6 +1231,14 @@ Deprecated
 
 Removed
 -------
+
+* Removed chained :class:`classmethod` descriptors (introduced in
+  :issue:`19072`).  This can no longer be used to wrap other descriptors
+  such as :class:`property`.  The core design of this feature was flawed
+  and caused a number of downstream problems.  To "pass-through" a
+  :class:`classmethod`, consider using the :attr:`!__wrapped__`
+  attribute that was added in Python 3.10.  (Contributed by Raymond
+  Hettinger in :gh:`89519`.)
 
 * Remove many APIs (functions, macros, variables) with names prefixed by
   ``_Py`` or ``_PY`` (considered as private API). If your project is affected
@@ -1211,6 +1321,12 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
   Configuration <init-config>` instead (:pep:`587`), added to Python 3.8.
   (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Remove the old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and
+  ``Py_TRASHCAN_SAFE_END``.  They should be replaced by the new macros
+  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.  The new macros were
+  added in Python 3.8 and the old macros were deprecated in Python 3.11.
+  (Contributed by Irit Katriel in :gh:`105111`.)
 
 * Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
   functions, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
@@ -1348,3 +1464,13 @@ removed, although there is currently no date scheduled for their removal.
 
 * Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
   (Contributed by Victor Stinner in :gh:`110014`.)
+
+
+Regression Test Changes
+=======================
+
+* Python built with :file:`configure` :option:`--with-pydebug` now
+  supports a :option:`-X presite=package.module <-X>` command-line
+  option. If used, it specifies a module that should be imported early
+  in the lifecycle of the interpreter, before ``site.py`` is executed.
+  (Contributed by Łukasz Langa in :gh:`110769`.)

@@ -489,37 +489,37 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 #. The context expression (the expression given in the
    :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
 
-#. The context manager's :meth:`__enter__` is loaded for later use.
+#. The context manager's :meth:`~object.__enter__` is loaded for later use.
 
-#. The context manager's :meth:`__exit__` is loaded for later use.
+#. The context manager's :meth:`~object.__exit__` is loaded for later use.
 
-#. The context manager's :meth:`__enter__` method is invoked.
+#. The context manager's :meth:`~object.__enter__` method is invoked.
 
 #. If a target was included in the :keyword:`with` statement, the return value
-   from :meth:`__enter__` is assigned to it.
+   from :meth:`~object.__enter__` is assigned to it.
 
    .. note::
 
-      The :keyword:`with` statement guarantees that if the :meth:`__enter__`
-      method returns without an error, then :meth:`__exit__` will always be
+      The :keyword:`with` statement guarantees that if the :meth:`~object.__enter__`
+      method returns without an error, then :meth:`~object.__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
       be. See step 7 below.
 
 #. The suite is executed.
 
-#. The context manager's :meth:`__exit__` method is invoked.  If an exception
+#. The context manager's :meth:`~object.__exit__` method is invoked.  If an exception
    caused the suite to be exited, its type, value, and traceback are passed as
-   arguments to :meth:`__exit__`. Otherwise, three :const:`None` arguments are
+   arguments to :meth:`~object.__exit__`. Otherwise, three :const:`None` arguments are
    supplied.
 
    If the suite was exited due to an exception, and the return value from the
-   :meth:`__exit__` method was false, the exception is reraised.  If the return
+   :meth:`~object.__exit__` method was false, the exception is reraised.  If the return
    value was true, the exception is suppressed, and execution continues with the
    statement following the :keyword:`with` statement.
 
    If the suite was exited for any reason other than an exception, the return
-   value from :meth:`__exit__` is ignored, and execution proceeds at the normal
+   value from :meth:`~object.__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
 The following code::
@@ -1058,7 +1058,7 @@ subject value:
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
    in the mapping, and not created on-the-fly via :meth:`__missing__` or
-   :meth:`__getitem__`.
+   :meth:`~object.__getitem__`.
 
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:

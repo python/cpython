@@ -1,3 +1,0 @@
-Improve syntax error for non-ASCII character that follows a numerical
-literal. It now points on the invalid non-ASCII character, not on the valid
-numerical literal.

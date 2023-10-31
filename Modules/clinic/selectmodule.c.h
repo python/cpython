@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(select_select__doc__,
 "select($module, rlist, wlist, xlist, timeout=None, /)\n"
@@ -1310,4 +1311,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=35cd4aa7b6802838 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c2dcb31cb17c2c6 input=a9049054013a1b77]*/

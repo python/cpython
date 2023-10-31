@@ -25,6 +25,7 @@
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
+        UOP_STAT_INC(INSTNAME, miss); \
         goto deoptimize;         \
     }
 
@@ -62,7 +63,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename),
             _PyFrame_GetCode(frame)->co_firstlineno,
-            2 * (long)(frame->prev_instr + 1 -
+            2 * (long)(frame->instr_ptr -
                    (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive));
 
     PyThreadState *tstate = _PyThreadState_GET();
@@ -93,7 +94,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
         OPT_STAT_INC(uops_executed);
-        UOP_EXE_INC(opcode);
+        UOP_STAT_INC(opcode, execution_count);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif
@@ -131,6 +132,7 @@ error:
     // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+    frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -140,7 +142,7 @@ deoptimize:
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    frame->prev_instr--;  // Back up to just before destination
+    frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;

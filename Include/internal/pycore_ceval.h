@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "dynamic_annotations.h" // _Py_ANNOTATE_RWLOCK_CREATE
+
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -51,16 +53,6 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     _Py_pending_call_func func,
     void *arg,
     int flags);
-
-typedef int (*_Py_simple_func)(void *);
-extern int _Py_CallInInterpreter(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
-extern int _Py_CallInInterpreterAndRawFree(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
 
 extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK

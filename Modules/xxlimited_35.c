@@ -5,7 +5,13 @@
  * See the xxlimited module for an extension module template.
  */
 
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
 #define Py_LIMITED_API 0x03050000
+#endif
 
 #include "Python.h"
 
@@ -293,7 +299,6 @@ xx_modexec(PyObject *m)
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

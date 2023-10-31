@@ -1,5 +1,0 @@
-Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
-:c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error if
-it is NULL. The caller is responsible to check if the result is NULL.
-Previously, the function was private and known as
-``_PyThreadState_UncheckedGet()``. Patch by Victor Stinner.

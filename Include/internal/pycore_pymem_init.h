@@ -18,17 +18,18 @@ extern void * _PyMem_RawRealloc(void *, void *, size_t);
 extern void _PyMem_RawFree(void *, void *);
 #define PYRAW_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree}
 
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC)
 extern void* _PyObject_Malloc(void *, size_t);
 extern void* _PyObject_Calloc(void *, size_t, size_t);
 extern void _PyObject_Free(void *, void *);
 extern void* _PyObject_Realloc(void *, void *, size_t);
 #  define PYOBJ_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
+#  define PYMEM_ALLOC PYOBJ_ALLOC
 #else
 # define PYOBJ_ALLOC PYRAW_ALLOC
+# define PYMEM_ALLOC PYOBJ_ALLOC
 #endif  // WITH_PYMALLOC
 
-#define PYMEM_ALLOC PYOBJ_ALLOC
 
 extern void* _PyMem_DebugRawMalloc(void *, size_t);
 extern void* _PyMem_DebugRawCalloc(void *, size_t, size_t);
