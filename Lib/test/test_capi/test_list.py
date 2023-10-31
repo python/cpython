@@ -48,3 +48,14 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, size, 23)
         self.assertRaises(SystemError, size, object())
         # CRASHES size(NULL)
+
+
+    def test_list_getitem(self):
+        getitem = _testcapi.list_getitem
+        lst = [1, 2, NULL]
+        self.assertEqual(getitem(lst, 0), 1)
+        self.assertRaises(IndexError, getitem, lst, -1)
+        self.assertRaises(IndexError, getitem, lst, 10)
+        self.assertRaises(SystemError, getitem, 42, 1)
+
+        # CRASHES getitem(NULL, 1)
