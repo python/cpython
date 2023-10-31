@@ -590,6 +590,14 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\([0-9]\)$!.0\1!g' | tr -d '.'`
+	AC_DEFINE_UNQUOTED([Py_SUNOS_VERSION], [$SUNOS_VERSION],
+	                   [The version of SunOS/Solaris as reported by `uname -r' without the dot.])
+    fi
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
@@ -2154,10 +2162,15 @@ AS_CASE([$ac_sys_system],
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
+      # Note: wasi-threads requires --import-memory.
+      # Note: wasi requires --export-memory.
+      # Note: --export-memory is implicit unless --import-memory is given
+      # Note: this requires LLVM >= 16.
       AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--export-memory"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
@@ -2691,7 +2704,7 @@ AC_CHECK_HEADERS([ \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
-  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
   termios.h util.h utime.h utmp.h \
 ])
@@ -4489,6 +4502,71 @@ then
 fi
 AC_MSG_RESULT([$with_doc_strings])
 
+# Check for stdatomic.h, required for mimalloc.
+AC_CACHE_CHECK([for stdatomic.h], [ac_cv_header_stdatomic_h], [
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <stdatomic.h>
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
+    int main() {
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
+      return 0;
+    }
+  ]])
+],[ac_cv_header_stdatomic_h=yes],[ac_cv_header_stdatomic_h=no])
+])
+
+AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
+    AC_DEFINE(HAVE_STD_ATOMIC, 1,
+              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
+])
+
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    int val;
+    int main() {
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      return 0;
+    }
+  ]])
+],[ac_cv_builtin_atomic=yes],[ac_cv_builtin_atomic=no])
+])
+
+AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
+])
+
+# --with-mimalloc
+AC_MSG_CHECKING([for --with-mimalloc])
+AC_ARG_WITH([mimalloc],
+  [AS_HELP_STRING([--with-mimalloc],
+                 [build with mimalloc memory allocator (default is yes if C11 stdatomic.h is available.)])],
+  [],
+  [with_mimalloc="$ac_cv_header_stdatomic_h"]
+)
+
+if test "$with_mimalloc" != no; then
+  if test "$ac_cv_header_stdatomic_h" != yes; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    AC_MSG_ERROR([mimalloc requires stdatomic.h, use --without-mimalloc to disable mimalloc.])
+  fi
+  with_mimalloc=yes
+  AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
+  AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
+fi
+
+AC_MSG_RESULT([$with_mimalloc])
+AC_SUBST([WITH_MIMALLOC])
+AC_SUBST([MIMALLOC_HEADERS])
+
 # Check for Python-specific malloc support
 AC_MSG_CHECKING([for --with-pymalloc])
 AC_ARG_WITH(
@@ -4743,6 +4821,13 @@ PY_CHECK_FUNC([eventfd], [
 #include <sys/eventfd.h>
 #endif
 ])
+
+PY_CHECK_FUNC([timerfd_create], [
+#ifdef HAVE_SYS_TIMERFD_H
+#include <sys/timerfd.h>
+#endif
+],
+[HAVE_TIMERFD_CREATE])
 
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype
@@ -5992,6 +6077,13 @@ AS_VAR_IF([with_readline], [no], [
       AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
 
+    # in readline as well as newer editline (April 2023)
+    AC_CHECK_TYPE([rl_compdisp_func_t],
+                  [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
+                             [Define if readline supports rl_compdisp_func_t])],
+                  [],
+                  [readline_includes])
+
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
 ])
@@ -6503,7 +6595,11 @@ SRCDIRS="\
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
+  Objects/mimalloc \
+  Objects/mimalloc/prim \
   Parser \
+  Parser/tokenizer \
+  Parser/lexer \
   Programs \
   Python \
   Python/frozen_modules \
@@ -6597,49 +6693,6 @@ if test "$ac_cv_gcc_asm_for_x87" = yes; then
         ;;
     esac
 fi
-
-# Check for stdatomic.h
-AC_CACHE_CHECK([for stdatomic.h], [ac_cv_header_stdatomic_h], [
-AC_LINK_IFELSE(
-[
-  AC_LANG_SOURCE([[
-    #include <stdatomic.h>
-    atomic_int int_var;
-    atomic_uintptr_t uintptr_var;
-    int main(void) {
-      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
-      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
-      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
-      return 0;
-    }
-  ]])
-],[ac_cv_header_stdatomic_h=yes],[ac_cv_header_stdatomic_h=no])
-])
-
-AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
-    AC_DEFINE([HAVE_STD_ATOMIC], [1],
-              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
-])
-
-# Check for GCC >= 4.7 and clang __atomic builtin functions
-AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
-AC_LINK_IFELSE(
-[
-  AC_LANG_SOURCE([[
-    int val;
-    int main(void) {
-      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
-      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
-      return 0;
-    }
-  ]])
-],[ac_cv_builtin_atomic=yes],[ac_cv_builtin_atomic=no])
-])
-
-AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
-    AC_DEFINE([HAVE_BUILTIN_ATOMIC], [1],
-      [Has builtin __atomic_load_n() and __atomic_store_n() functions])
-])
 
 # ensurepip option
 AC_MSG_CHECKING([for ensurepip])
@@ -7027,7 +7080,8 @@ int main()
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
-          [LIBS="${LIBS} -latomic"])
+          [LIBS="${LIBS} -latomic"
+           LIBATOMIC=${LIBATOMIC-"-latomic"}])
 _RESTORE_VAR([CPPFLAGS])
 
 
@@ -7299,7 +7353,10 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
-PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testcapi],
+    [test "$TEST_MODULES" = yes],
+    dnl Modules/_testcapi needs -latomic for 32bit AIX build
+    [], [], [$LIBATOMIC])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
@@ -7368,3 +7425,10 @@ AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
 Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 ])])
+
+if test "$ac_cv_header_stdatomic_h" != "yes"; then
+  AC_MSG_NOTICE(m4_normalize([
+    Your compiler or platform does have a working C11 stdatomic.h. A future
+    version of Python may require stdatomic.h.
+  ]))
+fi

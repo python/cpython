@@ -2,11 +2,33 @@ import dataclasses
 import json
 from typing import Any
 
-from test.support import TestStats
-
 from .utils import (
     StrJSON, TestName, FilterTuple,
     format_duration, normalize_test_name, print_warning)
+
+
+@dataclasses.dataclass(slots=True)
+class TestStats:
+    tests_run: int = 0
+    failures: int = 0
+    skipped: int = 0
+
+    @staticmethod
+    def from_unittest(result):
+        return TestStats(result.testsRun,
+                         len(result.failures),
+                         len(result.skipped))
+
+    @staticmethod
+    def from_doctest(results):
+        return TestStats(results.attempted,
+                         results.failed,
+                         results.skipped)
+
+    def accumulate(self, stats):
+        self.tests_run += stats.tests_run
+        self.failures += stats.failures
+        self.skipped += stats.skipped
 
 
 # Avoid enum.Enum to reduce the number of imports when tests are run

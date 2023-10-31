@@ -544,6 +544,7 @@ def collect_sysconfig(info_add):
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
         'WITH_FREELISTS',
+        'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',
     ):
@@ -730,6 +731,7 @@ def collect_support(info_add):
         return
 
     attributes = (
+        'MS_WINDOWS',
         'has_fork_support',
         'has_socket_support',
         'has_strftime_extensions',

@@ -61,6 +61,7 @@ class Instruction:
     # Computed by constructor
     always_exits: str  # If the block always exits, its last line; else ""
     has_deopt: bool
+    needs_this_instr: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -87,6 +88,7 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
+        self.needs_this_instr = variable_used(self.inst, "this_instr") or any(c.name != UNUSED for c in self.cache_effects)
         self.input_effects = [
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
@@ -164,7 +166,8 @@ class Instruction:
                 func = f"read_u{bits}"
             if tier == TIER_ONE:
                 out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
+                    f"{typ}{ceffect.name} = "
+                    f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
                 out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
@@ -210,12 +213,14 @@ class Instruction:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DEOPT_IF\((.+)\);\s*(?://.*)?$", line):
                 space, cond = m.groups()
+                space = extra + space
                 target = family.name if family else self.name
                 out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
             elif "DEOPT" in line:
                 filename = context.owner.filename
                 lineno = context.owner.tokens[context.begin].line
                 print(f"{filename}:{lineno}: ERROR: DEOPT_IF() must be all on one line")
+                out.write_raw(extra + line)
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 out.reset_lineno()
                 space = extra + m.group(1)
@@ -291,11 +296,6 @@ class PseudoInstruction:
     targets: list[Instruction]
     instr_fmt: str
     instr_flags: InstructionFlags
-
-
-@dataclasses.dataclass
-class OverriddenInstructionPlaceHolder:
-    name: str
 
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction

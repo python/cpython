@@ -12,7 +12,6 @@ from instructions import (
     InstructionOrCacheEffect,
     MacroInstruction,
     MacroParts,
-    OverriddenInstructionPlaceHolder,
     PseudoInstruction,
 )
 import parsing
@@ -66,7 +65,6 @@ class Analyzer:
         parsing.InstDef
         | parsing.Macro
         | parsing.Pseudo
-        | OverriddenInstructionPlaceHolder
     ]
     instrs: dict[str, Instruction]  # Includes ops
     macros: dict[str, parsing.Macro]
@@ -141,7 +139,7 @@ class Analyzer:
             match thing:
                 case parsing.InstDef(name=name):
                     macro: parsing.Macro | None = None
-                    if thing.kind == "inst":
+                    if thing.kind == "inst" and not thing.override:
                         macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
                         if not thing.override:
@@ -150,12 +148,7 @@ class Analyzer:
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
-                        placeholder = OverriddenInstructionPlaceHolder(name=name)
-                        self.everything[instrs_idx[name]] = placeholder
-                        if macro is not None:
-                            self.warning(
-                                f"Overriding desugared {macro.name} may not work", thing
-                            )
+                        self.everything[instrs_idx[name]] = thing
                     if name not in self.instrs and thing.override:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
@@ -379,8 +372,8 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    if instr.name != "_SET_IP":
-                        # _SET_IP in a macro is a no-op in Tier 1
+                    if instr.name != "_SAVE_RETURN_OFFSET":
+                        # _SAVE_RETURN_OFFSET's oparg does not transfer
                         flags.add(instr.instr_flags)
                 case _:
                     assert_never(component)
@@ -439,7 +432,6 @@ class Analyzer:
             "LOAD_FAST_LOAD_FAST",
             "LOAD_CONST_LOAD_FAST",
             "STORE_FAST_STORE_FAST",
-            "_BINARY_OP_INPLACE_ADD_UNICODE",
             "POP_JUMP_IF_TRUE",
             "POP_JUMP_IF_FALSE",
             "_ITER_JUMP_LIST",
