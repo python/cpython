@@ -813,18 +813,43 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
 }
 
 static void
-_sharednsitem_clear(_PyXI_namespace_item *item)
+_sharednsitem_clear_data(_PyXI_namespace_item *item)
 {
-    if (item->name != NULL) {
-        PyMem_RawFree((void *)item->name);
-        item->name = NULL;
-    }
     _PyCrossInterpreterData *data = item->data;
     if (data != NULL) {
         item->data = NULL;
         int rawfree = (data == &item->_data);
         (void)_release_xid_data(data, rawfree);
     }
+}
+
+static void
+_sharednsitem_clear(_PyXI_namespace_item *item)
+{
+    if (item->name != NULL) {
+        PyMem_RawFree((void *)item->name);
+        item->name = NULL;
+    }
+    _sharednsitem_clear_data(item);
+}
+
+static int
+_sharednsitem_copy_from_ns(struct _sharednsitem *item, PyObject *ns)
+{
+    assert(item->name != NULL);
+    assert(item->data == NULL);
+    PyObject *value = PyDict_GetItemString(ns, item->name);  // borrowed
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        // When applied, this item will be set to the default (or fail).
+        return 0;
+    }
+    if (_sharednsitem_set_value(item, value) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 static int
@@ -1001,6 +1026,22 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
         return NULL;
     }
     return ns;
+}
+
+int
+_PyXI_FillNamespaceFromDict(_PyXI_namespace *ns, PyObject *nsobj)
+{
+    for (Py_ssize_t i=0; i < ns->len; i++) {
+        _PyXI_namespace_item *item = &ns->items[i];
+        if (_sharednsitem_copy_from_ns(item, nsobj) < 0) {
+            // Clear out the ones we set so far.
+            for (Py_ssize_t j=0; j < i; j++) {
+                _sharednsitem_clear_data(&ns->items[j]);
+            }
+            return -1;
+        }
+    }
+    return 0;
 }
 
 int
