@@ -2738,7 +2738,8 @@ py_mimalloc_print_stats(FILE *out)
             MI_LARGE_OBJ_SIZE_MAX);
 
     mi_heap_t *heap = mi_heap_get_default();
-    struct _alloc_stats stats = {};
+    struct _alloc_stats stats;
+    memset(&stats, 0, sizeof(stats));
     mi_heap_visit_blocks(heap, false, &_collect_alloc_stats, &stats);
 
     fprintf(out, "    Allocated Blocks: %ld\n", stats.allocated_blocks);
