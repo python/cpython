@@ -500,11 +500,13 @@ jobs:
     - check_source  # Transitive dependency, needed to access `run_tests` value
     - check-docs
     - check_generated_files
-    - build_windows
     - build_macos
+    - build_macos_free_threaded
     - build_ubuntu
     - build_ubuntu_free_threaded
     - build_ubuntu_ssltests
+    - build_windows
+    - build_windows_free_threaded
     - test_hypothesis
     - build_asan
     - cifuzz
@@ -517,10 +519,10 @@ jobs:
       with:
         allowed-failures: >-
           build_macos,
+          build_macos_free_threaded,
           build_ubuntu_free_threaded,
           build_ubuntu_ssltests,
-          build_win32,
-          build_win_arm64,
+          build_windows_free_threaded,
           cifuzz,
           test_hypothesis,
         allowed-skips: >-
@@ -535,13 +537,13 @@ jobs:
             needs.check_source.outputs.run_tests != 'true'
             && '
             check_generated_files,
-            build_win32,
-            build_win_amd64,
-            build_win_arm64,
             build_macos,
+            build_macos_free_threaded,
             build_ubuntu,
             build_ubuntu_free_threaded,
             build_ubuntu_ssltests,
+            build_windows,
+            build_windows_free_threaded,
             build_asan,
             '
             || ''

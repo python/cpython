@@ -248,6 +248,9 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
         }
+        if (stats->opcode[i].miss) {
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
+        }
     }
 
     for (int i = 0; i < 256; i++) {
