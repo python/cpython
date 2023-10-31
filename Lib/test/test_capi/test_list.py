@@ -9,12 +9,13 @@ NULL = None
 class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyList_Check()
-        check = _testcapi.list_check()
-        self.assertFalse(check({1: 2}))
+        check = _testcapi.list_check
         self.assertTrue(check([1, 2]))
-        self.assertTrue(check((1, 2)))
-        self.assertTrue(check('abc'))
-        self.assertTrue(check(b'abc'))
+        self.assertTrue(check([]))
+        self.assertFalse(check({1: 2}))
+        self.assertFalse(check((1, 2)))
+        self.assertFalse(check('abc'))
+        self.assertFalse(check(b'abc'))
         self.assertFalse(check(42))
         self.assertFalse(check(object()))
-        # CRASHES check(NULL)
+
