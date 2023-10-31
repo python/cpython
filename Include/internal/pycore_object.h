@@ -210,6 +210,10 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 }
 
 #else
+// Merge the local and shared reference count fields and add `extra` to the
+// refcount when merging.
+Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
+
 // TODO: implement Py_DECREF specializations for Py_NOGIL build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
@@ -220,7 +224,47 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
-    Py_DECREF(op);
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        uint32_t refcount = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+        assert(refcount != 0);
+        refcount--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, refcount);
+#ifdef Py_REF_DEBUG
+        if (refcount <= 0) {
+            _Py_FatalRefcountError("Expected a positive remaining refcount");
+        }
+#endif
+    }
+    else {
+        Py_ssize_t refcount = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        assert(refcount != 0);
+        Py_ssize_t new_shared;
+        int should_queue = refcount == _Py_REF_MAYBE_WEAKREF;
+        do {
+            if (should_queue) {
+                new_shared = _Py_REF_QUEUED;
+            }
+            else {
+                new_shared = refcount - (1 << _Py_REF_SHARED_SHIFT);
+            }
+        } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
+                                                    &refcount, new_shared));
+
+        if (should_queue) {
+            // TODO: the inter-thread queue is not yet implemented. For now,
+            // we just merge the refcount here.
+            refcount = _Py_ExplicitMergeRefcount(op, -1);
+#ifdef Py_REF_DEBUG
+            if (refcount <= 0) {
+                _Py_FatalRefcountError("Expected a positive remaining refcount");
+            }
+#endif
+        }
+    }
 }
 
 static inline int
@@ -235,9 +279,6 @@ _Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
     return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_QUEUED;
 }
 
-// Merge the local and shared reference count fields and add `extra` to the
-// refcount when merging.
-Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
 #endif // !defined(Py_NOGIL)
 
 #ifdef Py_REF_DEBUG
