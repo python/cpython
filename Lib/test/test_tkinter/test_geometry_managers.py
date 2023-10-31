@@ -108,8 +108,8 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         a.pack_configure(in_=c)
         self.assertEqual(pack.pack_slaves(), [b, c, d])
         self.assertEqual(c.pack_slaves(), [a])
-        with self.assertRaisesRegex(TclError,
-                                    'can\'t pack %s inside itself' % (a,)):
+        with self.assertRaisesRegex(
+                TclError, """can't pack "?%s"? inside itself""" % (a,)):
             a.pack_configure(in_=a)
         with self.assertRaisesRegex(TclError, 'bad window path name ".foo"'):
             a.pack_configure(in_='.foo')
@@ -292,8 +292,10 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
     def test_place_configure_in(self):
         t, f, f2 = self.create2()
         self.assertEqual(f2.winfo_manager(), '')
-        with self.assertRaisesRegex(TclError, "can't place %s relative to "
-                                    "itself" % re.escape(str(f2))):
+        with self.assertRaisesRegex(
+                TclError,
+                """can't place "?%s"? relative to itself"""
+                 % re.escape(str(f2))):
             f2.place_configure(in_=f2)
         self.assertEqual(f2.winfo_manager(), '')
         with self.assertRaisesRegex(TclError, 'bad window path name'):

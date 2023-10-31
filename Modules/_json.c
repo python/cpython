@@ -11,8 +11,8 @@
 #include "Python.h"
 #include "pycore_ceval.h"           // _Py_EnterRecursiveCall()
 #include "pycore_runtime.h"         // _PyRuntime
-#include "structmember.h"           // PyMemberDef
-#include "pycore_global_objects.h"  // _Py_ID()
+
+#include "pycore_global_strings.h"  // _Py_ID()
 #include <stdbool.h>                // bool
 
 
@@ -28,12 +28,12 @@ typedef struct _PyScannerObject {
 } PyScannerObject;
 
 static PyMemberDef scanner_members[] = {
-    {"strict", T_BOOL, offsetof(PyScannerObject, strict), READONLY, "strict"},
-    {"object_hook", T_OBJECT, offsetof(PyScannerObject, object_hook), READONLY, "object_hook"},
-    {"object_pairs_hook", T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), READONLY},
-    {"parse_float", T_OBJECT, offsetof(PyScannerObject, parse_float), READONLY, "parse_float"},
-    {"parse_int", T_OBJECT, offsetof(PyScannerObject, parse_int), READONLY, "parse_int"},
-    {"parse_constant", T_OBJECT, offsetof(PyScannerObject, parse_constant), READONLY, "parse_constant"},
+    {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
+    {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
+    {"object_pairs_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), Py_READONLY},
+    {"parse_float", _Py_T_OBJECT, offsetof(PyScannerObject, parse_float), Py_READONLY, "parse_float"},
+    {"parse_int", _Py_T_OBJECT, offsetof(PyScannerObject, parse_int), Py_READONLY, "parse_int"},
+    {"parse_constant", _Py_T_OBJECT, offsetof(PyScannerObject, parse_constant), Py_READONLY, "parse_constant"},
     {NULL}
 };
 
@@ -52,14 +52,14 @@ typedef struct _PyEncoderObject {
 } PyEncoderObject;
 
 static PyMemberDef encoder_members[] = {
-    {"markers", T_OBJECT, offsetof(PyEncoderObject, markers), READONLY, "markers"},
-    {"default", T_OBJECT, offsetof(PyEncoderObject, defaultfn), READONLY, "default"},
-    {"encoder", T_OBJECT, offsetof(PyEncoderObject, encoder), READONLY, "encoder"},
-    {"indent", T_OBJECT, offsetof(PyEncoderObject, indent), READONLY, "indent"},
-    {"key_separator", T_OBJECT, offsetof(PyEncoderObject, key_separator), READONLY, "key_separator"},
-    {"item_separator", T_OBJECT, offsetof(PyEncoderObject, item_separator), READONLY, "item_separator"},
-    {"sort_keys", T_BOOL, offsetof(PyEncoderObject, sort_keys), READONLY, "sort_keys"},
-    {"skipkeys", T_BOOL, offsetof(PyEncoderObject, skipkeys), READONLY, "skipkeys"},
+    {"markers", _Py_T_OBJECT, offsetof(PyEncoderObject, markers), Py_READONLY, "markers"},
+    {"default", _Py_T_OBJECT, offsetof(PyEncoderObject, defaultfn), Py_READONLY, "default"},
+    {"encoder", _Py_T_OBJECT, offsetof(PyEncoderObject, encoder), Py_READONLY, "encoder"},
+    {"indent", _Py_T_OBJECT, offsetof(PyEncoderObject, indent), Py_READONLY, "indent"},
+    {"key_separator", _Py_T_OBJECT, offsetof(PyEncoderObject, key_separator), Py_READONLY, "key_separator"},
+    {"item_separator", _Py_T_OBJECT, offsetof(PyEncoderObject, item_separator), Py_READONLY, "item_separator"},
+    {"sort_keys", Py_T_BOOL, offsetof(PyEncoderObject, sort_keys), Py_READONLY, "sort_keys"},
+    {"skipkeys", Py_T_BOOL, offsetof(PyEncoderObject, skipkeys), Py_READONLY, "skipkeys"},
     {NULL}
 };
 
@@ -152,9 +152,6 @@ ascii_escape_unicode(PyObject *pystr)
     Py_UCS1 *output;
     int kind;
 
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
-
     input_chars = PyUnicode_GET_LENGTH(pystr);
     input = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -217,9 +214,6 @@ escape_unicode(PyObject *pystr)
     const void *input;
     int kind;
     Py_UCS4 maxchar;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(pystr);
     input_chars = PyUnicode_GET_LENGTH(pystr);
@@ -376,9 +370,6 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     Py_ssize_t next /* = begin */;
     const void *buf;
     int kind;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return 0;
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
@@ -556,7 +547,7 @@ py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
     Py_ssize_t end;
     Py_ssize_t next_end = -1;
     int strict = 1;
-    if (!PyArg_ParseTuple(args, "On|i:scanstring", &pystr, &end, &strict)) {
+    if (!PyArg_ParseTuple(args, "On|p:scanstring", &pystr, &end, &strict)) {
         return NULL;
     }
     if (PyUnicode_Check(pystr)) {
@@ -674,9 +665,6 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     PyObject *key = NULL;
     int has_pairs_hook = (s->object_pairs_hook != Py_None);
     Py_ssize_t next_idx;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
 
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -801,9 +789,6 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
     PyObject *rval;
     Py_ssize_t next_idx;
 
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
-
     rval = PyList_New(0);
     if (rval == NULL)
         return NULL;
@@ -905,9 +890,6 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     PyObject *rval;
     PyObject *numstr = NULL;
     PyObject *custom_func;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
 
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -1017,9 +999,6 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     const void *str;
     int kind;
     Py_ssize_t length;
-
-    if (PyUnicode_READY(pystr) == -1)
-        return NULL;
 
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -1298,13 +1277,13 @@ _encoded_const(PyObject *obj)
 {
     /* Return the JSON string representation of None, True, False */
     if (obj == Py_None) {
-        return Py_NewRef(&_Py_ID(null));
+        return &_Py_ID(null);
     }
     else if (obj == Py_True) {
-        return Py_NewRef(&_Py_ID(true));
+        return &_Py_ID(true);
     }
     else if (obj == Py_False) {
-        return Py_NewRef(&_Py_ID(false));
+        return &_Py_ID(false);
     }
     else {
         PyErr_SetString(PyExc_ValueError, "not a const");
@@ -1319,9 +1298,10 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
     double i = PyFloat_AS_DOUBLE(obj);
     if (!Py_IS_FINITE(i)) {
         if (!s->allow_nan) {
-            PyErr_SetString(
+            PyErr_Format(
                     PyExc_ValueError,
-                    "Out of range float values are not JSON compliant"
+                    "Out of range float values are not JSON compliant: %R",
+                    obj
                     );
             return NULL;
         }
@@ -1570,10 +1550,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
         */
     }
 
-    if (s->sort_keys) {
-
-        items = PyDict_Items(dct);
-        if (items == NULL || PyList_Sort(items) < 0)
+    if (s->sort_keys || !PyDict_CheckExact(dct)) {
+        items = PyMapping_Items(dct);
+        if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0))
             goto bail;
 
         for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
@@ -1777,22 +1756,12 @@ static int
 _json_exec(PyObject *module)
 {
     PyObject *PyScannerType = PyType_FromSpec(&PyScannerType_spec);
-    if (PyScannerType == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(module, "make_scanner", PyScannerType);
-    Py_DECREF(PyScannerType);
-    if (rc < 0) {
+    if (PyModule_Add(module, "make_scanner", PyScannerType) < 0) {
         return -1;
     }
 
     PyObject *PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
-    if (PyEncoderType == NULL) {
-        return -1;
-    }
-    rc = PyModule_AddObjectRef(module, "make_encoder", PyEncoderType);
-    Py_DECREF(PyEncoderType);
-    if (rc < 0) {
+    if (PyModule_Add(module, "make_encoder", PyEncoderType) < 0) {
         return -1;
     }
 
@@ -1801,6 +1770,7 @@ _json_exec(PyObject *module)
 
 static PyModuleDef_Slot _json_slots[] = {
     {Py_mod_exec, _json_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

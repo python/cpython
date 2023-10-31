@@ -1,2 +1,0 @@
-Add *loop_factory* parameter to :func:`asyncio.run` to allow specifying a custom event loop factory.
-Patch by Kumar Aditya.

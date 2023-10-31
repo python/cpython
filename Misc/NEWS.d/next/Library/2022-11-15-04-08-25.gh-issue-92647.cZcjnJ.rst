@@ -1,1 +1,0 @@
-Use final status of an enum to determine lookup or creation branch of functional API.

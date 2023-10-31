@@ -1,10 +1,10 @@
 /* PyByteArray (bytearray) implementation */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_bytesobject.h"
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "pycore_long.h"          // _PyLong_FromUnsignedChar()
@@ -61,6 +61,7 @@ static void
 bytearray_releasebuffer(PyByteArrayObject *obj, Py_buffer *view)
 {
     obj->ob_exports--;
+    assert(obj->ob_exports >= 0);
 }
 
 static int
@@ -1376,7 +1377,7 @@ bytearray.maketrans
     to: Py_buffer
     /
 
-Return a translation table useable for the bytes or bytearray translate method.
+Return a translation table usable for the bytes or bytearray translate method.
 
 The returned table will be one where each byte in frm is mapped to the byte at
 the same position in to.
@@ -1386,7 +1387,7 @@ The bytes objects frm and to must be of the same length.
 
 static PyObject *
 bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to)
-/*[clinic end generated code: output=1df267d99f56b15e input=5925a81d2fbbf151]*/
+/*[clinic end generated code: output=1df267d99f56b15e input=b10de38c85950a63]*/
 {
     return _Py_bytes_maketrans(frm, to);
 }
@@ -2012,7 +2013,7 @@ bytearray_join(PyByteArrayObject *self, PyObject *iterable_of_bytes)
 /*[clinic input]
 bytearray.splitlines
 
-    keepends: bool(accept={int}) = False
+    keepends: bool = False
 
 Return a list of the lines in the bytearray, breaking at line boundaries.
 
@@ -2022,7 +2023,7 @@ true.
 
 static PyObject *
 bytearray_splitlines_impl(PyByteArrayObject *self, int keepends)
-/*[clinic end generated code: output=4223c94b895f6ad9 input=99a27ad959b9cf6b]*/
+/*[clinic end generated code: output=4223c94b895f6ad9 input=66b2dcdea8d093bf]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyByteArray_AS_STRING(self),
@@ -2151,10 +2152,9 @@ static PyObject *
 bytearray_sizeof_impl(PyByteArrayObject *self)
 /*[clinic end generated code: output=738abdd17951c427 input=e27320fd98a4bc5a]*/
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self)) + self->ob_alloc * sizeof(char);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
+    res += (size_t)self->ob_alloc * sizeof(char);
+    return PyLong_FromSize_t(res);
 }
 
 static PySequenceMethods bytearray_as_sequence = {
@@ -2392,11 +2392,16 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
+        return Py_BuildValue("N(())", iter);
     }
 }
 

@@ -1,0 +1,2 @@
+Fix reference leaks in ``bind_class()`` and ``bind_all()`` methods of
+:mod:`tkinter` widgets.

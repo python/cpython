@@ -1,5 +1,6 @@
 import unittest
-from ctypes import *
+from ctypes import Structure, Union, sizeof, c_char, c_int
+
 
 class StructFieldsTestCase(unittest.TestCase):
     # Structure/Union classes must get 'finalized' sooner or
@@ -54,6 +55,12 @@ class StructFieldsTestCase(unittest.TestCase):
         x.char = b'a\0b\0'
         self.assertEqual(bytes(x), b'a\x00###')
 
+    def test_6(self):
+        class X(Structure):
+            _fields_ = [("x", c_int)]
+        CField = type(X.x)
+        self.assertRaises(TypeError, CField)
+
     def test_gh99275(self):
         class BrokenStructure(Structure):
             def __init_subclass__(cls, **kwargs):
@@ -86,6 +93,7 @@ class StructFieldsTestCase(unittest.TestCase):
             _fields_ = (("field", c_int),)
         self.assertRaises(TypeError,
                           MyCUnion.field.__get__, 'wrong type self', 42)
+
 
 if __name__ == "__main__":
     unittest.main()

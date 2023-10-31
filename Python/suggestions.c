@@ -1,10 +1,9 @@
 #include "Python.h"
+#include "pycore_code.h"          // _PyCode_GetVarnames()
 #include "pycore_frame.h"
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_pyerrors.h"      // export _Py_UTF8_Edit_Cost()
+#include "pycore_runtime.h"       // _Py_ID()
 
-#include "pycore_pyerrors.h"
-#include "pycore_code.h"        // _PyCode_GetVarnames()
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
 
 #define MAX_CANDIDATE_ITEMS 750
@@ -41,10 +40,8 @@ substitution_cost(char a, char b)
 static Py_ssize_t
 levenshtein_distance(const char *a, size_t a_size,
                      const char *b, size_t b_size,
-                     size_t max_cost)
+                     size_t max_cost, size_t *buffer)
 {
-    static size_t buffer[MAX_STRING_SIZE];
-
     // Both strings are the same (by identity)
     if (a == b) {
         return 0;
@@ -128,8 +125,8 @@ levenshtein_distance(const char *a, size_t a_size,
     return result;
 }
 
-static inline PyObject *
-calculate_suggestions(PyObject *dir,
+PyObject *
+_Py_CalculateSuggestions(PyObject *dir,
                       PyObject *name)
 {
     assert(!PyErr_Occurred());
@@ -147,24 +144,28 @@ calculate_suggestions(PyObject *dir,
     if (name_str == NULL) {
         return NULL;
     }
-
+    size_t *buffer = PyMem_New(size_t, MAX_STRING_SIZE);
+    if (buffer == NULL) {
+        return PyErr_NoMemory();
+    }
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
+        if (_PyUnicode_Equal(name, item)) {
+            continue;
+        }
         Py_ssize_t item_size;
         const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
+            PyMem_Free(buffer);
             return NULL;
-        }
-        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
-            continue;
         }
         // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
         // Don't take matches we've already beaten.
         max_distance = Py_MIN(max_distance, suggestion_distance - 1);
         Py_ssize_t current_distance =
-            levenshtein_distance(name_str, name_size,
-                                 item_str, item_size, max_distance);
+            levenshtein_distance(name_str, name_size, item_str,
+                                 item_size, max_distance, buffer);
         if (current_distance > max_distance) {
             continue;
         }
@@ -173,6 +174,7 @@ calculate_suggestions(PyObject *dir,
             suggestion_distance = current_distance;
         }
     }
+    PyMem_Free(buffer);
     return Py_XNewRef(suggestion);
 }
 
@@ -192,7 +194,7 @@ get_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
         return NULL;
     }
 
-    PyObject *suggestions = calculate_suggestions(dir, name);
+    PyObject *suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
     return suggestions;
 }
@@ -217,37 +219,46 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     assert(code != NULL && code->co_localsplusnames != NULL);
 
     PyObject *varnames = _PyCode_GetVarnames(code);
+    Py_DECREF(code);
     if (varnames == NULL) {
         return NULL;
     }
     PyObject *dir = PySequence_List(varnames);
     Py_DECREF(varnames);
-    Py_DECREF(code);
     if (dir == NULL) {
         return NULL;
     }
 
     // Are we inside a method and the instance has an attribute called 'name'?
-    if (PySequence_Contains(dir, &_Py_ID(self)) > 0) {
+    int res = PySequence_Contains(dir, &_Py_ID(self));
+    if (res < 0) {
+        goto error;
+    }
+    if (res > 0) {
         PyObject* locals = PyFrame_GetLocals(frame);
         if (!locals) {
             goto error;
         }
-        PyObject* self = PyDict_GetItem(locals, &_Py_ID(self)); /* borrowed */
-        Py_DECREF(locals);
+        PyObject* self = PyDict_GetItemWithError(locals, &_Py_ID(self)); /* borrowed */
         if (!self) {
+            Py_DECREF(locals);
             goto error;
         }
-        
-        if (PyObject_HasAttr(self, name)) {
+
+        res = PyObject_HasAttrWithError(self, name);
+        Py_DECREF(locals);
+        if (res < 0) {
+            goto error;
+        }
+        if (res) {
             Py_DECREF(dir);
-            return PyUnicode_FromFormat("self.%S", name);
+            return PyUnicode_FromFormat("self.%U", name);
         }
     }
 
-    PyObject *suggestions = calculate_suggestions(dir, name);
+    PyObject *suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
-    if (suggestions != NULL) {
+    if (suggestions != NULL || PyErr_Occurred()) {
         return suggestions;
     }
 
@@ -255,9 +266,9 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     if (dir == NULL) {
         return NULL;
     }
-    suggestions = calculate_suggestions(dir, name);
+    suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
-    if (suggestions != NULL) {
+    if (suggestions != NULL || PyErr_Occurred()) {
         return suggestions;
     }
 
@@ -265,7 +276,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     if (dir == NULL) {
         return NULL;
     }
-    suggestions = calculate_suggestions(dir, name);
+    suggestions = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
 
     return suggestions;
@@ -316,15 +327,16 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     assert(frame != NULL);
 
     PyObject* suggestion = get_suggestions_for_name_error(name, frame);
-    bool is_stdlib_module = is_name_stdlib_module(name);
-
-    if (suggestion == NULL && !is_stdlib_module) {
+    if (suggestion == NULL && PyErr_Occurred()) {
         return NULL;
     }
 
     // Add a trailer ". Did you mean: (...)?"
     PyObject* result = NULL;
-    if (!is_stdlib_module) {
+    if (!is_name_stdlib_module(name)) {
+        if (suggestion == NULL) {
+            return NULL;
+        }
         result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
     } else if (suggestion == NULL) {
         result = PyUnicode_FromFormat(". Did you forget to import %R?", name);
@@ -356,7 +368,7 @@ offer_suggestions_for_import_error(PyImportErrorObject *exc)
         return NULL;
     }
 
-    PyObject *suggestion = calculate_suggestions(dir, name);
+    PyObject *suggestion = _Py_CalculateSuggestions(dir, name);
     Py_DECREF(dir);
     if (!suggestion) {
         return NULL;
@@ -401,6 +413,14 @@ _Py_UTF8_Edit_Cost(PyObject *a, PyObject *b, Py_ssize_t max_cost)
     if (max_cost == -1) {
         max_cost = MOVE_COST * Py_MAX(size_a, size_b);
     }
-    return levenshtein_distance(utf8_a, size_a, utf8_b, size_b, max_cost);
+    size_t *buffer = PyMem_New(size_t, MAX_STRING_SIZE);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_ssize_t res = levenshtein_distance(utf8_a, size_a,
+                                    utf8_b, size_b, max_cost, buffer);
+    PyMem_Free(buffer);
+    return res;
 }
 

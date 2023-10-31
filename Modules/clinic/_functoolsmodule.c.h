@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_functools_cmp_to_key__doc__,
 "cmp_to_key($module, /, mycmp)\n"
@@ -101,4 +101,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 {
     return _functools__lru_cache_wrapper_cache_clear_impl(self);
 }
-/*[clinic end generated code: output=7e7f3bcf9ed61f23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=231403340a20e31b input=a9049054013a1b77]*/

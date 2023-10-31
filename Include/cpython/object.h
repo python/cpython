@@ -3,53 +3,16 @@
 #endif
 
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
-
-#ifdef Py_TRACE_REFS
-/* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-#endif
+PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 
 #ifdef Py_REF_DEBUG
-PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
+/* These are useful as debugging aids when chasing down refleaks. */
+PyAPI_FUNC(Py_ssize_t) _Py_GetGlobalRefTotal(void);
+#  define _Py_GetRefTotal() _Py_GetGlobalRefTotal()
+PyAPI_FUNC(Py_ssize_t) _Py_GetLegacyRefTotal(void);
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GetRefTotal(PyInterpreterState *);
 #endif
 
-
-/********************* String Literals ****************************************/
-/* This structure helps managing static strings. The basic usage goes like this:
-   Instead of doing
-
-       r = PyObject_CallMethod(o, "foo", "args", ...);
-
-   do
-
-       _Py_IDENTIFIER(foo);
-       ...
-       r = _PyObject_CallMethodId(o, &PyId_foo, "args", ...);
-
-   PyId_foo is a static variable, either on block level or file level. On first
-   usage, the string "foo" is interned, and the structures are linked. On interpreter
-   shutdown, all strings are released.
-
-   Alternatively, _Py_static_string allows choosing the variable name.
-   _PyUnicode_FromId returns a borrowed reference to the interned string.
-   _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
-*/
-typedef struct _Py_Identifier {
-    const char* string;
-    // Index in PyInterpreterState.unicode.ids.array. It is process-wide
-    // unique and must be initialized to -1.
-    Py_ssize_t index;
-} _Py_Identifier;
-
-#ifndef Py_BUILD_CORE
-// For now we are keeping _Py_IDENTIFIER for continued use
-// in non-builtin extensions (and naughty PyPI modules).
-
-#define _Py_static_string_init(value) { .string = (value), .index = -1 }
-#define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
-#define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
-
-#endif /* !Py_BUILD_CORE */
 
 typedef struct {
     /* Number implementations must check *both*
@@ -222,14 +185,26 @@ struct _typeobject {
     vectorcallfunc tp_vectorcall;
 
     /* bitset of which type-watchers care about this type */
-    char tp_watched;
+    unsigned char tp_watched;
 };
 
 /* This struct is used by the specializer
- * It should should be treated as an opaque blob
+ * It should be treated as an opaque blob
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
+    // In order to avoid bloating the bytecode with lots of inline caches, the
+    // members of this structure have a somewhat unique contract. They are set
+    // by the specialization machinery, and are invalidated by PyType_Modified.
+    // The rules for using them are as follows:
+    // - If getitem is non-NULL, then it is the same Python function that
+    //   PyType_Lookup(cls, "__getitem__") would return.
+    // - If getitem is NULL, then getitem_version is meaningless.
+    // - If getitem->func_version == getitem_version, then getitem can be called
+    //   with two positional arguments and no keyword arguments, and has neither
+    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
     PyObject *getitem;
+    uint32_t getitem_version;
+    PyObject *init;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -256,42 +231,14 @@ typedef struct _heaptypeobject {
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
-#ifndef Py_BUILD_CORE
-// Backward compatibility for 3rd-party extensions
-// that may be using the old name.
-#define _PyObject_LookupSpecial _PyObject_LookupSpecialId
-#endif
-PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
-PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
-PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
-
-PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
-PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
-/* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
-   don't raise AttributeError.
-
-   Return 1 and set *result != NULL if an attribute is found.
-   Return 0 and set *result == NULL if an attribute is not found;
-   an AttributeError is silenced.
-   Return -1 and set *result == NULL if an error other than AttributeError
-   is raised.
-*/
-PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, _Py_Identifier *, PyObject **);
-
-PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 
@@ -320,42 +267,55 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * triggered as a side-effect of `dst` getting torn down no longer believes
  * `dst` points to a valid object.
  *
- * gh-98724: Use the _tmp_dst_ptr variable to evaluate the 'dst' macro argument
- * exactly once, to prevent the duplication of side effects in this macro.
+ * Temporary variables are used to only evalutate macro arguments once and so
+ * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
+ * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
+ * implementation details about type punning.
+ *
+ * The memcpy() implementation does not emit a compiler warning if 'src' has
+ * not the same type than 'src': any pointer type is accepted for 'src'.
  */
-#define Py_SETREF(dst, src)                                     \
-    do {                                                        \
-        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_dst = (*_tmp_dst_ptr);                   \
-        *_tmp_dst_ptr = _PyObject_CAST(src);                    \
-        Py_DECREF(_tmp_dst);                                    \
+#ifdef _Py_TYPEOF
+#define Py_SETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(_tmp_old_dst); \
     } while (0)
+#else
+#define Py_SETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_DECREF(_tmp_old_dst); \
+    } while (0)
+#endif
 
 /* Py_XSETREF() is a variant of Py_SETREF() that uses Py_XDECREF() instead of
  * Py_DECREF().
  */
-#define Py_XSETREF(dst, src)                                    \
-    do {                                                        \
-        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_dst = (*_tmp_dst_ptr);                   \
-        *_tmp_dst_ptr = _PyObject_CAST(src);                    \
-        Py_XDECREF(_tmp_dst);                                   \
+#ifdef _Py_TYPEOF
+#define Py_XSETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(_tmp_old_dst); \
     } while (0)
+#else
+#define Py_XSETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#endif
 
-
-PyAPI_DATA(PyTypeObject) _PyNone_Type;
-PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
-
-/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
- * Defined in object.c.
- */
-PyAPI_DATA(int) _Py_SwappedOp[];
-
-PyAPI_FUNC(void)
-_PyDebugAllocatorStats(FILE *out, const char *block_name, int num_blocks,
-                       size_t sizeof_block);
-PyAPI_FUNC(void)
-_PyObject_DebugTypeStats(FILE *out);
 
 /* Define a pair of assertion macros:
    _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().
@@ -404,21 +364,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
     const char *file,
     int line,
     const char *function);
-
-/* Check if an object is consistent. For example, ensure that the reference
-   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
-
-   Call _PyObject_AssertFailed() if the object is inconsistent.
-
-   If check_content is zero, only check header fields: reduce the overhead.
-
-   The function always return 1. The return value is just here to be able to
-   write:
-
-   assert(_PyObject_CheckConsistency(obj, 1)); */
-PyAPI_FUNC(int) _PyObject_CheckConsistency(
-    PyObject *op,
-    int check_content);
 
 
 /* Trashcan mechanism, thanks to Christian Tismer.
@@ -480,7 +425,7 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
         /* If "cond" is false, then _tstate remains NULL and the deallocator \
          * is run normally without involving the trashcan */ \
         if (cond) { \
-            _tstate = PyThreadState_Get(); \
+            _tstate = PyThreadState_GetUnchecked(); \
             if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
                 break; \
             } \
@@ -496,23 +441,11 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
     Py_TRASHCAN_BEGIN_CONDITION((op), \
         _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
 
-/* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
- * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
- * will be removed in the future.
- * Use Py_TRASHCAN_BEGIN and Py_TRASHCAN_END instead.
- */
-Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
-#define Py_TRASHCAN_SAFE_BEGIN(op) \
-    do { \
-        UsingDeprecatedTrashcanMacro cond=1; \
-        Py_TRASHCAN_BEGIN_CONDITION((op), cond);
-#define Py_TRASHCAN_SAFE_END(op) \
-        Py_TRASHCAN_END; \
-    } while(0);
 
+PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
-PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
+PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 #define TYPE_MAX_WATCHERS 8
 
@@ -521,3 +454,10 @@ PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
 PyAPI_FUNC(int) PyType_ClearWatcher(int watcher_id);
 PyAPI_FUNC(int) PyType_Watch(int watcher_id, PyObject *type);
 PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
+
+/* Attempt to assign a version tag to the given type.
+ *
+ * Returns 1 if the type already had a valid version tag or a new one was
+ * assigned, or 0 if a new tag could not be assigned.
+ */
+PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);

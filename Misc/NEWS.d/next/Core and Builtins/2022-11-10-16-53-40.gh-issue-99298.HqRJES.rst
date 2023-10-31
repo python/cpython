@@ -1,3 +1,0 @@
-Remove the remaining error paths for attribute specializations, and refuse
-to specialize attribute accesses on types that haven't had
-:c:func:`PyType_Ready` called on them yet.

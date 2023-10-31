@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 #if defined(HAVE_MP_SEMAPHORE) && defined(MS_WINDOWS)
 
@@ -65,8 +65,8 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        blocking = _PyLong_AsInt(args[0]);
-        if (blocking == -1 && PyErr_Occurred()) {
+        blocking = PyObject_IsTrue(args[0]);
+        if (blocking < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -162,8 +162,8 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        blocking = _PyLong_AsInt(args[0]);
-        if (blocking == -1 && PyErr_Occurred()) {
+        blocking = PyObject_IsTrue(args[0]);
+        if (blocking < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -250,15 +250,15 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    kind = _PyLong_AsInt(fastargs[0]);
+    kind = PyLong_AsInt(fastargs[0]);
     if (kind == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    value = _PyLong_AsInt(fastargs[1]);
+    value = PyLong_AsInt(fastargs[1]);
     if (value == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    maxvalue = _PyLong_AsInt(fastargs[2]);
+    maxvalue = PyLong_AsInt(fastargs[2]);
     if (maxvalue == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -275,8 +275,8 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    unlink = _PyLong_AsInt(fastargs[4]);
-    if (unlink == -1 && PyErr_Occurred()) {
+    unlink = PyObject_IsTrue(fastargs[4]);
+    if (unlink < 0) {
         goto exit;
     }
     return_value = _multiprocessing_SemLock_impl(type, kind, value, maxvalue, name, unlink);
@@ -542,4 +542,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=720d7d0066dc0954 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d57992037e6770b6 input=a9049054013a1b77]*/

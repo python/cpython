@@ -1,8 +1,10 @@
 // namespace object implementation
 
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "structmember.h"         // PyMemberDef
+
+#include <stddef.h>               // offsetof()
 
 
 typedef struct {
@@ -12,7 +14,7 @@ typedef struct {
 
 
 static PyMemberDef namespace_members[] = {
-    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), READONLY},
+    {"__dict__", _Py_T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), Py_READONLY},
     {NULL}
 };
 
@@ -187,9 +189,37 @@ namespace_reduce(_PyNamespaceObject *ns, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject *
+namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        return NULL;
+    }
+
+    PyObject *result = PyObject_CallNoArgs((PyObject *)Py_TYPE(self));
+    if (!result) {
+        return NULL;
+    }
+    if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
+                      ((_PyNamespaceObject*)self)->ns_dict) < 0)
+    {
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (kwargs) {
+        if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, kwargs) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+    return result;
+}
+
+
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
+    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS, NULL},
     {NULL,         NULL}  // sentinel
 };
 

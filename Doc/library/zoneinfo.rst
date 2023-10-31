@@ -241,7 +241,7 @@ The following class methods are also available:
     .. warning::
 
         Invoking this function may change the semantics of datetimes using
-        ``ZoneInfo`` in surprising ways; this modifies process-wide global state
+        ``ZoneInfo`` in surprising ways; this modifies module state
         and thus may have wide-ranging effects. Only use it if you know that you
         need to.
 

@@ -152,11 +152,12 @@ unsigned long PyThread_get_thread_native_id(void);
 #endif
 
 /*
- * Initialization of the C package, should not be needed.
+ * Initialization for the current runtime.
  */
 static void
 PyThread__init_thread(void)
 {
+    // Initialization of the C package should not be needed.
 }
 
 /*

@@ -24,10 +24,11 @@ Bigint {
 
 #ifdef Py_USING_MEMORY_DEBUGGER
 
-struct _dtoa_runtime_state {
-        int _not_used;
+struct _dtoa_state {
+    int _not_used;
 };
-#define _dtoa_runtime_state_INIT {0}
+#define _dtoa_interp_state_INIT(INTERP) \
+    {0}
 
 #else  // !Py_USING_MEMORY_DEBUGGER
 
@@ -40,14 +41,17 @@ struct _dtoa_runtime_state {
 #define Bigint_PREALLOC_SIZE \
     ((PRIVATE_MEM+sizeof(double)-1)/sizeof(double))
 
-struct _dtoa_runtime_state {
-        struct Bigint *freelist[Bigint_Kmax+1];
-        double preallocated[Bigint_PREALLOC_SIZE];
-        double *preallocated_next;
+struct _dtoa_state {
+    /* p5s is a linked list of powers of 5 of the form 5**(2**i), i >= 2 */
+    // XXX This should be freed during runtime fini.
+    struct Bigint *p5s;
+    struct Bigint *freelist[Bigint_Kmax+1];
+    double preallocated[Bigint_PREALLOC_SIZE];
+    double *preallocated_next;
 };
-#define _dtoa_runtime_state_INIT(runtime) \
+#define _dtoa_state_INIT(INTERP) \
     { \
-        .preallocated_next = runtime.dtoa.preallocated, \
+        .preallocated_next = (INTERP)->dtoa.preallocated, \
     }
 
 #endif  // !Py_USING_MEMORY_DEBUGGER
@@ -56,12 +60,10 @@ struct _dtoa_runtime_state {
 /* These functions are used by modules compiled as C extension like math:
    they must be exported. */
 
-PyAPI_FUNC(double) _Py_dg_strtod(const char *str, char **ptr);
-PyAPI_FUNC(char *) _Py_dg_dtoa(double d, int mode, int ndigits,
-                        int *decpt, int *sign, char **rve);
-PyAPI_FUNC(void) _Py_dg_freedtoa(char *s);
-PyAPI_FUNC(double) _Py_dg_stdnan(int sign);
-PyAPI_FUNC(double) _Py_dg_infinity(int sign);
+extern double _Py_dg_strtod(const char *str, char **ptr);
+extern char* _Py_dg_dtoa(double d, int mode, int ndigits,
+                         int *decpt, int *sign, char **rve);
+extern void _Py_dg_freedtoa(char *s);
 
 #endif // _PY_SHORT_FLOAT_REPR == 1
 

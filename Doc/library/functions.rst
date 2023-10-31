@@ -14,8 +14,8 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
 | |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
 | |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
-| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
+| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
@@ -122,7 +122,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to a binary string prefixed with "0b". The result
    is a valid Python expression. If *x* is not a Python :class:`int` object, it
-   has to define an :meth:`__index__` method that returns an integer. Some
+   has to define an :meth:`~object.__index__` method that returns an integer. Some
    examples:
 
       >>> bin(3)
@@ -147,7 +147,7 @@ are always available.  They are listed here in alphabetical order.
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
-   ``True`` (see :ref:`bltin-boolean-values`).
+   ``True`` (see :ref:`typebool`).
 
    .. index:: pair: Boolean; type
 
@@ -167,6 +167,13 @@ are always available.  They are listed here in alphabetical order.
    the debugger of choice.
    If :func:`sys.breakpointhook` is not accessible, this function will
    raise :exc:`RuntimeError`.
+
+   By default, the behavior of :func:`breakpoint` can be changed with
+   the :envvar:`PYTHONBREAKPOINT` environment variable.
+   See :func:`sys.breakpointhook` for usage details.
+
+   Note that this is not guaranteed if :func:`sys.breakpointhook`
+   has been replaced.
 
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
@@ -278,7 +285,7 @@ are always available.  They are listed here in alphabetical order.
       ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
       have a new ``__wrapped__`` attribute.
 
-   .. versionchanged:: 3.11
+   .. deprecated-removed:: 3.11 3.13
       Class methods can no longer wrap other :term:`descriptors <descriptor>` such as
       :func:`property`.
 
@@ -376,9 +383,9 @@ are always available.  They are listed here in alphabetical order.
    ``0j``.
 
    For a general Python object ``x``, ``complex(x)`` delegates to
-   ``x.__complex__()``.  If ``__complex__()`` is not defined then it falls back
-   to :meth:`__float__`.  If ``__float__()`` is not defined then it falls back
-   to :meth:`__index__`.
+   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
 
    .. note::
 
@@ -393,8 +400,8 @@ are always available.  They are listed here in alphabetical order.
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__complex__` and
-      :meth:`__float__` are not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__complex__` and
+      :meth:`~object.__float__` are not defined.
 
 
 .. function:: delattr(object, name)
@@ -462,6 +469,7 @@ are always available.  They are listed here in alphabetical order.
       >>> class Shape:
       ...     def __dir__(self):
       ...         return ['area', 'perimeter', 'location']
+      ...
       >>> s = Shape()
       >>> dir(s)
       ['area', 'location', 'perimeter']
@@ -504,15 +512,15 @@ are always available.  They are listed here in alphabetical order.
 
    Equivalent to::
 
-      def enumerate(sequence, start=0):
+      def enumerate(iterable, start=0):
           n = start
-          for elem in sequence:
+          for elem in iterable:
               yield n, elem
               n += 1
 
 .. _func-eval:
 
-.. function:: eval(expression, /, globals=None, locals=None)
+.. function:: eval(expression, globals=None, locals=None)
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
@@ -561,7 +569,7 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
-.. index:: builtin: exec
+.. index:: pair: built-in function; exec
 
 .. function:: exec(object, globals=None, locals=None, /, *, closure=None)
 
@@ -622,7 +630,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: filter(function, iterable)
 
    Construct an iterator from those elements of *iterable* for which *function*
-   returns true.  *iterable* may be either a sequence, a container which
+   is true.  *iterable* may be either a sequence, a container which
    supports iteration, or an iterator.  If *function* is ``None``, the identity
    function is assumed, that is, all elements of *iterable* that are false are
    removed.
@@ -633,7 +641,7 @@ are always available.  They are listed here in alphabetical order.
    ``None``.
 
    See :func:`itertools.filterfalse` for the complementary function that returns
-   elements of *iterable* for which *function* returns false.
+   elements of *iterable* for which *function* is false.
 
 
 .. class:: float(x=0.0)
@@ -649,20 +657,23 @@ are always available.  They are listed here in alphabetical order.
    sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
    produced.  The argument may also be a string representing a NaN
    (not-a-number), or positive or negative infinity.  More precisely, the
-   input must conform to the following grammar after leading and trailing
-   whitespace characters are removed:
+   input must conform to the ``floatvalue`` production rule in the following
+   grammar, after leading and trailing whitespace characters are removed:
 
    .. productionlist:: float
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      numeric_value: `floatnumber` | `infinity` | `nan`
-      numeric_string: [`sign`] `numeric_value`
+      digitpart: `digit` (["_"] `digit`)*
+      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
+      exponent: ("e" | "E") ["+" | "-"] `digitpart`
+      floatnumber: number [`exponent`]
+      floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``floatnumber`` is the form of a Python floating-point literal,
-   described in :ref:`floating`.  Case is not significant, so, for example,
-   "inf", "Inf", "INFINITY", and "iNfINity" are all acceptable spellings for
-   positive infinity.
+   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
+   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
+   "INFINITY", and "iNfINity" are all acceptable spellings for positive
+   infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
@@ -670,8 +681,8 @@ are always available.  They are listed here in alphabetical order.
    float, an :exc:`OverflowError` will be raised.
 
    For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.  If ``__float__()`` is not defined then it falls back
-   to :meth:`__index__`.
+   ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
 
    If no argument is given, ``0.0`` is returned.
 
@@ -697,7 +708,7 @@ are always available.  They are listed here in alphabetical order.
       *x* is now a positional-only parameter.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__float__` is not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
 
 
 .. index::
@@ -783,7 +794,7 @@ are always available.  They are listed here in alphabetical order.
 
       For objects with custom :meth:`__hash__` methods, note that :func:`hash`
       truncates the return value based on the bit width of the host machine.
-      See :meth:`__hash__` for details.
+      See :meth:`__hash__ <object.__hash__>` for details.
 
 .. function:: help()
               help(request)
@@ -811,7 +822,7 @@ are always available.  They are listed here in alphabetical order.
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
    "0x". If *x* is not a Python :class:`int` object, it has to define an
-   :meth:`__index__` method that returns an integer. Some examples:
+   :meth:`~object.__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
@@ -882,24 +893,28 @@ are always available.  They are listed here in alphabetical order.
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__index__`,
-   it returns ``x.__index__()``.  If *x* defines :meth:`__trunc__`,
+   ``0`` if no arguments are given.  If *x* defines :meth:`~object.__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`~object.__index__`,
+   it returns ``x.__index__()``.  If *x* defines :meth:`~object.__trunc__`,
    it returns ``x.__trunc__()``.
    For floating point numbers, this truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
-   :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
-   literal <integers>` in radix *base*.  Optionally, the literal can be
-   preceded by ``+`` or ``-`` (with no space in between) and surrounded by
-   whitespace.  A base-n literal consists of the digits 0 to n-1, with ``a``
-   to ``z`` (or ``A`` to ``Z``) having
-   values 10 to 35.  The default *base* is 10. The allowed values are 0 and 2--36.
-   Base-2, -8, and -16 literals can be optionally prefixed with ``0b``/``0B``,
-   ``0o``/``0O``, or ``0x``/``0X``, as with integer literals in code.  Base 0
-   means to interpret exactly as a code literal, so that the actual base is 2,
-   8, 10, or 16, and so that ``int('010', 0)`` is not legal, while
-   ``int('010')`` is, as well as ``int('010', 8)``.
+   :class:`bytes`, or :class:`bytearray` instance representing an integer
+   in radix *base*.  Optionally, the string can be preceded by ``+`` or ``-``
+   (with no space in between), have leading zeros, be surrounded by whitespace,
+   and have single underscores interspersed between digits.
+
+   A base-n integer string contains digits, each representing a value from 0 to
+   n-1. The values 0--9 can be represented by any Unicode decimal digit. The
+   values 10--35 can be represented by ``a`` to ``z`` (or ``A`` to ``Z``). The
+   default *base* is 10. The allowed bases are 0 and 2--36. Base-2, -8, and -16
+   strings can be optionally prefixed with ``0b``/``0B``, ``0o``/``0O``, or
+   ``0x``/``0X``, as with integer literals in code.  For base 0, the string is
+   interpreted in a similar way to an :ref:`integer literal in code <integers>`,
+   in that the actual base is 2, 8, 10, or 16 as determined by the prefix. Base
+   0 also disallows leading zeros: ``int('010', 0)`` is not legal, while
+   ``int('010')`` and ``int('010', 8)`` are.
 
    The integer type is described in :ref:`typesnumeric`.
 
@@ -917,10 +932,10 @@ are always available.  They are listed here in alphabetical order.
       *x* is now a positional-only parameter.
 
    .. versionchanged:: 3.8
-      Falls back to :meth:`__index__` if :meth:`__int__` is not defined.
+      Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`__trunc__` is deprecated.
+      The delegation to :meth:`~object.__trunc__` is deprecated.
 
    .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
@@ -968,7 +983,7 @@ are always available.  They are listed here in alphabetical order.
    differently depending on the presence of the second argument. Without a
    second argument, *object* must be a collection object which supports the
    :term:`iterable` protocol (the :meth:`__iter__` method), or it must support
-   the sequence protocol (the :meth:`__getitem__` method with integer arguments
+   the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then *object* must be a callable object.  The iterator created in this case
@@ -1123,7 +1138,7 @@ are always available.  They are listed here in alphabetical order.
 
   Convert an integer number to an octal string prefixed with "0o".  The result
   is a valid Python expression. If *x* is not a Python :class:`int` object, it
-  has to define an :meth:`__index__` method that returns an integer. For
+  has to define an :meth:`~object.__index__` method that returns an integer. For
   example:
 
       >>> oct(8)
@@ -1143,8 +1158,8 @@ are always available.  They are listed here in alphabetical order.
 
   See also :func:`format` for more information.
 
-   .. index::
-      single: file object; open() built-in function
+.. index::
+   single: file object; open() built-in function
 
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
@@ -1216,7 +1231,7 @@ are always available.  They are listed here in alphabetical order.
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer is
      chosen using a heuristic trying to determine the underlying device's "block
-     size" and falling back on :attr:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
+     size" and falling back on :const:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
      the buffer will typically be 4096 or 8192 bytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
@@ -1256,7 +1271,7 @@ are always available.  They are listed here in alphabetical order.
 
    * ``'xmlcharrefreplace'`` is only supported when writing to a file.
      Characters not supported by the encoding are replaced with the
-     appropriate XML character reference ``&#nnn;``.
+     appropriate XML character reference :samp:`&#{nnn};`.
 
    * ``'backslashreplace'`` replaces malformed data by Python's backslashed
      escape sequences.
@@ -1332,7 +1347,7 @@ are always available.  They are listed here in alphabetical order.
       single: I/O control; buffering
       single: binary mode
       single: text mode
-      module: sys
+      pair: module; sys
 
    See also the file handling modules, such as :mod:`fileinput`, :mod:`io`
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
@@ -1345,28 +1360,28 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.3
 
-         * The *opener* parameter was added.
-         * The ``'x'`` mode was added.
-         * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
-         * :exc:`FileExistsError` is now raised if the file opened in exclusive
-           creation mode (``'x'``) already exists.
+      * The *opener* parameter was added.
+      * The ``'x'`` mode was added.
+      * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
+      * :exc:`FileExistsError` is now raised if the file opened in exclusive
+        creation mode (``'x'``) already exists.
 
    .. versionchanged:: 3.4
 
-         * The file is now non-inheritable.
+      * The file is now non-inheritable.
 
    .. versionchanged:: 3.5
 
-         * If the system call is interrupted and the signal handler does not raise an
-           exception, the function now retries the system call instead of raising an
-           :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
-         * The ``'namereplace'`` error handler was added.
+      * If the system call is interrupted and the signal handler does not raise an
+        exception, the function now retries the system call instead of raising an
+        :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      * The ``'namereplace'`` error handler was added.
 
    .. versionchanged:: 3.6
 
-         * Support added to accept objects implementing :class:`os.PathLike`.
-         * On Windows, opening a console buffer may return a subclass of
-           :class:`io.RawIOBase` other than :class:`io.FileIO`.
+      * Support added to accept objects implementing :class:`os.PathLike`.
+      * On Windows, opening a console buffer may return a subclass of
+        :class:`io.RawIOBase` other than :class:`io.FileIO`.
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
@@ -1436,8 +1451,9 @@ are always available.  They are listed here in alphabetical order.
    arguments are converted to text strings, :func:`print` cannot be used with
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
-   Whether the output is buffered is usually determined by *file*, but if the
-   *flush* keyword argument is true, the stream is forcibly flushed.
+   Output buffering is usually determined by *file*.
+   However, if *flush* is true, the stream is forcibly flushed.
+
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
@@ -1547,7 +1563,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return a reverse :term:`iterator`.  *seq* must be an object which has
    a :meth:`__reversed__` method or supports the sequence protocol (the
-   :meth:`__len__` method and the :meth:`__getitem__` method with integer
+   :meth:`__len__` method and the :meth:`~object.__getitem__` method with integer
    arguments starting at ``0``).
 
 
@@ -1615,7 +1631,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: slice(stop)
-           slice(start, stop, step=1)
+           slice(start, stop, step=None)
 
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
@@ -1627,6 +1643,9 @@ are always available.  They are listed here in alphabetical order.
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
+   .. versionchanged:: 3.12
+      Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
+      :attr:`~slice.stop`, and :attr:`~slice.step` are hashable).
 
 .. function:: sorted(iterable, /, *, key=None, reverse=False)
 
@@ -1669,7 +1688,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @staticmethod
-          def f(arg1, arg2, ...): ...
+          def f(arg1, arg2, argN): ...
 
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -1731,6 +1750,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
+
+   .. versionchanged:: 3.12 Summation of floats switched to an algorithm
+      that gives higher accuracy and better commutativity on most builds.
+
 
 .. class:: super()
            super(type, object_or_type=None)
@@ -1814,7 +1837,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: type(object)
            type(name, bases, dict, **kwds)
 
-   .. index:: object: type
+   .. index:: pair: object; type
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
@@ -1915,13 +1938,23 @@ are always available.  They are listed here in alphabetical order.
         >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
         [('a', 1), ('b', 2), ('c', 3)]
 
-     Unlike the default behavior, it checks that the lengths of iterables are
-     identical, raising a :exc:`ValueError` if they aren't:
+     Unlike the default behavior, it raises a :exc:`ValueError` if one iterable
+     is exhausted before the others:
 
-        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):  # doctest: +SKIP
+        ...     print(item)
+        ...
+        (0, 'fee')
+        (1, 'fi')
+        (2, 'fo')
         Traceback (most recent call last):
           ...
         ValueError: zip() argument 2 is longer than argument 1
+
+     ..
+        This doctest is disabled because doctest does not support capturing
+        output and exceptions in the same code unit.
+        https://github.com/python/cpython/issues/65382
 
      Without the ``strict=True`` argument, any bug that results in iterables of
      different lengths will be silenced, possibly manifesting as a hard-to-find
@@ -1960,8 +1993,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
 
    .. index::
-      statement: import
-      module: imp
+      pair: statement; import
+      pair: module; builtins
 
    .. note::
 

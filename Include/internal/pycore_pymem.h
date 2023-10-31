@@ -8,8 +8,20 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pymem.h"      // PyMemAllocatorName
+// Try to get the allocators name set by _PyMem_SetupAllocators().
+// Return NULL if unknown.
+// Export for '_testinternalcapi' shared extension.
+PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
 
+// strdup() using PyMem_RawMalloc()
+extern char* _PyMem_RawStrdup(const char *str);
+
+// strdup() using PyMem_Malloc().
+// Export for '_pickle ' shared extension.
+PyAPI_FUNC(char*) _PyMem_Strdup(const char *str);
+
+// wcsdup() using PyMem_RawMalloc()
+extern wchar_t* _PyMem_RawWcsdup(const wchar_t *str);
 
 typedef struct {
     /* We tag each block with an API ID in order to tag API violations */
@@ -18,6 +30,7 @@ typedef struct {
 } debug_alloc_api_t;
 
 struct _pymem_allocators {
+    PyThread_type_lock mutex;
     struct {
         PyMemAllocatorEx raw;
         PyMemAllocatorEx mem;
@@ -35,7 +48,7 @@ struct _pymem_allocators {
 /* Set the memory allocator of the specified domain to the default.
    Save the old allocator into *old_alloc if it's non-NULL.
    Return on success, or return -1 if the domain is unknown. */
-PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
+extern int _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 
@@ -81,37 +94,15 @@ static inline int _PyMem_IsPtrFreed(const void *ptr)
 #endif
 }
 
-PyAPI_FUNC(int) _PyMem_GetAllocatorName(
+extern int _PyMem_GetAllocatorName(
     const char *name,
     PyMemAllocatorName *allocator);
 
 /* Configure the Python memory allocators.
    Pass PYMEM_ALLOCATOR_DEFAULT to use default allocators.
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
-PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
+extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
-struct _PyTraceMalloc_Config {
-    /* Module initialized?
-       Variable protected by the GIL */
-    enum {
-        TRACEMALLOC_NOT_INITIALIZED,
-        TRACEMALLOC_INITIALIZED,
-        TRACEMALLOC_FINALIZED
-    } initialized;
-
-    /* Is tracemalloc tracing memory allocations?
-       Variable protected by the GIL */
-    int tracing;
-
-    /* limit of the number of frames in a traceback, 1 by default.
-       Variable protected by the GIL. */
-    int max_nframe;
-};
-
-#define _PyTraceMalloc_Config_INIT \
-    {.initialized = TRACEMALLOC_NOT_INITIALIZED, \
-     .tracing = 0, \
-     .max_nframe = 1}
 
 #ifdef __cplusplus
 }

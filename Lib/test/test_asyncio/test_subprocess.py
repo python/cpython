@@ -1,7 +1,7 @@
 import os
-import shutil
 import signal
 import sys
+import textwrap
 import unittest
 import warnings
 from unittest import mock
@@ -13,8 +13,12 @@ from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import os_helper
 
-if sys.platform != 'win32':
+
+if support.MS_WINDOWS:
+    import msvcrt
+else:
     from asyncio import unix_events
+
 
 if support.check_sanitizer(address=True):
     raise unittest.SkipTest("Exposes ASAN flakiness in GitHub CI")
@@ -152,6 +156,24 @@ class SubprocessMixin:
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
 
+    def test_communicate_none_input(self):
+        args = PROGRAM_CAT
+
+        async def run():
+            proc = await asyncio.create_subprocess_exec(
+                *args,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            return proc.returncode, stdout
+
+        task = run()
+        task = asyncio.wait_for(task, support.LONG_TIMEOUT)
+        exitcode, stdout = self.loop.run_until_complete(task)
+        self.assertEqual(exitcode, 0)
+        self.assertEqual(stdout, b'')
+
     def test_shell(self):
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell('exit 7')
@@ -253,26 +275,43 @@ class SubprocessMixin:
         finally:
             signal.signal(signal.SIGHUP, old_handler)
 
-    def prepare_broken_pipe_test(self):
+    def test_stdin_broken_pipe(self):
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
+
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        if support.MS_WINDOWS:
+            handle = msvcrt.get_osfhandle(rfd)
+            os.set_handle_inheritable(handle, True)
+            code = textwrap.dedent(f'''
+                import os, msvcrt
+                handle = {handle}
+                fd = msvcrt.open_osfhandle(handle, os.O_RDONLY)
+                os.read(fd, 1)
+            ''')
+            from subprocess import STARTUPINFO
+            startupinfo = STARTUPINFO()
+            startupinfo.lpAttributeList = {"handle_list": [handle]}
+            kwargs = dict(startupinfo=startupinfo)
+        else:
+            code = f'import os; fd = {rfd}; os.read(fd, 1)'
+            kwargs = dict(pass_fds=(rfd,))
 
         # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
-                sys.executable, '-c', 'pass',
+                sys.executable, '-c', code,
                 stdin=subprocess.PIPE,
+                **kwargs
             )
         )
 
-        return (proc, large_data)
-
-    def test_stdin_broken_pipe(self):
-        proc, large_data = self.prepare_broken_pipe_test()
-
         async def write_stdin(proc, data):
-            await asyncio.sleep(0.5)
             proc.stdin.write(data)
+            # Only exit the child process once the write buffer is filled
+            os.write(wfd, b'go')
             await proc.stdin.drain()
 
         coro = write_stdin(proc, large_data)
@@ -283,7 +322,16 @@ class SubprocessMixin:
         self.loop.run_until_complete(proc.wait())
 
     def test_communicate_ignore_broken_pipe(self):
-        proc, large_data = self.prepare_broken_pipe_test()
+        # buffer large enough to feed the whole pipe buffer
+        large_data = b'x' * support.PIPE_MAX_SIZE
+
+        # the program ends before the stdin can be fed
+        proc = self.loop.run_until_complete(
+            asyncio.create_subprocess_exec(
+                sys.executable, '-c', 'pass',
+                stdin=subprocess.PIPE,
+            )
+        )
 
         # communicate() must ignore BrokenPipeError when feeding stdin
         self.loop.set_exception_handler(lambda loop, msg: None)
@@ -685,6 +733,139 @@ class SubprocessMixin:
             await p.wait()
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
+
+    async def check_stdout_output(self, coro, output):
+        proc = await coro
+        stdout, _ = await proc.communicate()
+        self.assertEqual(stdout, output)
+        self.assertEqual(proc.returncode, 0)
+        task = asyncio.create_task(proc.wait())
+        await asyncio.sleep(0)
+        self.assertEqual(task.result(), proc.returncode)
+
+    def test_create_subprocess_env_shell(self) -> None:
+        async def main() -> None:
+            cmd = f'''{sys.executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
+            env = os.environ.copy()
+            env["FOO"] = "bar"
+            proc = await asyncio.create_subprocess_shell(
+                cmd, env=env, stdout=subprocess.PIPE
+            )
+            return proc
+
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'bar'))
+
+    def test_create_subprocess_env_exec(self) -> None:
+        async def main() -> None:
+            cmd = [sys.executable, "-c",
+                   "import os, sys; sys.stdout.write(os.getenv('FOO'))"]
+            env = os.environ.copy()
+            env["FOO"] = "baz"
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, env=env, stdout=subprocess.PIPE
+            )
+            return proc
+
+        self.loop.run_until_complete(self.check_stdout_output(main(), b'baz'))
+
+
+    def test_subprocess_concurrent_wait(self) -> None:
+        async def main() -> None:
+            proc = await asyncio.create_subprocess_exec(
+                *PROGRAM_CAT,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate(b'some data')
+            self.assertEqual(stdout, b"some data")
+            self.assertEqual(proc.returncode, 0)
+            self.assertEqual(await asyncio.gather(*[proc.wait() for _ in range(10)]),
+                             [proc.returncode] * 10)
+
+        self.loop.run_until_complete(main())
+
+    def test_subprocess_protocol_events(self):
+        # gh-108973: Test that all subprocess protocol methods are called.
+        # The protocol methods are not called in a determistic order.
+        # The order depends on the event loop and the operating system.
+        events = []
+        fds = [1, 2]
+        expected = [
+            ('pipe_data_received', 1, b'stdout'),
+            ('pipe_data_received', 2, b'stderr'),
+            ('pipe_connection_lost', 1),
+            ('pipe_connection_lost', 2),
+            'process_exited',
+        ]
+        per_fd_expected = [
+            'pipe_data_received',
+            'pipe_connection_lost',
+        ]
+
+        class MyProtocol(asyncio.SubprocessProtocol):
+            def __init__(self, exit_future: asyncio.Future) -> None:
+                self.exit_future = exit_future
+
+            def pipe_data_received(self, fd, data) -> None:
+                events.append(('pipe_data_received', fd, data))
+                self.exit_maybe()
+
+            def pipe_connection_lost(self, fd, exc) -> None:
+                events.append(('pipe_connection_lost', fd))
+                self.exit_maybe()
+
+            def process_exited(self) -> None:
+                events.append('process_exited')
+                self.exit_maybe()
+
+            def exit_maybe(self):
+                # Only exit when we got all expected events
+                if len(events) >= len(expected):
+                    self.exit_future.set_result(True)
+
+        async def main() -> None:
+            loop = asyncio.get_running_loop()
+            exit_future = asyncio.Future()
+            code = 'import sys; sys.stdout.write("stdout"); sys.stderr.write("stderr")'
+            transport, _ = await loop.subprocess_exec(lambda: MyProtocol(exit_future),
+                                                      sys.executable, '-c', code, stdin=None)
+            await exit_future
+            transport.close()
+
+            return events
+
+        events = self.loop.run_until_complete(main())
+
+        # First, make sure that we received all events
+        self.assertSetEqual(set(events), set(expected))
+
+        # Second, check order of pipe events per file descriptor
+        per_fd_events = {fd: [] for fd in fds}
+        for event in events:
+            if event == 'process_exited':
+                continue
+            name, fd = event[:2]
+            per_fd_events[fd].append(name)
+
+        for fd in fds:
+            self.assertEqual(per_fd_events[fd], per_fd_expected, (fd, events))
+
+    def test_subprocess_communicate_stdout(self):
+        # See https://github.com/python/cpython/issues/100133
+        async def get_command_stdout(cmd, *args):
+            proc = await asyncio.create_subprocess_exec(
+                cmd, *args, stdout=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await proc.communicate()
+            return stdout.decode().strip()
+
+        async def main():
+            outputs = [f'foo{i}' for i in range(10)]
+            res = await asyncio.gather(*[get_command_stdout(sys.executable, '-c',
+                                        f'print({out!r})') for out in outputs])
+            self.assertEqual(res, outputs)
+
+        self.loop.run_until_complete(main())
 
 
 if sys.platform != 'win32':

@@ -38,6 +38,6 @@
 #endif // HAVE_LIBB2
 
 // for secure_zero_memory(), store32(), store48(), and store64()
-#include "impl/blake2-impl.h" 
+#include "impl/blake2-impl.h"
 
 #endif // Py_BLAKE2MODULE_H
