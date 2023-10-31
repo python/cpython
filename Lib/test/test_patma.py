@@ -2760,7 +2760,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 1)
         self.assertIs(z, x)
 
-    def test_patma_256(self):
+    def test_patma_runtime_checkable_protocol(self):
         # Runtime-checkable protocol
         from typing import Protocol, runtime_checkable
 
@@ -2777,7 +2777,7 @@ class TestPatma(unittest.TestCase):
         class B(A): ...
 
         for cls in (A, B):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=cls.__name__):
                 inst = cls(1, 2)
                 w = 0
                 match inst:
@@ -2797,7 +2797,7 @@ class TestPatma(unittest.TestCase):
                 self.assertEqual(q, 1)
 
 
-    def test_patma_257(self):
+    def test_patma_generic_protocol(self):
         # Runtime-checkable generic protocol
         from typing import Generic, TypeVar, Protocol, runtime_checkable
 
@@ -2819,7 +2819,7 @@ class TestPatma(unittest.TestCase):
                 self.y = y
 
         for cls in (A, G):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=cls.__name__):
                 inst = cls(1, 2)
                 w = 0
                 match inst:
@@ -2827,7 +2827,7 @@ class TestPatma(unittest.TestCase):
                         w = 1
                 self.assertEqual(w, 0)
 
-    def test_patma_258(self):
+    def test_patma_protocol_with_match_args(self):
         # Runtime-checkable protocol with `__match_args__`
         from typing import Protocol, runtime_checkable
 
@@ -2847,7 +2847,7 @@ class TestPatma(unittest.TestCase):
         class B(A): ...
 
         for cls in (A, B):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=cls.__name__):
                 inst = cls(1, 2)
                 w = 0
                 match inst:
@@ -2866,6 +2866,12 @@ class TestPatma(unittest.TestCase):
                         q = 1
                 self.assertEqual(q, 1)
 
+                j = 0
+                match inst:
+                    case P(x=1, y=2):
+                        j = 1
+                self.assertEqual(j, 1)
+
                 g = 0
                 match inst:
                     case P(x, y):
@@ -2873,6 +2879,12 @@ class TestPatma(unittest.TestCase):
                         self.assertEqual(y, 2)
                         g = 1
                 self.assertEqual(g, 1)
+
+                h = 0
+                match inst:
+                    case P(1, 2):
+                        h = 1
+                self.assertEqual(h, 1)
 
 
 class TestSyntaxErrors(unittest.TestCase):
