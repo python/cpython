@@ -183,3 +183,5 @@ Doc/howto/clinic.rst          @erlend-aasland
 
 # WebAssembly
 /Tools/wasm/                  @brettcannon
+
+.github/CODEOWNERS
