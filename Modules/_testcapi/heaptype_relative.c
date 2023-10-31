@@ -1,4 +1,11 @@
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
 #define Py_LIMITED_API 0x030c0000 // 3.12
+#endif
+
 #include "parts.h"
 #include <stddef.h>               // max_align_t
 #include <string.h>               // memset
