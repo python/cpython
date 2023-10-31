@@ -1754,7 +1754,7 @@ class OtherTests(unittest.TestCase):
     @requires_zlib()
     def test_read_unicode_filenames(self):
         # bug #10801
-        fname = findfile('zip_cp437_header.zip')
+        fname = findfile('zip_cp437_header.zip', subdir='ziptestdata')
         with zipfile.ZipFile(fname) as zipfp:
             for name in zipfp.namelist():
                 zipfp.open(name).close()
@@ -2804,7 +2804,7 @@ class TestWithDirectory(unittest.TestCase):
         os.mkdir(TESTFN2)
 
     def test_extract_dir(self):
-        with zipfile.ZipFile(findfile("zipdir.zip")) as zipf:
+        with zipfile.ZipFile(findfile("zipdir.zip", subdir="ziptestdata")) as zipf:
             zipf.extractall(TESTFN2)
         self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a")))
         self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a", "b")))
@@ -2973,7 +2973,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertNotEqual(err.strip(), b'')
 
     def test_test_command(self):
-        zip_name = findfile('zipdir.zip')
+        zip_name = findfile('zipdir.zip', subdir='ziptestdata')
         for opt in '-t', '--test':
             out = self.zipfilecmd(opt, zip_name)
             self.assertEqual(out.rstrip(), b'Done testing')
@@ -2982,7 +2982,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(out, b'')
 
     def test_list_command(self):
-        zip_name = findfile('zipdir.zip')
+        zip_name = findfile('zipdir.zip', subdir='ziptestdata')
         t = io.StringIO()
         with zipfile.ZipFile(zip_name, 'r') as tf:
             tf.printdir(t)
@@ -3015,7 +3015,7 @@ class CommandLineTest(unittest.TestCase):
                 unlink(TESTFN2)
 
     def test_extract_command(self):
-        zip_name = findfile('zipdir.zip')
+        zip_name = findfile('zipdir.zip', subdir='ziptestdata')
         for opt in '-e', '--extract':
             with temp_dir() as extdir:
                 out = self.zipfilecmd(opt, zip_name, extdir)
