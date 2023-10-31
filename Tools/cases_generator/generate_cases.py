@@ -395,13 +395,9 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    for target in self.pseudos[thing.name].targets:
-                        target_instr = self.instrs.get(target)
-                        assert target_instr
-                        if format is None:
-                            format = target_instr.instr_fmt
-                        else:
-                            assert format == target_instr.instr_fmt
+                    # Pseudo instructions exist only in the compiler,
+                    # so do not have a format
+                    continue
                 case _:
                     assert_never(thing)
             assert format is not None
@@ -464,12 +460,12 @@ class Generator(Analyzer):
             self.out.emit("")
 
             self.out.emit(
-                "#define OPCODE_METADATA_FMT(OP) "
-                "(_PyOpcode_opcode_metadata[(OP)].instr_format)"
+                "#define OPCODE_METADATA_FLAGS(OP) "
+                "(_PyOpcode_opcode_metadata[(OP)].flags & (HAS_ARG_FLAG | HAS_JUMP_FLAG))"
             )
             self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
             self.out.emit(
-                "        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))"
+                "        (OPCODE_METADATA_FLAGS(OP1) == OPCODE_METADATA_FLAGS(OP2))"
             )
             self.out.emit("")
 
@@ -545,8 +541,6 @@ class Generator(Analyzer):
                         and not mac.name.startswith("INSTRUMENTED_")
                     ):
                         self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
-                # Irregular case:
-                self.out.emit("[JUMP_BACKWARD] = 1,")
 
             deoptcodes = {}
             for name, op in self.opmap.items():
@@ -732,12 +726,13 @@ class Generator(Analyzer):
             f"{{ .nuops = {len(pieces)}, .uops = {{ {', '.join(pieces)} }} }},"
         )
 
-    def emit_metadata_entry(self, name: str, fmt: str, flags: InstructionFlags) -> None:
+    def emit_metadata_entry(self, name: str, fmt: str | None, flags: InstructionFlags) -> None:
         flag_names = flags.names(value=True)
         if not flag_names:
             flag_names.append("0")
+        fmt_macro = "0" if fmt is None else INSTR_FMT_PREFIX + fmt
         self.out.emit(
-            f"[{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
+            f"[{name}] = {{ true, {fmt_macro},"
             f" {' | '.join(flag_names)} }},"
         )
 
@@ -751,7 +746,7 @@ class Generator(Analyzer):
 
     def write_metadata_for_pseudo(self, ps: PseudoInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.instr_flags)
+        self.emit_metadata_entry(ps.name, None, ps.instr_flags)
 
     def write_instructions(
         self, output_filename: str, emit_line_directives: bool
