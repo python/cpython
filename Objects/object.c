@@ -13,6 +13,7 @@
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type, _PyUOpOptimizer_Type, ...
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -26,10 +27,6 @@
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
 #  error "Py_LIMITED_API macro must not be defined"
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 /* Defined in tracemalloc.c */
@@ -298,6 +295,124 @@ _Py_DecRef(PyObject *o)
 {
     Py_DECREF(o);
 }
+
+#ifdef Py_NOGIL
+static inline int
+is_shared_refcnt_dead(Py_ssize_t shared)
+{
+#if SIZEOF_SIZE_T == 8
+    return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
+#else
+    return shared == (Py_ssize_t)0xDDDDDDDD;
+#endif
+}
+
+void
+_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+{
+    // Should we queue the object for the owning thread to merge?
+    int should_queue;
+
+    Py_ssize_t new_shared;
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&o->ob_ref_shared);
+    do {
+        should_queue = (shared == 0 || shared == _Py_REF_MAYBE_WEAKREF);
+
+        if (should_queue) {
+            // If the object had refcount zero, not queued, and not merged,
+            // then we enqueue the object to be merged by the owning thread.
+            // In this case, we don't subtract one from the reference count
+            // because the queue holds a reference.
+            new_shared = _Py_REF_QUEUED;
+        }
+        else {
+            // Otherwise, subtract one from the reference count. This might
+            // be negative!
+            new_shared = shared - (1 << _Py_REF_SHARED_SHIFT);
+        }
+
+#ifdef Py_REF_DEBUG
+        if ((_Py_REF_IS_MERGED(new_shared) && new_shared < 0) ||
+            is_shared_refcnt_dead(shared))
+        {
+            _Py_NegativeRefcount(filename, lineno, o);
+        }
+#endif
+    } while (!_Py_atomic_compare_exchange_ssize(&o->ob_ref_shared,
+                                                &shared, new_shared));
+
+    if (should_queue) {
+        // TODO: the inter-thread queue is not yet implemented. For now,
+        // we just merge the refcount here.
+        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(o, -1);
+        if (refcount == 0) {
+            _Py_Dealloc(o);
+        }
+    }
+    else if (new_shared == _Py_REF_MERGED) {
+        // refcount is zero AND merged
+        _Py_Dealloc(o);
+    }
+}
+
+void
+_Py_DecRefShared(PyObject *o)
+{
+    _Py_DecRefSharedDebug(o, NULL, 0);
+}
+
+void
+_Py_MergeZeroLocalRefcount(PyObject *op)
+{
+    assert(op->ob_ref_local == 0);
+
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    if (shared == 0) {
+        // Fast-path: shared refcount is zero (including flags)
+        _Py_Dealloc(op);
+        return;
+    }
+
+    // Slow-path: atomically set the flags (low two bits) to _Py_REF_MERGED.
+    Py_ssize_t new_shared;
+    do {
+        new_shared = (shared & ~_Py_REF_SHARED_FLAG_MASK) | _Py_REF_MERGED;
+    } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
+                                                &shared, new_shared));
+
+    if (new_shared == _Py_REF_MERGED) {
+        // i.e., the shared refcount is zero (only the flags are set) so we
+        // deallocate the object.
+        _Py_Dealloc(op);
+    }
+}
+
+Py_ssize_t
+_Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
+{
+    assert(!_Py_IsImmortal(op));
+    Py_ssize_t refcnt;
+    Py_ssize_t new_shared;
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    do {
+        refcnt = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
+        if (_Py_REF_IS_MERGED(shared)) {
+            return refcnt;
+        }
+
+        refcnt += (Py_ssize_t)op->ob_ref_local;
+        refcnt += extra;
+
+        new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
+    } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
+                                                &shared, new_shared));
+
+    _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
+    return refcnt;
+}
+#endif
 
 
 /**************************************/
@@ -911,26 +1026,24 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 }
 
 int
-PyObject_HasAttrString(PyObject *v, const char *name)
+PyObject_HasAttrStringWithError(PyObject *obj, const char *name)
 {
-    if (Py_TYPE(v)->tp_getattr != NULL) {
-        PyObject *res = (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
-        if (res != NULL) {
-            Py_DECREF(res);
-            return 1;
-        }
-        PyErr_Clear();
-        return 0;
-    }
+    PyObject *res;
+    int rc = PyObject_GetOptionalAttrString(obj, name, &res);
+    Py_XDECREF(res);
+    return rc;
+}
 
-    PyObject *attr_name = PyUnicode_FromString(name);
-    if (attr_name == NULL) {
+
+int
+PyObject_HasAttrString(PyObject *obj, const char *name)
+{
+    int rc = PyObject_HasAttrStringWithError(obj, name);
+    if (rc < 0) {
         PyErr_Clear();
         return 0;
     }
-    int ok = PyObject_HasAttr(v, attr_name);
-    Py_DECREF(attr_name);
-    return ok;
+    return rc;
 }
 
 int
@@ -1149,18 +1262,23 @@ PyObject_GetOptionalAttrString(PyObject *obj, const char *name, PyObject **resul
 }
 
 int
-PyObject_HasAttr(PyObject *v, PyObject *name)
+PyObject_HasAttrWithError(PyObject *obj, PyObject *name)
 {
     PyObject *res;
-    if (PyObject_GetOptionalAttr(v, name, &res) < 0) {
+    int rc = PyObject_GetOptionalAttr(obj, name, &res);
+    Py_XDECREF(res);
+    return rc;
+}
+
+int
+PyObject_HasAttr(PyObject *obj, PyObject *name)
+{
+    int rc = PyObject_HasAttrWithError(obj, name);
+    if (rc < 0) {
         PyErr_Clear();
         return 0;
     }
-    if (res == NULL) {
-        return 0;
-    }
-    Py_DECREF(res);
-    return 1;
+    return rc;
 }
 
 int
@@ -1926,10 +2044,7 @@ PyTypeObject _PyNone_Type = {
     none_new,           /*tp_new */
 };
 
-PyObject _Py_NoneStruct = {
-    { _Py_IMMORTAL_REFCNT },
-    &_PyNone_Type
-};
+PyObject _Py_NoneStruct = _PyObject_HEAD_INIT(&_PyNone_Type);
 
 /* NotImplemented is an object that can be used to signal that an
    operation is not implemented for the given type combination. */
@@ -2028,10 +2143,7 @@ PyTypeObject _PyNotImplemented_Type = {
     notimplemented_new, /*tp_new */
 };
 
-PyObject _Py_NotImplementedStruct = {
-    { _Py_IMMORTAL_REFCNT },
-    &_PyNotImplemented_Type
-};
+PyObject _Py_NotImplementedStruct = _PyObject_HEAD_INIT(&_PyNotImplemented_Type);
 
 
 PyStatus
@@ -2158,6 +2270,9 @@ static PyTypeObject* static_types[] = {
     &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_PyCounterExecutor_Type,
+    &_PyCounterOptimizer_Type,
+    &_PyDefaultOptimizer_Type,
     &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
@@ -2177,6 +2292,8 @@ static PyTypeObject* static_types[] = {
     &_PyPositionsIterator,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
+    &_PyUOpExecutor_Type,
+    &_PyUOpOptimizer_Type,
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
@@ -2243,7 +2360,16 @@ new_reference(PyObject *op)
         _PyTraceMalloc_NewReference(op);
     }
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
+#if !defined(Py_NOGIL)
     op->ob_refcnt = 1;
+#else
+    op->ob_tid = _Py_ThreadId();
+    op->_padding = 0;
+    op->ob_mutex = 0;
+    op->ob_gc_bits = 0;
+    op->ob_ref_local = 1;
+    op->ob_ref_shared = 0;
+#endif
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
@@ -2805,7 +2931,3 @@ int Py_IsFalse(PyObject *x)
 {
     return Py_Is(x, Py_False);
 }
-
-#ifdef __cplusplus
-}
-#endif

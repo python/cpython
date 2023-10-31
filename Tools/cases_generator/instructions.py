@@ -25,18 +25,10 @@ class ActiveCacheEffect:
 
 
 FORBIDDEN_NAMES_IN_UOPS = (
-    "resume_with_error",
-    "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "JUMPBY",
     "DISPATCH",
-    "INSTRUMENTED_JUMP",
-    "throwflag",
-    "exception_unwind",
-    "import_from",
-    "import_name",
-    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
     "TIER_ONE_ONLY",
 )
 
@@ -53,7 +45,6 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
-    kind: typing.Literal["inst", "op"]
     name: str
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -62,6 +53,7 @@ class Instruction:
     # Computed by constructor
     always_exits: str  # If the block always exits, its last line; else ""
     has_deopt: bool
+    needs_this_instr: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -77,7 +69,6 @@ class Instruction:
 
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
-        self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
@@ -89,6 +80,7 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
+        self.needs_this_instr = variable_used(self.inst, "this_instr") or any(c.name != UNUSED for c in self.cache_effects)
         self.input_effects = [
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
@@ -146,7 +138,8 @@ class Instruction:
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
@@ -165,7 +158,8 @@ class Instruction:
                 func = f"read_u{bits}"
             if tier == TIER_ONE:
                 out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
+                    f"{typ}{ceffect.name} = "
+                    f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
                 out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
@@ -209,6 +203,16 @@ class Instruction:
                     )
                 else:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
+            elif m := re.match(r"(\s*)DEOPT_IF\((.+)\);\s*(?://.*)?$", line):
+                space, cond = m.groups()
+                space = extra + space
+                target = family.name if family else self.name
+                out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
+            elif "DEOPT" in line:
+                filename = context.owner.filename
+                lineno = context.owner.tokens[context.begin].line
+                print(f"{filename}:{lineno}: ERROR: DEOPT_IF() must be all on one line")
+                out.write_raw(extra + line)
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 out.reset_lineno()
                 space = extra + m.group(1)
@@ -246,7 +250,8 @@ class AbstractInstruction(Instruction):
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         pass
 
@@ -270,7 +275,9 @@ class MacroInstruction:
     macro: parsing.Macro
     parts: MacroParts
     cache_offset: int
+    # Set later
     predicted: bool = False
+    family: parsing.Family | None = None
 
 
 @dataclasses.dataclass
@@ -279,13 +286,7 @@ class PseudoInstruction:
 
     name: str
     targets: list[Instruction]
-    instr_fmt: str
     instr_flags: InstructionFlags
-
-
-@dataclasses.dataclass
-class OverriddenInstructionPlaceHolder:
-    name: str
 
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction

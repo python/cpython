@@ -1,8 +1,5 @@
 import unittest
-import sys
 from collections import OrderedDict
-from test import support
-from test.support import import_helper
 import _testcapi
 
 
@@ -126,6 +123,34 @@ class CAPITest(unittest.TestCase):
 
         self.assertFalse(hasattrstring(obj, b'evil'))
         self.assertFalse(hasattrstring(obj, b'\xff'))
+        # CRASHES hasattrstring(obj, NULL)
+        # CRASHES hasattrstring(NULL, b'a')
+
+    def test_object_hasattrwitherror(self):
+        xhasattr = _testcapi.object_hasattrwitherror
+        obj = TestObject()
+        obj.a = 1
+        setattr(obj, '\U0001f40d', 2)
+        self.assertTrue(xhasattr(obj, 'a'))
+        self.assertFalse(xhasattr(obj, 'b'))
+        self.assertTrue(xhasattr(obj, '\U0001f40d'))
+
+        self.assertRaises(RuntimeError, xhasattr, obj, 'evil')
+        self.assertRaises(TypeError, xhasattr, obj, 1)
+        # CRASHES xhasattr(obj, NULL)
+        # CRASHES xhasattr(NULL, 'a')
+
+    def test_object_hasattrstringwitherror(self):
+        hasattrstring = _testcapi.object_hasattrstringwitherror
+        obj = TestObject()
+        obj.a = 1
+        setattr(obj, '\U0001f40d', 2)
+        self.assertTrue(hasattrstring(obj, b'a'))
+        self.assertFalse(hasattrstring(obj, b'b'))
+        self.assertTrue(hasattrstring(obj, '\U0001f40d'.encode()))
+
+        self.assertRaises(RuntimeError, hasattrstring, obj, b'evil')
+        self.assertRaises(UnicodeDecodeError, hasattrstring, obj, b'\xff')
         # CRASHES hasattrstring(obj, NULL)
         # CRASHES hasattrstring(NULL, b'a')
 
@@ -338,6 +363,44 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(haskeystring({}, NULL))
         self.assertFalse(haskeystring([], b'a'))
         self.assertFalse(haskeystring(NULL, b'a'))
+
+    def test_mapping_haskeywitherror(self):
+        haskey = _testcapi.mapping_haskeywitherror
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertTrue(haskey(dct, 'a'))
+        self.assertFalse(haskey(dct, 'b'))
+        self.assertTrue(haskey(dct, '\U0001f40d'))
+
+        dct2 = ProxyGetItem(dct)
+        self.assertTrue(haskey(dct2, 'a'))
+        self.assertFalse(haskey(dct2, 'b'))
+
+        self.assertTrue(haskey(['a', 'b', 'c'], 1))
+
+        self.assertRaises(TypeError, haskey, 42, 'a')
+        self.assertRaises(TypeError, haskey, {}, [])  # unhashable
+        self.assertRaises(IndexError, haskey, [], 1)
+        self.assertRaises(TypeError, haskey, [], 'a')
+
+        # CRASHES haskey({}, NULL))
+        # CRASHES haskey(NULL, 'a'))
+
+    def test_mapping_haskeystringwitherror(self):
+        haskeystring = _testcapi.mapping_haskeystringwitherror
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertTrue(haskeystring(dct, b'a'))
+        self.assertFalse(haskeystring(dct, b'b'))
+        self.assertTrue(haskeystring(dct, '\U0001f40d'.encode()))
+
+        dct2 = ProxyGetItem(dct)
+        self.assertTrue(haskeystring(dct2, b'a'))
+        self.assertFalse(haskeystring(dct2, b'b'))
+
+        self.assertRaises(TypeError, haskeystring, 42, b'a')
+        self.assertRaises(UnicodeDecodeError, haskeystring, {}, b'\xff')
+        self.assertRaises(SystemError, haskeystring, {}, NULL)
+        self.assertRaises(TypeError, haskeystring, [], b'a')
+        # CRASHES haskeystring(NULL, b'a')
 
     def test_object_setitem(self):
         setitem = _testcapi.object_setitem
@@ -753,6 +816,13 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
+
+    def test_number_check(self):
+        number_check = _testcapi.number_check
+        self.assertTrue(number_check(1 + 1j))
+        self.assertTrue(number_check(1))
+        self.assertTrue(number_check(0.5))
+        self.assertFalse(number_check("1 + 1j"))
 
 
 if __name__ == "__main__":

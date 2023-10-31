@@ -32,6 +32,7 @@ __all__ = (
     'FastChildWatcher', 'PidfdChildWatcher',
     'MultiLoopChildWatcher', 'ThreadedChildWatcher',
     'DefaultEventLoopPolicy',
+    'EventLoop',
 )
 
 
@@ -226,8 +227,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
-        # Skip one iteration for callbacks to be executed
-        self.call_soon_threadsafe(self.call_soon, transp._process_exited, returncode)
+        self.call_soon_threadsafe(transp._process_exited, returncode)
 
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
@@ -1371,14 +1371,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         return True
 
     def close(self):
-        self._join_threads()
-
-    def _join_threads(self):
-        """Internal: Join all non-daemon threads"""
-        threads = [thread for thread in list(self._threads.values())
-                   if thread.is_alive() and not thread.daemon]
-        for thread in threads:
-            thread.join()
+        pass
 
     def __enter__(self):
         return self
@@ -1397,7 +1390,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
         thread = threading.Thread(target=self._do_waitpid,
-                                  name=f"waitpid-{next(self._pid_counter)}",
+                                  name=f"asyncio-waitpid-{next(self._pid_counter)}",
                                   args=(loop, pid, callback, args),
                                   daemon=True)
         self._threads[pid] = thread
@@ -1465,8 +1458,6 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
                     self._watcher = PidfdChildWatcher()
                 else:
                     self._watcher = ThreadedChildWatcher()
-                if threading.current_thread() is threading.main_thread():
-                    self._watcher.attach_loop(self._local._loop)
 
     def set_event_loop(self, loop):
         """Set the event loop.
@@ -1511,3 +1502,4 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
 SelectorEventLoop = _UnixSelectorEventLoop
 DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+EventLoop = SelectorEventLoop

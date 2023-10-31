@@ -60,22 +60,21 @@
 #endif
 
 #ifdef Py_STATS
-#define INSTRUCTION_START(op) \
+#define INSTRUCTION_STATS(op) \
     do { \
-        frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
@@ -107,7 +106,6 @@
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
@@ -116,7 +114,7 @@
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) { \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
             goto error; \
         } \
@@ -146,7 +144,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
-#define JUMPTO(x)       (next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x))
 
 /* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
  * for advancing to the next instruction, taking into account cache entries
@@ -372,14 +369,18 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 /* Marker to specify tier 1 only instructions */
 #define TIER_ONE_ONLY
 
+/* Marker to specify tier 2 only instructions */
+#define TIER_TWO_ONLY
+
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
  * These need to treated differently by tier 1 and 2. */
 
 #if TIER_ONE
 
-#define LOAD_IP() \
-do { next_instr = frame->prev_instr+1; } while (0)
+#define LOAD_IP(OFFSET) do { \
+        next_instr = frame->instr_ptr + (OFFSET); \
+    } while (0)
 
 #define STORE_SP() \
 _PyFrame_SetStackPointer(frame, stack_pointer)
@@ -392,7 +393,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #if TIER_TWO
 
-#define LOAD_IP() \
+#define LOAD_IP(UNUSED) \
 do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
 
 #define STORE_SP() \

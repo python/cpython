@@ -11,11 +11,16 @@
  *
  */
 
-#include "Python.h"
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
 #endif
+
+// Need limited C API version 3.13 for PyModule_Add() on Windows
+#ifndef Py_NOGIL
+#define Py_LIMITED_API 0x030d0000
+#endif
+
+#include "Python.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -631,7 +636,3 @@ PyInit__stat(void)
 {
     return PyModuleDef_Init(&statmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

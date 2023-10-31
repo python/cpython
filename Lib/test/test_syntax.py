@@ -1004,7 +1004,22 @@ Missing ':' before suites:
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> def f[T]()
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
    >>> class A
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> class A[T]
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> class A[T]()
    ...     pass
    Traceback (most recent call last):
    SyntaxError: expected ':'
@@ -1446,7 +1461,17 @@ Specialized indentation errors:
    Traceback (most recent call last):
    IndentationError: expected an indented block after function definition on line 1
 
+   >>> def foo[T](x, /, y, *, z=2):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after function definition on line 1
+
    >>> class Blech(A):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after class definition on line 1
+
+   >>> class Blech[T](A):
    ... pass
    Traceback (most recent call last):
    IndentationError: expected an indented block after class definition on line 1
@@ -1977,6 +2002,17 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: yield expression cannot be used within the definition of a generic
 
+    >>> f(**x, *y)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(**x, *)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(x, *:)
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax
 """
 
 import re
@@ -2300,8 +2336,14 @@ func(
 
     def test_error_string_literal(self):
 
-        self._check_error("'blech", "unterminated string literal")
-        self._check_error('"blech', "unterminated string literal")
+        self._check_error("'blech", r"unterminated string literal \(.*\)$")
+        self._check_error('"blech', r"unterminated string literal \(.*\)$")
+        self._check_error(
+            r'"blech\"', r"unterminated string literal \(.*\); perhaps you escaped the end quote"
+        )
+        self._check_error(
+            r'r"blech\"', r"unterminated string literal \(.*\); perhaps you escaped the end quote"
+        )
         self._check_error("'''blech", "unterminated triple-quoted string literal")
         self._check_error('"""blech', "unterminated triple-quoted string literal")
 

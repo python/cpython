@@ -3,8 +3,6 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
-#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
@@ -76,57 +74,10 @@ lock_dealloc(lockobject *self)
     Py_DECREF(tp);
 }
 
-/* Helper to acquire an interruptible lock with a timeout.  If the lock acquire
- * is interrupted, signal handlers are run, and if they raise an exception,
- * PY_LOCK_INTR is returned.  Otherwise, PY_LOCK_ACQUIRED or PY_LOCK_FAILURE
- * are returned, depending on whether the lock can be acquired within the
- * timeout.
- */
-static PyLockStatus
+static inline PyLockStatus
 acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    _PyTime_t endtime = 0;
-    if (timeout > 0) {
-        endtime = _PyDeadline_Init(timeout);
-    }
-
-    PyLockStatus r;
-    do {
-        _PyTime_t microseconds;
-        microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
-
-        /* first a simple non-blocking try without releasing the GIL */
-        r = PyThread_acquire_lock_timed(lock, 0, 0);
-        if (r == PY_LOCK_FAILURE && microseconds != 0) {
-            Py_BEGIN_ALLOW_THREADS
-            r = PyThread_acquire_lock_timed(lock, microseconds, 1);
-            Py_END_ALLOW_THREADS
-        }
-
-        if (r == PY_LOCK_INTR) {
-            /* Run signal handlers if we were interrupted.  Propagate
-             * exceptions from signal handlers, such as KeyboardInterrupt, by
-             * passing up PY_LOCK_INTR.  */
-            if (_PyEval_MakePendingCalls(tstate) < 0) {
-                return PY_LOCK_INTR;
-            }
-
-            /* If we're using a timeout, recompute the timeout after processing
-             * signals, since those can take time.  */
-            if (timeout > 0) {
-                timeout = _PyDeadline_Get(endtime);
-
-                /* Check for negative values, since those mean block forever.
-                 */
-                if (timeout < 0) {
-                    r = PY_LOCK_FAILURE;
-                }
-            }
-        }
-    } while (r == PY_LOCK_INTR);  /* Retry if we were interrupted. */
-
-    return r;
+    return PyThread_acquire_lock_timed_with_retries(lock, timeout);
 }
 
 static int
@@ -136,13 +87,14 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     char *kwlist[] = {"blocking", "timeout", NULL};
     int blocking = 1;
     PyObject *timeout_obj = NULL;
-    const _PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
-
-    *timeout = unset_timeout ;
-
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO:acquire", kwlist,
                                      &blocking, &timeout_obj))
         return -1;
+
+    // XXX Use PyThread_ParseTimeoutArg().
+
+    const _PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
+    *timeout = unset_timeout;
 
     if (timeout_obj
         && _PyTime_FromSecondsObject(timeout,
@@ -156,7 +108,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     }
     if (*timeout < 0 && *timeout != unset_timeout) {
         PyErr_SetString(PyExc_ValueError,
-                        "timeout value must be positive");
+                        "timeout value must be a non-negative number");
         return -1;
     }
     if (!blocking)
@@ -490,6 +442,18 @@ PyDoc_STRVAR(rlock_release_save_doc,
 \n\
 For internal use by `threading.Condition`.");
 
+static PyObject *
+rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
+{
+    unsigned long tid = PyThread_get_thread_ident();
+    return PyLong_FromUnsignedLong(
+        self->rlock_owner == tid ? self->rlock_count : 0UL);
+}
+
+PyDoc_STRVAR(rlock_recursion_count_doc,
+"_recursion_count() -> int\n\
+\n\
+For internal use by reentrancy checks.");
 
 static PyObject *
 rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
@@ -565,6 +529,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS, rlock_acquire_restore_doc},
     {"_release_save", (PyCFunction)rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
+    {"_recursion_count", (PyCFunction)rlock_recursion_count,
+     METH_NOARGS, rlock_recursion_count_doc},
     {"__enter__",    _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
@@ -1066,7 +1032,7 @@ thread_bootstate_free(struct bootstate *boot, int decref)
         Py_DECREF(boot->args);
         Py_XDECREF(boot->kwargs);
     }
-    PyMem_Free(boot);
+    PyMem_RawFree(boot);
 }
 
 
@@ -1184,13 +1150,16 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    struct bootstate *boot = PyMem_NEW(struct bootstate, 1);
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
-    boot->tstate = _PyThreadState_New(interp);
+    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
     if (boot->tstate == NULL) {
-        PyMem_Free(boot);
+        PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
             return PyErr_NoMemory();
         }
@@ -1497,11 +1466,9 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     _PyErr_Display(file, exc_type, exc_value, exc_traceback);
 
     /* Call file.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (!res) {
+    if (_PyFile_Flush(file) < 0) {
         return -1;
     }
-    Py_DECREF(res);
 
     return 0;
 }
@@ -1590,6 +1557,18 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+static PyObject *
+thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return PyBool_FromLong(_Py_IsMainInterpreter(interp));
+}
+
+PyDoc_STRVAR(thread__is_main_interpreter_doc,
+"_is_main_interpreter()\n\
+\n\
+Return True if the current interpreter is the main Python interpreter.");
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1619,8 +1598,10 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
      METH_NOARGS, _set_sentinel_doc},
-    {"_excepthook",              thread_excepthook,
+    {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
+    {"_is_main_interpreter",    thread__is_main_interpreter,
+     METH_NOARGS, thread__is_main_interpreter_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 

@@ -664,8 +664,10 @@ def test_pdb_alias_command():
     ...     o.method()
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi',
     ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
     ...     'alias ps pi self',
+    ...     'alias ps',
     ...     'pi o',
     ...     's',
     ...     'ps',
@@ -674,8 +676,12 @@ def test_pdb_alias_command():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
     -> o.method()
+    (Pdb) alias pi
+    *** Unknown alias 'pi'
     (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
     (Pdb) alias ps pi self
+    (Pdb) alias ps
+    ps = pi self
     (Pdb) pi o
     o.attr1 = 10
     o.attr2 = str
@@ -853,9 +859,11 @@ def test_post_mortem_chained():
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
     ...     'exceptions 0',
+    ...     '$_exception',
     ...     'up',
     ...     'down',
     ...     'exceptions 1',
+    ...     '$_exception',
     ...     'up',
     ...     'down',
     ...     'exceptions -1',
@@ -876,6 +884,8 @@ def test_post_mortem_chained():
     (Pdb) exceptions 0
     > <doctest test.test_pdb.test_post_mortem_chained[0]>(3)test_function_2()
     -> 1/0
+    (Pdb) $_exception
+    ZeroDivisionError('division by zero')
     (Pdb) up
     > <doctest test.test_pdb.test_post_mortem_chained[1]>(3)test_function_reraise()
     -> test_function_2()
@@ -885,6 +895,8 @@ def test_post_mortem_chained():
     (Pdb) exceptions 1
     > <doctest test.test_pdb.test_post_mortem_chained[1]>(5)test_function_reraise()
     -> raise ZeroDivisionError('reraised') from e
+    (Pdb) $_exception
+    ZeroDivisionError('reraised')
     (Pdb) up
     > <doctest test.test_pdb.test_post_mortem_chained[2]>(5)test_function()
     -> test_function_reraise()
@@ -1504,7 +1516,7 @@ def test_next_until_return_at_return_event():
     > <doctest test.test_pdb.test_next_until_return_at_return_event[1]>(3)test_function()
     -> test_function_2()
     (Pdb) break test_function_2
-    Breakpoint 1 at <doctest test.test_pdb.test_next_until_return_at_return_event[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_next_until_return_at_return_event[0]>:2
     (Pdb) continue
     > <doctest test.test_pdb.test_next_until_return_at_return_event[0]>(2)test_function_2()
     -> x = 1
@@ -1926,7 +1938,7 @@ def test_pdb_next_command_in_generator_for_loop():
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[1]>(3)test_function()
     -> for i in test_gen():
     (Pdb) break test_gen
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:2
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>(2)test_gen()
     -> yield 0
@@ -2338,6 +2350,95 @@ def test_pdb_ambiguous_statements():
     (Pdb) continue
     """
 
+def test_pdb_function_break():
+    """Testing the line number of break on function
+
+    >>> def foo(): pass
+
+    >>> def bar():
+    ...
+    ...     pass
+
+    >>> def boo():
+    ...     # comments
+    ...     global x
+    ...     x = 1
+
+    >>> def gen():
+    ...     yield 42
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    ...     'break foo',
+    ...     'break bar',
+    ...     'break boo',
+    ...     'break gen',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_function_break[4]>(3)test_function()
+    -> pass
+    (Pdb) break foo
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[0]>:1
+    (Pdb) break bar
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[1]>:3
+    (Pdb) break boo
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[2]>:4
+    (Pdb) break gen
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[3]>:2
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_65052():
+    """See GH-65052
+
+    args, retval and display should not crash if the object is not displayable
+    >>> class A:
+    ...     def __new__(cls):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         return object.__new__(cls)
+    ...     def __init__(self):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         self.a = 1
+    ...     def __repr__(self):
+    ...         return self.a
+
+    >>> def test_function():
+    ...     A()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    ...     's',
+    ...     'retval',
+    ...     'continue',
+    ...     'args',
+    ...     'display self',
+    ...     'display',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()
+    -> return object.__new__(cls)
+    (Pdb) s
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()-><A instance at ...>
+    -> return object.__new__(cls)
+    (Pdb) retval
+    *** repr(retval) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(7)__init__()
+    -> self.a = 1
+    (Pdb) args
+    self = *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display self
+    display self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display
+    Currently displaying:
+    self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
@@ -2579,12 +2680,27 @@ def bœr():
         commands = ''
         expected = "SyntaxError:"
         stdout, stderr = self.run_pdb_script(
-            script, commands, expected_returncode=1
+            script, commands
         )
         self.assertIn(expected, stdout,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stdout))
+
+    def test_issue84583(self):
+        # A syntax error from ast.literal_eval should not make pdb exit.
+        script = "import ast; ast.literal_eval('')\n"
+        commands = """
+            continue
+            where
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        # The code should appear 3 times in the stdout:
+        # 1. when pdb starts
+        # 2. when the exception is raised, in trackback
+        # 3. in where command
+        self.assertEqual(stdout.count("ast.literal_eval('')"), 3)
 
     def test_issue26053(self):
         # run command of pdb prompt echoes the correct args
@@ -2746,8 +2862,7 @@ def bœr():
         stdout, stderr = self._run_pdb(
             ['-m', module_name], "", expected_returncode=1
         )
-        self.assertIn("ImportError: No module named t_main.__main__",
-                      stdout.splitlines())
+        self.assertIn("ImportError: No module named t_main.__main__;", stdout)
 
     def test_package_without_a_main(self):
         pkg_name = 't_pkg'
@@ -2764,6 +2879,22 @@ def bœr():
         self.assertIn(
             "'t_pkg.t_main' is a package and cannot be directly executed",
             stdout)
+
+    def test_nonexistent_module(self):
+        assert not os.path.exists(os_helper.TESTFN)
+        stdout, stderr = self._run_pdb(["-m", os_helper.TESTFN], "", expected_returncode=1)
+        self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout)
+
+    def test_dir_as_script(self):
+        with os_helper.temp_dir() as temp_dir:
+            stdout, stderr = self._run_pdb([temp_dir], "", expected_returncode=1)
+            self.assertIn(f"Error: {temp_dir} is a directory", stdout)
+
+    def test_invalid_cmd_line_options(self):
+        stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=2)
+        self.assertIn(f"pdb: error: argument -c/--command: expected one argument", stdout.split('\n')[1])
+        stdout, stderr = self._run_pdb(["--spam", "-m", "pdb"], "", expected_returncode=2)
+        self.assertIn(f"pdb: error: unrecognized arguments: --spam", stdout.split('\n')[1])
 
     def test_blocks_at_first_code_line(self):
         script = """

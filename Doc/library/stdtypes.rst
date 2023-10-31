@@ -48,9 +48,9 @@ By default, an object is considered true unless its class defines either a
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
-  .. index::
-     single: None (Built-in object)
-     single: False (Built-in object)
+.. index::
+   single: None (Built-in object)
+   single: False (Built-in object)
 
 * constants defined to be false: ``None`` and ``False``
 
@@ -804,6 +804,7 @@ number, :class:`float`, or :class:`complex`::
            hash_value = -2
        return hash_value
 
+.. _bltin-boolean-values:
 .. _typebool:
 
 Boolean Type - :class:`bool`
@@ -1641,7 +1642,7 @@ expression support in the :mod:`re` module).
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1805,7 +1806,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
@@ -1941,7 +1942,7 @@ expression support in the :mod:`re` module).
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2266,7 +2267,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
-   indexing via :meth:`__getitem__`, typically a :term:`mapping` or
+   indexing via :meth:`~object.__getitem__`, typically a :term:`mapping` or
    :term:`sequence`.  When indexed by a Unicode ordinal (an integer), the
    table object can do any of the following: return a Unicode ordinal or a
    string, to map the character to one or more other characters; return
@@ -2290,7 +2291,7 @@ expression support in the :mod:`re` module).
 
    The uppercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)
@@ -4856,7 +4857,7 @@ before the statement body is executed and exited when the statement ends:
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
    successfully and does not want to suppress the raised exception. This allows
-   context management code to easily detect whether or not an :meth:`__exit__`
+   context management code to easily detect whether or not an :meth:`~object.__exit__`
    method has actually failed.
 
 Python defines several context managers to support easy thread synchronisation,

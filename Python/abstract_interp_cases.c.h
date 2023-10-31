@@ -344,6 +344,10 @@
             break;
         }
 
+        case MAKE_CELL: {
+            break;
+        }
+
         case DELETE_DEREF: {
             break;
         }
@@ -471,6 +475,60 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
+        case _CHECK_ATTR_MODULE: {
+            break;
+        }
+
+        case _LOAD_ATTR_MODULE: {
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
+        case _CHECK_ATTR_WITH_HINT: {
+            break;
+        }
+
+        case _LOAD_ATTR_WITH_HINT: {
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
+        case _LOAD_ATTR_SLOT: {
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
+        case _CHECK_ATTR_CLASS: {
+            break;
+        }
+
+        case _LOAD_ATTR_CLASS: {
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
+        case _GUARD_DORV_VALUES: {
+            break;
+        }
+
+        case _STORE_ATTR_INSTANCE_VALUE: {
+            STACK_SHRINK(2);
+            break;
+        }
+
+        case _STORE_ATTR_SLOT: {
+            STACK_SHRINK(2);
             break;
         }
 
@@ -614,6 +672,13 @@
             break;
         }
 
+        case BEFORE_ASYNC_WITH: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
         case WITH_EXCEPT_START: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
@@ -621,6 +686,51 @@
         }
 
         case PUSH_EXC_INFO: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
+            break;
+        }
+
+        case _GUARD_KEYS_VERSION: {
+            break;
+        }
+
+        case _LOAD_ATTR_METHOD_WITH_VALUES: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _LOAD_ATTR_METHOD_NO_DICT: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(0)), true);
+            break;
+        }
+
+        case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(0)), true);
+            break;
+        }
+
+        case _CHECK_ATTR_METHOD_LAZY_DICT: {
+            break;
+        }
+
+        case _LOAD_ATTR_METHOD_LAZY_DICT: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
@@ -821,7 +931,7 @@
             break;
         }
 
-        case _SAVE_CURRENT_IP: {
+        case _SAVE_RETURN_OFFSET: {
             break;
         }
 

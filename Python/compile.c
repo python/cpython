@@ -1383,7 +1383,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     else {
         RETURN_IF_ERROR(compiler_set_qualname(c));
     }
-    ADDOP_I(c, loc, RESUME, 0);
+    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = -1;
@@ -1552,7 +1552,7 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
     ADDOP_I(c, loc, YIELD_VALUE, 0);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-    ADDOP_I(c, loc, RESUME, await ? 3 : 2);
+    ADDOP_I(c, loc, RESUME, await ? RESUME_AFTER_AWAIT : RESUME_AFTER_YIELD_FROM);
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, fail);
@@ -3261,18 +3261,6 @@ compiler_continue(struct compiler *c, location loc)
 }
 
 
-static location
-location_of_last_executing_statement(asdl_stmt_seq *stmts)
-{
-    for (Py_ssize_t i = asdl_seq_LEN(stmts) - 1; i >= 0; i++) {
-        location loc = LOC((stmt_ty)asdl_seq_GET(stmts, i));
-        if (loc.lineno > 0) {
-            return loc;
-        }
-    }
-    return NO_LOCATION;
-}
-
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
         SETUP_FINALLY           L
@@ -3341,9 +3329,9 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(
         compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    loc = location_of_last_executing_statement(s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
 
+    loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -3392,9 +3380,9 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
         compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
 
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
-    loc = location_of_last_executing_statement(s->v.Try.finalbody);
 
     compiler_pop_fblock(c, FINALLY_END, end);
+    loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -4173,7 +4161,7 @@ addop_yield(struct compiler *c, location loc) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
-    ADDOP_I(c, loc, RESUME, 1);
+    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
     return SUCCESS;
 }
 

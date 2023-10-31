@@ -1,9 +1,11 @@
 import builtins
 import codecs
+import _datetime
 import gc
 import locale
 import operator
 import os
+import random
 import struct
 import subprocess
 import sys
@@ -28,10 +30,6 @@ def requires_subinterpreters(meth):
     return unittest.skipIf(interpreters is None,
                            'subinterpreters required')(meth)
 
-
-# count the number of test runs, used to create unique
-# strings to intern in test_intern()
-INTERN_NUMRUNS = 0
 
 DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
@@ -177,7 +175,8 @@ class ExceptHookTest(unittest.TestCase):
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
-            sys.excepthook(1, '1', 1)
+            with test.support.catch_unraisable_exception():
+                sys.excepthook(1, '1', 1)
         self.assertTrue("TypeError: print_exception(): Exception expected for " \
                          "value, str found" in stderr.getvalue())
 
@@ -512,7 +511,7 @@ class SysModuleTest(unittest.TestCase):
         # Spawn a thread that blocks at a known place.  Then the main
         # thread does sys._current_frames(), and verifies that the frames
         # returned make sense.
-        entered_g = threading.Event()
+        g_raised = threading.Event()
         leave_g = threading.Event()
         thread_info = []  # the thread's id
 
@@ -521,22 +520,19 @@ class SysModuleTest(unittest.TestCase):
 
         def g456():
             thread_info.append(threading.get_ident())
-            entered_g.set()
             while True:
                 try:
                     raise ValueError("oops")
                 except ValueError:
+                    g_raised.set()
                     if leave_g.wait(timeout=support.LONG_TIMEOUT):
                         break
 
         t = threading.Thread(target=f123)
         t.start()
-        entered_g.wait()
+        g_raised.wait(timeout=support.LONG_TIMEOUT)
 
         try:
-            # At this point, t has finished its entered_g.set(), although it's
-            # impossible to guess whether it's still on that line or has moved on
-            # to its leave_g.wait().
             self.assertEqual(len(thread_info), 1)
             thread_id = thread_info[0]
 
@@ -695,10 +691,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
@@ -716,9 +710,7 @@ class SysModuleTest(unittest.TestCase):
 
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         t = sys.intern(s)
         self.assertIs(t, s)
 
@@ -1122,14 +1114,18 @@ class SysModuleTest(unittest.TestCase):
         traceback = [
             b'Traceback (most recent call last):',
             b'  File "<string>", line 8, in <module>',
+            b'    f2()',
             b'  File "<string>", line 6, in f2',
+            b'    f1()',
             b'  File "<string>", line 4, in f1',
+            b'    1 / 0',
+            b'    ~~^~~',
             b'ZeroDivisionError: division by zero'
         ]
         check(10, traceback)
         check(3, traceback)
-        check(2, traceback[:1] + traceback[2:])
-        check(1, traceback[:1] + traceback[3:])
+        check(2, traceback[:1] + traceback[3:])
+        check(1, traceback[:1] + traceback[5:])
         check(0, [traceback[-1]])
         check(-1, [traceback[-1]])
         check(1<<1000, traceback)
@@ -1208,6 +1204,13 @@ class SysModuleTest(unittest.TestCase):
         sys._stats_off()
         sys._stats_clear()
         sys._stats_dump()
+
+    @test.support.cpython_only
+    @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
+    def test_disable_gil_abi(self):
+        abi_threaded = 't' in sys.abiflags
+        py_nogil = (sysconfig.get_config_var('Py_NOGIL') == 1)
+        self.assertEqual(py_nogil, abi_threaded)
 
 
 @test.support.cpython_only
@@ -1581,7 +1584,7 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        # XXX
+        check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))

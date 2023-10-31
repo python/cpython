@@ -4,6 +4,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
 
+// Set this to 1 to dump all symtables to stdout for debugging
+#define _PY_DUMP_SYMTABLE 0
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \
@@ -251,6 +253,109 @@ static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
 static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
 static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 
+/* For debugging purposes only */
+#if _PY_DUMP_SYMTABLE
+static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
+{
+    const char *blocktype = "";
+    switch (ste->ste_type) {
+        case FunctionBlock: blocktype = "FunctionBlock"; break;
+        case ClassBlock: blocktype = "ClassBlock"; break;
+        case ModuleBlock: blocktype = "ModuleBlock"; break;
+        case AnnotationBlock: blocktype = "AnnotationBlock"; break;
+        case TypeVarBoundBlock: blocktype = "TypeVarBoundBlock"; break;
+        case TypeAliasBlock: blocktype = "TypeAliasBlock"; break;
+        case TypeParamBlock: blocktype = "TypeParamBlock"; break;
+    }
+    const char *comptype = "";
+    switch (ste->ste_comprehension) {
+        case ListComprehension: comptype = " ListComprehension"; break;
+        case DictComprehension: comptype = " DictComprehension"; break;
+        case SetComprehension: comptype = " SetComprehension"; break;
+        case GeneratorExpression: comptype = " GeneratorExpression"; break;
+        case NoComprehension: break;
+    }
+    PyObject* msg = PyUnicode_FromFormat(
+        (
+            "%U=== Symtable for %U ===\n"
+            "%U%s%s\n"
+            "%U%s%s%s%s%s%s%s%s%s%s%s%s%s\n"
+            "%Ulineno: %d col_offset: %d\n"
+            "%U--- Symbols ---\n"
+        ),
+        prefix,
+        ste->ste_name,
+        prefix,
+        blocktype,
+        comptype,
+        prefix,
+        ste->ste_nested ? " nested" : "",
+        ste->ste_free ? " free" : "",
+        ste->ste_child_free ? " child_free" : "",
+        ste->ste_generator ? " generator" : "",
+        ste->ste_coroutine ? " coroutine" : "",
+        ste->ste_varargs ? " varargs" : "",
+        ste->ste_varkeywords ? " varkeywords" : "",
+        ste->ste_returns_value ? " returns_value" : "",
+        ste->ste_needs_class_closure ? " needs_class_closure" : "",
+        ste->ste_needs_classdict ? " needs_classdict" : "",
+        ste->ste_comp_inlined ? " comp_inlined" : "",
+        ste->ste_comp_iter_target ? " comp_iter_target" : "",
+        ste->ste_can_see_class_scope ? " can_see_class_scope" : "",
+        prefix,
+        ste->ste_lineno,
+        ste->ste_col_offset,
+        prefix
+    );
+    assert(msg != NULL);
+    printf("%s", PyUnicode_AsUTF8(msg));
+    Py_DECREF(msg);
+    PyObject *name, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(ste->ste_symbols, &pos, &name, &value)) {
+        int scope = _PyST_GetScope(ste, name);
+        long flags = _PyST_GetSymbol(ste, name);
+        printf("%s  %s: ", PyUnicode_AsUTF8(prefix), PyUnicode_AsUTF8(name));
+        if (flags & DEF_GLOBAL) printf(" DEF_GLOBAL");
+        if (flags & DEF_LOCAL) printf(" DEF_LOCAL");
+        if (flags & DEF_PARAM) printf(" DEF_PARAM");
+        if (flags & DEF_NONLOCAL) printf(" DEF_NONLOCAL");
+        if (flags & USE) printf(" USE");
+        if (flags & DEF_FREE) printf(" DEF_FREE");
+        if (flags & DEF_FREE_CLASS) printf(" DEF_FREE_CLASS");
+        if (flags & DEF_IMPORT) printf(" DEF_IMPORT");
+        if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
+        if (flags & DEF_COMP_ITER) printf(" DEF_COMP_ITER");
+        if (flags & DEF_TYPE_PARAM) printf(" DEF_TYPE_PARAM");
+        if (flags & DEF_COMP_CELL) printf(" DEF_COMP_CELL");
+        switch (scope) {
+            case LOCAL: printf(" LOCAL"); break;
+            case GLOBAL_EXPLICIT: printf(" GLOBAL_EXPLICIT"); break;
+            case GLOBAL_IMPLICIT: printf(" GLOBAL_IMPLICIT"); break;
+            case FREE: printf(" FREE"); break;
+            case CELL: printf(" CELL"); break;
+        }
+        printf("\n");
+    }
+    printf("%s--- Children ---\n", PyUnicode_AsUTF8(prefix));
+    PyObject *new_prefix = PyUnicode_FromFormat("  %U", prefix);
+    assert(new_prefix != NULL);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
+        PyObject *child = PyList_GetItem(ste->ste_children, i);
+        assert(child != NULL && PySTEntry_Check(child));
+        _dump_symtable((PySTEntryObject *)child, new_prefix);
+    }
+    Py_DECREF(new_prefix);
+}
+
+static void dump_symtable(PySTEntryObject* ste)
+{
+    PyObject *empty = PyUnicode_FromString("");
+    assert(empty != NULL);
+    _dump_symtable(ste, empty);
+    Py_DECREF(empty);
+}
+#endif
 
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%U' in function definition"
@@ -360,8 +465,12 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Make the second symbol analysis pass */
-    if (symtable_analyze(st))
+    if (symtable_analyze(st)) {
+#if _PY_DUMP_SYMTABLE
+        dump_symtable(st->st_top);
+#endif
         return st;
+    }
     _PySymtable_Free(st);
     return NULL;
  error:
@@ -836,8 +945,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
                the class that has the same name as a local
                or global in the class scope.
             */
-            if  (classflag &&
-                 PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
+            if  (classflag) {
                 long flags = PyLong_AS_LONG(v) | DEF_FREE_CLASS;
                 v_new = PyLong_FromLong(flags);
                 if (!v_new) {
@@ -1078,7 +1186,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
-                        ste->ste_type == ClassBlock))
+                        (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
         goto error;
 
     temp = PyNumber_InPlaceOr(free, newfree);
@@ -1705,14 +1813,14 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case Try_kind:
         VISIT_SEQ(st, stmt, s->v.Try.body);
-        VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
+        VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, stmt, s->v.Try.finalbody);
         break;
     case TryStar_kind:
         VISIT_SEQ(st, stmt, s->v.TryStar.body);
-        VISIT_SEQ(st, stmt, s->v.TryStar.orelse);
         VISIT_SEQ(st, excepthandler, s->v.TryStar.handlers);
+        VISIT_SEQ(st, stmt, s->v.TryStar.orelse);
         VISIT_SEQ(st, stmt, s->v.TryStar.finalbody);
         break;
     case Assert_kind:

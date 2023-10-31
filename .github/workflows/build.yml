@@ -13,7 +13,6 @@ on:
     - '3.10'
     - '3.9'
     - '3.8'
-    - '3.7'
   pull_request:
     branches:
     - 'main'
@@ -22,7 +21,6 @@ on:
     - '3.10'
     - '3.9'
     - '3.8'
-    - '3.7'
 
 permissions:
   contents: read
@@ -40,6 +38,7 @@ jobs:
       run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
       run_tests: ${{ steps.check.outputs.run_tests }}
       run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
+      run_cifuzz: ${{ steps.check.outputs.run_cifuzz }}
       config_hash: ${{ steps.config_hash.outputs.hash }}
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +74,21 @@ jobs:
           else
             echo "Run hypothesis tests"
             echo "run_hypothesis=true" >> $GITHUB_OUTPUT
+          fi
+
+          # oss-fuzz maintains a configuration for fuzzing the main branch of
+          # CPython, so CIFuzz should be run only for code that is likely to be
+          # merged into the main branch; compatibility with older branches may
+          # be broken.
+          FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
+          if [ "$GITHUB_BASE_REF" = "main" ] && [ "$(git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE $FUZZ_RELEVANT_FILES; echo $?)" -eq 0 ]; then
+            # The tests are pretty slow so they are executed only for PRs
+            # changing relevant files.
+            echo "Run CIFuzz tests"
+            echo "run_cifuzz=true" >> $GITHUB_OUTPUT
+          else
+            echo "Branch too old for CIFuzz tests; or no C files were changed"
+            echo "run_cifuzz=false" >> $GITHUB_OUTPUT
           fi
       - name: Compute hash for config cache key
         id: config_hash
@@ -112,12 +126,14 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Restore config.cache
         uses: actions/cache@v3
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
-      - uses: actions/setup-python@v4
+          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -138,9 +154,6 @@ jobs:
         run: make regen-configure
       - name: Build CPython
         run: |
-          # Deepfreeze will usually cause global objects to be added or removed,
-          # so we run it before regen-global-objects gets rum (in regen-all).
-          make regen-deepfreeze
           make -j4 regen-all
           make regen-stdlib-module-names
       - name: Check for changes
@@ -165,144 +178,63 @@ jobs:
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
 
-  build_win32:
-    name: 'Windows (x86)'
-    runs-on: windows-latest
-    timeout-minutes: 60
+  build_windows:
+    name: 'Windows'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    env:
-       IncludeUwp: 'true'
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build CPython
-      run: .\PCbuild\build.bat -e -d -p Win32
-    - name: Display build info
-      run: .\python.bat -m test.pythoninfo
-    - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+    uses: ./.github/workflows/reusable-windows.yml
 
-  build_win_amd64:
-    name: 'Windows (x64)'
-    runs-on: windows-latest
-    timeout-minutes: 60
+  build_windows_free_threaded:
+    name: 'Windows (free-threaded)'
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
-    env:
-       IncludeUwp: 'true'
-    steps:
-    - uses: actions/checkout@v4
-    - name: Register MSVC problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
-    - name: Build CPython
-      run: .\PCbuild\build.bat -e -d -p x64
-    - name: Display build info
-      run: .\python.bat -m test.pythoninfo
-    - name: Tests
-      run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    uses: ./.github/workflows/reusable-windows.yml
+    with:
+      free-threaded: true
 
   build_macos:
     name: 'macOS'
-    runs-on: macos-latest
-    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    env:
-      HOMEBREW_NO_ANALYTICS: 1
-      HOMEBREW_NO_AUTO_UPDATE: 1
-      HOMEBREW_NO_INSTALL_CLEANUP: 1
-      PYTHONSTRICTEXTENSIONBUILD: 1
-    steps:
-    - uses: actions/checkout@v4
-    - name: Restore config.cache
-      uses: actions/cache@v3
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
-    - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
-    - name: Configure CPython
-      run: |
-        GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
-        GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
-        ./configure \
-          --config-cache \
-          --with-pydebug \
-          --prefix=/opt/python-dev \
-          --with-openssl="$(brew --prefix openssl@3.0)"
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: Tests
-      run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+    uses: ./.github/workflows/reusable-macos.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+
+  build_macos_free_threaded:
+    name: 'macOS (free-threaded)'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    uses: ./.github/workflows/reusable-macos.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      free-threaded: true
 
   build_ubuntu:
     name: 'Ubuntu'
-    runs-on: ubuntu-20.04
-    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    env:
-      OPENSSL_VER: 1.1.1v
-      PYTHONSTRICTEXTENSIONBUILD: 1
-    steps:
-    - uses: actions/checkout@v4
-    - name: Register gcc problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install Dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Configure OpenSSL env vars
-      run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
-      uses: actions/cache@v3
-      with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-    - name: Setup directory envs for out-of-tree builds
-      run: |
-        echo "CPYTHON_RO_SRCDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-ro-srcdir)" >> $GITHUB_ENV
-        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
-    - name: Create directories for read-only out-of-tree builds
-      run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
-    - name: Bind mount sources read-only
-      run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
-    - name: Restore config.cache
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
-    - name: Configure CPython out-of-tree
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: |
+    uses: ./.github/workflows/reusable-ubuntu.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: |
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
           --with-openssl=$OPENSSL_DIR
-    - name: Build CPython out-of-tree
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make -j4
-    - name: Display build info
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make pythoninfo
-    - name: Remount sources writable for tests
-      # some tests write to srcdir, lack of pyc files slows down testing
-      run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
-    - name: Tests
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+
+  build_ubuntu_free_threaded:
+    name: 'Ubuntu (free-threaded)'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    uses: ./.github/workflows/reusable-ubuntu.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: |
+        ../cpython-ro-srcdir/configure \
+          --config-cache \
+          --with-pydebug \
+          --with-openssl=$OPENSSL_DIR \
+          --disable-gil
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -313,7 +245,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1v, 3.0.10, 3.1.2]
+        openssl_ver: [1.1.1w, 3.0.11, 3.1.3]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -365,7 +297,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
     env:
-      OPENSSL_VER: 1.1.1v
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -474,7 +406,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1v
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -518,7 +450,47 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: xvfb-run make test
+
+  # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
+  cifuzz:
+    name: CIFuzz
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_cifuzz == 'true'
+    permissions:
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, undefined, memory]
+    steps:
+      - name: Build fuzzers (${{ matrix.sanitizer }})
+        id: build
+        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+        with:
+          oss-fuzz-project-name: cpython3
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Run fuzzers (${{ matrix.sanitizer }})
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+        with:
+          fuzz-seconds: 600
+          oss-fuzz-project-name: cpython3
+          output-sarif: true
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Upload crash
+        uses: actions/upload-artifact@v3
+        if: failure() && steps.build.outcome == 'success'
+        with:
+          name: ${{ matrix.sanitizer }}-artifacts
+          path: ./out/artifacts
+      - name: Upload SARIF
+        if: always() && steps.build.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: cifuzz-sarif/results.sarif
+          checkout_path: cifuzz-sarif
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
@@ -528,13 +500,16 @@ jobs:
     - check_source  # Transitive dependency, needed to access `run_tests` value
     - check-docs
     - check_generated_files
-    - build_win32
-    - build_win_amd64
     - build_macos
+    - build_macos_free_threaded
     - build_ubuntu
+    - build_ubuntu_free_threaded
     - build_ubuntu_ssltests
+    - build_windows
+    - build_windows_free_threaded
     - test_hypothesis
     - build_asan
+    - cifuzz
 
     runs-on: ubuntu-latest
 
@@ -544,8 +519,11 @@ jobs:
       with:
         allowed-failures: >-
           build_macos,
+          build_macos_free_threaded,
+          build_ubuntu_free_threaded,
           build_ubuntu_ssltests,
-          build_win32,
+          build_windows_free_threaded,
+          cifuzz,
           test_hypothesis,
         allowed-skips: >-
           ${{
@@ -559,12 +537,21 @@ jobs:
             needs.check_source.outputs.run_tests != 'true'
             && '
             check_generated_files,
-            build_win32,
-            build_win_amd64,
             build_macos,
+            build_macos_free_threaded,
             build_ubuntu,
+            build_ubuntu_free_threaded,
             build_ubuntu_ssltests,
+            build_windows,
+            build_windows_free_threaded,
             build_asan,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.check_source.outputs.run_cifuzz)
+            && '
+            cifuzz,
             '
             || ''
           }}

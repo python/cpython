@@ -1,8 +1,6 @@
 import sys
 import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
-from operator import or_ as _or_
-from functools import reduce
 
 
 __all__ = [
@@ -63,8 +61,8 @@ def _is_sunder(name):
     return (
             len(name) > 2 and
             name[0] == name[-1] == '_' and
-            name[1:2] != '_' and
-            name[-2:-1] != '_'
+            name[1] != '_' and
+            name[-2] != '_'
             )
 
 def _is_internal_class(cls_name, obj):
@@ -83,7 +81,6 @@ def _is_private(cls_name, name):
     if (
             len(name) > pat_len
             and name.startswith(pattern)
-            and name[pat_len:pat_len+1] != ['_']
             and (name[-1] != '_' or name[-2] != '_')
         ):
         return True
@@ -158,7 +155,6 @@ def _dedent(text):
     Like textwrap.dedent.  Rewritten because we cannot import textwrap.
     """
     lines = text.split('\n')
-    blanks = 0
     for i, ch in enumerate(lines[0]):
         if ch != ' ':
             break
@@ -1193,14 +1189,13 @@ class Enum(metaclass=EnumType):
 
     def __dir__(self):
         """
-        Returns all members and all public methods
+        Returns public methods and other interesting attributes.
         """
-        if self.__class__._member_type_ is object:
-            interesting = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
-        else:
+        interesting = set()
+        if self.__class__._member_type_ is not object:
             interesting = set(object.__dir__(self))
         for name in getattr(self, '__dict__', []):
-            if name[0] != '_':
+            if name[0] != '_' and name not in self._member_map_:
                 interesting.add(name)
         for cls in self.__class__.mro():
             for name, obj in cls.__dict__.items():
@@ -1213,7 +1208,7 @@ class Enum(metaclass=EnumType):
                     else:
                         # in case it was added by `dir(self)`
                         interesting.discard(name)
-                else:
+                elif name not in self._member_map_:
                     interesting.add(name)
         names = sorted(
                 set(['__class__', '__doc__', '__eq__', '__hash__', '__module__'])
@@ -1641,7 +1636,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
     Class decorator that converts a normal class into an :class:`Enum`.  No
     safety checks are done, and some advanced behavior (such as
     :func:`__init_subclass__`) is not available.  Enum creation can be faster
-    using :func:`simple_enum`.
+    using :func:`_simple_enum`.
 
         >>> from enum import Enum, _simple_enum
         >>> @_simple_enum(Enum)
@@ -1884,7 +1879,8 @@ class verify:
                     missed = [v for v in values if v not in member_values]
                     if missed:
                         missing_names.append(name)
-                        missing_value |= reduce(_or_, missed)
+                        for val in missed:
+                            missing_value |= val
                 if missing_names:
                     if len(missing_names) == 1:
                         alias = 'alias %s is missing' % missing_names[0]
