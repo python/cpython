@@ -29,9 +29,14 @@ PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 #  define _PyHASH_BITS 31
 #endif
 
+#define PyUnstable_PyHASH_BITS _PyHASH_BITS
+
 #define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
+#define PyUnstable_PyHASH_MODULUS _PyHASH_MODULUS
 #define _PyHASH_INF 314159
+#define PyUnstable_PyHASH_INF _PyHASH_INF
 #define _PyHASH_IMAG _PyHASH_MULTIPLIER
+#define PyUnstable_PyHASH_IMAG _PyHASH_IMAG
 
 /* Cutoff for small string DJBX33A optimization in range [1, cutoff).
  *
