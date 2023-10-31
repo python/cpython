@@ -179,7 +179,7 @@ class Generator(Analyzer):
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
                     if target_instr is None:
-                        target_instr = self.macro_instrs[target]
+                        target_instr: MacroInstruction = self.macro_instrs[target]
                         popped, pushed = stacking.get_stack_effect_info_for_macro(target_instr)
                     else:
                         target_popped = effect_str(target_instr.input_effects)
