@@ -1232,6 +1232,7 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     # And finally create the class.
     qualname = getattr(cls, '__qualname__', None)
+    old_cls = cls
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
     if qualname is not None:
         cls.__qualname__ = qualname
@@ -1242,6 +1243,34 @@ def _add_slots(cls, is_frozen, weakref_slot):
             cls.__getstate__ = _dataclass_getstate
         if '__setstate__' not in cls_dict:
             cls.__setstate__ = _dataclass_setstate
+
+    # The following is a fix for
+    # https://github.com/python/cpython/issues/111500
+    # The code is copied-and-modified from https://github.com/python-attrs/attrs
+    # All credits for it goes to the `attrs` team and contributors.
+    #
+    # If a method mentions `__class__` or uses the no-arg super(), the
+    # compiler will bake a reference to the class in the method itself
+    # as `method.__closure__`.  Since we replace the class with a
+    # clone, we rewrite these references so it keeps working.
+    for item in cls.__dict__.values():
+        if isinstance(item, (classmethod, staticmethod)):
+            closure_cells = getattr(item.__func__, "__closure__", None)
+        elif isinstance(item, property):
+            closure_cells = getattr(item.fget, "__closure__", None)
+        else:
+            closure_cells = getattr(item, "__closure__", None)
+
+        if not closure_cells:
+            continue
+        for cell in closure_cells:
+            try:
+                match = cell.cell_contents is old_cls
+            except ValueError:  # Cell is empty
+                pass
+            else:
+                if match:
+                    cell.cell_contents = cls
 
     return cls
 

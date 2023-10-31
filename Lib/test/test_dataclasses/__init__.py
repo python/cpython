@@ -3494,6 +3494,67 @@ class TestSlots(unittest.TestCase):
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
 
+    def test_super_without_params_and_slots(self):
+        # https://github.com/python/cpython/issues/111500
+        for slots in (True, False):
+            with self.subTest(slots=slots):
+                @dataclass(slots=slots)
+                class Base:
+                    x: int = 0
+                    def __post_init__(self):
+                        self.x = 1
+                    def method(self):
+                        return 2
+                    @property
+                    def prop(self):
+                        return 3
+                    @classmethod
+                    def clsmethod(cls):
+                        return 4
+                    @staticmethod
+                    def stmethod():
+                        return 5
+
+                @dataclass(slots=slots)
+                class Child(Base):
+                    y: int = 0
+                    z: int = 0
+                    def __post_init__(self):
+                        self.y = 2
+                        super().__post_init__()
+                        self.z = 3
+                    def method(self):
+                        return super().method()
+                    @property
+                    def prop(self):
+                        return super().prop
+                    @classmethod
+                    def clsmethod(cls):
+                        return super().clsmethod()
+                    @staticmethod
+                    def stmethod1():
+                        return super(Child, Child).stmethod()
+                    @staticmethod
+                    def stmethod2():
+                        return super().stmethod()
+
+                inst = Child()
+                self.assertEqual(inst.x, 1)
+                self.assertEqual(inst.y, 2)
+                self.assertEqual(inst.z, 3)
+                self.assertEqual(inst.method(), 2)
+                self.assertEqual(inst.prop, 3)
+                self.assertEqual(inst.clsmethod(), 4)
+                self.assertEqual(Child.clsmethod(), 4)
+                self.assertEqual(inst.stmethod1(), 5)
+                self.assertEqual(Child.stmethod1(), 5)
+                # These failures match regular classes:
+                msg = r"super\(\): no arguments"
+                with self.assertRaisesRegex(RuntimeError, msg):
+                    inst.stmethod2()
+                with self.assertRaisesRegex(RuntimeError, msg):
+                    Child.stmethod2()
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
