@@ -10,6 +10,7 @@ NULL = None
 class ListSubclass(list):
     ...
 
+
 class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyList_Check()
@@ -69,3 +70,16 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES for out of index: get_item(lst, 3)
         # CRASHES get_item(21, 2)
+
+
+    def test_list_setitem(self):
+        setitem = _testcapi.list_setitem
+        lst = [1, 2, 3]
+        setitem(lst, 1, 10)
+        self.assertEqual(lst[1], 10)
+        self.assertRaises(IndexError, setitem, [1], -1, 5)
+        self.assertRaises(TypeError, setitem, lst, 1.5, 10)
+        self.assertRaises(TypeError, setitem, 23, 'a', 5)
+        self.assertRaises(SystemError, setitem, {}, 0, 5)
+
+        # CRASHES setitem(NULL, 'a', 5)
