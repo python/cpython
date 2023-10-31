@@ -898,6 +898,41 @@ _PyXI_FreeNamespace(_PyXI_namespace *ns)
 }
 
 _PyXI_namespace *
+_PyXI_NamespaceFromNames(PyObject *names)
+{
+    if (names == NULL || names == Py_None) {
+        return NULL;
+    }
+
+    Py_ssize_t len = PySequence_Size(names);
+    if (len <= 0) {
+        return NULL;
+    }
+
+    _PyXI_namespace *ns = _sharedns_new(len);
+    if (ns == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i=0; i < len; i++) {
+        PyObject *key = PySequence_GetItem(names, i);
+        if (key == NULL) {
+            break;
+        }
+        struct _sharednsitem *item = &ns->items[i];
+        int res = _sharednsitem_init(item, key);
+        Py_DECREF(key);
+        if (res < 0) {
+            break;
+        }
+    }
+    if (PyErr_Occurred()) {
+        _PyXI_FreeNamespace(ns);
+        return NULL;
+    }
+    return ns;
+}
+
+_PyXI_namespace *
 _PyXI_NamespaceFromDict(PyObject *nsobj)
 {
     if (nsobj == NULL || nsobj == Py_None) {
