@@ -253,48 +253,6 @@
     <ClCompile Include="..\Objects\methodobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\alloc-aligned.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\alloc.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\arena.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\bitmap.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\heap.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\init.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\options.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\os.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\page.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\prim\prim.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\random.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment-map.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\stats.c">
-      <Filter>Source Files</Filter>
-    </CLCompile>
     <ClCompile Include="..\Python\modsupport.c">
       <Filter>Source Files</Filter>
     </ClCompile>
