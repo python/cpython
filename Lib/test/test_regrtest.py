@@ -2136,10 +2136,12 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testname, stats=1)
         self.assertNotIn('SPAM SPAM SPAM', output)
 
-        # Check for reference leaks, run in parallel
-        output = self.run_tests("-R", "3:3", "-j1", "--verbose3", testname)
-        self.check_executed_tests(output, testname, stats=1, parallel=True)
-        self.assertNotIn('SPAM SPAM SPAM', output)
+        # -R option needs a debug build
+        if support.Py_DEBUG:
+            # Check for reference leaks, run in parallel
+            output = self.run_tests("-R", "3:3", "-j1", "--verbose3", testname)
+            self.check_executed_tests(output, testname, stats=1, parallel=True)
+            self.assertNotIn('SPAM SPAM SPAM', output)
 
 
 class TestUtils(unittest.TestCase):
