@@ -135,9 +135,9 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_UnregisterClass(PyTypeObject *);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 
-/*************************/
-/* runtime state */
-/*************************/
+/*****************************/
+/* runtime state & lifecycle */
+/*****************************/
 
 struct _xi_runtime_state {
     // builtin types
