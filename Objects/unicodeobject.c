@@ -1015,6 +1015,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
+    _PyUnicode_STATE(unicode).embed_null = EMBED_NULL_UNKNOWN;
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
@@ -1068,6 +1069,7 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
+    _PyUnicode_STATE(unicode).embed_null = EMBED_NULL_UNKNOWN;
 
     data = (PyObject *)PyObject_Realloc(data, new_size);
     if (data == NULL) {
@@ -11082,6 +11084,7 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         Py_DECREF(left);
         *p_left = res;
     }
+    assert(_PyUnicode_STATE(*p_left).embed_null == EMBED_NULL_UNKNOWN);
     assert(_PyUnicode_CheckConsistency(*p_left, 1));
     return;
 
