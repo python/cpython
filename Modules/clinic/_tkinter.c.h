@@ -25,13 +25,8 @@ _tkinter_tkapp_eval(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("eval", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t script_length;
-    script = PyUnicode_AsUTF8AndSize(arg, &script_length);
+    script = PyUnicode_AsUTF8(arg);
     if (script == NULL) {
-        goto exit;
-    }
-    if (strlen(script) != (size_t)script_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_eval_impl(self, script);
@@ -61,13 +56,8 @@ _tkinter_tkapp_evalfile(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("evalfile", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t fileName_length;
-    fileName = PyUnicode_AsUTF8AndSize(arg, &fileName_length);
+    fileName = PyUnicode_AsUTF8(arg);
     if (fileName == NULL) {
-        goto exit;
-    }
-    if (strlen(fileName) != (size_t)fileName_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_evalfile_impl(self, fileName);
@@ -97,13 +87,8 @@ _tkinter_tkapp_record(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("record", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t script_length;
-    script = PyUnicode_AsUTF8AndSize(arg, &script_length);
+    script = PyUnicode_AsUTF8(arg);
     if (script == NULL) {
-        goto exit;
-    }
-    if (strlen(script) != (size_t)script_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_record_impl(self, script);
@@ -133,13 +118,8 @@ _tkinter_tkapp_adderrorinfo(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("adderrorinfo", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t msg_length;
-    msg = PyUnicode_AsUTF8AndSize(arg, &msg_length);
+    msg = PyUnicode_AsUTF8(arg);
     if (msg == NULL) {
-        goto exit;
-    }
-    if (strlen(msg) != (size_t)msg_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_adderrorinfo_impl(self, msg);
@@ -193,13 +173,8 @@ _tkinter_tkapp_exprstring(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprstring", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t s_length;
-    s = PyUnicode_AsUTF8AndSize(arg, &s_length);
+    s = PyUnicode_AsUTF8(arg);
     if (s == NULL) {
-        goto exit;
-    }
-    if (strlen(s) != (size_t)s_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_exprstring_impl(self, s);
@@ -229,13 +204,8 @@ _tkinter_tkapp_exprlong(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprlong", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t s_length;
-    s = PyUnicode_AsUTF8AndSize(arg, &s_length);
+    s = PyUnicode_AsUTF8(arg);
     if (s == NULL) {
-        goto exit;
-    }
-    if (strlen(s) != (size_t)s_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_exprlong_impl(self, s);
@@ -265,13 +235,8 @@ _tkinter_tkapp_exprdouble(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprdouble", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t s_length;
-    s = PyUnicode_AsUTF8AndSize(arg, &s_length);
+    s = PyUnicode_AsUTF8(arg);
     if (s == NULL) {
-        goto exit;
-    }
-    if (strlen(s) != (size_t)s_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_exprdouble_impl(self, s);
@@ -301,13 +266,8 @@ _tkinter_tkapp_exprboolean(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprboolean", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t s_length;
-    s = PyUnicode_AsUTF8AndSize(arg, &s_length);
+    s = PyUnicode_AsUTF8(arg);
     if (s == NULL) {
-        goto exit;
-    }
-    if (strlen(s) != (size_t)s_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_exprboolean_impl(self, s);
@@ -350,13 +310,8 @@ _tkinter_tkapp_createcommand(TkappObject *self, PyObject *const *args, Py_ssize_
         _PyArg_BadArgument("createcommand", "argument 1", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    name = PyUnicode_AsUTF8(args[0]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     func = args[1];
@@ -387,13 +342,8 @@ _tkinter_tkapp_deletecommand(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("deletecommand", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    name = PyUnicode_AsUTF8(arg);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _tkinter_tkapp_deletecommand_impl(self, name);
@@ -694,13 +644,8 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         screenName = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t screenName_length;
-        screenName = PyUnicode_AsUTF8AndSize(args[0], &screenName_length);
+        screenName = PyUnicode_AsUTF8(args[0]);
         if (screenName == NULL) {
-            goto exit;
-        }
-        if (strlen(screenName) != (size_t)screenName_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -715,13 +660,8 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("create", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t baseName_length;
-    baseName = PyUnicode_AsUTF8AndSize(args[1], &baseName_length);
+    baseName = PyUnicode_AsUTF8(args[1]);
     if (baseName == NULL) {
-        goto exit;
-    }
-    if (strlen(baseName) != (size_t)baseName_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
@@ -731,13 +671,8 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("create", "argument 3", "str", args[2]);
         goto exit;
     }
-    Py_ssize_t className_length;
-    className = PyUnicode_AsUTF8AndSize(args[2], &className_length);
+    className = PyUnicode_AsUTF8(args[2]);
     if (className == NULL) {
-        goto exit;
-    }
-    if (strlen(className) != (size_t)className_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 4) {
@@ -775,13 +710,8 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         use = NULL;
     }
     else if (PyUnicode_Check(args[7])) {
-        Py_ssize_t use_length;
-        use = PyUnicode_AsUTF8AndSize(args[7], &use_length);
+        use = PyUnicode_AsUTF8(args[7]);
         if (use == NULL) {
-            goto exit;
-        }
-        if (strlen(use) != (size_t)use_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -861,4 +791,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=d447501ec5aa9447 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c8b5f960d7738fd input=a9049054013a1b77]*/

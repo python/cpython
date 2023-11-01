@@ -4350,32 +4350,21 @@ class str_converter(CConverter):
                     {bad_argument}
                     goto exit;
                 }}}}
-                Py_ssize_t {length_name};
-                {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
+                {paramname} = PyUnicode_AsUTF8({argname});
                 if ({paramname} == NULL) {{{{
-                    goto exit;
-                }}}}
-                if (strlen({paramname}) != (size_t){length_name}) {{{{
-                    PyErr_SetString(PyExc_ValueError, "embedded null character");
                     goto exit;
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi),
-                length_name=self.length_name)
+                bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi))
         if self.format_unit == 'z':
             return self.format_code("""
                 if ({argname} == Py_None) {{{{
                     {paramname} = NULL;
                 }}}}
                 else if (PyUnicode_Check({argname})) {{{{
-                    Py_ssize_t {length_name};
-                    {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
+                    {paramname} = PyUnicode_AsUTF8({argname});
                     if ({paramname} == NULL) {{{{
-                        goto exit;
-                    }}}}
-                    if (strlen({paramname}) != (size_t){length_name}) {{{{
-                        PyErr_SetString(PyExc_ValueError, "embedded null character");
                         goto exit;
                     }}}}
                 }}}}
@@ -4385,8 +4374,7 @@ class str_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str or None', limited_capi=limited_capi),
-                length_name=self.length_name)
+                bad_argument=self.bad_argument(displayname, 'str or None', limited_capi=limited_capi))
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 #

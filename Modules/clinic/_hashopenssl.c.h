@@ -1278,13 +1278,8 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         _PyArg_BadArgument("pbkdf2_hmac", "argument 'hash_name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t hash_name_length;
-    hash_name = PyUnicode_AsUTF8AndSize(args[0], &hash_name_length);
+    hash_name = PyUnicode_AsUTF8(args[0]);
     if (hash_name == NULL) {
-        goto exit;
-    }
-    if (strlen(hash_name) != (size_t)hash_name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &password, PyBUF_SIMPLE) != 0) {
@@ -1824,4 +1819,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b7eddeb3d6ccdeec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc372898eaa3e000 input=a9049054013a1b77]*/

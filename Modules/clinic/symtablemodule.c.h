@@ -36,13 +36,8 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("symtable", "argument 3", "str", args[2]);
         goto exit;
     }
-    Py_ssize_t startstr_length;
-    startstr = PyUnicode_AsUTF8AndSize(args[2], &startstr_length);
+    startstr = PyUnicode_AsUTF8(args[2]);
     if (startstr == NULL) {
-        goto exit;
-    }
-    if (strlen(startstr) != (size_t)startstr_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _symtable_symtable_impl(module, source, filename, startstr);
@@ -50,4 +45,4 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=931964a76a72f850 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9af1ab5a114a1ec7 input=a9049054013a1b77]*/
