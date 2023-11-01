@@ -3880,19 +3880,21 @@ PyUnicode_AsUTF8(PyObject *unicode)
 
     // Cache to avoid calling O(n) strlen() operation at every
     // PyUnicode_AsUTF8() call on the same object.
-    if (_PyUnicode_STATE(unicode).embed_null == EMBED_NULL_UNKNOWN) {
-        if (strlen(utf8) != (size_t)size) {
-            _PyUnicode_STATE(unicode).embed_null = 1;
+    if (_PyUnicode_STATE(unicode).embed_null != 0) {
+        if (_PyUnicode_STATE(unicode).embed_null == EMBED_NULL_UNKNOWN) {
+            if (strlen(utf8) != (size_t)size) {
+                _PyUnicode_STATE(unicode).embed_null = 1;
+            }
+            else {
+                _PyUnicode_STATE(unicode).embed_null = 0;
+            }
         }
-        else {
-            _PyUnicode_STATE(unicode).embed_null = 0;
-        }
-    }
 
-    if (_PyUnicode_STATE(unicode).embed_null == 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "embedded null character");
-        return NULL;
+        if (_PyUnicode_STATE(unicode).embed_null == 1) {
+            PyErr_SetString(PyExc_ValueError,
+                            "embedded null character");
+            return NULL;
+        }
     }
 
     return utf8;
