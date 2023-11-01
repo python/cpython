@@ -183,8 +183,6 @@ static PyMethodDef test_methods[] = {
     {"list_reverse", list_reverse, METH_O},
     {"list_astuple", list_astuple, METH_O},
     {NULL},
-
-
 };
 
 int
