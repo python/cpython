@@ -91,7 +91,7 @@ class CAPITest(unittest.TestCase):
         self.assertNotEqual(get_item(lst, 1), 12)
         # CRASHES for out of index: get_item(lst, 3)
         # CRASHES get_item(21, 2)
-        # CRASHES get_item(Null,1)
+        # CRASHES get_item(NULL, 0)
 
 
     def test_list_setitem(self):
