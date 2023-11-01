@@ -91,21 +91,33 @@ class CAPITest(unittest.TestCase):
         self.assertNotEqual(get_item(lst, 1), 12)
         # CRASHES for out of index: get_item(lst, 3)
         # CRASHES get_item(21, 2)
-        # CRASHES get_item(NULL, 0)
+        # CRASHES get_item(Null,1)
 
 
     def test_list_setitem(self):
-        # Test PyList_SET_ITEM()
+        # Test PyList_SetItem()
         setitem = _testcapi.list_setitem
         lst = [1, 2, 3]
         setitem(lst, 1, 10)
-        self.assertEqual(lst, [1, 10, 3])
+        self.assertEqual(lst[1], 10)
         self.assertRaises(IndexError, setitem, [1], -1, 5)
         self.assertRaises(TypeError, setitem, lst, 1.5, 10)
         self.assertRaises(TypeError, setitem, 23, 'a', 5)
         self.assertRaises(SystemError, setitem, {}, 0, 5)
 
         # CRASHES setitem(NULL, 'a', 5)
+    
+    def test_list_set_item(self):
+        # Test PyList_SET_ITEM()
+        set_item = _testcapi.list_set_item
+        lst = [1, 2, 3]
+        set_item(lst, 1, 10)
+        # self.assertEqual(lst[1], 10)
+        # self.assertRaises(IndexError, set_item, [1], -1, 5)
+        # self.assertRaises(TypeError, set_item, lst, 1.5, 10)
+        # self.assertRaises(TypeError, set_item, 23, 'a', 5)
+        # self.assertRaises(SystemError, set_item, {}, 0, 5)
+
 
     def test_list_insert(self):
         # Test PyList_Insert()

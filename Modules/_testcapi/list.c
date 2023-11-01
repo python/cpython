@@ -69,8 +69,7 @@ list_setitem(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(obj);
     NULLABLE(value);
-    value = Py_XNewRef(value);
-    RETURN_INT(PyList_SetItem(obj, i, value));
+    RETURN_INT(PyList_SetItem(obj, i, Py_XNewRef(value)));
 
 }
 
@@ -84,8 +83,7 @@ list_set_item(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(obj);
     NULLABLE(value);
-    value = Py_XNewRef(value);
-    PyList_SET_ITEM(obj, i, value);
+    PyList_SET_ITEM(obj, i, Py_XNewRef(value));
     Py_RETURN_NONE;
 
 }
@@ -100,8 +98,7 @@ list_insert(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(obj);
     NULLABLE(value);
-    value = Py_XNewRef(value);
-    RETURN_INT(PyList_Insert(obj, where, value));
+    RETURN_INT(PyList_Insert(obj, where, Py_XNewRef(value)));
 
 }
 
@@ -140,8 +137,7 @@ list_setslice(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(obj);
     NULLABLE(value);
-    value = Py_XNewRef(value);
-    return PyList_SetSlice(obj, ilow, ihigh, value);
+    return PyList_SetSlice(obj, ilow, ihigh, Py_XNewRef(value));
 
 }
 
