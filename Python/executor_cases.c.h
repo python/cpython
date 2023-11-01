@@ -3270,3 +3270,9 @@
             stack_pointer[-1 - oparg] = top;
             break;
         }
+
+        case _CHECK_VALIDITY: {
+            TIER_TWO_ONLY
+            DEOPT_IF(!self->base.vm_data.valid, _CHECK_VALIDITY);
+            break;
+        }

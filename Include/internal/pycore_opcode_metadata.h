@@ -115,6 +115,7 @@
 #define _JUMP_TO_TOP 387
 #define _SAVE_RETURN_OFFSET 388
 #define _INSERT 389
+#define _CHECK_VALIDITY 390
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -738,6 +739,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 0;
         case _INSERT:
             return oparg + 1;
+        case _CHECK_VALIDITY:
+            return 0;
         default:
             return -1;
     }
@@ -1366,6 +1369,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case _INSERT:
             return oparg + 1;
+        case _CHECK_VALIDITY:
+            return 0;
         default:
             return -1;
     }
@@ -1749,6 +1754,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [_SAVE_RETURN_OFFSET] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [_EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
     [_INSERT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [_CHECK_VALIDITY] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
 };
 #endif // NEED_OPCODE_METADATA
 
@@ -1991,6 +1997,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_JUMP_TO_TOP] = "_JUMP_TO_TOP",
     [_SAVE_RETURN_OFFSET] = "_SAVE_RETURN_OFFSET",
     [_INSERT] = "_INSERT",
+    [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
 };
 #endif // NEED_OPCODE_METADATA
 

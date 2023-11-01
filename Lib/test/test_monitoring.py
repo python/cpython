@@ -1790,3 +1790,58 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
         test_func(1000)
         sys.monitoring.set_local_events(TEST_TOOL, code, 0)
         self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), 0)
+
+
+
+def get_first_executor(func):
+    import opcode, _testinternalcapi
+    code = func.__code__
+    co_code = code.co_code
+    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
+    for i in range(0, len(co_code), 2):
+        if co_code[i] == JUMP_BACKWARD:
+            try:
+                return _testinternalcapi.get_executor(code, i)
+            except ValueError:
+                pass
+    return None
+
+def print_executor(executor):
+    if executor is None:
+        print("No executor")
+        return
+    print("Executor")
+    for uop in executor:
+        print("  ", uop)
+
+class TestTier2Optimizer(CheckEvents):
+
+    def test_monitoring_already_opimized_loop(self):
+        def test_func(recorder):
+            set_events = sys.monitoring.set_events
+            line = E.LINE
+            i = 0
+            for i in range(601):
+                # Turn on events without branching once i reaches 500.
+                set_events(TEST_TOOL, line * int(i >= 500))
+                pass
+                pass
+                pass
+                pass
+                pass
+                pass
+                pass
+                pass
+
+        self.assertEqual(sys.monitoring._all_events(), {})
+        events = []
+        recorder = LineRecorder(events)
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, recorder)
+        try:
+            test_func(recorder)
+            recorder.events = []
+            print_executor(get_first_executor(test_func))
+        finally:
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+            sys.monitoring.set_events(TEST_TOOL, 0)
+        self.assertGreater(len(events), 1000)
