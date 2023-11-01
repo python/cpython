@@ -20,7 +20,9 @@ limited to:
 
 .. class:: Message(master=None, **options)
 
-   Create a default information message box.
+   Create a message window with an application-specified message, an icon
+   and a set of buttons.
+   Each of the buttons in the message window is identified by a unique symbolic name (see the *type* options).
 
    The following options are supported:
 
@@ -65,8 +67,10 @@ limited to:
          Arranges for a :ref:`predefined set of buttons <messagebox-types>`
          to be displayed.
 
+   .. method:: show(**options)
 
-   Returns the symbolic name of the selected button.
+      Display a message window and wait for the user to select one of the buttons. Then return the symbolic name of the selected button.
+      Keyword arguments can override options specified in the constructor.
 
 
 **Information message box**
