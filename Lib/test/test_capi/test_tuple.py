@@ -158,5 +158,3 @@ class CAPITest(unittest.TestCase):
     def test_tuple_resize(self):
         # Test PyTuple_Resize()
         pass
-
-
