@@ -382,7 +382,7 @@ _Py_COMP_DIAG_POP
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
-        &(runtime)->xidregistry.mutex, \
+        &(runtime)->xi.registry.mutex, \
         &(runtime)->getargs.mutex, \
         &(runtime)->unicode_state.ids.lock, \
         &(runtime)->imports.extensions.mutex, \
@@ -494,9 +494,6 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-// This is defined in crossinterp.c (for now).
-extern void _Py_xidregistry_clear(struct _xidregistry *);
-
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
@@ -504,8 +501,6 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     /* The count is cleared by _Py_FinalizeRefTotal(). */
     assert(runtime->object_state.interpreter_leaks == 0);
 #endif
-
-    _Py_xidregistry_clear(&runtime->xidregistry);
 
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
@@ -552,11 +547,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (int i = 0; i < NUMLOCKS; i++) {
         reinit_err += _PyThread_at_fork_reinit(lockptrs[i]);
     }
-    /* PyOS_AfterFork_Child(), which calls this function, later calls
-       _PyInterpreterState_DeleteExceptMain(), so we only need to update
-       the main interpreter here. */
-    assert(runtime->interpreters.main != NULL);
-    runtime->interpreters.main->xidregistry.mutex = runtime->xidregistry.mutex;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -719,9 +709,6 @@ init_interpreter(PyInterpreterState *interp,
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
     interp->f_opcode_trace_set = false;
-
-    assert(runtime->xidregistry.mutex != NULL);
-    interp->xidregistry.mutex = runtime->xidregistry.mutex;
 
     interp->_initialized = 1;
     return _PyStatus_OK();
@@ -947,10 +934,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
-
-    _Py_xidregistry_clear(&interp->xidregistry);
-    /* The lock is owned by the runtime, so we don't free it here. */
-    interp->xidregistry.mutex = NULL;
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */
