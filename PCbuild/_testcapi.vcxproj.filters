@@ -69,6 +69,9 @@
     <ClCompile Include="..\Modules\_testcapi\complex.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\numbers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\structmember.c">
       <Filter>Source Files</Filter>
     </ClCompile>
