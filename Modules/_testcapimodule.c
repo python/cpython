@@ -3953,6 +3953,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_List(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Tuple(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Structmember(m) < 0) {
         return NULL;
     }
