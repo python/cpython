@@ -125,7 +125,7 @@ tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
 
 static PyMethodDef test_methods[] = {
     {"tuple_check", tuple_check, METH_O},
-    {"tuple_check_exact", tuple_checkexact, METH_O},
+    {"tuple_checkexact", tuple_checkexact, METH_O},
     {"tuple_new", tuple_new, METH_O},
     {"tuple_pack", tuple_pack, METH_VARARGS},
     {"tuple_size", tuple_size, METH_O},
