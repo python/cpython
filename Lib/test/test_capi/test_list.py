@@ -8,7 +8,7 @@ _testcapi = import_helper.import_module('_testcapi')
 NULL = None
 
 class ListSubclass(list):
-    ...
+    pass
 
 
 class CAPITest(unittest.TestCase):
