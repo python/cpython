@@ -440,7 +440,7 @@ static int fuzz_ast_literal_eval(const char* data, size_t size) {
 }
 
 #define MAX_ELEMENTTREE_PARSEWHOLE_TEST_SIZE 0x100000
-PyObject* xml_parser_type = NULL;
+PyObject* xmlparser_type = NULL;
 PyObject* bytesio_type = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
 static int init_elementtree_parsewhole(void) {
@@ -448,22 +448,22 @@ static int init_elementtree_parsewhole(void) {
     if (elementtree_module == NULL) {
         return 0;
     }
-    xml_parser_type = PyObject_GetAttrString(elementtree_module, "XMLParser");
-    if (xml_parser_type == NULL) {
+    xmlparser_type = PyObject_GetAttrString(elementtree_module, "XMLParser");
+    Py_DECREF(elementtree_module);
+    if (xmlparser_type == NULL) {
         return 0;
     }
-    Py_DECREF(elementtree_module);
 
 
     PyObject* io_module = PyImport_ImportModule("io");
     if (io_module == NULL) {
         return 0;
     }
+    Py_DECREF(io_module);
     bytesio_type = PyObject_GetAttrString(io_module, "BytesIO");
     if (bytesio_type == NULL) {
         return 0;
     }
-    Py_DECREF(io_module);
 
     return 1;
 }
@@ -480,7 +480,7 @@ static int fuzz_elementtree_parsewhole(const char* data, size_t size) {
         abort();
     }
 
-    PyObject *xmlparser_instance = PyObject_CallObject(xml_parser_type, NULL);
+    PyObject *xmlparser_instance = PyObject_CallObject(xmlparser_type, NULL);
     if (xmlparser_instance == NULL) {
         assert(PyErr_Occurred());
         PyErr_Print();
