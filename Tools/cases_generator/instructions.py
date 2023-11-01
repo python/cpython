@@ -287,7 +287,7 @@ class PseudoInstruction:
     """A pseudo instruction."""
 
     name: str
-    targets: list[Instruction]
+    targets: list[Instruction | MacroInstruction]
     instr_flags: InstructionFlags
 
 
