@@ -89,6 +89,13 @@ _fini_not_shareable_error_type(PyInterpreterState *interp)
     Py_CLEAR(interp->xi.PyExc_NotShareableError);
 }
 
+static PyObject *
+_get_not_shareable_error_type(PyInterpreterState *interp)
+{
+    assert(interp->xi.PyExc_NotShareableError != NULL);
+    return interp->xi.PyExc_NotShareableError;
+}
+
 
 /* defining cross-interpreter data */
 
@@ -220,7 +227,7 @@ static inline void
 _set_xid_lookup_failure(PyInterpreterState *interp,
                         PyObject *obj, const char *msg)
 {
-    PyObject *exctype = interp->xi.PyExc_NotShareableError;
+    PyObject *exctype = _get_not_shareable_error_type(interp);
     assert(exctype != NULL);
     if (msg != NULL) {
         assert(obj == NULL);
@@ -1281,7 +1288,7 @@ _propagate_not_shareable_error(_PyXI_session *session)
         return;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (PyErr_ExceptionMatches(interp->xi.PyExc_NotShareableError)) {
+    if (PyErr_ExceptionMatches(_get_not_shareable_error_type(interp))) {
         // We want to propagate the exception directly.
         session->_exc_override = _PyXI_ERR_NOT_SHAREABLE;
         session->exc_override = &session->_exc_override;
