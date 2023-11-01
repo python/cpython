@@ -525,7 +525,7 @@ async def _asyncwith(c):
 dis_asyncwith = """\
 %4d        RETURN_GENERATOR
             POP_TOP
-            RESUME                   4
+            RESUME                   0
 
 %4d        LOAD_FAST                0 (c)
             BEFORE_ASYNC_WITH
@@ -533,7 +533,7 @@ dis_asyncwith = """\
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 24)
             YIELD_VALUE
-            RESUME                   7
+            RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 14)
          >> END_SEND
             POP_TOP
@@ -549,7 +549,7 @@ dis_asyncwith = """\
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 60)
             YIELD_VALUE
-            RESUME                   7
+            RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 50)
          >> END_SEND
             POP_TOP
@@ -755,7 +755,7 @@ None        COPY_FREE_VARS           1
 
 %4d        RETURN_GENERATOR
             POP_TOP
-            RESUME                   4
+            RESUME                   0
             LOAD_FAST                0 (.0)
          >> FOR_ITER                10 (to 34)
             STORE_FAST               1 (z)

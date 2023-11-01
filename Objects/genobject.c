@@ -398,9 +398,9 @@ gen_close(PyGenObject *gen, PyObject *args)
          * as it is automatically generated to handle
          * StopIteration. */
         int oparg = frame->instr_ptr->op.arg;
-        if (((oparg & RESUME_OPARG_LOCATION_MASK) > RESUME_AT_FUNC_START) &&
-            (oparg & RESUME_OPARG_DEPTH1_MASK)) {
+        if (oparg & RESUME_OPARG_DEPTH1_MASK) {
             // RESUME after YIELD_VALUE and exception depth is 1
+            assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
             Py_RETURN_NONE;
         }
