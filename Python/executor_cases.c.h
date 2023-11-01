@@ -884,6 +884,8 @@
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+            (void)seq;
+            (void)counter;
             break;
         }
 
