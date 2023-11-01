@@ -2,10 +2,12 @@ import unittest
 import sys
 from test.support import import_helper
 from collections import UserList
-
+from itertools import combinations
 _testcapi = import_helper.import_module('_testcapi')
 
 NULL = None
+PY_SSIZE_T_MIN = _testcapi.PY_SSIZE_T_MIN
+PY_SSIZE_T_MAX = _testcapi.PY_SSIZE_T_MAX
 
 class ListSubclass(list):
     pass
@@ -59,7 +61,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, size, 23)
         self.assertRaises(SystemError, size, object())
         # CRASHES size(NULL)
-    
+
     def test_list_get_size(self):
         # Test PyList_GET_SIZE()
         size = _testcapi.list_get_size
@@ -75,10 +77,13 @@ class CAPITest(unittest.TestCase):
     def test_list_getitem(self):
         # Test PyList_GetItem()
         getitem = _testcapi.list_getitem
-        lst = [1, 2, NULL]
+        lst = [1, 2, 3]
         self.assertEqual(getitem(lst, 0), 1)
+        self.assertEqual(getitem(lst, len(lst)-1), 3)
         self.assertRaises(IndexError, getitem, lst, -1)
-        self.assertRaises(IndexError, getitem, lst, 10)
+        self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MIN)
+        self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MAX)
+        self.assertRaises(IndexError, getitem, lst, len(lst))
         self.assertRaises(SystemError, getitem, 42, 1)
 
         # CRASHES getitem(NULL, 1)
@@ -86,9 +91,12 @@ class CAPITest(unittest.TestCase):
     def test_list_get_item(self):
         # Test PyList_GET_ITEM()
         get_item = _testcapi.list_get_item
-        lst = [1, 2, NULL]
+        lst = [1, 2, [1, 2, 3]]
         self.assertEqual(get_item(lst, 0), 1)
-        self.assertNotEqual(get_item(lst, 1), 12)
+        self.assertEqual(get_item(lst, 2), [1, 2, 3])
+
+        # CRASHES for get_item(lst, PY_SSIZE_T_MIN)
+        # CRASHES for get_item(lst, PY_SSIZE_T_MAX)
         # CRASHES for out of index: get_item(lst, 3)
         # CRASHES get_item(21, 2)
         # CRASHES get_item(Null,1)
@@ -98,38 +106,56 @@ class CAPITest(unittest.TestCase):
         # Test PyList_SetItem()
         setitem = _testcapi.list_setitem
         lst = [1, 2, 3]
-        setitem(lst, 1, 10)
-        self.assertEqual(lst[1], 10)
-        self.assertRaises(IndexError, setitem, [1], -1, 5)
+        setitem(lst, 0, 10)
+        self.assertEqual(lst[0], 10)
+        setitem(lst, len(lst)-1, 12)
+        self.assertEqual(lst[-1], 12)
+        self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MIN, 5)
+        self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MAX, 5)
+        self.assertRaises(IndexError, setitem, lst, -1, 5)
+        self.assertRaises(IndexError, setitem, lst, len(lst) , 5)
         self.assertRaises(TypeError, setitem, lst, 1.5, 10)
         self.assertRaises(TypeError, setitem, 23, 'a', 5)
         self.assertRaises(SystemError, setitem, {}, 0, 5)
 
         # CRASHES setitem(NULL, 'a', 5)
-    
+
     def test_list_set_item(self):
         # Test PyList_SET_ITEM()
         set_item = _testcapi.list_set_item
         lst = [1, 2, 3]
         set_item(lst, 1, 10)
-        # self.assertEqual(lst[1], 10)
-        # self.assertRaises(IndexError, set_item, [1], -1, 5)
-        # self.assertRaises(TypeError, set_item, lst, 1.5, 10)
-        # self.assertRaises(TypeError, set_item, 23, 'a', 5)
-        # self.assertRaises(SystemError, set_item, {}, 0, 5)
+        set_item(lst, 2, [1, 2, 3])
+        self.assertEqual(lst[2], [1, 2, 3])
+
+        # CRASHES for set_item([1], PY_SSIZE_T_MIN, 5)
+        # CRASHES for set_item([1], PY_SSIZE_T_MAX, 5)
+        # CRASHES for set_item([1], -1, 5)
+        # CRASHES for set_item([], 0, 1)
+        # CRASHES for set_item(NULL, 0, 1)
 
 
     def test_list_insert(self):
         # Test PyList_Insert()
         insert = _testcapi.list_insert
         lst = [1, 2, 3]
-        insert(lst, 1, 23)
-        self.assertEqual(lst[1], 23)
+        insert(lst, 0, 23)
+        self.assertEqual(lst[0], 23)
         insert(lst, -1, 22)
         self.assertEqual(lst[-2], 22)
+        insert(lst, PY_SSIZE_T_MIN, 1)
+        self.assertEqual(lst[0], 1)
+        insert(lst, len(lst), 123)
+        self.assertEqual(lst[-1], 123)
+        insert(lst, len(lst)-1, 124)
+        self.assertEqual(lst[-2], 124)
+        insert(lst, PY_SSIZE_T_MAX, 223)
+        self.assertEqual(lst[-1], 223)
+
         self.assertRaises(TypeError, insert, lst, 1.5, 10)
         self.assertRaises(TypeError, insert, 23, 'a', 5)
         self.assertRaises(SystemError, insert, {}, 0, 5)
+
         # CRASHES insert(NULL, 'a', 5)
 
     def test_list_append(self):
@@ -146,12 +172,21 @@ class CAPITest(unittest.TestCase):
     def test_list_getslice(self):
         # Test PyList_GetSlice()
         getslice = _testcapi.list_getslice
-        lst = [1,2,3,4,5,6,7,8,9,10]
-        self.assertEqual(getslice(lst, 0, 3), [1, 2, 3])
-        self.assertEqual(getslice(lst, 4, 6), [5,6])
-        self.assertEqual(getslice(lst, 6, 10), [7,8,9,10])
-        self.assertEqual(getslice(lst, 6, 100), [7,8,9,10])
-        self.assertNotEqual(getslice(lst, -2, -1), [9])
+        lst = [1,2,3]
+
+        # empty
+        self.assertEqual(getslice(lst, PY_SSIZE_T_MIN, 0), [])
+        self.assertEqual(getslice(lst, -1, 0), [])
+        self.assertEqual(getslice(lst, 3, PY_SSIZE_T_MAX), [])
+
+        # slice
+        self.assertEqual(getslice(lst, 1, 3), [2, 3])
+
+        # whole
+        self.assertEqual(getslice(lst, 0, len(lst)), lst)
+        self.assertEqual(getslice(lst, 0, 100), lst)
+        self.assertEqual(getslice(lst, -100, 100), lst)
+
         self.assertRaises(TypeError, lst, 'a', '2')
 
-        # CRASHES getslice(NULL, 1, 2)
+        # CRASHES getslice(NULL, 0, 0)
