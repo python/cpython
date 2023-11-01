@@ -16,7 +16,6 @@
 static void
 remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
 {
-    // Stage 1: Replace unneeded _SET_IP uops with NOP.
     // Note that we don't enter stubs, those SET_IPs are needed.
     int last_set_ip = -1;
     bool need_ip = true;
