@@ -274,7 +274,7 @@ new_code_arena(void)
     if (new_arena == NULL) {
         PyErr_NoMemory();
         munmap(memory, mem_size);
-        PyErr_FormatUnraisable("Failed to allocate new code arena struct");
+        PyErr_FormatUnraisable("Failed to allocate new code arena struct for perf trampoline");
         return -1;
     }
 

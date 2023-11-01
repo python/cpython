@@ -910,7 +910,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in evaluating initial values");
+        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -919,7 +919,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in evaluating path");
+        PyErr_FormatUnraisable("Exception ignored in running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);

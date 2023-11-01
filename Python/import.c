@@ -584,7 +584,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     if (PyList_SetSlice(MODULES_BY_INDEX(interp),
                         0, PyList_GET_SIZE(MODULES_BY_INDEX(interp)),
                         NULL)) {
-        PyErr_FormatUnraisable("Exception ignored on clearing interpreters module-list");
+        PyErr_FormatUnraisable("Exception ignored on clearing interpreters module list");
     }
 }
 
