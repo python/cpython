@@ -63,6 +63,7 @@ static size_t jump;
 static uint16_t invert, counter, index, hint;
 #define unused 0  // Used in a macro def, can't be static
 static uint32_t type_version;
+static _PyUOpExecutorObject *current_executor;
 
 static PyObject *
 dummy_func(
@@ -2364,7 +2365,7 @@ dummy_func(
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             if (executor->execute == _PyUopExecute) {
-                self = (_PyUOpExecutorObject *)executor;
+                current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
             frame = executor->execute(executor, frame, stack_pointer);
@@ -3991,18 +3992,18 @@ dummy_func(
 
         op(_POP_JUMP_IF_FALSE, (flag -- )) {
             if (Py_IsFalse(flag)) {
-                next_uop = self->trace + oparg;
+                next_uop = current_executor->trace + oparg;
             }
         }
 
         op(_POP_JUMP_IF_TRUE, (flag -- )) {
             if (Py_IsTrue(flag)) {
-                next_uop = self->trace + oparg;
+                next_uop = current_executor->trace + oparg;
             }
         }
 
         op(_JUMP_TO_TOP, (--)) {
-            next_uop = self->trace;
+            next_uop = current_executor->trace;
             CHECK_EVAL_BREAKER();
         }
 
@@ -4024,7 +4025,7 @@ dummy_func(
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_DECREF(self);
+            Py_DECREF(current_executor);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             goto enter_tier_one;
         }

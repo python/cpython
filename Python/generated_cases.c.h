@@ -3438,7 +3438,7 @@
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             if (executor->execute == _PyUopExecute) {
-                self = (_PyUOpExecutorObject *)executor;
+                current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
             frame = executor->execute(executor, frame, stack_pointer);

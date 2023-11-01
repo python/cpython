@@ -727,7 +727,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     }
 
     /* State shared between Tier 1 and Tier 2 interpreter */
-    _PyUOpExecutorObject *self = NULL;
+    _PyUOpExecutorObject *current_executor = NULL;
 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
@@ -982,7 +982,7 @@ enter_tier_two:
 #endif
 
     OPT_STAT_INC(traces_executed);
-    _PyUOpInstruction *next_uop = self->trace;
+    _PyUOpInstruction *next_uop = current_executor->trace;
 #ifdef Py_DEBUG
     uint64_t operand;  // Used by several DPRINTF() calls
 #endif
@@ -998,7 +998,7 @@ enter_tier_two:
 #endif
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
-                (int)(next_uop - self->trace),
+                (int)(next_uop - current_executor->trace),
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
                 oparg,
                 operand,
@@ -1047,7 +1047,7 @@ error_tier_two:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    Py_DECREF(self);
+    Py_DECREF(current_executor);
     goto resume_with_error;
 
 deoptimize:
@@ -1057,7 +1057,7 @@ deoptimize:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    Py_DECREF(self);
+    Py_DECREF(current_executor);
 enter_tier_one:
     next_instr = frame->instr_ptr;
     goto resume_frame;
