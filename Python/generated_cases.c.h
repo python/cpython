@@ -53,7 +53,7 @@
                 next_instr--;
             }
             else {
-                if (oparg < 2) {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
