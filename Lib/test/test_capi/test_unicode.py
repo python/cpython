@@ -193,7 +193,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(NULL, 0), '')
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
-        # TODO: Test PyUnicode_FromStringAndSize(NULL, size) for size != 0
+        self.assertRaises(SystemError, fromstringandsize, NULL, -1)
+        self.assertRaises(SystemError, fromstringandsize, NULL, 3)
+        self.assertRaises(SystemError, fromstringandsize, NULL, sys.maxsize)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
