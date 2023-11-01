@@ -59,6 +59,17 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, size, 23)
         self.assertRaises(SystemError, size, object())
         # CRASHES size(NULL)
+    
+    def test_list_get_size(self):
+        # Test PyList_GET_SIZE()
+        size = _testcapi.list_get_size
+        self.assertEqual(size([1, 2]), 2)
+        self.assertEqual(size(ListSubclass([1, 2])), 2)
+        # CRASHES size(object())
+        # CRASHES size(23)
+        # CRASHES size({})
+        # CRASHES size(UserList())
+        # CRASHES size(NULL)
 
 
     def test_list_getitem(self):

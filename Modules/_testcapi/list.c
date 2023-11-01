@@ -29,6 +29,13 @@ list_size(PyObject *Py_UNUSED(module), PyObject *obj)
 }
 
 static PyObject *
+list_get_size(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    RETURN_SIZE(PyList_GET_SIZE(obj));
+}
+
+static PyObject *
 list_getitem(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj;
@@ -64,6 +71,22 @@ list_setitem(PyObject *Py_UNUSED(module), PyObject *args)
     NULLABLE(value);
     value = Py_XNewRef(value);
     RETURN_INT(PyList_SetItem(obj, i, value));
+
+}
+
+static PyObject *
+list_set_item(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj, *value;
+    Py_ssize_t i;
+    if ( !PyArg_ParseTuple(args, "OnO", &obj, &i, &value)){
+        return NULL;
+    }
+    NULLABLE(obj);
+    NULLABLE(value);
+    value = Py_XNewRef(value);
+    PyList_SET_ITEM(obj, i, value);
+    Py_RETURN_NONE;
 
 }
 
@@ -108,6 +131,42 @@ list_getslice(PyObject *Py_UNUSED(module), PyObject *args)
 
 }
 
+static PyObject *
+list_setslice(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj, *value;
+    Py_ssize_t ilow, ihigh;
+    if ( !PyArg_ParseTuple(args, "OnnO", &obj, &ilow, &ihigh)){
+        return NULL;
+    }
+    NULLABLE(obj);
+    NULLABLE(value);
+    value = Py_XNewRef(value);
+    return PyList_SetSlice(obj, ilow, ihigh, value);
+
+}
+
+static PyObject *
+list_sort(PyObject* Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    RETURN_INT(PyList_Sort(obj));
+}
+
+static PyObject *
+list_reverse(PyObject* Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    RETURN_INT(PyList_Reverse(obj));
+}
+
+static PyObject *
+list_astuple(PyObject* Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyList_AsTuple(obj);
+}
+
 
 
 
@@ -116,16 +175,18 @@ static PyMethodDef test_methods[] = {
     {"list_check_exact", list_check_exact, METH_O},
     {"list_new", list_new, METH_O},
     {"list_size", list_size, METH_O},
+    {"list_get_size", list_get_size, METH_O},
     {"list_getitem", list_getitem, METH_VARARGS},
     {"list_get_item", list_get_item, METH_VARARGS},
     {"list_setitem", list_setitem, METH_VARARGS},
+    {"list_set_item", list_set_item, METH_VARARGS},
     {"list_insert", list_insert, METH_VARARGS},
     {"list_append", list_append, METH_VARARGS},
     {"list_getslice", list_getslice, METH_VARARGS},
-    // {"list_set_slice"},
-    // {"list_sort"},
-    // {"list_reverse"},
-    // {"list_as_tuple"},
+    {"list_setslice", list_setslice, METH_VARARGS},
+    {"list_sort", list_sort, METH_O},
+    {"list_reverse", list_reverse, METH_O},
+    {"list_astuple", list_astuple, METH_O},
     {NULL},
 
     
