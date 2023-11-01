@@ -8,8 +8,8 @@
 #include "pyconfig.h"   // Py_NOGIL
 #endif
 
-// For now, only limited C API 3.13 is supported
 #ifndef Py_NOGIL
+// For now, only limited C API 3.13 is supported
 #define Py_LIMITED_API 0x030d0000
 #endif
 

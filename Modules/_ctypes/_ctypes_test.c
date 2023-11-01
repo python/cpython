@@ -3,8 +3,8 @@
 #endif
 
 #ifndef Py_NOGIL
-// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
-#define Py_LIMITED_API 0x030d0000
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
 #endif
 
 // gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
