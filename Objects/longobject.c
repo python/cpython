@@ -6153,7 +6153,6 @@ int_is_integer_impl(PyObject *self)
     Py_RETURN_TRUE;
 }
 
-
 static PyObject *
 long_vectorcall(PyObject *type, PyObject * const*args,
                  size_t nargsf, PyObject *kwnames)
@@ -6172,7 +6171,8 @@ long_vectorcall(PyObject *type, PyObject * const*args,
             return long_new_impl(_PyType_CAST(type), args[0], args[1]);
         default:
             return PyErr_Format(PyExc_TypeError,
-            "int expected at most 2 argument%s, got %zd", nargs);
+                                "int expected at most 2 argument%s, got %zd",
+                                nargs);
     }
 }
 
