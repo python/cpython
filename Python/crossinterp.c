@@ -586,6 +586,29 @@ _long_shared(PyThreadState *tstate, PyObject *obj,
 }
 
 static PyObject *
+_new_float_object(_PyCrossInterpreterData *data)
+{
+    double * value_ptr = data->data;
+    return PyFloat_FromDouble(*value_ptr);
+}
+
+static int
+_float_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
+{
+    if (_PyCrossInterpreterData_InitWithSize(
+            data, tstate->interp, sizeof(double), NULL,
+            _new_float_object
+            ) < 0)
+    {
+        return -1;
+    }
+    double *shared = (double *)data->data;
+    *shared = PyFloat_AsDouble(obj);
+    return 0;
+}
+
+static PyObject *
 _new_none_object(_PyCrossInterpreterData *data)
 {
     // XXX Singleton refcounts are problematic across interpreters...
@@ -648,5 +671,10 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     // bool
     if (_xidregistry_add_type(xidregistry, &PyBool_Type, _bool_shared) != 0) {
         Py_FatalError("could not register bool for cross-interpreter sharing");
+    }
+
+    // float
+    if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
+        Py_FatalError("could not register float for cross-interpreter sharing");
     }
 }

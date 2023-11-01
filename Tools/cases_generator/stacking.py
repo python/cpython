@@ -365,8 +365,17 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
+        needs_this = any(part.instr.needs_this_instr for part in parts)
+        if needs_this and not mac.predicted:
+            out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;")
+        else:
+            out.emit(f"frame->instr_ptr = next_instr;")
+        out.emit(f"next_instr += {mac.cache_offset+1};")
+        out.emit(f"INSTRUCTION_STATS({mac.name});")
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
+            if needs_this:
+                out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {mac.cache_offset+1};")
         out.static_assert_family_size(mac.name, mac.family, mac.cache_offset)
         try:
             next_instr_is_set = write_components(
@@ -375,8 +384,6 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
         if not parts[-1].instr.always_exits:
-            if not next_instr_is_set and mac.cache_offset:
-                out.emit(f"next_instr += {mac.cache_offset};")
             if parts[-1].instr.check_eval_breaker:
                 out.emit("CHECK_EVAL_BREAKER();")
             out.emit("DISPATCH();")
@@ -450,8 +457,6 @@ def write_components(
 
         if mgr.instr.name == "_SAVE_RETURN_OFFSET":
             next_instr_is_set = True
-            if cache_offset:
-                out.emit(f"next_instr += {cache_offset};")
             if tier == TIER_ONE:
                 assert_no_pokes(managers)
 
