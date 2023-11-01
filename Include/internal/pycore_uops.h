@@ -13,7 +13,8 @@ extern "C" {
 #define _Py_UOP_MAX_TRACE_LENGTH 128
 
 typedef struct {
-    uint32_t opcode;
+    uint16_t opcode;
+    uint16_t target;   // Guard failure jump target.
     uint32_t oparg;
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
