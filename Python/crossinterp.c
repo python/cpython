@@ -1408,6 +1408,8 @@ _PyXI_Init(PyInterpreterState *interp)
 {
     PyStatus status;
 
+    // XXX Initialize xidregistry.
+
     // Initialize exceptions (heap types).
     status = _init_not_shareable_error_type(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1417,9 +1419,14 @@ _PyXI_Init(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+// _PyXI_Fini() must be called before the interpreter is cleared,
+// since we must clear some heap objects.
+
 void
 _PyXI_Fini(PyInterpreterState *interp)
 {
     // Finalize exceptions (heap types).
     _fini_not_shareable_error_type(interp);
+
+    // XXX Clear xidregistry.
 }
