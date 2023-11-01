@@ -2120,6 +2120,29 @@ class ArgsTestCase(BaseTestCase):
             self.assertIn(f"Exit code {exitcode} (SIGSEGV)", output)
         self.check_line(output, "just before crash!", full=True, regex=False)
 
+    def test_verbose3(self):
+        code = textwrap.dedent(r"""
+            import unittest
+            from test import support
+
+            class VerboseTests(unittest.TestCase):
+                def test_pass(self):
+                    print("SPAM SPAM SPAM")
+        """)
+        testname = self.create_test(code=code)
+
+        # Run sequentially
+        output = self.run_tests("--verbose3", testname)
+        self.check_executed_tests(output, testname, stats=1)
+        self.assertNotIn('SPAM SPAM SPAM', output)
+
+        # -R option needs a debug build
+        if support.Py_DEBUG:
+            # Check for reference leaks, run in parallel
+            output = self.run_tests("-R", "3:3", "-j1", "--verbose3", testname)
+            self.check_executed_tests(output, testname, stats=1, parallel=True)
+            self.assertNotIn('SPAM SPAM SPAM', output)
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):
