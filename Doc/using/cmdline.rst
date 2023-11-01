@@ -535,12 +535,13 @@ Miscellaneous options
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
    * ``-X frozen_modules`` determines whether or not frozen modules are
-     ignored by the import machinery.  A value of "on" means they get
-     imported and "off" means they are ignored.  The default is "on"
+     ignored by the import machinery.  A value of ``on`` means they get
+     imported and ``off`` means they are ignored.  The default is ``on``
      if this is an installed Python (the normal case).  If it's under
-     development (running from the source tree) then the default is "off".
-     Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
-     frozen modules are always used, even if this flag is set to "off".
+     development (running from the source tree) then the default is ``off``.
+     Note that the :mod:`!importlib_bootstrap` and
+     :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+     if this flag is set to ``off``. See also :envvar:`PYTHON_FROZEN_MODULES`.
    * ``-X perf`` enables support for the Linux ``perf`` profiler.
      When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
@@ -1092,6 +1093,20 @@ conflict.
    values of :func:`os.cpu_count` and :func:`os.process_cpu_count`.
 
    See also the :option:`-X cpu_count <-X>` command-line option.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_FROZEN_MODULES
+
+   If this variable is set to ``on`` or ``off``, it determines whether or not
+   frozen modules are ignored by the import machinery.  A value of ``on`` means
+   they get imported and ``off`` means they are ignored.  The default is ``on``
+   for non-debug builds (the normal case) and ``off`` for debug builds.
+   Note that the :mod:`!importlib_bootstrap` and
+   :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+   if this flag is set to ``off``.
+
+   See also the :option:`-X frozen_modules <-X>` command-line option.
 
    .. versionadded:: 3.13
 
