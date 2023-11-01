@@ -878,7 +878,8 @@ _PyPegen_run_parser(Parser *p)
 mod_ty
 _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
                              const char *enc, const char *ps1, const char *ps2,
-                             PyCompilerFlags *flags, int *errcode, PyArena *arena)
+                             PyCompilerFlags *flags, int *errcode,
+                             PyObject **interactive_src, PyArena *arena)
 {
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
@@ -907,6 +908,15 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
 
     result = _PyPegen_run_parser(p);
     _PyPegen_Parser_Free(p);
+
+    if (tok->fp_interactive && tok->interactive_src_start && result && interactive_src != NULL) {
+        *interactive_src = PyUnicode_FromString(tok->interactive_src_start);
+        if (!interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
+            Py_XDECREF(interactive_src);
+            result = NULL;
+            goto error;
+        }
+    }
 
 error:
     _PyTokenizer_Free(tok);

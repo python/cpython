@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "dynamic_annotations.h" // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
+
 // Get _POSIX_THREADS and _POSIX_SEMAPHORES macros if available
 #if (defined(HAVE_UNISTD_H) && !defined(_POSIX_THREADS) \
                             && !defined(_POSIX_SEMAPHORES))
@@ -82,6 +84,27 @@ struct _pythread_runtime_state {
    Return 0 on success, return -1 on error. */
 extern int _PyThread_at_fork_reinit(PyThread_type_lock *lock);
 #endif  /* HAVE_FORK */
+
+
+// unset: -1 seconds, in nanoseconds
+#define PyThread_UNSET_TIMEOUT ((_PyTime_t)(-1 * 1000 * 1000 * 1000))
+
+// Exported for the _xxinterpchannels module.
+PyAPI_FUNC(int) PyThread_ParseTimeoutArg(
+    PyObject *arg,
+    int blocking,
+    PY_TIMEOUT_T *timeout);
+
+/* Helper to acquire an interruptible lock with a timeout.  If the lock acquire
+ * is interrupted, signal handlers are run, and if they raise an exception,
+ * PY_LOCK_INTR is returned.  Otherwise, PY_LOCK_ACQUIRED or PY_LOCK_FAILURE
+ * are returned, depending on whether the lock can be acquired within the
+ * timeout.
+ */
+// Exported for the _xxinterpchannels module.
+PyAPI_FUNC(PyLockStatus) PyThread_acquire_lock_timed_with_retries(
+    PyThread_type_lock,
+    PY_TIMEOUT_T microseconds);
 
 
 #ifdef __cplusplus

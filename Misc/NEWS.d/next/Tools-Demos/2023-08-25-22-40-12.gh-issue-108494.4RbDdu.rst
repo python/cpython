@@ -1,5 +1,0 @@
-`Argument Clinic <https://devguide.python.org/development-tools/clinic/>`__
-now has a partial support of the :ref:`Limited API <limited-c-api>`: see
-`documentation in the Python Developer's Guide
-<https://devguide.python.org/development-tools/clinic/#clinic-howto-limited-capi>`__
-Patch by Victor Stinner.

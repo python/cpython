@@ -484,5 +484,19 @@ class TestAsyncCase(unittest.TestCase):
         result = test.run()
         self.assertTrue(result.wasSuccessful())
 
+    def test_loop_factory(self):
+        asyncio.set_event_loop_policy(None)
+
+        class TestCase1(unittest.IsolatedAsyncioTestCase):
+            loop_factory = asyncio.EventLoop
+
+            async def test_demo1(self):
+                pass
+
+        test = TestCase1('test_demo1')
+        result = test.run()
+        self.assertTrue(result.wasSuccessful())
+        self.assertIsNone(support.maybe_get_event_loop_policy())
+
 if __name__ == "__main__":
     unittest.main()

@@ -248,19 +248,9 @@ def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests
 
-def test_coverage(coverdir):
-    trace = support.import_module('trace')
-    tracer=trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
-                        trace=0, count=1)
-    tracer.run('import importlib; importlib.reload(cmd); test_main()')
-    r=tracer.results()
-    print("Writing coverage results...")
-    r.write_results(show_missing=True, summary=True, coverdir=coverdir)
 
 if __name__ == "__main__":
-    if "-c" in sys.argv:
-        test_coverage('/tmp/cmd.cover')
-    elif "-i" in sys.argv:
+    if "-i" in sys.argv:
         samplecmdclass().cmdloop()
     else:
         unittest.main()

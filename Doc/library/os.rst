@@ -3795,9 +3795,9 @@ Naturally, they are all only available on Linux.
 
    The file descriptor returned by :func:`timerfd_create` supports:
 
-      - :func:`read`
-      - :func:`~select.select`
-      - :func:`~select.poll`.
+   - :func:`read`
+   - :func:`~select.select`
+   - :func:`~select.poll`
 
    The file descriptor's :func:`read` method can be called with a buffer size
    of 8. If the timer has already expired one or more times, :func:`read`
@@ -3896,9 +3896,9 @@ Naturally, they are all only available on Linux.
 
    Discontinuous system clock change will be caused by the following events:
 
-      - ``settimeofday``
-      - ``clock_settime``
-      - set the system date and time by ``date`` command
+   - ``settimeofday``
+   - ``clock_settime``
+   - set the system date and time by ``date`` command
 
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.

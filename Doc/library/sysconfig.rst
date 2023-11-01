@@ -9,7 +9,7 @@
 
 .. versionadded:: 3.2
 
-**Source code:** :source:`Lib/sysconfig.py`
+**Source code:** :source:`Lib/sysconfig`
 
 .. index::
    single: configuration information

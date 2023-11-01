@@ -114,20 +114,10 @@
             break;
         }
 
-        case TO_BOOL: {
+        case _TO_BOOL: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            #if ENABLE_SPECIALIZATION
-            _PyToBoolCache *cache = (_PyToBoolCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
-                _Py_Specialize_ToBool(value, next_instr);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(TO_BOOL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err < 0) goto pop_1_error;
@@ -373,22 +363,12 @@
             break;
         }
 
-        case BINARY_SUBSCR: {
+        case _BINARY_SUBSCR: {
             PyObject *sub;
             PyObject *container;
             PyObject *res;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
-            #if ENABLE_SPECIALIZATION
-            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
-                _Py_Specialize_BinarySubscr(container, sub, next_instr);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(BINARY_SUBSCR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
             res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
@@ -566,23 +546,13 @@
             break;
         }
 
-        case STORE_SUBSCR: {
+        case _STORE_SUBSCR: {
             PyObject *sub;
             PyObject *container;
             PyObject *v;
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
             v = stack_pointer[-3];
-            #if ENABLE_SPECIALIZATION
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
-                _Py_Specialize_StoreSubscr(container, sub, next_instr);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(STORE_SUBSCR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
@@ -692,10 +662,9 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
-            LOAD_IP();
+            LOAD_IP(frame->return_offset);
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -897,19 +866,25 @@
             break;
         }
 
-        case UNPACK_SEQUENCE: {
+        case _SPECIALIZE_UNPACK_SEQUENCE: {
             PyObject *seq;
             seq = stack_pointer[-1];
+            uint16_t counter = (uint16_t)operand;
             #if ENABLE_SPECIALIZATION
-            _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                next_instr = this_instr;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(UNPACK_SEQUENCE, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+            break;
+        }
+
+        case _UNPACK_SEQUENCE: {
+            PyObject *seq;
+            seq = stack_pointer[-1];
             PyObject **top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackIterable(tstate, seq, oparg, -1, top);
             Py_DECREF(seq);
@@ -984,22 +959,11 @@
             break;
         }
 
-        case STORE_ATTR: {
+        case _STORE_ATTR: {
             PyObject *owner;
             PyObject *v;
             owner = stack_pointer[-1];
             v = stack_pointer[-2];
-            #if ENABLE_SPECIALIZATION
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                next_instr--;
-                _Py_Specialize_StoreAttr(owner, next_instr, name);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(STORE_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
@@ -1130,20 +1094,9 @@
             break;
         }
 
-        case LOAD_GLOBAL: {
+        case _LOAD_GLOBAL: {
             PyObject *res;
             PyObject *null = NULL;
-            #if ENABLE_SPECIALIZATION
-            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                next_instr--;
-                _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(LOAD_GLOBAL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
@@ -1164,7 +1117,6 @@
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
-
                 /* namespace 1: globals */
                 if (PyMapping_GetOptionalItem(GLOBALS(), name, &res) < 0) goto error;
                 if (res == NULL) {
@@ -1244,6 +1196,18 @@
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error;
             SETLOCAL(oparg, NULL);
+            break;
+        }
+
+        case MAKE_CELL: {
+            // "initial" is probably NULL but not if it's an arg (or set
+            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            PyObject *initial = GETLOCAL(oparg);
+            PyObject *cell = PyCell_New(initial);
+            if (cell == NULL) {
+                goto error;
+            }
+            SETLOCAL(oparg, cell);
             break;
         }
 
@@ -1619,22 +1583,11 @@
             break;
         }
 
-        case LOAD_ATTR: {
+        case _LOAD_ATTR: {
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
             owner = stack_pointer[-1];
-            #if ENABLE_SPECIALIZATION
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                next_instr--;
-                _Py_Specialize_LoadAttr(owner, next_instr, name);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(LOAD_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -1642,7 +1595,6 @@
                 if (_PyObject_GetMethod(owner, name, &attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
-
                        meth | self | arg1 | ... | argN
                      */
                     assert(attr != NULL);  // No errors on this branch
@@ -1653,7 +1605,6 @@
                        something was returned by a descriptor protocol).  Set
                        the second element of the stack to NULL, to signal
                        CALL that it's not a method call.
-
                        NULL | meth | arg1 | ... | argN
                     */
                     Py_DECREF(owner);
@@ -1881,22 +1832,12 @@
             break;
         }
 
-        case COMPARE_OP: {
+        case _COMPARE_OP: {
             PyObject *right;
             PyObject *left;
             PyObject *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            #if ENABLE_SPECIALIZATION
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
-                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(COMPARE_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
             assert((oparg >> 5) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg >> 5);
             Py_DECREF(left);
@@ -2329,6 +2270,46 @@
             break;
         }
 
+        case BEFORE_ASYNC_WITH: {
+            PyObject *mgr;
+            PyObject *exit;
+            PyObject *res;
+            mgr = stack_pointer[-1];
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
+            if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                goto error;
+            }
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
+            if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol "
+                                  "(missed __aexit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                Py_DECREF(enter);
+                goto error;
+            }
+            Py_DECREF(mgr);
+            res = _PyObject_CallNoArgs(enter);
+            Py_DECREF(enter);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error;
+            }
+            STACK_GROW(1);
+            stack_pointer[-2] = exit;
+            stack_pointer[-1] = res;
+            break;
+        }
+
         case WITH_EXCEPT_START: {
             PyObject *val;
             PyObject *lasti;
@@ -2587,7 +2568,6 @@
             STACK_SHRINK(1);
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            frame->return_offset = 0;
             assert(tstate->interp->eval_frame == NULL);
             STORE_SP();
             new_frame->previous = frame;
@@ -2595,7 +2575,7 @@
             frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
             LOAD_SP();
-            LOAD_IP();
+            LOAD_IP(0);
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -3204,24 +3184,12 @@
             break;
         }
 
-        case BINARY_OP: {
+        case _BINARY_OP: {
             PyObject *rhs;
             PyObject *lhs;
             PyObject *res;
             rhs = stack_pointer[-1];
             lhs = stack_pointer[-2];
-            #if ENABLE_SPECIALIZATION
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(BINARY_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
-            assert(NB_ADD <= oparg);
-            assert(oparg <= NB_INPLACE_XOR);
             assert(_PyEval_BinaryOps[oparg]);
             res = _PyEval_BinaryOps[oparg](lhs, rhs);
             Py_DECREF(lhs);
@@ -3270,23 +3238,23 @@
         }
 
         case _SET_IP: {
-            frame->prev_instr = ip_offset + oparg;
+            TIER_TWO_ONLY
+            frame->instr_ptr = ip_offset + oparg;
             break;
         }
 
-        case _SAVE_CURRENT_IP: {
+        case _SAVE_RETURN_OFFSET: {
             #if TIER_ONE
-            frame->prev_instr = next_instr - 1;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             #endif
             #if TIER_TWO
-            // Relies on a preceding _SET_IP
-            frame->prev_instr--;
+            frame->return_offset = oparg;
             #endif
             break;
         }
 
         case _EXIT_TRACE: {
-            frame->prev_instr--;  // Back up to just before destination
+            TIER_TWO_ONLY
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);

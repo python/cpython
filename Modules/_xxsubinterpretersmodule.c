@@ -6,9 +6,12 @@
 #endif
 
 #include "Python.h"
+#include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
+
 #include "interpreteridobject.h"
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -304,7 +307,7 @@ _sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
     }
 
     if (exc != NULL) {
-        PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
+        PyObject *msgobj = PyObject_Str(exc);
         if (msgobj == NULL) {
             failure = "unable to format exception message";
             code = ERR_NO_MEMORY;

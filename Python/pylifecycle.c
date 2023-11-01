@@ -1076,6 +1076,38 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 }
 
 
+#ifdef Py_DEBUG
+static void
+run_presite(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+
+    if (!config->run_presite) {
+        return;
+    }
+
+    PyObject *presite_modname = PyUnicode_FromWideChar(
+        config->run_presite,
+        wcslen(config->run_presite)
+    );
+    if (presite_modname == NULL) {
+        fprintf(stderr, "Could not convert pre-site module name to unicode\n");
+        Py_DECREF(presite_modname);
+    }
+    else {
+        PyObject *presite = PyImport_Import(presite_modname);
+        if (presite == NULL) {
+            fprintf(stderr, "pre-site import failed:\n");
+            _PyErr_Print(tstate);
+        }
+        Py_XDECREF(presite);
+        Py_DECREF(presite_modname);
+    }
+}
+#endif
+
+
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
@@ -1156,6 +1188,10 @@ init_interp_main(PyThreadState *tstate)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_DEBUG
+    run_presite(tstate);
+#endif
 
     status = add_main_module(interp);
     if (_PyStatus_EXCEPTION(status)) {
