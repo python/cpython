@@ -80,13 +80,13 @@ typedef struct _excinfo {
     const char *msg;
 } _Py_excinfo;
 
-PyAPI_FUNC(void) _Py_excinfo_Clear(_Py_excinfo *info);
-PyAPI_FUNC(int) _Py_excinfo_Copy(_Py_excinfo *dest, _Py_excinfo *src);
-PyAPI_FUNC(const char *) _Py_excinfo_InitFromException(
+extern void _Py_excinfo_Clear(_Py_excinfo *info);
+extern int _Py_excinfo_Copy(_Py_excinfo *dest, _Py_excinfo *src);
+extern const char * _Py_excinfo_InitFromException(
     _Py_excinfo *info,
     PyObject *exc);
-PyAPI_FUNC(void) _Py_excinfo_Apply(_Py_excinfo *info, PyObject *exctype);
-PyAPI_FUNC(const char *) _Py_excinfo_AsUTF8(
+extern void _Py_excinfo_Apply(_Py_excinfo *info, PyObject *exctype);
+extern const char * _Py_excinfo_AsUTF8(
     _Py_excinfo *info,
     char *buf,
     size_t bufsize);

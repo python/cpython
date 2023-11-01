@@ -788,7 +788,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
 
 /* error codes */
 
-int
+static int
 _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
 {
     assert(!PyErr_Occurred());
@@ -836,7 +836,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
 
 /* shared exceptions */
 
-const char *
+static const char *
 _PyXI_InitExceptionInfo(_PyXI_exception_info *info,
                         PyObject *excobj, _PyXI_errcode code)
 {
@@ -1128,7 +1128,7 @@ _PyXI_NamespaceFromNames(PyObject *names)
 static void _propagate_not_shareable_error(_PyXI_session *);
 
 // All items are expected to be shareable.
-_PyXI_namespace *
+static _PyXI_namespace *
 _PyXI_NamespaceFromDict(PyObject *nsobj, _PyXI_session *session)
 {
     // session must be entered already, if provided.

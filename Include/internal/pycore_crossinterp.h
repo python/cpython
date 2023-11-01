@@ -175,10 +175,6 @@ typedef enum error_code {
     _PyXI_ERR_NOT_SHAREABLE = -7,
 } _PyXI_errcode;
 
-PyAPI_FUNC(int) _PyXI_ApplyErrorCode(
-    _PyXI_errcode code,
-    PyInterpreterState *interp);
-
 
 typedef struct _sharedexception {
     // The originating interpreter.
@@ -190,23 +186,15 @@ typedef struct _sharedexception {
     _Py_excinfo uncaught;
 } _PyXI_exception_info;
 
-PyAPI_FUNC(const char *) _PyXI_InitExceptionInfo(
-    _PyXI_exception_info *info,
-    PyObject *exc,
-    _PyXI_errcode code);
 PyAPI_FUNC(void) _PyXI_ApplyExceptionInfo(
     _PyXI_exception_info *info,
     PyObject *exctype);
-
 
 typedef struct xi_session _PyXI_session;
 typedef struct _sharedns _PyXI_namespace;
 
 PyAPI_FUNC(void) _PyXI_FreeNamespace(_PyXI_namespace *ns);
 PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromNames(PyObject *names);
-PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromDict(
-    PyObject *nsobj,
-    _PyXI_session *session);
 PyAPI_FUNC(int) _PyXI_FillNamespaceFromDict(
     _PyXI_namespace *ns,
     PyObject *nsobj,
