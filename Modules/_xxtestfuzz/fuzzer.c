@@ -459,8 +459,8 @@ static int init_elementtree_parsewhole(void) {
     if (io_module == NULL) {
         return 0;
     }
-    Py_DECREF(io_module);
     bytesio_type = PyObject_GetAttrString(io_module, "BytesIO");
+    Py_DECREF(io_module);
     if (bytesio_type == NULL) {
         return 0;
     }
