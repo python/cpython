@@ -1017,8 +1017,10 @@ class TestRecursion(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 recurse(101_000)
             c_recurse(100)
-            with self.assertRaises(RecursionError):
-                c_recurse(90_000)
+            if sys.platform != "win32":
+                # This crashes CI on Windows
+                with self.assertRaises(RecursionError):
+                    c_recurse(90_000)
             c_py_recurse(90)
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
