@@ -232,6 +232,14 @@ END = '/* End auto-generated code */'
 def generate_global_strings(identifiers, strings):
     filename = os.path.join(INTERNAL, 'pycore_global_strings.h')
 
+    # NUL characters are not supported; see _PyASCIIObject_INIT_embed_null().
+    for identifier in identifiers:
+        if "\0" in identifier:
+            raise Exception(f"an identifier contains a null character: {identifier!r}")
+    for string in strings:
+        if "\0" in string:
+            raise Exception(f"a string contains a null character: {string!r}")
+
     # Read the non-generated part of the file.
     with open(filename) as infile:
         orig = infile.read()
@@ -321,7 +329,10 @@ def generate_runtime_init(identifiers, strings):
         printer.write('')
         with printer.block('#define _Py_str_ascii_INIT', continuation=True):
             for i in range(128):
-                printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
+                if i == 0:
+                    printer.write(f'_PyASCIIObject_INIT_embed_null("\\x{i:02x}"),')
+                else:
+                    printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
                 immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]')
         printer.write('')
         with printer.block('#define _Py_str_latin1_INIT', continuation=True):

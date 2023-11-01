@@ -1259,7 +1259,7 @@ extern "C" {
 }
 
 #define _Py_str_ascii_INIT { \
-    _PyASCIIObject_INIT("\x00"), \
+    _PyASCIIObject_INIT_embed_null("\x00"), \
     _PyASCIIObject_INIT("\x01"), \
     _PyASCIIObject_INIT("\x02"), \
     _PyASCIIObject_INIT("\x03"), \

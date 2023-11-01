@@ -301,7 +301,12 @@ unicode_fromstring(PyObject *self, PyObject *arg)
     if (!PyArg_Parse(arg, "z#", &s, &size)) {
         return NULL;
     }
-    return PyUnicode_FromString(s);
+    PyObject *unicode = PyUnicode_FromString(s);
+    if (unicode == NULL) {
+        return NULL;
+    }
+    assert(((PyASCIIObject*)unicode)->state.embed_null == 0);
+    return unicode;
 }
 
 /* Test PyUnicode_FromKindAndData() */

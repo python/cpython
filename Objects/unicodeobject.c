@@ -205,6 +205,10 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 static inline int unicode_is_finalizing(void);
 static int unicode_is_singleton(PyObject *unicode);
 #endif
+static inline Py_ssize_t
+findchar(const void *s, int kind,
+         Py_ssize_t size, Py_UCS4 ch,
+         int direction);
 
 
 // Return a reference to the immortal empty string singleton.
@@ -623,6 +627,15 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         }
         CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
+
+    if (_PyUnicode_STATE(ascii).embed_null != 2) {
+        Py_ssize_t pos = findchar(PyUnicode_DATA(ascii),
+                                  PyUnicode_KIND(ascii),
+                                  PyUnicode_GET_LENGTH(ascii),
+                                  0, 1);
+        assert(_PyUnicode_STATE(ascii).embed_null == (pos >= 0));
+    }
+
     return 1;
 
 #undef CHECK
@@ -1253,6 +1266,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     _PyUnicode_STATE(unicode).compact = 1;
     _PyUnicode_STATE(unicode).ascii = is_ascii;
     _PyUnicode_STATE(unicode).statically_allocated = 0;
+    _PyUnicode_STATE(unicode).embed_null = 2;
     if (is_ascii) {
         ((char*)data)[size] = 0;
     }
@@ -1890,7 +1904,16 @@ PyUnicode_FromString(const char *u)
         PyErr_SetString(PyExc_OverflowError, "input too long");
         return NULL;
     }
-    return PyUnicode_DecodeUTF8Stateful(u, (Py_ssize_t)size, NULL, NULL);
+    PyObject *unicode;
+    unicode = PyUnicode_DecodeUTF8Stateful(u, (Py_ssize_t)size, NULL, NULL);
+    if (unicode != NULL) {
+        // PyUnicode_DecodeUTF8Stateful(u, strlen(u)) cannot create NUL
+        // characters: the UTF-8 decoder with the strict error handler only
+        // creates a NUL character if the input string contains a NUL byte
+        // which cannot be the case here.
+        _PyUnicode_STATE(unicode).embed_null = 0;
+    }
+    return unicode;
 }
 
 
@@ -1932,6 +1955,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
     if (!obj) {
         return NULL;
     }
+    _PyUnicode_STATE(obj).embed_null = 0;
     PyUnicode_InternInPlace(&obj);
 
     if (index >= ids->size) {
@@ -3846,10 +3870,27 @@ PyUnicode_AsUTF8(PyObject *unicode)
 {
     Py_ssize_t size;
     const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &size);
-    if (utf8 != NULL && strlen(utf8) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
+    if (utf8 == NULL) {
         return NULL;
     }
+
+    // Cache to avoid calling O(n) strlen() operation at every
+    // PyUnicode_AsUTF8() call on the same object.
+    if (_PyUnicode_STATE(unicode).embed_null == 2) {
+        if (strlen(utf8) != (size_t)size) {
+            _PyUnicode_STATE(unicode).embed_null = 1;
+        }
+        else {
+            _PyUnicode_STATE(unicode).embed_null = 0;
+        }
+    }
+
+    if (_PyUnicode_STATE(unicode).embed_null == 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null character");
+        return NULL;
+    }
+
     return utf8;
 }
 

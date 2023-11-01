@@ -142,9 +142,16 @@ typedef struct {
         unsigned int ascii:1;
         /* The object is statically allocated. */
         unsigned int statically_allocated:1;
+        // Does the string embed null characters? Possible values:
+        //   0: No
+        //   1: Yes
+        //   2: Unknown, the string must be scanned
+        //   3: Invalid state (must not be used)
+        // Cache used by PyUnicode_AsUTF8() to avoid calling strlen().
+        unsigned int embed_null:2;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        unsigned int :24;
+        unsigned int :22;
     } state;
 } PyASCIIObject;
 
