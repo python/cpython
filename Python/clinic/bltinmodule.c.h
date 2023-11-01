@@ -329,13 +329,8 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         _PyArg_BadArgument("compile", "argument 'mode'", "str", args[2]);
         goto exit;
     }
-    Py_ssize_t mode_length;
-    mode = PyUnicode_AsUTF8AndSize(args[2], &mode_length);
+    mode = PyUnicode_AsUTF8(args[2]);
     if (mode == NULL) {
-        goto exit;
-    }
-    if (strlen(mode) != (size_t)mode_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -1212,4 +1207,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=31bded5d08647a57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95d3813b1798f018 input=a9049054013a1b77]*/

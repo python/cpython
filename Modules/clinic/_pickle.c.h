@@ -466,13 +466,8 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'encoding'", "str", fastargs[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[2], &encoding_length);
+        encoding = PyUnicode_AsUTF8(fastargs[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -484,13 +479,8 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'errors'", "str", fastargs[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(fastargs[3], &errors_length);
+        errors = PyUnicode_AsUTF8(fastargs[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -870,13 +860,8 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        encoding = PyUnicode_AsUTF8(args[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -888,13 +873,8 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        errors = PyUnicode_AsUTF8(args[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -996,13 +976,8 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        encoding = PyUnicode_AsUTF8(args[2]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1014,13 +989,8 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        Py_ssize_t errors_length;
-        errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+        errors = PyUnicode_AsUTF8(args[3]);
         if (errors == NULL) {
-            goto exit;
-        }
-        if (strlen(errors) != (size_t)errors_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1034,4 +1004,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7f0564b5fb5410a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c675a6680a6b90c input=a9049054013a1b77]*/
