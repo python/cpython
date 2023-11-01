@@ -11,10 +11,6 @@ extern "C" {
 #include "pycore_pyerrors.h"
 
 
-/**************************/
-/* cross-interpreter data */
-/**************************/
-
 /***************************/
 /* cross-interpreter calls */
 /***************************/
