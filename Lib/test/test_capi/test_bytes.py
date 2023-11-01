@@ -1,4 +1,5 @@
 import unittest
+import sys
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -54,7 +55,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'', 0), b'')
         self.assertEqual(fromstringandsize(NULL, 0), b'')
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
-        self.assertRaises(MemoryError, fromstringandsize, NULL, sys.maxsize)
+        self.assertRaises((MemoryError, OverflowError), fromstringandsize, NULL, sys.maxsize)
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
         self.assertRaises(SystemError, fromstringandsize, NULL, -1)
