@@ -80,15 +80,6 @@ class ComplexTest(unittest.TestCase):
                 msg += ': zeros have different signs'
         self.fail(msg.format(x, y))
 
-    def assertComplexesAreIdentical(self, x, y):
-        """assert that complex numbers x and y are identical
-
-        I.e. they have identical real and imag components.
-
-        """
-        (self.assertFloatsAreIdentical(x.real, y.real)
-         and self.assertFloatsAreIdentical(x.imag, y.imag))
-
     def assertClose(self, x, y, eps=1e-9):
         """Return true iff complexes x and y "are close"."""
         self.assertCloseAbs(x.real, y.real, eps)
@@ -840,30 +831,30 @@ class CAPIComplexTest(ComplexTest):
         # Test PyComplex_FromCComplex()
         fromccomplex = _testcapi.complex_fromccomplex
 
-        self.assertComplexesAreIdentical(fromccomplex(1+2j), 1.0+2.0j)
+        self.assertEqual(fromccomplex(1+2j), 1.0+2.0j)
 
     def test_fromdoubles(self):
         # Test PyComplex_FromDoubles()
         fromdoubles = _testcapi.complex_fromdoubles
 
-        self.assertComplexesAreIdentical(fromdoubles(1.0, 2.0), 1.0+2.0j)
+        self.assertEqual(fromdoubles(1.0, 2.0), 1.0+2.0j)
 
     def test_realasdouble(self):
         # Test PyComplex_RealAsDouble()
         realasdouble = _testcapi.complex_realasdouble
 
-        self.assertFloatsAreIdentical(realasdouble(1+2j), 1.0)
-        self.assertFloatsAreIdentical(realasdouble(1), 1.0)
-        self.assertFloatsAreIdentical(realasdouble(-1), -1.0)
+        self.assertEqual(realasdouble(1+2j), 1.0)
+        self.assertEqual(realasdouble(1), 1.0)
+        self.assertEqual(realasdouble(-1), -1.0)
         # Function doesn't support classes with __complex__ dunder, see #109598
-        #self.assertFloatsAreIdentical(realasdouble(Complex()), 4.25)
-        #self.assertFloatsAreIdentical(realasdouble(3.14), 3.14)
-        #self.assertFloatsAreIdentical(realasdouble(FloatSubclass(3.14)), 3.14)
-        #self.assertFloatsAreIdentical(realasdouble(Float()), 4.25)
+        #self.assertEqual(realasdouble(Complex()), 4.25)
+        #self.assertEqual(realasdouble(3.14), 3.14)
+        #self.assertEqual(realasdouble(FloatSubclass(3.14)), 3.14)
+        #self.assertEqual(realasdouble(Float()), 4.25)
         #with self.assertWarns(DeprecationWarning):
-        #    self.assertFloatsAreIdentical(realasdouble(BadComplex2()), 4.25)
+        #    self.assertEqual(realasdouble(BadComplex2()), 4.25)
         #with self.assertWarns(DeprecationWarning):
-        #    self.assertFloatsAreIdentical(realasdouble(BadFloat2()), 4.25)
+        #    self.assertEqual(realasdouble(BadFloat2()), 4.25)
         self.assertRaises(TypeError, realasdouble, BadComplex())
         self.assertRaises(TypeError, realasdouble, BadFloat())
         self.assertRaises(TypeError, realasdouble, object())
@@ -874,25 +865,25 @@ class CAPIComplexTest(ComplexTest):
         # Test PyComplex_ImagAsDouble()
         imagasdouble = _testcapi.complex_imagasdouble
 
-        self.assertFloatsAreIdentical(imagasdouble(1+2j), 2.0)
-        self.assertFloatsAreIdentical(imagasdouble(1), 0.0)
-        self.assertFloatsAreIdentical(imagasdouble(-1), 0.0)
+        self.assertEqual(imagasdouble(1+2j), 2.0)
+        self.assertEqual(imagasdouble(1), 0.0)
+        self.assertEqual(imagasdouble(-1), 0.0)
         # Function doesn't support classes with __complex__ dunder, see #109598
-        #self.assertFloatsAreIdentical(imagasdouble(Complex()), 0.5)
-        #self.assertFloatsAreIdentical(imagasdouble(3.14), 0.0)
-        #self.assertFloatsAreIdentical(imagasdouble(FloatSubclass(3.14)), 0.0)
-        #self.assertFloatsAreIdentical(imagasdouble(Float()), 0.0)
+        #self.assertEqual(imagasdouble(Complex()), 0.5)
+        #self.assertEqual(imagasdouble(3.14), 0.0)
+        #self.assertEqual(imagasdouble(FloatSubclass(3.14)), 0.0)
+        #self.assertEqual(imagasdouble(Float()), 0.0)
         #with self.assertWarns(DeprecationWarning):
-        #    self.assertFloatsAreIdentical(imagasdouble(BadComplex2()), 0.5)
+        #    self.assertEqual(imagasdouble(BadComplex2()), 0.5)
         #with self.assertWarns(DeprecationWarning):
-        #    self.assertFloatsAreIdentical(imagasdouble(BadFloat2()), 0.0)
+        #    self.assertEqual(imagasdouble(BadFloat2()), 0.0)
         # Function returns 0.0 anyway, see #109598
         #self.assertRaises(TypeError, imagasdouble, BadComplex())
         #self.assertRaises(TypeError, imagasdouble, BadFloat())
         #self.assertRaises(TypeError, imagasdouble, object())
-        self.assertFloatsAreIdentical(imagasdouble(BadComplex()), 0.0)
-        self.assertFloatsAreIdentical(imagasdouble(BadFloat()), 0.0)
-        self.assertFloatsAreIdentical(imagasdouble(object()), 0.0)
+        self.assertEqual(imagasdouble(BadComplex()), 0.0)
+        self.assertEqual(imagasdouble(BadFloat()), 0.0)
+        self.assertEqual(imagasdouble(object()), 0.0)
 
         # CRASHES imagasdouble(NULL)
 
@@ -900,17 +891,17 @@ class CAPIComplexTest(ComplexTest):
         # Test PyComplex_AsCComplex()
         asccomplex = _testcapi.complex_asccomplex
 
-        self.assertComplexesAreIdentical(asccomplex(1+2j), 1.0+2.0j)
-        self.assertComplexesAreIdentical(asccomplex(1), 1.0+0.0j)
-        self.assertComplexesAreIdentical(asccomplex(-1), -1.0+0.0j)
-        self.assertComplexesAreIdentical(asccomplex(Complex()), 4.25+0.5j)
-        self.assertComplexesAreIdentical(asccomplex(3.14), 3.14+0.0j)
-        self.assertComplexesAreIdentical(asccomplex(FloatSubclass(3.14)), 3.14+0.0j)
-        self.assertComplexesAreIdentical(asccomplex(Float()), 4.25+0.0j)
+        self.assertEqual(asccomplex(1+2j), 1.0+2.0j)
+        self.assertEqual(asccomplex(1), 1.0+0.0j)
+        self.assertEqual(asccomplex(-1), -1.0+0.0j)
+        self.assertEqual(asccomplex(Complex()), 4.25+0.5j)
+        self.assertEqual(asccomplex(3.14), 3.14+0.0j)
+        self.assertEqual(asccomplex(FloatSubclass(3.14)), 3.14+0.0j)
+        self.assertEqual(asccomplex(Float()), 4.25+0.0j)
         with self.assertWarns(DeprecationWarning):
-            self.assertComplexesAreIdentical(asccomplex(BadComplex2()), 4.25+0.5j)
+            self.assertEqual(asccomplex(BadComplex2()), 4.25+0.5j)
         with self.assertWarns(DeprecationWarning):
-            self.assertComplexesAreIdentical(asccomplex(BadFloat2()), 4.25+0.0j)
+            self.assertEqual(asccomplex(BadFloat2()), 4.25+0.0j)
         self.assertRaises(TypeError, asccomplex, BadComplex())
         self.assertRaises(TypeError, asccomplex, BadFloat())
         self.assertRaises(TypeError, asccomplex, object())
