@@ -40,7 +40,7 @@ struct _Py_exc_state {
 PyAPI_FUNC(PyTypeObject *) _PyExc_GetExceptionSnapshotType(
     PyInterpreterState *interp);
 
-PyAPI_FUNC(PyObject *) PyExceptionSnapshot_FromInfo(_Py_excinfo *info);
+extern PyObject * PyExceptionSnapshot_FromInfo(_Py_excinfo *info);
 
 
 #ifdef __cplusplus
