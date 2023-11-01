@@ -1120,6 +1120,13 @@ New Features
 * Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
   (Contributed by Victor Stinner in :gh:`111089`.)
 
+* Add ``PyASCIIObject.state.embed_null`` member to Python :class:`str` objects.
+  It is used as a cache by :c:func:`PyUnicode_AsUTF8` to only check once if a
+  string contains a null character. Strings created by
+  :c:func:`PyUnicode_FromString` initializes *embed_null* to 0 since the string
+  cannot contain a null character.
+  (Contributed by Victor Stinner in :gh:`111089`.)
+
 
 Porting to Python 3.13
 ----------------------
@@ -1192,7 +1199,7 @@ Porting to Python 3.13
 
 * The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
   contains embedded null characters. To accept embedded null characters and
-  truncate on purpose at the first null byte,
+  truncate on purpose at the first null character,
   ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
   (Contributed by Victor Stinner in :gh:`111089`.)
 

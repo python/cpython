@@ -1,5 +1,5 @@
 Add ``PyASCIIObject.state.embed_null`` member to Python str objects. It is
 used as a cache by :c:func:`PyUnicode_AsUTF8` to only check once if a string
 contains a null character. Strings created by :c:func:`PyUnicode_FromString`
-initializes *embed_null* since the string cannot contain a null character.
+initializes *embed_null* to 0 since the string cannot contain a null character.
 Patch by Victor Stinner.
