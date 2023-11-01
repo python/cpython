@@ -387,9 +387,13 @@ class FilterTests(BaseTest):
             with self.module.catch_warnings(
                 module=self.module, action="error", category=FutureWarning
             ):
-                self.module.warn("Other types of warnings are not errors")
-                self.assertRaises(FutureWarning,
-                                  self.module.warn, FutureWarning("msg"))
+                with support.captured_stderr() as stderr:
+                    error_msg = "Other types of warnings are not errors"
+                    self.module.warn(error_msg)
+                    self.assertRaises(FutureWarning,
+                                      self.module.warn, FutureWarning("msg"))
+                    stderr = stderr.getvalue()
+                    self.assertIn(error_msg, stderr)
 
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
@@ -1229,6 +1233,10 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stderr.splitlines(),
             [b"Traceback (most recent call last):",
              b"  File \"<string>\", line 1, in <module>",
+             b'    import sys, warnings; sys.stdout.write(str(sys.warnoptions)); warnings.w'
+             b"arn('Message', DeprecationWarning)",
+             b'                                                                  ^^^^^^^^^^'
+             b'^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
              b"DeprecationWarning: Message"])
 
     def test_default_filter_configuration(self):

@@ -1,0 +1,1 @@
+Remove unnecessary instruction pointer updates before returning from frames.

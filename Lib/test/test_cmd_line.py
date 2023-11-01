@@ -717,11 +717,11 @@ class CmdLineTest(unittest.TestCase):
 
         # Memory allocator debug hooks
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             pass
         else:
-            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
+            code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
             if support.with_pymalloc():
@@ -783,7 +783,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out, expected_filters)
 
     def check_pythonmalloc(self, env_var, name):
-        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        code = 'import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())'
         env = dict(os.environ)
         env.pop('PYTHONDEVMODE', None)
         if env_var is not None:
@@ -799,9 +799,11 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), name)
         self.assertEqual(proc.returncode, 0)
 
+    @support.cpython_only
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()
+        mimalloc = support.with_mimalloc()
         if pymalloc:
             default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
@@ -819,6 +821,11 @@ class CmdLineTest(unittest.TestCase):
             tests.extend((
                 ('pymalloc', 'pymalloc'),
                 ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+        if mimalloc:
+            tests.extend((
+                ('mimalloc', 'mimalloc'),
+                ('mimalloc_debug', 'mimalloc_debug'),
             ))
 
         for env_var, name in tests:
@@ -877,11 +884,8 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
 
-        def res2int(res):
-            out = res.out.strip().decode("utf-8")
-            return tuple(int(i) for i in out.split())
-
         res = assert_python_ok('-c', code)
+        res2int = self.res2int
         current_max = sys.get_int_max_str_digits()
         self.assertEqual(res2int(res), (current_max, current_max))
         res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
@@ -900,6 +904,26 @@ class CmdLineTest(unittest.TestCase):
             PYTHONINTMAXSTRDIGITS='4000'
         )
         self.assertEqual(res2int(res), (6000, 6000))
+
+    def test_cpu_count(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
+        self.assertEqual(self.res2int(res), (4321, 4321))
+        res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (1234, 1234))
+
+    def test_cpu_count_default(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code)
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def res2int(self, res):
+        out = res.out.strip().decode("utf-8")
+        return tuple(int(i) for i in out.split())
 
 
 @unittest.skipIf(interpreter_requires_environment(),

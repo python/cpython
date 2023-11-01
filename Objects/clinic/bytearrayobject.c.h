@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
@@ -67,13 +68,8 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("bytearray", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        encoding = PyUnicode_AsUTF8(fastargs[1]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -84,13 +80,8 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("bytearray", "argument 'errors'", "str", fastargs[2]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(fastargs[2], &errors_length);
+    errors = PyUnicode_AsUTF8(fastargs[2]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -161,10 +152,6 @@ bytearray_removeprefix(PyByteArrayObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &prefix, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&prefix, 'C')) {
-        _PyArg_BadArgument("removeprefix", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = bytearray_removeprefix_impl(self, &prefix);
 
 exit:
@@ -199,10 +186,6 @@ bytearray_removesuffix(PyByteArrayObject *self, PyObject *arg)
     Py_buffer suffix = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &suffix, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&suffix, 'C')) {
-        _PyArg_BadArgument("removesuffix", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = bytearray_removesuffix_impl(self, &suffix);
@@ -289,7 +272,7 @@ PyDoc_STRVAR(bytearray_maketrans__doc__,
 "maketrans(frm, to, /)\n"
 "--\n"
 "\n"
-"Return a translation table useable for the bytes or bytearray translate method.\n"
+"Return a translation table usable for the bytes or bytearray translate method.\n"
 "\n"
 "The returned table will be one where each byte in frm is mapped to the byte at\n"
 "the same position in to.\n"
@@ -315,15 +298,7 @@ bytearray_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[0], &frm, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&frm, 'C')) {
-        _PyArg_BadArgument("maketrans", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (PyObject_GetBuffer(args[1], &to, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&to, 'C')) {
-        _PyArg_BadArgument("maketrans", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = bytearray_maketrans_impl(&frm, &to);
@@ -375,15 +350,7 @@ bytearray_replace(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nar
     if (PyObject_GetBuffer(args[0], &old, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&old, 'C')) {
-        _PyArg_BadArgument("replace", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (PyObject_GetBuffer(args[1], &new, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&new, 'C')) {
-        _PyArg_BadArgument("replace", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -983,13 +950,8 @@ bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
             _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+        encoding = PyUnicode_AsUTF8(args[0]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1000,13 +962,8 @@ bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
         _PyArg_BadArgument("decode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+    errors = PyUnicode_AsUTF8(args[1]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -1120,9 +1077,6 @@ bytearray_fromhex(PyTypeObject *type, PyObject *arg)
         _PyArg_BadArgument("fromhex", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     string = arg;
     return_value = bytearray_fromhex_impl(type, string);
 
@@ -1206,7 +1160,7 @@ bytearray_hex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, 
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[1]);
+    bytes_per_sep = PyLong_AsInt(args[1]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1259,7 +1213,7 @@ bytearray_reduce_ex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t n
     if (nargs < 1) {
         goto skip_optional;
     }
-    proto = _PyLong_AsInt(args[0]);
+    proto = PyLong_AsInt(args[0]);
     if (proto == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1287,4 +1241,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=022698e8b0faa272 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a7de6295a7ce6cc input=a9049054013a1b77]*/

@@ -1,2 +1,0 @@
-Attributes/methods are no longer shadowed by same-named enum members,
-although they may be shadowed by enum.property's.

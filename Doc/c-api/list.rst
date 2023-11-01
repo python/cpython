@@ -86,6 +86,10 @@ List Objects
    Macro form of :c:func:`PyList_SetItem` without error checking. This is
    normally only used to fill in new lists where there is no previous content.
 
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions
+   <--with-assertions>`.
+
    .. note::
 
       This macro "steals" a reference to *item*, and, unlike

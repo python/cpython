@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(EncodingMap_size__doc__,
 "size($self, /)\n"
@@ -202,13 +203,8 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+        encoding = PyUnicode_AsUTF8(args[0]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -219,13 +215,8 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("encode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+    errors = PyUnicode_AsUTF8(args[1]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -289,7 +280,7 @@ unicode_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    tabsize = _PyLong_AsInt(args[0]);
+    tabsize = PyLong_AsInt(args[0]);
     if (tabsize == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -736,7 +727,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_replace__doc__,
-"replace($self, old, new, count=-1, /)\n"
+"replace($self, old, new, /, count=-1)\n"
 "--\n"
 "\n"
 "Return a copy with all occurrences of substring old replaced by new.\n"
@@ -749,28 +740,53 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
-    {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL, unicode_replace__doc__},
+    {"replace", _PyCFunction_CAST(unicode_replace), METH_FASTCALL|METH_KEYWORDS, unicode_replace__doc__},
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
                      Py_ssize_t count);
 
 static PyObject *
-unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(count), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "count", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replace",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *old;
     PyObject *new;
     Py_ssize_t count = -1;
 
-    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
         _PyArg_BadArgument("replace", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     old = args[0];
@@ -778,12 +794,9 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("replace", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
     new = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
+    if (!noptargs) {
+        goto skip_optional_pos;
     }
     {
         Py_ssize_t ival = -1;
@@ -797,7 +810,7 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         }
         count = ival;
     }
-skip_optional:
+skip_optional_pos:
     return_value = unicode_replace_impl(self, old, new, count);
 
 exit:
@@ -827,9 +840,6 @@ unicode_removeprefix(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("removeprefix", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     prefix = arg;
@@ -863,9 +873,6 @@ unicode_removesuffix(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("removesuffix", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     suffix = arg;
@@ -934,7 +941,7 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
 "    Maximum number of splits (starting from the left).\n"
@@ -1058,7 +1065,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
 "    Maximum number of splits (starting from the left).\n"
@@ -1261,18 +1268,12 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("maketrans", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
     y = args[1];
     if (nargs < 3) {
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[2])) {
         _PyArg_BadArgument("maketrans", "argument 3", "str", args[2]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[2]) == -1) {
         goto exit;
     }
     z = args[2];
@@ -1378,9 +1379,6 @@ unicode___format__(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = unicode___format___impl(self, format_spec);
 
@@ -1465,13 +1463,8 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("str", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        encoding = PyUnicode_AsUTF8(fastargs[1]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1482,13 +1475,8 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("str", "argument 'errors'", "str", fastargs[2]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(fastargs[2], &errors_length);
+    errors = PyUnicode_AsUTF8(fastargs[2]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -1497,4 +1485,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05d942840635dadf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=20313d6339272ddc input=a9049054013a1b77]*/

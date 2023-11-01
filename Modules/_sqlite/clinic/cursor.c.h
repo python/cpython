@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
@@ -65,9 +65,6 @@ pysqlite_cursor_execute(pysqlite_Cursor *self, PyObject *const *args, Py_ssize_t
         _PyArg_BadArgument("execute", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     sql = args[0];
     if (nargs < 2) {
         goto skip_optional;
@@ -107,9 +104,6 @@ pysqlite_cursor_executemany(pysqlite_Cursor *self, PyObject *const *args, Py_ssi
         _PyArg_BadArgument("executemany", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     sql = args[0];
     seq_of_parameters = args[1];
     return_value = pysqlite_cursor_executemany_impl(self, sql, seq_of_parameters);
@@ -141,13 +135,8 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *arg)
         _PyArg_BadArgument("executescript", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t sql_script_length;
-    sql_script = PyUnicode_AsUTF8AndSize(arg, &sql_script_length);
+    sql_script = PyUnicode_AsUTF8(arg);
     if (sql_script == NULL) {
-        goto exit;
-    }
-    if (strlen(sql_script) != (size_t)sql_script_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pysqlite_cursor_executescript_impl(self, sql_script);
@@ -229,7 +218,7 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    maxrows = _PyLong_AsInt(args[0]);
+    maxrows = PyLong_AsInt(args[0]);
     if (maxrows == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -319,4 +308,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=1f82e3c9791bb9a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c772882c7df587ea input=a9049054013a1b77]*/

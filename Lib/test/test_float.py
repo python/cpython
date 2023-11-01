@@ -25,7 +25,7 @@ NAN = float("nan")
 
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
-format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
+format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
 
 class FloatSubclass(float):
     pass
@@ -733,8 +733,13 @@ class FormatTestCase(unittest.TestCase):
 
                 lhs, rhs = map(str.strip, line.split('->'))
                 fmt, arg = lhs.split()
-                self.assertEqual(fmt % float(arg), rhs)
-                self.assertEqual(fmt % -float(arg), '-' + rhs)
+                f = float(arg)
+                self.assertEqual(fmt % f, rhs)
+                self.assertEqual(fmt % -f, '-' + rhs)
+                if fmt != '%r':
+                    fmt2 = fmt[1:]
+                    self.assertEqual(format(f, fmt2), rhs)
+                    self.assertEqual(format(-f, fmt2), '-' + rhs)
 
     def test_issue5864(self):
         self.assertEqual(format(123.456, '.4'), '123.5')
@@ -763,6 +768,7 @@ class FormatTestCase(unittest.TestCase):
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):
         with open(os.path.join(os.path.split(__file__)[0],
+                  'mathdata',
                   'floating_points.txt'), encoding="utf-8") as floats_file:
             for line in floats_file:
                 line = line.strip()
@@ -1040,11 +1046,8 @@ class InfNanTest(unittest.TestCase):
         self.assertEqual(copysign(1.0, float('inf')), 1.0)
         self.assertEqual(copysign(1.0, float('-inf')), -1.0)
 
-    @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
-                         "applies only when using short float repr style")
     def test_nan_signs(self):
-        # When using the dtoa.c code, the sign of float('nan') should
-        # be predictable.
+        # The sign of float('nan') should be predictable.
         self.assertEqual(copysign(1.0, float('nan')), 1.0)
         self.assertEqual(copysign(1.0, float('-nan')), -1.0)
 

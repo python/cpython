@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 #if defined(MS_WINDOWS)
 
@@ -66,7 +62,7 @@ _multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!handle && PyErr_Occurred()) {
         goto exit;
     }
-    size = _PyLong_AsInt(args[1]);
+    size = PyLong_AsInt(args[1]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -108,10 +104,6 @@ _multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &buf, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buf, 'C')) {
-        _PyArg_BadArgument("send", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     return_value = _multiprocessing_send_impl(module, handle, &buf);
 
 exit:
@@ -146,13 +138,8 @@ _multiprocessing_sem_unlink(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("sem_unlink", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    name = PyUnicode_AsUTF8(arg);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _multiprocessing_sem_unlink_impl(module, name);
@@ -172,4 +159,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=4a6afc67c1f5ec85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6735cbc59b6f324 input=a9049054013a1b77]*/
