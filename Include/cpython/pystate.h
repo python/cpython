@@ -214,12 +214,7 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 500
 #else
    // This value is duplicated in Lib/test/support/__init__.py
-#  if defined(MS_WINDOWS) && defined(Py_DEBUG)
-    // On Windows in debug mode the interpreter uses more stack space
-#    define Py_C_RECURSION_LIMIT 1000
-#  else
-#    define Py_C_RECURSION_LIMIT 1500
-#  endif
+#  define Py_C_RECURSION_LIMIT 1500
 #endif
 
 
