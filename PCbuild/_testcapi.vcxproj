@@ -122,6 +122,7 @@
     <ClCompile Include="..\Modules\_testcapi\pyatomic.c" />
     <ClCompile Include="..\Modules\_testcapi\pyos.c" />
     <ClCompile Include="..\Modules\_testcapi\file.c" />
+    <ClCompile Include="..\Modules\_testcapi\codec.c" />
     <ClCompile Include="..\Modules\_testcapi\sys.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />

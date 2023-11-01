@@ -3974,6 +3974,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_File(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Codec(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Sys(m) < 0) {
         return NULL;
     }
