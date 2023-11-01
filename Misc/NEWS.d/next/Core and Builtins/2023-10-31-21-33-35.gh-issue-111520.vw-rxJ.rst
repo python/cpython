@@ -1,0 +1,6 @@
+Merge the Tier 1 (bytecode) and Tier 2 (micro-ops) interpreters together,
+moving the Tier 2 interpreter loop and switch into
+``_PyEval_EvalFrameDefault()`` in ``ceval.c``.
+
+**Beware!** This changes the environment variables to enable micro-ops and
+their debugging to ``PYTHON_UOPS`` and ``PYTHON_LLTRACE``.
