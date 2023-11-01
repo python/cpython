@@ -3406,7 +3406,10 @@
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (this_instr[1].cache > tstate->interp->optimizer_backedge_threshold &&
+            uint16_t ucounter = this_instr[1].cache;
+            /* Convert to signed int. For most compilers, this is a no-op  */
+            int32_t counter = ucounter > INT16_MAX ? (uint32_t)ucounter - (1<<16) : ucounter;
+            if (counter > tstate->interp->optimizer_backedge_threshold &&
                 // Double-check that the opcode isn't instrumented or something:
                 this_instr->op.code == JUMP_BACKWARD)
             {
@@ -3417,8 +3420,16 @@
                     // Rewind and enter the executor:
                     assert(this_instr->op.code == ENTER_EXECUTOR);
                     next_instr = this_instr;
+                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
-                this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                else {
+                    int backoff = counter &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    if (backoff < 16 - OPTIMIZER_BITS_IN_COUNTER) {
+                        backoff++;
+                    }
+                    counter = 1 + backoff - (1<<(backoff+OPTIMIZER_BITS_IN_COUNTER));
+                    this_instr[1].cache = (uint16_t)counter;
+                }
             }
             #endif  /* ENABLE_SPECIALIZATION */
             DISPATCH();
