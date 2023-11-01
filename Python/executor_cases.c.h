@@ -3261,10 +3261,7 @@
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_DECREF(current_executor);
-            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            goto enter_tier_one;
+            GOTO_TIER_ONE();
             break;
         }
 

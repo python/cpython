@@ -1027,6 +1027,7 @@ enter_tier_two:
         }
     }
 
+// Jump here from ERROR_IF(..., unbound_local_error)
 unbound_local_error_tier_two:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
         UNBOUNDLOCAL_ERROR_MSG,
@@ -1034,6 +1035,7 @@ unbound_local_error_tier_two:
     );
     goto error_tier_two;
 
+// JUMP to any of these from ERROR_IF(..., error)
 pop_4_error_tier_two:
     STACK_SHRINK(1);
 pop_3_error_tier_two:
@@ -1050,6 +1052,7 @@ error_tier_two:
     Py_DECREF(current_executor);
     goto resume_with_error;
 
+// Jump here from DEOPT_IF()
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
@@ -1058,10 +1061,18 @@ deoptimize:
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
+    // Fall through
+// Jump here from ENTER_EXECUTOR
 enter_tier_one:
     next_instr = frame->instr_ptr;
     goto resume_frame;
 
+// Jump here from _EXIT_TRACE
+exit_trace:
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    Py_DECREF(current_executor);
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+    goto enter_tier_one;
 }
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
