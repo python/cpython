@@ -1032,7 +1032,7 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
                 Py_INCREF(op);
                 (void) clear(op);
                 if (_PyErr_Occurred(tstate)) {
-                    PyErr_FormatUnraisable("Exception ignored in tp_clear of %.200s",
+                    PyErr_FormatUnraisable("Exception ignored in tp_clear of %s",
                                            Py_TYPE(op)->tp_name);
                 }
                 Py_DECREF(op);

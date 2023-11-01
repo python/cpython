@@ -902,7 +902,7 @@ module_clear(PyModuleObject *m)
     {
         int res = m->md_def->m_clear((PyObject*)m);
         if (PyErr_Occurred()) {
-            PyErr_FormatUnraisable("Exception ignored in m_clear of module%s%V\n",
+            PyErr_FormatUnraisable("Exception ignored in m_clear of module%s%V",
                                    m->md_name ? " " : "",
                                    m->md_name, "");
         }
