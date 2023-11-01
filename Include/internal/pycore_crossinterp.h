@@ -186,9 +186,6 @@ typedef struct _sharedexception {
     _Py_excinfo uncaught;
 } _PyXI_exception_info;
 
-PyAPI_FUNC(void) _PyXI_ApplyExceptionInfo(
-    _PyXI_exception_info *info,
-    PyObject *exctype);
 
 typedef struct xi_session _PyXI_session;
 typedef struct _sharedns _PyXI_namespace;

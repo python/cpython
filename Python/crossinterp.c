@@ -928,7 +928,7 @@ _PyXI_InitExceptionInfo(_PyXI_exception_info *info,
     return failure;
 }
 
-void
+static void
 _PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
 {
     if (exctype == NULL) {
