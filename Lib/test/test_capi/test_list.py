@@ -22,10 +22,10 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check((1, 2)))
         self.assertFalse(check(42))
         self.assertFalse(check(object()))
-        
+
         # CRASHES check(NULL)
-        
-        
+
+
     def test_list_check_exact(self):
         # Test PyList_CheckExact()
         check = _testcapi.list_check_exact
@@ -35,7 +35,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(UserList([1, 2])))
         self.assertFalse(check({1: 2}))
         self.assertFalse(check(object()))
-        
+
         # CRASHES check(NULL)
 
     def test_list_new(self):
@@ -95,7 +95,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, setitem, {}, 0, 5)
 
         # CRASHES setitem(NULL, 'a', 5)
-    
+
     def test_list_insert(self):
         # Test PyList_Insert()
         insert = _testcapi.list_insert
@@ -119,7 +119,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(lst[-1], [4,5,6])
         self.assertRaises(SystemError, append, lst, NULL)
         # CRASHES append(NULL, 0)
-    
+
     def test_list_getslice(self):
         # Test PyList_GetSlice()
         getslice = _testcapi.list_getslice
@@ -130,7 +130,5 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getslice(lst, 6, 100), [7,8,9,10])
         self.assertNotEqual(getslice(lst, -2, -1), [9])
         self.assertRaises(TypeError, lst, 'a', '2')
-        
+
         # CRASHES getslice(NULL, 1, 2)
-    
-    
