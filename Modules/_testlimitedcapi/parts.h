@@ -35,6 +35,7 @@ int _PyTestLimitedCAPI_Init_Long(PyObject *module);
 int _PyTestLimitedCAPI_Init_PyOS(PyObject *module);
 int _PyTestLimitedCAPI_Init_Set(PyObject *module);
 int _PyTestLimitedCAPI_Init_Sys(PyObject *module);
+int _PyTestLimitedCAPI_Init_Tuple(PyObject *module);
 int _PyTestLimitedCAPI_Init_Unicode(PyObject *module);
 int _PyTestLimitedCAPI_Init_VectorcallLimited(PyObject *module);
 

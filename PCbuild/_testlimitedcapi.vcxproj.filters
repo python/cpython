@@ -23,6 +23,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\testcapi_long.h" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
