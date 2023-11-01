@@ -3314,7 +3314,6 @@ def test_syntax_error_subclass_from_stdlib():
     """
     `ParseError` is a subclass of `SyntaxError`, but it is not a builtin:
 
-    >>> from xml.etree.ElementTree import ParseError
     >>> test_syntax_error_subclass_from_stdlib()
     Traceback (most recent call last):
       ...
