@@ -65,6 +65,31 @@ _PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
 }
 
 
+/* exceptions */
+
+static PyStatus
+_init_not_shareable_error_type(PyInterpreterState *interp)
+{
+    const char *name = "_interpreters.NotShareableError";
+    PyObject *base = PyExc_ValueError;
+    PyObject *ns = NULL;
+    PyObject *exctype = PyErr_NewException(name, base, ns);
+    if (exctype == NULL) {
+        PyErr_Clear();
+        return _PyStatus_ERR("could not initialize NotShareableError");
+    }
+
+    interp->xi.PyExc_NotShareableError = exctype;
+    return _PyStatus_OK();
+}
+
+static void
+_fini_not_shareable_error_type(PyInterpreterState *interp)
+{
+    Py_CLEAR(interp->xi.PyExc_NotShareableError);
+}
+
+
 /* defining cross-interpreter data */
 
 static inline void
@@ -1381,14 +1406,13 @@ _PyXI_Exit(_PyXI_session *session)
 PyStatus
 _PyXI_Init(PyInterpreterState *interp)
 {
-    // Initialize NotShareableError (a heap type).
-    PyObject *exctype = PyErr_NewException("_interpreters.NotShareableError",
-                                           PyExc_ValueError, NULL);
-    if (exctype == NULL) {
-        PyErr_Clear();
-        return _PyStatus_ERR("could not initialize NotShareableError");
+    PyStatus status;
+
+    // Initialize exceptions (heap types).
+    status = _init_not_shareable_error_type(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
-    interp->xi.PyExc_NotShareableError = exctype;
 
     return _PyStatus_OK();
 }
@@ -1396,6 +1420,6 @@ _PyXI_Init(PyInterpreterState *interp)
 void
 _PyXI_Fini(PyInterpreterState *interp)
 {
-    // Dealloc heap type exceptions.
-    Py_CLEAR(interp->xi.PyExc_NotShareableError);
+    // Finalize exceptions (heap types).
+    _fini_not_shareable_error_type(interp);
 }
