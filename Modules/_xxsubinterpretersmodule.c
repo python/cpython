@@ -307,7 +307,7 @@ _sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
     }
 
     if (exc != NULL) {
-        PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
+        PyObject *msgobj = PyObject_Str(exc);
         if (msgobj == NULL) {
             failure = "unable to format exception message";
             code = ERR_NO_MEMORY;
