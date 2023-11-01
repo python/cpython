@@ -412,7 +412,6 @@ PYTHON_OBJS=	\
 		Python/crossinterp.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
-		Python/executor.o \
 		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
@@ -1602,12 +1601,6 @@ Python/ceval.o: \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
-
-Python/executor.o: \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
-		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/ceval_macros.h \
-		$(srcdir)/Python/executor_cases.c.h
 
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h

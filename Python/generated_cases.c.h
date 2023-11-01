@@ -3,6 +3,11 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+#ifdef TIER_TWO
+    #error "This file is for Tier 1 only"
+#endif
+#define TIER_ONE 1
+
         TARGET(NOP) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
@@ -61,7 +66,7 @@
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 next_instr = this_instr;
             }
@@ -250,7 +255,7 @@
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -286,7 +291,7 @@
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -1190,7 +1195,7 @@
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1250,7 +1255,7 @@
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             Py_INCREF(retval);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1320,7 +1325,7 @@
             if (PyAsyncGen_CheckExact(aiter)) {
                 awaitable = type->tp_as_async->am_anext(aiter);
                 if (awaitable == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
             } else {
                 if (type->tp_as_async != NULL){
@@ -1330,7 +1335,7 @@
                 if (getter != NULL) {
                     next_iter = (*getter)(aiter);
                     if (next_iter == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
                 else {
@@ -1338,7 +1343,7 @@
                                   "'async for' requires an iterator with "
                                   "__anext__ method, got %.100s",
                                   type->tp_name);
-                    goto error;
+                    GOTO_ERROR(error);
                 }
 
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
@@ -1350,7 +1355,7 @@
                         Py_TYPE(next_iter)->tp_name);
 
                     Py_DECREF(next_iter);
-                    goto error;
+                    GOTO_ERROR(error);
                 } else {
                     Py_DECREF(next_iter);
                 }
@@ -1454,7 +1459,7 @@
                         JUMPBY(oparg);
                     }
                     else {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
                 Py_DECREF(v);
@@ -1502,7 +1507,7 @@
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -1575,7 +1580,7 @@
                 else {
                     assert(PyLong_Check(lasti));
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                    goto error;
+                    GOTO_ERROR(error);
                 }
             }
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1704,7 +1709,7 @@
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when deleting %R", name);
-                goto error;
+                GOTO_ERROR(error);
             }
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
@@ -1712,7 +1717,7 @@
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                           NAME_ERROR_MSG,
                                           name);
-                goto error;
+                GOTO_ERROR(error);
             }
             DISPATCH();
         }
@@ -1907,7 +1912,7 @@
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                               NAME_ERROR_MSG, name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
             DISPATCH();
         }
@@ -1938,7 +1943,7 @@
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
@@ -1946,17 +1951,17 @@
                     Py_INCREF(v);
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 else {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -1978,7 +1983,7 @@
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
@@ -1986,17 +1991,17 @@
                     Py_INCREF(v);
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 else {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -2164,7 +2169,7 @@
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             SETLOCAL(oparg, cell);
             DISPATCH();
@@ -2180,7 +2185,7 @@
             // Fortunately we don't need its superpower.
             if (oldobj == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                goto error;
+                GOTO_ERROR(error);
             }
             PyCell_SET(cell, NULL);
             Py_DECREF(oldobj);
@@ -2200,7 +2205,7 @@
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
                 Py_DECREF(class_dict);
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(class_dict);
             if (!value) {
@@ -2208,7 +2213,7 @@
                 value = PyCell_GET(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_INCREF(value);
             }
@@ -2363,7 +2368,7 @@
             values = stack_pointer - oparg;
             set = PySet_New(NULL);
             if (set == NULL)
-                goto error;
+                GOTO_ERROR(error);
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
@@ -2459,7 +2464,7 @@
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");
-                goto error;  // Pop the keys and values.
+                GOTO_ERROR(error);  // Pop the keys and values.
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
@@ -3432,13 +3437,16 @@
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
+            if (executor->execute == _PyUopExecute) {
+                current_executor = (_PyUOpExecutorObject *)executor;
+                GOTO_TIER_TWO();
+            }
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = tstate->current_frame;
                 goto resume_with_error;
             }
-            next_instr = frame->instr_ptr;
-            goto resume_frame;
+            goto enter_tier_one;
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
@@ -3673,7 +3681,7 @@
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 iter = iterable;
             }
@@ -3684,7 +3692,7 @@
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
                 if (iter == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_DECREF(iterable);
             }
@@ -3723,7 +3731,7 @@
                 if (next == NULL) {
                     if (_PyErr_Occurred(tstate)) {
                         if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                            goto error;
+                            GOTO_ERROR(error);
                         }
                         monitor_raise(tstate, frame, this_instr);
                         _PyErr_Clear(tstate);
@@ -3758,7 +3766,7 @@
             else {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -3941,7 +3949,7 @@
                                   "asynchronous context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
@@ -3953,7 +3961,7 @@
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
             res = _PyObject_CallNoArgs(enter);
@@ -3988,7 +3996,7 @@
                                   "context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
@@ -4000,7 +4008,7 @@
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
             res = _PyObject_CallNoArgs(enter);
@@ -4341,7 +4349,7 @@
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     if (new_frame == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     frame->return_offset = (uint16_t)(next_instr - this_instr);
                     DISPATCH_INLINED(new_frame);
@@ -4708,7 +4716,7 @@
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);
             if (self == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
@@ -4750,7 +4758,7 @@
                 PyErr_Format(PyExc_TypeError,
                     "__init__() should return None, not '%.200s'",
                     Py_TYPE(should_be_none)->tp_name);
-                goto error;
+                GOTO_ERROR(error);
             }
             STACK_SHRINK(1);
             DISPATCH();
@@ -4815,7 +4823,7 @@
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
+                GOTO_ERROR(error);
             }
             PyObject *arg = args[0];
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
@@ -4942,7 +4950,7 @@
             PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4981,7 +4989,7 @@
             PyObject *inst = args[0];
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -5053,7 +5061,7 @@
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
@@ -5141,7 +5149,7 @@
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
@@ -5263,7 +5271,7 @@
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 assert(next_instr - this_instr == 1);
                 frame->return_offset = 1;
@@ -5330,11 +5338,11 @@
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
                 if (tuple == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_SETREF(callargs, tuple);
             }
@@ -5348,7 +5356,7 @@
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
-                if (err) goto error;
+                if (err) GOTO_ERROR(error);
                 result = PyObject_Call(func, callargs, kwargs);
                 if (result == NULL) {
                     _Py_call_instrumentation_exc2(
@@ -5379,7 +5387,7 @@
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     assert(next_instr - this_instr == 1);
                     frame->return_offset = 1;
@@ -5412,7 +5420,7 @@
 
             Py_DECREF(codeobj);
             if (func_obj == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
 
             _PyFunction_SetVersion(
@@ -5467,7 +5475,7 @@
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             if (gen == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5765,3 +5773,5 @@
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
         }
+
+#undef TIER_ONE

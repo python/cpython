@@ -1,4 +1,4 @@
-// Macros and other things needed by ceval.c, executor.c, and bytecodes.c
+// Macros and other things needed by ceval.c, and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -80,7 +80,7 @@
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { \
+#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
@@ -112,11 +112,14 @@
         goto start_frame;                               \
     } while (0)
 
+// Use this instead of 'goto error' so Tier 2 can go to a different label
+#define GOTO_ERROR(LABEL) goto LABEL
+
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
-            goto error; \
+            GOTO_ERROR(error); \
         } \
     }
 
@@ -322,7 +325,7 @@ do { \
     }\
     else { \
         result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) goto error; \
+        if ((result) == NULL) GOTO_ERROR(error); \
         _Py_DECREF_NO_DEALLOC(left); \
         _Py_DECREF_NO_DEALLOC(right); \
     } \
@@ -374,27 +377,14 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
- * These need to treated differently by tier 1 and 2. */
-
-#if TIER_ONE
+ * These need to treated differently by tier 1 and 2.
+ * The Tier 1 version is here; Tier 2 is inlined in ceval.c. */
 
 #define LOAD_IP(OFFSET) do { \
         next_instr = frame->instr_ptr + (OFFSET); \
     } while (0)
 
-#define STORE_SP() \
-_PyFrame_SetStackPointer(frame, stack_pointer)
-
-#define LOAD_SP() \
-stack_pointer = _PyFrame_GetStackPointer(frame);
-
-#endif
-
-
-#if TIER_TWO
-
-#define LOAD_IP(UNUSED) \
-do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
+/* There's no STORE_IP(), it's inlined by the code generator. */
 
 #define STORE_SP() \
 _PyFrame_SetStackPointer(frame, stack_pointer)
@@ -402,8 +392,8 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 #define LOAD_SP() \
 stack_pointer = _PyFrame_GetStackPointer(frame);
 
-#endif
+/* Tier-switching macros. */
 
+#define GOTO_TIER_TWO() goto enter_tier_two;
 
-
-
+#define GOTO_TIER_ONE() goto exit_trace;

@@ -433,10 +433,10 @@ translate_bytecode_to_trace(
     int trace_stack_depth = 0;
 
 #ifdef Py_DEBUG
-    char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
-    if (uop_debug != NULL && *uop_debug >= '0') {
-        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    if (python_lltrace != NULL && *python_lltrace >= '0') {
+        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
     }
 #endif
 
@@ -881,10 +881,10 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     if (dest < last_instr) {
         int new_trace_length = move_stubs(trace, dest, last_instr, trace_length);
 #ifdef Py_DEBUG
-        char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
+        char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
         int lltrace = 0;
-        if (uop_debug != NULL && *uop_debug >= '0') {
-            lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+        if (python_lltrace != NULL && *python_lltrace >= '0') {
+            lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
         }
         if (lltrace >= 2) {
             printf("Optimized trace (length %d+%d = %d, saved %d):\n",
@@ -937,6 +937,15 @@ uop_optimize(
     _Py_ExecutorInit((_PyExecutorObject *)executor, &dependencies);
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
+}
+
+/* Dummy execute() function for Uop Executor.
+ * The actual implementation is inlined in ceval.c,
+ * in _PyEval_EvalFrameDefault(). */
+_PyInterpreterFrame *
+_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+{
+    Py_FatalError("Tier 2 is now inlined into Tier 1");
 }
 
 static void

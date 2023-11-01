@@ -118,17 +118,19 @@ class TestGeneratedCases(unittest.TestCase):
 
         with open(self.temp_output_filename) as temp_output:
             lines = temp_output.readlines()
-            while lines and lines[0].startswith("// "):
+            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
                 lines.pop(0)
+            while lines and lines[-1].startswith(("#", "\n")):
+                lines.pop(-1)
         actual = "".join(lines)
-        # if actual.rstrip() != expected.rstrip():
+        # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
         #     print("Expected:")
         #     print(expected)
         #     print("End")
 
-        self.assertEqual(actual.rstrip(), expected.rstrip())
+        self.assertEqual(actual.strip(), expected.strip())
 
     def test_inst_no_args(self):
         input = """
