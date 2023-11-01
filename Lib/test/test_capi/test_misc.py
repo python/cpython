@@ -2595,7 +2595,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("UNPACK_SEQUENCE", uops)
+        self.assertIn("_UNPACK_SEQUENCE", uops)
 
     def test_pop_jump_if_false(self):
         def testfunc(n):
