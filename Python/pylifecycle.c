@@ -1742,7 +1742,7 @@ finalize_interp_types(PyInterpreterState *interp)
 {
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
-    _PyExc_Fini(interp);
+    _PyExc_FiniTypes(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
     _PyFloat_FiniType(interp);
@@ -1779,7 +1779,7 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     _PyXI_Fini(tstate->interp);
-    _PyExc_ClearExceptionGroupType(tstate->interp);
+    _PyExc_FiniHeapObjects(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
 
     /* Clear interpreter state and all thread states */
@@ -1799,6 +1799,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyPerfTrampoline_Fini();
     }
 
+    _PyExc_Fini(tstate->interp);
     finalize_interp_types(tstate->interp);
 }
 

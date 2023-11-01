@@ -16,6 +16,8 @@ extern "C" {
 extern PyStatus _PyExc_InitState(PyInterpreterState *);
 extern PyStatus _PyExc_InitGlobalObjects(PyInterpreterState *);
 extern int _PyExc_InitTypes(PyInterpreterState *);
+extern void _PyExc_FiniHeapObjects(PyInterpreterState *);
+extern void _PyExc_FiniTypes(PyInterpreterState *);
 extern void _PyExc_Fini(PyInterpreterState *);
 
 
@@ -32,7 +34,6 @@ struct _Py_exc_state {
     PyTypeObject *ExceptionSnapshotType;
 };
 
-extern void _PyExc_ClearExceptionGroupType(PyInterpreterState *);
 
 /* other API */
 

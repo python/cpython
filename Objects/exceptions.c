@@ -3682,14 +3682,9 @@ _PyExc_InitTypes(PyInterpreterState *interp)
     return 0;
 }
 
-
-static void
-_exc_snapshot_clear_type(PyInterpreterState *interp);
-
-static void
+void
 _PyExc_FiniTypes(PyInterpreterState *interp)
 {
-    _exc_snapshot_clear_type(interp);
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
         _PyStaticType_Dealloc(interp, exc);
@@ -3806,11 +3801,16 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     return 0;
 }
 
+
+// _PyExc_FiniHeapObjects() must be called before the interpreter
+// state is cleared, since there are heap types to clean up.
+
 void
-_PyExc_ClearExceptionGroupType(PyInterpreterState *interp)
+_PyExc_FiniHeapObjects(PyInterpreterState *interp)
 {
-    struct _Py_exc_state *state = &interp->exc_state;
+    struct _Py_exc_state *state = get_exc_state(interp);
     Py_CLEAR(state->PyExc_ExceptionGroup);
+    Py_CLEAR(state->ExceptionSnapshotType);
 }
 
 void
@@ -3819,8 +3819,6 @@ _PyExc_Fini(PyInterpreterState *interp)
     struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
-
-    _PyExc_FiniTypes(interp);
 }
 
 int
@@ -3970,13 +3968,6 @@ _exc_snapshot_init_type(PyInterpreterState *interp)
     }
     state->ExceptionSnapshotType = cls;
     return 0;
-}
-
-static void
-_exc_snapshot_clear_type(PyInterpreterState *interp)
-{
-    struct _Py_exc_state *state = get_exc_state(interp);
-    Py_CLEAR(state->ExceptionSnapshotType);
 }
 
 PyTypeObject *
