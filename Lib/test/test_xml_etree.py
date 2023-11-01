@@ -25,7 +25,7 @@ from itertools import product, islice
 from test import support
 from test.support import os_helper
 from test.support import warnings_helper
-from test.support import findfile, gc_collect, swap_attr, swap_item, infinite_recursion
+from test.support import findfile, gc_collect, swap_attr, swap_item
 from test.support.import_helper import import_fresh_module
 from test.support.os_helper import TESTFN
 
@@ -2540,8 +2540,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         with swap_attr(e, 'tag', e):
             with self.assertRaises(RuntimeError):
-                with infinite_recursion():
-                    repr(e)  # Should not crash
+                repr(e)  # Should not crash
 
     def test_element_get_text(self):
         # Issue #27863

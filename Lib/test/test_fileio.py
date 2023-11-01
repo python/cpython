@@ -10,7 +10,7 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (
-    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi, infinite_recursion
+    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi
 )
 from test.support.os_helper import (
     TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
@@ -187,8 +187,7 @@ class AutoFileTests:
         # Issue #25455
         with swap_attr(self.f, 'name', self.f):
             with self.assertRaises(RuntimeError):
-                with infinite_recursion():
-                    repr(self.f)  # Should not crash
+                repr(self.f)  # Should not crash
 
     def testErrors(self):
         f = self.f
