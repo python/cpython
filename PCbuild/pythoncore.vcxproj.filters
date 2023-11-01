@@ -1253,9 +1253,6 @@
     <ClCompile Include="..\Python\errors.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\executor.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\fileutils.c">
       <Filter>Python</Filter>
     </ClCompile>
