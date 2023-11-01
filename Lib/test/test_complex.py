@@ -3,10 +3,16 @@ import sys
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support import import_helper
+from test.test_capi.test_getargs import (BadComplex, BadComplex2, Complex,
+                                         FloatSubclass, Float, BadFloat,
+                                         BadFloat2, ComplexSubclass)
 
 from random import random
 from math import atan2, isnan, copysign
 import operator
+
+_testcapi = import_helper.import_module('_testcapi')
 
 INF = float("inf")
 NAN = float("nan")
@@ -19,6 +25,8 @@ ZERO_DIVISION = (
     (1.0, 0+0j),
     (1, 0+0j),
 )
+
+NULL = None
 
 class ComplexTest(unittest.TestCase):
 
@@ -71,6 +79,15 @@ class ComplexTest(unittest.TestCase):
             else:
                 msg += ': zeros have different signs'
         self.fail(msg.format(x, y))
+
+    def assertComplexesAreIdentical(self, x, y):
+        """assert that complex numbers x and y are identical
+
+        I.e. they have identical real and imag components.
+
+        """
+        (self.assertFloatsAreIdentical(x.real, y.real)
+         and self.assertFloatsAreIdentical(x.imag, y.imag))
 
     def assertClose(self, x, y, eps=1e-9):
         """Return true iff complexes x and y "are close"."""
@@ -790,6 +807,115 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(complex(1, INF), 'F'), '1.000000+INFj')
         self.assertEqual(format(complex(INF, 1), 'F'), 'INF+1.000000j')
         self.assertEqual(format(complex(INF, -1), 'F'), 'INF-1.000000j')
+
+
+class CAPIComplexTest(ComplexTest):
+    def test_check(self):
+        # Test PyComplex_Check()
+        check = _testcapi.complex_check
+
+        self.assertTrue(check(1+2j))
+        self.assertTrue(check(ComplexSubclass(1+2j)))
+        self.assertFalse(check(Complex()))
+        self.assertFalse(check(3))
+        self.assertFalse(check([]))
+        self.assertFalse(check(object()))
+
+        # CRASHES check(NULL)
+
+    def test_checkexact(self):
+        # PyComplex_CheckExact()
+        checkexact = _testcapi.complex_checkexact
+
+        self.assertTrue(checkexact(1+2j))
+        self.assertFalse(checkexact(ComplexSubclass(1+2j)))
+        self.assertFalse(checkexact(Complex()))
+        self.assertFalse(checkexact(3))
+        self.assertFalse(checkexact([]))
+        self.assertFalse(checkexact(object()))
+
+        # CRASHES checkexact(NULL)
+
+    def test_fromccomplex(self):
+        # Test PyComplex_FromCComplex()
+        fromccomplex = _testcapi.complex_fromccomplex
+
+        self.assertComplexesAreIdentical(fromccomplex(1+2j), 1.0+2.0j)
+
+    def test_fromdoubles(self):
+        # Test PyComplex_FromDoubles()
+        fromdoubles = _testcapi.complex_fromdoubles
+
+        self.assertComplexesAreIdentical(fromdoubles(1.0, 2.0), 1.0+2.0j)
+
+    def test_realasdouble(self):
+        # Test PyComplex_RealAsDouble()
+        realasdouble = _testcapi.complex_realasdouble
+
+        self.assertFloatsAreIdentical(realasdouble(1+2j), 1.0)
+        self.assertFloatsAreIdentical(realasdouble(1), 1.0)
+        self.assertFloatsAreIdentical(realasdouble(-1), -1.0)
+        # Function doesn't support classes with __complex__ dunder, see #109598
+        #self.assertFloatsAreIdentical(realasdouble(Complex()), 4.25)
+        #self.assertFloatsAreIdentical(realasdouble(3.14), 3.14)
+        #self.assertFloatsAreIdentical(realasdouble(FloatSubclass(3.14)), 3.14)
+        #self.assertFloatsAreIdentical(realasdouble(Float()), 4.25)
+        #with self.assertWarns(DeprecationWarning):
+        #    self.assertFloatsAreIdentical(realasdouble(BadComplex2()), 4.25)
+        #with self.assertWarns(DeprecationWarning):
+        #    self.assertFloatsAreIdentical(realasdouble(BadFloat2()), 4.25)
+        self.assertRaises(TypeError, realasdouble, BadComplex())
+        self.assertRaises(TypeError, realasdouble, BadFloat())
+        self.assertRaises(TypeError, realasdouble, object())
+
+        # CRASHES realasdouble(NULL)
+
+    def test_imagasdouble(self):
+        # Test PyComplex_ImagAsDouble()
+        imagasdouble = _testcapi.complex_imagasdouble
+
+        self.assertFloatsAreIdentical(imagasdouble(1+2j), 2.0)
+        self.assertFloatsAreIdentical(imagasdouble(1), 0.0)
+        self.assertFloatsAreIdentical(imagasdouble(-1), 0.0)
+        # Function doesn't support classes with __complex__ dunder, see #109598
+        #self.assertFloatsAreIdentical(imagasdouble(Complex()), 0.5)
+        #self.assertFloatsAreIdentical(imagasdouble(3.14), 0.0)
+        #self.assertFloatsAreIdentical(imagasdouble(FloatSubclass(3.14)), 0.0)
+        #self.assertFloatsAreIdentical(imagasdouble(Float()), 0.0)
+        #with self.assertWarns(DeprecationWarning):
+        #    self.assertFloatsAreIdentical(imagasdouble(BadComplex2()), 0.5)
+        #with self.assertWarns(DeprecationWarning):
+        #    self.assertFloatsAreIdentical(imagasdouble(BadFloat2()), 0.0)
+        # Function returns 0.0 anyway, see #109598
+        #self.assertRaises(TypeError, imagasdouble, BadComplex())
+        #self.assertRaises(TypeError, imagasdouble, BadFloat())
+        #self.assertRaises(TypeError, imagasdouble, object())
+        self.assertFloatsAreIdentical(imagasdouble(BadComplex()), 0.0)
+        self.assertFloatsAreIdentical(imagasdouble(BadFloat()), 0.0)
+        self.assertFloatsAreIdentical(imagasdouble(object()), 0.0)
+
+        # CRASHES imagasdouble(NULL)
+
+    def test_asccomplex(self):
+        # Test PyComplex_AsCComplex()
+        asccomplex = _testcapi.complex_asccomplex
+
+        self.assertComplexesAreIdentical(asccomplex(1+2j), 1.0+2.0j)
+        self.assertComplexesAreIdentical(asccomplex(1), 1.0+0.0j)
+        self.assertComplexesAreIdentical(asccomplex(-1), -1.0+0.0j)
+        self.assertComplexesAreIdentical(asccomplex(Complex()), 4.25+0.5j)
+        self.assertComplexesAreIdentical(asccomplex(3.14), 3.14+0.0j)
+        self.assertComplexesAreIdentical(asccomplex(FloatSubclass(3.14)), 3.14+0.0j)
+        self.assertComplexesAreIdentical(asccomplex(Float()), 4.25+0.0j)
+        with self.assertWarns(DeprecationWarning):
+            self.assertComplexesAreIdentical(asccomplex(BadComplex2()), 4.25+0.5j)
+        with self.assertWarns(DeprecationWarning):
+            self.assertComplexesAreIdentical(asccomplex(BadFloat2()), 4.25+0.0j)
+        self.assertRaises(TypeError, asccomplex, BadComplex())
+        self.assertRaises(TypeError, asccomplex, BadFloat())
+        self.assertRaises(TypeError, asccomplex, object())
+
+        # CRASHES asccomplex(NULL)
 
 
 if __name__ == "__main__":
