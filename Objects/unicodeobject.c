@@ -189,6 +189,8 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define OVERALLOCATE_FACTOR 4
 #endif
 
+#define EMBED_NULL_UNKNOWN 2
+
 /* Forward declaration */
 static inline int
 _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
@@ -628,7 +630,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
 
-    if (_PyUnicode_STATE(ascii).embed_null != 2) {
+    if (_PyUnicode_STATE(ascii).embed_null != EMBED_NULL_UNKNOWN) {
         Py_ssize_t pos = findchar(PyUnicode_DATA(ascii),
                                   PyUnicode_KIND(ascii),
                                   PyUnicode_GET_LENGTH(ascii),
@@ -1266,7 +1268,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     _PyUnicode_STATE(unicode).compact = 1;
     _PyUnicode_STATE(unicode).ascii = is_ascii;
     _PyUnicode_STATE(unicode).statically_allocated = 0;
-    _PyUnicode_STATE(unicode).embed_null = 2;
+    _PyUnicode_STATE(unicode).embed_null = EMBED_NULL_UNKNOWN;
     if (is_ascii) {
         ((char*)data)[size] = 0;
     }
@@ -3876,7 +3878,7 @@ PyUnicode_AsUTF8(PyObject *unicode)
 
     // Cache to avoid calling O(n) strlen() operation at every
     // PyUnicode_AsUTF8() call on the same object.
-    if (_PyUnicode_STATE(unicode).embed_null == 2) {
+    if (_PyUnicode_STATE(unicode).embed_null == EMBED_NULL_UNKNOWN) {
         if (strlen(utf8) != (size_t)size) {
             _PyUnicode_STATE(unicode).embed_null = 1;
         }
@@ -14668,7 +14670,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
     _PyUnicode_STATE(self).compact = 0;
     _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
     _PyUnicode_STATE(self).statically_allocated = 0;
-    _PyUnicode_STATE(self).embed_null = 2;
+    _PyUnicode_STATE(self).embed_null = EMBED_NULL_UNKNOWN;
     _PyUnicode_UTF8_LENGTH(self) = 0;
     _PyUnicode_UTF8(self) = NULL;
     _PyUnicode_DATA_ANY(self) = NULL;
