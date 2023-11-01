@@ -850,6 +850,42 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
+.. classmethod:: Path.from_uri(uri)
+
+   Return a new path object from parsing a 'file' URI conforming to
+   :rfc:`8089`. For example::
+
+       >>> p = Path.from_uri('file:///etc/hosts')
+       PosixPath('/etc/hosts')
+
+   On Windows, DOS device and UNC paths may be parsed from URIs::
+
+       >>> p = Path.from_uri('file:///c:/windows')
+       WindowsPath('c:/windows')
+       >>> p = Path.from_uri('file://server/share')
+       WindowsPath('//server/share')
+
+   Several variant forms are supported::
+
+       >>> p = Path.from_uri('file:////server/share')
+       WindowsPath('//server/share')
+       >>> p = Path.from_uri('file://///server/share')
+       WindowsPath('//server/share')
+       >>> p = Path.from_uri('file:c:/windows')
+       WindowsPath('c:/windows')
+       >>> p = Path.from_uri('file:/c|/windows')
+       WindowsPath('c:/windows')
+
+   :exc:`ValueError` is raised if the URI does not start with ``file:``, or
+   the parsed path isn't absolute.
+
+   :func:`os.fsdecode` is used to decode percent-escaped byte sequences, and
+   so file URIs are not portable across machines with different
+   :ref:`filesystem encodings <filesystem-encoding>`.
+
+   .. versionadded:: 3.13
+
+
 .. method:: Path.stat(*, follow_symlinks=True)
 
    Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.

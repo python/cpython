@@ -17,6 +17,11 @@
 
 #include "clinic/bltinmodule.c.h"
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
+
+
 static PyObject*
 update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
 {

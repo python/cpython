@@ -1,6 +1,0 @@
-When regrtest reruns failed tests in verbose mode (``./python -m test
---rerun``), tests are now rerun in fresh worker processes rather than being
-executed in the main process. If a test does crash or is killed by a timeout,
-the main process can detect and handle the killed worker process. Tests are
-rerun in parallel if the ``-jN`` option is used to run tests in parallel.
-Patch by Victor Stinner.

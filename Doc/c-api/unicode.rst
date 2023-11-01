@@ -971,8 +971,8 @@ These are the UTF-8 codec APIs:
    returned buffer always has an extra null byte appended (not included in
    *size*), regardless of whether there are any other null code points.
 
-   In the case of an error, ``NULL`` is returned with an exception set and no
-   *size* is stored.
+   On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
+   return ``NULL``.
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
@@ -992,10 +992,18 @@ These are the UTF-8 codec APIs:
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
+   Raise an exception if the *unicode* string contains embedded null
+   characters. To accept embedded null characters and truncate on purpose
+   at the first null byte, ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be
+   used instead.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
       The return type is now ``const char *`` rather of ``char *``.
+
+   .. versionchanged:: 3.13
+      Raise an exception if the string contains embedded null characters.
 
 
 UTF-32 Codecs
@@ -1394,6 +1402,28 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
    This function returns ``-1`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
+
+
+.. c:function:: int PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *string, Py_ssize_t size)
+
+   Compare a Unicode object with a char buffer which is interpreted as
+   being UTF-8 or ASCII encoded and return true (``1``) if they are equal,
+   or false (``0``) otherwise.
+   If the Unicode object contains surrogate characters or
+   the C string is not valid UTF-8, false (``0``) is returned.
+
+   This function does not raise exceptions.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyUnicode_EqualToUTF8(PyObject *unicode, const char *string)
+
+   Similar to :c:func:`PyUnicode_EqualToUTF8AndSize`, but compute *string*
+   length using :c:func:`!strlen`.
+   If the Unicode object contains null characters, false (``0``) is returned.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, const char *string)

@@ -258,7 +258,7 @@ class MmapTests(unittest.TestCase):
                 try:
                     m = mmap.mmap(f.fileno(), mapsize, prot=prot)
                 except PermissionError:
-                    # on macOS 14, PROT_READ | PROT_WRITE is not allowed
+                    # on macOS 14, PROT_READ | PROT_EXEC is not allowed
                     pass
                 else:
                     self.assertRaises(TypeError, m.write, b"abcdef")

@@ -167,7 +167,7 @@ typedef struct {
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
-    uint64_t _co_instrumentation_version; /* current instrumentation version */  \
+    uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \

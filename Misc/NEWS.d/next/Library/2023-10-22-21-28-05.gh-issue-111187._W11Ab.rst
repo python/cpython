@@ -1,0 +1,1 @@
+Postpone removal version for locale.getdefaultlocale() to Python 3.15.

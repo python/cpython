@@ -161,7 +161,7 @@ class DemoWindow(object):
                               label='Help', underline=0)
         root['menu'] = self.mBar
 
-        pane = PanedWindow(orient=HORIZONTAL, sashwidth=5,
+        pane = PanedWindow(root, orient=HORIZONTAL, sashwidth=5,
                            sashrelief=SOLID, bg='#ddd')
         pane.add(self.makeTextFrame(pane))
         pane.add(self.makeGraphFrame(pane))

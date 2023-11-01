@@ -1383,7 +1383,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     else {
         RETURN_IF_ERROR(compiler_set_qualname(c));
     }
-    ADDOP_I(c, loc, RESUME, 0);
+    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = -1;
@@ -1552,7 +1552,7 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
     ADDOP_I(c, loc, YIELD_VALUE, 0);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-    ADDOP_I(c, loc, RESUME, await ? 3 : 2);
+    ADDOP_I(c, loc, RESUME, await ? RESUME_AFTER_AWAIT : RESUME_AFTER_YIELD_FROM);
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, fail);
@@ -4161,7 +4161,7 @@ addop_yield(struct compiler *c, location loc) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
-    ADDOP_I(c, loc, RESUME, 1);
+    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
     return SUCCESS;
 }
 

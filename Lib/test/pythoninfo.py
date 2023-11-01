@@ -239,6 +239,7 @@ def collect_os(info_add):
         'getresgid',
         'getresuid',
         'getuid',
+        'process_cpu_count',
         'uname',
     ):
         call_func(info_add, 'os.%s' % func, os, func)
@@ -543,6 +544,7 @@ def collect_sysconfig(info_add):
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
         'WITH_FREELISTS',
+        'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',
     ):
@@ -729,6 +731,7 @@ def collect_support(info_add):
         return
 
     attributes = (
+        'MS_WINDOWS',
         'has_fork_support',
         'has_socket_support',
         'has_strftime_extensions',
