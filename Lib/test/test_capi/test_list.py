@@ -2,7 +2,6 @@ import unittest
 import sys
 from test.support import import_helper
 from collections import UserList
-from itertools import combinations
 _testcapi = import_helper.import_module('_testcapi')
 
 NULL = None
