@@ -377,7 +377,7 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
- * These need to treated differently by tier 1 and 2. 
+ * These need to treated differently by tier 1 and 2.
  * The Tier 1 version is here; Tier 2 is inlined in ceval.c. */
 
 #define LOAD_IP(OFFSET) do { \
