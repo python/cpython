@@ -1,4 +1,4 @@
-// Macros and other things needed by ceval.c, executor.c, and bytecodes.c
+// Macros and other things needed by ceval.c, and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
