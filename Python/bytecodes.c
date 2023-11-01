@@ -669,8 +669,7 @@ dummy_func(
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            assert(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -1000,8 +999,8 @@ dummy_func(
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - this_instr);
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+                assert(next_instr - this_instr + oparg <= UINT16_MAX);
+                frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1040,8 +1039,8 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - this_instr);
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+            assert(next_instr - this_instr + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -2061,8 +2060,7 @@ dummy_func(
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
-            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2088,8 +2086,7 @@ dummy_func(
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
-            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2732,8 +2729,8 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - this_instr);
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(next_instr - this_instr + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -3046,8 +3043,7 @@ dummy_func(
                 if (new_frame == NULL) {
                     goto error;
                 }
-                assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - this_instr);
-                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -3202,8 +3198,7 @@ dummy_func(
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
-            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -3279,8 +3274,7 @@ dummy_func(
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
-            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             /* Link frames */
