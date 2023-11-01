@@ -132,12 +132,12 @@ list_setslice(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value;
     Py_ssize_t ilow, ihigh;
-    if ( !PyArg_ParseTuple(args, "OnnO", &obj, &ilow, &ihigh)){
+    if ( !PyArg_ParseTuple(args, "OnnO", &obj, &ilow, &ihigh, &value)){
         return NULL;
     }
     NULLABLE(obj);
     NULLABLE(value);
-    return PyList_SetSlice(obj, ilow, ihigh, Py_XNewRef(value));
+    RETURN_INT(PyList_SetSlice(obj, ilow, ihigh, Py_XNewRef(value)));
 
 }
 
@@ -184,7 +184,7 @@ static PyMethodDef test_methods[] = {
     {"list_astuple", list_astuple, METH_O},
     {NULL},
 
-    
+
 };
 
 int

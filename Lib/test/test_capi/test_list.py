@@ -190,3 +190,78 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, lst, 'a', '2')
 
         # CRASHES getslice(NULL, 0, 0)
+
+    def test_list_setslice(self):
+        # Test PyList_SetSlice()
+        def set_slice(lst, low, high, value):
+            lst = lst.copy()
+            self.assertEqual(_testcapi.list_setslice(lst, low, high, value), 0)
+            return lst
+
+        # insert items
+        self.assertEqual(set_slice([], 0, 0, list("abc")), list("abc"))
+        self.assertEqual(set_slice([], PY_SSIZE_T_MIN, PY_SSIZE_T_MIN, list("abc")), list("abc"))
+        self.assertEqual(set_slice([], PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, list("abc")), list("abc"))
+        lst = list("abc")
+        self.assertEqual(set_slice(lst, 0, 0, ["X"]), list("Xabc"))
+        self.assertEqual(set_slice(lst, 1, 1, list("XY")), list("aXYbc"))
+        self.assertEqual(set_slice(lst, len(lst), len(lst), ["X"]), list("abcX"))
+        # self.assertEqual(set_slice(lst, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, ["X"]), list("abcX"))
+
+        # replace items
+        lst = list("abc")
+        self.assertEqual(set_slice(lst, -100, 1, list("X")), list("Xbc"))
+        self.assertEqual(set_slice(lst, 1, 2, list("X")), list("aXc"))
+        self.assertEqual(set_slice(lst, 1, 3, list("XY")), list("aXY"))
+        self.assertEqual(set_slice(lst, 0, 3, list("XYZ")), list("XYZ"))
+
+        # delete items
+        lst = list("abcdef")
+        self.assertEqual(set_slice(lst, 0, len(lst), []), [])
+        self.assertEqual(set_slice(lst, -100, 100, []), [])
+        self.assertEqual(set_slice(lst, 1, 5, []), list("af"))
+        self.assertEqual(set_slice(lst, 3, len(lst), []), list("abc"))
+
+        # delete items with NULL
+        lst = list("abcdef")
+        self.assertEqual(set_slice(lst, 0, len(lst), NULL), [])
+        self.assertEqual(set_slice(lst, 3, len(lst), NULL), list("abc"))
+
+        # CRASHES PyList_SetSlice(NULL, 0, 0, ["x"])
+
+    def test_list_sort(self):
+        # Test PyList_Sort()
+        sort = _testcapi.list_sort
+        lst = [4, 6, 7, 3, 1, 5, 9, 2, 0, 8]
+        sort(lst)
+        self.assertEqual(lst, list(range(10)))
+
+        lst2 = ListSubclass([4, 6, 7, 3, 1, 5, 9, 2, 0, 8])
+        sort(lst2)
+        self.assertEqual(lst2, list(range(10)))
+
+        self.assertRaises(SystemError, sort, object())
+        self.assertRaises(SystemError, sort, NULL)
+
+
+    def test_list_reverse(self):
+        # Test PyList_Reverse()
+        reverse = _testcapi.list_reverse
+        def list_reverse(lst):
+            self.assertEqual(reverse(lst), 0)
+            return lst
+
+        self.assertEqual(list_reverse([]), [])
+        self.assertEqual(list_reverse([2, 5, 10]), [10, 5, 2])
+
+        self.assertRaises(SystemError, reverse, object())
+        self.assertRaises(SystemError, reverse, NULL)
+
+    def test_list_astuple(self):
+        # Test PyList_AsTuple()
+        astuple = _testcapi.list_astuple
+        self.assertEqual(astuple([]), ())
+        self.assertEqual(astuple([2, 5, 10]), (2, 5, 10))
+
+        self.assertRaises(SystemError, astuple, object())
+        self.assertRaises(SystemError, astuple, NULL)
