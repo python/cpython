@@ -25,20 +25,11 @@ complex_fromccomplex(PyObject *Py_UNUSED(module), PyObject *obj)
 }
 
 static PyObject *
-complex_fromdoubles(PyObject *Py_UNUSED(module), PyObject *const *args,
-                    Py_ssize_t nargs)
+complex_fromdoubles(PyObject *Py_UNUSED(module), PyObject *args)
 {
     double real, imag;
 
-    assert(nargs == 2);
-
-    real = PyFloat_AsDouble(args[0]);
-    if (real == -1. && PyErr_Occurred()) {
-        return NULL;
-    }
-
-    imag = PyFloat_AsDouble(args[1]);
-    if (imag == -1. && PyErr_Occurred()) {
+    if (!PyArg_ParseTuple(args, "dd", &real, &imag)) {
         return NULL;
     }
 
@@ -95,7 +86,7 @@ static PyMethodDef test_methods[] = {
     {"complex_check", complex_check, METH_O},
     {"complex_checkexact", complex_checkexact, METH_O},
     {"complex_fromccomplex", complex_fromccomplex, METH_O},
-    {"complex_fromdoubles", _PyCFunction_CAST(complex_fromdoubles), METH_FASTCALL},
+    {"complex_fromdoubles", complex_fromdoubles, METH_VARARGS},
     {"complex_realasdouble", complex_realasdouble, METH_O},
     {"complex_imagasdouble", complex_imagasdouble, METH_O},
     {"complex_asccomplex", complex_asccomplex, METH_O},
