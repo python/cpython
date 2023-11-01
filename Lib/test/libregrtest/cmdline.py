@@ -494,10 +494,16 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
     if ns.verbose:
         ns.header = True
-    if ns.huntrleaks and ns.verbose3:
+    # When -jN option is used, a worker process does not use --verbose3
+    # and so -R 3:3 -jN --verbose3 just works as expected: there is no false
+    # alarm about memory leak.
+    if ns.huntrleaks and ns.verbose3 and ns.use_mp is None:
         ns.verbose3 = False
+        # run_single_test() replaces sys.stdout with io.StringIO if verbose3
+        # is true. In this case, huntrleaks sees an write into StringIO as
+        # a memory leak, whereas it is not (gh-71290).
         print("WARNING: Disable --verbose3 because it's incompatible with "
-              "--huntrleaks: see http://bugs.python.org/issue27103",
+              "--huntrleaks without -jN option",
               file=sys.stderr)
     if ns.forever:
         # --forever implies --failfast
