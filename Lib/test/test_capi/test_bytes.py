@@ -53,9 +53,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'abc\0def'), b'abc\0def')
         self.assertEqual(fromstringandsize(b'', 0), b'')
         self.assertEqual(fromstringandsize(NULL, 0), b'')
+        self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
+        self.assertRaises(MemoryError, fromstringandsize, NULL, sys.maxsize)
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
-        # TODO: Test PyBytes_FromStringAndSize(NULL, size) for size != 0
+        self.assertRaises(SystemError, fromstringandsize, NULL, -1)
 
     def test_fromstring(self):
         # Test PyBytes_FromString()
@@ -93,7 +95,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES size(NULL)
 
     def test_asstring(self):
-        """Test PyUnicode_AsString()"""
+        """Test PyBytes_AsString()"""
         asstring = _testcapi.bytes_asstring
 
         self.assertEqual(asstring(b'abc', 4), b'abc\0')
@@ -104,7 +106,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES asstring(NULL, 0)
 
     def test_asstringandsize(self):
-        """Test PyUnicode_AsStringAndSize()"""
+        """Test PyBytes_AsStringAndSize()"""
         asstringandsize = _testcapi.bytes_asstringandsize
         asstringandsize_null = _testcapi.bytes_asstringandsize_null
 
