@@ -334,6 +334,11 @@ Deprecated
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
+* :mod:`asyncio`:
+
+  * :func:`asyncio.set_event_loop_policy` will be removed along with the
+    rest of the asyncio policy system in Python 3.15 or later.
+
 * Passing more than one positional argument to :func:`sqlite3.connect` and the
   :class:`sqlite3.Connection` constructor is deprecated. The remaining
   parameters will become keyword-only in Python 3.15.
@@ -507,9 +512,6 @@ Pending Removal in Python 3.15
   but they are just ignored. Python version does not allow any arguments.
   All arguments will be removed from :func:`threading.RLock` in Python 3.15.
   (Contributed by Nikita Sobolev in :gh:`102029`.)
-
-* :func:`asyncio.set_event_loop_policy` will be removed along with the
-  rest of the asyncio policy system in Python 3.15 or later.
 
 Pending Removal in Python 3.16
 ------------------------------
