@@ -99,7 +99,7 @@ class CAPITest(unittest.TestCase):
         setitem = _testcapi.list_setitem
         lst = [1, 2, 3]
         setitem(lst, 1, 10)
-        self.assertEqual(lst[1], 10)
+        self.assertEqual(lst, [1, 10, 3])
         self.assertRaises(IndexError, setitem, [1], -1, 5)
         self.assertRaises(TypeError, setitem, lst, 1.5, 10)
         self.assertRaises(TypeError, setitem, 23, 'a', 5)
