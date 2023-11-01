@@ -182,13 +182,13 @@ jobs:
     name: 'Windows'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-build-windows.yml
+    uses: ./.github/workflows/reusable-windows.yml
 
   build_windows_free_threaded:
     name: 'Windows (free-threaded)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
-    uses: ./.github/workflows/reusable-build-windows.yml
+    uses: ./.github/workflows/reusable-windows.yml
     with:
       free-threaded: true
 
@@ -196,7 +196,7 @@ jobs:
     name: 'macOS'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-build-macos.yml
+    uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
 
@@ -204,7 +204,7 @@ jobs:
     name: 'macOS (free-threaded)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
-    uses: ./.github/workflows/reusable-build-macos.yml
+    uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threaded: true
@@ -213,7 +213,7 @@ jobs:
     name: 'Ubuntu'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-build-ubuntu.yml
+    uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       options: |
@@ -226,7 +226,7 @@ jobs:
     name: 'Ubuntu (free-threaded)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
-    uses: ./.github/workflows/reusable-build-ubuntu.yml
+    uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       options: |

@@ -778,6 +778,7 @@ class TestIsShareable(TestBase):
                 'spam',
                 10,
                 -10,
+                100.0,
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -805,7 +806,6 @@ class TestIsShareable(TestBase):
                 object,
                 object(),
                 Exception(),
-                100.0,
                 # user-defined types and objects
                 Cheese,
                 Cheese('Wensleydale'),
