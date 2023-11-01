@@ -958,7 +958,7 @@ enter_tier_two:
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
-        goto deoptimize_tier_two;\
+        goto deoptimize;\
     }
 
 #ifdef Py_STATS
@@ -1046,7 +1046,7 @@ error_tier_two:
     Py_DECREF(self);
     goto resume_with_error;
 
-deoptimize_tier_two:
+deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
