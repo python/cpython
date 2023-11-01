@@ -983,7 +983,9 @@ enter_tier_two:
 
     OPT_STAT_INC(traces_executed);
     _PyUOpInstruction *next_uop = self->trace;
-    uint64_t operand;
+#ifdef Py_DEBUG
+    uint64_t operand;  // Used by several DPRINTF() calls
+#endif
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif
@@ -991,7 +993,9 @@ enter_tier_two:
     for (;;) {
         opcode = next_uop->opcode;
         oparg = next_uop->oparg;
+#ifdef Py_DEBUG
         operand = next_uop->operand;
+#endif
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
                 (int)(next_uop - self->trace),
