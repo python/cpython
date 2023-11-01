@@ -188,13 +188,8 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             _PyArg_BadArgument("open", "argument 'mode'", "str", args[1]);
             goto exit;
         }
-        Py_ssize_t mode_length;
-        mode = PyUnicode_AsUTF8AndSize(args[1], &mode_length);
+        mode = PyUnicode_AsUTF8(args[1]);
         if (mode == NULL) {
-            goto exit;
-        }
-        if (strlen(mode) != (size_t)mode_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -215,13 +210,8 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             encoding = NULL;
         }
         else if (PyUnicode_Check(args[3])) {
-            Py_ssize_t encoding_length;
-            encoding = PyUnicode_AsUTF8AndSize(args[3], &encoding_length);
+            encoding = PyUnicode_AsUTF8(args[3]);
             if (encoding == NULL) {
-                goto exit;
-            }
-            if (strlen(encoding) != (size_t)encoding_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -238,13 +228,8 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             errors = NULL;
         }
         else if (PyUnicode_Check(args[4])) {
-            Py_ssize_t errors_length;
-            errors = PyUnicode_AsUTF8AndSize(args[4], &errors_length);
+            errors = PyUnicode_AsUTF8(args[4]);
             if (errors == NULL) {
-                goto exit;
-            }
-            if (strlen(errors) != (size_t)errors_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -261,13 +246,8 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             newline = NULL;
         }
         else if (PyUnicode_Check(args[5])) {
-            Py_ssize_t newline_length;
-            newline = PyUnicode_AsUTF8AndSize(args[5], &newline_length);
+            newline = PyUnicode_AsUTF8(args[5]);
             if (newline == NULL) {
-                goto exit;
-            }
-            if (strlen(newline) != (size_t)newline_length) {
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -404,4 +384,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d60f4e778a600a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=feb173d5f2bfb98a input=a9049054013a1b77]*/
