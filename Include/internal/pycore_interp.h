@@ -153,8 +153,8 @@ struct _is {
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry xidregistry;
+    /* cross-interpreter data and utils */
+    struct _xi_state xi;
 
 #ifdef HAVE_FORK
     PyObject *before_forkers;
