@@ -633,7 +633,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                                   PyUnicode_KIND(ascii),
                                   PyUnicode_GET_LENGTH(ascii),
                                   0, 1);
-        assert(_PyUnicode_STATE(ascii).embed_null == (pos >= 0));
+        CHECK(_PyUnicode_STATE(ascii).embed_null == (pos >= 0));
     }
 
     return 1;
