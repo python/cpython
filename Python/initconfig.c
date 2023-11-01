@@ -290,7 +290,7 @@ static const char usage_envvars[] =
 "   and end column offset) to every instruction in code objects. This is useful \n"
 "   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n"
-"PYTHON_FROZEN_MODULES     : if this variable is set, it determines whether or not \n"
+"PYTHON_FROZEN_MODULES   : if this variable is set, it determines whether or not \n"
 "   frozen modules should be used. The default is \"on\" (or \"off\" if you are \n"
 "   running a local build).\n"
 "These variables have equivalent command-line parameters (see --help for details):\n"
