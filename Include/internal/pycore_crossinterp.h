@@ -126,6 +126,8 @@ struct _xidregitem {
 };
 
 struct _xidregistry {
+    int global;  /* builtin types or heap types */
+    int initialized;
     PyThread_type_lock mutex;
     struct _xidregitem *head;
 };

@@ -358,6 +358,28 @@ _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
    alternative would be to add a tp_* slot for a class's
    crossinterpdatafunc. It would be simpler and more efficient. */
 
+static inline struct _xidregistry *
+_get_global_xidregistry(_PyRuntimeState *runtime)
+{
+    return &runtime->xi.registry;
+}
+
+static inline struct _xidregistry *
+_get_xidregistry(PyInterpreterState *interp)
+{
+    return &interp->xi.registry;
+}
+
+static inline struct _xidregistry *
+_get_xidregistry_for_type(PyInterpreterState *interp, PyTypeObject *cls)
+{
+    struct _xidregistry *registry = _get_global_xidregistry(interp->runtime);
+    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        registry = _get_xidregistry(interp);
+    }
+    return registry;
+}
+
 static int
 _xidregistry_add_type(struct _xidregistry *xidregistry,
                       PyTypeObject *cls, crossinterpdatafunc getdata)
@@ -409,10 +431,8 @@ _xidregistry_remove_entry(struct _xidregistry *xidregistry,
     return next;
 }
 
-// This is used in pystate.c (for now).
-// XXX Call this is _PyXI_Fini() instead of _PyRuntimeState_Fini()?
-void
-_Py_xidregistry_clear(struct _xidregistry *xidregistry)
+static void
+_xidregistry_clear(struct _xidregistry *xidregistry)
 {
     struct _xidregitem *cur = xidregistry->head;
     xidregistry->head = NULL;
@@ -421,6 +441,22 @@ _Py_xidregistry_clear(struct _xidregistry *xidregistry)
         Py_XDECREF(cur->weakref);
         PyMem_RawFree(cur);
         cur = next;
+    }
+}
+
+static void
+_xidregistry_lock(struct _xidregistry *registry)
+{
+    if (registry->mutex != NULL) {
+        PyThread_acquire_lock(registry->mutex, WAIT_LOCK);
+    }
+}
+
+static void
+_xidregistry_unlock(struct _xidregistry *registry)
+{
+    if (registry->mutex != NULL) {
+        PyThread_release_lock(registry->mutex);
     }
 }
 
@@ -450,30 +486,6 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
     return NULL;
 }
 
-static inline struct _xidregistry *
-_get_xidregistry(PyInterpreterState *interp, PyTypeObject *cls)
-{
-    struct _xidregistry *xidregistry = &interp->runtime->xi.registry;
-    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        assert(interp->xi.registry.mutex == xidregistry->mutex);
-        xidregistry = &interp->xi.registry;
-    }
-    return xidregistry;
-}
-
-static void _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry);
-
-static inline void
-_ensure_builtins_xid(PyInterpreterState *interp, struct _xidregistry *xidregistry)
-{
-    if (xidregistry != &interp->xi.registry) {
-        assert(xidregistry == &interp->runtime->xi.registry);
-        if (xidregistry->head == NULL) {
-            _register_builtins_for_crossinterpreter_data(xidregistry);
-        }
-    }
-}
-
 int
 _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                       crossinterpdatafunc getdata)
@@ -489,11 +501,8 @@ _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
 
     int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
-    PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
-
-    // XXX Do this once in _PyXI_Init()?
-    _ensure_builtins_xid(interp, xidregistry);
+    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    _xidregistry_lock(xidregistry);
 
     struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
@@ -505,7 +514,7 @@ _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
     res = _xidregistry_add_type(xidregistry, cls, getdata);
 
 finally:
-    PyThread_release_lock(xidregistry->mutex);
+    _xidregistry_unlock(xidregistry);
     return res;
 }
 
@@ -514,8 +523,8 @@ _PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
 {
     int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
-    PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
+    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    _xidregistry_lock(xidregistry);
 
     struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
@@ -527,7 +536,7 @@ _PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
         res = 1;
     }
 
-    PyThread_release_lock(xidregistry->mutex);
+    _xidregistry_unlock(xidregistry);
     return res;
 }
 
@@ -536,15 +545,13 @@ _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 {
     PyTypeObject *cls = Py_TYPE(obj);
 
-    struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
-    PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
-
-    _ensure_builtins_xid(interp, xidregistry);
+    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
+    _xidregistry_lock(xidregistry);
 
     struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
     crossinterpdatafunc func = matched != NULL ? matched->getdata : NULL;
 
-    PyThread_release_lock(xidregistry->mutex);
+    _xidregistry_unlock(xidregistry);
     return func;
 }
 
@@ -679,6 +686,55 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
         Py_FatalError("could not register str for cross-interpreter sharing");
     }
 }
+
+/* registry lifecycle */
+
+static void
+_xidregistry_init(struct _xidregistry *registry)
+{
+    if (registry->initialized) {
+        return;
+    }
+    registry->initialized = 1;
+
+    if (registry->global) {
+        // We manage the mutex lifecycle in pystate.c.
+        assert(registry->mutex != NULL);
+
+        // Registering the builtins is cheap so we don't bother doing it lazily.
+        assert(registry->head == NULL);
+        _register_builtins_for_crossinterpreter_data(registry);
+    }
+    else {
+        // Within an interpreter we rely on the GIL instead of a separate lock.
+        assert(registry->mutex == NULL);
+
+        // There's nothing else to initialize.
+    }
+}
+
+static void
+_xidregistry_fini(struct _xidregistry *registry)
+{
+    if (!registry->initialized) {
+        return;
+    }
+    registry->initialized = 0;
+
+    _xidregistry_clear(registry);
+
+    if (registry->global) {
+        // We manage the mutex lifecycle in pystate.c.
+        assert(registry->mutex != NULL);
+    }
+    else {
+        // There's nothing else to finalize.
+
+        // Within an interpreter we rely on the GIL instead of a separate lock.
+        assert(registry->mutex == NULL);
+    }
+}
+
 
 /*************************/
 /* convenience utilities */
@@ -1408,7 +1464,11 @@ _PyXI_Init(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    // XXX Initialize xidregistry.
+    // Initialize the XID registry.
+    if (_Py_IsMainInterpreter(interp)) {
+        _xidregistry_init(_get_global_xidregistry(interp->runtime));
+    }
+    _xidregistry_init(_get_xidregistry(interp));
 
     // Initialize exceptions (heap types).
     status = _init_not_shareable_error_type(interp);
@@ -1428,5 +1488,9 @@ _PyXI_Fini(PyInterpreterState *interp)
     // Finalize exceptions (heap types).
     _fini_not_shareable_error_type(interp);
 
-    // XXX Clear xidregistry.
+    // Finalize the XID registry.
+    _xidregistry_fini(_get_xidregistry(interp));
+    if (_Py_IsMainInterpreter(interp)) {
+        _xidregistry_fini(_get_global_xidregistry(interp->runtime));
+    }
 }
