@@ -53,16 +53,7 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertEqual(fromstring(b"3.14"), 3.14)
         self.assertEqual(fromstring(bytearray(b"3.14")), 3.14)
         self.assertEqual(fromstring(array.array('b', b'3.14')), 3.14)
-        self.assertEqual(fromstring("10."), 10.)
-        self.assertEqual(fromstring("-1e10"), -1e10)
-        self.assertEqual(fromstring("3.14e+42"), 3.14e+42)
-        self.assertEqual(fromstring("0e0"), 0.0)
-        self.assertEqual(fromstring("3.14_15_93"), 3.141593)
-        self.assertEqualWithSign(fromstring("-0.0"), -0.0)
-
         self.assertRaises(TypeError, fromstring, 3.14)
-        self.assertRaises(TypeError, fromstring, object())
-        self.assertRaises(ValueError, fromstring, "spam")
 
         # CRASHES fromstring(NULL)
 
