@@ -205,6 +205,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
 static inline int unicode_is_finalizing(void);
 static int unicode_is_singleton(PyObject *unicode);
 #endif
+static int unicode_fill_utf8(PyObject *unicode);
 
 
 // Return a reference to the immortal empty string singleton.
@@ -3813,10 +3814,8 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 }
 
 
-static int unicode_fill_utf8(PyObject *unicode);
-
-const char *
-PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
+static const char *
+unicode_as_utf8(PyObject *unicode, Py_ssize_t *psize, int check_embed_null)
 {
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
@@ -3826,31 +3825,47 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
         return NULL;
     }
 
-    if (PyUnicode_UTF8(unicode) == NULL) {
+    const char *utf8 = PyUnicode_UTF8(unicode);
+    if (utf8 == NULL) {
         if (unicode_fill_utf8(unicode) == -1) {
             if (psize) {
                 *psize = -1;
             }
             return NULL;
         }
+        utf8 = PyUnicode_UTF8(unicode);
     }
 
     if (psize) {
         *psize = PyUnicode_UTF8_LENGTH(unicode);
     }
+
+    if (check_embed_null) {
+        if (strlen(utf8) != (size_t)PyUnicode_UTF8_LENGTH(unicode)) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return NULL;
+        }
+    }
+
     return PyUnicode_UTF8(unicode);
 }
 
-const char *
+const char*
+PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
+{
+    return unicode_as_utf8(unicode, psize, psize == NULL);
+}
+
+const char*
 PyUnicode_AsUTF8(PyObject *unicode)
 {
-    Py_ssize_t size;
-    const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &size);
-    if (utf8 != NULL && strlen(utf8) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
-    return utf8;
+    return unicode_as_utf8(unicode, NULL, 1);
+}
+
+const char*
+PyUnicode_AsUTF8Unsafe(PyObject *unicode)
+{
+    return unicode_as_utf8(unicode, NULL, 0);
 }
 
 /*

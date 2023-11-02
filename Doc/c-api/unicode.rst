@@ -971,6 +971,12 @@ These are the UTF-8 codec APIs:
    returned buffer always has an extra null byte appended (not included in
    *size*), regardless of whether there are any other null code points.
 
+   If *size* is NULL and the *unicode* string contains embedded null
+   characters, raise an exception. To accept embedded null characters and
+   truncate on purpose at the first null byte, :c:func:`PyUnicode_AsUTF8Unsafe`
+   and :c:func:`PyUnicode_AsUTF8AndSize(unicode, &size)
+   <PyUnicode_AsUTF8AndSize>` can be used instead.
+
    On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
    return ``NULL``.
 
@@ -987,15 +993,21 @@ These are the UTF-8 codec APIs:
    .. versionchanged:: 3.10
       This function is a part of the :ref:`limited API <limited-c-api>`.
 
+   .. versionchanged:: 3.13
+      Raise an exception if *size* is NULL and the string contains embedded
+      null characters.
+
 
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
 
-   As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
+   Similar to :c:func:`PyUnicode_AsUTF8AndSize(unicode, NULL)
+   <PyUnicode_AsUTF8AndSize>`, but does not store the size.
 
    Raise an exception if the *unicode* string contains embedded null
-   characters. To accept embedded null characters and truncate on purpose
-   at the first null byte, ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be
-   used instead.
+   characters. To accept embedded null characters and truncate on purpose at
+   the first null byte, :c:func:`PyUnicode_AsUTF8Unsafe` and
+   :c:func:`PyUnicode_AsUTF8AndSize(unicode, &size) <PyUnicode_AsUTF8AndSize>`
+   can be used instead.
 
    .. versionadded:: 3.3
 
@@ -1004,6 +1016,16 @@ These are the UTF-8 codec APIs:
 
    .. versionchanged:: 3.13
       Raise an exception if the string contains embedded null characters.
+
+.. c:function:: const char* PyUnicode_AsUTF8Unsafe(PyObject *unicode)
+
+   Similar to :c:func:`PyUnicode_AsUTF8`, but do not raise an exception if the
+   string contains embedded null characters.
+
+   This function can be used to truncate a string on purpose at the first null
+   character.
+
+   .. versionchanged:: 3.13
 
 
 UTF-32 Codecs

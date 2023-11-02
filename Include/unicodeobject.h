@@ -451,7 +451,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
 // This function caches the UTF-8 encoded string in the Unicode object
 // and subsequent calls will return the same string. The memory is released
 // when the Unicode object is deallocated.
-PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
+PyAPI_FUNC(const char*) PyUnicode_AsUTF8(PyObject *unicode);
+
+// Similar to PyUnicode_AsUTF8(), but do not raise an exception if the string
+// contains embedded null characters.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(const char*) PyUnicode_AsUTF8Unsafe(PyObject *unicode);
+#endif
 
 // Returns a pointer to the UTF-8 encoding of the
 // Unicode object unicode and the size of the encoded representation

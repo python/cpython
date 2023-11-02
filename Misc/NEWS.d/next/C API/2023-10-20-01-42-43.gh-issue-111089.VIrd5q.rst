@@ -1,2 +1,4 @@
-The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the
-string contains embedded null characters. Patch by Victor Stinner.
+The :c:func:`PyUnicode_AsUTF8` and
+:c:func:`PyUnicode_AsUTF8AndSize(unicode, NULL) <PyUnicode_AsUTF8AndSize>`
+functions now raise an exception if the string contains embedded null
+characters. Patch by Victor Stinner.
