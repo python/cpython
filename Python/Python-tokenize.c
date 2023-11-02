@@ -4,7 +4,6 @@
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
-#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
 
