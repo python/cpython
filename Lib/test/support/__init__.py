@@ -796,7 +796,10 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
-_header = 'nP'
+if sysconfig.get_config_var('Py_NOGIL'):
+    _header = 'PHBBInP'
+else:
+    _header = 'nP'
 _align = '0n'
 _vheader = _header + 'n'
 
@@ -1831,6 +1834,11 @@ def with_pymalloc():
     return _testcapi.WITH_PYMALLOC
 
 
+def with_mimalloc():
+    import _testcapi
+    return _testcapi.WITH_MIMALLOC
+
+
 class _ALWAYS_EQ:
     """
     Object that is equal to anything.
@@ -2347,8 +2355,15 @@ def adjust_int_max_str_digits(max_digits):
 #For recursion tests, easily exceeds default recursion limit
 EXCEEDS_RECURSION_LIMIT = 5000
 
-# The default C recursion limit (from Include/cpython/pystate.h).
-Py_C_RECURSION_LIMIT = 1500
+def _get_c_recursion_limit():
+    try:
+        import _testcapi
+        return _testcapi.Py_C_RECURSION_LIMIT
+    except (ImportError, AttributeError):
+        return 1500  #  (from Include/cpython/pystate.h)
+
+# The default C recursion limit.
+Py_C_RECURSION_LIMIT = _get_c_recursion_limit()
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
