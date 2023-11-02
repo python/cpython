@@ -1501,7 +1501,9 @@
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            gen->gi_frame_state = FRAME_SUSPENDED;
+            assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
+            assert(oparg == 0 || oparg == 1);
+            gen->gi_frame_state = FRAME_SUSPENDED + oparg;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
@@ -1532,7 +1534,9 @@
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            gen->gi_frame_state = FRAME_SUSPENDED;
+            assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
+            assert(oparg == 0 || oparg == 1);
+            gen->gi_frame_state = FRAME_SUSPENDED + oparg;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
@@ -3422,12 +3426,12 @@
                     this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
                 else {
-                    int backoff = counter &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                    if (backoff < 16 - OPTIMIZER_BITS_IN_COUNTER) {
+                    int backoff = counter & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
                         backoff++;
                     }
-                    counter = 1 + backoff - (1<<(backoff+OPTIMIZER_BITS_IN_COUNTER));
-                    this_instr[1].cache = (uint16_t)counter;
+                    int count = -(1 << backoff);
+                    this_instr[1].cache = (uint16_t)((count << OPTIMIZER_BITS_IN_COUNTER) | backoff);
                 }
             }
             #endif  /* ENABLE_SPECIALIZATION */
