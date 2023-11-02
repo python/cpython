@@ -322,6 +322,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(certfile)
         STRUCT_FOR_ID(check_same_thread)
         STRUCT_FOR_ID(clear)
+        STRUCT_FOR_ID(clk_id)
         STRUCT_FOR_ID(close)
         STRUCT_FOR_ID(closed)
         STRUCT_FOR_ID(closefd)
