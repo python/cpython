@@ -755,13 +755,12 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
     shared->len = PyTuple_GET_SIZE(obj);
     shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
     if (shared->data == NULL) {
-        // Set no memory exception?
+        PyErr_Format(PyExc_MemoryError, "not enough memory");
         return -1;
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         shared->data[i] = _PyCrossInterpreterData_New();
-        // TODO: Where does this field get free'ed?
         PyObject *item = PyTuple_GET_ITEM(obj, i);
         if (_PyObject_GetCrossInterpreterData(item, shared->data[i]) != 0) {
             return -1;
