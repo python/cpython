@@ -829,7 +829,7 @@ PyType_Modified(PyTypeObject *type)
                 PyType_WatchCallback cb = interp->type_watchers[i];
                 if (cb && (cb(type) < 0)) {
                     PyErr_FormatUnraisable(
-                        "Exception ignored in watcher callback #%d for %R",
+                        "Exception ignored in type watcher callback #%d for %R",
                         i, type);
                 }
             }
