@@ -139,20 +139,12 @@ class Analyzer:
             match thing:
                 case parsing.InstDef(name=name):
                     macro: parsing.Macro | None = None
-                    if thing.kind == "inst" and not thing.override:
+                    if thing.kind == "inst":
                         macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
-                        if not thing.override:
-                            raise psr.make_syntax_error(
-                                f"Duplicate definition of '{name}' @ {thing.context} "
-                                f"previous definition @ {self.instrs[name].inst.context}",
-                                thing_first_token,
-                            )
-                        self.everything[instrs_idx[name]] = thing
-                    if name not in self.instrs and thing.override:
                         raise psr.make_syntax_error(
-                            f"Definition of '{name}' @ {thing.context} is supposed to be "
-                            "an override but no previous definition exists.",
+                            f"Duplicate definition of '{name}' @ {thing.context} "
+                            f"previous definition @ {self.instrs[name].inst.context}",
                             thing_first_token,
                         )
                     self.instrs[name] = Instruction(thing)

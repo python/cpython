@@ -666,12 +666,9 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-    def test_override_inst(self):
+    def test_annotated_inst(self):
         input = """
-        inst(OP, (--)) {
-            spam();
-        }
-        override inst(OP, (--)) {
+        annotation inst(OP, (--)) {
             ham();
         }
         """
@@ -686,22 +683,19 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-    def test_override_op(self):
+    def test_annotated_op(self):
         input = """
-        op(OP, (--)) {
+        annotation op(OP, (--)) {
             spam();
         }
         macro(M) = OP;
-        override op(OP, (--)) {
-            ham();
-        }
         """
         output = """
         TARGET(M) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
-            ham();
+            spam();
             DISPATCH();
         }
         """
