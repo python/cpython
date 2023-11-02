@@ -738,6 +738,7 @@ pycore_init_types(PyInterpreterState *interp)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
     return _PyStatus_OK();
 }
 
@@ -850,6 +851,11 @@ pycore_interp_init(PyThreadState *tstate)
     }
 
     status = pycore_init_builtins(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    status = _PyXI_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -1229,7 +1235,7 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
-        char *envvar = Py_GETENV("PYTHONUOPS");
+        char *envvar = Py_GETENV("PYTHON_UOPS");
         int enabled = envvar != NULL && *envvar > '0';
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
             enabled = 1;
@@ -1772,6 +1778,7 @@ finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
+    _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
 

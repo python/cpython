@@ -102,6 +102,8 @@ class IsShareableTests(unittest.TestCase):
                 'spam',
                 10,
                 -10,
+                True,
+                False,
                 100.0,
                 ]
         for obj in shareables:
@@ -121,8 +123,6 @@ class IsShareableTests(unittest.TestCase):
 
         not_shareables = [
                 # singletons
-                True,
-                False,
                 NotImplemented,
                 ...,
                 # builtin types and objects
@@ -188,6 +188,9 @@ class ShareableTypeTests(unittest.TestCase):
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
                     _testinternalcapi.get_crossinterp_data(i)
+
+    def test_bool(self):
+        self._assert_values([True, False])
 
     def test_float(self):
         self._assert_values([0.0, 1.1, -1.0, 0.12345678, -0.12345678])

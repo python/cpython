@@ -1259,13 +1259,8 @@ sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t backend_length;
-    backend = PyUnicode_AsUTF8AndSize(arg, &backend_length);
+    backend = PyUnicode_AsUTF8(arg);
     if (backend == NULL) {
-        goto exit;
-    }
-    if (strlen(backend) != (size_t)backend_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = sys_activate_stack_trampoline_impl(module, backend);
@@ -1452,4 +1447,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=f36d45c829250775 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cdfb714878deeaf1 input=a9049054013a1b77]*/

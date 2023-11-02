@@ -153,6 +153,17 @@ class CmdLineTest(unittest.TestCase):
                 res = assert_python_ok(*cmd)
                 self.assertRegex(res.out.decode('utf-8'), expected)
 
+    def test_env_var_frozen_modules(self):
+        tests = {
+            ('on', 'FrozenImporter'),
+            ('off', 'SourceFileLoader'),
+        }
+        for raw, expected in tests:
+            cmd = ['-c', 'import os; print(os.__spec__.loader, end="")']
+            with self.subTest(raw):
+                res = assert_python_ok(*cmd, PYTHON_FROZEN_MODULES=raw)
+                self.assertRegex(res.out.decode('utf-8'), expected)
+
     def test_run_module(self):
         # Test expected operation of the '-m' switch
         # Switch needs an argument
