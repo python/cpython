@@ -731,7 +731,9 @@ _new_tuple_object(_PyCrossInterpreterData *data)
     return tuple;
 }
 
-void _tuple_shared_free(void* data) {
+static void
+_tuple_shared_free(void* data)
+{
     struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data);
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         _PyCrossInterpreterData_Release(shared->data[i]);
