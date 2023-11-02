@@ -693,6 +693,26 @@ _none_shared(PyThreadState *tstate, PyObject *obj,
     return 0;
 }
 
+static PyObject *
+_new_bool_object(_PyCrossInterpreterData *data)
+{
+    if (data->data){
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static int
+_bool_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
+{
+    _PyCrossInterpreterData_Init(data, tstate->interp,
+            (void *) (Py_IsTrue(obj) ? (uintptr_t) 1 : (uintptr_t) 0), NULL,
+            _new_bool_object);
+    // data->obj and data->free remain NULL
+    return 0;
+}
+
 static void
 _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
 {
@@ -714,6 +734,11 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     // str
     if (_xidregistry_add_type(xidregistry, &PyUnicode_Type, _str_shared) != 0) {
         Py_FatalError("could not register str for cross-interpreter sharing");
+    }
+
+    // bool
+    if (_xidregistry_add_type(xidregistry, &PyBool_Type, _bool_shared) != 0) {
+        Py_FatalError("could not register bool for cross-interpreter sharing");
     }
 
     // float
