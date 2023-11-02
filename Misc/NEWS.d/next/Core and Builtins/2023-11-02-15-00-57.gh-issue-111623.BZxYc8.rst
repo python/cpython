@@ -1,2 +1,2 @@
-Support for sharing tuples between interpreters using the cross-interpreter
+Add support for sharing tuples between interpreters using the cross-interpreter
 API
