@@ -6396,11 +6396,19 @@ Convert a 32-bit integer from network to host byte order.");
 
 
 static PyObject *
-socket_htons(PyObject *self, PyObject *args)
+socket_htons(PyObject *self, PyObject *arg)
 {
     int x;
 
-    if (!PyArg_ParseTuple(args, "i:htons", &x)) {
+    if (!PyLong_Check(arg)) {
+        return PyErr_Format(PyExc_TypeError,
+                            "expected int, %s found",
+                            Py_TYPE(arg)->tp_name);
+    }
+
+    x = PyLong_AsInt(arg);
+
+    if (x == -1 && PyErr_Occurred()) {
         return NULL;
     }
     if (x < 0) {
@@ -7220,7 +7228,7 @@ static PyMethodDef socket_methods[] = {
     {"ntohl",                   socket_ntohl,
      METH_O, ntohl_doc},
     {"htons",                   socket_htons,
-     METH_VARARGS, htons_doc},
+     METH_O, htons_doc},
     {"htonl",                   socket_htonl,
      METH_O, htonl_doc},
     {"inet_aton",               socket_inet_aton,
