@@ -1101,7 +1101,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
         if (instruction->op.code == ENTER_EXECUTOR) {
             int exec_index = instruction->op.arg;
             _PyExecutorObject *exec = code->co_executors->executors[exec_index];
-            check_opcode = exec->vm_data.opcode;
+            check_opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
             check_oparg |= exec->vm_data.oparg;
         }
         else {
