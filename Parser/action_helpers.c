@@ -65,6 +65,33 @@ _PyPegen_seq_append_to_end(Parser *p, asdl_seq *seq, void *a)
     return new_seq;
 }
 
+/* Creates a new sequence that concats seq1 and seq2 */
+asdl_seq *
+_PyPegen_seq_concat(Parser *p, asdl_seq *seq1, asdl_seq *seq2)
+{
+    if (!seq1) {
+        return seq2;
+    }
+
+    if (!seq2) {
+        return seq1;
+    }
+
+    Py_ssize_t size1 = asdl_seq_LEN(seq1), size2 = asdl_seq_LEN(seq2);
+    asdl_seq *new_seq = (asdl_seq*)_Py_asdl_generic_seq_new(size1 + size2, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < size1; i++) {
+        asdl_seq_SET_UNTYPED(new_seq, i, asdl_seq_GET_UNTYPED(seq1, i));
+    }
+    for (Py_ssize_t i = 0; i < size2; i++) {
+        asdl_seq_SET_UNTYPED(new_seq, i + size1, asdl_seq_GET_UNTYPED(seq2, i));
+    }
+    return new_seq;
+}
+
 static Py_ssize_t
 _get_flattened_seq_size(asdl_seq *seqs)
 {
