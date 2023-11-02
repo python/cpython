@@ -2343,12 +2343,12 @@ dummy_func(
                     this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
                 else {
-                    int backoff = counter &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                    if (backoff < 16 - OPTIMIZER_BITS_IN_COUNTER) {
+                    int backoff = counter & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
                         backoff++;
                     }
-                    counter = 1 + backoff - (1<<(backoff+OPTIMIZER_BITS_IN_COUNTER));
-                    this_instr[1].cache = (uint16_t)counter;
+                    int count = -(1 << backoff);
+                    this_instr[1].cache = (uint16_t)((count << OPTIMIZER_BITS_IN_COUNTER) | backoff);
                 }
             }
             #endif  /* ENABLE_SPECIALIZATION */
