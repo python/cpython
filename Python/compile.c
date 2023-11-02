@@ -34,7 +34,6 @@
 #include "pycore_flowgraph.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
@@ -1407,8 +1406,8 @@ compiler_exit_scope(struct compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            _PyErr_WriteUnraisableMsg("on removing the last compiler "
-                                      "stack item", NULL);
+            PyErr_FormatUnraisable("Exception ignored on removing "
+                                   "the last compiler stack item");
         }
     }
     else {
