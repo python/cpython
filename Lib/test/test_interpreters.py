@@ -781,6 +781,7 @@ class TestIsShareable(TestBase):
                 True,
                 False,
                 100.0,
+                (),
                 ]
         for obj in shareables:
             with self.subTest(obj):

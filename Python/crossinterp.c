@@ -713,6 +713,64 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
     return 0;
 }
 
+struct _shared_tuple_data {
+    Py_ssize_t len;
+    _PyCrossInterpreterData ** data;
+};
+
+static PyObject *
+_new_tuple_object(_PyCrossInterpreterData *data)
+{
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
+    PyObject *tuple = PyTuple_New(shared->len);
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
+        PyTuple_SET_ITEM(tuple, i, item);
+    }
+    return tuple;
+}
+
+void _tuple_shared_free(void* data) {
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data);
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        _PyCrossInterpreterData_Release(shared->data[i]);
+    }
+    PyMem_Free(shared->data);
+    PyMem_RawFree(shared);
+}
+
+static int
+_tuple_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
+{
+    if (_PyCrossInterpreterData_InitWithSize(
+            data, tstate->interp, sizeof(struct _shared_tuple_data), obj,
+            _new_tuple_object
+            ) < 0)
+    {
+        return -1;
+    }
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)data->data;
+    shared->len = PyTuple_GET_SIZE(obj);
+    shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
+    if (shared->data == NULL) {
+        // Set no memory exception?
+        return -1;
+    }
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        shared->data[i] = _PyCrossInterpreterData_New();
+        // TODO: Where does this field get free'ed?
+        PyObject *item = PyTuple_GET_ITEM(obj, i);
+        if (_PyObject_GetCrossInterpreterData(item, shared->data[i]) != 0) {
+            return -1;
+        }
+    }
+    data->free = _tuple_shared_free;
+    return 0;
+}
+
 static void
 _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
 {
@@ -744,6 +802,11 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     // float
     if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
         Py_FatalError("could not register float for cross-interpreter sharing");
+    }
+
+    // tuple
+    if (_xidregistry_add_type(xidregistry, &PyTuple_Type, _tuple_shared) != 0) {
+        Py_FatalError("could not register tuple for cross-interpreter sharing");
     }
 }
 
