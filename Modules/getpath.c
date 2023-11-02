@@ -4,7 +4,6 @@
 #include "pycore_fileutils.h"     // _Py_abspath()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pymem.h"         // _PyMem_RawWcsdup()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -911,7 +910,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        _PyErr_WriteUnraisableMsg("error evaluating initial values", NULL);
+        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -920,13 +919,13 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        _PyErr_WriteUnraisableMsg("error evaluating path", NULL);
+        PyErr_FormatUnraisable("Exception ignored in running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);
 
     if (_PyConfig_FromDict(config, configDict) < 0) {
-        _PyErr_WriteUnraisableMsg("reading getpath results", NULL);
+        PyErr_FormatUnraisable("Exception ignored in reading getpath results");
         Py_DECREF(dict);
         return PyStatus_Error("error getting getpath results");
     }
