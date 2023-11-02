@@ -840,6 +840,7 @@ label_exception_targets(basicblock *entryblock) {
         assert(except_stack != NULL);
         b->b_exceptstack = NULL;
         handler = except_stack_top(except_stack);
+        int last_yield_except_depth = -1;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr)) {
@@ -878,10 +879,21 @@ label_exception_targets(basicblock *entryblock) {
                     todo++;
                 }
             }
-            else {
-                if (instr->i_opcode == YIELD_VALUE) {
-                    instr->i_oparg = except_stack->depth;
+            else if (instr->i_opcode == YIELD_VALUE) {
+                instr->i_except = handler;
+                last_yield_except_depth = except_stack->depth;
+            }
+            else if (instr->i_opcode == RESUME) {
+                instr->i_except = handler;
+                if (instr->i_oparg != RESUME_AT_FUNC_START) {
+                    assert(last_yield_except_depth >= 0);
+                    if (last_yield_except_depth == 1) {
+                        instr->i_oparg |= RESUME_OPARG_DEPTH1_MASK;
+                    }
+                    last_yield_except_depth = -1;
                 }
+            }
+            else {
                 instr->i_except = handler;
             }
         }
