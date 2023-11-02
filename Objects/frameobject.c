@@ -1090,13 +1090,27 @@ static int
 _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
 {
     // This only works when opcode is a non-quickened form:
+    assert(opcode != ENTER_EXECUTOR);
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     for (_Py_CODEUNIT *instruction = _PyCode_CODE(_PyFrame_GetCode(frame));
          instruction < frame->instr_ptr; instruction++)
     {
-        int check_opcode = _PyOpcode_Deopt[instruction->op.code];
-        check_oparg |= instruction->op.arg;
+        int check_opcode = -1;
+        if (instruction->op.code == ENTER_EXECUTOR) {
+            int exec_index = instruction->op.arg;
+            _PyExecutorObject *exec = code->co_executors->executors[exec_index];
+            check_opcode = exec->vm_data.opcode;
+            check_oparg |= exec->vm_data.oparg;
+        }
+        else {
+            check_opcode = _PyOpcode_Deopt[instruction->op.code];
+            check_oparg |= instruction->op.arg;
+        }
+
+        assert(check_opcode != ENTER_EXECUTOR);
+
         if (check_opcode == opcode && check_oparg == oparg) {
             return 1;
         }
