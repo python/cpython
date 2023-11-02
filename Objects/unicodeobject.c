@@ -1795,6 +1795,8 @@ unicode_char(Py_UCS4 ch)
         assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
         PyUnicode_4BYTE_DATA(unicode)[0] = ch;
     }
+    // ch >= 256 and so cannot be 0
+    _PyUnicode_STATE(unicode).embed_null = 0;
     assert(_PyUnicode_CheckConsistency(unicode, 1));
     return unicode;
 }
@@ -1811,8 +1813,13 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
         return NULL;
     }
 
+    unsigned int embed_null;
     if (size == -1) {
         size = wcslen(u);
+        embed_null = 0;
+    }
+    else {
+        embed_null = EMBED_NULL_UNKNOWN;
     }
 
     /* If the Unicode data is known at construction time, we can apply
@@ -1877,6 +1884,7 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
     default:
         Py_UNREACHABLE();
     }
+    _PyUnicode_STATE(unicode).embed_null = embed_null;
 
     return unicode_result(unicode);
 }
@@ -2232,6 +2240,7 @@ _PyUnicode_Copy(PyObject *unicode)
 
     memcpy(PyUnicode_DATA(copy), PyUnicode_DATA(unicode),
               length * PyUnicode_KIND(unicode));
+    _PyUnicode_STATE(copy).embed_null = _PyUnicode_STATE(unicode).embed_null;
     assert(_PyUnicode_CheckConsistency(copy, 1));
     return copy;
 }
