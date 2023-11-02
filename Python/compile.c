@@ -34,7 +34,6 @@
 #include "pycore_flowgraph.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
@@ -1407,8 +1406,8 @@ compiler_exit_scope(struct compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            _PyErr_WriteUnraisableMsg("on removing the last compiler "
-                                      "stack item", NULL);
+            PyErr_FormatUnraisable("Exception ignored on removing "
+                                   "the last compiler stack item");
         }
     }
     else {
@@ -1550,7 +1549,7 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     // Set up a virtual try/except to handle when StopIteration is raised during
     // a close or throw call. The only way YIELD_VALUE raises if they do!
     ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
-    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP(c, loc, YIELD_VALUE);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     ADDOP_I(c, loc, RESUME, await ? RESUME_AFTER_AWAIT : RESUME_AFTER_YIELD_FROM);
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
@@ -4160,7 +4159,7 @@ addop_yield(struct compiler *c, location loc) {
     if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
-    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP(c, loc, YIELD_VALUE);
     ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
     return SUCCESS;
 }
