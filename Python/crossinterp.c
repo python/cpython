@@ -723,9 +723,16 @@ _new_tuple_object(_PyCrossInterpreterData *data)
 {
     struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
     PyObject *tuple = PyTuple_New(shared->len);
+    if (tuple == NULL) {
+        return NULL;
+    }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
+        if (item == NULL){
+            Py_DECREF(tuple);
+            return NULL;
+        }
         PyTuple_SET_ITEM(tuple, i, item);
     }
     return tuple;
