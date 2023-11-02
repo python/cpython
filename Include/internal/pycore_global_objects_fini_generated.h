@@ -833,7 +833,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(certfile));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(check_same_thread));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(clear));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(clk_id));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(close));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(closed));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(closefd));
