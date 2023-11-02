@@ -1,0 +1,2 @@
+Improve str.__doc__ to clarify encoding and errors, their defaults, and when
+they're used.

@@ -14685,13 +14685,16 @@ PyDoc_STRVAR(unicode_doc,
 "str(object='') -> str\n\
 str(bytes_or_buffer[, encoding[, errors]]) -> str\n\
 \n\
-Create a new string object from the given object. If encoding or\n\
-errors is specified, then the object must expose a data buffer\n\
-that will be decoded using the given encoding and error handler.\n\
-Otherwise, returns the result of object.__str__() (if defined)\n\
-or repr(object).\n\
-encoding defaults to sys.getdefaultencoding().\n\
-errors defaults to 'strict'.");
+Create a new string object from the given object.\n\
+\n\
+If a single argument is given, returns the result of object.__str__()\n\
+(if defined) or repr(object).\n\
+\n\
+If encoding or errors or both are specified, then the object must\n\
+expose a data buffer that will be decoded using the given encoding\n\
+and error handler. If errors is specified, encoding defaults to\n\
+sys.getdefaultencoding(). If encoding is specified, errors defaults\n\
+to 'strict'.");
 
 static PyObject *unicode_iter(PyObject *seq);
 
