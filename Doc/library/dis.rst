@@ -823,6 +823,8 @@ iterations of the loop.
    .. versionchanged:: 3.12
       oparg set to be the exception block depth, for efficient closing of generators.
 
+   .. versionchanged:: 3.13
+      this opcode no longer has an oparg
 
 .. opcode:: SETUP_ANNOTATIONS
 
@@ -1625,11 +1627,12 @@ iterations of the loop.
       success (``True``) or failure (``False``).
 
 
-.. opcode:: RESUME (where)
+.. opcode:: RESUME (context)
 
    A no-op. Performs internal tracing, debugging and optimization checks.
 
-   The ``where`` operand marks where the ``RESUME`` occurs:
+   The ``context`` oparand consists of two parts. The lowest two bits
+   indicate where the ``RESUME`` occurs:
 
    * ``0`` The start of a function, which is neither a generator, coroutine
      nor an async generator
@@ -1637,7 +1640,13 @@ iterations of the loop.
    * ``2`` After a ``yield from`` expression
    * ``3`` After an ``await`` expression
 
+   The next bit is ``1`` if the RESUME is at except-depth ``1``, and ``0``
+   otherwise.
+
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      The oparg value changed to include information about except-depth
 
 
 .. opcode:: RETURN_GENERATOR

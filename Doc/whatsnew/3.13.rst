@@ -120,6 +120,11 @@ Other Language Changes
   is rejected when the global is used in the :keyword:`else` block.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
+* Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
+  determines whether or not frozen modules are ignored by the import machinery,
+  equivalent of the :option:`-X frozen_modules <-X>` command-line option.
+  (Contributed by Yilei Yang in :gh:`111374`.)
+
 New Modules
 ===========
 
@@ -604,21 +609,6 @@ although there is currently no date scheduled for their removal.
   * ``EntryPoints`` tuple interface.
   * Implicit ``None`` on return values.
 
-* :mod:`importlib.resources`: First parameter to files is renamed to 'anchor'.
-* :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use ``files()`` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
-  for migration advice.
-
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
@@ -831,6 +821,24 @@ configparser
   and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104886`.)
 
+importlib
+---------
+
+* Remove :mod:`importlib.resources` deprecated methods:
+
+  * ``contents()``
+  * ``is_resource()``
+  * ``open_binary()``
+  * ``open_text()``
+  * ``path()``
+  * ``read_binary()``
+  * ``read_text()``
+
+  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
+  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
+  for migration advice.
+  (Contributed by Jason R. Coombs in :gh:`106532`.)
+
 locale
 ------
 
@@ -937,6 +945,14 @@ Others
 
 * None yet
 
+CPython bytecode changes
+========================
+
+* ``YIELD_VALUE`` no longer has an oparg. The oparg of ``RESUME`` was
+  changed to add a bit indicating whether the except-depth is 1, which
+  is needed to optimize closing of generators.
+  (Contributed by Irit Katriel in :gh:`111354`.)
+
 Porting to Python 3.13
 ======================
 
@@ -1032,7 +1048,8 @@ New Features
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
-  If the assertion fails, make sure that the size is set before.
+  If the assertion fails in :c:func:`PyTuple_SET_ITEM`, make sure that the
+  tuple size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
 
 * Add :c:func:`PyModule_Add` function: similar to
@@ -1103,6 +1120,10 @@ New Features
 * Add :c:func:`PySys_Audit` and :c:func:`PySys_AuditTuple` functions to the
   limited C API.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* Add :c:func:`PyErr_FormatUnraisable` function: similar to
+  :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
+  (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
 * Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
   (Contributed by Victor Stinner in :gh:`111089`.)
@@ -1182,6 +1203,14 @@ Porting to Python 3.13
   truncate on purpose at the first null byte,
   ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
   (Contributed by Victor Stinner in :gh:`111089`.)
+
+* On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
+  header file. If needed, it should now be included explicitly. For example, it
+  provides ``offsetof()`` function, and ``size_t`` and ``ptrdiff_t`` types.
+  Including ``<stddef.h>`` explicitly was already needed by all other
+  platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 
 Deprecated
 ----------

@@ -30,6 +30,15 @@ extern void _JIT_OPERAND;
     }
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
+#undef GOTO_ERROR
+#define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
+#undef LOAD_IP
+#define LOAD_IP(UNUSED) ((void)0)
+#undef JUMP_TO_OPARG
+#define JUMP_TO_OPARG()     \
+    do {                    \
+        _jump_taken = true; \
+    } while (0)
 
 #define TAIL_CALL(WHERE)                                                \
     do {                                                                \
@@ -45,42 +54,41 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
            PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
-    _Py_CODEUNIT *ip_offset = _PyCode_CODE(_PyFrame_GetCode(frame));
     uint32_t opcode = _JIT_OPCODE;
     int32_t oparg = (uintptr_t)&_JIT_OPARG;
     uint64_t operand = (uintptr_t)&_JIT_OPERAND;
     // Pretend to modify the values to keep clang from being clever and
     // optimizing them based on valid extern addresses, which must be in
-    // range(1, 2**31 - 2**24)):
+    // range(1, 2**31 - 2**24):
     asm("" : "+r" (oparg));
     asm("" : "+r" (operand));
-    int pc = -1;  // XXX
+    bool _jump_taken = false;
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
 #include "executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }
-    if (pc != -1) {
-        assert(pc == oparg);
+    if (_jump_taken) {
         assert(opcode == _JUMP_TO_TOP || opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
         TAIL_CALL(_JIT_JUMP);
     }
     TAIL_CALL(_JIT_CONTINUE);
     // Labels that the instruction implementations expect to exist:
-unbound_local_error:
+unbound_local_error_tier_two:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG, PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg));
-    goto error;
-pop_4_error:
+    goto error_tier_two;
+pop_4_error_tier_two:
     STACK_SHRINK(1);
-pop_3_error:
+pop_3_error_tier_two:
     STACK_SHRINK(1);
-pop_2_error:
+pop_2_error_tier_two:
     STACK_SHRINK(1);
-pop_1_error:
+pop_1_error_tier_two:
     STACK_SHRINK(1);
-error:
+error_tier_two:
     TAIL_CALL(_JIT_ERROR);
 deoptimize:
+exit_trace:
     TAIL_CALL(_JIT_DEOPTIMIZE);
 }
