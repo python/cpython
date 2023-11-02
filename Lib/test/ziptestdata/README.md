@@ -1,7 +1,7 @@
 # Test data for `test_zipfile`
 
 The test executables in this directory are created manually from header.sh and
-the `testdata_module_inside_zip.py` file.  You must have infozip's zip utility
+the `testdata_module_inside_zip.py` file.  You must have Info-ZIP's zip utility
 installed (`apt install zip` on Debian).
 
 ## Purpose
@@ -25,7 +25,7 @@ rm zip2.zip
 
 ### Modern format (4.5) zip64 file
 
-Redirecting from stdin forces infozip's zip tool to create a zip64.
+Redirecting from stdin forces Info-ZIP's zip tool to create a zip64.
 
 ```
 zip -0 <testdata_module_inside_zip.py >zip64.zip
