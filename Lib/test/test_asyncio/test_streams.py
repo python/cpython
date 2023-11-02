@@ -1074,6 +1074,35 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
+    def test_unhandled_exceptions(self) -> None:
+        port = socket_helper.find_unused_port()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        async def client():
+            rd, wr = await asyncio.open_connection('localhost', port)
+            wr.write(b'test msg')
+            await wr.drain()
+            wr.close()
+            await wr.wait_closed()
+
+        async def main():
+            async def handle_echo(reader, writer):
+                raise Exception('test')
+
+            server = await asyncio.start_server(
+                handle_echo, 'localhost', port)
+            await server.start_serving()
+            await client()
+            server.close()
+            await server.wait_closed()
+
+        self.loop.run_until_complete(main())
+
+        self.assertEqual(messages[0]['message'],
+                         'Unhandled exception in client_connected_cb')
+
 
 if __name__ == '__main__':
     unittest.main()
