@@ -120,6 +120,11 @@ Other Language Changes
   is rejected when the global is used in the :keyword:`else` block.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
+* Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
+  determines whether or not frozen modules are ignored by the import machinery,
+  equivalent of the :option:`-X frozen_modules <-X>` command-line option.
+  (Contributed by Yilei Yang in :gh:`111374`.)
+
 New Modules
 ===========
 
@@ -1035,7 +1040,8 @@ New Features
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
-  If the assertion fails, make sure that the size is set before.
+  If the assertion fails in :c:func:`PyTuple_SET_ITEM`, make sure that the
+  tuple size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
 
 * Add :c:func:`PyModule_Add` function: similar to
