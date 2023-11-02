@@ -5912,14 +5912,9 @@ _PyDict_SendEvent(int watcher_bits,
                 // unraisablehook keep a reference to it, so we don't pass the
                 // dict as context, just an informative string message.  Dict
                 // repr can call arbitrary code, so we invent a simpler version.
-                PyObject *context = PyUnicode_FromFormat(
-                    "%s watcher callback for <dict at %p>",
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for <dict at %p>",
                     dict_event_name(event), mp);
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
             }
         }
         watcher_bits >>= 1;

@@ -1032,8 +1032,8 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
                 Py_INCREF(op);
                 (void) clear(op);
                 if (_PyErr_Occurred(tstate)) {
-                    _PyErr_WriteUnraisableMsg("in tp_clear of",
-                                              (PyObject*)Py_TYPE(op));
+                    PyErr_FormatUnraisable("Exception ignored in tp_clear of %s",
+                                           Py_TYPE(op)->tp_name);
                 }
                 Py_DECREF(op);
             }
@@ -1344,7 +1344,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
             _PyErr_Clear(tstate);
         }
         else {
-            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
+            PyErr_FormatUnraisable("Exception ignored in garbage collection");
         }
     }
 
@@ -1403,7 +1403,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
             "collected", collected,
             "uncollectable", uncollectable);
         if (info == NULL) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
             return;
         }
     }
@@ -1411,7 +1411,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
         Py_XDECREF(info);
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
         return;
     }
 

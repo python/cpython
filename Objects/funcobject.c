@@ -8,8 +8,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
 
-static PyObject* func_repr(PyFunctionObject *op);
-
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
     switch (event) {
@@ -35,21 +33,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                // Don't risk resurrecting the func if an unraisablehook keeps a
-                // reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = func_repr(func);
-                if (repr != NULL) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        func_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event), func->func_qualname, func);
             }
         }
         i++;

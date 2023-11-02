@@ -2235,7 +2235,7 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyEval_SetProfile(tstate, func, arg) < 0) {
         /* Log _PySys_Audit() error */
-        _PyErr_WriteUnraisableMsg("in PyEval_SetProfile", NULL);
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfile");
     }
 }
 
@@ -2252,7 +2252,7 @@ PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
 
     while (ts) {
         if (_PyEval_SetProfile(ts, func, arg) < 0) {
-            _PyErr_WriteUnraisableMsg("in PyEval_SetProfileAllThreads", NULL);
+            PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
         }
         HEAD_LOCK(runtime);
         ts = PyThreadState_Next(ts);
@@ -2266,7 +2266,7 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyEval_SetTrace(tstate, func, arg) < 0) {
         /* Log _PySys_Audit() error */
-        _PyErr_WriteUnraisableMsg("in PyEval_SetTrace", NULL);
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetTrace");
     }
 }
 
@@ -2283,7 +2283,7 @@ PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
 
     while (ts) {
         if (_PyEval_SetTrace(ts, func, arg) < 0) {
-            _PyErr_WriteUnraisableMsg("in PyEval_SetTraceAllThreads", NULL);
+            PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
         }
         HEAD_LOCK(runtime);
         ts = PyThreadState_Next(ts);

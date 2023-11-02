@@ -479,8 +479,9 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
         self.assertEqual(120, rc)
-        self.assertRegex(err.decode('ascii', 'ignore'),
-                         'Exception ignored in.*\nOSError: .*')
+        self.assertIn(b'Exception ignored on flushing sys.stdout:\n'
+                      b'OSError: '.replace(b'\n', os.linesep.encode()),
+                      err)
 
     def test_closed_stdout(self):
         # Issue #13444: if stdout has been explicitly closed, we should
