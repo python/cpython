@@ -1,2 +1,0 @@
-Allow :file:`Tools/i18n/pygettext.py` to detect calls to ``gettext`` in
-f-strings.

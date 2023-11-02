@@ -28,23 +28,6 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
 import tkinter
 from tkinter import _flatten, _join, _stringify, _splitdict
 
-# Verify if Tk is new enough to not need the Tile package
-_REQUIRE_TILE = True if tkinter.TkVersion < 8.5 else False
-
-def _load_tile(master):
-    if _REQUIRE_TILE:
-        import os
-        tilelib = os.environ.get('TILE_LIBRARY')
-        if tilelib:
-            # append custom tile path to the list of directories that
-            # Tcl uses when attempting to resolve packages with the package
-            # command
-            master.tk.eval(
-                    'global auto_path; '
-                    'lappend auto_path {%s}' % tilelib)
-
-        master.tk.eval('package require tile') # TclError may be raised here
-        master._tile_loaded = True
 
 def _format_optvalue(value, script=False):
     """Internal function."""
@@ -349,12 +332,7 @@ def setup_master(master=None):
     If it is not allowed to use the default root and master is None,
     RuntimeError is raised."""
     if master is None:
-        if tkinter._support_default_root:
-            master = tkinter._default_root or tkinter.Tk()
-        else:
-            raise RuntimeError(
-                    "No master specified and tkinter is "
-                    "configured to not support default root")
+        master = tkinter._get_default_root()
     return master
 
 
@@ -365,11 +343,6 @@ class Style(object):
 
     def __init__(self, master=None):
         master = setup_master(master)
-
-        if not getattr(master, '_tile_loaded', False):
-            # Load tile now, if needed
-            _load_tile(master)
-
         self.master = master
         self.tk = self.master.tk
 
@@ -551,9 +524,6 @@ class Widget(tkinter.Widget):
             readonly, alternate, invalid
         """
         master = setup_master(master)
-        if not getattr(master, '_tile_loaded', False):
-            # Load tile now, if needed
-            _load_tile(master)
         tkinter.Widget.__init__(self, master, widgetname, kw=kw)
 
 
@@ -574,7 +544,7 @@ class Widget(tkinter.Widget):
         matches statespec. statespec is expected to be a sequence."""
         ret = self.tk.getboolean(
                 self.tk.call(self._w, "instate", ' '.join(statespec)))
-        if ret and callback:
+        if ret and callback is not None:
             return callback(*args, **kw)
 
         return ret
@@ -1538,7 +1508,10 @@ class LabeledScale(Frame):
         scale_side = 'bottom' if self._label_top else 'top'
         label_side = 'top' if scale_side == 'bottom' else 'bottom'
         self.scale.pack(side=scale_side, fill='x')
-        tmp = Label(self).pack(side=label_side) # place holder
+        # Dummy required to make frame correct height
+        dummy = Label(self)
+        dummy.pack(side=label_side)
+        dummy.lower()
         self.label.place(anchor='n' if label_side == 'top' else 's')
 
         # update the label as scale or variable changes
@@ -1645,7 +1618,10 @@ class OptionMenu(Menubutton):
         menu.delete(0, 'end')
         for val in values:
             menu.add_radiobutton(label=val,
-                command=tkinter._setit(self._variable, val, self._callback),
+                command=(
+                    None if self._callback is None
+                    else lambda val=val: self._callback(val)
+                ),
                 variable=self._variable)
 
         if default:

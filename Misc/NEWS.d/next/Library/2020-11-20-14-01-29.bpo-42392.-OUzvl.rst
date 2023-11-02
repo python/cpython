@@ -1,2 +1,0 @@
-Remove loop parameter from ``__init__`` in all ``asyncio.locks`` and
-``asyncio.Queue`` classes. Patch provided by Yurii Karabas.

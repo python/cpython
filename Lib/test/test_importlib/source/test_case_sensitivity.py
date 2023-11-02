@@ -1,7 +1,7 @@
 """Test case-sensitivity (PEP 235)."""
 import sys
 
-from .. import util
+from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -60,17 +60,6 @@ class CaseSensitivityTest(util.CASEOKTestBase):
             self.assertIn(self.name, sensitive.get_filename(self.name))
             self.assertIsNotNone(insensitive)
             self.assertIn(self.name, insensitive.get_filename(self.name))
-
-
-class CaseSensitivityTestPEP302(CaseSensitivityTest):
-    def find(self, finder):
-        return finder.find_module(self.name)
-
-
-(Frozen_CaseSensitivityTestPEP302,
- Source_CaseSensitivityTestPEP302
- ) = util.test_both(CaseSensitivityTestPEP302, importlib=importlib,
-                    machinery=machinery)
 
 
 class CaseSensitivityTestPEP451(CaseSensitivityTest):

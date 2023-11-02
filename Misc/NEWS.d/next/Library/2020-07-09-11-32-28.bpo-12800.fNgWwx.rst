@@ -1,4 +1,0 @@
-Extracting a symlink from a tarball should succeed and overwrite the symlink
-if it already exists. The fix is to remove the existing file or symlink
-before extraction. Based on patch by Chris AtLee, Jeffrey Kintscher, and
-Senthil Kumaran.

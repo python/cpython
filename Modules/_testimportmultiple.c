@@ -3,7 +3,16 @@
  * file (issue16421). This file defines 3 modules (_testimportmodule,
  * foo, bar), only the first one is called the same as the compiled file.
  */
-#include<Python.h>
+
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
+#define Py_LIMITED_API 0x03020000
+#endif
+
+#include <Python.h>
 
 static struct PyModuleDef _testimportmultiple = {
     PyModuleDef_HEAD_INIT,
@@ -54,4 +63,3 @@ static struct PyModuleDef _barmodule = {
 PyMODINIT_FUNC PyInit__testimportmultiple_bar(void){
     return PyModule_Create(&_barmodule);
 }
-

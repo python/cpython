@@ -79,11 +79,11 @@ class Nested(object):
             try:
                 if mgr.__exit__(*ex):
                     ex = (None, None, None)
-            except:
-                ex = sys.exc_info()
+            except BaseException as e:
+                ex = (type(e), e, e.__traceback__)
         self.entered = None
         if ex is not exc_info:
-            raise ex[0](ex[1]).with_traceback(ex[2])
+            raise ex
 
 
 class MockNested(Nested):
@@ -117,7 +117,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksEnter():
             foo = LacksEnter()
             with foo: pass
-        self.assertRaisesRegex(AttributeError, '__enter__', fooLacksEnter)
+        self.assertRaisesRegex(TypeError, 'the context manager', fooLacksEnter)
 
     def testEnterAttributeError2(self):
         class LacksEnterAndExit(object):
@@ -126,7 +126,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksEnterAndExit():
             foo = LacksEnterAndExit()
             with foo: pass
-        self.assertRaisesRegex(AttributeError, '__enter__', fooLacksEnterAndExit)
+        self.assertRaisesRegex(TypeError, 'the context manager', fooLacksEnterAndExit)
 
     def testExitAttributeError(self):
         class LacksExit(object):
@@ -136,7 +136,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksExit():
             foo = LacksExit()
             with foo: pass
-        self.assertRaisesRegex(AttributeError, '__exit__', fooLacksExit)
+        self.assertRaisesRegex(TypeError, 'the context manager.*__exit__', fooLacksExit)
 
     def assertRaisesSyntaxError(self, codestr):
         def shouldRaiseSyntaxError(s):

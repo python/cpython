@@ -1,5 +1,0 @@
-The :c:func:`PyConfig_Read` function now only parses :c:member:`PyConfig.argv`
-arguments once: :c:member:`PyConfig.parse_argv` is set to ``2`` after arguments
-are parsed. Since Python arguments are strippped from
-:c:member:`PyConfig.argv`, parsing arguments twice would parse the application
-options as Python options.

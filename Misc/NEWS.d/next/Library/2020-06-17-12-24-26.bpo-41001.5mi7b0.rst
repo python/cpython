@@ -1,2 +1,0 @@
-Add func:`os.eventfd` to provide a low level interface for Linux's event
-notification file descriptor.

@@ -1,1 +1,0 @@
-Support was removed for AIX 5.3 and below. See :issue:`40680`.
