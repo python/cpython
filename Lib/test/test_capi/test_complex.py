@@ -1,4 +1,5 @@
 import unittest
+import warnings
 
 from test.test_capi.test_getargs import (BadComplex, BadComplex2, Complex,
                                          FloatSubclass, Float, BadFloat,
@@ -102,6 +103,10 @@ class CAPIComplexTest(unittest.TestCase):
         # Test PyComplex_AsCComplex()
         asccomplex = _testcapi.complex_asccomplex
 
+        class BadComplex3:
+            def __complex__(self):
+                raise RuntimeError
+
         self.assertEqual(asccomplex(1+2j), 1.0+2.0j)
         self.assertEqual(asccomplex(1), 1.0+0.0j)
         self.assertEqual(asccomplex(-1), -1.0+0.0j)
@@ -111,9 +116,13 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertEqual(asccomplex(Float()), 4.25+0.0j)
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(asccomplex(BadComplex2()), 4.25+0.5j)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, asccomplex, BadComplex2())
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(asccomplex(BadFloat2()), 4.25+0.0j)
         self.assertRaises(TypeError, asccomplex, BadComplex())
+        self.assertRaises(RuntimeError, asccomplex, BadComplex3())
         self.assertRaises(TypeError, asccomplex, BadFloat())
         self.assertRaises(TypeError, asccomplex, object())
 
