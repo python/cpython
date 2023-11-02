@@ -281,7 +281,7 @@ class TestTypeWatchers(unittest.TestCase):
             with catch_unraisable_exception() as cm:
                 C.foo = "bar"
                 self.assertEqual(cm.unraisable.err_msg,
-                        f"Exception ignored in watcher callback #0 for {C!r}")
+                    f"Exception ignored in type watcher callback #0 for {C!r}")
                 self.assertIs(cm.unraisable.object, None)
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
