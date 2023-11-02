@@ -945,6 +945,14 @@ Others
 
 * None yet
 
+CPython bytecode changes
+========================
+
+* ``YIELD_VALUE`` no longer has an oparg. The oparg of ``RESUME`` was
+  changed to add a bit indicating whether the except-depth is 1, which
+  is needed to optimize closing of generators.
+  (Contributed by Irit Katriel in :gh:`111354`.)
+
 Porting to Python 3.13
 ======================
 
