@@ -1104,7 +1104,8 @@ _PyXI_FreeNamespace(_PyXI_namespace *ns)
     }
     else {
         // We can assume the first item represents all items.
-        assert(ns->items[0].data->interpid == interp->id);
+        assert(ns->items[0].data == NULL
+               || ns->items[0].data->interpid == interp->id);
         if (interp == PyInterpreterState_Get()) {
             // We can avoid pending calls.
             _free_xi_namespace(ns);
