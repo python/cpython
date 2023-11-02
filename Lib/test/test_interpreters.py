@@ -778,6 +778,8 @@ class TestIsShareable(TestBase):
                 'spam',
                 10,
                 -10,
+                True,
+                False,
                 100.0,
                 ]
         for obj in shareables:
@@ -797,8 +799,6 @@ class TestIsShareable(TestBase):
 
         not_shareables = [
                 # singletons
-                True,
-                False,
                 NotImplemented,
                 ...,
                 # builtin types and objects
