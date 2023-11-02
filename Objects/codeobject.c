@@ -12,8 +12,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
-static PyObject* code_repr(PyCodeObject *co);
-
 static const char *
 code_event_name(PyCodeEvent event) {
     switch (event) {
@@ -41,21 +39,9 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
-                // Don't risk resurrecting the object if an unraisablehook keeps
-                // a reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = code_repr(co);
-                if (repr) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        code_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for %R",
+                    code_event_name(event), co);
             }
         }
         i++;
