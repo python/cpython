@@ -1639,44 +1639,6 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *
-bench_asutf8(PyObject *self, PyObject *args)
-{
-    PyObject *str;
-    Py_ssize_t loops;
-    if (!PyArg_ParseTuple(args, "O!n", &PyUnicode_Type, &str, &loops)) {
-        return NULL;
-    }
-
-    PyObject *codecs = PyImport_ImportModule("_codecs");
-    if (codecs == NULL) {
-        return NULL;
-    }
-    PyObject *lookup_error = PyObject_GetAttrString(codecs, "lookup_error");
-    Py_DECREF(codecs);
-    if (lookup_error == NULL) {
-        return NULL;
-    }
-
-    _PyTime_t t = _PyTime_GetPerfCounter();
-    for (Py_ssize_t i=0; i < loops; i++) {
-        PyObject *error = PyObject_CallOneArg(lookup_error, str);
-        if (error != NULL) {
-            Py_DECREF(error);
-        }
-        else {
-            PyErr_Clear();
-        }
-    }
-
-    _PyTime_t dt = _PyTime_GetPerfCounter() - t;
-
-    Py_DECREF(lookup_error);
-
-    return PyFloat_FromDouble(_PyTime_AsSecondsDouble(dt));
-}
-
-
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1739,7 +1701,6 @@ static PyMethodDef module_functions[] = {
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
-    {"bench_asutf8", bench_asutf8, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
