@@ -761,6 +761,10 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         shared->data[i] = _PyCrossInterpreterData_New();
+        if (shared->data[i] == NULL){
+            PyMem_Free(shared->data);
+            return -1; // PyErr_NoMemory already set
+        }
         PyObject *item = PyTuple_GET_ITEM(obj, i);
         if (_PyObject_GetCrossInterpreterData(item, shared->data[i]) != 0) {
             return -1;
