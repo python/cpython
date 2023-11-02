@@ -32,6 +32,7 @@ float_asdouble(PyObject *Py_UNUSED(module), PyObject *obj)
 {
     double d;
 
+    NULLABLE(obj);
     d = PyFloat_AsDouble(obj);
     if (d == -1. && PyErr_Occurred()) {
         return NULL;

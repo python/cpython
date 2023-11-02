@@ -1,6 +1,8 @@
+import array
 import math
 import sys
 import unittest
+import warnings
 
 from test.test_capi.test_getargs import (Float, FloatSubclass, FloatSubclass2,
                                          BadIndex2, BadFloat2, Index, BadIndex,
@@ -48,6 +50,9 @@ class CAPIFloatTest(unittest.TestCase):
         fromstring = _testcapi.float_fromstring
 
         self.assertEqual(fromstring("3.14"), 3.14)
+        self.assertEqual(fromstring(b"3.14"), 3.14)
+        self.assertEqual(fromstring(bytearray(b"3.14")), 3.14)
+        self.assertEqual(fromstring(array.array('b', b'3.14')), 3.14)
         self.assertEqual(fromstring("10."), 10.)
         self.assertEqual(fromstring("-1e10"), -1e10)
         self.assertEqual(fromstring("3.14e+42"), 3.14e+42)
@@ -81,6 +86,10 @@ class CAPIFloatTest(unittest.TestCase):
             self.assertEqual(asdouble(BadIndex2()), 1.)
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(asdouble(BadFloat2()), 4.25)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, asdouble, BadFloat2())
+        self.assertRaises(TypeError, asdouble, object())
         self.assertRaises(TypeError, asdouble, NULL)
 
     def test_getinfo(self):
