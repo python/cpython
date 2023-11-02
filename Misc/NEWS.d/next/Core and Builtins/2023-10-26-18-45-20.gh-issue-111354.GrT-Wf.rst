@@ -1,0 +1,3 @@
+Remove ``oparg`` from :opcode:`YIELD_VALUE`. Change ``oparg`` of
+:opcode:`RESUME` to include information about the except-depth.
+These changes make it possible to simplify the code in generator close.
