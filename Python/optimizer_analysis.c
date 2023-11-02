@@ -14,16 +14,16 @@
 
 
 static void
-remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
+remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
     // Note that we don't enter stubs, those SET_IPs are needed.
     int last_set_ip = -1;
     bool need_ip = true;
-    for (int pc = 0; pc < trace_length; pc++) {
-        int opcode = trace[pc].opcode;
+    for (int pc = 0; pc < buffer_size; pc++) {
+        int opcode = buffer[pc].opcode;
         if (opcode == _SET_IP) {
             if (!need_ip && last_set_ip >= 0) {
-                trace[last_set_ip].opcode = NOP;
+                buffer[last_set_ip].opcode = NOP;
             }
             need_ip = false;
             last_set_ip = pc;
@@ -44,11 +44,11 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
 int
 _Py_uop_analyze_and_optimize(
     PyCodeObject *co,
-    _PyUOpInstruction *trace,
-    int trace_len,
+    _PyUOpInstruction *buffer,
+    int buffer_size,
     int curr_stacklen
 )
 {
-    remove_unneeded_uops(trace, trace_len);
-    return trace_len;
+    remove_unneeded_uops(buffer, buffer_size);
+    return 0;
 }

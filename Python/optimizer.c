@@ -386,6 +386,10 @@ PyTypeObject _PyUOpExecutor_Type = {
 
 #define TRACE_STACK_SIZE 5
 
+/* Returns 1 on success,
+ * 0 if it failed to produce a worthwhile trace,
+ * and -1 on an error.
+ */
 static int
 translate_bytecode_to_trace(
     PyCodeObject *code,
@@ -774,7 +778,7 @@ done:
                 2 * INSTR_IP(initial_instr, code),
                 trace_length,
                 buffer_size - max_length);
-        return trace_length;
+        return 1;
     }
     else {
         OPT_STAT_INC(trace_too_short);
@@ -798,37 +802,47 @@ done:
 #define SET_BIT(array, bit) (array[(bit)>>5] |= (1<<((bit)&31)))
 #define BIT_IS_SET(array, bit) (array[(bit)>>5] & (1<<((bit)&31)))
 
+/* Count the number of used uops, and mark them in the bit vector `used`.
+ * This can be done in a single pass using simple reachability analysis,
+ * as there are no backward jumps.
+ * NOPs are excluded from the count.
+*/
 static int
 compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 {
-    int length = 0;
+    int count = 0;
     SET_BIT(used, 0);
     for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
+        count++;
         int opcode = buffer[i].opcode;
-        if (opcode == NOP) {
-            UNSET_BIT(used, i);
-            SET_BIT(used, i+1);
-            continue;
-        }
-        length ++;
         if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             continue;
         }
+        /* All other micro-ops fall through, so i+1 is reachable */
         SET_BIT(used, i+1);
-        if (opcode == _POP_JUMP_IF_FALSE ||
-            opcode == _POP_JUMP_IF_TRUE)
-        {
-            int target = buffer[i].oparg;
-            SET_BIT(used, target);
+        switch(opcode) {
+            case NOP:
+                /* Don't count NOPs as used */
+                count--;
+                UNSET_BIT(used, i);
+                break;
+            case _POP_JUMP_IF_FALSE:
+            case _POP_JUMP_IF_TRUE:
+                /* Mark target as reachable */
+                SET_BIT(used, buffer[i].oparg);
         }
     }
-    return length;
+    return count;
 }
 
-/* Account for the buffer having gaps and NOPs. */
+/* Makes an executor from a buffer of uops.
+ * Account for the buffer having gaps and NOPs by computing a "used"
+ * bit vector and only copying the used uops. Here "used" means reachable
+ * and not a NOP.
+ */
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 {
@@ -839,6 +853,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         return NULL;
     }
     int dest = length - 1;
+    /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
             continue;
@@ -848,9 +863,12 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         if (opcode == _POP_JUMP_IF_FALSE ||
             opcode == _POP_JUMP_IF_TRUE)
         {
+            /* The oparg of the target will already have been set to its new offset */
             int oparg = executor->trace[dest].oparg;
             executor->trace[dest].oparg = buffer[oparg].oparg;
         }
+        /* Set the oparg to be the destination offset,
+         * so that we can set the oparg of earlier jumps correctly. */
         buffer[i].oparg = dest;
         dest--;
     }
@@ -871,22 +889,25 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
-    int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
-    if (trace_length <= 0) {
+    int err = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
+    if (err <= 0) {
         // Error or nothing translated
-        return trace_length;
+        return err;
     }
     OPT_HIST(trace_length, trace_length_hist);
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
-    if (uop_optimize != NULL && *uop_optimize > '0') {
-        trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
+    if (uop_optimize == NULL || *uop_optimize > '0') {
+        err = _Py_uop_analyze_and_optimize(code, trace, _Py_UOP_MAX_TRACE_LENGTH, curr_stackentries);
+        if (err < 0) {
+            return -1;
+        }
     }
-    OPT_HIST(trace_length, optimized_trace_length_hist);
     _PyExecutorObject *executor = make_executor_from_uops(trace, &dependencies);
     if (executor == NULL) {
         return -1;
     }
+    OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
     *exec_ptr = executor;
     return 1;
 }
