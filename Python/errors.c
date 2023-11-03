@@ -1699,17 +1699,6 @@ format_unraisable(PyObject *obj, const char *format, ...)
 }
 
 void
-_PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
-{
-    if (err_msg_str) {
-        format_unraisable(obj, "Exception ignored %s", err_msg_str);
-    }
-    else {
-        format_unraisable(obj, NULL);
-    }
-}
-
-void
 PyErr_WriteUnraisable(PyObject *obj)
 {
     format_unraisable(obj, NULL);

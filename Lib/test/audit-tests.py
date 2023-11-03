@@ -289,7 +289,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testinternalcapi import write_unraisable_exc
+    from _testcapi import err_formatunraisable
 
     def unraisablehook(hookargs):
         pass
@@ -302,7 +302,8 @@ def test_unraisablehook():
 
     sys.addaudithook(hook)
     sys.unraisablehook = unraisablehook
-    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+    err_formatunraisable(RuntimeError("nonfatal-error"),
+                         "Exception ignored for audit hook test")
 
 
 def test_winreg():
