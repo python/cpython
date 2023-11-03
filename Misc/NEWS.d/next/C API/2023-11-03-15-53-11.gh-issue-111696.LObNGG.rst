@@ -1,0 +1,2 @@
+Add support for ``"%T"`` format to :c:func:`PyUnicode_FromFormat`: format the
+name of a type (``type.__name__``).  Patch by Victor Stinner.

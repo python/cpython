@@ -1164,6 +1164,10 @@ New Features
   :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
+* Add support for ``"%T"`` format to :c:func:`PyUnicode_FromFormat`: format
+  the name of a type (``type.__name__``).
+  (Contributed by Victor Stinner in :gh:`111696`.)
+
 
 Porting to Python 3.13
 ----------------------

@@ -609,6 +609,23 @@ class CAPITest(unittest.TestCase):
         check_format('xyz',
                      b'%V', None, b'xyz')
 
+        # test %T and %#T
+        obj = 'abc'
+        obj_type = type(obj)
+        check_format('type: str',
+                     b'type: %T', py_object(obj_type))
+        class LocalType:
+            pass
+        obj = LocalType()
+        obj_type = type(obj)
+        name = 'LocalType'
+        check_format(f'type: {name}',
+                     b'type: %T', py_object(obj_type))
+        check_format(f'type: {name[:3]}',
+                     b'type: %.3T', py_object(obj_type))
+        check_format(f'type: {name.rjust(20)}',
+                     b'type: %20T', py_object(obj_type))
+
         # test %ls
         check_format('abc', b'%ls', c_wchar_p('abc'))
         check_format('\u4eba\u6c11', b'%ls', c_wchar_p('\u4eba\u6c11'))
