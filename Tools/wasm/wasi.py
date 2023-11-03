@@ -216,14 +216,18 @@ def main():
                        dest="debug",
                        help="Debug build (i.e., pydebug)")
     default_host_runner = (f"{shutil.which('wasmtime')} run "
-                   # Make sure the stack size will work in a pydebug build.
-                   # The value comes from `ulimit -s` under Linux which is
-                   # 8291 KiB.
-                   "--wasm max-wasm-stack=8388608 "
+                    # Make sure the stack size will work for a pydebug build.
+                    # The 8388608 value comes from `ulimit -s` under Linux which
+                    # is 8291 KiB.
+                    "--wasm max-wasm-stack=8388608 "
+                    # Enable thread support.
+                    "--wasm threads=y --wasi threads=y "
                     # Map the checkout to / to load the stdlib from /Lib.
-                   "--dir {HOST_DIR}::{GUEST_DIR} "
-                   "--env {ENV_VAR_NAME}={ENV_VAR_VALUE} "
-                   "{PYTHON_WASM}")
+                    "--dir {HOST_DIR}::{GUEST_DIR} "
+                    # Set PYTHONPATH to the sysconfig data.
+                    "--env {ENV_VAR_NAME}={ENV_VAR_VALUE} "
+                    # Path to the WASM binary.
+                    "{PYTHON_WASM}")
     build.add_argument("--host-runner", action="store",
                        default=default_host_runner, dest="host_runner",
                        help="Command template for running the WebAssembly code "
