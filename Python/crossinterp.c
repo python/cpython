@@ -906,6 +906,9 @@ _PyXI_InitExceptionInfo(_PyXI_exception_info *info,
 void
 _PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
 {
+    if (exctype == NULL) {
+        exctype = PyExc_RuntimeError;
+    }
     if (info->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         // Raise an exception that proxies the propagated exception.
         _Py_excinfo_Apply(&info->uncaught, exctype);
