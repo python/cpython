@@ -66,6 +66,7 @@ class CAPIFloatTest(unittest.TestCase):
                 raise RuntimeError
 
         self.assertEqual(asdouble(3.14), 3.14)
+        self.assertEqual(asdouble(-1), -1.0)
         self.assertEqual(asdouble(FloatSubclass(3.14)), 3.14)
         self.assertEqual(asdouble(FloatSubclass2(3.14)), 3.14)
         self.assertEqual(asdouble(Index()), 99.)
