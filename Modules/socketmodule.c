@@ -6395,22 +6395,18 @@ PyDoc_STRVAR(ntohl_doc,
 Convert a 32-bit integer from network to host byte order.");
 
 
+/*[clinic input]
+_socket.socket.htons
+    x: int
+    /
+
+Convert a 16-bit unsigned integer from host to network byte order.
+[clinic start generated code]*/
+
 static PyObject *
-socket_htons(PyObject *self, PyObject *arg)
+_socket_socket_htons_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=d785ee692312da47 input=053252d8416f4337]*/
 {
-    int x;
-
-    if (!PyLong_Check(arg)) {
-        return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
-    }
-
-    x = PyLong_AsInt(arg);
-
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "htons: can't convert negative Python int to C "
@@ -6425,11 +6421,6 @@ socket_htons(PyObject *self, PyObject *arg)
     }
     return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
-
-PyDoc_STRVAR(htons_doc,
-"htons(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from host to network byte order.");
 
 
 static PyObject *
@@ -7227,8 +7218,7 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, ntohs_doc},
     {"ntohl",                   socket_ntohl,
      METH_O, ntohl_doc},
-    {"htons",                   socket_htons,
-     METH_O, htons_doc},
+    _SOCKET_SOCKET_HTONS_METHODDEF
     {"htonl",                   socket_htonl,
      METH_O, htonl_doc},
     {"inet_aton",               socket_inet_aton,
