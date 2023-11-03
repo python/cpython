@@ -1,0 +1,2 @@
+Fix runtime crash when some error happens in opcode
+``LOAD_FROM_DICT_OR_DEREF``.

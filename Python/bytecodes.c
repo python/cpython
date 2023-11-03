@@ -1535,10 +1535,8 @@ dummy_func(
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
-                Py_DECREF(class_dict);
                 GOTO_ERROR(error);
             }
-            Py_DECREF(class_dict);
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
@@ -1548,6 +1546,7 @@ dummy_func(
                 }
                 Py_INCREF(value);
             }
+            Py_DECREF(class_dict);
         }
 
         inst(LOAD_DEREF, ( -- value)) {
