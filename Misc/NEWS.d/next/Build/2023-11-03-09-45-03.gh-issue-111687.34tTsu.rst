@@ -1,0 +1,1 @@
+``clockid_t`` in AIX is ``long long`` in both 32bit and 64bit build
