@@ -6528,30 +6528,29 @@ _socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
 }
 
 #ifdef HAVE_INET_NTOA
-PyDoc_STRVAR(inet_ntoa_doc,
-"inet_ntoa(packed_ip) -> ip_address_string\n\
-\n\
-Convert an IP address from 32-bit packed binary format to string format");
+/*[clinic input]
+_socket.socket.inet_ntoa
+    packed_ip: Py_buffer
+    /
 
-static PyObject*
-socket_inet_ntoa(PyObject *self, PyObject *args)
+Convert an IP address from 32-bit packed binary format to string format.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip)
+/*[clinic end generated code: output=b671880a3f62461b input=95c2c4a1b2ee957c]*/
 {
-    Py_buffer packed_ip;
     struct in_addr packed_addr;
 
-    if (!PyArg_ParseTuple(args, "y*:inet_ntoa", &packed_ip)) {
-        return NULL;
-    }
-
-    if (packed_ip.len != sizeof(packed_addr)) {
+    if (packed_ip->len != sizeof(packed_addr)) {
         PyErr_SetString(PyExc_OSError,
             "packed IP wrong length for inet_ntoa");
-        PyBuffer_Release(&packed_ip);
+        PyBuffer_Release(packed_ip);
         return NULL;
     }
 
-    memcpy(&packed_addr, packed_ip.buf, packed_ip.len);
-    PyBuffer_Release(&packed_ip);
+    memcpy(&packed_addr, packed_ip->buf, packed_ip->len);
+    PyBuffer_Release(packed_ip);
 
     SUPPRESS_DEPRECATED_CALL
     return PyUnicode_FromString(inet_ntoa(packed_addr));
@@ -7219,8 +7218,7 @@ static PyMethodDef socket_methods[] = {
      METH_O, htonl_doc},
     _SOCKET_SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
-    {"inet_ntoa",               socket_inet_ntoa,
-     METH_VARARGS, inet_ntoa_doc},
+    _SOCKET_SOCKET_INET_NTOA_METHODDEF
 #endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,

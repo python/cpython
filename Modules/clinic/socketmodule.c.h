@@ -179,4 +179,44 @@ _socket_socket_inet_aton(PySocketSockObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fcda0595da1ee90d input=a9049054013a1b77]*/
+
+#if defined(HAVE_INET_NTOA)
+
+PyDoc_STRVAR(_socket_socket_inet_ntoa__doc__,
+"inet_ntoa($self, packed_ip, /)\n"
+"--\n"
+"\n"
+"Convert an IP address from 32-bit packed binary format to string format.");
+
+#define _SOCKET_SOCKET_INET_NTOA_METHODDEF    \
+    {"inet_ntoa", (PyCFunction)_socket_socket_inet_ntoa, METH_O, _socket_socket_inet_ntoa__doc__},
+
+static PyObject *
+_socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip);
+
+static PyObject *
+_socket_socket_inet_ntoa(PySocketSockObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer packed_ip = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &packed_ip, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    return_value = _socket_socket_inet_ntoa_impl(self, &packed_ip);
+
+exit:
+    /* Cleanup for packed_ip */
+    if (packed_ip.obj) {
+       PyBuffer_Release(&packed_ip);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_INET_NTOA) */
+
+#ifndef _SOCKET_SOCKET_INET_NTOA_METHODDEF
+    #define _SOCKET_SOCKET_INET_NTOA_METHODDEF
+#endif /* !defined(_SOCKET_SOCKET_INET_NTOA_METHODDEF) */
+/*[clinic end generated code: output=14b6716b99e1e91f input=a9049054013a1b77]*/
