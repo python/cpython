@@ -641,7 +641,7 @@ User-defined generics for parameter expressions are also supported via parameter
 specification variables in the form ``[**P]``.  The behavior is consistent
 with type variables' described above as parameter specification variables are
 treated by the typing module as a specialized type variable.  The one exception
-to this is that a list of types can be used to substitute a :class:`ParamSpec`:
+to this is that a list of types can be used to substitute a :class:`ParamSpec`::
 
    >>> class Z[T, **P]: ...  # T is a TypeVar; P is a ParamSpec
    ...
