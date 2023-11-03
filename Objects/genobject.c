@@ -165,7 +165,6 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
-    PyObject *result;
 
     *presult = NULL;
     if (gen->gi_frame_state == FRAME_CREATED && arg && arg != Py_None) {
@@ -214,8 +213,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
            FRAME_STATE_SUSPENDED(gen->gi_frame_state));
 
     /* Push arg onto the frame's value stack */
-    result = arg ? arg : Py_None;
-    _PyFrame_StackPush(frame, Py_NewRef(result));
+    PyObject *arg_obj = arg ? arg : Py_None;
+    _PyFrame_StackPush(frame, Py_NewRef(arg_obj));
 
     _PyErr_StackItem *prev_exc_info = tstate->exc_info;
     gen->gi_exc_state.previous_item = prev_exc_info;
@@ -228,7 +227,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     gen->gi_frame_state = FRAME_EXECUTING;
     EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
-    result = _PyEval_EvalFrame(tstate, frame, exc);
+    PyObject *result = _PyEval_EvalFrame(tstate, frame, exc);
     assert(tstate->exc_info == prev_exc_info);
     assert(gen->gi_exc_state.previous_item == NULL);
     assert(gen->gi_frame_state != FRAME_EXECUTING);
