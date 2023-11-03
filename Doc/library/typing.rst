@@ -3059,7 +3059,7 @@ Introspection helpers
 
    Return the set of members defined in a :class:`Protocol`.
 
-   ::
+   .. doctest::
 
       >>> from typing import Protocol, get_protocol_members
       >>> class P(Protocol):
