@@ -35,7 +35,7 @@
                 next_instr = this_instr;
             }
             else {
-                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                if (!RESUME_WITH_SUBITERATOR(oparg)) {
                     CHECK_EVAL_BREAKER();
                 }
                 this_instr->op.code = RESUME_CHECK;
@@ -71,7 +71,7 @@
                 next_instr = this_instr;
             }
             else {
-                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                if (!RESUME_WITH_SUBITERATOR(oparg)) {
                     CHECK_EVAL_BREAKER();
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
