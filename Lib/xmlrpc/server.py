@@ -270,7 +270,7 @@ class SimpleXMLRPCDispatcher:
                              encoding=self.encoding)
         except BaseException as exc:
             response = dumps(
-                Fault(1, "%s:%s" % (type(exc), exc)),
+                Fault(1, "%s:%s" % (repr(type(exc)), exc)),
                 encoding=self.encoding, allow_none=self.allow_none,
                 )
 
@@ -365,7 +365,7 @@ class SimpleXMLRPCDispatcher:
             except BaseException as exc:
                 results.append(
                     {'faultCode' : 1,
-                     'faultString' : "%s:%s" % (type(exc), exc)}
+                     'faultString' : "%s:%s" % (repr(type(exc)), exc)}
                     )
         return results
 
@@ -628,7 +628,7 @@ class MultiPathXMLRPCServer(SimpleXMLRPCServer):
             # (each dispatcher should have handled their own
             # exceptions)
             response = dumps(
-                Fault(1, "%s:%s" % (type(exc), exc)),
+                Fault(1, "%s:%s" % (repr(type(exc)), exc)),
                 encoding=self.encoding, allow_none=self.allow_none)
             response = response.encode(self.encoding, 'xmlcharrefreplace')
         return response

@@ -125,6 +125,11 @@ Other Language Changes
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
+* Formatting a type as a string now formats the type fully qualified name,
+  instead of formating its representation (`<class ...>`).
+  (Contributed by Victor Stinner in :gh:`111696`.)
+
+
 New Modules
 ===========
 

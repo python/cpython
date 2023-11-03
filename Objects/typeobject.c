@@ -1596,37 +1596,75 @@ static PyGetSetDef type_getsets[] = {
     {0}
 };
 
+static PyObject*
+type_fullyqualname(PyTypeObject *type, int ignore_module_error)
+{
+    // type is a static type and PyType_Ready() was not called on it yet?
+    if (type->tp_name == NULL) {
+        PyErr_SetString(PyExc_TypeError, "static type not initialized");
+        return NULL;
+    }
+
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        // Static type
+        return PyUnicode_FromString(type->tp_name);
+    }
+
+    PyObject *qualname = type_qualname(type, NULL);
+    if (qualname == NULL) {
+        return NULL;
+    }
+
+    PyObject *module = type_module(type, NULL);
+    if (module == NULL) {
+        if (ignore_module_error) {
+            // type_repr() ignores type_module() errors
+            PyErr_Clear();
+            return qualname;
+        }
+
+        Py_DECREF(qualname);
+        return NULL;
+    }
+
+    PyObject *result;
+    if (PyUnicode_Check(module)
+        && !_PyUnicode_Equal(module, &_Py_ID(builtins)))
+    {
+        result = PyUnicode_FromFormat("%U.%U", module, qualname);
+    }
+    else {
+        result = Py_NewRef(qualname);
+    }
+    Py_DECREF(module);
+    Py_DECREF(qualname);
+    return result;
+}
+
+
+static PyObject *
+type_str(PyTypeObject *type)
+{
+    return type_fullyqualname(type, 0);
+}
+
+
 static PyObject *
 type_repr(PyTypeObject *type)
 {
     if (type->tp_name == NULL) {
-        // type_repr() called before the type is fully initialized
-        // by PyType_Ready().
+        // If type_repr() is called before the type is fully initialized
+        // by PyType_Ready(), just format the type memory address.
         return PyUnicode_FromFormat("<class at %p>", type);
     }
 
-    PyObject *mod, *name, *rtn;
-
-    mod = type_module(type, NULL);
-    if (mod == NULL)
-        PyErr_Clear();
-    else if (!PyUnicode_Check(mod)) {
-        Py_SETREF(mod, NULL);
-    }
-    name = type_qualname(type, NULL);
-    if (name == NULL) {
-        Py_XDECREF(mod);
+    PyObject *fullqualname = type_fullyqualname(type, 1);
+    if (fullqualname == NULL) {
         return NULL;
     }
-
-    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins)))
-        rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
-    else
-        rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
-
-    Py_XDECREF(mod);
-    Py_DECREF(name);
-    return rtn;
+    PyObject *result = PyUnicode_FromFormat("<class '%U'>", fullqualname);
+    Py_DECREF(fullqualname);
+    return result;
 }
 
 static PyObject *
@@ -4540,6 +4578,7 @@ PyType_GetQualName(PyTypeObject *type)
     return type_qualname(type, NULL);
 }
 
+
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
@@ -5230,6 +5269,7 @@ type___sizeof___impl(PyTypeObject *self)
     return PyLong_FromSize_t(size);
 }
 
+
 static PyMethodDef type_methods[] = {
     TYPE_MRO_METHODDEF
     TYPE___SUBCLASSES___METHODDEF
@@ -5354,7 +5394,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     (ternaryfunc)type_call,                     /* tp_call */
-    0,                                          /* tp_str */
+    (reprfunc)type_str,                         /* tp_str */
     (getattrofunc)_Py_type_getattro,            /* tp_getattro */
     (setattrofunc)type_setattro,                /* tp_setattro */
     0,                                          /* tp_as_buffer */

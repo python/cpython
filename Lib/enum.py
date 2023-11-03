@@ -729,7 +729,7 @@ class EnumType(type):
         if names is None and type is None:
             # no body? no data-type? possibly wrong usage
             raise TypeError(
-                    f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
+                    f"{cls!r} has no members; specify `names=()` if you meant to create a new, empty, enum"
                     )
         return cls._create_(
                 class_name=value,

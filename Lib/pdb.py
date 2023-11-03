@@ -1729,7 +1729,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message('Class %s.%s' % (value.__module__, value.__qualname__))
             return
         # None of the above...
-        self.message(type(value))
+        self.message(repr(type(value)))
 
     complete_whatis = _complete_expression
 

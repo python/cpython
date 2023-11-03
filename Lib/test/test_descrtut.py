@@ -38,16 +38,16 @@ test_1 = """
 
 Here's the new type at work:
 
-    >>> print(defaultdict)              # show our type
+    >>> print(repr(defaultdict))        # show our type
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(type(defaultdict))        # its metatype
+    >>> print(repr(type(defaultdict)))  # its metatype
     <class 'type'>
     >>> a = defaultdict(default=0.0)    # create an instance
     >>> print(a)                        # show the instance
     {}
-    >>> print(type(a))                  # show its type
+    >>> print(repr(type(a)))            # show its type
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(a.__class__)              # show its class
+    >>> print(repr(a.__class__))        # show its class
     <class 'test.test_descrtut.defaultdict'>
     >>> print(type(a) is a.__class__)   # its type is its class
     True
@@ -261,7 +261,7 @@ implicit first argument that is the *class* for which they are invoked.
     >>> class C:
     ...     @classmethod
     ...     def foo(cls, y):
-    ...         print("classmethod", cls, y)
+    ...         print("classmethod", repr(cls), y)
 
     >>> C.foo(1)
     classmethod <class 'test.test_descrtut.C'> 1

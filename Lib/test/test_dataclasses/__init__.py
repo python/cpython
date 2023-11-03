@@ -738,7 +738,7 @@ class TestCase(unittest.TestCase):
             with self.subTest(typ=typ):
                 # Can't use a zero-length value.
                 with self.assertRaisesRegex(ValueError,
-                                            f'mutable default {typ} for field '
+                                            f'mutable default {typ!r} for field '
                                             'x is not allowed'):
                     @dataclass
                     class Point:
@@ -747,7 +747,7 @@ class TestCase(unittest.TestCase):
 
                 # Nor a non-zero-length value
                 with self.assertRaisesRegex(ValueError,
-                                            f'mutable default {typ} for field '
+                                            f'mutable default {typ!r} for field '
                                             'y is not allowed'):
                     @dataclass
                     class Point:
