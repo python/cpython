@@ -95,6 +95,9 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
+        # implement fair scheduling, where thread always waits
+        # its turn.
+        # Jumping the queue if all are cancelled is an optimization.
         if (not self._locked and (self._waiters is None or
                 all(w.cancelled() for w in self._waiters))):
             self._locked = True
@@ -105,19 +108,16 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         fut = self._get_loop().create_future()
         self._waiters.append(fut)
 
-        # Finally block should be called before the CancelledError
-        # handling as we don't want CancelledError to call
-        # _wake_up_first() and attempt to wake up itself.
         try:
-            try:
-                await fut
-            finally:
-                self._waiters.remove(fut)
-        except exceptions.CancelledError:
+            await fut
+        except BaseException:
+            self._waiters.remove(fut)
             if not self._locked:
+                # Error occurred after release() was called, must re-do release
                 self._wake_up_first()
             raise
 
+        self._waiters.remove(fut)
         self._locked = True
         return True
 
@@ -269,7 +269,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
                 self._waiters.remove(fut)
 
         finally:
-            # Must reacquire lock even if wait is cancelled
+            # Must reacquire lock even if wait is cancelled.
             # We only catch CancelledError here, since we don't want any
             # other (fatal) errors with the future to cause us to spin.
             err = None
@@ -383,20 +383,18 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         fut = self._get_loop().create_future()
         self._waiters.append(fut)
 
-        # Finally block should be called before the CancelledError
-        # handling as we don't want CancelledError to call
-        # _wake_up_first() and attempt to wake up itself.
         try:
-            try:
-                await fut
-            finally:
-                self._waiters.remove(fut)
-        except exceptions.CancelledError:
-            if not fut.cancelled():
+            await fut
+        except BaseException:
+            self._waiters.remove(fut)
+            if fut.done() and not fut.cancelled():
+                # Error occurred after release() was called for us.  Must undo
+                # the bookkeeping done there and retry.
                 self._value += 1
                 self._wake_up_next()
             raise
 
+        self._waiters.remove(fut)
         if self._value > 0:
             self._wake_up_next()
         return True
