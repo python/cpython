@@ -483,7 +483,7 @@ class BaseConfigurator(object):
         if not callable(c):
             c = self.resolve(c)
         # Check for valid identifiers
-        kwargs = {k: config[k] for k in config if (False if k == '.' else valid_ident(k))}
+        kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
         result = c(**kwargs)
         props = config.pop('.', None)
         if props:
