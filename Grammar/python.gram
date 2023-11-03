@@ -96,7 +96,7 @@ statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(
 statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | a[asdl_stmt_seq*]=simple_stmts { a }
 
 statement_newline[asdl_stmt_seq*]:
-    | a=compound_stmt NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
+    | a[asdl_seq*]=compound_stmt+ b=(simple_stmts | NEWLINE { _Py_asdl_stmt_seq_new(0, p->arena) }) { (asdl_stmt_seq*)_PyPegen_seq_concat(p, a, (asdl_seq*)b) }
     | simple_stmts
     | NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, CHECK(stmt_ty, _PyAST_Pass(EXTRA))) }
     | ENDMARKER { _PyPegen_interactive_exit(p) }
