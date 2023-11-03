@@ -48,7 +48,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
     Py_VISIT(gen->gi_name);
     Py_VISIT(gen->gi_qualname);
-    if (gen->gi_frame_state < FRAME_CLEARED) {
+    if (gen->gi_frame_state != FRAME_CLEARED) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)(gen->gi_iframe);
         assert(frame->frame_obj == NULL ||
                frame->frame_obj->f_frame->owner == FRAME_OWNED_BY_GENERATOR);
@@ -68,7 +68,7 @@ _PyGen_Finalize(PyObject *self)
 {
     PyGenObject *gen = (PyGenObject *)self;
 
-    if (gen->gi_frame_state >= FRAME_COMPLETED) {
+    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
         /* Generator isn't paused, so no need to close */
         return;
     }
@@ -141,7 +141,7 @@ gen_dealloc(PyGenObject *gen)
            and GC_Del. */
         Py_CLEAR(((PyAsyncGenObject*)gen)->ag_origin_or_finalizer);
     }
-    if (gen->gi_frame_state < FRAME_CLEARED) {
+    if (gen->gi_frame_state != FRAME_CLEARED) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
         gen->gi_frame_state = FRAME_CLEARED;
         frame->previous = NULL;
@@ -192,7 +192,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         PyErr_SetString(PyExc_ValueError, msg);
         return PYGEN_ERROR;
     }
-    if (gen->gi_frame_state >= FRAME_COMPLETED) {
+    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
         if (PyCoro_CheckExact(gen) && !closing) {
             /* `gen` is an exhausted coroutine: raise an error,
                except when called from gen_close(), which should
@@ -210,7 +210,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         return PYGEN_ERROR;
     }
 
-    assert(gen->gi_frame_state < FRAME_EXECUTING);
+    assert((gen->gi_frame_state == FRAME_CREATED) ||
+           FRAME_STATE_SUSPENDED(gen->gi_frame_state));
+
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     _PyFrame_StackPush(frame, Py_NewRef(result));
@@ -360,7 +362,7 @@ gen_close(PyGenObject *gen, PyObject *args)
         gen->gi_frame_state = FRAME_COMPLETED;
         Py_RETURN_NONE;
     }
-    if (gen->gi_frame_state >= FRAME_COMPLETED) {
+    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
         Py_RETURN_NONE;
     }
     PyObject *yf = _PyGen_yf(gen);
@@ -2089,7 +2091,7 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
         return NULL;
     }
 
-    if (gen->gi_frame_state >= FRAME_COMPLETED) {
+    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
         o->agt_state = AWAITABLE_STATE_CLOSED;
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
