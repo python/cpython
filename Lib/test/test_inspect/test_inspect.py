@@ -16,6 +16,7 @@ import pickle
 import shutil
 import stat
 import sys
+import subprocess
 import time
 import types
 import tempfile
@@ -35,7 +36,8 @@ from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
+from test.support import has_subprocess_support, SuppressCrashReport
 from test import support
 
 from . import inspect_fodder as mod
@@ -4959,6 +4961,67 @@ def foo():
             with open(path, 'w', encoding='utf-8') as src:
                 src.write(self.src_after)
             self.assertInspectEqual(path, module)
+
+
+class TestRepl(unittest.TestCase):
+
+    def spawn_repl(self, *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
+        """Run the Python REPL with the given arguments.
+
+        kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
+        object.
+        """
+
+        # To run the REPL without using a terminal, spawn python with the command
+        # line option '-i' and the process name set to '<stdin>'.
+        # The directory of argv[0] must match the directory of the Python
+        # executable for the Popen() call to python to succeed as the directory
+        # path may be used by Py_GetPath() to build the default module search
+        # path.
+        stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
+        cmd_line = [stdin_fname, '-E', '-i']
+        cmd_line.extend(args)
+
+        # Set TERM=vt100, for the rationale see the comments in spawn_python() of
+        # test.support.script_helper.
+        env = kw.setdefault('env', dict(os.environ))
+        env['TERM'] = 'vt100'
+        return subprocess.Popen(cmd_line,
+                                executable=sys.executable,
+                                text=True,
+                                stdin=subprocess.PIPE,
+                                stdout=stdout, stderr=stderr,
+                                **kw)
+
+    def run_on_interactive_mode(self, source):
+        """Spawn a new Python interpreter, pass the given
+        input source code from the stdin and return the
+        result back. If the interpreter exits non-zero, it
+        raises a ValueError."""
+
+        process = self.spawn_repl()
+        process.stdin.write(source)
+        output = kill_python(process)
+
+        if process.returncode != 0:
+            raise ValueError("Process didn't exit properly.")
+        return output
+
+    @unittest.skipIf(not has_subprocess_support, "test requires subprocess")
+    def test_getsource(self):
+        output = self.run_on_interactive_mode(textwrap.dedent("""\
+        def f():
+            print(0)
+            return 1 + 2
+
+        import inspect
+        print(f"The source is: <<<{inspect.getsource(f)}>>>")
+        """))
+
+        expected = "The source is: <<<def f():\n    print(0)\n    return 1 + 2\n>>>"
+        self.assertIn(expected, output)
+
+
 
 
 if __name__ == "__main__":

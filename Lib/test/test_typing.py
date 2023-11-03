@@ -9,8 +9,7 @@ import itertools
 import pickle
 import re
 import sys
-import warnings
-from unittest import TestCase, main, skipUnless, skip
+from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
 
@@ -45,7 +44,7 @@ import typing
 import weakref
 import types
 
-from test.support import import_helper, captured_stderr, cpython_only
+from test.support import captured_stderr, cpython_only
 from test import mod_generics_cache
 from test import _typed_dict_helper
 
@@ -553,6 +552,12 @@ class TypeVarTests(BaseTestCase):
                 for x in range(10):
                     vals[x] = cls(str(x))
                 del vals
+
+    def test_constructor(self):
+        T = TypeVar(name="T")
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, None)
 
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
@@ -2005,13 +2010,13 @@ class BaseCallableTests:
         def f():
             pass
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], None])
+            isinstance(f, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], Any])
+            isinstance(f, Callable[[], Any])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], None])
+            isinstance(None, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], Any])
+            isinstance(None, Callable[[], Any])
 
     def test_repr(self):
         Callable = self.Callable

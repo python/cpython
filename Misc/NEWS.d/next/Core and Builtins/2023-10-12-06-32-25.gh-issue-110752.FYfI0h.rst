@@ -1,1 +1,0 @@
-Reset ``ceval.eval_breaker`` in :func:`interpreter_clear`

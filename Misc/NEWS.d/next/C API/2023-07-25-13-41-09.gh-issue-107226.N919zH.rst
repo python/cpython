@@ -1,2 +1,0 @@
-:c:func:`PyModule_AddObjectRef` is now only available in the limited API
-version 3.10 or later.

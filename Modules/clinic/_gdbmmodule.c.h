@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -316,13 +318,8 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = PyUnicode_AsUTF8(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
@@ -338,4 +335,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84f30c7fff0eadac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=725cafd8b2d8cfdb input=a9049054013a1b77]*/
