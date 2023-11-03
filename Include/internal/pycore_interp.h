@@ -200,7 +200,6 @@ struct _is {
     uint32_t next_func_version;
 
     _Py_GlobalMonitors monitors;
-    bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
