@@ -1425,7 +1425,6 @@ dummy_func(
                     Py_INCREF(value);
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(class_dict);
                     goto error;
                 }
             }
@@ -1433,13 +1432,11 @@ dummy_func(
                 value = PyObject_GetItem(class_dict, name);
                 if (value == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(class_dict);
                         goto error;
                     }
                     _PyErr_Clear(tstate);
                 }
             }
-            Py_DECREF(class_dict);
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
@@ -1449,6 +1446,7 @@ dummy_func(
                 }
                 Py_INCREF(value);
             }
+            Py_DECREF(class_dict);
         }
 
         inst(LOAD_DEREF, ( -- value)) {
