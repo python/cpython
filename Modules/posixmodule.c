@@ -292,9 +292,15 @@ corresponding Unix manual entries for more information on calls.");
 #  undef HAVE_SCHED_SETAFFINITY
 #endif
 
-#if defined(HAVE_SYS_XATTR_H) && defined(HAVE_LINUX_LIMITS_H) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
-#  define USE_XATTRS
-#  include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
+#if defined(HAVE_SYS_XATTR_H)
+#  if defined(HAVE_LINUX_LIMITS_H) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
+#    define USE_XATTRS
+#    include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
+#  endif
+#  if defined(__CYGWIN__)
+#    define USE_XATTRS
+#    include <cygwin/limits.h>  // Needed for XATTR_SIZE_MAX and XATTR_LIST_MAX.
+#  endif
 #endif
 
 #ifdef USE_XATTRS
@@ -548,6 +554,11 @@ extern char        *ctermid_r(char *);
 /* eventfd() */
 #ifdef HAVE_SYS_EVENTFD_H
 #  include <sys/eventfd.h>
+#endif
+
+/* timerfd_create() */
+#ifdef HAVE_SYS_TIMERFD_H
+#  include <sys/timerfd.h>
 #endif
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -10096,6 +10107,227 @@ os_times_impl(PyObject *module)
 #endif /* HAVE_TIMES */
 
 
+#if defined(HAVE_TIMERFD_CREATE)
+#define ONE_SECOND_IN_NS (1000 * 1000 * 1000)
+#define EXTRACT_NSEC(value)  (long)( ( (double)(value) - (time_t)(value) ) * 1e9)
+#define CONVERT_SEC_AND_NSEC_TO_DOUBLE(sec, nsec) ( (double)(sec) + (double)(nsec) * 1e-9 )
+
+static PyObject *
+build_itimerspec(const struct itimerspec* curr_value)
+{
+    double _value = CONVERT_SEC_AND_NSEC_TO_DOUBLE(curr_value->it_value.tv_sec,
+                                                          curr_value->it_value.tv_nsec);
+    PyObject *value = PyFloat_FromDouble(_value);
+    if (value == NULL) {
+        return NULL;
+    }
+    double _interval = CONVERT_SEC_AND_NSEC_TO_DOUBLE(curr_value->it_interval.tv_sec,
+                                                   curr_value->it_interval.tv_nsec);
+    PyObject *interval = PyFloat_FromDouble(_interval);
+    if (interval == NULL) {
+        Py_DECREF(value);
+        return NULL;
+    }
+    PyObject *tuple = PyTuple_Pack(2, value, interval);
+    Py_DECREF(interval);
+    Py_DECREF(value);
+    return tuple;
+}
+
+static PyObject *
+build_itimerspec_ns(const struct itimerspec* curr_value)
+{
+    _PyTime_t value, interval;
+    if (_PyTime_FromTimespec(&value, &curr_value->it_value) < 0) {
+        return NULL;
+    }
+    if (_PyTime_FromTimespec(&interval, &curr_value->it_interval) < 0) {
+        return NULL;
+    }
+    return Py_BuildValue("LL", value, interval);
+}
+
+/*[clinic input]
+os.timerfd_create
+
+    clockid: int
+        A valid clock ID constant as timer file descriptor.
+
+        time.CLOCK_REALTIME
+        time.CLOCK_MONOTONIC
+        time.CLOCK_BOOTTIME
+    /
+    *
+    flags: int = 0
+        0 or a bit mask of os.TFD_NONBLOCK or os.TFD_CLOEXEC.
+
+        os.TFD_NONBLOCK
+            If *TFD_NONBLOCK* is set as a flag, read doesn't blocks.
+            If *TFD_NONBLOCK* is not set as a flag, read block until the timer fires.
+
+        os.TFD_CLOEXEC
+            If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag
+
+Create and return a timer file descriptor.
+[clinic start generated code]*/
+
+static PyObject *
+os_timerfd_create_impl(PyObject *module, int clockid, int flags)
+/*[clinic end generated code: output=1caae80fb168004a input=64b7020c5ac0b8f4]*/
+
+{
+    int fd;
+    Py_BEGIN_ALLOW_THREADS
+    flags |= TFD_CLOEXEC;  // PEP 446: always create non-inheritable FD
+    fd = timerfd_create(clockid, flags);
+    Py_END_ALLOW_THREADS
+    if (fd == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromLong(fd);
+}
+
+/*[clinic input]
+os.timerfd_settime
+
+    fd: fildes
+        A timer file descriptor.
+    /
+    *
+    flags: int = 0
+        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
+    initial: double = 0.0
+        The initial expiration time, in seconds.
+    interval: double = 0.0
+        The timer's interval, in seconds.
+
+Alter a timer file descriptor's internal timer in seconds.
+[clinic start generated code]*/
+
+static PyObject *
+os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
+                        double interval)
+/*[clinic end generated code: output=0dda31115317adb9 input=6c24e47e7a4d799e]*/
+{
+    struct itimerspec new_value;
+    struct itimerspec old_value;
+    int result;
+    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(initial, _PyTime_ROUND_FLOOR), &new_value.it_value) < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid initial value");
+        return NULL;
+    }
+    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(interval, _PyTime_ROUND_FLOOR), &new_value.it_interval) < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid interval value");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    result = timerfd_settime(fd, flags, &new_value, &old_value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return build_itimerspec(&old_value);
+}
+
+
+/*[clinic input]
+os.timerfd_settime_ns
+
+    fd: fildes
+        A timer file descriptor.
+    /
+    *
+    flags: int = 0
+        0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
+    initial: long_long = 0
+        initial expiration timing in seconds.
+    interval: long_long = 0
+        interval for the timer in seconds.
+
+Alter a timer file descriptor's internal timer in nanoseconds.
+[clinic start generated code]*/
+
+static PyObject *
+os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
+                           long long initial, long long interval)
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=261e105d6e42f5bc]*/
+{
+    struct itimerspec new_value;
+    struct itimerspec old_value;
+    int result;
+    if (_PyTime_AsTimespec(initial, &new_value.it_value) < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid initial value");
+        return NULL;
+    }
+    if (_PyTime_AsTimespec(interval, &new_value.it_interval) < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid interval value");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    result = timerfd_settime(fd, flags, &new_value, &old_value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return build_itimerspec_ns(&old_value);
+}
+
+/*[clinic input]
+os.timerfd_gettime
+
+    fd: fildes
+        A timer file descriptor.
+    /
+
+Return a tuple of a timer file descriptor's (interval, next expiration) in float seconds.
+[clinic start generated code]*/
+
+static PyObject *
+os_timerfd_gettime_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=8148e3430870da1c]*/
+{
+    struct itimerspec curr_value;
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = timerfd_gettime(fd, &curr_value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return build_itimerspec(&curr_value);
+}
+
+
+/*[clinic input]
+os.timerfd_gettime_ns
+
+    fd: fildes
+        A timer file descriptor.
+    /
+
+Return a tuple of a timer file descriptor's (interval, next expiration) in nanoseconds.
+[clinic start generated code]*/
+
+static PyObject *
+os_timerfd_gettime_ns_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=580633a4465f39fe input=a825443e4c6b40ac]*/
+{
+    struct itimerspec curr_value;
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = timerfd_gettime(fd, &curr_value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return build_itimerspec_ns(&curr_value);
+}
+
+#undef ONE_SECOND_IN_NS
+#undef EXTRACT_NSEC
+
+#endif  /* HAVE_TIMERFD_CREATE */
+
 #ifdef HAVE_GETSID
 /*[clinic input]
 os.getsid
@@ -11050,9 +11282,9 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
 
 done:
     #if !defined(HAVE_LARGEFILE_SUPPORT)
-        return Py_BuildValue("l", sbytes);
+        return PyLong_FromLong(sbytes);
     #else
-        return Py_BuildValue("L", sbytes);
+        return PyLong_FromLongLong(sbytes);
     #endif
 
 #else
@@ -11065,7 +11297,7 @@ done:
         } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
         if (ret < 0)
             return (!async_err) ? posix_error() : NULL;
-        return Py_BuildValue("n", ret);
+        return PyLong_FromSsize_t(ret);
     }
 #endif
     off_t offset;
@@ -11086,7 +11318,7 @@ done:
         return (!async_err) ? posix_error() : NULL;
 
     if (offset >= st.st_size) {
-        return Py_BuildValue("i", 0);
+        return PyLong_FromLong(0);
     }
 
     // On illumos specifically sendfile() may perform a partial write but
@@ -11112,7 +11344,7 @@ done:
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
-    return Py_BuildValue("n", ret);
+    return PyLong_FromSsize_t(ret);
 #endif
 }
 #endif /* HAVE_SENDFILE */
@@ -14366,7 +14598,6 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 }
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
 
-
 /*[clinic input]
 os.cpu_count
 
@@ -14379,7 +14610,12 @@ static PyObject *
 os_cpu_count_impl(PyObject *module)
 /*[clinic end generated code: output=5fc29463c3936a9c input=ba2f6f8980a0e2eb]*/
 {
-    int ncpu;
+    const PyConfig *config = _Py_GetConfig();
+    if (config->cpu_count > 0) {
+        return PyLong_FromLong(config->cpu_count);
+    }
+
+    int ncpu = 0;
 #ifdef MS_WINDOWS
 # ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
@@ -14575,6 +14811,7 @@ typedef struct {
 #ifdef MS_WINDOWS
     struct _Py_stat_struct win32_lstat;
     uint64_t win32_file_index;
+    uint64_t win32_file_index_high;
     int got_file_index;
 #else /* POSIX */
 #ifdef HAVE_DIRENT_D_TYPE
@@ -14904,11 +15141,10 @@ os_DirEntry_inode_impl(DirEntry *self)
         }
 
         self->win32_file_index = stat.st_ino;
+        self->win32_file_index_high = stat.st_ino_high;
         self->got_file_index = 1;
     }
-    static_assert(sizeof(unsigned long long) >= sizeof(self->win32_file_index),
-                  "DirEntry.win32_file_index is larger than unsigned long long");
-    return PyLong_FromUnsignedLongLong(self->win32_file_index);
+    return _pystat_l128_from_l64_l64(self->win32_file_index, self->win32_file_index_high);
 #else /* POSIX */
     static_assert(sizeof(unsigned long long) >= sizeof(self->d_ino),
                   "DirEntry.d_ino is larger than unsigned long long");
@@ -16028,6 +16264,11 @@ static PyMethodDef posix_methods[] = {
     OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     OS_SETNS_METHODDEF
     OS_UNSHARE_METHODDEF
+    OS_TIMERFD_CREATE_METHODDEF
+    OS_TIMERFD_SETTIME_METHODDEF
+    OS_TIMERFD_SETTIME_NS_METHODDEF
+    OS_TIMERFD_GETTIME_METHODDEF
+    OS_TIMERFD_GETTIME_NS_METHODDEF
 
     OS__PATH_ISDEVDRIVE_METHODDEF
     OS__PATH_ISDIR_METHODDEF
@@ -16341,6 +16582,19 @@ all_ins(PyObject *m)
 #endif
 #ifdef SF_NOCACHE
     if (PyModule_AddIntMacro(m, SF_NOCACHE)) return -1;
+#endif
+
+#ifdef TFD_NONBLOCK
+    if (PyModule_AddIntMacro(m, TFD_NONBLOCK)) return -1;
+#endif
+#ifdef TFD_CLOEXEC
+    if (PyModule_AddIntMacro(m, TFD_CLOEXEC)) return -1;
+#endif
+#ifdef TFD_TIMER_ABSTIME
+    if (PyModule_AddIntMacro(m, TFD_TIMER_ABSTIME)) return -1;
+#endif
+#ifdef TFD_TIMER_CANCEL_ON_SET
+    if (PyModule_AddIntMacro(m, TFD_TIMER_CANCEL_ON_SET)) return -1;
 #endif
 
     /* constants for posix_fadvise */
@@ -16739,6 +16993,10 @@ static const struct have_function {
 
 #ifdef HAVE_EVENTFD
     {"HAVE_EVENTFD", NULL},
+#endif
+
+#ifdef HAVE_TIMERFD_CREATE
+    {"HAVE_TIMERFD_CREATE", NULL},
 #endif
 
 #ifdef HAVE_FACCESSAT

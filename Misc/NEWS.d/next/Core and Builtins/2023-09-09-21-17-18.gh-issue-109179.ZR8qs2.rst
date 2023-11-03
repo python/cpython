@@ -1,1 +1,0 @@
-Fix bug where the C traceback display drops notes from :exc:`SyntaxError`.

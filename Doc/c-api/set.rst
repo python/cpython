@@ -163,4 +163,6 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 
 .. c:function:: int PySet_Clear(PyObject *set)
 
-   Empty an existing set of all elements.
+   Empty an existing set of all elements. Return ``0`` on
+   success. Return ``-1`` and raise :exc:`SystemError` if *set* is not an instance of
+   :class:`set` or its subtype.

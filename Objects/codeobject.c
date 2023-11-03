@@ -7,12 +7,11 @@
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
-
-static PyObject* code_repr(PyCodeObject *co);
 
 static const char *
 code_event_name(PyCodeEvent event) {
@@ -41,21 +40,9 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
-                // Don't risk resurrecting the object if an unraisablehook keeps
-                // a reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = code_repr(co);
-                if (repr) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        code_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for %R",
+                    code_event_name(event), co);
             }
         }
         i++;
@@ -733,7 +720,7 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
 static const uint8_t assert0[6] = {
-    RESUME, 0,
+    RESUME, RESUME_AT_FUNC_START,
     LOAD_ASSERTION_ERROR, 0,
     RAISE_VARARGS, 1
 };

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 

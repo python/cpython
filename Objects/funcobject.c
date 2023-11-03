@@ -3,11 +3,10 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
-
-static PyObject* func_repr(PyFunctionObject *op);
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -34,21 +33,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                // Don't risk resurrecting the func if an unraisablehook keeps a
-                // reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = func_repr(func);
-                if (repr != NULL) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        func_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event), func->func_qualname, func);
             }
         }
         i++;
@@ -288,7 +275,7 @@ _PyFunction_LookupByVersion(uint32_t version)
     PyFunctionObject *func = interp->func_state.func_version_cache[
         version % FUNC_VERSION_CACHE_SIZE];
     if (func != NULL && func->func_version == version) {
-        return (PyFunctionObject *)Py_NewRef(func);
+        return func;
     }
     return NULL;
 }
@@ -1109,10 +1096,6 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
     if (type == NULL)
         type = (PyObject *)(Py_TYPE(obj));
-    if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL) {
-        return Py_TYPE(cm->cm_callable)->tp_descr_get(cm->cm_callable, type,
-                                                      type);
-    }
     return PyMethod_New(cm->cm_callable, type);
 }
 

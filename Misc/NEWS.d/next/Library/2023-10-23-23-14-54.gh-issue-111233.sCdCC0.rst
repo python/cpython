@@ -1,0 +1,1 @@
+Fix :mod:`select` not checking for errors when initializing.

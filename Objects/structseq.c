@@ -9,11 +9,11 @@
 
 #include "Python.h"
 #include "pycore_dict.h"          // _PyDict_Pop()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";

@@ -1,7 +1,0 @@
-In the beta 1 release we added a utility function for extension module
-authors, to use when testing their module for support in multiple
-interpreters or under a per-interpreter GIL.  The name of that function has
-changed from ``allowing_all_extensions`` to
-``_incompatible_extension_module_restrictions``.  The default for the
-"disable_check" argument has change from ``True`` to ``False``, to better
-match the new function name.
