@@ -608,7 +608,7 @@ static bool frame_is_suspended(PyFrameObject *frame)
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
-        return gen->gi_frame_state == FRAME_SUSPENDED;
+        return FRAME_STATE_SUSPENDED(gen->gi_frame_state);
     }
     return false;
 }

@@ -824,7 +824,8 @@ iterations of the loop.
       oparg set to be the exception block depth, for efficient closing of generators.
 
    .. versionchanged:: 3.13
-      this opcode no longer has an oparg
+      oparg is ``1`` if this instruction is part of a yield-from or await, and ``0``
+      otherwise.
 
 .. opcode:: SETUP_ANNOTATIONS
 

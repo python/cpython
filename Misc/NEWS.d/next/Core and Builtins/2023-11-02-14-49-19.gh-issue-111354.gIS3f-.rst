@@ -1,0 +1,5 @@
+The oparg of :opcode:`YIELD_VALUE` is now ``1`` if the instruction is part
+of a yield-from or await, and ``0`` otherwise.
+
+The SUSPENDED frame state is now split into ``SUSPENDED`` and
+``SUSPENDED_YIELD_FROM``. This simplifies the code in ``_PyGen_yf``.
