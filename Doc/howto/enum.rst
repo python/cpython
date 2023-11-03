@@ -494,7 +494,8 @@ It is possible to modify how enum members are pickled/unpickled by defining
 :meth:`__reduce_ex__` in the enumeration class.  The default method is by-value,
 but enums with complicated values may want to use by-name::
 
-    >>> class MyEnum(Enum):
+    >>> import enum
+    >>> class MyEnum(enum.Enum):
     ...     __reduce_ex__ = enum.pickle_by_enum_name
 
 .. note::
@@ -736,7 +737,7 @@ be combined with them (but may lose :class:`IntFlag` membership::
     >>> Perm.X | 4
     <Perm.R|X: 5>
 
-    >>> Perm.X | 8
+    >>> Perm.X + 8
     9
 
 .. note::
@@ -1398,8 +1399,9 @@ alias::
     ...     GRENE = 2
     ...
     Traceback (most recent call last):
-    ...
+      ...
     ValueError: aliases not allowed in DuplicateFreeEnum:  'GRENE' --> 'GREEN'
+    Error calling __set_name__ on '_proto_member' instance 'GRENE' in 'Color'
 
 .. note::
 
