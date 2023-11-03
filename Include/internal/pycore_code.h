@@ -271,6 +271,8 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
+#include "pycore_bitutils.h"  // _Py_bit_length
+
 #define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
 #define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
