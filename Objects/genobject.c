@@ -43,13 +43,6 @@ PyGen_GetCode(PyGenObject *gen) {
     return res;
 }
 
-static inline int
-exc_state_traverse(_PyErr_StackItem *exc_state, visitproc visit, void *arg)
-{
-    Py_VISIT(exc_state->exc_value);
-    return 0;
-}
-
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
@@ -66,7 +59,8 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     }
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */
-    return exc_state_traverse(&gen->gi_exc_state, visit, arg);
+    Py_VISIT(gen->gi_exc_state.exc_value);
+    return 0;
 }
 
 void
