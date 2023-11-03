@@ -1954,7 +1954,7 @@ without the dedicated syntax, as documented below.
 
    .. doctest::
 
-      >>> from typing import ParamSpec
+      >>> from typing import ParamSpec, get_origin
       >>> P = ParamSpec("P")
       >>> get_origin(P.args) is P
       True
@@ -3065,8 +3065,7 @@ Introspection helpers
       >>> class P(Protocol):
       ...     def a(self) -> str: ...
       ...     b: int
-      >>> get_protocol_members(P)
-      frozenset({'a', 'b'})
+      >>> assert get_protocol_members(P) == frozenset({'a', 'b'})
 
    Raise :exc:`TypeError` for arguments that are not Protocols.
 

@@ -9,8 +9,9 @@ import itertools
 import pickle
 import re
 import sys
-import warnings
-from unittest import TestCase, main, skipUnless, skip
+import os
+import doctest
+from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
 
@@ -45,7 +46,7 @@ import typing
 import weakref
 import types
 
-from test.support import import_helper, captured_stderr, cpython_only
+from test.support import captured_stderr, cpython_only, REPO_ROOT
 from test import mod_generics_cache
 from test import _typed_dict_helper
 
@@ -9463,6 +9464,16 @@ class TypeIterationTests(BaseTestCase):
     def test_is_not_instance_of_iterable(self):
         for type_to_test in self._UNITERABLE_TYPES:
             self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
+
+
+def load_tests(loader, tests, pattern):
+    tests.addTests(doctest.DocFileSuite(
+        os.path.join(REPO_ROOT, 'Doc/library/typing.rst'),
+        module_relative=False,
+        # Some tests in `typing.rst` pretend to be executed in `__main__`:
+        globs={'__name__': '__main__'},
+    ))
+    return tests
 
 
 if __name__ == '__main__':
