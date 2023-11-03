@@ -106,6 +106,7 @@ class _GeneratorContextManagerBase:
     """Shared functionality for @contextmanager and @asynccontextmanager."""
 
     def __init__(self, func, args, kwds):
+        self.exc_context = None
         self.gen = func(*args, **kwds)
         self.func, self.args, self.kwds = func, args, kwds
         # Issue 19330: ensure context manager instances have good docstrings
@@ -134,6 +135,8 @@ class _GeneratorContextManager(
     """Helper for @contextmanager decorator."""
 
     def __enter__(self):
+        # store the exception context on enter so it can be restored on exit
+        self.exc_context = sys.exception()
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
         del self.args, self.kwds, self.func
@@ -143,6 +146,9 @@ class _GeneratorContextManager(
             raise RuntimeError("generator didn't yield") from None
 
     def __exit__(self, typ, value, traceback):
+        # don't keep the stored exception alive unnecessarily
+        exc_context = self.exc_context
+        self.exc_context = None
         if typ is None:
             try:
                 next(self.gen)
@@ -159,6 +165,12 @@ class _GeneratorContextManager(
                 # tell if we get the same exception back
                 value = typ()
             try:
+                # If the generator handles the exception thrown into it, the
+                # exception context will revert to the actual current exception
+                # context here. In order to make the context manager behave
+                # like a normal function we set the current exception context
+                # to what it was during the context manager's __enter__
+                sys._set_exception(exc_context)
                 self.gen.throw(value)
             except StopIteration as exc:
                 # Suppress StopIteration *unless* it's the same exception that
