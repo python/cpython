@@ -22,6 +22,8 @@ PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyO
 
 extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 
+extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
+
 // Helper to look up a builtin object
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
