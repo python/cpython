@@ -426,13 +426,13 @@ def decode_edge(packed, edgeindex, prev_child_offset, offset):
     x, offset = decode_varint_unsigned(packed, offset)
     if x == 0 and edgeindex == 0:
         raise KeyError # trying to decode past a final node
-    child_offset_difference, len1, final_edge = number_split_bits(x, 2)
+    child_offset_difference, len1, last_edge = number_split_bits(x, 2)
     child_offset = prev_child_offset + child_offset_difference
     if len1:
         size = 1
     else:
         size, offset = decode_varint_unsigned(packed, offset)
-    return child_offset, final_edge, size, offset
+    return child_offset, last_edge, size, offset
 
 def _match_edge(packed, s, size, node_offset, stringpos):
     if size > 1 and stringpos + size > len(s):
@@ -461,8 +461,8 @@ def _lookup(packed, s):
         prev_child_offset = edge_offset
         edgeindex = 0
         while 1:
-            child_offset, final_edge, size, edgelabel_chars_offset = decode_edge(packed, edgeindex, prev_child_offset, edge_offset)
-            #print(f"    {edge_offset=} {child_offset=} {final_edge=} {size=} {edgelabel_chars_offset=}")
+            child_offset, last_edge, size, edgelabel_chars_offset = decode_edge(packed, edgeindex, prev_child_offset, edge_offset)
+            #print(f"    {edge_offset=} {child_offset=} {last_edge=} {size=} {edgelabel_chars_offset=}")
             edgeindex += 1
             prev_child_offset = child_offset
             if _match_edge(packed, s, size, edgelabel_chars_offset, stringpos):
@@ -472,10 +472,10 @@ def _lookup(packed, s):
                 stringpos += size
                 node_offset = child_offset
                 break
-            if final_edge:
+            if last_edge:
                 raise KeyError
-            child_count, _, _ = decode_node(packed, child_offset)
-            skipped += child_count
+            descendant_count, _, _ = decode_node(packed, child_offset)
+            skipped += descendant_count
             edge_offset = edgelabel_chars_offset + size
     _, final, _ = decode_node(packed, node_offset)
     if final:
@@ -498,17 +498,17 @@ def _inverse_lookup(packed, pos):
         prev_child_offset = edge_offset
         edgeindex = 0
         while 1:
-            child_offset, final_edge, size, edgelabel_chars_offset = decode_edge(packed, edgeindex, prev_child_offset, edge_offset)
+            child_offset, last_edge, size, edgelabel_chars_offset = decode_edge(packed, edgeindex, prev_child_offset, edge_offset)
             edgeindex += 1
             prev_child_offset = child_offset
-            child_count, _, _ = decode_node(packed, child_offset)
-            nextpos = pos - child_count
+            descendant_count, _, _ = decode_node(packed, child_offset)
+            nextpos = pos - descendant_count
             if nextpos < 0:
                 assert edgelabel_chars_offset >= 0
                 result.extend(packed[edgelabel_chars_offset: edgelabel_chars_offset + size])
                 node_offset = child_offset
                 break
-            elif not final_edge:
+            elif not last_edge:
                 pos = nextpos
                 edge_offset = edgelabel_chars_offset + size
             else:

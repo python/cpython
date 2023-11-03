@@ -1101,7 +1101,7 @@ _dawg_node_is_final(unsigned int node_offset)
 }
 
 static unsigned int
-_dawg_node_child_count(unsigned int node_offset)
+_dawg_node_descendant_count(unsigned int node_offset)
 {
     unsigned int num;
     _dawg_decode_varint_unsigned(node_offset, &num);
@@ -1144,7 +1144,8 @@ _dawg_node_child_count(unsigned int node_offset)
 //
 // There is a special case: if a final node has no outgoing edges, it has to be
 // followed by a 0 byte to indicate that there are no edges (because the end of
-// the edge list is normally indicated in a bit in the edge encoding).
+// the edge list is normally indicated in a bit in the edge encoding). This is
+// indicated by _dawg_decode_edge returning -1
 
 
 static int
@@ -1157,7 +1158,7 @@ _dawg_decode_edge(bool is_first_edge, unsigned int prev_target_node_offset,
     if (num == 0 && is_first_edge) {
         return -1; // trying to decode past a final node without outgoing edges
     }
-    bool final_edge = num & 1;
+    bool last_edge = num & 1;
     num >>= 1;
     bool len_is_one = num & 1;
     num >>= 1;
@@ -1168,7 +1169,7 @@ _dawg_decode_edge(bool is_first_edge, unsigned int prev_target_node_offset,
         *size = packed_name_dawg[edge_offset++];
     }
     *label_offset = edge_offset;
-    return final_edge;
+    return last_edge;
 }
 
 static int
@@ -1185,10 +1186,10 @@ _lookup_dawg_packed(const char* name, unsigned int namelen)
         for (;;) {
             unsigned int size;
             unsigned int label_offset, target_node_offset;
-            int final_edge = _dawg_decode_edge(
+            int last_edge = _dawg_decode_edge(
                     is_first_edge, prev_target_node_offset, edge_offset,
                     &size, &label_offset, &target_node_offset);
-            if (final_edge == -1) {
+            if (last_edge == -1) {
                 return -1;
             }
             is_first_edge = false;
@@ -1204,10 +1205,10 @@ _lookup_dawg_packed(const char* name, unsigned int namelen)
                 node_offset = target_node_offset;
                 break;
             }
-            if (final_edge) {
+            if (last_edge) {
                 return -1;
             }
-            result += _dawg_node_child_count(target_node_offset);
+            result += _dawg_node_descendant_count(target_node_offset);
             edge_offset = label_offset + size;
         }
     }
@@ -1241,17 +1242,17 @@ _inverse_dawg_lookup(char* buffer, unsigned int buflen, unsigned int pos)
         for (;;) {
             unsigned int size;
             unsigned int label_offset, target_node_offset;
-            int final_edge = _dawg_decode_edge(
+            int last_edge = _dawg_decode_edge(
                     is_first_edge, prev_target_node_offset, edge_offset,
                     &size, &label_offset, &target_node_offset);
-            if (final_edge == -1) {
+            if (last_edge == -1) {
                 return 0;
             }
             is_first_edge = false;
             prev_target_node_offset = target_node_offset;
 
-            unsigned int child_count = _dawg_node_child_count(target_node_offset);
-            if (pos < child_count) {
+            unsigned int descendant_count = _dawg_node_descendant_count(target_node_offset);
+            if (pos < descendant_count) {
                 if (bufpos + size >= buflen) {
                     return 0; // buffer overflow
                 }
@@ -1260,8 +1261,8 @@ _inverse_dawg_lookup(char* buffer, unsigned int buflen, unsigned int pos)
                 }
                 node_offset = target_node_offset;
                 break;
-            } else if (!final_edge) {
-                pos -= child_count;
+            } else if (!last_edge) {
+                pos -= descendant_count;
                 edge_offset = label_offset + size;
             } else {
                 return 0;
