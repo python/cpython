@@ -2931,3 +2931,11 @@ int Py_IsFalse(PyObject *x)
 {
     return Py_Is(x, Py_False);
 }
+
+
+// Py_SET_REFCNT() implementation for stable ABI
+void
+_Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
+{
+    Py_SET_REFCNT(ob, refcnt);
+}
