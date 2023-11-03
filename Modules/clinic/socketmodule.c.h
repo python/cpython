@@ -92,6 +92,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_socket_socket_ntohs__doc__,
+"ntohs($self, x, /)\n"
+"--\n"
+"\n"
+"Convert a 16-bit unsigned integer from network to host byte order.");
+
+#define _SOCKET_SOCKET_NTOHS_METHODDEF    \
+    {"ntohs", (PyCFunction)_socket_socket_ntohs, METH_O, _socket_socket_ntohs__doc__},
+
+static PyObject *
+_socket_socket_ntohs_impl(PySocketSockObject *self, int x);
+
+static PyObject *
+_socket_socket_ntohs(PySocketSockObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int x;
+
+    x = PyLong_AsInt(arg);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _socket_socket_ntohs_impl(self, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_socket_socket_htons__doc__,
 "htons($self, x, /)\n"
 "--\n"
@@ -119,4 +147,4 @@ _socket_socket_htons(PySocketSockObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32bb95d366735f37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da4ea7017df2e254 input=a9049054013a1b77]*/

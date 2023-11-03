@@ -6332,14 +6332,18 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 #endif /* HAVE_SOCKETPAIR */
 
 
-static PyObject *
-socket_ntohs(PyObject *self, PyObject *args)
-{
-    int x;
+/*[clinic input]
+_socket.socket.ntohs
+    x: int
+    /
 
-    if (!PyArg_ParseTuple(args, "i:ntohs", &x)) {
-        return NULL;
-    }
+Convert a 16-bit unsigned integer from network to host byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_ntohs_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=a828a61a9fb205b2 input=9a79cb3a71652147]*/
+{
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "ntohs: can't convert negative Python int to C "
@@ -6354,11 +6358,6 @@ socket_ntohs(PyObject *self, PyObject *args)
     }
     return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
-
-PyDoc_STRVAR(ntohs_doc,
-"ntohs(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from network to host byte order.");
 
 
 static PyObject *
@@ -7214,8 +7213,7 @@ static PyMethodDef socket_methods[] = {
     {"socketpair",              socket_socketpair,
      METH_VARARGS, socketpair_doc},
 #endif
-    {"ntohs",                   socket_ntohs,
-     METH_VARARGS, ntohs_doc},
+    _SOCKET_SOCKET_NTOHS_METHODDEF
     {"ntohl",                   socket_ntohl,
      METH_O, ntohl_doc},
     _SOCKET_SOCKET_HTONS_METHODDEF
