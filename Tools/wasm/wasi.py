@@ -38,7 +38,7 @@ def call(command, *, quiet, **kwargs):
                                              prefix="cpython-wasi-",
                                              suffix=".log")
         stderr = subprocess.STDOUT
-        print(f"Logging output to {stdout.name} ...")
+        print(f"Logging output to {stdout.name} (--quiet)...")
 
     subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
 
@@ -78,8 +78,12 @@ def compile_host_python(context):
         configure.append("--with-pydebug")
 
     if not context.build_python:
-        print("Skipped via --skip-build-python ...")
+        print("Skipping build (--skip-build-python)...")
     else:
+        if context.clean:
+            print(f"Deleting {build_dir} (--clean)...")
+            shutil.rmtree(build_dir, ignore_errors=True)
+
         with contextlib.chdir(build_dir):
             call(configure, quiet=context.quiet)
             call(["make", "--jobs", str(cpu_count()), "all"],
@@ -141,9 +145,14 @@ def wasi_sdk_env(context):
 def compile_wasi_python(context, build_python, version):
     """Compile the wasm32-wasi Python."""
     build_dir = CROSS_BUILD_DIR / HOST_TRIPLE
-    build_dir.mkdir(exist_ok=True)
 
     section(build_dir)
+
+    if context.clean:
+        print(f"Deleting {build_dir} (--clean)...")
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+    build_dir.mkdir(exist_ok=True)
 
     config_site = os.fsdecode(CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-wasi")
     # Use PYTHONPATH to include sysconfig data (which must be anchored to the
@@ -152,15 +161,7 @@ def compile_wasi_python(context, build_python, version):
     sysconfig_data = f"{guest_build_dir}/build/lib.wasi-wasm32-{version}"
     if context.debug:
         sysconfig_data += "-pydebug"
-    # host_runner = (f"{shutil.which('wasmtime')} run "
-    #                # Make sure the stack size will work in a pydebug build.
-    #                # The value comes from `ulimit -s` under Linux which is
-    #                # 8291 KiB.
-    #                "--max-wasm-stack 8388608 "
-    #                 # Map the checkout to / to load the stdlib from /Lib.
-    #                f"--mapdir /::{CHECKOUT} "
-    #                f"--env PYTHONPATH=/{sysconfig_data} "
-    #                f"{build_dir / 'python.wasm'} --")
+
     host_runner = context.host_runner.format(GUEST_DIR="/",
                                              HOST_DIR=CHECKOUT,
                                              ENV_VAR_NAME="PYTHONPATH",
@@ -183,6 +184,8 @@ def compile_wasi_python(context, build_python, version):
                      f"--with-build-python={build_python}"]
         if context.debug:
             configure.append("--with-pydebug")
+        if context.threads:
+            configure.append("--with-wasm-pthreads")
         configure_env = os.environ | env_additions | wasi_sdk_env(context)
         call(configure, env=configure_env, quiet=context.quiet)
         call(["make", "--jobs", str(cpu_count()), "all"],
@@ -202,19 +205,22 @@ def main():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
     build = subcommands.add_parser("build")
+    build.add_argument("--quiet", action="store_true", default=False,
+                       dest="quiet",
+                       help="Redirect output from subprocesses to a log file")
+    build.add_argument("--clean", action="store_true", default=False,
+                       dest="clean",
+                       help="Delete any build directories before building")
+    build.add_argument("--with-pydebug", action="store_true", default=False,
+                       dest="debug",
+                       help="Debug build (i.e., pydebug)")
+    build.add_argument("--skip-build-python", action="store_false",
+                       dest="build_python", default=True,
+                       help="Skip building the build/host Python")
     build.add_argument("--wasi-sdk", type=pathlib.Path, dest="wasi_sdk_path",
                        default=find_wasi_sdk(),
                        help="Path to wasi-sdk; defaults to "
                             "$WASI_SDK_PATH or /opt/wasi-sdk")
-    build.add_argument("--skip-build-python", action="store_false",
-                       dest="build_python", default=True,
-                       help="Skip building the build/host Python")
-    build.add_argument("--quiet", action="store_true", default=False,
-                       dest="quiet",
-                       help="Redirect output from subprocesses to a log file")
-    build.add_argument("--with-pydebug", action="store_true", default=False,
-                       dest="debug",
-                       help="Debug build (i.e., pydebug)")
     default_host_runner = (f"{shutil.which('wasmtime')} run "
                     # Make sure the stack size will work for a pydebug build.
                     # The 8388608 value comes from `ulimit -s` under Linux which
@@ -233,6 +239,10 @@ def main():
                        help="Command template for running the WebAssembly code "
                             "(default for wasmtime 14 or newer: "
                             f"`{default_host_runner}`)")
+    build.add_argument("--threads", action="store_true", default=False,
+                       dest="threads",
+                       help="Compile with threads support (off by default as "
+                            "thread support is experimental in WASI)")
 
     context = parser.parse_args()
     if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
