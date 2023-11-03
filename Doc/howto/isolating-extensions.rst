@@ -438,9 +438,20 @@ GC-tracked objects need to be allocated using GC-aware functions.
 
 If you use use :c:func:`PyObject_New` or :c:func:`PyObject_NewVar`:
 
-- Get and call type's :c:member:`~PyTypeObject.tp_alloc` slot , if possible.
-- If not possible (e.g. inside a custom ``tp_alloc``),
-  call :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
+- Get and call type's :c:member:`~PyTypeObject.tp_alloc` slot, if possible.
+  That is, replace ``TYPE *o = PyObject_New(TYPE, typeobj)`` by::
+
+      TYPE *o = typeobj->tp_alloc(typeobj, 0);
+
+  Replace ``o = PyObject_NewVar(TYPE, typeobj, size)`` with the same,
+  but use size instead of the 0.
+
+- If the above is not possible (e.g. inside a custom ``tp_alloc``),
+  call :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`::
+
+      TYPE *o = PyObject_GC_New(TYPE, typeobj);
+
+      TYPE *o = PyObject_GC_NewVar(TYPE, typeobj, size);
 
 
 Module State Access from Classes
