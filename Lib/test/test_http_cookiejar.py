@@ -707,6 +707,25 @@ class CookieTests(unittest.TestCase):
 
         # XXX RFC 2965 expiry rules (some apply to V0 too)
 
+    def test_cookie_expiry(self):
+        delay = 1
+        current_time = time.time()
+        future = time2netscape(current_time + delay)
+        url = "http://www.acme.com"
+        req = urllib.request.Request(url)
+        headers = [f"Set-Cookie: a=b; expires={future};"]
+        res = FakeResponse(headers, url)
+        policy = DefaultCookiePolicy()
+        new_policy = DefaultCookiePolicy()
+        jar = CookieJar(policy=policy)
+        jar.extract_cookies(res, req)
+        cookie = jar.make_cookies(res, req)[0]
+
+        time.sleep(delay)
+        self.assertTrue(cookie.is_expired())
+        self.assertFalse(policy.return_ok(cookie, req))
+        self.assertFalse(new_policy.return_ok(cookie, req))
+
     def test_default_path(self):
         # RFC 2965
         pol = DefaultCookiePolicy(rfc2965=True)
