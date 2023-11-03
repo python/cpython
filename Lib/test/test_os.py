@@ -4342,8 +4342,8 @@ class CPUCountTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'sched_setaffinity'),
                          "don't have sched affinity support")
     def test_process_cpu_count_affinity(self):
-        ncpu = os.cpu_count()
-        if ncpu is None:
+        affinity1 = os.process_cpu_count()
+        if affinity1 is None:
             self.skipTest("Could not determine the number of CPUs")
 
         # Disable one CPU
@@ -4356,8 +4356,8 @@ class CPUCountTests(unittest.TestCase):
         os.sched_setaffinity(0, mask)
 
         # test process_cpu_count()
-        affinity = os.process_cpu_count()
-        self.assertEqual(affinity, ncpu - 1)
+        affinity2 = os.process_cpu_count()
+        self.assertEqual(affinity2, affinity1 - 1)
 
 
 # FD inheritance check is only useful for systems with process support.
