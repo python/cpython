@@ -643,15 +643,10 @@ with type variables' described above as parameter specification variables are
 treated by the typing module as a specialized type variable.  The one exception
 to this is that a list of types can be used to substitute a :class:`ParamSpec`:
 
-.. doctest::
-
    >>> class Z[T, **P]: ...  # T is a TypeVar; P is a ParamSpec
    ...
    >>> Z[int, [dict, float]]
    __main__.Z[int, [dict, float]]
-
-   >>> 1 + 2
-   4
 
 Classes generic over a :class:`ParamSpec` can also be created using explicit
 inheritance from :class:`Generic`. In this case, ``**`` is not used::
@@ -3070,7 +3065,8 @@ Introspection helpers
       >>> class P(Protocol):
       ...     def a(self) -> str: ...
       ...     b: int
-      >>> assert get_protocol_members(P) == frozenset({'a', 'b'})
+      >>> get_protocol_members(P) == frozenset({'a', 'b'})
+      True
 
    Raise :exc:`TypeError` for arguments that are not Protocols.
 
