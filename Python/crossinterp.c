@@ -1320,7 +1320,9 @@ _PyXI_NamespaceFromNames(PyObject *names)
     return ns;
 }
 
+#ifndef NDEBUG
 static int _session_is_active(_PyXI_session *);
+#endif
 static void _propagate_not_shareable_error(_PyXI_session *);
 
 int
@@ -1468,11 +1470,13 @@ _exit_session(_PyXI_session *session)
     session->init_tstate = NULL;
 }
 
+#ifndef NDEBUG
 static int
 _session_is_active(_PyXI_session *session)
 {
     return (session->init_tstate != NULL);
 }
+#endif
 
 static void
 _propagate_not_shareable_error(_PyXI_session *session)
