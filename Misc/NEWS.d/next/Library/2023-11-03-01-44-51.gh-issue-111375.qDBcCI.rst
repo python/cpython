@@ -1,0 +1,2 @@
+Fix handling of ``sys.exception()`` within ``@contextlib.contextmanager``
+functions. Patch by Carey Metcalfe.

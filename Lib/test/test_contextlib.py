@@ -306,6 +306,88 @@ def woohoo():
             with woohoo():
                 raise StopIteration
 
+    def test_contextmanager_handling_exception_resets_exc_info(self):
+        # Test that sys.exc_info() is correctly unset after handling the error
+        # when used within a context manager
+
+        @contextmanager
+        def ctx(reraise=False):
+            try:
+                self.assertIsNone(sys.exception())
+                yield
+            except:
+                self.assertIsInstance(sys.exception(), ZeroDivisionError)
+                if reraise:
+                    raise
+            else:
+                self.assertIsNone(sys.exception())
+            self.assertIsNone(sys.exception())
+
+        with ctx():
+            pass
+
+        with ctx():
+            1/0
+
+        with self.assertRaises(ZeroDivisionError):
+            with ctx(reraise=True):
+                1/0
+
+    def test_contextmanager_while_handling(self):
+        # test that any exceptions currently being handled are preserved
+        # through the context manager
+
+        @contextmanager
+        def ctx(reraise=False):
+            # called while handling an IndexError --> TypeError
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(sys.exception().__context__, IndexError)
+            exc_ctx = sys.exception()
+            try:
+                # raises a ValueError --> ZeroDivisionError
+                yield
+            except:
+                self.assertIsInstance(sys.exception(), ZeroDivisionError)
+                self.assertIsInstance(sys.exception().__context__, ValueError)
+                # original error context is preserved
+                self.assertIs(sys.exception().__context__.__context__, exc_ctx)
+                if reraise:
+                    raise
+
+            # inner error handled, context should now be the original context
+            self.assertIs(sys.exception(), exc_ctx)
+
+        try:
+            raise IndexError()
+        except:
+            try:
+                raise TypeError()
+            except:
+                with ctx():
+                    try:
+                        raise ValueError()
+                    except:
+                        self.assertIsInstance(sys.exception(), ValueError)
+                        1/0
+                self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(sys.exception(), IndexError)
+
+        try:
+            raise IndexError()
+        except:
+            try:
+                raise TypeError()
+            except:
+                with self.assertRaises(ZeroDivisionError):
+                    with ctx(reraise=True):
+                        try:
+                            raise ValueError()
+                        except:
+                            self.assertIsInstance(sys.exception(), ValueError)
+                            1/0
+                    self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(sys.exception(), IndexError)
+
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):
