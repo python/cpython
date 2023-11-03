@@ -348,7 +348,7 @@ class Dawg:
             offsets[node] = i * 2 ** 30
 
 
-        # due to the variable inteper width encoding of edge targets we need to
+        # due to the variable integer width encoding of edge targets we need to
         # run this to fixpoint. in the process we shrink the output more and
         # more until we can't any more. at any point we can stop and use the
         # output, but we might need padding zero bytes when joining the chunks
