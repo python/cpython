@@ -1,0 +1,1 @@
+Specialize slot loads and stores for _Py_T_OBJECT as well as Py_T_OBJECT_EX
