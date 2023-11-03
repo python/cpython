@@ -46,7 +46,7 @@ class Instruction:
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
     name: str
-    annotation: str | None
+    annotations: list[str]
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
     block_line: int  # First line of block in original code
@@ -71,7 +71,7 @@ class Instruction:
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
         self.name = inst.name
-        self.annotation = inst.annotation
+        self.annotations = inst.annotations
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
             self.block

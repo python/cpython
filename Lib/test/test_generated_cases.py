@@ -742,6 +742,14 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+        input = """
+        guard register specializing op(OP, (--)) {
+            spam();
+        }
+        macro(M) = OP;
+        """
+        self.run_cases_test(input, output)
+
 
 if __name__ == "__main__":
     unittest.main()

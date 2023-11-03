@@ -652,7 +652,7 @@ class Generator(Analyzer):
         for part in parts:
             if isinstance(part, Component):
                 # Skip specializations
-                if part.instr.annotation == "specializing":
+                if "specializing" in part.instr.annotations:
                     continue
                 # All other component instructions must be viable uops
                 if not part.instr.is_viable_uop():

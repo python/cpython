@@ -174,8 +174,6 @@ INT = "INT"
 kwds.append(INT)
 LONG = "LONG"
 kwds.append(LONG)
-REGISTER = "REGISTER"
-kwds.append(REGISTER)
 OFFSETOF = "OFFSETOF"
 kwds.append(OFFSETOF)
 RESTRICT = "RESTRICT"

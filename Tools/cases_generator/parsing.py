@@ -105,7 +105,7 @@ UOp = OpName | CacheEffect
 
 @dataclass
 class InstHeader(Node):
-    annotation : str | None
+    annotations : list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
@@ -114,7 +114,7 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
-    annotation : str | None
+    annotations : list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
@@ -159,7 +159,7 @@ class Parser(PLexer):
         if hdr := self.inst_header():
             if block := self.block():
                 return InstDef(
-                    hdr.annotation,
+                    hdr.annotations,
                     hdr.kind,
                     hdr.name,
                     hdr.inputs,
@@ -173,8 +173,9 @@ class Parser(PLexer):
     def inst_header(self) -> InstHeader | None:
         # [annotation] inst(NAME, (inputs -- outputs))
         # | [annotation] op(NAME, (inputs -- outputs))
-        anno = self.expect(lx.ANNOTATION)
-        annotation = None if anno is None else anno.text
+        annotations = []
+        while anno := self.expect(lx.ANNOTATION):
+            annotations.append(anno.text)
         tkn = self.expect(lx.INST)
         if not tkn:
             tkn = self.expect(lx.OP)
@@ -186,7 +187,7 @@ class Parser(PLexer):
                     inp, outp = self.io_effect()
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
-                            return InstHeader(annotation, kind, name, inp, outp)
+                            return InstHeader(annotations, kind, name, inp, outp)
         return None
 
     def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
