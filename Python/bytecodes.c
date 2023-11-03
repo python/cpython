@@ -52,6 +52,7 @@
 
 /* Annotations */
 #define guard
+#define override
 #define specializing
 
 // Dummy variables for stack effects.

@@ -206,19 +206,19 @@ VOLATILE = "VOLATILE"
 kwds.append(VOLATILE)
 WHILE = "WHILE"
 kwds.append(WHILE)
-#An instruction in the DSL
+# An instruction in the DSL
 INST = "INST"
 kwds.append(INST)
-#A micro-op in the DSL
+# A micro-op in the DSL
 OP = "OP"
 kwds.append(OP)
-#A macro in the DSL
+# A macro in the DSL
 MACRO = "MACRO"
 kwds.append(MACRO)
 keywords = {name.lower(): name for name in kwds}
 
 ANNOTATION = "ANNOTATION"
-annotations = {"specializing", "guard"}
+annotations = {"specializing", "guard", "override", "register"}
 
 __all__ = []
 __all__.extend(kwds)
