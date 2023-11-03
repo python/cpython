@@ -55,6 +55,10 @@ class TestDawg(unittest.TestCase):
         self.assertEqual(inverse_lookup(packed, inverse, 5), b"zcatnip")
         self.assertRaises(KeyError, inverse_lookup, packed, inverse, 12)
 
+    def test_forbid_empty_dawg(self):
+        dawg = Dawg()
+        self.assertRaises(ValueError, dawg.finish)
+
     @given(char_name_db())
     @example([("abc", "a"), ("abd", "b")])
     @example(

@@ -133,6 +133,8 @@ class Dawg:
         self.previous_word = word
 
     def finish(self):
+        if not self.data:
+            raise ValueError("need at least one word in the dawg")
         # minimize all unchecked_nodes
         self._minimize(0)
 
