@@ -1877,8 +1877,9 @@ new_kwtuple(const char * const *keywords, int total, int pos)
 }
 
 static int
-_parser_init(struct _PyArg_Parser *parser)
+_parser_init(void *arg)
 {
+    struct _PyArg_Parser *parser = (struct _PyArg_Parser *)arg;
     const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
     assert(parser->pos == 0 &&
@@ -1925,40 +1926,27 @@ _parser_init(struct _PyArg_Parser *parser)
     parser->min = min;
     parser->max = max;
     parser->kwtuple = kwtuple;
-    parser->initialized = owned ? 1 : -1;
+    parser->is_kwtuple_owned = owned;
 
     assert(parser->next == NULL);
-    parser->next = _PyRuntime.getargs.static_parsers;
-    _PyRuntime.getargs.static_parsers = parser;
+    parser->next = _Py_atomic_load_ptr(&_PyRuntime.getargs.static_parsers);
+    do {
+        // compare-exchange updates parser->next on failure
+    } while (_Py_atomic_compare_exchange_ptr(&_PyRuntime.getargs.static_parsers,
+                                             &parser->next, parser));
     return 1;
 }
 
 static int
 parser_init(struct _PyArg_Parser *parser)
 {
-    // volatile as it can be modified by other threads
-    // and should not be optimized or reordered by compiler
-    if (*((volatile int *)&parser->initialized)) {
-        assert(parser->kwtuple != NULL);
-        return 1;
-    }
-    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
-    // Check again if another thread initialized the parser
-    // while we were waiting for the lock.
-    if (*((volatile int *)&parser->initialized)) {
-        assert(parser->kwtuple != NULL);
-        PyThread_release_lock(_PyRuntime.getargs.mutex);
-        return 1;
-    }
-    int ret = _parser_init(parser);
-    PyThread_release_lock(_PyRuntime.getargs.mutex);
-    return ret;
+    return _PyOnceFlag_CallOnce(&parser->once, &_parser_init, parser);
 }
 
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
-    if (parser->initialized == 1) {
+    if (parser->is_kwtuple_owned) {
         Py_CLEAR(parser->kwtuple);
     }
 }

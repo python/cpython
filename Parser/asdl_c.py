@@ -1102,13 +1102,6 @@ static int add_ast_fields(struct ast_state *state)
             static int
             init_types(struct ast_state *state)
             {
-                // init_types() must not be called after _PyAST_Fini()
-                // has been called
-                assert(state->initialized >= 0);
-
-                if (state->initialized) {
-                    return 1;
-                }
                 if (init_identifiers(state) < 0) {
                     return 0;
                 }
@@ -1125,7 +1118,6 @@ static int add_ast_fields(struct ast_state *state)
         self.file.write(textwrap.dedent('''
                 state->recursion_depth = 0;
                 state->recursion_limit = 0;
-                state->initialized = 1;
                 return 1;
             }
         '''))
@@ -1480,7 +1472,8 @@ class ChainOfVisitors:
 
 def generate_ast_state(module_state, f):
     f.write('struct ast_state {\n')
-    f.write('    int initialized;\n')
+    f.write('    _PyOnceFlag once;\n')
+    f.write('    int finalized;\n')
     f.write('    int recursion_depth;\n')
     f.write('    int recursion_limit;\n')
     for s in module_state:
@@ -1500,11 +1493,8 @@ def generate_ast_fini(module_state, f):
     f.write(textwrap.dedent("""
                 Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
 
-            #if !defined(NDEBUG)
-                state->initialized = -1;
-            #else
-                state->initialized = 0;
-            #endif
+                state->finalized = 1;
+                state->once = (_PyOnceFlag){0};
             }
 
     """))
@@ -1543,6 +1533,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_ast.h"
         #include "pycore_ast_state.h"     // struct ast_state
         #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+        #include "pycore_lock.h"          // _PyOnceFlag
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
         #include <stddef.h>
@@ -1555,7 +1546,8 @@ def generate_module_def(mod, metadata, f, internal_h):
         {
             PyInterpreterState *interp = _PyInterpreterState_GET();
             struct ast_state *state = &interp->ast;
-            if (!init_types(state)) {
+            assert(!state->finalized);
+            if (!_PyOnceFlag_CallOnce(&state->once, (_Py_once_fn_t *)&init_types, state)) {
                 return NULL;
             }
             return state;
@@ -1628,6 +1620,9 @@ def write_internal_h_header(mod, f):
     print(textwrap.dedent("""
         #ifndef Py_INTERNAL_AST_STATE_H
         #define Py_INTERNAL_AST_STATE_H
+
+        #include "pycore_lock.h"    // _PyOnceFlag
+
         #ifdef __cplusplus
         extern "C" {
         #endif

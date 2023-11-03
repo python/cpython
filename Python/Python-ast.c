@@ -4,6 +4,7 @@
 #include "pycore_ast.h"
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+#include "pycore_lock.h"          // _PyOnceFlag
 #include "pycore_interp.h"        // _PyInterpreterState.ast
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stddef.h>
@@ -16,7 +17,8 @@ get_ast_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct ast_state *state = &interp->ast;
-    if (!init_types(state)) {
+    assert(!state->finalized);
+    if (!_PyOnceFlag_CallOnce(&state->once, (_Py_once_fn_t *)&init_types, state)) {
         return NULL;
     }
     return state;
@@ -271,11 +273,8 @@ void _PyAST_Fini(PyInterpreterState *interp)
 
     Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
 
-#if !defined(NDEBUG)
-    state->initialized = -1;
-#else
-    state->initialized = 0;
-#endif
+    state->finalized = 1;
+    state->once = (_PyOnceFlag){0};
 }
 
 static int init_identifiers(struct ast_state *state)
@@ -1126,13 +1125,6 @@ static int add_ast_fields(struct ast_state *state)
 static int
 init_types(struct ast_state *state)
 {
-    // init_types() must not be called after _PyAST_Fini()
-    // has been called
-    assert(state->initialized >= 0);
-
-    if (state->initialized) {
-        return 1;
-    }
     if (init_identifiers(state) < 0) {
         return 0;
     }
@@ -1920,7 +1912,6 @@ init_types(struct ast_state *state)
 
     state->recursion_depth = 0;
     state->recursion_limit = 0;
-    state->initialized = 1;
     return 1;
 }
 
