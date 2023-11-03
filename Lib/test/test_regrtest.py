@@ -318,11 +318,12 @@ class ParseArgsTestCase(unittest.TestCase):
                     stderr.getvalue(),
                 )
 
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_coverage_mp(self):
         for opt in '-T', '--coverage':
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt, '-j1'])
-            self.assertTrue(ns.trace)
+                self.assertTrue(ns.trace)
 
     def test_coverdir(self):
         for opt in '-D', '--coverdir':
