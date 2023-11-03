@@ -185,6 +185,12 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+ipaddress
+---------
+
+* Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
+  (Contributed by Charles Machalow in :gh:`109466`.)
+
 opcode
 ------
 
@@ -948,7 +954,8 @@ Others
 CPython bytecode changes
 ========================
 
-* ``YIELD_VALUE`` no longer has an oparg. The oparg of ``RESUME`` was
+* The oparg of ``YIELD_VALUE`` is now ``1`` if the yield is part of a
+  yield-from or await, and ``0`` otherwise. The oparg of ``RESUME`` was
   changed to add a bit indicating whether the except-depth is 1, which
   is needed to optimize closing of generators.
   (Contributed by Irit Katriel in :gh:`111354`.)
@@ -1048,8 +1055,6 @@ New Features
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
-  If the assertion fails in :c:func:`PyTuple_SET_ITEM`, make sure that the
-  tuple size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
 
 * Add :c:func:`PyModule_Add` function: similar to
