@@ -6457,14 +6457,17 @@ Convert a 32-bit integer from host to network byte order.");
 
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
-PyDoc_STRVAR(inet_aton_doc,
-"inet_aton(string) -> bytes giving packed 32-bit IP representation\n\
-\n\
-Convert an IP address in string format (123.45.67.89) to the 32-bit packed\n\
-binary format used in low-level network functions.");
+/*[clinic input]
+_socket.socket.inet_aton
+    ip_addr: str
+    /
 
-static PyObject*
-socket_inet_aton(PyObject *self, PyObject *args)
+Convert an IP address in string format (123.45.67.89) to the 32-bit packed binary format used in low-level network functions.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
+/*[clinic end generated code: output=5bfe11a255423d8c input=a120e20cb52b9488]*/
 {
 #ifdef HAVE_INET_ATON
     struct in_addr buf;
@@ -6477,11 +6480,6 @@ socket_inet_aton(PyObject *self, PyObject *args)
     /* Have to use inet_addr() instead */
     unsigned int packed_addr;
 #endif
-    const char *ip_addr;
-
-    if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr))
-        return NULL;
-
 
 #ifdef HAVE_INET_ATON
 
@@ -7219,8 +7217,7 @@ static PyMethodDef socket_methods[] = {
     _SOCKET_SOCKET_HTONS_METHODDEF
     {"htonl",                   socket_htonl,
      METH_O, htonl_doc},
-    {"inet_aton",               socket_inet_aton,
-     METH_VARARGS, inet_aton_doc},
+    _SOCKET_SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
     {"inet_ntoa",               socket_inet_ntoa,
      METH_VARARGS, inet_ntoa_doc},

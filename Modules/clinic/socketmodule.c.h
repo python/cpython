@@ -147,4 +147,36 @@ _socket_socket_htons(PySocketSockObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=da4ea7017df2e254 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_socket_socket_inet_aton__doc__,
+"inet_aton($self, ip_addr, /)\n"
+"--\n"
+"\n"
+"Convert an IP address in string format (123.45.67.89) to the 32-bit packed binary format used in low-level network functions.");
+
+#define _SOCKET_SOCKET_INET_ATON_METHODDEF    \
+    {"inet_aton", (PyCFunction)_socket_socket_inet_aton, METH_O, _socket_socket_inet_aton__doc__},
+
+static PyObject *
+_socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr);
+
+static PyObject *
+_socket_socket_inet_aton(PySocketSockObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *ip_addr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("inet_aton", "argument", "str", arg);
+        goto exit;
+    }
+    ip_addr = PyUnicode_AsUTF8(arg);
+    if (ip_addr == NULL) {
+        goto exit;
+    }
+    return_value = _socket_socket_inet_aton_impl(self, ip_addr);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=fcda0595da1ee90d input=a9049054013a1b77]*/
