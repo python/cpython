@@ -185,7 +185,7 @@ _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
         _PyArg_BadArgument("write", "argument 1", "str", args[0]);
         goto exit;
     }
-    s = PyUnicode_AsUTF8(args[0]);
+    s = PyUnicode_AsUTF8Safe(args[0]);
     if (s == NULL) {
         goto exit;
     }
@@ -470,7 +470,7 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             encoding = NULL;
         }
         else if (PyUnicode_Check(fastargs[1])) {
-            encoding = PyUnicode_AsUTF8(fastargs[1]);
+            encoding = PyUnicode_AsUTF8Safe(fastargs[1]);
             if (encoding == NULL) {
                 goto exit;
             }
@@ -494,7 +494,7 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             newline = NULL;
         }
         else if (PyUnicode_Check(fastargs[3])) {
-            newline = PyUnicode_AsUTF8(fastargs[3]);
+            newline = PyUnicode_AsUTF8Safe(fastargs[3]);
             if (newline == NULL) {
                 goto exit;
             }
@@ -965,4 +965,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=c9ffb48a5278cbd4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21f88ca65fc6d90d input=a9049054013a1b77]*/

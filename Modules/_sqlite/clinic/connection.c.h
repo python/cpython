@@ -297,7 +297,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         _PyArg_BadArgument("blobopen", "argument 1", "str", args[0]);
         goto exit;
     }
-    table = PyUnicode_AsUTF8(args[0]);
+    table = PyUnicode_AsUTF8Safe(args[0]);
     if (table == NULL) {
         goto exit;
     }
@@ -305,7 +305,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         _PyArg_BadArgument("blobopen", "argument 2", "str", args[1]);
         goto exit;
     }
-    col = PyUnicode_AsUTF8(args[1]);
+    col = PyUnicode_AsUTF8Safe(args[1]);
     if (col == NULL) {
         goto exit;
     }
@@ -328,7 +328,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         _PyArg_BadArgument("blobopen", "argument 'name'", "str", args[4]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[4]);
+    name = PyUnicode_AsUTF8Safe(args[4]);
     if (name == NULL) {
         goto exit;
     }
@@ -484,7 +484,7 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
         _PyArg_BadArgument("create_function", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    name = PyUnicode_AsUTF8Safe(args[0]);
     if (name == NULL) {
         goto exit;
     }
@@ -562,7 +562,7 @@ create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *c
         _PyArg_BadArgument("create_window_function", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    name = PyUnicode_AsUTF8Safe(args[0]);
     if (name == NULL) {
         goto exit;
     }
@@ -663,7 +663,7 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
         _PyArg_BadArgument("create_aggregate", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    name = PyUnicode_AsUTF8Safe(args[0]);
     if (name == NULL) {
         goto exit;
     }
@@ -1033,7 +1033,7 @@ pysqlite_connection_load_extension(pysqlite_Connection *self, PyObject *const *a
         _PyArg_BadArgument("load_extension", "argument 1", "str", args[0]);
         goto exit;
     }
-    extension_name = PyUnicode_AsUTF8(args[0]);
+    extension_name = PyUnicode_AsUTF8Safe(args[0]);
     if (extension_name == NULL) {
         goto exit;
     }
@@ -1044,7 +1044,7 @@ pysqlite_connection_load_extension(pysqlite_Connection *self, PyObject *const *a
         entrypoint = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        entrypoint = PyUnicode_AsUTF8(args[1]);
+        entrypoint = PyUnicode_AsUTF8Safe(args[1]);
         if (entrypoint == NULL) {
             goto exit;
         }
@@ -1266,7 +1266,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
             _PyArg_BadArgument("backup", "argument 'name'", "str", args[3]);
             goto exit;
         }
-        name = PyUnicode_AsUTF8(args[3]);
+        name = PyUnicode_AsUTF8Safe(args[3]);
         if (name == NULL) {
             goto exit;
         }
@@ -1335,7 +1335,7 @@ pysqlite_connection_create_collation(pysqlite_Connection *self, PyTypeObject *cl
         _PyArg_BadArgument("create_collation", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    name = PyUnicode_AsUTF8Safe(args[0]);
     if (name == NULL) {
         goto exit;
     }
@@ -1412,7 +1412,7 @@ serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, Py
         _PyArg_BadArgument("serialize", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    name = PyUnicode_AsUTF8Safe(args[0]);
     if (name == NULL) {
         goto exit;
     }
@@ -1510,7 +1510,7 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         _PyArg_BadArgument("deserialize", "argument 'name'", "str", args[1]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[1]);
+    name = PyUnicode_AsUTF8Safe(args[1]);
     if (name == NULL) {
         goto exit;
     }
@@ -1758,4 +1758,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=7d2a4d9272f7cb9e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f59a52d04d3babf9 input=a9049054013a1b77]*/

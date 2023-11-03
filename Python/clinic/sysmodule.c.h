@@ -1259,7 +1259,7 @@ sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
         goto exit;
     }
-    backend = PyUnicode_AsUTF8(arg);
+    backend = PyUnicode_AsUTF8Safe(arg);
     if (backend == NULL) {
         goto exit;
     }
@@ -1447,4 +1447,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=cdfb714878deeaf1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f20b9ec0c154485e input=a9049054013a1b77]*/

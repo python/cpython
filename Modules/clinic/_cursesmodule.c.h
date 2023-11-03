@@ -2726,7 +2726,7 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
             term = NULL;
         }
         else if (PyUnicode_Check(args[0])) {
-            term = PyUnicode_AsUTF8(args[0]);
+            term = PyUnicode_AsUTF8Safe(args[0]);
             if (term == NULL) {
                 goto exit;
             }
@@ -3921,7 +3921,7 @@ _curses_tigetflag(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("tigetflag", "argument", "str", arg);
         goto exit;
     }
-    capname = PyUnicode_AsUTF8(arg);
+    capname = PyUnicode_AsUTF8Safe(arg);
     if (capname == NULL) {
         goto exit;
     }
@@ -3959,7 +3959,7 @@ _curses_tigetnum(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("tigetnum", "argument", "str", arg);
         goto exit;
     }
-    capname = PyUnicode_AsUTF8(arg);
+    capname = PyUnicode_AsUTF8Safe(arg);
     if (capname == NULL) {
         goto exit;
     }
@@ -3997,7 +3997,7 @@ _curses_tigetstr(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("tigetstr", "argument", "str", arg);
         goto exit;
     }
-    capname = PyUnicode_AsUTF8(arg);
+    capname = PyUnicode_AsUTF8Safe(arg);
     if (capname == NULL) {
         goto exit;
     }
@@ -4298,4 +4298,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=555e266fc4838612 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=361addffba5351c7 input=a9049054013a1b77]*/

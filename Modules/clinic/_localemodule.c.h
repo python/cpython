@@ -37,7 +37,7 @@ _locale_setlocale(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         locale = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        locale = PyUnicode_AsUTF8(args[1]);
+        locale = PyUnicode_AsUTF8Safe(args[1]);
         if (locale == NULL) {
             goto exit;
         }
@@ -225,7 +225,7 @@ _locale_gettext(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("gettext", "argument", "str", arg);
         goto exit;
     }
-    in = PyUnicode_AsUTF8(arg);
+    in = PyUnicode_AsUTF8Safe(arg);
     if (in == NULL) {
         goto exit;
     }
@@ -267,7 +267,7 @@ _locale_dgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         domain = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        domain = PyUnicode_AsUTF8(args[0]);
+        domain = PyUnicode_AsUTF8Safe(args[0]);
         if (domain == NULL) {
             goto exit;
         }
@@ -280,7 +280,7 @@ _locale_dgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("dgettext", "argument 2", "str", args[1]);
         goto exit;
     }
-    in = PyUnicode_AsUTF8(args[1]);
+    in = PyUnicode_AsUTF8Safe(args[1]);
     if (in == NULL) {
         goto exit;
     }
@@ -322,7 +322,7 @@ _locale_dcgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         domain = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        domain = PyUnicode_AsUTF8(args[0]);
+        domain = PyUnicode_AsUTF8Safe(args[0]);
         if (domain == NULL) {
             goto exit;
         }
@@ -335,7 +335,7 @@ _locale_dcgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("dcgettext", "argument 2", "str", args[1]);
         goto exit;
     }
-    msgid = PyUnicode_AsUTF8(args[1]);
+    msgid = PyUnicode_AsUTF8Safe(args[1]);
     if (msgid == NULL) {
         goto exit;
     }
@@ -375,7 +375,7 @@ _locale_textdomain(PyObject *module, PyObject *arg)
         domain = NULL;
     }
     else if (PyUnicode_Check(arg)) {
-        domain = PyUnicode_AsUTF8(arg);
+        domain = PyUnicode_AsUTF8Safe(arg);
         if (domain == NULL) {
             goto exit;
         }
@@ -421,7 +421,7 @@ _locale_bindtextdomain(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("bindtextdomain", "argument 1", "str", args[0]);
         goto exit;
     }
-    domain = PyUnicode_AsUTF8(args[0]);
+    domain = PyUnicode_AsUTF8Safe(args[0]);
     if (domain == NULL) {
         goto exit;
     }
@@ -463,7 +463,7 @@ _locale_bind_textdomain_codeset(PyObject *module, PyObject *const *args, Py_ssiz
         _PyArg_BadArgument("bind_textdomain_codeset", "argument 1", "str", args[0]);
         goto exit;
     }
-    domain = PyUnicode_AsUTF8(args[0]);
+    domain = PyUnicode_AsUTF8Safe(args[0]);
     if (domain == NULL) {
         goto exit;
     }
@@ -471,7 +471,7 @@ _locale_bind_textdomain_codeset(PyObject *module, PyObject *const *args, Py_ssiz
         codeset = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        codeset = PyUnicode_AsUTF8(args[1]);
+        codeset = PyUnicode_AsUTF8Safe(args[1]);
         if (codeset == NULL) {
             goto exit;
         }
@@ -545,4 +545,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=14a4bffed066ebb3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf01d7a4c6899baa input=a9049054013a1b77]*/

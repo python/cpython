@@ -1278,7 +1278,7 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         _PyArg_BadArgument("pbkdf2_hmac", "argument 'hash_name'", "str", args[0]);
         goto exit;
     }
-    hash_name = PyUnicode_AsUTF8(args[0]);
+    hash_name = PyUnicode_AsUTF8Safe(args[0]);
     if (hash_name == NULL) {
         goto exit;
     }
@@ -1819,4 +1819,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=bc372898eaa3e000 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a36198c27bbbec7 input=a9049054013a1b77]*/

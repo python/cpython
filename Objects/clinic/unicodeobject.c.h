@@ -203,7 +203,7 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(args[0]);
+        encoding = PyUnicode_AsUTF8Safe(args[0]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -215,7 +215,7 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("encode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8(args[1]);
+    errors = PyUnicode_AsUTF8Safe(args[1]);
     if (errors == NULL) {
         goto exit;
     }
@@ -1463,7 +1463,7 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("str", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(fastargs[1]);
+        encoding = PyUnicode_AsUTF8Safe(fastargs[1]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -1475,7 +1475,7 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("str", "argument 'errors'", "str", fastargs[2]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8(fastargs[2]);
+    errors = PyUnicode_AsUTF8Safe(fastargs[2]);
     if (errors == NULL) {
         goto exit;
     }
@@ -1485,4 +1485,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20313d6339272ddc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1cd8caa5d0b60e6f input=a9049054013a1b77]*/

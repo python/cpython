@@ -466,7 +466,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'encoding'", "str", fastargs[2]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(fastargs[2]);
+        encoding = PyUnicode_AsUTF8Safe(fastargs[2]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -479,7 +479,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("Unpickler", "argument 'errors'", "str", fastargs[3]);
             goto exit;
         }
-        errors = PyUnicode_AsUTF8(fastargs[3]);
+        errors = PyUnicode_AsUTF8Safe(fastargs[3]);
         if (errors == NULL) {
             goto exit;
         }
@@ -860,7 +860,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(args[2]);
+        encoding = PyUnicode_AsUTF8Safe(args[2]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -873,7 +873,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("load", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        errors = PyUnicode_AsUTF8(args[3]);
+        errors = PyUnicode_AsUTF8Safe(args[3]);
         if (errors == NULL) {
             goto exit;
         }
@@ -976,7 +976,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(args[2]);
+        encoding = PyUnicode_AsUTF8Safe(args[2]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -989,7 +989,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             _PyArg_BadArgument("loads", "argument 'errors'", "str", args[3]);
             goto exit;
         }
-        errors = PyUnicode_AsUTF8(args[3]);
+        errors = PyUnicode_AsUTF8Safe(args[3]);
         if (errors == NULL) {
             goto exit;
         }
@@ -1004,4 +1004,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1c675a6680a6b90c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b8bdcb983d5263d input=a9049054013a1b77]*/

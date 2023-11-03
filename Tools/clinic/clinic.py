@@ -4350,7 +4350,7 @@ class str_converter(CConverter):
                     {bad_argument}
                     goto exit;
                 }}}}
-                {paramname} = PyUnicode_AsUTF8({argname});
+                {paramname} = PyUnicode_AsUTF8Safe({argname});
                 if ({paramname} == NULL) {{{{
                     goto exit;
                 }}}}
@@ -4363,7 +4363,7 @@ class str_converter(CConverter):
                     {paramname} = NULL;
                 }}}}
                 else if (PyUnicode_Check({argname})) {{{{
-                    {paramname} = PyUnicode_AsUTF8({argname});
+                    {paramname} = PyUnicode_AsUTF8Safe({argname});
                     if ({paramname} == NULL) {{{{
                         goto exit;
                     }}}}

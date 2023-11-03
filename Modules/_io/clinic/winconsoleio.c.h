@@ -106,7 +106,7 @@ _io__WindowsConsoleIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("_WindowsConsoleIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
         }
-        mode = PyUnicode_AsUTF8(fastargs[1]);
+        mode = PyUnicode_AsUTF8Safe(fastargs[1]);
         if (mode == NULL) {
             goto exit;
         }
@@ -452,4 +452,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=76408dd67894bc9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e91b3d71222c279c input=a9049054013a1b77]*/

@@ -36,7 +36,7 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("symtable", "argument 3", "str", args[2]);
         goto exit;
     }
-    startstr = PyUnicode_AsUTF8(args[2]);
+    startstr = PyUnicode_AsUTF8Safe(args[2]);
     if (startstr == NULL) {
         goto exit;
     }
@@ -45,4 +45,4 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9af1ab5a114a1ec7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f112de0987e9bc4 input=a9049054013a1b77]*/

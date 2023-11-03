@@ -25,7 +25,7 @@ _tkinter_tkapp_eval(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("eval", "argument", "str", arg);
         goto exit;
     }
-    script = PyUnicode_AsUTF8(arg);
+    script = PyUnicode_AsUTF8Safe(arg);
     if (script == NULL) {
         goto exit;
     }
@@ -56,7 +56,7 @@ _tkinter_tkapp_evalfile(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("evalfile", "argument", "str", arg);
         goto exit;
     }
-    fileName = PyUnicode_AsUTF8(arg);
+    fileName = PyUnicode_AsUTF8Safe(arg);
     if (fileName == NULL) {
         goto exit;
     }
@@ -87,7 +87,7 @@ _tkinter_tkapp_record(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("record", "argument", "str", arg);
         goto exit;
     }
-    script = PyUnicode_AsUTF8(arg);
+    script = PyUnicode_AsUTF8Safe(arg);
     if (script == NULL) {
         goto exit;
     }
@@ -118,7 +118,7 @@ _tkinter_tkapp_adderrorinfo(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("adderrorinfo", "argument", "str", arg);
         goto exit;
     }
-    msg = PyUnicode_AsUTF8(arg);
+    msg = PyUnicode_AsUTF8Safe(arg);
     if (msg == NULL) {
         goto exit;
     }
@@ -173,7 +173,7 @@ _tkinter_tkapp_exprstring(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprstring", "argument", "str", arg);
         goto exit;
     }
-    s = PyUnicode_AsUTF8(arg);
+    s = PyUnicode_AsUTF8Safe(arg);
     if (s == NULL) {
         goto exit;
     }
@@ -204,7 +204,7 @@ _tkinter_tkapp_exprlong(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprlong", "argument", "str", arg);
         goto exit;
     }
-    s = PyUnicode_AsUTF8(arg);
+    s = PyUnicode_AsUTF8Safe(arg);
     if (s == NULL) {
         goto exit;
     }
@@ -235,7 +235,7 @@ _tkinter_tkapp_exprdouble(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprdouble", "argument", "str", arg);
         goto exit;
     }
-    s = PyUnicode_AsUTF8(arg);
+    s = PyUnicode_AsUTF8Safe(arg);
     if (s == NULL) {
         goto exit;
     }
@@ -266,7 +266,7 @@ _tkinter_tkapp_exprboolean(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("exprboolean", "argument", "str", arg);
         goto exit;
     }
-    s = PyUnicode_AsUTF8(arg);
+    s = PyUnicode_AsUTF8Safe(arg);
     if (s == NULL) {
         goto exit;
     }
@@ -310,7 +310,7 @@ _tkinter_tkapp_createcommand(TkappObject *self, PyObject *const *args, Py_ssize_
         _PyArg_BadArgument("createcommand", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    name = PyUnicode_AsUTF8Safe(args[0]);
     if (name == NULL) {
         goto exit;
     }
@@ -342,7 +342,7 @@ _tkinter_tkapp_deletecommand(TkappObject *self, PyObject *arg)
         _PyArg_BadArgument("deletecommand", "argument", "str", arg);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(arg);
+    name = PyUnicode_AsUTF8Safe(arg);
     if (name == NULL) {
         goto exit;
     }
@@ -644,7 +644,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         screenName = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        screenName = PyUnicode_AsUTF8(args[0]);
+        screenName = PyUnicode_AsUTF8Safe(args[0]);
         if (screenName == NULL) {
             goto exit;
         }
@@ -660,7 +660,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("create", "argument 2", "str", args[1]);
         goto exit;
     }
-    baseName = PyUnicode_AsUTF8(args[1]);
+    baseName = PyUnicode_AsUTF8Safe(args[1]);
     if (baseName == NULL) {
         goto exit;
     }
@@ -671,7 +671,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("create", "argument 3", "str", args[2]);
         goto exit;
     }
-    className = PyUnicode_AsUTF8(args[2]);
+    className = PyUnicode_AsUTF8Safe(args[2]);
     if (className == NULL) {
         goto exit;
     }
@@ -710,7 +710,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         use = NULL;
     }
     else if (PyUnicode_Check(args[7])) {
-        use = PyUnicode_AsUTF8(args[7]);
+        use = PyUnicode_AsUTF8Safe(args[7]);
         if (use == NULL) {
             goto exit;
         }
@@ -791,4 +791,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=0c8b5f960d7738fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02d363ce26c6ff09 input=a9049054013a1b77]*/

@@ -329,7 +329,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         _PyArg_BadArgument("compile", "argument 'mode'", "str", args[2]);
         goto exit;
     }
-    mode = PyUnicode_AsUTF8(args[2]);
+    mode = PyUnicode_AsUTF8Safe(args[2]);
     if (mode == NULL) {
         goto exit;
     }
@@ -1207,4 +1207,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=95d3813b1798f018 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a662b059b7f004f input=a9049054013a1b77]*/

@@ -979,6 +979,15 @@ These are the UTF-8 codec APIs:
    responsible for deallocating the buffer. The buffer is deallocated and
    pointers to it become invalid when the Unicode object is garbage collected.
 
+   If *size* is NULL and the *unicode* string contains null characters, the
+   UTF-8 encoded string contains embedded null bytes and the caller is not
+   aware since the string size is not stored. C functions processing null
+   terminated ``char*`` truncate the string at the first embedded null byte, and
+   so ignore bytes after the null byte. The :c:func:`PyUnicode_AsUTF8` function
+   can be used to raise an exception rather than truncating the string. Or
+   :c:func:`PyUnicode_AsUTF8(unicode, &size) <PyUnicode_AsUTF8AndSize>` can be
+   used to store the size.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
@@ -990,12 +999,13 @@ These are the UTF-8 codec APIs:
 
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
 
-   As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
+   Similar to :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
-   Raise an exception if the *unicode* string contains embedded null
-   characters. To accept embedded null characters and truncate on purpose
-   at the first null byte, ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be
-   used instead.
+   If the *unicode* string contains null characters, the UTF-8 encoded string
+   contains embedded null bytes. C functions processing null terminated ``char*``
+   truncate the string at the first embedded null byte, and so ignore bytes
+   after the null byte. The :c:func:`PyUnicode_AsUTF8` function can be used to
+   raise an exception rather than truncating the string.
 
    .. versionadded:: 3.3
 
@@ -1004,6 +1014,20 @@ These are the UTF-8 codec APIs:
 
    .. versionchanged:: 3.13
       Raise an exception if the string contains embedded null characters.
+
+.. c:function:: const char* PyUnicode_AsUTF8Safe(PyObject *unicode)
+
+   Similar to :c:func:`PyUnicode_AsUTF8`, but raise :exc:`ValueError` if the
+   string contains embedded null characters.
+
+   The Unicode Character Set contains characters which can cause bugs or even
+   security issues depending on how they are proceed. See for example `Unicode
+   Technical Report #36: Unicode Security Considerations
+   <https://unicode.org/reports/tr36/>`_. This function implements a single
+   check: only test if the string contains null characters. Additional checks
+   are needed to prevent further issues cause by Unicode characters.
+
+   .. versionadded:: 3.13
 
 
 UTF-32 Codecs

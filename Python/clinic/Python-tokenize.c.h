@@ -65,7 +65,7 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("tokenizeriter", "argument 'encoding'", "str", fastargs[2]);
         goto exit;
     }
-    encoding = PyUnicode_AsUTF8(fastargs[2]);
+    encoding = PyUnicode_AsUTF8Safe(fastargs[2]);
     if (encoding == NULL) {
         goto exit;
     }
@@ -75,4 +75,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=92cb8176149f0924 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d99e17efae06f69 input=a9049054013a1b77]*/

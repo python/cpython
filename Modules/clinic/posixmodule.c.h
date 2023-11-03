@@ -4672,7 +4672,7 @@ os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
         goto exit;
     }
-    user = PyUnicode_AsUTF8(args[0]);
+    user = PyUnicode_AsUTF8Safe(args[0]);
     if (user == NULL) {
         goto exit;
     }
@@ -4721,7 +4721,7 @@ os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
         goto exit;
     }
-    user = PyUnicode_AsUTF8(args[0]);
+    user = PyUnicode_AsUTF8Safe(args[0]);
     if (user == NULL) {
         goto exit;
     }
@@ -12393,4 +12393,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a377982a6d1e77b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b28ac6a1d7db8d7f input=a9049054013a1b77]*/

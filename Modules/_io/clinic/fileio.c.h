@@ -107,7 +107,7 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("FileIO", "argument 'mode'", "str", fastargs[1]);
             goto exit;
         }
-        mode = PyUnicode_AsUTF8(fastargs[1]);
+        mode = PyUnicode_AsUTF8Safe(fastargs[1]);
         if (mode == NULL) {
             goto exit;
         }
@@ -523,4 +523,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=27cff9d0a618edb6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c4f29fdf9b5de1f input=a9049054013a1b77]*/

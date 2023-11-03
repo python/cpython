@@ -275,7 +275,7 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
         _PyArg_BadArgument("__getformat__", "argument", "str", arg);
         goto exit;
     }
-    typestr = PyUnicode_AsUTF8(arg);
+    typestr = PyUnicode_AsUTF8Safe(arg);
     if (typestr == NULL) {
         goto exit;
     }
@@ -313,4 +313,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=01f6fbd082eefead input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6ac74a0fd28b03a0 input=a9049054013a1b77]*/

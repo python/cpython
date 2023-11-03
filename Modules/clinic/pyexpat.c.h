@@ -129,7 +129,7 @@ pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
         _PyArg_BadArgument("SetBase", "argument", "str", arg);
         goto exit;
     }
-    base = PyUnicode_AsUTF8(arg);
+    base = PyUnicode_AsUTF8Safe(arg);
     if (base == NULL) {
         goto exit;
     }
@@ -223,7 +223,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject 
         context = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        context = PyUnicode_AsUTF8(args[0]);
+        context = PyUnicode_AsUTF8Safe(args[0]);
         if (context == NULL) {
             goto exit;
         }
@@ -239,7 +239,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject 
         _PyArg_BadArgument("ExternalEntityParserCreate", "argument 2", "str", args[1]);
         goto exit;
     }
-    encoding = PyUnicode_AsUTF8(args[1]);
+    encoding = PyUnicode_AsUTF8Safe(args[1]);
     if (encoding == NULL) {
         goto exit;
     }
@@ -403,7 +403,7 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             encoding = NULL;
         }
         else if (PyUnicode_Check(args[0])) {
-            encoding = PyUnicode_AsUTF8(args[0]);
+            encoding = PyUnicode_AsUTF8Safe(args[0]);
             if (encoding == NULL) {
                 goto exit;
             }
@@ -421,7 +421,7 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             namespace_separator = NULL;
         }
         else if (PyUnicode_Check(args[1])) {
-            namespace_separator = PyUnicode_AsUTF8(args[1]);
+            namespace_separator = PyUnicode_AsUTF8Safe(args[1]);
             if (namespace_separator == NULL) {
                 goto exit;
             }
@@ -473,4 +473,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=bfc1f3d3e2cbc8dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64c752c1f1f0097f input=a9049054013a1b77]*/

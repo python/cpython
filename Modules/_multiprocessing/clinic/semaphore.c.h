@@ -266,7 +266,7 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("SemLock", "argument 'name'", "str", fastargs[3]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(fastargs[3]);
+    name = PyUnicode_AsUTF8Safe(fastargs[3]);
     if (name == NULL) {
         goto exit;
     }
@@ -537,4 +537,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=fd94dc907e6ab57f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5dade818e2fe188a input=a9049054013a1b77]*/

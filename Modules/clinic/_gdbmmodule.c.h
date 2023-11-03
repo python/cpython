@@ -318,7 +318,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    flags = PyUnicode_AsUTF8(args[1]);
+    flags = PyUnicode_AsUTF8Safe(args[1]);
     if (flags == NULL) {
         goto exit;
     }
@@ -335,4 +335,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=725cafd8b2d8cfdb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a47436b3978073b input=a9049054013a1b77]*/

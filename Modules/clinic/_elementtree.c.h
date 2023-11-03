@@ -1131,7 +1131,7 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
         encoding = NULL;
     }
     else if (PyUnicode_Check(fastargs[1])) {
-        encoding = PyUnicode_AsUTF8(fastargs[1]);
+        encoding = PyUnicode_AsUTF8Safe(fastargs[1]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -1214,4 +1214,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=399d9d5c9435070b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d931a3fad36c5d18 input=a9049054013a1b77]*/

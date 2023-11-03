@@ -391,7 +391,7 @@ _ssl__SSLSocket_get_channel_binding(PySSLSocket *self, PyObject *const *args, Py
         _PyArg_BadArgument("get_channel_binding", "argument 'cb_type'", "str", args[0]);
         goto exit;
     }
-    cb_type = PyUnicode_AsUTF8(args[0]);
+    cb_type = PyUnicode_AsUTF8Safe(args[0]);
     if (cb_type == NULL) {
         goto exit;
     }
@@ -468,7 +468,7 @@ _ssl__SSLContext_set_ciphers(PySSLContext *self, PyObject *arg)
         _PyArg_BadArgument("set_ciphers", "argument", "str", arg);
         goto exit;
     }
-    cipherlist = PyUnicode_AsUTF8(arg);
+    cipherlist = PyUnicode_AsUTF8Safe(arg);
     if (cipherlist == NULL) {
         goto exit;
     }
@@ -1306,7 +1306,7 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("txt2obj", "argument 'txt'", "str", args[0]);
         goto exit;
     }
-    txt = PyUnicode_AsUTF8(args[0]);
+    txt = PyUnicode_AsUTF8Safe(args[0]);
     if (txt == NULL) {
         goto exit;
     }
@@ -1412,7 +1412,7 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("enum_certificates", "argument 'store_name'", "str", args[0]);
         goto exit;
     }
-    store_name = PyUnicode_AsUTF8(args[0]);
+    store_name = PyUnicode_AsUTF8Safe(args[0]);
     if (store_name == NULL) {
         goto exit;
     }
@@ -1483,7 +1483,7 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         _PyArg_BadArgument("enum_crls", "argument 'store_name'", "str", args[0]);
         goto exit;
     }
-    store_name = PyUnicode_AsUTF8(args[0]);
+    store_name = PyUnicode_AsUTF8Safe(args[0]);
     if (store_name == NULL) {
         goto exit;
     }
@@ -1502,4 +1502,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=8350af68e0a56792 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88c013a5b9912248 input=a9049054013a1b77]*/
