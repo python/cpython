@@ -1005,6 +1005,7 @@ enter_tier_two:
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         next_uop++;
         OPT_STAT_INC(uops_executed);
+        UOP_STAT_INC(opcode, execution_count);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif
@@ -1058,6 +1059,7 @@ deoptimize:
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+    UOP_STAT_INC(opcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
