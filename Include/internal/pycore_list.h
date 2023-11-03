@@ -51,8 +51,8 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     Py_ssize_t allocated = self->allocated;
     assert((size_t)len + 1 < PY_SSIZE_T_MAX);
     if (allocated > len) {
-        Py_SET_SIZE(self, len + 1);
         PyList_SET_ITEM(self, len, newitem);
+        Py_SET_SIZE(self, len + 1);
         return 0;
     }
     return _PyList_AppendTakeRefListResize(self, newitem);

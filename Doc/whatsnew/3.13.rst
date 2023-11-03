@@ -1049,8 +1049,6 @@ New Features
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
-  If the assertion fails in :c:func:`PyTuple_SET_ITEM`, make sure that the
-  tuple size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
 
 * Add :c:func:`PyModule_Add` function: similar to

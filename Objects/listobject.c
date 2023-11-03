@@ -956,8 +956,8 @@ list_extend(PyListObject *self, PyObject *iterable)
         if (Py_SIZE(self) < self->allocated) {
             /* steals ref */
             Py_ssize_t len = Py_SIZE(self);
-            Py_SET_SIZE(self, len + 1);
             PyList_SET_ITEM(self, len, item);
+            Py_SET_SIZE(self, len + 1);
         }
         else {
             if (_PyList_AppendTakeRef(self, item) < 0)
