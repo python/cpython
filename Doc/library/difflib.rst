@@ -171,9 +171,12 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    expressed in the ISO 8601 format. If not specified, the
    strings default to blanks.
 
+      >>> import sys
+      >>> from difflib import *
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
-      >>> sys.stdout.writelines(context_diff(s1, s2, fromfile='before.py', tofile='after.py'))
+      >>> sys.stdout.writelines(context_diff(s1, s2, fromfile='before.py',
+      ...                        tofile='after.py'))
       *** before.py
       --- after.py
       ***************
@@ -294,12 +297,11 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
 
-   The context diff format normally has a header for filenames and modification
+   The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
    *tofile*, *fromfiledate*, and *tofiledate*.  The modification times are normally
    expressed in the ISO 8601 format. If not specified, the
    strings default to blanks.
-
 
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
