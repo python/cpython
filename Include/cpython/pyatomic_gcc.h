@@ -487,6 +487,14 @@ static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value)
 { __atomic_store_n((void **)obj, value, __ATOMIC_RELEASE); }
 
+static inline void
+_Py_atomic_store_int_release(int *obj, int value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline int
+_Py_atomic_load_int_acquire(const int *obj)
+{ return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
+
 
 // --- _Py_atomic_fence ------------------------------------------------------
 

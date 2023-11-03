@@ -3499,13 +3499,14 @@ type_new_set_doc(PyTypeObject *type)
         return 0;
     }
 
-    const char *doc_str = PyUnicode_AsUTF8(doc);
+    Py_ssize_t doc_size;
+    const char *doc_str = PyUnicode_AsUTF8AndSize(doc, &doc_size);
     if (doc_str == NULL) {
         return -1;
     }
 
     // Silently truncate the docstring if it contains a null byte
-    Py_ssize_t size = strlen(doc_str) + 1;
+    Py_ssize_t size = doc_size + 1;
     char *tp_doc = (char *)PyObject_Malloc(size);
     if (tp_doc == NULL) {
         PyErr_NoMemory();

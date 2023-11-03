@@ -9,13 +9,14 @@ import traceback
 import unittest
 
 from test import support
-from test.support import TestStats
 from test.support import threading_helper
 
-from .result import State, TestResult
+from .filter import match_test
+from .result import State, TestResult, TestStats
 from .runtests import RunTests
 from .save_env import saved_test_environment
 from .setup import setup_tests
+from .testresult import get_test_runner
 from .utils import (
     TestName,
     clear_caches, remove_testfn, abs_module_name, print_warning)
@@ -33,7 +34,47 @@ def run_unittest(test_mod):
         print(error, file=sys.stderr)
     if loader.errors:
         raise Exception("errors while loading tests")
-    return support.run_unittest(tests)
+    _filter_suite(tests, match_test)
+    return _run_suite(tests)
+
+def _filter_suite(suite, pred):
+    """Recursively filter test cases in a suite based on a predicate."""
+    newtests = []
+    for test in suite._tests:
+        if isinstance(test, unittest.TestSuite):
+            _filter_suite(test, pred)
+            newtests.append(test)
+        else:
+            if pred(test):
+                newtests.append(test)
+    suite._tests = newtests
+
+def _run_suite(suite):
+    """Run tests from a unittest.TestSuite-derived class."""
+    runner = get_test_runner(sys.stdout,
+                             verbosity=support.verbose,
+                             capture_output=(support.junit_xml_list is not None))
+
+    result = runner.run(suite)
+
+    if support.junit_xml_list is not None:
+        support.junit_xml_list.append(result.get_xml_element())
+
+    if not result.testsRun and not result.skipped and not result.errors:
+        raise support.TestDidNotRun
+    if not result.wasSuccessful():
+        stats = TestStats.from_unittest(result)
+        if len(result.errors) == 1 and not result.failures:
+            err = result.errors[0][1]
+        elif len(result.failures) == 1 and not result.errors:
+            err = result.failures[0][1]
+        else:
+            err = "multiple errors occurred"
+            if not support.verbose: err += "; run in verbose mode for details"
+        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
+        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
+        raise support.TestFailedWithDetails(err, errors, failures, stats=stats)
+    return result
 
 
 def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:

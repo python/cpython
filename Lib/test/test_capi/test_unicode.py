@@ -197,7 +197,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(NULL, 0), '')
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
-        # TODO: Test PyUnicode_FromStringAndSize(NULL, size) for size != 0
+        self.assertRaises(SystemError, fromstringandsize, NULL, -1)
+        self.assertRaises(SystemError, fromstringandsize, NULL, 3)
+        self.assertRaises(SystemError, fromstringandsize, NULL, sys.maxsize)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -882,7 +884,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8('abc', 4), b'abc\0')
         self.assertEqual(unicode_asutf8('абв', 7), b'\xd0\xb0\xd0\xb1\xd0\xb2\0')
         self.assertEqual(unicode_asutf8('\U0001f600', 5), b'\xf0\x9f\x98\x80\0')
-        self.assertEqual(unicode_asutf8('abc\0def', 8), b'abc\0def\0')
+
+        # disallow embedded null characters
+        self.assertRaises(ValueError, unicode_asutf8, 'abc\0', 0)
+        self.assertRaises(ValueError, unicode_asutf8, 'abc\0def', 0)
 
         self.assertRaises(UnicodeEncodeError, unicode_asutf8, '\ud8ff', 0)
         self.assertRaises(TypeError, unicode_asutf8, b'abc', 0)
@@ -906,7 +911,11 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, '\ud8ff', 0)
         self.assertRaises(TypeError, unicode_asutf8andsize, b'abc', 0)
         self.assertRaises(TypeError, unicode_asutf8andsize, [], 0)
+        self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize_null, '\ud8ff', 0)
+        self.assertRaises(TypeError, unicode_asutf8andsize_null, b'abc', 0)
+        self.assertRaises(TypeError, unicode_asutf8andsize_null, [], 0)
         # CRASHES unicode_asutf8andsize(NULL, 0)
+        # CRASHES unicode_asutf8andsize_null(NULL, 0)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')

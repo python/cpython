@@ -8,10 +8,11 @@
 #include <stdbool.h>
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
-#include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 
 #include "osdefs.h"               // SEP
 
@@ -3699,10 +3700,6 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
 PyStatus
 _PyExc_InitGlobalObjects(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     if (preallocate_memerrors() < 0) {
         return _PyStatus_NO_MEMORY();
     }
