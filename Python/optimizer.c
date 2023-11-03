@@ -778,6 +778,7 @@ done:
                 2 * INSTR_IP(initial_instr, code),
                 trace_length,
                 buffer_size - max_length);
+        OPT_HIST(trace_length + buffer_size - max_length, trace_length_hist);
         return 1;
     }
     else {
@@ -888,22 +889,21 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
-    int err = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
+    _PyUOpInstruction buffer[_Py_UOP_MAX_TRACE_LENGTH];
+    int err = translate_bytecode_to_trace(code, instr, buffer, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
     }
-    OPT_HIST(trace_length, trace_length_hist);
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
-        err = _Py_uop_analyze_and_optimize(code, trace, _Py_UOP_MAX_TRACE_LENGTH, curr_stackentries);
+        err = _Py_uop_analyze_and_optimize(code, buffer, _Py_UOP_MAX_TRACE_LENGTH, curr_stackentries);
         if (err < 0) {
             return -1;
         }
     }
-    _PyExecutorObject *executor = make_executor_from_uops(trace, &dependencies);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;
     }
