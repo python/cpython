@@ -1473,10 +1473,11 @@ _capture_current_exception(_PyXI_session *session)
     }
 
     // Handle the exception override.
-    _PyXI_errcode errcode = session->exc_override != NULL
-        ? *session->exc_override
-        : _PyXI_ERR_UNCAUGHT_EXCEPTION;
+    _PyXI_errcode *override = session->exc_override;
     session->exc_override = NULL;
+    _PyXI_errcode errcode = override != NULL
+        ? *override
+        : _PyXI_ERR_UNCAUGHT_EXCEPTION;
 
     // Pop the exception object.
     PyObject *excval = NULL;
@@ -1507,7 +1508,7 @@ _capture_current_exception(_PyXI_session *session)
     else {
         failure = _PyXI_InitExceptionInfo(exc, excval,
                                           _PyXI_ERR_UNCAUGHT_EXCEPTION);
-        if (failure == NULL && session->exc_override != NULL) {
+        if (failure == NULL && override != NULL) {
             exc->code = errcode;
         }
     }
