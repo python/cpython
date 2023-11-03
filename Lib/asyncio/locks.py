@@ -270,16 +270,21 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
 
         finally:
             # Must reacquire lock even if wait is cancelled
-            cancelled = False
+            # We only catch CancelledError here, since we don't want any
+            # other (fatal) errors with the future to cause us to spin.
+            err = None
             while True:
                 try:
                     await self.acquire()
                     break
-                except exceptions.CancelledError:
-                    cancelled = True
+                except exceptions.CancelledError as e:
+                    err = e
 
-            if cancelled:
-                raise exceptions.CancelledError
+            if err:
+                try:
+                    raise err  # re-raise same exception instance
+                finally:
+                    err = None  # brake reference cycles
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.

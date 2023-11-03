@@ -758,7 +758,64 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(asyncio.TimeoutError):
                 await asyncio.wait_for(condition.wait(), timeout=0.5)
 
+    async def test_cancelled_error_wakeup(self):
+        """Test that a cancelled error, received when awaiting wakeup
+        will be re-raised un-modified.
+        """
+        wake = False
+        raised = None
+        cond = asyncio.Condition()
 
+        async def func():
+            nonlocal raised
+            async with cond:
+                with self.assertRaises(asyncio.CancelledError) as err:
+                    await cond.wait_for(lambda: wake)
+                raised = err.exception
+                raise raised
+            
+        task = asyncio.create_task(func())
+        await asyncio.sleep(0)
+        # Task is waiting on the condition, cancel it there
+        task.cancel(msg="foo")
+        with self.assertRaises(asyncio.CancelledError) as err:
+            await task
+        self.assertEqual(err.exception.args, ("foo",))
+        # we should have got the _same_ exception instance as the one originally raised
+        self.assertIs(err.exception, raised)
+
+    async def test_cancelled_error_re_aquire(self):
+        """Test that a cancelled error, received when re-aquiring lock,
+        will be re-raised un-modified.
+        """
+        wake = False
+        raised = None
+        cond = asyncio.Condition()
+
+        async def func():
+            nonlocal raised
+            async with cond:
+                with self.assertRaises(asyncio.CancelledError) as err:
+                    await cond.wait_for(lambda: wake)
+                raised = err.exception
+                raise raised
+                
+        task = asyncio.create_task(func())
+        await asyncio.sleep(0)
+        # Task is waiting on the condition
+        await cond.acquire()
+        wake = True
+        cond.notify()
+        await asyncio.sleep(0)
+        # task is now trying to re-acquire the lock, cancel it there
+        task.cancel(msg="foo")
+        cond.release()
+        with self.assertRaises(asyncio.CancelledError) as err:
+            await task
+        self.assertEqual(err.exception.args, ("foo",))
+        # we should have got the _same_ exception instance as the one originally raised
+        self.assertIs(err.exception, raised)
+        
 class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
     def test_initial_value_zero(self):
