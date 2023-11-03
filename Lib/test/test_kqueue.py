@@ -262,10 +262,14 @@ class TestKQueue(unittest.TestCase):
         # gh-110395: kqueue objects must be closed after fork
         kqueue = select.kqueue()
         if (pid := os.fork()) == 0:
-            self.assertTrue(kqueue.closed)
-            with self.assertRaisesRegex(ValueError, "closed kqueue"):
-                kqueue.fileno()
-            os._exit(0)
+            try:
+                self.assertTrue(kqueue.closed)
+                with self.assertRaisesRegex(ValueError, "closed kqueue"):
+                    kqueue.fileno()
+            except:
+                os._exit(1)
+            finally:
+                os._exit(0)
         else:
             self.assertFalse(kqueue.closed)
             support.wait_process(pid, exitcode=0)
