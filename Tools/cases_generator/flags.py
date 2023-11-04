@@ -30,6 +30,7 @@ WHITELIST = (
     "_PyLong_IsCompact",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_CompactValue",
+    "_Py_NewRef",
 )
 
 def makes_escaping_api_call(instr: parsing.Node) -> bool:
