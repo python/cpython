@@ -776,6 +776,8 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
         }
         PyObject *item = PyTuple_GET_ITEM(obj, i);
         if (_PyObject_GetCrossInterpreterData(item, shared->data[i]) != 0) {
+            PyMem_RawFree(shared->data[i]);
+            _tuple_shared_free(shared);
             return -1;
         }
     }
