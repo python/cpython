@@ -1798,14 +1798,9 @@ class TestTier2Optimizer(CheckEvents):
             set_events = sys.monitoring.set_events
             line = E.LINE
             i = 0
-            for i in range(601):
+            for i in range(551):
                 # Turn on events without branching once i reaches 500.
                 set_events(TEST_TOOL, line * int(i >= 500))
-                pass
-                pass
-                pass
-                pass
-                pass
                 pass
                 pass
                 pass
@@ -1819,4 +1814,4 @@ class TestTier2Optimizer(CheckEvents):
         finally:
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.set_events(TEST_TOOL, 0)
-        self.assertGreater(len(events), 1000)
+        self.assertGreater(len(events), 250)

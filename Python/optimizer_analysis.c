@@ -30,6 +30,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
         }
         else if (opcode == _CHECK_VALIDITY) {
             if (maybe_invalid) {
+                /* Exiting the trace requires that IP is correct */
+                need_ip = true;
                 maybe_invalid = false;
             }
             else {
