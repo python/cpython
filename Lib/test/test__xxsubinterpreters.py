@@ -199,7 +199,11 @@ class ShareableTypeTests(unittest.TestCase):
     def test_tuple(self):
         self._assert_values([(), (1,), ("hello", "world", ), (1, True, "hello")])
         # Test nesting
-        self._assert_values([((1,),), ((1, 2), (3, 4)), ((1, 2), (3, 4), (5, 6))])
+        self._assert_values([
+            ((1,),),
+            ((1, 2), (3, 4)),
+            ((1, 2), (3, 4), (5, 6)),
+        ])
 
     def test_tuples_containing_non_shareable_types(self):
         non_shareables = [
