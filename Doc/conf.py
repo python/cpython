@@ -485,3 +485,6 @@ ogp_custom_meta_tags = [
     '<meta property="og:image:height" content="200" />',
     '<meta name="theme-color" content="#3776ab" />',
 ]
+
+# sphinx-doctest config
+doctest_test_doctest_blocks = 'test'
