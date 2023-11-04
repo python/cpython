@@ -943,6 +943,10 @@ it can be updated:
     >>> Movie('Star Wars').director
     'J.J. Abrams'
 
+.. testcleanup::
+
+   conn.close()
+
 
 Pure Python Equivalents
 ^^^^^^^^^^^^^^^^^^^^^^^
