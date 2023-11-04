@@ -753,6 +753,10 @@ static int
 _tuple_shared(PyThreadState *tstate, PyObject *obj,
              _PyCrossInterpreterData *data)
 {
+    Py_ssize_t len = PyTuple_GET_SIZE(obj);
+    if (len < 0) {
+        return -1;
+    }
     if (_PyCrossInterpreterData_InitWithSize(
             data, tstate->interp, sizeof(struct _shared_tuple_data), obj,
             _new_tuple_object
@@ -761,7 +765,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
         return -1;
     }
     struct _shared_tuple_data *shared = (struct _shared_tuple_data *)data->data;
-    shared->len = PyTuple_GET_SIZE(obj);
+    shared->len = len;
     shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
     if (shared->data == NULL) {
         PyErr_NoMemory();
