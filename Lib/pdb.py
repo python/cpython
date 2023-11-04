@@ -604,8 +604,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                         # This is a no-op
                         return "!"
                     line = line.replace(f'%{idx}', args[idx])
-                else:
-                    if idx < len(args) and '%*' not in line:
+                elif '%*' not in line:
+                    if idx < len(args):
                         self.error(f"Too many arguments for alias '{args[0]}'")
                         # This is a no-op
                         return "!"

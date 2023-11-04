@@ -677,6 +677,8 @@ def test_pdb_alias_command():
     ...     'myp',
     ...     'myp 1',
     ...     'myp 1 2',
+    ...     'alias repeat_second_arg p "%* %2"',
+    ...     'repeat_second_arg 1 2 3',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -709,6 +711,9 @@ def test_pdb_alias_command():
     1
     (Pdb) myp 1 2
     *** Too many arguments for alias 'myp'
+    (Pdb) alias repeat_second_arg p "%* %2"
+    (Pdb) repeat_second_arg 1 2 3
+    '1 2 3 2'
     (Pdb) continue
     """
 
