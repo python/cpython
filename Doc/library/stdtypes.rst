@@ -1619,12 +1619,7 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased. For example::
-
-      >>> 'PYTHON IS AMAZING'.capitalize()
-      'Python is amazing'
-      >>> 'ǋemačka Starts With a non-english Digraph'.capitalize()
-      'ǋemačka starts with a non-english digraph'
+   rest lowercased.
 
    See also :meth:`title`.
 
@@ -1633,6 +1628,21 @@ expression support in the :mod:`re` module).
       This means that characters like digraphs will only have their first
       letter capitalized, instead of the full character.
 
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+      
+>>> 'PYTHON IS AMAZING'.capitalize()
+'Python is amazing'
+>>> 'ǋemačka Starts With a non-english Digraph'.capitalize()
+'ǋemačka starts with a non-english digraph'
+
+.. raw:: html
+
+   </details>
+   </dd>
 
 .. method:: str.casefold()
 
@@ -1643,32 +1653,53 @@ expression support in the :mod:`re` module).
    intended to remove all case distinctions in a string. For example, the German
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
-   converts it to ``"ss"``, as follows. For example::
-
-      >>> 'ß'.casefold()
-      'ss'
-      >>> 'ß'.lower()
-      'ß'
+   converts it to ``"ss"``, as follows.
 
    The casefolding algorithm is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
+
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+      
+>>> 'ß'.casefold()
+'ss'
+>>> 'ß'.lower()
+'ß'
+
+.. raw:: html
+
+   </details>
+   </dd>
 
 
 .. method:: str.center(width[, fillchar])
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
-   returned if *width* is less than or equal to ``len(s)``. For example::
+   returned if *width* is less than or equal to ``len(s)``.
 
-      >>> 'Python'.center(10)
-      '  Python  '
-      >>> 'Python'.center(10, '-')
-      '--Python--'
-      >>> 'Python'.center(4)
-      'Python'
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+      
+>>> 'Python'.center(10)
+'  Python  '
+>>> 'Python'.center(10, '-')
+'--Python--'
+>>> 'Python'.center(4)
+'Python'
+
+.. raw:: html
+
+   </details>
+   </dd>
 
 
 .. method:: str.count(sub[, start[, end]])
@@ -1678,18 +1709,29 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
    If *sub* is empty, returns the number of empty strings between characters
-   which is the length of the string plus one. For example::
+   which is the length of the string plus one.
 
-      >>> 'spam, spam, spam'.count('spam')
-      3
-      >>> 'spam, spam, spam'.count('spam', 5)
-      2
-      >>> 'spam, spam, spam'.count('spam', 5, 10)
-      1
-      >>> 'spam, spam, spam'.count('eggs')
-      0
-      >>> 'spam, spam, spam'.count('')
-      17
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+      
+>>> 'spam, spam, spam'.count('spam')
+3
+>>> 'spam, spam, spam'.count('spam', 5)
+2
+>>> 'spam, spam, spam'.count('spam', 5, 10)
+1
+>>> 'spam, spam, spam'.count('eggs')
+0
+>>> 'spam, spam, spam'.count('')
+17
+
+.. raw:: html
+
+   </details>
+   </dd>
 
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
