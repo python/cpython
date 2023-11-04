@@ -1318,7 +1318,7 @@ class TestChdir(unittest.TestCase):
     def test_reentrant(self):
         old_cwd = os.getcwd()
         target1 = self.make_relative_path('data')
-        target2 = self.make_relative_path('ziptestdata')
+        target2 = self.make_relative_path('archivetestdata')
         self.assertNotIn(old_cwd, (target1, target2))
         chdir1, chdir2 = chdir(target1), chdir(target2)
 
