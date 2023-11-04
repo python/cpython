@@ -764,7 +764,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
     shared->len = PyTuple_GET_SIZE(obj);
     shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
     if (shared->data == NULL) {
-        PyErr_Format(PyExc_MemoryError, "not enough memory");
+        PyErr_NoMemory();
         return -1;
     }
 
