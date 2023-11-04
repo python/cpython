@@ -853,6 +853,32 @@ sys_exception_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+sys._set_exception
+    exception: object
+
+Set the current exception.
+
+Subsequent calls to sys.exception()/sys.exc_info() will return
+the provided exception until another exception is raised in the
+current thread or the execution stack returns to a frame where
+another exception is being handled.
+[clinic start generated code]*/
+
+static PyObject *
+sys__set_exception_impl(PyObject *module, PyObject *exception)
+/*[clinic end generated code: output=39e119ee6b747085 input=46da3b45313a1cfa]*/
+{
+    if (!Py_IsNone(exception) && !PyExceptionInstance_Check(exception)){
+        PyErr_SetString(
+            PyExc_TypeError,
+            "must be an exception/None"
+        );
+        return NULL;
+    }
+    PyErr_SetHandledException(exception);
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 sys.exc_info
@@ -2772,6 +2798,7 @@ static PyMethodDef sys_methods[] = {
     SYS__CURRENT_EXCEPTIONS_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF
     SYS_EXCEPTION_METHODDEF
+    SYS__SET_EXCEPTION_METHODDEF
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF
     SYS_EXIT_METHODDEF

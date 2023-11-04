@@ -161,6 +161,123 @@ class ActiveExceptionTests(unittest.TestCase):
         self.assertIsInstance(e, ValueError)
         self.assertIs(exc, e)
 
+class SetExceptionTests(unittest.TestCase):
+
+    def tearDown(self):
+        # make sure we don't leave the global exception set
+        sys._set_exception(None);
+
+    def test_set_exc_invalid_values(self):
+        for x in (0, "1", b"2"):
+            with self.assertRaises(TypeError):
+                sys._set_exception(x);
+
+    def test_clear_exc(self):
+        try:
+            raise ValueError()
+        except ValueError:
+            self.assertIsInstance(sys.exception(), ValueError)
+            sys._set_exception(None)
+            self.assertIsNone(sys.exception())
+
+    def test_set_exc(self):
+        exc = ValueError()
+        self.assertIsNone(sys.exception())
+        sys._set_exception(exc)
+        self.assertIs(sys.exception(), exc)
+
+    def test_set_exc_replaced_by_new_exception_and_restored(self):
+        exc = ValueError()
+        sys._set_exception(exc)
+        self.assertIs(sys.exception(), exc)
+        try:
+            raise TypeError()
+        except TypeError:
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIs(sys.exception().__context__, exc)
+
+        self.assertIs(sys.exception(), exc)
+
+    def test_set_exc_popped_on_exit_except(self):
+        exc = ValueError()
+        try:
+            raise TypeError()
+        except TypeError:
+            self.assertIsInstance(sys.exception(), TypeError)
+            sys._set_exception(exc)
+            self.assertIs(sys.exception(), exc)
+        self.assertIsNone(sys.exception())
+
+    def test_cleared_exc_overridden_and_restored(self):
+        try:
+            raise ValueError()
+        except ValueError:
+            try:
+                raise TypeError()
+            except TypeError:
+                self.assertIsInstance(sys.exception(), TypeError)
+                sys._set_exception(None)
+                self.assertIsNone(sys.exception())
+                try:
+                    raise IndexError()
+                except IndexError:
+                    self.assertIsInstance(sys.exception(), IndexError)
+                    self.assertIsNone(sys.exception().__context__)
+                self.assertIsNone(sys.exception())
+            self.assertIsInstance(sys.exception(), ValueError)
+        self.assertIsNone(sys.exception())
+
+    def test_clear_exc_in_generator(self):
+        def inner():
+            self.assertIsNone(sys.exception())
+            yield
+            self.assertIsInstance(sys.exception(), ValueError)
+            sys._set_exception(None)
+            self.assertIsNone(sys.exception())
+            yield
+            self.assertIsNone(sys.exception())
+
+        # with a single exception in exc_info stack
+        g = inner()
+        next(g)
+        try:
+            raise ValueError()
+        except:
+            self.assertIsInstance(sys.exception(), ValueError)
+            next(g)
+            self.assertIsInstance(sys.exception(), ValueError)
+        self.assertIsNone(sys.exception())
+        with self.assertRaises(StopIteration):
+            next(g)
+        self.assertIsNone(sys.exception())
+
+        # with multiple exceptions in exc_info stack by chaining generators
+        def outer():
+            g = inner()
+            self.assertIsNone(sys.exception())
+            yield next(g)
+            self.assertIsInstance(sys.exception(), TypeError)
+            try:
+                raise ValueError()
+            except:
+                self.assertIsInstance(sys.exception(), ValueError)
+                self.assertIsInstance(sys.exception().__context__, TypeError)
+                yield next(g)
+                self.assertIsInstance(sys.exception(), ValueError)
+            self.assertIsInstance(sys.exception(), TypeError)
+
+        g = outer()
+        next(g)
+        try:
+            raise TypeError()
+        except:
+            self.assertIsInstance(sys.exception(), TypeError)
+            next(g)
+            self.assertIsInstance(sys.exception(), TypeError)
+        self.assertIsNone(sys.exception())
+        with self.assertRaises(StopIteration):
+            next(g)
+        self.assertIsNone(sys.exception())
 
 class ExceptHookTest(unittest.TestCase):
 
