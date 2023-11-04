@@ -773,7 +773,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
                     await cond.wait_for(lambda: wake)
                 raised = err.exception
                 raise raised
-            
+
         task = asyncio.create_task(func())
         await asyncio.sleep(0)
         # Task is waiting on the condition, cancel it there
@@ -799,7 +799,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
                     await cond.wait_for(lambda: wake)
                 raised = err.exception
                 raise raised
-                
+
         task = asyncio.create_task(func())
         await asyncio.sleep(0)
         # Task is waiting on the condition
@@ -815,7 +815,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(err.exception.args, ("foo",))
         # we should have got the _same_ exception instance as the one originally raised
         self.assertIs(err.exception, raised)
-        
+
 class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
     def test_initial_value_zero(self):
