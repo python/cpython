@@ -1382,10 +1382,14 @@ class DocTestRunner:
                     # we don't care about the carets / suggestions / etc
                     # We only care about the error message and notes.
                     # They start with `SyntaxError:` (or any other class name)
+                    exception_line_prefixes = (
+                        f"{exception[0].__qualname__}:",
+                        f"{exception[0].__module__}.{exception[0].__qualname__}:",
+                    )
                     exc_msg_index = next(
                         index
                         for index, line in enumerate(formatted_ex)
-                        if line.startswith(f"{exception[0].__name__}:")
+                        if line.startswith(exception_line_prefixes)
                     )
                     formatted_ex = formatted_ex[exc_msg_index:]
 
