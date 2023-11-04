@@ -110,6 +110,7 @@ typedef unsigned long long PyThread_ident_t;
 typedef Py_uintptr_t PyThread_handle_t;
 
 #define PY_FORMAT_THREAD_IDENT_T "llu"
+#define Py_PARSE_THREAD_IDENT_T "K"
 
 PyAPI_FUNC(PyThread_ident_t) PyThread_get_thread_ident_ex(void);
 

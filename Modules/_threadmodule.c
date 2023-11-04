@@ -79,7 +79,7 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
 static PyObject *
 ThreadHandle_repr(ThreadHandleObject *self)
 {
-    return PyUnicode_FromFormat("<%s object: ident=" PY_FORMAT_THREAD_IDENT_T ">",
+    return PyUnicode_FromFormat("<%s object: ident=%" PY_FORMAT_THREAD_IDENT_T ">",
                                 Py_TYPE(self)->tp_name, self->ident);
 }
 
@@ -529,11 +529,12 @@ to be available for other threads.");
 static PyObject *
 rlock_acquire_restore(rlockobject *self, PyObject *args)
 {
-    unsigned long owner;
+    PyThread_ident_t owner;
     unsigned long count;
     int r = 1;
 
-    if (!PyArg_ParseTuple(args, "(kk):_acquire_restore", &count, &owner))
+    if (!PyArg_ParseTuple(args, "(k" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
+            &count, &owner))
         return NULL;
 
     if (!PyThread_acquire_lock(self->rlock_lock, 0)) {
@@ -559,7 +560,7 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
-    unsigned long owner;
+    PyThread_ident_t owner;
     unsigned long count;
 
     if (self->rlock_count == 0) {
@@ -573,7 +574,7 @@ rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
     self->rlock_count = 0;
     self->rlock_owner = 0;
     PyThread_release_lock(self->rlock_lock);
-    return Py_BuildValue("kk", count, owner);
+    return Py_BuildValue("k" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
 
 PyDoc_STRVAR(rlock_release_save_doc,
@@ -633,7 +634,8 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 rlock_repr(rlockobject *self)
 {
-    return PyUnicode_FromFormat("<%s %s object owner=%ld count=%lu at %p>",
+    return PyUnicode_FromFormat(
+        "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%lu at %p>",
         self->rlock_count ? "locked" : "unlocked",
         Py_TYPE(self)->tp_name, self->rlock_owner,
         self->rlock_count, self);
