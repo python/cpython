@@ -1,0 +1,1 @@
+Set ``f_trace_lines = True`` on all frames upon :func:`pdb.set_trace()`
