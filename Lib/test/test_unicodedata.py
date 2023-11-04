@@ -104,6 +104,26 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             if looked_name := self.db.name(char, None):
                 self.assertEqual(self.db.lookup(looked_name), char)
 
+    def test_no_names_in_pua(self):
+        puas = [*range(0xe000, 0xf8ff),
+                *range(0xf0000, 0xfffff),
+                *range(0x100000, 0x10ffff)]
+        for i in puas:
+            char = chr(i)
+            self.assertRaises(ValueError, self.db.name, char)
+
+    def test_lookup_nonexistant(self):
+        # just make sure that lookup can fail
+        for nonexistant in [
+            "LATIN SMLL LETR A",
+            "OPEN HANDS SIGHS",
+            "DREGS",
+            "HANDBUG",
+            "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
+            "???",
+        ]:
+            self.assertRaises(KeyError, self.db.lookup, nonexistant)
+
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
         self.assertEqual(self.db.digit('9'), 9)

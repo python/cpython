@@ -1,0 +1,5 @@
+Switch the storage of the unicode codepoint names to use a different
+data-structure, a `directed acyclic word graph
+<https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton>`_.
+This makes the unicodedata shared library about 440 KiB smaller. Contributed by
+Carl Friedrich Bolz-Tereick using code from the PyPy project.
