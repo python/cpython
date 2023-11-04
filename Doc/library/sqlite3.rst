@@ -222,7 +222,10 @@ creating a new cursor, then querying the database:
    >>> title, year = res.fetchone()
    >>> print(f'The highest scoring Monty Python movie is {title!r}, released in {year}')
    The highest scoring Monty Python movie is 'Monty Python and the Holy Grail', released in 1975
-   >>> con.close()
+
+.. testcleanup::
+
+   con.close()
 
 You've now created an SQLite database using the :mod:`!sqlite3` module,
 inserted data and retrieved values from it in multiple ways.
@@ -1110,13 +1113,15 @@ Connection objects
          for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
              print(row)
 
-         con.close()
-
       .. testoutput:: sqlite3.loadext
          :hide:
 
          (2, 'broccoli pie', 'broccoli cheese onions flour')
          (3, 'pumpkin pie', 'pumpkin sugar flour butter')
+
+      .. testcleanup::
+
+         con.close()
 
    .. method:: load_extension(path, /, *, entrypoint=None)
 
@@ -2515,6 +2520,8 @@ Some useful URI tricks include:
    res = con2.execute("SELECT data FROM shared")
    assert res.fetchone() == (28,)
 
+   con1.close()
+   con2.close()
 
 More information about this feature, including a list of parameters,
 can be found in the `SQLite URI documentation`_.
