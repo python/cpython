@@ -5,6 +5,7 @@ from test.support import import_helper
 
 try:
     import _testcapi
+    from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 except ImportError:
     _testcapi = None
 
@@ -26,9 +27,17 @@ class CAPITest(unittest.TestCase):
         for maxchar in 0, 0x61, 0xa1, 0x4f60, 0x1f600, 0x10ffff:
             self.assertEqual(new(0, maxchar), '')
             self.assertEqual(new(5, maxchar), chr(maxchar)*5)
+            self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX, maxchar)
         self.assertEqual(new(0, 0x110000), '')
+        self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2, 0x4f60)
+        self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2+1, 0x4f60)
+        self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2, 0x1f600)
+        self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//2+1, 0x1f600)
+        self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//4, 0x1f600)
+        self.assertRaises(MemoryError, new, PY_SSIZE_T_MAX//4+1, 0x1f600)
         self.assertRaises(SystemError, new, 5, 0x110000)
         self.assertRaises(SystemError, new, -1, 0)
+        self.assertRaises(SystemError, new, PY_SSIZE_T_MIN, 0)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -49,8 +58,8 @@ class CAPITest(unittest.TestCase):
             for to in strings[:idx]:
                 self.assertRaises(ValueError, fill, to, 0, 0, fill_char)
             for to in strings[idx:]:
-                for start in range(7):
-                    for length in range(-1, 7 - start):
+                for start in [*range(7), PY_SSIZE_T_MAX]:
+                    for length in [*range(-1, 7 - start), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
                         filled = max(min(length, 5 - start), 0)
                         if filled == 5 and to != strings[idx]:
                             # narrow -> wide
@@ -62,6 +71,7 @@ class CAPITest(unittest.TestCase):
 
         s = strings[0]
         self.assertRaises(IndexError, fill, s, -1, 0, 0x78)
+        self.assertRaises(IndexError, fill, s, PY_SSIZE_T_MIN, 0, 0x78)
         self.assertRaises(ValueError, fill, s, 0, 0, 0x110000)
         self.assertRaises(SystemError, fill, b'abc', 0, 0, 0x78)
         self.assertRaises(SystemError, fill, [], 0, 0, 0x78)
@@ -72,7 +82,7 @@ class CAPITest(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_writechar(self):
-        """Test PyUnicode_ReadChar()"""
+        """Test PyUnicode_WriteChar()"""
         from _testcapi import unicode_writechar as writechar
 
         strings = [
@@ -92,10 +102,12 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(IndexError, writechar, 'abc', 3, 0x78)
         self.assertRaises(IndexError, writechar, 'abc', -1, 0x78)
+        self.assertRaises(IndexError, writechar, 'abc', PY_SSIZE_T_MAX, 0x78)
+        self.assertRaises(IndexError, writechar, 'abc', PY_SSIZE_T_MIN, 0x78)
         self.assertRaises(TypeError, writechar, b'abc', 0, 0x78)
         self.assertRaises(TypeError, writechar, [], 0, 0x78)
         # CRASHES writechar(NULL, 0, 0x78)
-        # TODO: Test PyUnicode_CopyCharacters() with non-modifiable and legacy
+        # TODO: Test PyUnicode_WriteChar() with non-modifiable and legacy
         # unicode.
 
     @support.cpython_only
@@ -113,7 +125,11 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(resize(s, 3), (s, 0))
             self.assertEqual(resize(s, 2), (s[:2], 0))
             self.assertEqual(resize(s, 4), (s + '\0', 0))
+            self.assertEqual(resize(s, 10), (s + '\0'*7, 0))
             self.assertEqual(resize(s, 0), ('', 0))
+            self.assertRaises(MemoryError, resize, s, PY_SSIZE_T_MAX)
+            self.assertRaises(SystemError, resize, s, -1)
+            self.assertRaises(SystemError, resize, s, PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, resize, b'abc', 0)
         self.assertRaises(SystemError, resize, [], 0)
         self.assertRaises(SystemError, resize, NULL, 0)
@@ -192,10 +208,13 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'', 0), '')
         self.assertEqual(fromstringandsize(NULL, 0), '')
 
+        self.assertRaises(MemoryError, fromstringandsize, b'abc', PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
+        self.assertRaises(SystemError, fromstringandsize, b'abc', PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, fromstringandsize, NULL, -1)
+        self.assertRaises(SystemError, fromstringandsize, NULL, PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, fromstringandsize, NULL, 3)
-        self.assertRaises(SystemError, fromstringandsize, NULL, sys.maxsize)
+        self.assertRaises(SystemError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -243,7 +262,9 @@ class CAPITest(unittest.TestCase):
         for kind in -1, 0, 3, 5, 8:
             self.assertRaises(SystemError, fromkindanddata, kind, b'')
         self.assertRaises(ValueError, fromkindanddata, 1, b'abc', -1)
+        self.assertRaises(ValueError, fromkindanddata, 1, b'abc', PY_SSIZE_T_MIN)
         self.assertRaises(ValueError, fromkindanddata, 1, NULL, -1)
+        self.assertRaises(ValueError, fromkindanddata, 1, NULL, PY_SSIZE_T_MIN)
         # CRASHES fromkindanddata(1, NULL, 1)
         # CRASHES fromkindanddata(4, b'\xff\xff\xff\xff')
 
@@ -259,12 +280,14 @@ class CAPITest(unittest.TestCase):
             'ab\xa1\xa2\u4f60\u597d\U0001f600\U0001f601'
         ]
         for s in strings:
-            for start in range(0, len(s) + 2):
-                for end in range(max(start-1, 0), len(s) + 2):
+            for start in [*range(0, len(s) + 2), PY_SSIZE_T_MAX]:
+                for end in [*range(max(start-1, 0), len(s) + 2), PY_SSIZE_T_MAX]:
                     self.assertEqual(substring(s, start, end), s[start:end])
 
         self.assertRaises(IndexError, substring, 'abc', -1, 0)
+        self.assertRaises(IndexError, substring, 'abc', PY_SSIZE_T_MIN, 0)
         self.assertRaises(IndexError, substring, 'abc', 0, -1)
+        self.assertRaises(IndexError, substring, 'abc', 0, PY_SSIZE_T_MIN)
         # CRASHES substring(b'abc', 0, 0)
         # CRASHES substring([], 0, 0)
         # CRASHES substring(NULL, 0, 0)
@@ -294,7 +317,9 @@ class CAPITest(unittest.TestCase):
             for i, c in enumerate(s):
                 self.assertEqual(readchar(s, i), ord(c))
             self.assertRaises(IndexError, readchar, s, len(s))
+            self.assertRaises(IndexError, readchar, s, PY_SSIZE_T_MAX)
             self.assertRaises(IndexError, readchar, s, -1)
+            self.assertRaises(IndexError, readchar, s, PY_SSIZE_T_MIN)
 
         self.assertRaises(TypeError, readchar, b'abc', 0)
         self.assertRaises(TypeError, readchar, [], 0)
@@ -729,10 +754,15 @@ class CAPITest(unittest.TestCase):
         if SIZEOF_WCHAR_T == 2:
             self.assertEqual(fromwidechar('a\U0001f600'.encode(encoding), 2), 'a\ud83d')
 
+        self.assertRaises(MemoryError, fromwidechar, b'', PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, -2)
+        self.assertRaises(SystemError, fromwidechar, b'\0'*SIZEOF_WCHAR_T, PY_SSIZE_T_MIN)
         self.assertEqual(fromwidechar(NULL, 0), '')
         self.assertRaises(SystemError, fromwidechar, NULL, 1)
+        self.assertRaises(SystemError, fromwidechar, NULL, PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, fromwidechar, NULL, -1)
+        self.assertRaises(SystemError, fromwidechar, NULL, -2)
+        self.assertRaises(SystemError, fromwidechar, NULL, PY_SSIZE_T_MIN)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -967,6 +997,11 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(split('a|b|c|d', '|'), ['a', 'b', 'c', 'd'])
         self.assertEqual(split('a|b|c|d', '|', 2), ['a', 'b', 'c|d'])
+        self.assertEqual(split('a|b|c|d', '|', PY_SSIZE_T_MAX),
+                         ['a', 'b', 'c', 'd'])
+        self.assertEqual(split('a|b|c|d', '|', -1), ['a', 'b', 'c', 'd'])
+        self.assertEqual(split('a|b|c|d', '|', PY_SSIZE_T_MIN),
+                         ['a', 'b', 'c', 'd'])
         self.assertEqual(split('a|b|c|d', '\u20ac'), ['a|b|c|d'])
         self.assertEqual(split('a||b|c||d', '||'), ['a', 'b|c', 'd'])
         self.assertEqual(split('а|б|в|г', '|'), ['а', 'б', 'в', 'г'])
@@ -990,6 +1025,11 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(rsplit('a|b|c|d', '|'), ['a', 'b', 'c', 'd'])
         self.assertEqual(rsplit('a|b|c|d', '|', 2), ['a|b', 'c', 'd'])
+        self.assertEqual(rsplit('a|b|c|d', '|', PY_SSIZE_T_MAX),
+                         ['a', 'b', 'c', 'd'])
+        self.assertEqual(rsplit('a|b|c|d', '|', -1), ['a', 'b', 'c', 'd'])
+        self.assertEqual(rsplit('a|b|c|d', '|', PY_SSIZE_T_MIN),
+                         ['a', 'b', 'c', 'd'])
         self.assertEqual(rsplit('a|b|c|d', '\u20ac'), ['a|b|c|d'])
         self.assertEqual(rsplit('a||b|c||d', '||'), ['a', 'b|c', 'd'])
         self.assertEqual(rsplit('а|б|в|г', '|'), ['а', 'б', 'в', 'г'])
@@ -1122,11 +1162,14 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_count(str, '', 0, len(str)), len(str)+1)
         # start < end
         self.assertEqual(unicode_count(str, '!', 1, len(str)+1), 1)
+        self.assertEqual(unicode_count(str, '!', 1, PY_SSIZE_T_MAX), 1)
         # start >= end
         self.assertEqual(unicode_count(str, '!', 0, 0), 0)
         self.assertEqual(unicode_count(str, '!', len(str), 0), 0)
         # negative
         self.assertEqual(unicode_count(str, '!', -len(str), -1), 1)
+        self.assertEqual(unicode_count(str, '!', -len(str)-1, -1), 1)
+        self.assertEqual(unicode_count(str, '!', PY_SSIZE_T_MIN, -1), 1)
         # bad arguments
         self.assertRaises(TypeError, unicode_count, str, b'!', 0, len(str))
         self.assertRaises(TypeError, unicode_count, b"!>_<!", '!', 0, len(str))
@@ -1145,11 +1188,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tailmatch(str, 'aba', 0, len(str), -1), 1)
         self.assertEqual(tailmatch(str, 'aha', 0, len(str), 1), 1)
 
-        self.assertEqual(tailmatch(str, 'aba', 0, sys.maxsize, -1), 1)
-        self.assertEqual(tailmatch(str, 'aba', -len(str), sys.maxsize, -1), 1)
-        self.assertEqual(tailmatch(str, 'aba', -sys.maxsize-1, len(str), -1), 1)
-        self.assertEqual(tailmatch(str, 'aha', 0, sys.maxsize, 1), 1)
-        self.assertEqual(tailmatch(str, 'aha', -sys.maxsize-1, len(str), 1), 1)
+        self.assertEqual(tailmatch(str, 'aba', 0, PY_SSIZE_T_MAX, -1), 1)
+        self.assertEqual(tailmatch(str, 'aba', -len(str), PY_SSIZE_T_MAX, -1), 1)
+        self.assertEqual(tailmatch(str, 'aba', PY_SSIZE_T_MIN, len(str), -1), 1)
+        self.assertEqual(tailmatch(str, 'aha', 0, PY_SSIZE_T_MAX, 1), 1)
+        self.assertEqual(tailmatch(str, 'aha', PY_SSIZE_T_MIN, len(str), 1), 1)
 
         self.assertEqual(tailmatch(str, 'z', 0, len(str), 1), 0)
         self.assertEqual(tailmatch(str, 'z', 0, len(str), -1), 0)
@@ -1188,13 +1231,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(find(str, '', 0, len(str), -1), len(str))
         # start < end
         self.assertEqual(find(str, '!', 1, len(str)+1, 1), 4)
-        self.assertEqual(find(str, '!', 1, len(str)+1, -1), 4)
+        self.assertEqual(find(str, '!', 1, PY_SSIZE_T_MAX, 1), 4)
+        self.assertEqual(find(str, '!', 0, len(str)+1, -1), 4)
+        self.assertEqual(find(str, '!', 0, PY_SSIZE_T_MAX, -1), 4)
         # start >= end
         self.assertEqual(find(str, '!', 0, 0, 1), -1)
+        self.assertEqual(find(str, '!', 0, 0, -1), -1)
         self.assertEqual(find(str, '!', len(str), 0, 1), -1)
+        self.assertEqual(find(str, '!', len(str), 0, -1), -1)
         # negative
         self.assertEqual(find(str, '!', -len(str), -1, 1), 0)
         self.assertEqual(find(str, '!', -len(str), -1, -1), 0)
+        self.assertEqual(find(str, '!', PY_SSIZE_T_MIN, -1, 1), 0)
+        self.assertEqual(find(str, '!', PY_SSIZE_T_MIN, -1, -1), 0)
+        self.assertEqual(find(str, '!', PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, 1), 0)
+        self.assertEqual(find(str, '!', PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, -1), 4)
         # bad arguments
         self.assertRaises(TypeError, find, str, b'!', 0, len(str), 1)
         self.assertRaises(TypeError, find, b"!>_<!", '!', 0, len(str), 1)
@@ -1219,13 +1270,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_findchar(str, 0x110000, 0, len(str), -1), -1)
         # start < end
         self.assertEqual(unicode_findchar(str, ord('!'), 1, len(str)+1, 1), 4)
-        self.assertEqual(unicode_findchar(str, ord('!'), 1, len(str)+1, -1), 4)
+        self.assertEqual(unicode_findchar(str, ord('!'), 1, PY_SSIZE_T_MAX, 1), 4)
+        self.assertEqual(unicode_findchar(str, ord('!'), 0, len(str)+1, -1), 4)
+        self.assertEqual(unicode_findchar(str, ord('!'), 0, PY_SSIZE_T_MAX, -1), 4)
         # start >= end
         self.assertEqual(unicode_findchar(str, ord('!'), 0, 0, 1), -1)
+        self.assertEqual(unicode_findchar(str, ord('!'), 0, 0, -1), -1)
         self.assertEqual(unicode_findchar(str, ord('!'), len(str), 0, 1), -1)
+        self.assertEqual(unicode_findchar(str, ord('!'), len(str), 0, -1), -1)
         # negative
         self.assertEqual(unicode_findchar(str, ord('!'), -len(str), -1, 1), 0)
         self.assertEqual(unicode_findchar(str, ord('!'), -len(str), -1, -1), 0)
+        self.assertEqual(unicode_findchar(str, ord('!'), PY_SSIZE_T_MIN, -1, 1), 0)
+        self.assertEqual(unicode_findchar(str, ord('!'), PY_SSIZE_T_MIN, -1, -1), 0)
+        self.assertEqual(unicode_findchar(str, ord('!'), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, 1), 0)
+        self.assertEqual(unicode_findchar(str, ord('!'), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, -1), 4)
         # bad arguments
         # CRASHES unicode_findchar(b"!>_<!", ord('!'), 0, len(str), 1)
         # CRASHES unicode_findchar([], ord('!'), 0, len(str), 1)
@@ -1243,7 +1302,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(replace(str, 'abra', '='), '=cad=')
         self.assertEqual(replace(str, 'a', '=', 2), '=br=cadabra')
         self.assertEqual(replace(str, 'a', '=', 0), str)
-        self.assertEqual(replace(str, 'a', '=', sys.maxsize), '=br=c=d=br=')
+        self.assertEqual(replace(str, 'a', '=', PY_SSIZE_T_MAX), '=br=c=d=br=')
+        self.assertEqual(replace(str, 'a', '=', -1), '=br=c=d=br=')
+        self.assertEqual(replace(str, 'a', '=', PY_SSIZE_T_MIN), '=br=c=d=br=')
         self.assertEqual(replace(str, 'z', '='), str)
         self.assertEqual(replace(str, '', '='), '=a=b=r=a=c=a=d=a=b=r=a=')
         self.assertEqual(replace(str, 'a', 'ж'), 'жbrжcжdжbrж')
@@ -1422,11 +1483,17 @@ class CAPITest(unittest.TestCase):
 
         s = strings[0]
         self.assertRaises(IndexError, unicode_copycharacters, s, 6, s, 0, 5)
+        self.assertRaises(IndexError, unicode_copycharacters, s, PY_SSIZE_T_MAX, s, 0, 5)
         self.assertRaises(IndexError, unicode_copycharacters, s, -1, s, 0, 5)
+        self.assertRaises(IndexError, unicode_copycharacters, s, PY_SSIZE_T_MIN, s, 0, 5)
         self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, 6, 5)
+        self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, PY_SSIZE_T_MAX, 5)
         self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, -1, 5)
+        self.assertRaises(IndexError, unicode_copycharacters, s, 0, s, PY_SSIZE_T_MIN, 5)
         self.assertRaises(SystemError, unicode_copycharacters, s, 1, s, 0, 5)
+        self.assertRaises(SystemError, unicode_copycharacters, s, 1, s, 0, PY_SSIZE_T_MAX)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, -1)
+        self.assertRaises(SystemError, unicode_copycharacters, s, 0, s, 0, PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, [], 0, 0)
         # CRASHES unicode_copycharacters(s, 0, NULL, 0, 0)
