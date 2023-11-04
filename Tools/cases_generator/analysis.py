@@ -383,7 +383,12 @@ class Analyzer:
         return MacroInstruction(macro.name, format, flags, macro, parts, offset)
 
     def analyze_pseudo(self, pseudo: parsing.Pseudo) -> PseudoInstruction:
-        targets = [self.instrs[target] for target in pseudo.targets]
+        targets: list[Instruction | MacroInstruction] = []
+        for target_name in pseudo.targets:
+            if target_name in self.instrs:
+                targets.append(self.instrs[target_name])
+            else:
+                targets.append(self.macro_instrs[target_name])
         assert targets
         ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
         assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
