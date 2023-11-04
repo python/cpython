@@ -647,7 +647,6 @@ to this is that a list of types can be used to substitute a :class:`ParamSpec`::
    ...
    >>> Z[int, [dict, float]]
    __main__.Z[int, [dict, float]]
-
    >>> 1 + 2
    4
 
