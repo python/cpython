@@ -242,10 +242,6 @@
             break;
         }
 
-        case _SPECIALIZE_UNPACK_SEQUENCE: {
-            break;
-        }
-
         case _UNPACK_SEQUENCE: {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
@@ -677,6 +673,13 @@
         }
 
         case BEFORE_ASYNC_WITH: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case BEFORE_WITH: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
