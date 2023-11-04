@@ -715,7 +715,7 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
 
 struct _shared_tuple_data {
     Py_ssize_t len;
-    _PyCrossInterpreterData ** data;
+    _PyCrossInterpreterData **data;
 };
 
 static PyObject *
