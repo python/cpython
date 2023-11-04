@@ -70,7 +70,7 @@ class CAPIComplexTest(unittest.TestCase):
 
         # Test types with __complex__ dunder method
         # Function doesn't support classes with __complex__ dunder, see #109598
-        self.assertRaises(TypeError, realsasdouble, Complex())
+        self.assertRaises(TypeError, realasdouble, Complex())
         #self.assertEqual(realasdouble(Complex()), 4.25)
         #self.assertRaises(TypeError, realasdouble, BadComplex())
         #with self.assertWarns(DeprecationWarning):
@@ -86,7 +86,7 @@ class CAPIComplexTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(realasdouble(BadFloat2()), 4.25)
 
-        self.assertRaises(TypeError, realasdouble, 42)
+        self.assertEqual(realasdouble(42), 42.)
         self.assertRaises(TypeError, realasdouble, object())
 
         # CRASHES realasdouble(NULL)
@@ -121,7 +121,7 @@ class CAPIComplexTest(unittest.TestCase):
         #    self.assertEqual(imagasdouble(BadFloat2()), 0.0)
 
         # Function returns 0.0 anyway, see #109598
-        self.assertEquals(imagasdouble(object()), 0.0)
+        self.assertEqual(imagasdouble(object()), 0.0)
         #self.assertRaises(TypeError, imagasdouble, object())
 
         # CRASHES imagasdouble(NULL)
@@ -153,6 +153,7 @@ class CAPIComplexTest(unittest.TestCase):
             self.assertEqual(asccomplex(BadFloat2()), 4.25+0.0j)
 
         self.assertRaises(TypeError, asccomplex, object())
+        self.assertEqual(asccomplex(42), 42+0j)
 
         # CRASHES asccomplex(NULL)
 
