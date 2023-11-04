@@ -25,7 +25,7 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertTrue(check(ComplexSubclass(1+2j)))
         self.assertFalse(check(Complex()))
         self.assertFalse(check(3))
-        self.assertFalse(check([]))
+        self.assertFalse(check(3.0))
         self.assertFalse(check(object()))
 
         # CRASHES check(NULL)
@@ -38,7 +38,7 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertFalse(checkexact(ComplexSubclass(1+2j)))
         self.assertFalse(checkexact(Complex()))
         self.assertFalse(checkexact(3))
-        self.assertFalse(checkexact([]))
+        self.assertFalse(checkexact(3.0))
         self.assertFalse(checkexact(object()))
 
         # CRASHES checkexact(NULL)
@@ -61,12 +61,16 @@ class CAPIComplexTest(unittest.TestCase):
 
         # Test subclasses of complex/float
         self.assertEqual(realasdouble(1+2j), 1.0)
+        self.assertEqual(realasdouble(-1+0j), -1.0)
+        self.assertEqual(realasdouble(-1.0), -1.0)
+        
         self.assertEqual(realasdouble(ComplexSubclass(1+2j)), 1.0)
         self.assertEqual(realasdouble(3.14), 3.14)
         self.assertEqual(realasdouble(FloatSubclass(3.14)), 3.14)
 
         # Test types with __complex__ dunder method
         # Function doesn't support classes with __complex__ dunder, see #109598
+        self.assertRaises(TypeError, realsasdouble, Complex())
         #self.assertEqual(realasdouble(Complex()), 4.25)
         #self.assertRaises(TypeError, realasdouble, BadComplex())
         #with self.assertWarns(DeprecationWarning):
@@ -82,6 +86,7 @@ class CAPIComplexTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(realasdouble(BadFloat2()), 4.25)
 
+        self.assertRaises(TypeError, realasdouble, 42)
         self.assertRaises(TypeError, realasdouble, object())
 
         # CRASHES realasdouble(NULL)
@@ -92,6 +97,7 @@ class CAPIComplexTest(unittest.TestCase):
 
         # Test subclasses of complex/float
         self.assertEqual(imagasdouble(1+2j), 2.0)
+        self.assertEqual(imagasdouble(1-1j), -1.0)
         self.assertEqual(imagasdouble(ComplexSubclass(1+2j)), 2.0)
         self.assertEqual(imagasdouble(3.14), 0.0)
         self.assertEqual(imagasdouble(FloatSubclass(3.14)), 0.0)
@@ -115,6 +121,7 @@ class CAPIComplexTest(unittest.TestCase):
         #    self.assertEqual(imagasdouble(BadFloat2()), 0.0)
 
         # Function returns 0.0 anyway, see #109598
+        self.assertEquals(imagasdouble(object()), 0.0)
         #self.assertRaises(TypeError, imagasdouble, object())
 
         # CRASHES imagasdouble(NULL)
