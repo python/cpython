@@ -456,9 +456,9 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, IntLike(42))
         self.assertRaises(TypeError, complex, 123, IntLike(42))
 
-        self.assertEqual(complex(ComplexLikeSubclass(42j)), 42j)
+        self.assertEqual(complex(ComplexLikeSubclass(21j)), 42j)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(complex(ComplexLikeSubclass(ComplexSubclass(2j))), 2j)
+            self.assertEqual(complex(ComplexLikeSubclass(ComplexSubclass(1j))), 2j)
         self.assertRaises(TypeError, complex, ComplexLikeSubclass(42))
 
     def test___complex__(self):

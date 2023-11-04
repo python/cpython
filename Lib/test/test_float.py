@@ -187,9 +187,9 @@ class GeneralFloatCases(unittest.TestCase):
                 return float(str(self)) + 1
 
         self.assertEqual(float(FloatLike(42.)), 42.)
-        self.assertEqual(float(FloatLikeSubclass(42.)), 42.)
+        self.assertEqual(float(FloatLikeSubclass(21.)), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(FloatLikeSubclass(FloatSubclass(42))), 42.)
+            self.assertEqual(float(FloatLikeSubclass(FloatSubclass(21))), 42.)
         self.assertRaises(TypeError, float, FloatLikeSubclass(42))
         self.assertEqual(float(FooStr('8')), 9.)
 

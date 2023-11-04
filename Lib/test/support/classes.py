@@ -47,7 +47,7 @@ class FloatLikeSubclass(float):
         self.value = value
 
     def __float__(self):
-        return self.value
+        return self.value.__class__(self.value*2)
 
 
 class ComplexSubclass(complex):
@@ -68,4 +68,4 @@ class ComplexLikeSubclass(complex):
         self.value = value
 
     def __complex__(self):
-        return self.value
+        return self.value.__class__(self.value*2)
