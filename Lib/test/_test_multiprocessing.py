@@ -2693,6 +2693,9 @@ class _TestPool(BaseTestCase):
                 p.join()
 
     def test_terminate(self):
+        if self.TYPE == 'threads':
+            self.skipTest("Threads cannot be terminated")
+
         # Simulate slow tasks which take "forever" to complete
         p = self.Pool(3)
         args = [support.LONG_TIMEOUT for i in range(10_000)]
