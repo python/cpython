@@ -907,6 +907,7 @@ SYMBOL_NAMES = (
     "_Py_IncRef",
     "_Py_NoneStruct",
     "_Py_NotImplementedStruct",
+    "_Py_SetRefcnt",
     "_Py_SwappedOp",
     "_Py_TrueStruct",
     "_Py_VaBuildValue_SizeT",
