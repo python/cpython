@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_elementtree_Element_append__doc__,
 "append($self, subelement, /)\n"
@@ -1130,13 +1131,8 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
         encoding = NULL;
     }
     else if (PyUnicode_Check(fastargs[1])) {
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        encoding = PyUnicode_AsUTF8(fastargs[1]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1218,4 +1214,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20d1869da79a43d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=399d9d5c9435070b input=a9049054013a1b77]*/

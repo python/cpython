@@ -887,7 +887,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
-                    lineno = code.co_firstlineno
+                    lineno = self._find_first_executable_line(code)
                     filename = code.co_filename
                 except:
                     # last thing to try
@@ -989,6 +989,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error('Blank or comment')
             return 0
         return lineno
+
+    def _find_first_executable_line(self, code):
+        """ Try to find the first executable line of the code object.
+
+        Equivalently, find the line number of the instruction that's
+        after RESUME
+
+        Return code.co_firstlineno if no executable line is found.
+        """
+        prev = None
+        for instr in dis.get_instructions(code):
+            if prev is not None and prev.opname == 'RESUME':
+                if instr.positions.lineno is not None:
+                    return instr.positions.lineno
+                return code.co_firstlineno
+            prev = instr
+        return code.co_firstlineno
 
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
@@ -1741,7 +1758,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns)
+        code.interact("*interactive*", local=ns, local_exit=True)
 
     def do_alias(self, arg):
         """alias [name [command]]

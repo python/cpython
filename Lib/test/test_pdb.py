@@ -1516,7 +1516,7 @@ def test_next_until_return_at_return_event():
     > <doctest test.test_pdb.test_next_until_return_at_return_event[1]>(3)test_function()
     -> test_function_2()
     (Pdb) break test_function_2
-    Breakpoint 1 at <doctest test.test_pdb.test_next_until_return_at_return_event[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_next_until_return_at_return_event[0]>:2
     (Pdb) continue
     > <doctest test.test_pdb.test_next_until_return_at_return_event[0]>(2)test_function_2()
     -> x = 1
@@ -1938,7 +1938,7 @@ def test_pdb_next_command_in_generator_for_loop():
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[1]>(3)test_function()
     -> for i in test_gen():
     (Pdb) break test_gen
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:2
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>(2)test_gen()
     -> yield 0
@@ -2347,6 +2347,48 @@ def test_pdb_ambiguous_statements():
     The value of n is 42
     > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
     -> with PdbTestInput([
+    (Pdb) continue
+    """
+
+def test_pdb_function_break():
+    """Testing the line number of break on function
+
+    >>> def foo(): pass
+
+    >>> def bar():
+    ...
+    ...     pass
+
+    >>> def boo():
+    ...     # comments
+    ...     global x
+    ...     x = 1
+
+    >>> def gen():
+    ...     yield 42
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    ...     'break foo',
+    ...     'break bar',
+    ...     'break boo',
+    ...     'break gen',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_function_break[4]>(3)test_function()
+    -> pass
+    (Pdb) break foo
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[0]>:1
+    (Pdb) break bar
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[1]>:3
+    (Pdb) break boo
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[2]>:4
+    (Pdb) break gen
+    Breakpoint ... at <doctest test.test_pdb.test_pdb_function_break[3]>:2
     (Pdb) continue
     """
 

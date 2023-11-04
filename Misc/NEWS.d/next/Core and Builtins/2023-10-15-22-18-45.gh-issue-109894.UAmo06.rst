@@ -1,0 +1,1 @@
+Fixed crash due to improperly initialized static :exc:`MemoryError` in subinterpreter.
