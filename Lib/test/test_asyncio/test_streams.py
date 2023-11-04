@@ -37,8 +37,7 @@ class StreamTests(test_utils.TestCase):
         # just in case if we have transport close callbacks
         test_utils.run_briefly(self.loop)
 
-        self.loop.close()
-        gc.collect()
+        # set_event_loop() takes care of closing self.loop in a safe way
         super().tearDown()
 
     def _basetest_open_connection(self, open_connection_fut):
@@ -1102,6 +1101,8 @@ os.close(fd)
 
         self.assertEqual(messages[0]['message'],
                          'Unhandled exception in client_connected_cb')
+        # Break explicitly reference cycle
+        messages = None
 
 
 if __name__ == '__main__':
