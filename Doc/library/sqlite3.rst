@@ -16,6 +16,8 @@
    src = sqlite3.connect(":memory:", isolation_level=None)
    dst = sqlite3.connect("tutorial.db", isolation_level=None)
    src.backup(dst)
+   src.close()
+   dst.close()
    del src, dst
 
 .. _sqlite3-intro:
