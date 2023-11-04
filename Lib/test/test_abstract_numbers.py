@@ -119,6 +119,100 @@ class TestSubclassNumbers(unittest.TestCase):
         # test __rsub__
         self.assertEqual(complex(2, 3) - MyComplex(1, 2), MyComplex(1, 1))
 
+    def test_real(self):
+        class MyReal(Real):
+            def __init__(self, n):
+                self.n = n
+
+            def __add__(self, other):
+                raise NotImplementedError
+
+            def __radd__(self, other):
+                raise NotImplementedError
+
+            def __neg__(self):
+                raise NotImplementedError
+
+            def __pos__(self):
+                return self.n
+
+            def __mul__(self, other):
+                raise NotImplementedError
+
+            def __rmul__(self, other):
+                raise NotImplementedError
+
+            def __truediv__(self, other):
+                raise NotImplementedError
+
+            def __rtruediv__(self, other):
+                raise NotImplementedError
+
+            def __pow__(self, exponent):
+                raise NotImplementedError
+
+            def __rpow__(self, base):
+                raise NotImplementedError
+
+            def __abs__(self):
+                raise NotImplementedError
+
+            def __eq__(self, other):
+                raise NotImplementedError
+
+            def __float__(self):
+                return float(self.n)
+
+            def __trunc__(self):
+                raise NotImplementedError
+
+            def __floor__(self):
+                raise NotImplementedError
+
+            def __ceil__(self):
+                raise NotImplementedError
+
+            def __round__(self, ndigits=None):
+                raise NotImplementedError
+
+            def __floordiv__(self, other):
+                return self.n // other
+
+            def __rfloordiv__(self, other):
+                return other // self.n
+
+            def __mod__(self, other):
+                return self.n % other
+
+            def __rmod__(self, other):
+                return other % self.n
+
+            def __lt__(self, other):
+                raise NotImplementedError
+
+            def __le__(self, other):
+                raise NotImplementedError
+
+            # test conjugate
+
+        # test __divmod__
+        self.assertEqual(divmod(MyReal(3), 2), (1, 1))
+
+        # test __rdivmod__
+        self.assertEqual(divmod(3, MyReal(2)), (1, 1))
+
+        # test __complex__
+        self.assertEqual(complex(MyReal(1)).imag, 0j)
+
+        # test real
+        self.assertEqual(MyReal(3).real, 3)
+
+        # test imag
+        self.assertEqual(MyReal(3).imag, 0)
+
+        # test conjugate
+        self.assertEqual(MyReal(123).conjugate(), 123)
+
 
 if __name__ == "__main__":
     unittest.main()
