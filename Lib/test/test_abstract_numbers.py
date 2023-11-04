@@ -43,8 +43,8 @@ class TestNumbers(unittest.TestCase):
         self.assertRaises(TypeError, int, c1)
 
 
-class TestSubclassNumbers(unittest.TestCase):
-    def test_subclass_complex(self):
+class TestNumbersDefaultMethods(unittest.TestCase):
+    def test_complex(self):
         class MyComplex(Complex):
             def __init__(self, real, imag):
                 self.r = real
@@ -119,7 +119,7 @@ class TestSubclassNumbers(unittest.TestCase):
         # test __rsub__
         self.assertEqual(complex(2, 3) - MyComplex(1, 2), MyComplex(1, 1))
 
-    def test_subclass_real(self):
+    def test_real(self):
         class MyReal(Real):
             def __init__(self, n):
                 self.n = n
@@ -214,7 +214,7 @@ class TestSubclassNumbers(unittest.TestCase):
         self.assertEqual(MyReal(123).conjugate(), 123)
 
 
-    def test_subclass_rational(self):
+    def test_rational(self):
         class MyRational(Rational):
             def __init__(self, numerator, denominator):
                 self.n = numerator
@@ -298,7 +298,7 @@ class TestSubclassNumbers(unittest.TestCase):
         self.assertEqual(float(MyRational(9, 3)), 3)
 
 
-    def test_subclass_integral(self):
+    def test_integral(self):
         class MyIntegral(Integral):
             def __init__(self, n):
                 self.n = n
