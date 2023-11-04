@@ -5,7 +5,7 @@ from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support.classes import (ComplexSubclass, ComplexLike,
                                   ComplexLikeSubclass, FloatLike,
-                                  MyIndex, MyInt)
+                                  IndexLike, IntLike)
 
 from random import random
 from math import atan2, isnan, copysign
@@ -448,13 +448,13 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(real=FloatLike(17.), imag=FloatLike(23.)), 17+23j)
         self.assertRaises(TypeError, complex, FloatLike(None))
 
-        self.assertAlmostEqual(complex(MyIndex(42)), 42.0+0.0j)
-        self.assertAlmostEqual(complex(123, MyIndex(42)), 123.0+42.0j)
-        self.assertRaises(OverflowError, complex, MyIndex(2**2000))
-        self.assertRaises(OverflowError, complex, 123, MyIndex(2**2000))
+        self.assertAlmostEqual(complex(IndexLike(42)), 42.0+0.0j)
+        self.assertAlmostEqual(complex(123, IndexLike(42)), 123.0+42.0j)
+        self.assertRaises(OverflowError, complex, IndexLike(2**2000))
+        self.assertRaises(OverflowError, complex, 123, IndexLike(2**2000))
 
-        self.assertRaises(TypeError, complex, MyInt(42))
-        self.assertRaises(TypeError, complex, 123, MyInt(42))
+        self.assertRaises(TypeError, complex, IntLike(42))
+        self.assertRaises(TypeError, complex, 123, IntLike(42))
 
         self.assertEqual(complex(ComplexLikeSubclass(42j)), 42j)
         with self.assertWarns(DeprecationWarning):

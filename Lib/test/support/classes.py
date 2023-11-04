@@ -1,6 +1,6 @@
 # Common test classes.
 
-class MyIndex:
+class IndexLike:
     def __init__(self, value):
         self.value = value
 
@@ -8,7 +8,7 @@ class MyIndex:
         return self.value
 
 
-class MyInt:
+class IntLike:
     def __init__(self, value):
         self.value = value
 

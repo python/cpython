@@ -11,7 +11,7 @@ from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support.classes import (FloatSubclass, OtherFloatSubclass, FloatLike,
-                                  FloatLikeSubclass, MyIndex, MyInt)
+                                  FloatLikeSubclass, IndexLike, IntLike)
 from math import isinf, isnan, copysign, ldexp
 import math
 
@@ -206,9 +206,9 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIs(type(FloatSubclass(f)), FloatSubclass)
 
-        self.assertEqual(float(MyIndex(42)), 42.0)
-        self.assertRaises(OverflowError, float, MyIndex(2**2000))
-        self.assertRaises(TypeError, float, MyInt(42))
+        self.assertEqual(float(IndexLike(42)), 42.0)
+        self.assertRaises(OverflowError, float, IndexLike(2**2000))
+        self.assertRaises(TypeError, float, IntLike(42))
 
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
