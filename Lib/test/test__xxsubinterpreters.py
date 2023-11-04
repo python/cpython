@@ -211,7 +211,7 @@ class ShareableTypeTests(unittest.TestCase):
                 object(),
         ]
         for s in non_shareables:
-            value = tuple([0, 1., s])
+            value = tuple([0, 1.0, s])
             with self.subTest(repr(value)):
                 # XXX Assert the NotShareableError when it is exported
                 with self.assertRaises(Exception):
