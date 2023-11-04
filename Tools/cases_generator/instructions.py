@@ -162,7 +162,7 @@ class Instruction:
                     f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
-                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})next_uop[-1].operand;")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
@@ -197,6 +197,8 @@ class Instruction:
                 ninputs, symbolic = list_effect_size(ieffs)
                 if ninputs:
                     label = f"pop_{ninputs}_{label}"
+                if tier == TIER_TWO:
+                    label = label + "_tier_two"
                 if symbolic:
                     out.write_raw(
                         f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
@@ -285,7 +287,7 @@ class PseudoInstruction:
     """A pseudo instruction."""
 
     name: str
-    targets: list[Instruction]
+    targets: list[Instruction | MacroInstruction]
     instr_flags: InstructionFlags
 
 

@@ -6483,7 +6483,7 @@ for_stmt_rule(Parser *p)
 
 // with_stmt:
 //     | invalid_with_stmt_indent
-//     | 'with' '(' ','.with_item+ ','? ')' ':' block
+//     | 'with' '(' ','.with_item+ ','? ')' ':' TYPE_COMMENT? block
 //     | 'with' ','.with_item+ ':' TYPE_COMMENT? block
 //     | 'async' 'with' '(' ','.with_item+ ','? ')' ':' block
 //     | 'async' 'with' ','.with_item+ ':' TYPE_COMMENT? block
@@ -6528,12 +6528,12 @@ with_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s with_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_with_stmt_indent"));
     }
-    { // 'with' '(' ','.with_item+ ','? ')' ':' block
+    { // 'with' '(' ','.with_item+ ','? ')' ':' TYPE_COMMENT? block
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' block"));
+        D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' TYPE_COMMENT? block"));
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
@@ -6542,6 +6542,7 @@ with_stmt_rule(Parser *p)
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_withitem_seq* a;
         asdl_stmt_seq* b;
+        void *tc;
         if (
             (_keyword = _PyPegen_expect_token(p, 629))  // token='with'
             &&
@@ -6555,10 +6556,12 @@ with_stmt_rule(Parser *p)
             &&
             (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
             &&
+            (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
+            &&
             (b = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ with_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' block"));
+            D(fprintf(stderr, "%*c+ with_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' TYPE_COMMENT? block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -6568,7 +6571,7 @@ with_stmt_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = CHECK_VERSION ( stmt_ty , 9 , "Parenthesized context managers are" , _PyAST_With ( a , b , NULL , EXTRA ) );
+            _res = CHECK_VERSION ( stmt_ty , 9 , "Parenthesized context managers are" , _PyAST_With ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -6578,7 +6581,7 @@ with_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s with_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' TYPE_COMMENT? block"));
     }
     { // 'with' ','.with_item+ ':' TYPE_COMMENT? block
         if (p->error_indicator) {

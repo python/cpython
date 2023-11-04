@@ -16,7 +16,6 @@
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
-#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "frameobject.h"          // PyFrame_New()
 
 #include "osdefs.h"               // SEP
@@ -110,6 +109,26 @@ tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
 }
 
 static int
+tb_get_lineno(PyTracebackObject* tb) {
+    _PyInterpreterFrame* frame = tb->tb_frame->f_frame;
+    assert(frame != NULL);
+    return PyCode_Addr2Line(_PyFrame_GetCode(frame), tb->tb_lasti);
+}
+
+static PyObject *
+tb_lineno_get(PyTracebackObject *self, void *Py_UNUSED(_))
+{
+    int lineno = self->tb_lineno;
+    if (lineno == -1) {
+        lineno = tb_get_lineno(self);
+        if (lineno < 0) {
+            Py_RETURN_NONE;
+        }
+    }
+    return PyLong_FromLong(lineno);
+}
+
+static int
 tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
 {
     if (!new_next) {
@@ -152,12 +171,12 @@ static PyMethodDef tb_methods[] = {
 static PyMemberDef tb_memberlist[] = {
     {"tb_frame",        _Py_T_OBJECT,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
     {"tb_lasti",        Py_T_INT,          OFF(tb_lasti),  Py_READONLY},
-    {"tb_lineno",       Py_T_INT,          OFF(tb_lineno), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
 static PyGetSetDef tb_getsetters[] = {
     {"tb_next", (getter)tb_next_get, (setter)tb_next_set, NULL, NULL},
+    {"tb_lineno", (getter)tb_lineno_get, NULL, NULL, NULL},
     {NULL}      /* Sentinel */
 };
 
@@ -236,8 +255,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
     int addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr,
-                         PyFrame_GetLineNumber(frame));
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr, -1);
 }
 
 
@@ -681,9 +699,13 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
     }
     while (tb != NULL) {
         code = PyFrame_GetCode(tb->tb_frame);
+        int tb_lineno = tb->tb_lineno;
+        if (tb_lineno == -1) {
+            tb_lineno = tb_get_lineno(tb);
+        }
         if (last_file == NULL ||
             code->co_filename != last_file ||
-            last_line == -1 || tb->tb_lineno != last_line ||
+            last_line == -1 || tb_lineno != last_line ||
             last_name == NULL || code->co_name != last_name) {
             if (cnt > TB_RECURSIVE_CUTOFF) {
                 if (tb_print_line_repeated(f, cnt) < 0) {
@@ -691,13 +713,13 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
                 }
             }
             last_file = code->co_filename;
-            last_line = tb->tb_lineno;
+            last_line = tb_lineno;
             last_name = code->co_name;
             cnt = 0;
         }
         cnt++;
         if (cnt <= TB_RECURSIVE_CUTOFF) {
-            if (tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
+            if (tb_displayline(tb, f, code->co_filename, tb_lineno,
                                tb->tb_frame, code->co_name) < 0) {
                 goto error;
             }
