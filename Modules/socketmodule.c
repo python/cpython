@@ -7044,18 +7044,23 @@ PyDoc_STRVAR(if_nameindex_doc,
 \n\
 Returns a list of network interface information (index, name) tuples.");
 
+/*[clinic input]
+_socket.socket.if_nametoindex
+    oname: object(converter="PyUnicode_FSConverter")
+    /
+
+Returns the interface index corresponding to the interface name if_name.
+[clinic start generated code]*/
+
 static PyObject *
-socket_if_nametoindex(PyObject *self, PyObject *args)
+_socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
+/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
 {
-    PyObject *oname;
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
 #else
     unsigned long index;
 #endif
-    if (!PyArg_ParseTuple(args, "O&:if_nametoindex",
-                          PyUnicode_FSConverter, &oname))
-        return NULL;
 
     index = if_nametoindex(PyBytes_AS_STRING(oname));
     Py_DECREF(oname);
@@ -7068,10 +7073,6 @@ socket_if_nametoindex(PyObject *self, PyObject *args)
     return PyLong_FromUnsignedLong(index);
 }
 
-PyDoc_STRVAR(if_nametoindex_doc,
-"if_nametoindex(if_name)\n\
-\n\
-Returns the interface index corresponding to the interface name if_name.");
 
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
@@ -7241,8 +7242,7 @@ static PyMethodDef socket_methods[] = {
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
-    {"if_nametoindex", socket_if_nametoindex,
-     METH_VARARGS, if_nametoindex_doc},
+    _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     {"if_indextoname", socket_if_indextoname,
      METH_O, if_indextoname_doc},
 #endif

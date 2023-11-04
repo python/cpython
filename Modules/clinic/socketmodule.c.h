@@ -216,7 +216,42 @@ exit:
 
 #endif /* defined(HAVE_INET_NTOA) */
 
+#if (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS))
+
+PyDoc_STRVAR(_socket_socket_if_nametoindex__doc__,
+"if_nametoindex($self, oname, /)\n"
+"--\n"
+"\n"
+"Returns the interface index corresponding to the interface name if_name.");
+
+#define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF    \
+    {"if_nametoindex", (PyCFunction)_socket_socket_if_nametoindex, METH_O, _socket_socket_if_nametoindex__doc__},
+
+static PyObject *
+_socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname);
+
+static PyObject *
+_socket_socket_if_nametoindex(PySocketSockObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *oname;
+
+    if (!PyUnicode_FSConverter(arg, &oname)) {
+        goto exit;
+    }
+    return_value = _socket_socket_if_nametoindex_impl(self, oname);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)) */
+
 #ifndef _SOCKET_SOCKET_INET_NTOA_METHODDEF
     #define _SOCKET_SOCKET_INET_NTOA_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_INET_NTOA_METHODDEF) */
-/*[clinic end generated code: output=14b6716b99e1e91f input=a9049054013a1b77]*/
+
+#ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
+    #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
+#endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
+/*[clinic end generated code: output=a6621b09bcb88f6b input=a9049054013a1b77]*/
