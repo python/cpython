@@ -120,6 +120,35 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_socket_socket_ntohl__doc__,
+"ntohl($self, x, /)\n"
+"--\n"
+"\n"
+"Convert a 32-bit integer from network to host byte order.");
+
+#define _SOCKET_SOCKET_NTOHL_METHODDEF    \
+    {"ntohl", (PyCFunction)_socket_socket_ntohl, METH_O, _socket_socket_ntohl__doc__},
+
+static PyObject *
+_socket_socket_ntohl_impl(PySocketSockObject *self, unsigned long x);
+
+static PyObject *
+_socket_socket_ntohl(PySocketSockObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    unsigned long x;
+
+    if (!PyLong_Check(arg)) {
+        _PyArg_BadArgument("ntohl", "argument", "int", arg);
+        goto exit;
+    }
+    x = PyLong_AsUnsignedLongMask(arg);
+    return_value = _socket_socket_ntohl_impl(self, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_socket_socket_htons__doc__,
 "htons($self, x, /)\n"
 "--\n"
@@ -254,4 +283,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=a6621b09bcb88f6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f71189edaff55d1d input=a9049054013a1b77]*/
