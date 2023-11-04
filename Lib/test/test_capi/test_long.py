@@ -2,28 +2,12 @@ import unittest
 import sys
 
 from test.support import import_helper
+from test.support.classes import IntSubclass, IndexLike, IntAndIndexLike
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 
 NULL = None
-
-class IntSubclass(int):
-    pass
-
-class Index:
-    def __init__(self, value):
-        self.value = value
-
-    def __index__(self):
-        return self.value
-
-# use __index__(), not __int__()
-class MyIndexAndInt:
-    def __index__(self):
-        return 10
-    def __int__(self):
-        return 22
 
 
 class LongTests(unittest.TestCase):
@@ -170,8 +154,8 @@ class LongTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(PyLong_AsInt(value), value)
         self.assertEqual(PyLong_AsInt(IntSubclass(42)), 42)
-        self.assertEqual(PyLong_AsInt(Index(42)), 42)
-        self.assertEqual(PyLong_AsInt(MyIndexAndInt()), 10)
+        self.assertEqual(PyLong_AsInt(IndexLike(42)), 42)
+        self.assertEqual(PyLong_AsInt(IntAndIndexLike(10)), 10)
 
         # bound checking
         self.assertRaises(OverflowError, PyLong_AsInt, INT_MIN - 1)
@@ -193,8 +177,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(aslong(value), value)
 
         self.assertEqual(aslong(IntSubclass(42)), 42)
-        self.assertEqual(aslong(Index(42)), 42)
-        self.assertEqual(aslong(MyIndexAndInt()), 10)
+        self.assertEqual(aslong(IndexLike(42)), 42)
+        self.assertEqual(aslong(IntAndIndexLike(10)), 10)
 
         self.assertRaises(OverflowError, aslong, LONG_MIN - 1)
         self.assertRaises(OverflowError, aslong, LONG_MAX + 1)
@@ -213,8 +197,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(aslongandoverflow(value), (value, 0))
 
         self.assertEqual(aslongandoverflow(IntSubclass(42)), (42, 0))
-        self.assertEqual(aslongandoverflow(Index(42)), (42, 0))
-        self.assertEqual(aslongandoverflow(MyIndexAndInt()), (10, 0))
+        self.assertEqual(aslongandoverflow(IndexLike(42)), (42, 0))
+        self.assertEqual(aslongandoverflow(IntAndIndexLike(10)), (10, 0))
 
         self.assertEqual(aslongandoverflow(LONG_MIN - 1), (-1, -1))
         self.assertEqual(aslongandoverflow(LONG_MAX + 1), (-1, 1))
@@ -231,8 +215,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(asunsignedlong(value), value)
 
         self.assertEqual(asunsignedlong(IntSubclass(42)), 42)
-        self.assertRaises(TypeError, asunsignedlong, Index(42))
-        self.assertRaises(TypeError, asunsignedlong, MyIndexAndInt())
+        self.assertRaises(TypeError, asunsignedlong, IndexLike(42))
+        self.assertRaises(TypeError, asunsignedlong, IntAndIndexLike(10))
 
         self.assertRaises(OverflowError, asunsignedlong, -1)
         self.assertRaises(OverflowError, asunsignedlong, ULONG_MAX + 1)
@@ -251,8 +235,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(asunsignedlongmask(value), value)
 
         self.assertEqual(asunsignedlongmask(IntSubclass(42)), 42)
-        self.assertEqual(asunsignedlongmask(Index(42)), 42)
-        self.assertEqual(asunsignedlongmask(MyIndexAndInt()), 10)
+        self.assertEqual(asunsignedlongmask(IndexLike(42)), 42)
+        self.assertEqual(asunsignedlongmask(IntAndIndexLike(10)), 10)
 
         self.assertEqual(asunsignedlongmask(-1), ULONG_MAX)
         self.assertEqual(asunsignedlongmask(ULONG_MAX + 1), 0)
@@ -271,8 +255,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(aslonglong(value), value)
 
         self.assertEqual(aslonglong(IntSubclass(42)), 42)
-        self.assertEqual(aslonglong(Index(42)), 42)
-        self.assertEqual(aslonglong(MyIndexAndInt()), 10)
+        self.assertEqual(aslonglong(IndexLike(42)), 42)
+        self.assertEqual(aslonglong(IntAndIndexLike(10)), 10)
 
         self.assertRaises(OverflowError, aslonglong, LLONG_MIN - 1)
         self.assertRaises(OverflowError, aslonglong, LLONG_MAX + 1)
@@ -291,8 +275,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(aslonglongandoverflow(value), (value, 0))
 
         self.assertEqual(aslonglongandoverflow(IntSubclass(42)), (42, 0))
-        self.assertEqual(aslonglongandoverflow(Index(42)), (42, 0))
-        self.assertEqual(aslonglongandoverflow(MyIndexAndInt()), (10, 0))
+        self.assertEqual(aslonglongandoverflow(IndexLike(42)), (42, 0))
+        self.assertEqual(aslonglongandoverflow(IntAndIndexLike(10)), (10, 0))
 
         self.assertEqual(aslonglongandoverflow(LLONG_MIN - 1), (-1, -1))
         self.assertEqual(aslonglongandoverflow(LLONG_MAX + 1), (-1, 1))
@@ -309,8 +293,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(asunsignedlonglong(value), value)
 
         self.assertEqual(asunsignedlonglong(IntSubclass(42)), 42)
-        self.assertRaises(TypeError, asunsignedlonglong, Index(42))
-        self.assertRaises(TypeError, asunsignedlonglong, MyIndexAndInt())
+        self.assertRaises(TypeError, asunsignedlonglong, IndexLike(42))
+        self.assertRaises(TypeError, asunsignedlonglong, IntAndIndexLike(10))
 
         self.assertRaises(OverflowError, asunsignedlonglong, -1)
         self.assertRaises(OverflowError, asunsignedlonglong, ULLONG_MAX + 1)
@@ -329,8 +313,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(asunsignedlonglongmask(value), value)
 
         self.assertEqual(asunsignedlonglongmask(IntSubclass(42)), 42)
-        self.assertEqual(asunsignedlonglongmask(Index(42)), 42)
-        self.assertEqual(asunsignedlonglongmask(MyIndexAndInt()), 10)
+        self.assertEqual(asunsignedlonglongmask(IndexLike(42)), 42)
+        self.assertEqual(asunsignedlonglongmask(IntAndIndexLike(10)), 10)
 
         self.assertEqual(asunsignedlonglongmask(-1), ULLONG_MAX)
         self.assertEqual(asunsignedlonglongmask(ULLONG_MAX + 1), 0)
@@ -349,8 +333,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(as_ssize_t(value), value)
 
         self.assertEqual(as_ssize_t(IntSubclass(42)), 42)
-        self.assertRaises(TypeError, as_ssize_t, Index(42))
-        self.assertRaises(TypeError, as_ssize_t, MyIndexAndInt())
+        self.assertRaises(TypeError, as_ssize_t, IndexLike(42))
+        self.assertRaises(TypeError, as_ssize_t, IntAndIndexLike(10))
 
         self.assertRaises(OverflowError, as_ssize_t, PY_SSIZE_T_MIN - 1)
         self.assertRaises(OverflowError, as_ssize_t, PY_SSIZE_T_MAX + 1)
@@ -369,8 +353,8 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(as_size_t(value), value)
 
         self.assertEqual(as_size_t(IntSubclass(42)), 42)
-        self.assertRaises(TypeError, as_size_t, Index(42))
-        self.assertRaises(TypeError, as_size_t, MyIndexAndInt())
+        self.assertRaises(TypeError, as_size_t, IndexLike(42))
+        self.assertRaises(TypeError, as_size_t, IntAndIndexLike(10))
 
         self.assertRaises(OverflowError, as_size_t, -1)
         self.assertRaises(OverflowError, as_size_t, SIZE_MAX + 1)
@@ -389,8 +373,8 @@ class LongTests(unittest.TestCase):
                 self.assertIsInstance(asdouble(value), float)
 
         self.assertEqual(asdouble(IntSubclass(42)), 42.0)
-        self.assertRaises(TypeError, asdouble, Index(42))
-        self.assertRaises(TypeError, asdouble, MyIndexAndInt())
+        self.assertRaises(TypeError, asdouble, IndexLike(42))
+        self.assertRaises(TypeError, asdouble, IntAndIndexLike(10))
 
         self.assertRaises(OverflowError, asdouble, 2 * MAX)
         self.assertRaises(OverflowError, asdouble, -2 * MAX)
@@ -417,7 +401,7 @@ class LongTests(unittest.TestCase):
         if y >= M//2:
             self.assertIs(asvoidptr(y - M), NULL)
 
-        self.assertRaises(TypeError, asvoidptr, Index(x))
+        self.assertRaises(TypeError, asvoidptr, IndexLike(x))
         self.assertRaises(TypeError, asvoidptr, object())
         self.assertRaises(OverflowError, asvoidptr, 2**1000)
         self.assertRaises(OverflowError, asvoidptr, -2**1000)

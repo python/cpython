@@ -8,12 +8,25 @@ class IndexLike:
         return self.value
 
 
+class IntSubclass(int):
+    pass
+
 class IntLike:
     def __init__(self, value):
         self.value = value
 
     def __int__(self):
         return self.value
+
+class IntAndIndexLike:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+    def __int__(self):
+        return self.value + 12
 
 
 class FloatSubclass(float):
