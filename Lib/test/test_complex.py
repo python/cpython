@@ -3,6 +3,9 @@ import sys
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support.classes import (ComplexSubclass, ComplexLike,
+                                  ComplexLikeSubclass, FloatLike,
+                                  MyIndex, MyInt)
 
 from random import random
 from math import atan2, isnan, copysign
@@ -10,47 +13,6 @@ import operator
 
 INF = float("inf")
 NAN = float("nan")
-
-class ComplexSubclass(complex):
-    pass
-
-class OtherComplexSubclass(complex):
-    pass
-
-class MyIndex:
-    def __init__(self, value):
-        self.value = value
-
-    def __index__(self):
-        return self.value
-
-class MyInt:
-    def __init__(self, value):
-        self.value = value
-
-    def __int__(self):
-        return self.value
-
-class FloatLike:
-    def __init__(self, value):
-        self.value = value
-
-    def __float__(self):
-        return self.value
-
-class ComplexLike:
-    def __init__(self, value):
-        self.value = value
-
-    def __complex__(self):
-        return self.value
-
-class ComplexLikeSubclass(complex):
-    def __init__(self, value):
-        self.value = value
-
-    def __complex__(self):
-        return self.value
 
 
 # These tests ensure that complex math does the right thing

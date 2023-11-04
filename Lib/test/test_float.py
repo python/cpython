@@ -10,6 +10,8 @@ import unittest
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support.classes import (FloatSubclass, OtherFloatSubclass, FloatLike,
+                                  FloatLikeSubclass, MyIndex, MyInt)
 from math import isinf, isnan, copysign, ldexp
 import math
 
@@ -26,40 +28,6 @@ NAN = float("nan")
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
 format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
-
-class FloatSubclass(float):
-    pass
-
-class OtherFloatSubclass(float):
-    pass
-
-class MyIndex:
-    def __init__(self, value):
-        self.value = value
-
-    def __index__(self):
-        return self.value
-
-class MyInt:
-    def __init__(self, value):
-        self.value = value
-
-    def __int__(self):
-        return self.value
-
-class FloatLike:
-    def __init__(self, value):
-        self.value = value
-
-    def __float__(self):
-        return self.value
-
-class FloatLikeSubclass(float):
-    def __init__(self, value):
-        self.value = value
-
-    def __float__(self):
-        return self.value
 
 
 class GeneralFloatCases(unittest.TestCase):
