@@ -119,7 +119,7 @@ class TestSubclassNumbers(unittest.TestCase):
         # test __rsub__
         self.assertEqual(complex(2, 3) - MyComplex(1, 2), MyComplex(1, 1))
 
-    def test_real(self):
+    def test_subclass_real(self):
         class MyReal(Real):
             def __init__(self, n):
                 self.n = n
@@ -212,6 +212,213 @@ class TestSubclassNumbers(unittest.TestCase):
 
         # test conjugate
         self.assertEqual(MyReal(123).conjugate(), 123)
+
+
+    def test_subclass_rational(self):
+        class MyRational(Rational):
+            def __init__(self, numerator, denominator):
+                self.n = numerator
+                self.d = denominator
+
+            def __add__(self, other):
+                raise NotImplementedError
+
+            def __radd__(self, other):
+                raise NotImplementedError
+
+            def __neg__(self):
+                raise NotImplementedError
+
+            def __pos__(self):
+                raise NotImplementedError
+
+            def __mul__(self, other):
+                raise NotImplementedError
+
+            def __rmul__(self, other):
+                raise NotImplementedError
+
+            def __truediv__(self, other):
+                raise NotImplementedError
+
+            def __rtruediv__(self, other):
+                raise NotImplementedError
+
+            def __pow__(self, exponent):
+                raise NotImplementedError
+
+            def __rpow__(self, base):
+                raise NotImplementedError
+
+            def __abs__(self):
+                raise NotImplementedError
+
+            def __eq__(self, other):
+                raise NotImplementedError
+
+            def __trunc__(self):
+                raise NotImplementedError
+
+            def __floor__(self):
+                raise NotImplementedError
+
+            def __ceil__(self):
+                raise NotImplementedError
+
+            def __round__(self, ndigits=None):
+                raise NotImplementedError
+
+            def __floordiv__(self, other):
+                raise NotImplementedError
+
+            def __rfloordiv__(self, other):
+                raise NotImplementedError
+
+            def __mod__(self, other):
+                raise NotImplementedError
+
+            def __rmod__(self, other):
+                raise NotImplementedError
+
+            def __lt__(self, other):
+                raise NotImplementedError
+
+            def __le__(self, other):
+                raise NotImplementedError
+
+            @property
+            def numerator(self):
+                return self.n
+
+            @property
+            def denominator(self):
+                return self.d
+
+        # test__float__
+        self.assertEqual(float(MyRational(9, 3)), 3)
+
+
+    def test_subclass_integral(self):
+        class MyIntegral(Integral):
+            def __init__(self, n):
+                self.n = n
+
+            def __add__(self, other):
+                raise NotImplementedError
+
+            def __radd__(self, other):
+                raise NotImplementedError
+
+            def __neg__(self):
+                raise NotImplementedError
+
+            def __pos__(self):
+                return self.n
+
+            def __mul__(self, other):
+                raise NotImplementedError
+
+            def __rmul__(self, other):
+                raise NotImplementedError
+
+            def __truediv__(self, other):
+                raise NotImplementedError
+
+            def __rtruediv__(self, other):
+                raise NotImplementedError
+
+            def __pow__(self, exponent):
+                raise NotImplementedError
+
+            def __rpow__(self, base):
+                raise NotImplementedError
+
+            def __abs__(self):
+                raise NotImplementedError
+
+            def __eq__(self, other):
+                raise NotImplementedError
+
+            def __trunc__(self):
+                raise NotImplementedError
+
+            def __floor__(self):
+                raise NotImplementedError
+
+            def __ceil__(self):
+                raise NotImplementedError
+
+            def __round__(self, ndigits=None):
+                raise NotImplementedError
+
+            def __floordiv__(self, other):
+                raise NotImplementedError
+
+            def __rfloordiv__(self, other):
+                raise NotImplementedError
+
+            def __mod__(self, other):
+                raise NotImplementedError
+
+            def __rmod__(self, other):
+                raise NotImplementedError
+
+            def __lt__(self, other):
+                raise NotImplementedError
+
+            def __le__(self, other):
+                raise NotImplementedError
+
+            def __int__(self):
+                return self.n
+
+            def __pow__(self, exponent, modulus=None):
+                raise NotImplementedError
+
+            def __lshift__(self, other):
+                raise NotImplementedError
+
+            def __rlshift__(self, other):
+                raise NotImplementedError
+
+            def __rshift__(self, other):
+                raise NotImplementedError
+
+            def __rrshift__(self, other):
+                raise NotImplementedError
+
+            def __and__(self, other):
+                raise NotImplementedError
+
+            def __rand__(self, other):
+                raise NotImplementedError
+
+            def __xor__(self, other):
+                raise NotImplementedError
+
+            def __rxor__(self, other):
+                raise NotImplementedError
+
+            def __or__(self, other):
+                raise NotImplementedError
+
+            def __ror__(self, other):
+                raise NotImplementedError
+
+            def __invert__(self):
+                raise NotImplementedError
+
+        # test __index__
+        self.assertEqual(operator.index(MyIntegral(123)), 123)
+
+        # test __float__
+        self.assertEqual(float(MyIntegral(123)), 123.0)
+
+        # test numerator
+        self.assertEqual(MyIntegral(123).numerator, 123)
+
+        # test denominator
+        self.assertEqual(MyIntegral(123).denominator, 1)
 
 
 if __name__ == "__main__":
