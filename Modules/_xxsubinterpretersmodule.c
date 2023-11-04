@@ -7,6 +7,7 @@
 
 #include "Python.h"
 #include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -18,22 +19,6 @@
 
 #define MODULE_NAME "_xxsubinterpreters"
 
-
-static const char *
-_copy_raw_string(PyObject *strobj)
-{
-    const char *str = PyUnicode_AsUTF8(strobj);
-    if (str == NULL) {
-        return NULL;
-    }
-    char *copied = PyMem_RawMalloc(strlen(str)+1);
-    if (copied == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    strcpy(copied, str);
-    return copied;
-}
 
 static PyInterpreterState *
 _get_current_interp(void)
@@ -61,21 +46,6 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 
 #define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
-
-static int
-_release_xid_data(_PyCrossInterpreterData *data)
-{
-    PyObject *exc = PyErr_GetRaisedException();
-    int res = _PyCrossInterpreterData_Release(data);
-    if (res < 0) {
-        /* The owning interpreter is already destroyed. */
-        _PyCrossInterpreterData_Clear(NULL, data);
-        // XXX Emit a warning?
-        PyErr_Clear();
-    }
-    PyErr_SetRaisedException(exc);
-    return res;
-}
 
 
 /* module state *************************************************************/
@@ -110,263 +80,6 @@ clear_module_state(module_state *state)
     Py_CLEAR(state->RunFailedError);
 
     return 0;
-}
-
-
-/* data-sharing-specific code ***********************************************/
-
-struct _sharednsitem {
-    const char *name;
-    _PyCrossInterpreterData data;
-};
-
-static void _sharednsitem_clear(struct _sharednsitem *);  // forward
-
-static int
-_sharednsitem_init(struct _sharednsitem *item, PyObject *key, PyObject *value)
-{
-    item->name = _copy_raw_string(key);
-    if (item->name == NULL) {
-        return -1;
-    }
-    if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
-        _sharednsitem_clear(item);
-        return -1;
-    }
-    return 0;
-}
-
-static void
-_sharednsitem_clear(struct _sharednsitem *item)
-{
-    if (item->name != NULL) {
-        PyMem_RawFree((void *)item->name);
-        item->name = NULL;
-    }
-    (void)_release_xid_data(&item->data);
-}
-
-static int
-_sharednsitem_apply(struct _sharednsitem *item, PyObject *ns)
-{
-    PyObject *name = PyUnicode_FromString(item->name);
-    if (name == NULL) {
-        return -1;
-    }
-    PyObject *value = _PyCrossInterpreterData_NewObject(&item->data);
-    if (value == NULL) {
-        Py_DECREF(name);
-        return -1;
-    }
-    int res = PyDict_SetItem(ns, name, value);
-    Py_DECREF(name);
-    Py_DECREF(value);
-    return res;
-}
-
-typedef struct _sharedns {
-    Py_ssize_t len;
-    struct _sharednsitem* items;
-} _sharedns;
-
-static _sharedns *
-_sharedns_new(Py_ssize_t len)
-{
-    _sharedns *shared = PyMem_RawCalloc(sizeof(_sharedns), 1);
-    if (shared == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    shared->len = len;
-    shared->items = PyMem_RawCalloc(sizeof(struct _sharednsitem), len);
-    if (shared->items == NULL) {
-        PyErr_NoMemory();
-        PyMem_RawFree(shared);
-        return NULL;
-    }
-    return shared;
-}
-
-static void
-_sharedns_free(_sharedns *shared)
-{
-    for (Py_ssize_t i=0; i < shared->len; i++) {
-        _sharednsitem_clear(&shared->items[i]);
-    }
-    PyMem_RawFree(shared->items);
-    PyMem_RawFree(shared);
-}
-
-static _sharedns *
-_get_shared_ns(PyObject *shareable)
-{
-    if (shareable == NULL || shareable == Py_None) {
-        return NULL;
-    }
-    Py_ssize_t len = PyDict_Size(shareable);
-    if (len == 0) {
-        return NULL;
-    }
-
-    _sharedns *shared = _sharedns_new(len);
-    if (shared == NULL) {
-        return NULL;
-    }
-    Py_ssize_t pos = 0;
-    for (Py_ssize_t i=0; i < len; i++) {
-        PyObject *key, *value;
-        if (PyDict_Next(shareable, &pos, &key, &value) == 0) {
-            break;
-        }
-        if (_sharednsitem_init(&shared->items[i], key, value) != 0) {
-            break;
-        }
-    }
-    if (PyErr_Occurred()) {
-        _sharedns_free(shared);
-        return NULL;
-    }
-    return shared;
-}
-
-static int
-_sharedns_apply(_sharedns *shared, PyObject *ns)
-{
-    for (Py_ssize_t i=0; i < shared->len; i++) {
-        if (_sharednsitem_apply(&shared->items[i], ns) != 0) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
-// Ultimately we'd like to preserve enough information about the
-// exception and traceback that we could re-constitute (or at least
-// simulate, a la traceback.TracebackException), and even chain, a copy
-// of the exception in the calling interpreter.
-
-typedef struct _sharedexception {
-    PyInterpreterState *interp;
-#define ERR_NOT_SET 0
-#define ERR_NO_MEMORY 1
-#define ERR_ALREADY_RUNNING 2
-    int code;
-    const char *name;
-    const char *msg;
-} _sharedexception;
-
-static const struct _sharedexception no_exception = {
-    .name = NULL,
-    .msg = NULL,
-};
-
-static void
-_sharedexception_clear(_sharedexception *exc)
-{
-    if (exc->name != NULL) {
-        PyMem_RawFree((void *)exc->name);
-    }
-    if (exc->msg != NULL) {
-        PyMem_RawFree((void *)exc->msg);
-    }
-}
-
-static const char *
-_sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
-{
-    if (sharedexc->interp == NULL) {
-        sharedexc->interp = PyInterpreterState_Get();
-    }
-
-    if (code != ERR_NOT_SET) {
-        assert(exc == NULL);
-        assert(code > 0);
-        sharedexc->code = code;
-        return NULL;
-    }
-
-    assert(exc != NULL);
-    const char *failure = NULL;
-
-    PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
-    if (nameobj == NULL) {
-        failure = "unable to format exception type name";
-        code = ERR_NO_MEMORY;
-        goto error;
-    }
-    sharedexc->name = _copy_raw_string(nameobj);
-    Py_DECREF(nameobj);
-    if (sharedexc->name == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-            failure = "out of memory copying exception type name";
-        } else {
-            failure = "unable to encode and copy exception type name";
-        }
-        code = ERR_NO_MEMORY;
-        goto error;
-    }
-
-    if (exc != NULL) {
-        PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
-        if (msgobj == NULL) {
-            failure = "unable to format exception message";
-            code = ERR_NO_MEMORY;
-            goto error;
-        }
-        sharedexc->msg = _copy_raw_string(msgobj);
-        Py_DECREF(msgobj);
-        if (sharedexc->msg == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-                failure = "out of memory copying exception message";
-            } else {
-                failure = "unable to encode and copy exception message";
-            }
-            code = ERR_NO_MEMORY;
-            goto error;
-        }
-    }
-
-    return NULL;
-
-error:
-    assert(failure != NULL);
-    PyErr_Clear();
-    _sharedexception_clear(sharedexc);
-    *sharedexc = (_sharedexception){
-        .interp = sharedexc->interp,
-        .code = code,
-    };
-    return failure;
-}
-
-static void
-_sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
-{
-    if (exc->name != NULL) {
-        assert(exc->code == ERR_NOT_SET);
-        if (exc->msg != NULL) {
-            PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
-        }
-        else {
-            PyErr_SetString(wrapperclass, exc->name);
-        }
-    }
-    else if (exc->msg != NULL) {
-        assert(exc->code == ERR_NOT_SET);
-        PyErr_SetString(wrapperclass, exc->msg);
-    }
-    else if (exc->code == ERR_NO_MEMORY) {
-        PyErr_NoMemory();
-    }
-    else if (exc->code == ERR_ALREADY_RUNNING) {
-        assert(exc->interp != NULL);
-        assert(_PyInterpreterState_IsRunningMain(exc->interp));
-        _PyInterpreterState_FailIfRunningMain(exc->interp);
-    }
-    else {
-        assert(exc->code == ERR_NOT_SET);
-        PyErr_SetNone(wrapperclass);
-    }
 }
 
 
@@ -489,43 +202,8 @@ exceptions_init(PyObject *mod)
 }
 
 static int
-_run_script(PyInterpreterState *interp,
-            const char *codestr, Py_ssize_t codestrlen,
-            _sharedns *shared, _sharedexception *sharedexc, int flags)
+_run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 {
-    int errcode = ERR_NOT_SET;
-
-    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
-        assert(PyErr_Occurred());
-        // In the case where we didn't switch interpreters, it would
-        // be more efficient to leave the exception in place and return
-        // immediately.  However, life is simpler if we don't.
-        PyErr_Clear();
-        errcode = ERR_ALREADY_RUNNING;
-        goto error;
-    }
-
-    PyObject *excval = NULL;
-    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
-    if (main_mod == NULL) {
-        goto error;
-    }
-    PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
-    Py_DECREF(main_mod);
-    if (ns == NULL) {
-        goto error;
-    }
-    Py_INCREF(ns);
-
-    // Apply the cross-interpreter data.
-    if (shared != NULL) {
-        if (_sharedns_apply(shared, ns) != 0) {
-            Py_DECREF(ns);
-            goto error;
-        }
-    }
-
-    // Run the script/code/etc.
     PyObject *result = NULL;
     if (flags & RUN_TEXT) {
         result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
@@ -540,86 +218,46 @@ _run_script(PyInterpreterState *interp,
     else {
         Py_UNREACHABLE();
     }
-    Py_DECREF(ns);
     if (result == NULL) {
-        goto error;
+        return -1;
     }
-    else {
-        Py_DECREF(result);  // We throw away the result.
-    }
-    _PyInterpreterState_SetNotRunningMain(interp);
-
-    *sharedexc = no_exception;
+    Py_DECREF(result);  // We throw away the result.
     return 0;
-
-error:
-    excval = PyErr_GetRaisedException();
-    const char *failure = _sharedexception_bind(excval, errcode, sharedexc);
-    if (failure != NULL) {
-        fprintf(stderr,
-                "RunFailedError: script raised an uncaught exception (%s)",
-                failure);
-    }
-    if (excval != NULL) {
-        // XXX Instead, store the rendered traceback on sharedexc,
-        // attach it to the exception when applied,
-        // and teach PyErr_Display() to print it.
-        PyErr_Display(NULL, excval, NULL);
-        Py_DECREF(excval);
-    }
-    if (errcode != ERR_ALREADY_RUNNING) {
-        _PyInterpreterState_SetNotRunningMain(interp);
-    }
-    assert(!PyErr_Occurred());
-    return -1;
 }
 
 static int
-_run_in_interpreter(PyObject *mod, PyInterpreterState *interp,
+_run_in_interpreter(PyInterpreterState *interp,
                     const char *codestr, Py_ssize_t codestrlen,
-                    PyObject *shareables, int flags)
+                    PyObject *shareables, int flags,
+                    PyObject *excwrapper)
 {
-    module_state *state = get_module_state(mod);
-    assert(state != NULL);
+    assert(!PyErr_Occurred());
+    _PyXI_session session = {0};
 
-    _sharedns *shared = _get_shared_ns(shareables);
-    if (shared == NULL && PyErr_Occurred()) {
+    // Prep and switch interpreters.
+    if (_PyXI_Enter(&session, interp, shareables) < 0) {
+        assert(!PyErr_Occurred());
+        _PyXI_ApplyExceptionInfo(session.exc, excwrapper);
+        assert(PyErr_Occurred());
         return -1;
     }
 
-    // Switch to interpreter.
-    PyThreadState *save_tstate = NULL;
-    PyThreadState *tstate = NULL;
-    if (interp != PyInterpreterState_Get()) {
-        tstate = PyThreadState_New(interp);
-        tstate->_whence = _PyThreadState_WHENCE_EXEC;
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
-    }
-
     // Run the script.
-    _sharedexception exc = (_sharedexception){ .interp = interp };
-    int result = _run_script(interp, codestr, codestrlen, shared, &exc, flags);
+    int res = _run_script(session.main_ns, codestr, codestrlen, flags);
 
-    // Switch back.
-    if (save_tstate != NULL) {
-        PyThreadState_Clear(tstate);
-        PyThreadState_Swap(save_tstate);
-        PyThreadState_Delete(tstate);
-    }
+    // Clean up and switch back.
+    _PyXI_Exit(&session);
 
     // Propagate any exception out to the caller.
-    if (result < 0) {
-        assert(!PyErr_Occurred());
-        _sharedexception_apply(&exc, state->RunFailedError);
-        assert(PyErr_Occurred());
+    assert(!PyErr_Occurred());
+    if (res < 0) {
+        _PyXI_ApplyCapturedException(&session, excwrapper);
+    }
+    else {
+        assert(!_PyXI_HasCapturedException(&session));
     }
 
-    if (shared != NULL) {
-        _sharedns_free(shared);
-    }
-
-    return result;
+    return res;
 }
 
 
@@ -805,7 +443,6 @@ PyDoc_STRVAR(get_main_doc,
 \n\
 Return the ID of main interpreter.");
 
-
 static PyUnicodeObject *
 convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
                    const char *expected)
@@ -903,10 +540,12 @@ _interp_exec(PyObject *self,
     }
 
     // Run the code in the interpreter.
-    int res = _run_in_interpreter(self, interp, codestr, codestrlen,
-                                  shared_arg, flags);
+    module_state *state = get_module_state(self);
+    assert(state != NULL);
+    int res = _run_in_interpreter(interp, codestr, codestrlen,
+                                  shared_arg, flags, state->RunFailedError);
     Py_XDECREF(bytes_obj);
-    if (res != 0) {
+    if (res < 0) {
         return -1;
     }
 
@@ -981,7 +620,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, (PyObject *)script, shared);
+    int res = _interp_exec(self, id, script, shared);
     Py_DECREF(script);
     if (res < 0) {
         return NULL;
