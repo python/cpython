@@ -6415,15 +6415,18 @@ _socket_socket_htons_impl(PySocketSockObject *self, int x)
 }
 
 
-static PyObject *
-socket_htonl(PyObject *self, PyObject *arg)
-{
-    unsigned long x;
+/*[clinic input]
+_socket.socket.htonl
+    x: unsigned_long(bitwise=True)
+    /
 
-    if (PyLong_Check(arg)) {
-        x = PyLong_AsUnsignedLong(arg);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
-            return NULL;
+Convert a 32-bit integer from host to network byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_htonl_impl(PySocketSockObject *self, unsigned long x)
+/*[clinic end generated code: output=04a88551f090913e input=e356f217ac56bef5]*/
+{
 #if SIZEOF_LONG > 4
         {
             unsigned long y;
@@ -6435,18 +6438,8 @@ socket_htonl(PyObject *self, PyObject *arg)
             x = y;
         }
 #endif
-    }
-    else
-        return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
-    return PyLong_FromUnsignedLong(htonl((unsigned long)x));
+    return PyLong_FromUnsignedLong(htonl(x));
 }
-
-PyDoc_STRVAR(htonl_doc,
-"htonl(integer) -> integer\n\
-\n\
-Convert a 32-bit integer from host to network byte order.");
 
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
@@ -7207,8 +7200,7 @@ static PyMethodDef socket_methods[] = {
     _SOCKET_SOCKET_NTOHS_METHODDEF
     _SOCKET_SOCKET_NTOHL_METHODDEF
     _SOCKET_SOCKET_HTONS_METHODDEF
-    {"htonl",                   socket_htonl,
-     METH_O, htonl_doc},
+    _SOCKET_SOCKET_HTONL_METHODDEF
     _SOCKET_SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
     _SOCKET_SOCKET_INET_NTOA_METHODDEF
