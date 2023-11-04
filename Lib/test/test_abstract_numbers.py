@@ -49,18 +49,18 @@ class TestNumbersDefaultMethods(unittest.TestCase):
             def __init__(self, real, imag):
                 self.r = real
                 self.i = imag
-            
+
             def __complex__(self):
                 pass
 
             @property
             def real(self):
                 return self.r
-            
+
             @property
             def imag(self):
                 return self.i
-            
+
             def __add__(self, other):
                 if isinstance(other, Complex):
                     return MyComplex(self.imag + other.imag,
