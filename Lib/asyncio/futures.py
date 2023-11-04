@@ -138,9 +138,6 @@ class Future:
             exc = exceptions.CancelledError()
         else:
             exc = exceptions.CancelledError(self._cancel_message)
-        exc.__context__ = self._cancelled_exc
-        # Remove the reference since we don't need this anymore.
-        self._cancelled_exc = None
         return exc
 
     def cancel(self, msg=None):
