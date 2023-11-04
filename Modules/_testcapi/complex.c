@@ -21,11 +21,7 @@ complex_fromccomplex(PyObject *Py_UNUSED(module), PyObject *obj)
 {
     Py_complex complex;
 
-
-    NULLABLE(obj);
-    complex = PyComplex_AsCComplex(obj);
-
-    if (complex.real == -1. && PyErr_Occurred()) {
+    if (!PyArg_Parse(obj, "D", &complex)) {
         return NULL;
     }
 
