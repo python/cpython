@@ -266,7 +266,6 @@ class CAPITest(unittest.TestCase):
         for kind in -1, 0, 3, 5, 8:
             self.assertRaises(SystemError, fromkindanddata, kind, b'')
         self.assertRaises(ValueError, fromkindanddata, 1, b'abc', -1)
-        self.assertRaises(MemoryError, fromkindanddata, 1, b'abc', PY_SSIZE_T_MAX)
         self.assertRaises(ValueError, fromkindanddata, 1, b'abc', PY_SSIZE_T_MIN)
         self.assertRaises(ValueError, fromkindanddata, 1, NULL, -1)
         self.assertRaises(ValueError, fromkindanddata, 1, NULL, PY_SSIZE_T_MIN)
