@@ -6362,7 +6362,7 @@ _socket_socket_ntohs_impl(PySocketSockObject *self, int x)
 
 /*[clinic input]
 _socket.socket.ntohl
-    x: unsigned_long(bitwise=True)
+    x: unsigned_long
     /
 
 Convert a 32-bit integer from network to host byte order.
@@ -6370,7 +6370,7 @@ Convert a 32-bit integer from network to host byte order.
 
 static PyObject *
 _socket_socket_ntohl_impl(PySocketSockObject *self, unsigned long x)
-/*[clinic end generated code: output=88e46cad3e45c65c input=02a9a0c0ad14a079]*/
+/*[clinic end generated code: output=88e46cad3e45c65c input=862d49375611e718]*/
 {
 #if SIZEOF_LONG > 4
         {
@@ -6417,7 +6417,7 @@ _socket_socket_htons_impl(PySocketSockObject *self, int x)
 
 /*[clinic input]
 _socket.socket.htonl
-    x: unsigned_long(bitwise=True)
+    x: unsigned_long
     /
 
 Convert a 32-bit integer from host to network byte order.
@@ -6425,7 +6425,7 @@ Convert a 32-bit integer from host to network byte order.
 
 static PyObject *
 _socket_socket_htonl_impl(PySocketSockObject *self, unsigned long x)
-/*[clinic end generated code: output=04a88551f090913e input=e356f217ac56bef5]*/
+/*[clinic end generated code: output=04a88551f090913e input=0b263bade5b54efc]*/
 {
 #if SIZEOF_LONG > 4
         {
