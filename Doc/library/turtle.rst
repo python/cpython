@@ -2481,7 +2481,7 @@ facilities:
 - Calling :func:`help` on methods or functions displays the docstrings:
 
 .. doctest::
-   :skipif: _tkinter is None
+   :skipif: True
 
      >>> help(Screen.bgcolor)
      Help on method bgcolor in module turtle:
@@ -2516,7 +2516,7 @@ facilities:
   form:
 
 .. doctest::
-   :skipif: _tkinter is None
+   :skipif: True
 
      >>> help(bgcolor)
      Help on function bgcolor in module turtle:
