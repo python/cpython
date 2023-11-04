@@ -421,7 +421,7 @@ Module functions
 
    .. testcleanup::
 
-      conn.close()
+      con.close()
 
 .. function:: register_adapter(type, adapter, /)
 
