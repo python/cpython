@@ -63,7 +63,7 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertEqual(realasdouble(1+2j), 1.0)
         self.assertEqual(realasdouble(-1+0j), -1.0)
         self.assertEqual(realasdouble(-1.0), -1.0)
-        
+
         self.assertEqual(realasdouble(ComplexSubclass(1+2j)), 1.0)
         self.assertEqual(realasdouble(3.14), 3.14)
         self.assertEqual(realasdouble(FloatSubclass(3.14)), 3.14)
