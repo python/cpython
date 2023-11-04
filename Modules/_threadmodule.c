@@ -5,7 +5,6 @@
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
@@ -1071,7 +1070,8 @@ thread_run(void *boot_raw)
             /* SystemExit is ignored silently */
             PyErr_Clear();
         else {
-            _PyErr_WriteUnraisableMsg("in thread started by", boot->func);
+            PyErr_FormatUnraisable(
+                "Exception ignored in thread started by %R", boot->func);
         }
     }
     else {

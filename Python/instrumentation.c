@@ -1833,6 +1833,23 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     return 0;
 }
 
+int
+_PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet *events)
+{
+    assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (check_tool(interp, tool_id)) {
+        return -1;
+    }
+    if (code->_co_monitoring == NULL) {
+        *events = 0;
+        return 0;
+    }
+    _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
+    *events = get_local_events(local, tool_id);
+    return 0;
+}
+
 /*[clinic input]
 module monitoring
 [clinic start generated code]*/

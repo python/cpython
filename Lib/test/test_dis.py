@@ -532,7 +532,7 @@ dis_asyncwith = """\
             GET_AWAITABLE            1
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 24)
-            YIELD_VALUE              2
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 14)
          >> END_SEND
@@ -548,7 +548,7 @@ dis_asyncwith = """\
             GET_AWAITABLE            2
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 60)
-            YIELD_VALUE              2
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 50)
          >> END_SEND
@@ -571,7 +571,7 @@ None        JUMP_BACKWARD           11 (to 60)
             GET_AWAITABLE            2
             LOAD_CONST               0 (None)
          >> SEND                     4 (to 102)
-            YIELD_VALUE              3
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 90)
          >> CLEANUP_THROW
@@ -762,8 +762,8 @@ None        COPY_FREE_VARS           1
             LOAD_DEREF               2 (x)
             LOAD_FAST                1 (z)
             BINARY_OP                0 (+)
-            YIELD_VALUE              1
-            RESUME                   1
+            YIELD_VALUE              0
+            RESUME                   5
             POP_TOP
             JUMP_BACKWARD           12 (to 10)
          >> END_FOR
