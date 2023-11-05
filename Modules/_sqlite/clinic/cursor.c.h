@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
@@ -134,13 +135,8 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *arg)
         _PyArg_BadArgument("executescript", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t sql_script_length;
-    sql_script = PyUnicode_AsUTF8AndSize(arg, &sql_script_length);
+    sql_script = PyUnicode_AsUTF8(arg);
     if (sql_script == NULL) {
-        goto exit;
-    }
-    if (strlen(sql_script) != (size_t)sql_script_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pysqlite_cursor_executescript_impl(self, sql_script);
@@ -312,4 +308,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=0c52a9cf54d00543 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c772882c7df587ea input=a9049054013a1b77]*/

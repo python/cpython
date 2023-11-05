@@ -544,6 +544,7 @@ def collect_sysconfig(info_add):
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
         'WITH_FREELISTS',
+        'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',
     ):

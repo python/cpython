@@ -147,7 +147,7 @@ The module defines the following user-callable items:
 
    This class operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
-   until the file's :func:`fileno` method is called, at which point the
+   until the file's :func:`~io.IOBase.fileno` method is called, at which point the
    contents are written to disk and operation proceeds as with
    :func:`TemporaryFile`.
 
@@ -404,13 +404,13 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
 
     # create a temporary file using a context manager
     # close the file, use the name to open the file again
-    >>> with tempfile.TemporaryFile(delete_on_close=False) as fp:
-    ...    fp.write(b'Hello world!')
-    ...    fp.close()
-    # the file is closed, but not removed
-    # open the file again by using its name
-    ...    with open(fp.name) as f
-    ...        f.read()
+    >>> with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+    ...     fp.write(b'Hello world!')
+    ...     fp.close()
+    ... # the file is closed, but not removed
+    ... # open the file again by using its name
+    ...     with open(fp.name, mode='rb') as f:
+    ...         f.read()
     b'Hello world!'
     >>>
     # file is now removed
