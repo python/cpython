@@ -1391,7 +1391,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
     @property
     def ipv6_mapped(self):
-        """Return the IPv6 mapped address.
+        """Return the IPv4-mapped IPv6 address.
 
         Returns:
             The IPv4-mapped IPv6 address per RFC 4291.
