@@ -65,8 +65,8 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertEqual(realasdouble(-1.0), -1.0)
 
         self.assertEqual(realasdouble(ComplexSubclass(1+2j)), 1.0)
-        self.assertEqual(realasdouble(3.14), 3.14)
-        self.assertEqual(realasdouble(FloatSubclass(3.14)), 3.14)
+        self.assertEqual(realasdouble(4.25), 4.25)
+        self.assertEqual(realasdouble(FloatSubclass(4.25)), 4.25)
 
         # Test types with __complex__ dunder method
         # Function doesn't support classes with __complex__ dunder, see #109598
@@ -91,8 +91,8 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertEqual(imagasdouble(1+2j), 2.0)
         self.assertEqual(imagasdouble(1-1j), -1.0)
         self.assertEqual(imagasdouble(ComplexSubclass(1+2j)), 2.0)
-        self.assertEqual(imagasdouble(3.14), 0.0)
-        self.assertEqual(imagasdouble(FloatSubclass(3.14)), 0.0)
+        self.assertEqual(imagasdouble(4.25), 0.0)
+        self.assertEqual(imagasdouble(FloatSubclass(4.25)), 0.0)
 
         # Test types with __complex__ dunder method
         # Function doesn't support classes with __complex__ dunder, see #109598
@@ -110,8 +110,8 @@ class CAPIComplexTest(unittest.TestCase):
         # Test subclasses of complex/float
         self.assertEqual(asccomplex(1+2j), 1.0+2.0j)
         self.assertEqual(asccomplex(ComplexSubclass(1+2j)), 1.0+2.0j)
-        self.assertEqual(asccomplex(3.14), 3.14+0.0j)
-        self.assertEqual(asccomplex(FloatSubclass(3.14)), 3.14+0.0j)
+        self.assertEqual(asccomplex(4.25), 4.25+0.0j)
+        self.assertEqual(asccomplex(FloatSubclass(4.25)), 4.25+0.0j)
 
         # Test types with __complex__ dunder method
         self.assertEqual(asccomplex(Complex()), 4.25+0.5j)
