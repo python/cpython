@@ -640,6 +640,9 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   If the passed object has a ``__signature__`` attribute, this function
+   returns it without further computations.
+
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
@@ -762,6 +765,8 @@ function.
              pass
          sig = MySignature.from_callable(min)
          assert isinstance(sig, MySignature)
+
+       Its behavior is otherwise identical to that of :func:`signature`.
 
        .. versionadded:: 3.5
 
@@ -1463,10 +1468,11 @@ generator to be determined easily.
    Get current state of a generator-iterator.
 
    Possible states are:
-    * GEN_CREATED: Waiting to start execution.
-    * GEN_RUNNING: Currently being executed by the interpreter.
-    * GEN_SUSPENDED: Currently suspended at a yield expression.
-    * GEN_CLOSED: Execution has completed.
+
+   * GEN_CREATED: Waiting to start execution.
+   * GEN_RUNNING: Currently being executed by the interpreter.
+   * GEN_SUSPENDED: Currently suspended at a yield expression.
+   * GEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.2
 
@@ -1478,10 +1484,11 @@ generator to be determined easily.
    ``cr_frame`` attributes.
 
    Possible states are:
-    * CORO_CREATED: Waiting to start execution.
-    * CORO_RUNNING: Currently being executed by the interpreter.
-    * CORO_SUSPENDED: Currently suspended at an await expression.
-    * CORO_CLOSED: Execution has completed.
+
+   * CORO_CREATED: Waiting to start execution.
+   * CORO_RUNNING: Currently being executed by the interpreter.
+   * CORO_SUSPENDED: Currently suspended at an await expression.
+   * CORO_CLOSED: Execution has completed.
 
    .. versionadded:: 3.5
 
@@ -1494,10 +1501,11 @@ generator to be determined easily.
    ``ag_running`` and ``ag_frame`` attributes.
 
    Possible states are:
-    * AGEN_CREATED: Waiting to start execution.
-    * AGEN_RUNNING: Currently being executed by the interpreter.
-    * AGEN_SUSPENDED: Currently suspended at a yield expression.
-    * AGEN_CLOSED: Execution has completed.
+
+   * AGEN_CREATED: Waiting to start execution.
+   * AGEN_RUNNING: Currently being executed by the interpreter.
+   * AGEN_SUSPENDED: Currently suspended at a yield expression.
+   * AGEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.12
 
@@ -1655,6 +1663,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

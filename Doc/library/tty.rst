@@ -15,6 +15,8 @@
 The :mod:`tty` module defines functions for putting the tty into cbreak and raw
 modes.
 
+.. availability:: Unix.
+
 Because it requires the :mod:`termios` module, it will work only on Unix.
 
 The :mod:`tty` module defines the following functions:
@@ -43,6 +45,9 @@ The :mod:`tty` module defines the following functions:
    :func:`termios.tcsetattr`. The return value of :func:`termios.tcgetattr`
    is saved before setting *fd* to raw mode; this value is returned.
 
+   .. versionchanged:: 3.12
+      The return value is now the original tty attributes, instead of None.
+
 
 .. function:: setcbreak(fd, when=termios.TCSAFLUSH)
 
@@ -50,6 +55,9 @@ The :mod:`tty` module defines the following functions:
    defaults to :const:`termios.TCSAFLUSH`, and is passed to
    :func:`termios.tcsetattr`. The return value of :func:`termios.tcgetattr`
    is saved before setting *fd* to cbreak mode; this value is returned.
+
+   .. versionchanged:: 3.12
+      The return value is now the original tty attributes, instead of None.
 
 
 .. seealso::

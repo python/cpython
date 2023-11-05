@@ -22,6 +22,8 @@ always available.
 
    .. versionadded:: 3.2
 
+   .. availability:: Unix.
+
 
 .. function:: addaudithook(hook)
 
@@ -173,7 +175,11 @@ always available.
 
    Call ``func(*args)``, while tracing is enabled.  The tracing state is saved,
    and restored afterwards.  This is intended to be called from a debugger from
-   a checkpoint, to recursively debug some other code.
+   a checkpoint, to recursively debug or profile some other code.
+
+   Tracing is suspended while calling a tracing function set by
+   :func:`settrace` or :func:`setprofile` to avoid infinite recursion.
+   :func:`!call_tracing` enables explicit recursion of the tracing function.
 
 
 .. data:: copyright
@@ -753,7 +759,7 @@ always available.
 
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
-   found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
+   found in the :mod:`os` module (:samp:`RTLD_{xxx}` constants, e.g.
    :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
@@ -1441,7 +1447,7 @@ always available.
    lazy resolving of symbols when importing a module, if called as
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
    ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag values
-   can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
+   can be found in the :mod:`os` module (:samp:`RTLD_{xxx}` constants, e.g.
    :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
@@ -1471,12 +1477,15 @@ always available.
    its return value is not used, so it can simply return ``None``.  Error in the profile
    function will cause itself unset.
 
+   .. note::
+      The same tracing mechanism is used for :func:`!setprofile` as :func:`settrace`.
+      To trace calls with :func:`!setprofile` inside a tracing function
+      (e.g. in a debugger breakpoint), see :func:`call_tracing`.
+
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
-
-   .. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1498,6 +1507,9 @@ always available.
 
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
+
+   .. audit-event:: sys.setprofile "" sys.setprofile
+
 
 .. function:: setrecursionlimit(limit)
 
@@ -1552,12 +1564,15 @@ always available.
    function to be used for the new scope, or ``None`` if the scope shouldn't be
    traced.
 
-   The local trace function should return a reference to itself (or to another
-   function for further tracing in that scope), or ``None`` to turn off tracing
-   in that scope.
+   The local trace function should return a reference to itself, or to another
+   function which would then be used as the local trace function for the scope.
 
    If there is any error occurred in the trace function, it will be unset, just
    like ``settrace(None)`` is called.
+
+   .. note::
+      Tracing is disabled while calling the trace function (e.g. a function set by
+      :func:`!settrace`). For recursive tracing see :func:`call_tracing`.
 
    The events have the following meaning:
 
@@ -1779,7 +1794,7 @@ always available.
       However, if you are writing a library (and do not control in which
       context its code will be executed), be aware that the standard streams
       may be replaced with file-like objects like :class:`io.StringIO` which
-      do not support the :attr:!buffer` attribute.
+      do not support the :attr:`!buffer` attribute.
 
 
 .. data:: __stdin__

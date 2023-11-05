@@ -1,7 +1,6 @@
 # Author: Paul Kippes <kippesp@gmail.com>
 
 import unittest
-import sqlite3 as sqlite
 
 from .util import memory_database
 from .util import MemoryDatabaseMixin

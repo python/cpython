@@ -22,9 +22,6 @@
 #include <math.h>                 // HUGE_VAL
 #include <stdarg.h>               // va_list
 #include <wchar.h>                // wchar_t
-#ifdef HAVE_STDDEF_H
-#  include <stddef.h>             // size_t
-#endif
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>          // ssize_t
 #endif
@@ -48,6 +45,7 @@
 #include "pytypedefs.h"
 #include "pybuffer.h"
 #include "pystats.h"
+#include "pyatomic.h"
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"

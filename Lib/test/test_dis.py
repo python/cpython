@@ -524,17 +524,15 @@ async def _asyncwith(c):
 
 dis_asyncwith = """\
 %4d        RETURN_GENERATOR
-
-None        POP_TOP
-
-%4d        RESUME                   0
+            POP_TOP
+            RESUME                   0
 
 %4d        LOAD_FAST                0 (c)
             BEFORE_ASYNC_WITH
             GET_AWAITABLE            1
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 24)
-            YIELD_VALUE              2
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 14)
          >> END_SEND
@@ -550,7 +548,7 @@ None        POP_TOP
             GET_AWAITABLE            2
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 60)
-            YIELD_VALUE              2
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 50)
          >> END_SEND
@@ -573,7 +571,7 @@ None        JUMP_BACKWARD           11 (to 60)
             GET_AWAITABLE            2
             LOAD_CONST               0 (None)
          >> SEND                     4 (to 102)
-            YIELD_VALUE              3
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 90)
          >> CLEANUP_THROW
@@ -598,7 +596,6 @@ None     >> COPY                     3
 ExceptionTable:
 12 rows
 """ % (_asyncwith.__code__.co_firstlineno,
-       _asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
        _asyncwith.__code__.co_firstlineno + 1,
@@ -757,18 +754,16 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
 None        COPY_FREE_VARS           1
 
 %4d        RETURN_GENERATOR
-
-None        POP_TOP
-
-%4d        RESUME                   0
+            POP_TOP
+            RESUME                   0
             LOAD_FAST                0 (.0)
          >> FOR_ITER                10 (to 34)
             STORE_FAST               1 (z)
             LOAD_DEREF               2 (x)
             LOAD_FAST                1 (z)
             BINARY_OP                0 (+)
-            YIELD_VALUE              1
-            RESUME                   1
+            YIELD_VALUE              0
+            RESUME                   5
             POP_TOP
             JUMP_BACKWARD           12 (to 10)
          >> END_FOR
@@ -780,7 +775,6 @@ ExceptionTable:
 1 row
 """ % (dis_nested_1,
        __file__,
-       _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
 )

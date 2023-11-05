@@ -79,7 +79,7 @@ PIC. To populate the build cache, run:
 ```shell
 . /opt/emsdk/emsdk_env.sh
 embuilder build zlib bzip2 MINIMAL_PIC
-embuilder build --pic zlib bzip2 MINIMAL_PIC
+embuilder --pic build zlib bzip2 MINIMAL_PIC
 ```
 
 

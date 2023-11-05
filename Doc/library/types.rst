@@ -472,6 +472,12 @@ Standard names are defined for the following types:
 
       .. versionadded:: 3.12
 
+.. class:: CapsuleType
+
+   The type of :ref:`capsule objects <capsules>`.
+
+   .. versionadded:: 3.13
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
