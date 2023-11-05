@@ -1675,7 +1675,7 @@ dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1) {
-            _PyErr_WriteUnraisableMsg(warnmsg, NULL);
+            PyErr_FormatUnraisable("Exception ignored %s", warnmsg);
             return NULL;
         }
     }
@@ -1698,7 +1698,7 @@ dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
     /* Ignore any exception raised by the lookup */
     PyObject *exc2 = _PyErr_Occurred(tstate);
     if (exc2 && !PyErr_GivenExceptionMatches(exc2, PyExc_KeyError)) {
-        _PyErr_WriteUnraisableMsg(warnmsg, NULL);
+        PyErr_FormatUnraisable("Exception ignored %s", warnmsg);
     }
     _PyErr_SetRaisedException(tstate, exc);
 
@@ -2700,12 +2700,11 @@ dict_update_arg(PyObject *self, PyObject *arg)
     if (PyDict_CheckExact(arg)) {
         return PyDict_Merge(self, arg, 1);
     }
-    PyObject *func;
-    if (PyObject_GetOptionalAttr(arg, &_Py_ID(keys), &func) < 0) {
+    int has_keys = PyObject_HasAttrWithError(arg, &_Py_ID(keys));
+    if (has_keys < 0) {
         return -1;
     }
-    if (func != NULL) {
-        Py_DECREF(func);
+    if (has_keys) {
         return PyDict_Merge(self, arg, 1);
     }
     return PyDict_MergeFromSeq2(self, arg, 1);
@@ -3938,8 +3937,8 @@ PyDict_GetItemString(PyObject *v, const char *key)
     PyObject *kv, *rv;
     kv = PyUnicode_FromString(key);
     if (kv == NULL) {
-        _PyErr_WriteUnraisableMsg(
-            "in PyDict_GetItemString()", NULL);
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyDict_GetItemString()");
         return NULL;
     }
     rv = PyDict_GetItem(v, kv);
@@ -4657,7 +4656,7 @@ dictview_mapping(PyObject *view, void *Py_UNUSED(ignored)) {
 
 static PyGetSetDef dictview_getset[] = {
     {"mapping", dictview_mapping, (setter)NULL,
-     "dictionary that this view refers to", NULL},
+     PyDoc_STR("dictionary that this view refers to"), NULL},
     {0}
 };
 
@@ -5664,7 +5663,7 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
 }
 
 int
-_PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
+PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
@@ -5687,7 +5686,7 @@ _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 }
 
 void
-_PyObject_ClearManagedDict(PyObject *obj)
+PyObject_ClearManagedDict(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
@@ -5927,14 +5926,9 @@ _PyDict_SendEvent(int watcher_bits,
                 // unraisablehook keep a reference to it, so we don't pass the
                 // dict as context, just an informative string message.  Dict
                 // repr can call arbitrary code, so we invent a simpler version.
-                PyObject *context = PyUnicode_FromFormat(
-                    "%s watcher callback for <dict at %p>",
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for <dict at %p>",
                     dict_event_name(event), mp);
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
             }
         }
         watcher_bits >>= 1;

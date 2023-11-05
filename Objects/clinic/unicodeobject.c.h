@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(EncodingMap_size__doc__,
 "size($self, /)\n"
@@ -203,13 +203,8 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+        encoding = PyUnicode_AsUTF8(args[0]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -220,13 +215,8 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("encode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
+    errors = PyUnicode_AsUTF8(args[1]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -951,7 +941,7 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
 "    Maximum number of splits (starting from the left).\n"
@@ -1075,7 +1065,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
 "    Maximum number of splits (starting from the left).\n"
@@ -1473,13 +1463,8 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("str", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
         }
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        encoding = PyUnicode_AsUTF8(fastargs[1]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1490,13 +1475,8 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("str", "argument 'errors'", "str", fastargs[2]);
         goto exit;
     }
-    Py_ssize_t errors_length;
-    errors = PyUnicode_AsUTF8AndSize(fastargs[2], &errors_length);
+    errors = PyUnicode_AsUTF8(fastargs[2]);
     if (errors == NULL) {
-        goto exit;
-    }
-    if (strlen(errors) != (size_t)errors_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -1505,4 +1485,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a64776a3ea1c970c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=20313d6339272ddc input=a9049054013a1b77]*/

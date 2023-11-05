@@ -274,8 +274,8 @@ class IdleConfTest(unittest.TestCase):
                 conf.CreateConfigHandlers()
 
         # Check keys are equal
-        self.assertCountEqual(conf.defaultCfg.keys(), conf.config_types)
-        self.assertCountEqual(conf.userCfg.keys(), conf.config_types)
+        self.assertCountEqual(conf.defaultCfg, conf.config_types)
+        self.assertCountEqual(conf.userCfg, conf.config_types)
 
         # Check conf parser are correct type
         for default_parser in conf.defaultCfg.values():

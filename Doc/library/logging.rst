@@ -907,7 +907,7 @@ you want to use.
 
 In the case of {}-formatting, you can specify formatting flags by placing them
 after the attribute name, separated from it with a colon. For example: a
-placeholder of ``{msecs:03d}`` would format a millisecond value of ``4`` as
+placeholder of ``{msecs:03.0f}`` would format a millisecond value of ``4`` as
 ``004``. Refer to the :meth:`str.format` documentation for full details on
 the options available to you.
 

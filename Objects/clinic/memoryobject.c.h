@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(memoryview__doc__,
 "memoryview(object)\n"
@@ -305,13 +305,8 @@ memoryview_tobytes(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t n
         order = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t order_length;
-        order = PyUnicode_AsUTF8AndSize(args[0], &order_length);
+        order = PyUnicode_AsUTF8(args[0]);
         if (order == NULL) {
-            goto exit;
-        }
-        if (strlen(order) != (size_t)order_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -413,4 +408,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=28a632db32b44b63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=abd8c0ce804d8992 input=a9049054013a1b77]*/

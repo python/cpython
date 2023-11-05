@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
@@ -200,13 +196,8 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t flags_length;
-    flags = PyUnicode_AsUTF8AndSize(args[1], &flags_length);
+    flags = PyUnicode_AsUTF8(args[1]);
     if (flags == NULL) {
-        goto exit;
-    }
-    if (strlen(flags) != (size_t)flags_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (nargs < 3) {
@@ -222,4 +213,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f1bf74536f201669 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48183905532205c2 input=a9049054013a1b77]*/

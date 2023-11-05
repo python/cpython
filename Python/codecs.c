@@ -14,7 +14,6 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include <ctype.h>
 
 const char *Py_hexdigits = "0123456789abcdef";
 

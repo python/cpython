@@ -2,16 +2,17 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_pybuffer.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_crossinterp.h"   // _Py_CallInInterpreter()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_long.h"          // _Py_IsNegative
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
-#include <ctype.h>
-#include <stddef.h>               // offsetof()
 
+#include <stddef.h>               // offsetof()
 
 
 /* Shorthands to return certain errors */
@@ -805,6 +806,27 @@ PyBuffer_Release(Py_buffer *view)
     }
     view->obj = NULL;
     Py_DECREF(obj);
+}
+
+static int
+_buffer_release_call(void *arg)
+{
+    PyBuffer_Release((Py_buffer *)arg);
+    return 0;
+}
+
+int
+_PyBuffer_ReleaseInInterpreter(PyInterpreterState *interp,
+                               Py_buffer *view)
+{
+    return _Py_CallInInterpreter(interp, _buffer_release_call, view);
+}
+
+int
+_PyBuffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
+                                         Py_buffer *view)
+{
+    return _Py_CallInInterpreterAndRawFree(interp, _buffer_release_call, view);
 }
 
 PyObject *
@@ -2394,11 +2416,13 @@ int
 PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
 {
     if (key == NULL) {
+        *result = NULL;
         null_error();
         return -1;
     }
     PyObject *okey = PyUnicode_FromString(key);
     if (okey == NULL) {
+        *result = NULL;
         return -1;
     }
     int rc = PyMapping_GetOptionalItem(obj, okey, result);
@@ -2426,6 +2450,24 @@ PyMapping_SetItemString(PyObject *o, const char *key, PyObject *value)
 }
 
 int
+PyMapping_HasKeyStringWithError(PyObject *obj, const char *key)
+{
+    PyObject *res;
+    int rc = PyMapping_GetOptionalItemString(obj, key, &res);
+    Py_XDECREF(res);
+    return rc;
+}
+
+int
+PyMapping_HasKeyWithError(PyObject *obj, PyObject *key)
+{
+    PyObject *res;
+    int rc = PyMapping_GetOptionalItem(obj, key, &res);
+    Py_XDECREF(res);
+    return rc;
+}
+
+int
 PyMapping_HasKeyString(PyObject *obj, const char *key)
 {
     PyObject *dummy;
@@ -2440,19 +2482,17 @@ PyMapping_HasKeyString(PyObject *obj, const char *key)
         rc = PyMapping_GetOptionalItemString(obj, key, &dummy);
     }
     if (rc < 0) {
-        _PyErr_WriteUnraisableMsg(
-            "in PyMapping_HasKeyString(); consider using "
-            "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()",
-            NULL);
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyMapping_HasKeyString(); consider using "
+            "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()");
         return 0;
     }
     // PyMapping_HasKeyString() also clears the error set before it's call
     // if the key is not found.
     if (rc == 0 && PyErr_Occurred()) {
-        _PyErr_WriteUnraisableMsg(
-            "in PyMapping_HasKeyString(); consider using "
-            "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()",
-            NULL);
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyMapping_HasKeyString(); consider using "
+            "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()");
         return 0;
     }
     Py_XDECREF(dummy);
@@ -2474,17 +2514,17 @@ PyMapping_HasKey(PyObject *obj, PyObject *key)
         rc = PyMapping_GetOptionalItem(obj, key, &dummy);
     }
     if (rc < 0) {
-        _PyErr_WriteUnraisableMsg(
-            "in PyMapping_HasKey(); consider using "
-            "PyMapping_GetOptionalItem() or PyObject_GetItem()", NULL);
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyMapping_HasKey(); consider using "
+            "PyMapping_GetOptionalItem() or PyObject_GetItem()");
         return 0;
     }
     // PyMapping_HasKey() also clears the error set before it's call
     // if the key is not found.
     if (rc == 0 && PyErr_Occurred()) {
-        _PyErr_WriteUnraisableMsg(
-            "in PyMapping_HasKey(); consider using "
-            "PyMapping_GetOptionalItem() or PyObject_GetItem()", NULL);
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyMapping_HasKey(); consider using "
+            "PyMapping_GetOptionalItem() or PyObject_GetItem()");
         return 0;
     }
     Py_XDECREF(dummy);

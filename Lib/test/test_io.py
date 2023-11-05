@@ -1541,8 +1541,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 
         self.assertEqual(b"abcdefg", bufio.read())
 
-    @support.requires_resource('cpu')
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threads(self):
         try:
             # Write out many bytes with exactly the same number of 0's,
@@ -1930,8 +1930,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
                 f.truncate()
                 self.assertEqual(f.tell(), buffer_size + 2)
 
-    @support.requires_resource('cpu')
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threads(self):
         try:
             # Write out many bytes from many threads and test they were
@@ -4396,11 +4396,11 @@ class MiscIOTest(unittest.TestCase):
         ''')
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
-        self.assertEqual(len(warnings), 2)
+        self.assertEqual(len(warnings), 4)
         self.assertTrue(
             warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
-            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
+            warnings[2].startswith(b"<string>:8: EncodingWarning: "))
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"
@@ -4468,10 +4468,12 @@ class CMiscIOTest(MiscIOTest):
             self.assertFalse(err.strip('.!'))
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('walltime')
     def test_daemon_threads_shutdown_stdout_deadlock(self):
         self.check_daemon_threads_shutdown_deadlock('stdout')
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('walltime')
     def test_daemon_threads_shutdown_stderr_deadlock(self):
         self.check_daemon_threads_shutdown_deadlock('stderr')
 
@@ -4645,11 +4647,13 @@ class SignalsTest(unittest.TestCase):
             os.close(r)
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_read_retry_buffered(self):
         self.check_interrupted_read_retry(lambda x: x.decode('latin1'),
                                           mode="rb")
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_read_retry_text(self):
         self.check_interrupted_read_retry(lambda x: x,
                                           mode="r", encoding="latin1")
@@ -4723,10 +4727,12 @@ class SignalsTest(unittest.TestCase):
                     raise
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_write_retry_buffered(self):
         self.check_interrupted_write_retry(b"x", mode="wb")
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_write_retry_text(self):
         self.check_interrupted_write_retry("x", mode="w", encoding="latin1")
 

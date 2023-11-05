@@ -6,9 +6,27 @@
 extern "C" {
 #endif
 
+typedef struct _PyExecutorLinkListNode {
+    struct _PyExecutorObject *next;
+    struct _PyExecutorObject *previous;
+} _PyExecutorLinkListNode;
+
+
+/* Bloom filter with m = 256
+ * https://en.wikipedia.org/wiki/Bloom_filter */
+#define BLOOM_FILTER_WORDS 8
+
+typedef struct _bloom_filter {
+    uint32_t bits[BLOOM_FILTER_WORDS];
+} _PyBloomFilter;
+
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
+    uint8_t valid;
+    uint8_t linked;
+    _PyBloomFilter bloom;
+    _PyExecutorLinkListNode links;
 } _PyVMData;
 
 typedef struct _PyExecutorObject {
@@ -40,10 +58,18 @@ PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
-struct _PyInterpreterFrame *
+int
 _PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer);
 
 extern _PyOptimizerObject _PyOptimizer_Default;
+
+void _Py_ExecutorInit(_PyExecutorObject *, _PyBloomFilter *);
+void _Py_ExecutorClear(_PyExecutorObject *);
+void _Py_BloomFilter_Init(_PyBloomFilter *);
+void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
+PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
+PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj);
+extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);

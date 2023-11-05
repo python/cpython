@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_fileutils.h"     // _Py_error_handler
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 /* --- Characters Type APIs ----------------------------------------------- */

@@ -236,6 +236,10 @@ class TokenTests(unittest.TestCase):
             check(f"[{num}for x in ()]")
             check(f"{num}spam", error=True)
 
+            # gh-88943: Invalid non-ASCII character following a numerical literal.
+            with self.assertRaisesRegex(SyntaxError, r"invalid character '⁄' \(U\+2044\)"):
+                compile(f"{num}⁄7", "<testcase>", "eval")
+
             with self.assertWarnsRegex(SyntaxWarning, r'invalid \w+ literal'):
                 compile(f"{num}is x", "<testcase>", "eval")
             with warnings.catch_warnings():
@@ -350,6 +354,11 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "x: int: str")
         check_syntax_error(self, "def f():\n"
                                  "    nonlocal x: int\n")
+        check_syntax_error(self, "def f():\n"
+                                 "    global x: int\n")
+        check_syntax_error(self, "x: int = y = 1")
+        check_syntax_error(self, "z = w: int = 1")
+        check_syntax_error(self, "x: int = y: int = 1")
         # AST pass
         check_syntax_error(self, "[x, 0]: int\n")
         check_syntax_error(self, "f(): int\n")
@@ -362,6 +371,12 @@ class GrammarTests(unittest.TestCase):
                                  "    global x\n")
         check_syntax_error(self, "def f():\n"
                                  "    global x\n"
+                                 "    x: int\n")
+        check_syntax_error(self, "def f():\n"
+                                 "    x: int\n"
+                                 "    nonlocal x\n")
+        check_syntax_error(self, "def f():\n"
+                                 "    nonlocal x\n"
                                  "    x: int\n")
 
     def test_var_annot_basic_semantics(self):

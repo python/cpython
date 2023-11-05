@@ -16,8 +16,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
-#include <ctype.h>
-#include <float.h>
+#include <float.h>                // DBL_MAX
 #include <stdlib.h>               // strtol()
 
 /*[clinic input]
