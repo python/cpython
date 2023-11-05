@@ -2,7 +2,7 @@
 #include "util.h"
 
 static PyObject *
-file_from_fd(PyObject *self, PyObject *args)
+file_from_fd(PyObject *Py_UNUSED(self), PyObject *args)
 {
     int fd;
     const char *name;
@@ -12,7 +12,7 @@ file_from_fd(PyObject *self, PyObject *args)
     const char *errors;
     const char *newline;
     int closefd;
-    if (!PyArg_ParseTuple(args, "ississsi",
+    if (!PyArg_ParseTuple(args, "izzizzzi",
                           &fd,
                           &name, &mode,
                           &buffering,
@@ -29,7 +29,7 @@ file_from_fd(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-file_get_line(PyObject *self, PyObject *args)
+file_get_line(PyObject *Py_UNUSED(self), PyObject *args)
 {
     PyObject *obj;
     int n;
@@ -42,7 +42,7 @@ file_get_line(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-file_write_object(PyObject *self, PyObject *args)
+file_write_object(PyObject *Py_UNUSED(self), PyObject *args)
 {
     PyObject *obj, *p;
     int flags;
@@ -56,11 +56,11 @@ file_write_object(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-file_write_string(PyObject *self, PyObject *args)
+file_write_string(PyObject *Py_UNUSED(self), PyObject *args)
 {
     const char *string;
     PyObject *f;
-    if (!PyArg_ParseTuple(args, "sO", &string, &f)) {
+    if (!PyArg_ParseTuple(args, "zO", &string, &f)) {
         return NULL;
     }
 
@@ -69,7 +69,7 @@ file_write_string(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-object_as_file_descriptor(PyObject *self, PyObject *obj)
+object_as_file_descriptor(PyObject *Py_UNUSED(self), PyObject *obj)
 {
     NULLABLE(obj);
     RETURN_INT(PyObject_AsFileDescriptor(obj));
