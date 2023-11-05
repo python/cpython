@@ -52,10 +52,13 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertEqual(fromstring(b"4.25"), 4.25)
         self.assertRaises(ValueError, fromstring, "4.25\0")
         self.assertRaises(ValueError, fromstring, b"4.25\0")
+
         self.assertEqual(fromstring(bytearray(b"4.25")), 4.25)
+
         self.assertEqual(fromstring(memoryview(b"4.25")), 4.25)
         self.assertEqual(fromstring(memoryview(b"4.255")[:-1]), 4.25)
         self.assertRaises(TypeError, fromstring, memoryview(b"4.25")[::2])
+
         self.assertRaises(TypeError, fromstring, 4.25)
 
         # CRASHES fromstring(NULL)
@@ -78,6 +81,7 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertEqual(asdouble(-1), -1.0)
         self.assertEqual(asdouble(42), 42.0)
         self.assertEqual(asdouble(2**1000), float(2**1000))
+
         self.assertEqual(asdouble(FloatSubclass(4.25)), 4.25)
         self.assertEqual(asdouble(FloatSubclass2(4.25)), 4.25)
         self.assertEqual(asdouble(Index()), 99.)
