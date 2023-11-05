@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 14
+          node-version: 20
       - run: npm install mailgun.js form-data
       - name: Send notification
         uses: actions/github-script@v6

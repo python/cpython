@@ -1466,34 +1466,55 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
-/*[clinic input]
-_testinternalcapi.write_unraisable_exc
-    exception as exc: object
-    err_msg: object
-    obj: object
-    /
-[clinic start generated code]*/
+static void
+_xid_capsule_destructor(PyObject *capsule)
+{
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data != NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        _PyCrossInterpreterData_Free(data);
+    }
+}
 
 static PyObject *
-_testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                            PyObject *err_msg, PyObject *obj)
-/*[clinic end generated code: output=a0f063cdd04aad83 input=274381b1a3fa5cd6]*/
+get_crossinterp_data(PyObject *self, PyObject *args)
 {
-
-    const char *err_msg_utf8;
-    if (err_msg != Py_None) {
-        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
-        if (err_msg_utf8 == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        err_msg_utf8 = NULL;
+    PyObject *obj = NULL;
+    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+        return NULL;
     }
 
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
-    Py_RETURN_NONE;
+    _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+    if (data == NULL) {
+        return NULL;
+    }
+    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+        _PyCrossInterpreterData_Free(data);
+        return NULL;
+    }
+    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    if (capsule == NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        _PyCrossInterpreterData_Free(data);
+    }
+    return capsule;
+}
+
+static PyObject *
+restore_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *capsule = NULL;
+    if (!PyArg_ParseTuple(args, "O:restore_crossinterp_data", &capsule)) {
+        return NULL;
+    }
+
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data == NULL) {
+        return NULL;
+    }
+    return _PyCrossInterpreterData_NewObject(data);
 }
 
 
@@ -1556,6 +1577,36 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+compile_perf_trampoline_entry(PyObject *self, PyObject *args)
+{
+    PyObject *co;
+    if (!PyArg_ParseTuple(args, "O!", &PyCode_Type, &co)) {
+        return NULL;
+    }
+    int ret = PyUnstable_PerfTrampoline_CompileCode((PyCodeObject *)co);
+    if (ret != 0) {
+        PyErr_SetString(PyExc_AssertionError, "Failed to compile trampoline");
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
+static PyObject *
+perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
+{
+    int enable;
+    if (!PyArg_ParseTuple(args, "i", &enable)) {
+        return NULL;
+    }
+    int ret = PyUnstable_PerfTrampoline_SetPersistAfterFork(enable);
+    if (ret == 0) {
+        PyErr_SetString(PyExc_AssertionError, "Failed to set persist_after_fork");
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -1613,7 +1664,10 @@ static PyMethodDef module_functions[] = {
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
-    _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
+    {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
+    {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
+    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
+    {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {NULL, NULL} /* sentinel */
 };

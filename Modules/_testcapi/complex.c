@@ -1,26 +1,52 @@
 #include "parts.h"
-#include "clinic/complex.c.h"
+#include "util.h"
 
-
-/*[clinic input]
-module _testcapi
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
-
-/*[clinic input]
-_testcapi.complex_real_as_double
-
-    op: object
-    /
-
-Test PyComplex_RealAsDouble().
-[clinic start generated code]*/
 
 static PyObject *
-_testcapi_complex_real_as_double(PyObject *module, PyObject *op)
-/*[clinic end generated code: output=91427770a4583095 input=7ffd3ffd53495b3d]*/
+complex_check(PyObject *Py_UNUSED(module), PyObject *obj)
 {
-    double real = PyComplex_RealAsDouble(op);
+    NULLABLE(obj);
+    return PyLong_FromLong(PyComplex_Check(obj));
+}
+
+static PyObject *
+complex_checkexact(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyComplex_CheckExact(obj));
+}
+
+static PyObject *
+complex_fromccomplex(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    Py_complex complex;
+
+    if (!PyArg_Parse(obj, "D", &complex)) {
+        return NULL;
+    }
+
+    return PyComplex_FromCComplex(complex);
+}
+
+static PyObject *
+complex_fromdoubles(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    double real, imag;
+
+    if (!PyArg_ParseTuple(args, "dd", &real, &imag)) {
+        return NULL;
+    }
+
+    return PyComplex_FromDoubles(real, imag);
+}
+
+static PyObject *
+complex_realasdouble(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    double real;
+
+    NULLABLE(obj);
+    real = PyComplex_RealAsDouble(obj);
 
     if (real == -1. && PyErr_Occurred()) {
         return NULL;
@@ -29,20 +55,13 @@ _testcapi_complex_real_as_double(PyObject *module, PyObject *op)
     return PyFloat_FromDouble(real);
 }
 
-/*[clinic input]
-_testcapi.complex_imag_as_double
-
-    op: object
-    /
-
-Test PyComplex_ImagAsDouble().
-[clinic start generated code]*/
-
 static PyObject *
-_testcapi_complex_imag_as_double(PyObject *module, PyObject *op)
-/*[clinic end generated code: output=f66f10a3d47beec4 input=e2b4b00761e141ea]*/
+complex_imagasdouble(PyObject *Py_UNUSED(module), PyObject *obj)
 {
-    double imag = PyComplex_ImagAsDouble(op);
+    double imag;
+
+    NULLABLE(obj);
+    imag = PyComplex_ImagAsDouble(obj);
 
     if (imag == -1. && PyErr_Occurred()) {
         return NULL;
@@ -51,9 +70,30 @@ _testcapi_complex_imag_as_double(PyObject *module, PyObject *op)
     return PyFloat_FromDouble(imag);
 }
 
+static PyObject *
+complex_asccomplex(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    Py_complex complex;
+
+    NULLABLE(obj);
+    complex = PyComplex_AsCComplex(obj);
+
+    if (complex.real == -1. && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    return PyComplex_FromCComplex(complex);
+}
+
+
 static PyMethodDef test_methods[] = {
-    _TESTCAPI_COMPLEX_REAL_AS_DOUBLE_METHODDEF
-    _TESTCAPI_COMPLEX_IMAG_AS_DOUBLE_METHODDEF
+    {"complex_check", complex_check, METH_O},
+    {"complex_checkexact", complex_checkexact, METH_O},
+    {"complex_fromccomplex", complex_fromccomplex, METH_O},
+    {"complex_fromdoubles", complex_fromdoubles, METH_VARARGS},
+    {"complex_realasdouble", complex_realasdouble, METH_O},
+    {"complex_imagasdouble", complex_imagasdouble, METH_O},
+    {"complex_asccomplex", complex_asccomplex, METH_O},
     {NULL},
 };
 

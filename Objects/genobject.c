@@ -9,6 +9,8 @@
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -239,7 +241,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
     if (result) {
-        if (gen->gi_frame_state == FRAME_SUSPENDED) {
+        if (FRAME_STATE_SUSPENDED(gen->gi_frame_state)) {
             *presult = result;
             return PYGEN_NEXT;
         }
@@ -341,37 +343,16 @@ is_resume(_Py_CODEUNIT *instr)
     );
 }
 
-static inline bool
-is_yield(_Py_CODEUNIT *instr)
-{
-    return instr->op.code == YIELD_VALUE || instr->op.code == INSTRUMENTED_YIELD_VALUE;
-}
-
 PyObject *
 _PyGen_yf(PyGenObject *gen)
 {
-    PyObject *yf = NULL;
-
-    if (gen->gi_frame_state < FRAME_CLEARED) {
+    if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
-
-        if (gen->gi_frame_state == FRAME_CREATED) {
-            /* Return immediately if the frame didn't start yet. SEND
-               always come after LOAD_CONST: a code object should not start
-               with SEND */
-            assert(_PyCode_CODE(_PyGen_GetCode(gen))[0].op.code != SEND);
-            return NULL;
-        }
-        _Py_CODEUNIT next = frame->prev_instr[1];
-        if (!is_resume(&next) || next.op.arg < 2)
-        {
-            /* Not in a yield from */
-            return NULL;
-        }
-        yf = Py_NewRef(_PyFrame_StackPeek(frame));
+        assert(is_resume(frame->instr_ptr));
+        assert((frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
+        return Py_NewRef(_PyFrame_StackPeek(frame));
     }
-
-    return yf;
+    return NULL;
 }
 
 static PyObject *
@@ -379,6 +360,7 @@ gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
     int err = 0;
+
 
     if (gen->gi_frame_state == FRAME_CREATED) {
         gen->gi_frame_state = FRAME_COMPLETED;
@@ -396,16 +378,14 @@ gen_close(PyGenObject *gen, PyObject *args)
         Py_DECREF(yf);
     }
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
-    /* It is possible for the previous instruction to not be a
-     * YIELD_VALUE if the debugger has changed the lineno. */
-    if (err == 0 && is_yield(frame->prev_instr)) {
-        assert(is_resume(frame->prev_instr + 1));
-        int exception_handler_depth = frame->prev_instr[0].op.arg;
-        assert(exception_handler_depth > 0);
+    if (is_resume(frame->instr_ptr)) {
         /* We can safely ignore the outermost try block
-         * as it automatically generated to handle
+         * as it is automatically generated to handle
          * StopIteration. */
-        if (exception_handler_depth == 1) {
+        int oparg = frame->instr_ptr->op.arg;
+        if (oparg & RESUME_OPARG_DEPTH1_MASK) {
+            // RESUME after YIELD_VALUE and exception depth is 1
+            assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
             Py_RETURN_NONE;
         }
@@ -751,7 +731,7 @@ gen_getrunning(PyGenObject *gen, void *Py_UNUSED(ignored))
 static PyObject *
 gen_getsuspended(PyGenObject *gen, void *Py_UNUSED(ignored))
 {
-    return PyBool_FromLong(gen->gi_frame_state == FRAME_SUSPENDED);
+    return PyBool_FromLong(FRAME_STATE_SUSPENDED(gen->gi_frame_state));
 }
 
 static PyObject *
@@ -1106,7 +1086,7 @@ coro_get_cr_await(PyCoroObject *coro, void *Py_UNUSED(ignored))
 static PyObject *
 cr_getsuspended(PyCoroObject *coro, void *Py_UNUSED(ignored))
 {
-    if (coro->cr_frame_state == FRAME_SUSPENDED) {
+    if (FRAME_STATE_SUSPENDED(coro->cr_frame_state)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -1543,7 +1523,7 @@ ag_getcode(PyGenObject *gen, void *Py_UNUSED(ignored))
 static PyObject *
 ag_getsuspended(PyAsyncGenObject *ag, void *Py_UNUSED(ignored))
 {
-    if (ag->ag_frame_state == FRAME_SUSPENDED) {
+    if (FRAME_STATE_SUSPENDED(ag->ag_frame_state)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;

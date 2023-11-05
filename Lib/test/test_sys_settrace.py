@@ -9,6 +9,11 @@ from functools import wraps
 import asyncio
 from test.support import import_helper
 import contextlib
+import os
+import tempfile
+import textwrap
+import subprocess
+import warnings
 
 support.requires_working_socket(module=True)
 
@@ -1801,6 +1806,39 @@ class TraceOpcodesTestCase(TraceTestCase):
     def make_tracer():
         return Tracer(trace_opcode_events=True)
 
+    def test_trace_opcodes_after_settrace(self):
+        """Make sure setting f_trace_opcodes after starting trace works even
+        if it's the first time f_trace_opcodes is being set. GH-103615"""
+
+        code = textwrap.dedent("""
+            import sys
+
+            def opcode_trace_func(frame, event, arg):
+                if event == "opcode":
+                    print("opcode trace triggered")
+                return opcode_trace_func
+
+            sys.settrace(opcode_trace_func)
+            sys._getframe().f_trace = opcode_trace_func
+            sys._getframe().f_trace_opcodes = True
+            a = 1
+        """)
+
+        # We can't use context manager because Windows can't execute a file while
+        # it's being written
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.py')
+        tmp.write(code.encode('utf-8'))
+        tmp.close()
+        try:
+            p = subprocess.Popen([sys.executable, tmp.name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p.wait()
+            out = p.stdout.read()
+        finally:
+            os.remove(tmp.name)
+            p.stdout.close()
+            p.stderr.close()
+        self.assertIn(b"opcode trace triggered", out)
+
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def setUp(self):
@@ -2001,6 +2039,9 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
+            else:
+                stack.enter_context(warnings.catch_warnings())
+                warnings.simplefilter('error')
             func(output)
 
         sys.settrace(None)
@@ -2064,7 +2105,7 @@ class JumpTestCase(unittest.TestCase):
         output.append(1)
         output.append(2)
 
-    @jump_test(1, 4, [5])
+    @jump_test(1, 4, [5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_is_none_forwards(output):
         x = None
         if x is None:
@@ -2081,7 +2122,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
         output.append(6)
 
-    @jump_test(1, 4, [5])
+    @jump_test(2, 4, [5])
     def test_jump_is_not_none_forwards(output):
         x = None
         if x is not None:

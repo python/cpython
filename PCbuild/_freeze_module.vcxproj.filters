@@ -103,6 +103,9 @@
     <ClCompile Include="..\Python\context.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\crossinterp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\descrobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -122,9 +125,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\errors.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\executor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\exceptions.c">

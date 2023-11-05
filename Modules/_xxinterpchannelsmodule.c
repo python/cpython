@@ -7,6 +7,7 @@
 
 #include "Python.h"
 #include "interpreteridobject.h"
+#include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 

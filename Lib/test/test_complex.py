@@ -8,11 +8,6 @@ from random import random
 from math import atan2, isnan, copysign
 import operator
 
-try:
-    import _testcapi
-except ImportError:
-    _testcapi = None
-
 INF = float("inf")
 NAN = float("nan")
 # These tests ensure that complex math does the right thing
@@ -795,34 +790,6 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(complex(1, INF), 'F'), '1.000000+INFj')
         self.assertEqual(format(complex(INF, 1), 'F'), 'INF+1.000000j')
         self.assertEqual(format(complex(INF, -1), 'F'), 'INF-1.000000j')
-
-    @unittest.skipIf(_testcapi is None, 'needs _testcapi')
-    def test_PyComplex_RealAsDouble(self):
-        from test.test_capi.test_getargs import BadComplex, Complex
-
-        f = _testcapi.complex_real_as_double
-
-        self.assertFloatsAreIdentical(f(1+2j), 1.0)
-        self.assertFloatsAreIdentical(f(1), 1.0)
-        self.assertFloatsAreIdentical(f(-1), -1.0)
-        self.assertFloatsAreIdentical(f(Complex()), 4.25)
-
-        self.assertRaises(TypeError, f, None)
-        self.assertRaises(TypeError, f, BadComplex())
-
-    @unittest.skipIf(_testcapi is None, 'needs _testcapi')
-    def test_PyComplex_ImagAsDouble(self):
-        from test.test_capi.test_getargs import BadComplex, Complex
-
-        f = _testcapi.complex_imag_as_double
-
-        self.assertFloatsAreIdentical(f(1+2j), 2.0)
-        self.assertFloatsAreIdentical(f(1), 0.0)
-        self.assertFloatsAreIdentical(f(-1), 0.0)
-        self.assertFloatsAreIdentical(f(Complex()), 0.5)
-
-        self.assertRaises(TypeError, f, None)
-        self.assertRaises(TypeError, f, BadComplex())
 
 
 if __name__ == "__main__":

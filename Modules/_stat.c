@@ -11,8 +11,14 @@
  *
  */
 
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
 // Need limited C API version 3.13 for PyModule_Add() on Windows
 #define Py_LIMITED_API 0x030d0000
+#endif
 
 #include "Python.h"
 
