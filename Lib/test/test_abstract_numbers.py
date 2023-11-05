@@ -51,7 +51,7 @@ class TestNumbersDefaultMethods(unittest.TestCase):
                 self.i = imag
 
             def __complex__(self):
-                pass
+                raise NotImplementedError
 
             @property
             def real(self):
@@ -69,37 +69,37 @@ class TestNumbersDefaultMethods(unittest.TestCase):
                     return MyComplex(self.imag + 0, self.real + other.real)
 
             def __radd__(self, other):
-                pass
+                raise NotImplementedError
 
             def __neg__(self):
                 return MyComplex(-self.real, -self.imag)
 
             def __pos__(self):
-                pass
+                raise NotImplementedError
 
             def __mul__(self, other):
-                pass
+                raise NotImplementedError
 
             def __rmul__(self, other):
-                pass
+                raise NotImplementedError
 
             def __truediv__(self, other):
-                pass
+                raise NotImplementedError
 
             def __rtruediv__(self, other):
-                pass
+                raise NotImplementedError
 
             def __pow__(self, exponent):
-                pass
+                raise NotImplementedError
 
             def __rpow__(self, base):
-                pass
+                raise NotImplementedError
 
             def __abs__(self):
-                pass
+                raise NotImplementedError
 
             def conjugate(self):
-                pass
+                raise NotImplementedError
 
             def __eq__(self, other):
                 if isinstance(other, Complex):
@@ -325,9 +325,6 @@ class TestNumbersDefaultMethods(unittest.TestCase):
                 raise NotImplementedError
 
             def __rtruediv__(self, other):
-                raise NotImplementedError
-
-            def __pow__(self, exponent):
                 raise NotImplementedError
 
             def __rpow__(self, base):
