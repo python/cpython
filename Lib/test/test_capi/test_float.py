@@ -14,10 +14,6 @@ NULL = None
 
 
 class CAPIFloatTest(unittest.TestCase):
-    def assertEqualWithSign(self, actual, expected):
-        self.assertEqual(actual, expected)
-        self.assertEqual(math.copysign(1, actual), math.copysign(1, expected))
-
     def test_check(self):
         # Test PyFloat_Check()
         check = _testcapi.float_check
@@ -26,7 +22,6 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertTrue(check(FloatSubclass(4.25)))
         self.assertFalse(check(Float()))
         self.assertFalse(check(3))
-        self.assertFalse(check([]))
         self.assertFalse(check(object()))
 
         # CRASHES check(NULL)
@@ -39,7 +34,6 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertFalse(checkexact(FloatSubclass(4.25)))
         self.assertFalse(checkexact(Float()))
         self.assertFalse(checkexact(3))
-        self.assertFalse(checkexact([]))
         self.assertFalse(checkexact(object()))
 
         # CRASHES checkexact(NULL)
@@ -78,8 +72,9 @@ class CAPIFloatTest(unittest.TestCase):
                 raise RuntimeError
 
         self.assertEqual(asdouble(4.25), 4.25)
-        self.assertEqual(asdouble(-1), -1.0)
+        self.assertEqual(asdouble(-1.0), -1.0)
         self.assertEqual(asdouble(42), 42.0)
+        self.assertEqual(asdouble(-1), -1.0)
         self.assertEqual(asdouble(2**1000), float(2**1000))
 
         self.assertEqual(asdouble(FloatSubclass(4.25)), 4.25)

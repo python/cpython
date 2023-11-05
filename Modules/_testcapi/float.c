@@ -53,7 +53,7 @@ float_asdouble(PyObject *Py_UNUSED(module), PyObject *obj)
     return PyFloat_FromDouble(d);
 }
 
-static PyObject*
+static PyObject *
 float_getinfo(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(arg))
 {
     return PyFloat_GetInfo();
