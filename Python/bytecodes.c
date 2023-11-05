@@ -2335,10 +2335,12 @@ dummy_func(
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            uint16_t counter = this_instr[1].cache;
-            if (counter == tstate->interp->optimizer_backedge_threshold) {
-                // Double-check that the opcode isn't instrumented or something:
-                assert(this_instr->op.code == JUMP_BACKWARD);
+            /* We are using unsigned values, but we really want signed values, so
+             * do the 2s complement comparison manually */
+            uint16_t ucounter = this_instr[1].cache + (1 << 15);
+            uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
+            // Double-check that the opcode isn't instrumented or something:
+            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
@@ -2349,14 +2351,15 @@ dummy_func(
                     this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
                 else {
-                    int backoff = counter & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                    if (backoff < OPTIMIZER_BITS_IN_COUNTER + MINIMUM_TIER2_BACKOFF) {
-                        backoff = OPTIMIZER_BITS_IN_COUNTER + MINIMUM_TIER2_BACKOFF;
+                    int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    if (backoff < MINIMUM_TIER2_BACKOFF) {
+                        backoff = MINIMUM_TIER2_BACKOFF;
                     }
-                    else if (backoff < 15) {
+                    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
                         backoff++;
                     }
-                    this_instr[1].cache = (0U - (1 << backoff)) | backoff;
+                    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
+                    this_instr[1].cache = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
                 }
             }
             #endif  /* ENABLE_SPECIALIZATION */

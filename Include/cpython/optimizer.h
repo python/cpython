@@ -45,8 +45,10 @@ typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_C
 typedef struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
-    uint32_t resume_threshold;
-    uint32_t backedge_threshold;
+    /* These thresholds are treated as signed so do not exceed INT16_MAX
+     * Use INT16_MAX to indicate that the optimizer should never be called */
+    uint16_t resume_threshold;
+    uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 } _PyOptimizerObject;
 
