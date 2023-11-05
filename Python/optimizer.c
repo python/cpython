@@ -385,7 +385,7 @@ PyTypeObject _PyUOpExecutor_Type = {
 };
 
 /* TO DO -- Generate this table */
-static uint16_t
+static const uint16_t
 _PyUop_Replacements[OPCODE_METADATA_SIZE] = {
     [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
