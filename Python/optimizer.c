@@ -122,8 +122,8 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = error_optimize,
-    .resume_threshold = UINT16_MAX,
-    .backedge_threshold = UINT16_MAX,
+    .resume_threshold = UINT16_MAX+1,
+    .backedge_threshold = UINT16_MAX+1,
 };
 
 _PyOptimizerObject *

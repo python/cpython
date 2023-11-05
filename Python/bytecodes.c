@@ -2335,13 +2335,10 @@ dummy_func(
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            uint16_t ucounter = this_instr[1].cache;
-            /* Convert to signed int. For most compilers, this is a no-op  */
-            int32_t counter = ucounter > INT16_MAX ? (uint32_t)ucounter - (1<<16) : ucounter;
-            if (counter > tstate->interp->optimizer_backedge_threshold &&
+            uint16_t counter = this_instr[1].cache;
+            if (counter == tstate->interp->optimizer_backedge_threshold) {
                 // Double-check that the opcode isn't instrumented or something:
-                this_instr->op.code == JUMP_BACKWARD)
-            {
+                assert(this_instr->op.code == JUMP_BACKWARD);
                 OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
@@ -2353,11 +2350,13 @@ dummy_func(
                 }
                 else {
                     int backoff = counter & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                    if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
+                    if (backoff < OPTIMIZER_BITS_IN_COUNTER + MINIMUM_TIER2_BACKOFF) {
+                        backoff = OPTIMIZER_BITS_IN_COUNTER + MINIMUM_TIER2_BACKOFF;
+                    }
+                    else if (backoff < 15) {
                         backoff++;
                     }
-                    int count = -(1 << backoff);
-                    this_instr[1].cache = (uint16_t)((count << OPTIMIZER_BITS_IN_COUNTER) | backoff);
+                    this_instr[1].cache = (0U - (1 << backoff)) | backoff;
                 }
             }
             #endif  /* ENABLE_SPECIALIZATION */
