@@ -4672,8 +4672,13 @@ os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
         goto exit;
     }
-    user = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t user_length;
+    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
     if (user == NULL) {
+        goto exit;
+    }
+    if (strlen(user) != (size_t)user_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     basegid = PyLong_AsInt(args[1]);
@@ -4721,8 +4726,13 @@ os_getgrouplist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getgrouplist", "argument 1", "str", args[0]);
         goto exit;
     }
-    user = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t user_length;
+    user = PyUnicode_AsUTF8AndSize(args[0], &user_length);
     if (user == NULL) {
+        goto exit;
+    }
+    if (strlen(user) != (size_t)user_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!_Py_Gid_Converter(args[1], &basegid)) {
@@ -12393,4 +12403,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a377982a6d1e77b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a05abdc48e3def44 input=a9049054013a1b77]*/
