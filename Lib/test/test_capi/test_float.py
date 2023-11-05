@@ -23,8 +23,8 @@ class CAPIFloatTest(unittest.TestCase):
         # Test PyFloat_Check()
         check = _testcapi.float_check
 
-        self.assertTrue(check(3.14))
-        self.assertTrue(check(FloatSubclass(3.14)))
+        self.assertTrue(check(4.25))
+        self.assertTrue(check(FloatSubclass(4.25)))
         self.assertFalse(check(Float()))
         self.assertFalse(check(3))
         self.assertFalse(check([]))
@@ -36,8 +36,8 @@ class CAPIFloatTest(unittest.TestCase):
         # Test PyFloat_CheckExact()
         checkexact = _testcapi.float_checkexact
 
-        self.assertTrue(checkexact(3.14))
-        self.assertFalse(checkexact(FloatSubclass(3.14)))
+        self.assertTrue(checkexact(4.25))
+        self.assertFalse(checkexact(FloatSubclass(4.25)))
         self.assertFalse(checkexact(Float()))
         self.assertFalse(checkexact(3))
         self.assertFalse(checkexact([]))
@@ -49,13 +49,13 @@ class CAPIFloatTest(unittest.TestCase):
         # Test PyFloat_FromString()
         fromstring = _testcapi.float_fromstring
 
-        self.assertEqual(fromstring("3.14"), 3.14)
-        self.assertEqual(fromstring(b"3.14"), 3.14)
-        self.assertRaises(ValueError, fromstring, "3.14\0")
-        self.assertRaises(ValueError, fromstring, b"3.14\0")
-        self.assertEqual(fromstring(bytearray(b"3.14")), 3.14)
-        self.assertEqual(fromstring(array.array('b', b'3.14')), 3.14)
-        self.assertRaises(TypeError, fromstring, 3.14)
+        self.assertEqual(fromstring("4.25"), 4.25)
+        self.assertEqual(fromstring(b"4.25"), 4.25)
+        self.assertRaises(ValueError, fromstring, "4.25\0")
+        self.assertRaises(ValueError, fromstring, b"4.25\0")
+        self.assertEqual(fromstring(bytearray(b"4.25")), 4.25)
+        self.assertEqual(fromstring(array.array('b', b'4.25')), 4.25)
+        self.assertRaises(TypeError, fromstring, 4.25)
 
         # CRASHES fromstring(NULL)
 
@@ -73,12 +73,12 @@ class CAPIFloatTest(unittest.TestCase):
             def __float__(self):
                 raise RuntimeError
 
-        self.assertEqual(asdouble(3.14), 3.14)
+        self.assertEqual(asdouble(4.25), 4.25)
         self.assertEqual(asdouble(-1), -1.0)
         self.assertEqual(asdouble(42), 42.0)
         self.assertEqual(asdouble(2**1000), float(2**1000))
-        self.assertEqual(asdouble(FloatSubclass(3.14)), 3.14)
-        self.assertEqual(asdouble(FloatSubclass2(3.14)), 3.14)
+        self.assertEqual(asdouble(FloatSubclass(4.25)), 4.25)
+        self.assertEqual(asdouble(FloatSubclass2(4.25)), 4.25)
         self.assertEqual(asdouble(Index()), 99.)
 
         self.assertRaises(TypeError, asdouble, BadIndex())
