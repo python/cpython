@@ -61,9 +61,10 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(realasdouble(1+2j), 1.0)
         self.assertEqual(realasdouble(-1+0j), -1.0)
-        self.assertEqual(realasdouble(-1.0), -1.0)
         self.assertEqual(realasdouble(4.25), 4.25)
+        self.assertEqual(realasdouble(-1.0), -1.0)
         self.assertEqual(realasdouble(42), 42.)
+        self.assertEqual(realasdouble(-1), -1.0)
 
         # Test subclasses of complex/float
         self.assertEqual(realasdouble(ComplexSubclass(1+2j)), 1.0)
@@ -110,8 +111,11 @@ class CAPIComplexTest(unittest.TestCase):
         asccomplex = _testcapi.complex_asccomplex
 
         self.assertEqual(asccomplex(1+2j), 1.0+2.0j)
+        self.assertEqual(asccomplex(-1+2j), -1.0+2.0j)
         self.assertEqual(asccomplex(4.25), 4.25+0.0j)
+        self.assertEqual(asccomplex(-1.0), -1.0+0.0j)
         self.assertEqual(asccomplex(42), 42+0j)
+        self.assertEqual(asccomplex(-1), -1.0+0.0j)
 
         # Test subclasses of complex/float
         self.assertEqual(asccomplex(ComplexSubclass(1+2j)), 1.0+2.0j)
