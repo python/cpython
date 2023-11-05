@@ -1,4 +1,3 @@
-import array
 import math
 import sys
 import unittest
@@ -54,7 +53,9 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertRaises(ValueError, fromstring, "4.25\0")
         self.assertRaises(ValueError, fromstring, b"4.25\0")
         self.assertEqual(fromstring(bytearray(b"4.25")), 4.25)
-        self.assertEqual(fromstring(array.array('b', b'4.25')), 4.25)
+        self.assertEqual(fromstring(memoryview(b"4.25")), 4.25)
+        self.assertEqual(fromstring(memoryview(b"4.255")[:-1]), 4.25)
+        self.assertRaises(TypeError, fromstring, memoryview(b"4.25")[::2])
         self.assertRaises(TypeError, fromstring, 4.25)
 
         # CRASHES fromstring(NULL)
