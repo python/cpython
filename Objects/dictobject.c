@@ -3942,7 +3942,6 @@ PyDict_GetItemString(PyObject *v, const char *key)
             "PyDict_GetItemRefString()");
         return NULL;
     }
-    rv = PyDict_GetItem(v, kv);
     rv = dict_getitem(v, kv,
             "Exception ignored in PyDict_GetItemString(); consider using "
             "PyDict_GetItemRefString()");

@@ -2492,8 +2492,8 @@ PyMapping_HasKeyString(PyObject *obj, const char *key)
     // if the key is not found.
     if (rc == 0 && PyErr_Occurred()) {
         PyErr_FormatUnraisable(
-            "Exception ignored in PyMapping_HasKeyString(); consider using "
-            "PyMapping_HasKeyStringWithError(), "
+            "Ignore exception set before calling in PyMapping_HasKeyString(); "
+            "consider using PyMapping_HasKeyStringWithError(), "
             "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()");
         return 0;
     }
@@ -2526,8 +2526,8 @@ PyMapping_HasKey(PyObject *obj, PyObject *key)
     // if the key is not found.
     if (rc == 0 && PyErr_Occurred()) {
         PyErr_FormatUnraisable(
-            "Exception ignored in PyMapping_HasKey(); consider using "
-            "PyMapping_HasKeyWithError(), "
+            "Ignore exception set before calling in PyMapping_HasKey(); "
+            "consider using PyMapping_HasKeyWithError(), "
             "PyMapping_GetOptionalItem() or PyObject_GetItem()");
         return 0;
     }
