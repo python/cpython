@@ -116,3 +116,7 @@ class CAPIFloatTest(unittest.TestCase):
         getmin = _testcapi.float_getmin
 
         self.assertEqual(getmin(), sys.float_info.min)
+
+
+if __name__ == "__main__":
+    unittest.main()
