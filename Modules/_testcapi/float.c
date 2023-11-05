@@ -28,11 +28,25 @@ float_fromstring(PyObject *Py_UNUSED(module), PyObject *obj)
 }
 
 static PyObject *
-float_asdouble(PyObject *Py_UNUSED(module), PyObject *obj)
+float_fromdouble(PyObject *Py_UNUSED(module), PyObject *obj)
 {
     double d;
 
     if (!PyArg_Parse(obj, "d", &d)) {
+        return NULL;
+    }
+
+    return PyFloat_FromDouble(d);
+}
+
+static PyObject *
+float_asdouble(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    double d;
+
+    NULLABLE(obj);
+    d = PyFloat_AsDouble(obj);
+    if (d == -1. && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -154,6 +168,7 @@ static PyMethodDef test_methods[] = {
     {"float_check", float_check, METH_O},
     {"float_checkexact", float_checkexact, METH_O},
     {"float_fromstring", float_fromstring, METH_O},
+    {"float_fromdouble", float_fromdouble, METH_O},
     {"float_asdouble", float_asdouble, METH_O},
     {"float_getinfo", float_getinfo, METH_NOARGS},
     {"float_getmax", float_getmax, METH_NOARGS},

@@ -59,6 +59,12 @@ class CAPIFloatTest(unittest.TestCase):
 
         # CRASHES fromstring(NULL)
 
+    def test_fromdouble(self):
+        # Test PyFloat_FromDouble()
+        fromdouble = _testcapi.float_fromdouble
+
+        self.assertEqual(fromdouble(4.25), 4.25)
+
     def test_asdouble(self):
         # Test PyFloat_AsDouble()
         asdouble = _testcapi.float_asdouble
