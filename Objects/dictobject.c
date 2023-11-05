@@ -1675,7 +1675,7 @@ dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1) {
-            PyErr_FormatUnraisable("Exception ignored %s", warnmsg);
+            PyErr_FormatUnraisable(warnmsg);
             return NULL;
         }
     }
@@ -1698,7 +1698,7 @@ dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
     /* Ignore any exception raised by the lookup */
     PyObject *exc2 = _PyErr_Occurred(tstate);
     if (exc2 && !PyErr_GivenExceptionMatches(exc2, PyExc_KeyError)) {
-        PyErr_FormatUnraisable("Exception ignored %s", warnmsg);
+        PyErr_FormatUnraisable(warnmsg);
     }
     _PyErr_SetRaisedException(tstate, exc);
 
@@ -1710,8 +1710,8 @@ PyObject *
 PyDict_GetItem(PyObject *op, PyObject *key)
 {
     return dict_getitem(op, key,
-            "in PyDict_GetItem(); consider using "
-            "PyDict_GetItemWithError()");
+            "Exception ignored in PyDict_GetItem(); consider using "
+            "PyDict_GetItemRef() or PyDict_GetItemWithError()");
 }
 
 Py_ssize_t
@@ -3938,11 +3938,14 @@ PyDict_GetItemString(PyObject *v, const char *key)
     kv = PyUnicode_FromString(key);
     if (kv == NULL) {
         PyErr_FormatUnraisable(
-            "Exception ignored in PyDict_GetItemString()");
+            "Exception ignored in PyDict_GetItemString(); consider using "
+            "PyDict_GetItemRefString()");
         return NULL;
     }
     rv = PyDict_GetItem(v, kv);
-    rv = dict_getitem(v, kv, "in PyDict_GetItemString()");
+    rv = dict_getitem(v, kv,
+            "Exception ignored in PyDict_GetItemString(); consider using "
+            "PyDict_GetItemRefString()");
     Py_DECREF(kv);
     return rv;  // borrowed reference
 }
