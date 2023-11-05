@@ -1394,7 +1394,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
         """Return the IPv6 mapped address.
 
         Returns:
-            The IPv4 Mapped IPv6 Address per RFC 4291
+            The IPv4-mapped IPv6 address per RFC 4291.
 
         """
         return IPv6Address(f'::ffff:{self}')
