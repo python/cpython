@@ -1,0 +1,1 @@
+Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which retuns the IPv4-mapped IPv6 address.
