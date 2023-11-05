@@ -978,6 +978,13 @@ class BytesIO(BufferedIOBase):
             raise ValueError("tell on closed file")
         return self._pos
 
+    def peek(self, size=1):
+        if self.closed:
+            raise ValueError("peek on closed file")
+        if size < 0:
+            return self._buffer[self._pos:]
+        return self._buffer[self._pos:self._pos + size]
+
     def truncate(self, pos=None):
         if self.closed:
             raise ValueError("truncate on closed file")
