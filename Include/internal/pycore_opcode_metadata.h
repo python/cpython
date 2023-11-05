@@ -81,15 +81,15 @@
 #define _FOR_ITER 353
 #define _ITER_CHECK_LIST 354
 #define _ITER_JUMP_LIST 355
-#define _IS_ITER_EXHAUSTED_LIST 356
+#define _GUARD_NOT_EXHAUSTED_LIST 356
 #define _ITER_NEXT_LIST 357
 #define _ITER_CHECK_TUPLE 358
 #define _ITER_JUMP_TUPLE 359
-#define _IS_ITER_EXHAUSTED_TUPLE 360
+#define _GUARD_NOT_EXHAUSTED_TUPLE 360
 #define _ITER_NEXT_TUPLE 361
 #define _ITER_CHECK_RANGE 362
 #define _ITER_JUMP_RANGE 363
-#define _IS_ITER_EXHAUSTED_RANGE 364
+#define _GUARD_NOT_EXHAUSTED_RANGE 364
 #define _ITER_NEXT_RANGE 365
 #define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 366
 #define _GUARD_KEYS_VERSION 367
@@ -543,7 +543,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_LIST:
             return 1;
-        case _IS_ITER_EXHAUSTED_LIST:
+        case _GUARD_NOT_EXHAUSTED_LIST:
             return 1;
         case _ITER_NEXT_LIST:
             return 1;
@@ -553,7 +553,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_TUPLE:
             return 1;
-        case _IS_ITER_EXHAUSTED_TUPLE:
+        case _GUARD_NOT_EXHAUSTED_TUPLE:
             return 1;
         case _ITER_NEXT_TUPLE:
             return 1;
@@ -563,7 +563,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_RANGE:
             return 1;
-        case _IS_ITER_EXHAUSTED_RANGE:
+        case _GUARD_NOT_EXHAUSTED_RANGE:
             return 1;
         case _ITER_NEXT_RANGE:
             return 1;
@@ -1173,8 +1173,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_LIST:
             return 1;
-        case _IS_ITER_EXHAUSTED_LIST:
-            return 2;
+        case _GUARD_NOT_EXHAUSTED_LIST:
+            return 1;
         case _ITER_NEXT_LIST:
             return 2;
         case FOR_ITER_LIST:
@@ -1183,8 +1183,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_TUPLE:
             return 1;
-        case _IS_ITER_EXHAUSTED_TUPLE:
-            return 2;
+        case _GUARD_NOT_EXHAUSTED_TUPLE:
+            return 1;
         case _ITER_NEXT_TUPLE:
             return 2;
         case FOR_ITER_TUPLE:
@@ -1193,8 +1193,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_RANGE:
             return 1;
-        case _IS_ITER_EXHAUSTED_RANGE:
-            return 2;
+        case _GUARD_NOT_EXHAUSTED_RANGE:
+            return 1;
         case _ITER_NEXT_RANGE:
             return 2;
         case FOR_ITER_RANGE:
@@ -1658,17 +1658,17 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [INSTRUMENTED_FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [_ITER_CHECK_LIST] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_JUMP_LIST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [_IS_ITER_EXHAUSTED_LIST] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_NOT_EXHAUSTED_LIST] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_NEXT_LIST] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
     [_ITER_CHECK_TUPLE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_JUMP_TUPLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [_IS_ITER_EXHAUSTED_TUPLE] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_NOT_EXHAUSTED_TUPLE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_NEXT_TUPLE] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
     [_ITER_CHECK_RANGE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_JUMP_RANGE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [_IS_ITER_EXHAUSTED_RANGE] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_NOT_EXHAUSTED_RANGE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_NEXT_RANGE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
@@ -1878,6 +1878,9 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [MATCH_KEYS] = { .nuops = 1, .uops = { { MATCH_KEYS, 0, 0 } } },
     [GET_ITER] = { .nuops = 1, .uops = { { GET_ITER, 0, 0 } } },
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
+    [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, 0, 0 }, { _ITER_JUMP_LIST, 0, 0 }, { _ITER_NEXT_LIST, 0, 0 } } },
+    [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, 0, 0 }, { _ITER_JUMP_TUPLE, 0, 0 }, { _ITER_NEXT_TUPLE, 0, 0 } } },
+    [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, 0, 0 }, { _ITER_JUMP_RANGE, 0, 0 }, { _ITER_NEXT_RANGE, 0, 0 } } },
     [BEFORE_ASYNC_WITH] = { .nuops = 1, .uops = { { BEFORE_ASYNC_WITH, 0, 0 } } },
     [BEFORE_WITH] = { .nuops = 1, .uops = { { BEFORE_WITH, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
@@ -1974,15 +1977,15 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_FOR_ITER] = "_FOR_ITER",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
     [_ITER_JUMP_LIST] = "_ITER_JUMP_LIST",
-    [_IS_ITER_EXHAUSTED_LIST] = "_IS_ITER_EXHAUSTED_LIST",
+    [_GUARD_NOT_EXHAUSTED_LIST] = "_GUARD_NOT_EXHAUSTED_LIST",
     [_ITER_NEXT_LIST] = "_ITER_NEXT_LIST",
     [_ITER_CHECK_TUPLE] = "_ITER_CHECK_TUPLE",
     [_ITER_JUMP_TUPLE] = "_ITER_JUMP_TUPLE",
-    [_IS_ITER_EXHAUSTED_TUPLE] = "_IS_ITER_EXHAUSTED_TUPLE",
+    [_GUARD_NOT_EXHAUSTED_TUPLE] = "_GUARD_NOT_EXHAUSTED_TUPLE",
     [_ITER_NEXT_TUPLE] = "_ITER_NEXT_TUPLE",
     [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
     [_ITER_JUMP_RANGE] = "_ITER_JUMP_RANGE",
-    [_IS_ITER_EXHAUSTED_RANGE] = "_IS_ITER_EXHAUSTED_RANGE",
+    [_GUARD_NOT_EXHAUSTED_RANGE] = "_GUARD_NOT_EXHAUSTED_RANGE",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",

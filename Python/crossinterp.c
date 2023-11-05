@@ -713,6 +713,99 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
     return 0;
 }
 
+struct _shared_tuple_data {
+    Py_ssize_t len;
+    _PyCrossInterpreterData **data;
+};
+
+static PyObject *
+_new_tuple_object(_PyCrossInterpreterData *data)
+{
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
+    PyObject *tuple = PyTuple_New(shared->len);
+    if (tuple == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
+        if (item == NULL){
+            Py_DECREF(tuple);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(tuple, i, item);
+    }
+    return tuple;
+}
+
+static void
+_tuple_shared_free(void* data)
+{
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data);
+#ifndef NDEBUG
+    int64_t interpid = PyInterpreterState_GetID(_PyInterpreterState_GET());
+#endif
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        if (shared->data[i] != NULL) {
+            assert(shared->data[i]->interpid == interpid);
+            _PyCrossInterpreterData_Release(shared->data[i]);
+            PyMem_RawFree(shared->data[i]);
+            shared->data[i] = NULL;
+        }
+    }
+    PyMem_Free(shared->data);
+    PyMem_RawFree(shared);
+}
+
+static int
+_tuple_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
+{
+    Py_ssize_t len = PyTuple_GET_SIZE(obj);
+    if (len < 0) {
+        return -1;
+    }
+    struct _shared_tuple_data *shared = PyMem_RawMalloc(sizeof(struct _shared_tuple_data));
+    if (shared == NULL){
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    shared->len = len;
+    shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
+    if (shared->data == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+        if (data == NULL) {
+            goto error;  // PyErr_NoMemory already set
+        }
+        PyObject *item = PyTuple_GET_ITEM(obj, i);
+
+        int res = -1;
+        if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
+            res = _PyObject_GetCrossInterpreterData(item, data);
+            _Py_LeaveRecursiveCallTstate(tstate);
+        }
+        if (res < 0) {
+            PyMem_RawFree(data);
+            goto error;
+        }
+        shared->data[i] = data;
+    }
+    _PyCrossInterpreterData_Init(
+            data, tstate->interp, shared, obj, _new_tuple_object);
+    data->free = _tuple_shared_free;
+    return 0;
+
+error:
+    _tuple_shared_free(shared);
+    return -1;
+}
+
 static void
 _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
 {
@@ -744,6 +837,11 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     // float
     if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
         Py_FatalError("could not register float for cross-interpreter sharing");
+    }
+
+    // tuple
+    if (_xidregistry_add_type(xidregistry, &PyTuple_Type, _tuple_shared) != 0) {
+        Py_FatalError("could not register tuple for cross-interpreter sharing");
     }
 }
 

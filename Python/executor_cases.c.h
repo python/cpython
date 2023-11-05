@@ -2138,26 +2138,14 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_LIST: {
+        case _GUARD_NOT_EXHAUSTED_LIST: {
             PyObject *iter;
-            PyObject *exhausted;
             iter = stack_pointer[-1];
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyList_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
-            STACK_GROW(1);
-            stack_pointer[-1] = exhausted;
+            DEOPT_IF(seq == NULL, _GUARD_NOT_EXHAUSTED_LIST);
+            DEOPT_IF(it->it_index >= PyList_GET_SIZE(seq), _GUARD_NOT_EXHAUSTED_LIST);
             break;
         }
 
@@ -2183,26 +2171,14 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_TUPLE: {
+        case _GUARD_NOT_EXHAUSTED_TUPLE: {
             PyObject *iter;
-            PyObject *exhausted;
             iter = stack_pointer[-1];
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyTuple_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
-            STACK_GROW(1);
-            stack_pointer[-1] = exhausted;
+            DEOPT_IF(seq == NULL, _GUARD_NOT_EXHAUSTED_TUPLE);
+            DEOPT_IF(it->it_index >= PyTuple_GET_SIZE(seq), _GUARD_NOT_EXHAUSTED_TUPLE);
             break;
         }
 
@@ -2229,15 +2205,12 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_RANGE: {
+        case _GUARD_NOT_EXHAUSTED_RANGE: {
             PyObject *iter;
-            PyObject *exhausted;
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            exhausted = r->len <= 0 ? Py_True : Py_False;
-            STACK_GROW(1);
-            stack_pointer[-1] = exhausted;
+            DEOPT_IF(r->len <= 0, _GUARD_NOT_EXHAUSTED_RANGE);
             break;
         }
 
