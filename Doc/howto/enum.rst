@@ -1401,7 +1401,6 @@ alias::
     Traceback (most recent call last):
       ...
     ValueError: aliases not allowed in DuplicateFreeEnum:  'GRENE' --> 'GREEN'
-    Error calling __set_name__ on '_proto_member' instance 'GRENE' in 'Color'
 
 .. note::
 
