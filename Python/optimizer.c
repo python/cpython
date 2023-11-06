@@ -384,34 +384,12 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
 };
 
-static int
-move_stubs(
-    _PyUOpInstruction *trace,
-    int trace_length,
-    int stubs_start,
-    int stubs_end
-)
-{
-    memmove(trace + trace_length,
-            trace + stubs_start,
-            (stubs_end - stubs_start) * sizeof(_PyUOpInstruction));
-    // Patch up the jump targets
-    for (int i = 0; i < trace_length; i++) {
-        if (trace[i].opcode == _POP_JUMP_IF_FALSE ||
-            trace[i].opcode == _POP_JUMP_IF_TRUE)
-        {
-            int target = trace[i].oparg;
-            if (target >= stubs_start) {
-                target += trace_length - stubs_start;
-                trace[i].oparg = target;
-            }
-        }
-    }
-    return trace_length + stubs_end - stubs_start;
-}
-
 #define TRACE_STACK_SIZE 5
 
+/* Returns 1 on success,
+ * 0 if it failed to produce a worthwhile trace,
+ * and -1 on an error.
+ */
 static int
 translate_bytecode_to_trace(
     PyCodeObject *code,
@@ -790,7 +768,7 @@ done:
     }
     assert(code == initial_code);
     // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, _EXIT_TRACE
-    if (trace_length > 3) {
+    if (trace_length > 4) {
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0);
         DPRINTF(1,
                 "Created a trace for %s (%s:%d) at byte offset %d -- length %d+%d\n",
@@ -800,25 +778,8 @@ done:
                 2 * INSTR_IP(initial_instr, code),
                 trace_length,
                 buffer_size - max_length);
-        if (max_length < buffer_size) {
-            // There are stubs
-            if (trace_length < max_length) {
-                // There's a gap before the stubs
-                // Move the stubs back to be immediately after the main trace
-                // (which ends at trace_length)
-                DPRINTF(2,
-                        "Moving %d stub uops back by %d\n",
-                        buffer_size - max_length,
-                        max_length - trace_length);
-                trace_length = move_stubs(trace, trace_length, max_length, buffer_size);
-            }
-            else {
-                assert(trace_length == max_length);
-                // There's no gap
-                trace_length = buffer_size;
-            }
-        }
-        return trace_length;
+        OPT_HIST(trace_length + buffer_size - max_length, trace_length_hist);
+        return 1;
     }
     else {
         OPT_STAT_INC(trace_too_short);
@@ -838,70 +799,84 @@ done:
 #undef DPRINTF
 }
 
+#define UNSET_BIT(array, bit) (array[(bit)>>5] &= ~(1<<((bit)&31)))
+#define SET_BIT(array, bit) (array[(bit)>>5] |= (1<<((bit)&31)))
+#define BIT_IS_SET(array, bit) (array[(bit)>>5] & (1<<((bit)&31)))
+
+/* Count the number of used uops, and mark them in the bit vector `used`.
+ * This can be done in a single pass using simple reachability analysis,
+ * as there are no backward jumps.
+ * NOPs are excluded from the count.
+*/
 static int
-remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
+compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 {
-    // Stage 1: Replace unneeded _SET_IP uops with NOP.
-    // Note that we don't enter stubs, those SET_IPs are needed.
-    int last_set_ip = -1;
-    int last_instr = 0;
-    bool need_ip = true;
-    for (int pc = 0; pc < trace_length; pc++) {
-        int opcode = trace[pc].opcode;
-        if (opcode == _SET_IP) {
-            if (!need_ip && last_set_ip >= 0) {
-                trace[last_set_ip].opcode = NOP;
-            }
-            need_ip = false;
-            last_set_ip = pc;
+    int count = 0;
+    SET_BIT(used, 0);
+    for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
+        if (!BIT_IS_SET(used, i)) {
+            continue;
         }
-        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
-            last_instr = pc + 1;
-            break;
+        count++;
+        int opcode = buffer[i].opcode;
+        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+            continue;
         }
-        else {
-            // If opcode has ERROR or DEOPT, set need_ip to true
-            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG) || opcode == _PUSH_FRAME) {
-                need_ip = true;
-            }
-        }
-    }
-    // Stage 2: Squash NOP opcodes (pre-existing or set above).
-    int dest = 0;
-    for (int pc = 0; pc < last_instr; pc++) {
-        int opcode = trace[pc].opcode;
-        if (opcode != NOP) {
-            if (pc != dest) {
-                trace[dest] = trace[pc];
-            }
-            dest++;
+        /* All other micro-ops fall through, so i+1 is reachable */
+        SET_BIT(used, i+1);
+        switch(opcode) {
+            case NOP:
+                /* Don't count NOPs as used */
+                count--;
+                UNSET_BIT(used, i);
+                break;
+            case _POP_JUMP_IF_FALSE:
+            case _POP_JUMP_IF_TRUE:
+                /* Mark target as reachable */
+                SET_BIT(used, buffer[i].oparg);
         }
     }
-    // Stage 3: Move the stubs back.
-    if (dest < last_instr) {
-        int new_trace_length = move_stubs(trace, dest, last_instr, trace_length);
-#ifdef Py_DEBUG
-        char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
-        int lltrace = 0;
-        if (python_lltrace != NULL && *python_lltrace >= '0') {
-            lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
-        }
-        if (lltrace >= 2) {
-            printf("Optimized trace (length %d+%d = %d, saved %d):\n",
-                dest, trace_length - last_instr, new_trace_length,
-                trace_length - new_trace_length);
-            for (int pc = 0; pc < new_trace_length; pc++) {
-                printf("%4d: (%s, %d, %" PRIu64 ")\n",
-                    pc,
-                    uop_name(trace[pc].opcode),
-                    (trace[pc].oparg),
-                    (uint64_t)(trace[pc].operand));
-            }
-        }
-#endif
-        trace_length = new_trace_length;
+    return count;
+}
+
+/* Makes an executor from a buffer of uops.
+ * Account for the buffer having gaps and NOPs by computing a "used"
+ * bit vector and only copying the used uops. Here "used" means reachable
+ * and not a NOP.
+ */
+static _PyExecutorObject *
+make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
+{
+    uint32_t used[(_Py_UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
+    int length = compute_used(buffer, used);
+    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &_PyUOpExecutor_Type, length);
+    if (executor == NULL) {
+        return NULL;
     }
-    return trace_length;
+    int dest = length - 1;
+    /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
+    for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
+        if (!BIT_IS_SET(used, i)) {
+            continue;
+        }
+        executor->trace[dest] = buffer[i];
+        int opcode = buffer[i].opcode;
+        if (opcode == _POP_JUMP_IF_FALSE ||
+            opcode == _POP_JUMP_IF_TRUE)
+        {
+            /* The oparg of the target will already have been set to its new offset */
+            int oparg = executor->trace[dest].oparg;
+            executor->trace[dest].oparg = buffer[oparg].oparg;
+        }
+        /* Set the oparg to be the destination offset,
+         * so that we can set the oparg of earlier jumps correctly. */
+        buffer[i].oparg = dest;
+        dest--;
+    }
+    assert(dest == -1);
+    executor->base.execute = _PyUopExecute;
+    _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
+    return (_PyExecutorObject *)executor;
 }
 
 static int
@@ -914,28 +889,26 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
-    int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
-    if (trace_length <= 0) {
+    _PyUOpInstruction buffer[_Py_UOP_MAX_TRACE_LENGTH];
+    int err = translate_bytecode_to_trace(code, instr, buffer, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
+    if (err <= 0) {
         // Error or nothing translated
-        return trace_length;
+        return err;
     }
-    OPT_HIST(trace_length, trace_length_hist);
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
-    if (uop_optimize != NULL && *uop_optimize > '0') {
-        trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
+    if (uop_optimize == NULL || *uop_optimize > '0') {
+        err = _Py_uop_analyze_and_optimize(code, buffer, _Py_UOP_MAX_TRACE_LENGTH, curr_stackentries);
+        if (err < 0) {
+            return -1;
+        }
     }
-    trace_length = remove_unneeded_uops(trace, trace_length);
-    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &_PyUOpExecutor_Type, trace_length);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;
     }
-    OPT_HIST(trace_length, optimized_trace_length_hist);
-    executor->base.execute = _PyUopExecute;
-    memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
-    _Py_ExecutorInit((_PyExecutorObject *)executor, &dependencies);
-    *exec_ptr = (_PyExecutorObject *)executor;
+    OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
+    *exec_ptr = executor;
     return 1;
 }
 
