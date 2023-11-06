@@ -164,6 +164,17 @@ extern void _PyXI_Fini(PyInterpreterState *interp);
 /* short-term data sharing */
 /***************************/
 
+// Ultimately we'd like to preserve enough information about the
+// exception and traceback that we could re-constitute (or at least
+// simulate, a la traceback.TracebackException), and even chain, a copy
+// of the exception in the calling interpreter.
+
+typedef struct _excinfo {
+    const char *type;
+    const char *msg;
+} _Py_excinfo;
+
+
 typedef enum error_code {
     _PyXI_ERR_NO_ERROR = 0,
     _PyXI_ERR_UNCAUGHT_EXCEPTION = -1,
