@@ -6,7 +6,6 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
@@ -139,9 +138,11 @@ _socket_socket_ntohl(PySocketSockObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned long x;
 
-    if (!_PyLong_UnsignedLong_Converter(arg, &x)) {
+    if (!PyLong_Check(arg)) {
+        _PyArg_BadArgument("ntohl", "argument", "int", arg);
         goto exit;
     }
+    x = PyLong_AsUnsignedLongMask(arg);
     return_value = _socket_socket_ntohl_impl(self, x);
 
 exit:
@@ -194,9 +195,11 @@ _socket_socket_htonl(PySocketSockObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned long x;
 
-    if (!_PyLong_UnsignedLong_Converter(arg, &x)) {
+    if (!PyLong_Check(arg)) {
+        _PyArg_BadArgument("htonl", "argument", "int", arg);
         goto exit;
     }
+    x = PyLong_AsUnsignedLongMask(arg);
     return_value = _socket_socket_htonl_impl(self, x);
 
 exit:
@@ -309,4 +312,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=f3a97b202b9f3af0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf08c9f291c95a68 input=a9049054013a1b77]*/
