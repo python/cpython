@@ -178,17 +178,17 @@ class Generator(Analyzer):
                 # for all targets.
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
-                    # Currently target is always an instr. This could change
-                    # in the future, e.g., if we have a pseudo targetting a
-                    # macro instruction.
-                    assert target_instr
-                    target_popped = effect_str(target_instr.input_effects)
-                    target_pushed = effect_str(target_instr.output_effects)
-                    if popped is None:
-                        popped, pushed = target_popped, target_pushed
+                    if target_instr is None:
+                        macro_instr = self.macro_instrs[target]
+                        popped, pushed = stacking.get_stack_effect_info_for_macro(macro_instr)
                     else:
-                        assert popped == target_popped
-                        assert pushed == target_pushed
+                        target_popped = effect_str(target_instr.input_effects)
+                        target_pushed = effect_str(target_instr.output_effects)
+                        if popped is None:
+                            popped, pushed = target_popped, target_pushed
+                        else:
+                            assert popped == target_popped
+                            assert pushed == target_pushed
             case _:
                 assert_never(thing)
         assert popped is not None and pushed is not None
@@ -758,6 +758,12 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_TWO\n")
+            self.out.write_raw("    #error \"This file is for Tier 1 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_ONE 1\n")
+
             # Write and count instructions of all kinds
             n_macros = 0
             for thing in self.everything:
@@ -773,6 +779,9 @@ class Generator(Analyzer):
                     case _:
                         assert_never(thing)
 
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_ONE\n")
+
         print(
             f"Wrote {n_macros} cases to {output_filename}",
             file=sys.stderr,
@@ -786,6 +795,13 @@ class Generator(Analyzer):
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_ONE\n")
+            self.out.write_raw("    #error \"This file is for Tier 2 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_TWO 2\n")
+
             for instr in self.instrs.values():
                 if instr.is_viable_uop():
                     n_uops += 1
@@ -795,6 +811,10 @@ class Generator(Analyzer):
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
                         self.out.emit("break;")
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_TWO\n")
+
         print(
             f"Wrote {n_uops} cases to {executor_filename}",
             file=sys.stderr,
