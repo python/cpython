@@ -459,6 +459,7 @@ translate_bytecode_to_trace(
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
     trace[trace_length].operand = (OPERAND); \
+    trace[trace_length].target = 0 \
     trace_length++;
 
 #define INSTR_IP(INSTR, CODE) \

@@ -23,10 +23,15 @@
 
 
 #undef DEOPT_IF
-#define DEOPT_IF(COND, INSTNAME) \
-    if ((COND)) {                \
-        UOP_STAT_INC(INSTNAME, miss); \
-        goto deoptimize;         \
+#define DEOPT_IF(COND, INSTNAME)          \
+    if ((COND)) {                         \
+        if (target) {                     \
+            pc = target;                  \
+        }                                 \
+        else {                            \
+            UOP_STAT_INC(INSTNAME, miss); \
+            goto deoptimize;              \
+        }                                 \
     }
 
 #ifdef Py_STATS
@@ -76,6 +81,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     int pc = 0;
     int opcode;
     int oparg;
+    int target;
     uint64_t operand;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
@@ -83,6 +89,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
     for (;;) {
         opcode = self->trace[pc].opcode;
+        target = self->trace[pc].target;
         oparg = self->trace[pc].oparg;
         operand = self->trace[pc].operand;
         DPRINTF(3,
