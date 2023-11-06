@@ -81,11 +81,6 @@ class ClearTest(unittest.TestCase):
         next(gen)
         self.assertFalse(endly)
 
-        # Raise exception when attempting to clear a suspended frame
-        with self.assertRaisesRegex(RuntimeError, r'suspended frame'):
-            gen.gi_frame.clear()
-        self.assertFalse(endly)
-
         # Cannot clear a suspended frame
         with self.assertRaisesRegex(RuntimeError, r'suspended frame'):
             gen.gi_frame.clear()

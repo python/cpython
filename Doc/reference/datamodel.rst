@@ -1220,7 +1220,8 @@ Frame objects support one method:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.13
-      Attempting to clear a suspended frame raises :exc:`RuntimeError`.
+      Attempting to clear a suspended frame raises :exc:`RuntimeError`
+      (as has always been the case for executing frames).
 
 
 .. _traceback-objects:
