@@ -6360,18 +6360,15 @@ _socket_socket_ntohs_impl(PySocketSockObject *self, int x)
 }
 
 
-/*[clinic input]
-_socket.socket.ntohl
-    x: unsigned_long(bitwise=True)
-    /
-
-Convert a 32-bit integer from network to host byte order.
-[clinic start generated code]*/
-
 static PyObject *
-_socket_socket_ntohl_impl(PySocketSockObject *self, unsigned long x)
-/*[clinic end generated code: output=88e46cad3e45c65c input=02a9a0c0ad14a079]*/
+socket_ntohl(PyObject *self, PyObject *arg)
 {
+    unsigned long x;
+
+    if (PyLong_Check(arg)) {
+        x = PyLong_AsUnsignedLong(arg);
+        if (x == (unsigned long) -1 && PyErr_Occurred())
+            return NULL;
 #if SIZEOF_LONG > 4
         {
             unsigned long y;
@@ -6383,8 +6380,18 @@ _socket_socket_ntohl_impl(PySocketSockObject *self, unsigned long x)
             x = y;
         }
 #endif
+    }
+    else
+        return PyErr_Format(PyExc_TypeError,
+                            "expected int, %s found",
+                            Py_TYPE(arg)->tp_name);
     return PyLong_FromUnsignedLong(ntohl(x));
 }
+
+PyDoc_STRVAR(ntohl_doc,
+"ntohl(integer) -> integer\n\
+\n\
+Convert a 32-bit integer from network to host byte order.");
 
 
 /*[clinic input]
@@ -7205,7 +7212,8 @@ static PyMethodDef socket_methods[] = {
      METH_VARARGS, socketpair_doc},
 #endif
     _SOCKET_SOCKET_NTOHS_METHODDEF
-    _SOCKET_SOCKET_NTOHL_METHODDEF
+    {"ntohl",                   socket_ntohl,
+     METH_O, ntohl_doc},
     _SOCKET_SOCKET_HTONS_METHODDEF
     {"htonl",                   socket_htonl,
      METH_O, htonl_doc},
