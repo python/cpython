@@ -1864,6 +1864,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_ITER] = { .nuops = 1, .uops = { { GET_ITER, 0, 0 } } },
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [BEFORE_ASYNC_WITH] = { .nuops = 1, .uops = { { BEFORE_ASYNC_WITH, 0, 0 } } },
+    [BEFORE_WITH] = { .nuops = 1, .uops = { { BEFORE_WITH, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 0 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
