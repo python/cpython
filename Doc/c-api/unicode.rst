@@ -971,8 +971,8 @@ These are the UTF-8 codec APIs:
    returned buffer always has an extra null byte appended (not included in
    *size*), regardless of whether there are any other null code points.
 
-   In the case of an error, ``NULL`` is returned with an exception set and no
-   *size* is stored.
+   On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
+   return ``NULL``.
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
@@ -992,10 +992,18 @@ These are the UTF-8 codec APIs:
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
+   Raise an exception if the *unicode* string contains embedded null
+   characters. To accept embedded null characters and truncate on purpose
+   at the first null byte, ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be
+   used instead.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
       The return type is now ``const char *`` rather of ``char *``.
+
+   .. versionchanged:: 3.13
+      Raise an exception if the string contains embedded null characters.
 
 
 UTF-32 Codecs

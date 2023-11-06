@@ -16,6 +16,7 @@ this type and there is exactly one in existence.
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 
@@ -97,10 +98,7 @@ PyTypeObject PyEllipsis_Type = {
     ellipsis_new,                       /* tp_new */
 };
 
-PyObject _Py_EllipsisObject = {
-    { _Py_IMMORTAL_REFCNT },
-    &PyEllipsis_Type
-};
+PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 
 /* Slice object implementation */

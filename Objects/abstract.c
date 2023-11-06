@@ -5,6 +5,7 @@
 #include "pycore_pybuffer.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_crossinterp.h"   // _Py_CallInInterpreter()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_long.h"          // _Py_IsNegative
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
