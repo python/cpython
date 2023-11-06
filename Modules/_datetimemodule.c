@@ -4060,8 +4060,8 @@ static PyObject *
 timezone_getinitargs(PyDateTime_TimeZone *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->name == NULL)
-        return Py_BuildValue("(O)", self->offset);
-    return Py_BuildValue("(OO)", self->offset, self->name);
+        return PyTuple_Pack(1, self->offset);
+    return PyTuple_Pack(2, self->offset, self->name);
 }
 
 static PyMethodDef timezone_methods[] = {

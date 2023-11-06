@@ -1378,15 +1378,16 @@ class TestBranchAndJumpEvents(CheckEvents):
                     x = 4
                 else:
                     x = 6
+            7
 
         self.check_events(func, recorders = JUMP_AND_BRANCH_RECORDERS, expected = [
             ('branch', 'func', 2, 2),
-            ('branch', 'func', 3, 4),
+            ('branch', 'func', 3, 6),
             ('jump', 'func', 6, 2),
             ('branch', 'func', 2, 2),
-            ('branch', 'func', 3, 3),
+            ('branch', 'func', 3, 4),
             ('jump', 'func', 4, 2),
-            ('branch', 'func', 2, 2)])
+            ('branch', 'func', 2, 7)])
 
         self.check_events(func, recorders = JUMP_BRANCH_AND_LINE_RECORDERS, expected = [
             ('line', 'get_events', 10),
@@ -1394,17 +1395,18 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 2),
             ('branch', 'func', 2, 2),
             ('line', 'func', 3),
-            ('branch', 'func', 3, 4),
+            ('branch', 'func', 3, 6),
             ('line', 'func', 6),
             ('jump', 'func', 6, 2),
             ('line', 'func', 2),
             ('branch', 'func', 2, 2),
             ('line', 'func', 3),
-            ('branch', 'func', 3, 3),
+            ('branch', 'func', 3, 4),
             ('line', 'func', 4),
             ('jump', 'func', 4, 2),
             ('line', 'func', 2),
-            ('branch', 'func', 2, 2),
+            ('branch', 'func', 2, 7),
+            ('line', 'func', 7),
             ('line', 'get_events', 11)])
 
     def test_except_star(self):
@@ -1434,7 +1436,7 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'meth', 1),
             ('jump', 'func', 5, 5),
             ('jump', 'func', 5, '[offset=114]'),
-            ('branch', 'func', '[offset=120]', '[offset=122]'),
+            ('branch', 'func', '[offset=120]', '[offset=124]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1450,7 +1452,7 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('return', None),
             ('jump', 'func', 5, 5),
             ('jump', 'func', 5, '[offset=114]'),
-            ('branch', 'func', '[offset=120]', '[offset=122]'),
+            ('branch', 'func', '[offset=120]', '[offset=124]'),
             ('return', None),
             ('line', 'get_events', 11)])
 

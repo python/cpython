@@ -107,7 +107,6 @@ Local naming conventions:
 
 #include "Python.h"
 #include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
-#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
@@ -7723,10 +7722,10 @@ socket_exec(PyObject *m)
 
 /* FreeBSD divert(4) */
 #ifdef PF_DIVERT
-    PyModule_AddIntMacro(m, PF_DIVERT);
+    ADD_INT_MACRO(m, PF_DIVERT);
 #endif
 #ifdef AF_DIVERT
-    PyModule_AddIntMacro(m, AF_DIVERT);
+    ADD_INT_MACRO(m, AF_DIVERT);
 #endif
 
 #ifdef AF_PACKET

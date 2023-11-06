@@ -133,7 +133,6 @@ any DWARF information available for them).
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_frame.h"
 #include "pycore_interp.h"
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -193,7 +192,7 @@ typedef struct trampoline_api_st trampoline_api_t;
 #define perf_code_arena _PyRuntime.ceval.perf.code_arena
 #define trampoline_api _PyRuntime.ceval.perf.trampoline_api
 #define perf_map_file _PyRuntime.ceval.perf.map_file
-
+#define persist_after_fork _PyRuntime.ceval.perf.persist_after_fork
 
 static void
 perf_map_write_entry(void *state, const void *code_addr,
@@ -236,8 +235,7 @@ new_code_arena(void)
              0);  // offset (not used here)
     if (!memory) {
         PyErr_SetFromErrno(PyExc_OSError);
-        _PyErr_WriteUnraisableMsg(
-            "Failed to create new mmap for perf trampoline", NULL);
+        PyErr_FormatUnraisable("Failed to create new mmap for perf trampoline");
         perf_status = PERF_STATUS_FAILED;
         return -1;
     }
@@ -261,9 +259,8 @@ new_code_arena(void)
     if (res == -1) {
         PyErr_SetFromErrno(PyExc_OSError);
         munmap(memory, mem_size);
-        _PyErr_WriteUnraisableMsg(
-            "Failed to set mmap for perf trampoline to PROT_READ | PROT_EXEC",
-            NULL);
+        PyErr_FormatUnraisable("Failed to set mmap for perf trampoline to "
+                               "PROT_READ | PROT_EXEC");
         return -1;
     }
 
@@ -277,8 +274,7 @@ new_code_arena(void)
     if (new_arena == NULL) {
         PyErr_NoMemory();
         munmap(memory, mem_size);
-        _PyErr_WriteUnraisableMsg("Failed to allocate new code arena struct",
-                                  NULL);
+        PyErr_FormatUnraisable("Failed to allocate new code arena struct for perf trampoline");
         return -1;
     }
 
@@ -360,6 +356,26 @@ default_eval:
     return _PyEval_EvalFrameDefault(ts, frame, throw);
 }
 #endif  // PY_HAVE_PERF_TRAMPOLINE
+
+int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
+{
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+    py_trampoline f = NULL;
+    assert(extra_code_index != -1);
+    int ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
+    if (ret != 0 || f == NULL) {
+        py_trampoline new_trampoline = compile_trampoline();
+        if (new_trampoline == NULL) {
+            return 0;
+        }
+        trampoline_api.write_state(trampoline_api.state, new_trampoline,
+                                   perf_code_arena->code_size, co);
+        return _PyCode_SetExtra((PyObject *)co, extra_code_index,
+                         (void *)new_trampoline);
+    }
+#endif // PY_HAVE_PERF_TRAMPOLINE
+    return 0;
+}
 
 int
 _PyIsPerfTrampolineActive(void)
@@ -448,16 +464,34 @@ _PyPerfTrampoline_Fini(void)
     return 0;
 }
 
+int
+PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable){
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+    persist_after_fork = enable;
+    return persist_after_fork;
+#endif
+    return 0;
+}
+
 PyStatus
 _PyPerfTrampoline_AfterFork_Child(void)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
-    // Restart trampoline in file in child.
-    int was_active = _PyIsPerfTrampolineActive();
-    _PyPerfTrampoline_Fini();
     PyUnstable_PerfMapState_Fini();
-    if (was_active) {
-        _PyPerfTrampoline_Init(1);
+    if (persist_after_fork) {
+        char filename[256];
+        pid_t parent_pid = getppid();
+        snprintf(filename, sizeof(filename), "/tmp/perf-%d.map", parent_pid);
+        if (PyUnstable_CopyPerfMapFile(filename) != 0) {
+            return PyStatus_Error("Failed to copy perf map file.");
+        }
+    } else {
+        // Restart trampoline in file in child.
+        int was_active = _PyIsPerfTrampolineActive();
+        _PyPerfTrampoline_Fini();
+        if (was_active) {
+            _PyPerfTrampoline_Init(1);
+        }
     }
 #endif
     return PyStatus_Ok();
