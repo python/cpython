@@ -169,6 +169,66 @@ you can try compiling with MingW32, by passing "-c mingw32" to setup.py.""")
             s = s.replace(k, v)
         return s
 
+def _find_vc2015():
+    try:
+        key = _winreg.OpenKeyEx(
+            _winreg.HKEY_LOCAL_MACHINE,
+            r"Software\Microsoft\VisualStudio\SxS\VC7",
+            access=winreg.KEY_READ | winreg.KEY_WOW64_32KEY
+        )
+    except OSError:
+        log.debug("Visual C++ is not registered")
+        return None, None
+
+    best_version = 0
+    best_dir = None
+    with key:
+        for i in count():
+            try:
+                v, vc_dir, vt = _winreg.EnumValue(key, i)
+            except OSError:
+                break
+            if v and vt == _winreg.REG_SZ and os.path.isdir(vc_dir):
+                try:
+                    version = int(float(v))
+                except (ValueError, TypeError):
+                    continue
+                if version >= 14 and version > best_version:
+                    best_version, best_dir = version, vc_dir
+    return best_version, best_dir
+
+def _find_vc2017():
+    """Returns "15, path" based on the result of invoking vswhere.exe
+    If no install is found, returns "None, None"
+
+    The version is returned to avoid unnecessarily changing the function
+    result. It may be ignored when the path is not None.
+
+    If vswhere.exe is not available, by definition, VS 2017 is not
+    installed.
+    """
+    root = os.environ.get("ProgramFiles(x86)") or os.environ.get("ProgramFiles")
+    if not root:
+        return None, None
+
+    try:
+        path = subprocess.check_output([
+            os.path.join(root, "Microsoft Visual Studio", "Installer", "vswhere.exe"),
+            "-latest",
+            "-prerelease",
+            "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "-property", "installationPath",
+            "-products", "*",
+        ]).strip()
+    except (subprocess.CalledProcessError, OSError, UnicodeDecodeError):
+        return None, None
+
+    path = os.path.join(path, "VC", "Auxiliary", "Build")
+    if os.path.isdir(path):
+        return 15, path
+
+    return None, None
+
 def get_build_version():
     """Return the version of MSVC that was used to build Python.
 
@@ -216,89 +276,83 @@ def removeDuplicates(variable):
     newVariable = os.pathsep.join(newList)
     return newVariable
 
-def find_vcvarsall(version):
-    """Find the vcvarsall.bat file
 
-    At first it tries to find the productdir of VS 2008 in the registry. If
-    that fails it falls back to the VS90COMNTOOLS env var.
-    """
-    vsbase = VS_BASE % version
-    try:
-        productdir = Reg.get_value(r"%s\Setup\VC" % vsbase,
-                                   "productdir")
-    except KeyError:
-        productdir = None
+def _find_vcvarsall(plat_spec):
+    # bpo-38597: Removed vcruntime return value
+    _, best_dir = _find_vc2017()
 
-    # trying Express edition
-    if productdir is None:
-        vsbase = VSEXPRESS_BASE % version
-        try:
-            productdir = Reg.get_value(r"%s\Setup\VC" % vsbase,
-                                       "productdir")
-        except KeyError:
-            productdir = None
-            log.debug("Unable to find productdir in registry")
+    if not best_dir:
+        best_version, best_dir = _find_vc2015()
 
-    if not productdir or not os.path.isdir(productdir):
-        toolskey = "VS%0.f0COMNTOOLS" % version
-        toolsdir = os.environ.get(toolskey, None)
+    if not best_dir:
+        log.debug("No suitable Visual C++ version found")
+        return None, None
 
-        if toolsdir and os.path.isdir(toolsdir):
-            productdir = os.path.join(toolsdir, os.pardir, os.pardir, "VC")
-            productdir = os.path.abspath(productdir)
-            if not os.path.isdir(productdir):
-                log.debug("%s is not a valid directory" % productdir)
-                return None
-        else:
-            log.debug("Env var %s is not set or invalid" % toolskey)
-    if not productdir:
-        log.debug("No productdir found")
-        return None
-    vcvarsall = os.path.join(productdir, "vcvarsall.bat")
-    if os.path.isfile(vcvarsall):
-        return vcvarsall
-    log.debug("Unable to find vcvarsall.bat")
-    return None
+    vcvarsall = os.path.join(best_dir, "vcvarsall.bat")
+    if not os.path.isfile(vcvarsall):
+        log.debug("%s cannot be found", vcvarsall)
+        return None, None
 
-def query_vcvarsall(version, arch="x86"):
-    """Launch vcvarsall.bat and read the settings from its environment
-    """
-    vcvarsall = find_vcvarsall(version)
-    interesting = set(("include", "lib", "libpath", "path"))
-    result = {}
+    return vcvarsall, None
 
-    if vcvarsall is None:
+
+def _get_vc_env(plat_spec):
+    if os.getenv("DISTUTILS_USE_SDK"):
+        return {
+            key.lower(): value
+            for key, value in os.environ.items()
+        }
+
+    vcvarsall, _ = _find_vcvarsall(plat_spec)
+    if not vcvarsall:
         raise DistutilsPlatformError("Unable to find vcvarsall.bat")
-    log.debug("Calling 'vcvarsall.bat %s' (version=%s)", arch, version)
-    popen = subprocess.Popen('"%s" %s & set' % (vcvarsall, arch),
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+
     try:
-        stdout, stderr = popen.communicate()
-        if popen.wait() != 0:
-            raise DistutilsPlatformError(stderr.decode("mbcs"))
+        out = subprocess.check_output(
+            'cmd /u /c "{}" {} && set'.format(vcvarsall, plat_spec),
+            stderr=subprocess.STDOUT,
+        ).decode('utf-16le', errors='replace')
+    except subprocess.CalledProcessError as exc:
+        log.error(exc.output)
+        raise DistutilsPlatformError("Error executing {}"
+                .format(exc.cmd))
 
-        stdout = stdout.decode("mbcs")
-        for line in stdout.split("\n"):
-            line = Reg.convert_mbcs(line)
-            if '=' not in line:
-                continue
-            line = line.strip()
-            key, value = line.split('=', 1)
-            key = key.lower()
-            if key in interesting:
-                if value.endswith(os.pathsep):
-                    value = value[:-1]
-                result[key] = removeDuplicates(value)
+    env = {
+        key.lower(): value
+        for key, _, value in
+        (line.partition('=') for line in out.splitlines())
+        if key and value
+    }
 
-    finally:
-        popen.stdout.close()
-        popen.stderr.close()
+    return env
 
-    if len(result) != len(interesting):
-        raise ValueError(str(list(result.keys())))
+def _find_exe(exe, paths=None):
+    """Return path to an MSVC executable program.
 
-    return result
+    Tries to find the program in several places: first, one of the
+    MSVC program search paths from the registry; next, the directories
+    in the PATH environment variable.  If any of those work, return an
+    absolute path that is known to exist.  If none of them work, just
+    return the original program name, 'exe'.
+    """
+    if not paths:
+        paths = os.getenv('path').split(os.pathsep)
+    for p in paths:
+        fn = os.path.join(os.path.abspath(p), exe)
+        if os.path.isfile(fn):
+            return fn
+    return exe
+
+# A map keyed by get_platform() return values to values accepted by
+# 'vcvarsall.bat'. Always cross-compile from x86 to work with the
+# lighter-weight MSVC installs that do not include native 64-bit tools.
+PLAT_TO_VCVARS = {
+    'win32' : 'x86',
+    'win-amd64' : 'x86_amd64',
+    'win-arm32' : 'x86_arm',
+    'win-arm64' : 'x86_arm64'
+}
+
 
 # More globals
 VERSION = get_build_version()
@@ -352,7 +406,7 @@ class MSVCCompiler(CCompiler) :
         assert not self.initialized, "don't init multiple times"
         if plat_name is None:
             plat_name = get_platform()
-        # sanity check for platforms to prevent obscure errors later.
+        # sanity check for platforms to prevent obscure errors later.query_vcvarsall
         ok_plats = 'win32', 'win-amd64', 'win-ia64'
         if plat_name not in ok_plats:
             raise DistutilsPlatformError("--plat-name must be one of %s" %
@@ -380,7 +434,7 @@ class MSVCCompiler(CCompiler) :
                 plat_spec = PLAT_TO_VCVARS[get_platform()] + '_' + \
                             PLAT_TO_VCVARS[plat_name]
 
-            vc_env = query_vcvarsall(VERSION, plat_spec)
+            vc_env = _get_vc_env(plat_spec)
 
             # take care to only use strings in the environment.
             self.__paths = vc_env['path'].encode('mbcs').split(os.pathsep)
