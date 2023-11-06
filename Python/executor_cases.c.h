@@ -14,13 +14,13 @@
 
         case RESUME_CHECK: {
 #if defined(__EMSCRIPTEN__)
-            DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
+            TIER2_DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            DEOPT_IF(eval_breaker != version, RESUME);
+            TIER2_DEOPT_IF(eval_breaker != version, RESUME);
             break;
         }
 
@@ -134,7 +134,7 @@
         case TO_BOOL_BOOL: {
             PyObject *value;
             value = stack_pointer[-1];
-            DEOPT_IF(!PyBool_Check(value), TO_BOOL);
+            TIER2_DEOPT_IF(!PyBool_Check(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             break;
         }
@@ -143,7 +143,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            DEOPT_IF(!PyLong_CheckExact(value), TO_BOOL);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
                 assert(_Py_IsImmortal(value));
@@ -161,7 +161,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
+            TIER2_DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value) ? Py_True : Py_False;
             Py_DECREF(value);
@@ -174,7 +174,7 @@
             PyObject *res;
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            DEOPT_IF(!Py_IsNone(value), TO_BOOL);
+            TIER2_DEOPT_IF(!Py_IsNone(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             res = Py_False;
             stack_pointer[-1] = res;
@@ -185,7 +185,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
+            TIER2_DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             if (value == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value));
@@ -207,7 +207,7 @@
             uint32_t version = (uint32_t)next_uop[-1].operand;
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
-            DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
+            TIER2_DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
             STAT_INC(TO_BOOL, hit);
             Py_DECREF(value);
             res = Py_True;
@@ -231,8 +231,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyLong_CheckExact(left), _GUARD_BOTH_INT);
-            DEOPT_IF(!PyLong_CheckExact(right), _GUARD_BOTH_INT);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(left), _GUARD_BOTH_INT);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(right), _GUARD_BOTH_INT);
             break;
         }
 
@@ -289,8 +289,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyFloat_CheckExact(left), _GUARD_BOTH_FLOAT);
-            DEOPT_IF(!PyFloat_CheckExact(right), _GUARD_BOTH_FLOAT);
+            TIER2_DEOPT_IF(!PyFloat_CheckExact(left), _GUARD_BOTH_FLOAT);
+            TIER2_DEOPT_IF(!PyFloat_CheckExact(right), _GUARD_BOTH_FLOAT);
             break;
         }
 
@@ -347,8 +347,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyUnicode_CheckExact(left), _GUARD_BOTH_UNICODE);
-            DEOPT_IF(!PyUnicode_CheckExact(right), _GUARD_BOTH_UNICODE);
+            TIER2_DEOPT_IF(!PyUnicode_CheckExact(left), _GUARD_BOTH_UNICODE);
+            TIER2_DEOPT_IF(!PyUnicode_CheckExact(right), _GUARD_BOTH_UNICODE);
             break;
         }
 
@@ -439,13 +439,13 @@
             PyObject *res;
             sub = stack_pointer[-1];
             list = stack_pointer[-2];
-            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
-            DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < PyList_Size(list)
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
@@ -463,14 +463,14 @@
             PyObject *res;
             sub = stack_pointer[-1];
             str = stack_pointer[-2];
-            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
-            DEOPT_IF(!PyUnicode_CheckExact(str), BINARY_SUBSCR);
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!PyUnicode_CheckExact(str), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index, BINARY_SUBSCR);
+            TIER2_DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index, BINARY_SUBSCR);
             // Specialize for reading an ASCII character from any string:
             Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
-            DEOPT_IF(Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c, BINARY_SUBSCR);
+            TIER2_DEOPT_IF(Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c, BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
@@ -486,13 +486,13 @@
             PyObject *res;
             sub = stack_pointer[-1];
             tuple = stack_pointer[-2];
-            DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
-            DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < PyTuple_Size(list)
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
@@ -510,7 +510,7 @@
             PyObject *res;
             sub = stack_pointer[-1];
             dict = stack_pointer[-2];
-            DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
+            TIER2_DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyDict_GetItemWithError(dict, sub);
             if (res == NULL) {
@@ -575,14 +575,14 @@
             sub = stack_pointer[-1];
             list = stack_pointer[-2];
             value = stack_pointer[-3];
-            DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
-            DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
+            TIER2_DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
 
             // Ensure nonnegative, zero-or-one-digit ints.
-            DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), STORE_SUBSCR);
+            TIER2_DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), STORE_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             // Ensure index < len(list)
-            DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
+            TIER2_DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
 
             PyObject *old_value = PyList_GET_ITEM(list, index);
@@ -602,7 +602,7 @@
             sub = stack_pointer[-1];
             dict = stack_pointer[-2];
             value = stack_pointer[-3];
-            DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
+            TIER2_DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
             Py_DECREF(dict);
@@ -906,8 +906,8 @@
             PyObject **values;
             seq = stack_pointer[-1];
             values = stack_pointer - 1;
-            DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
-            DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
+            TIER2_DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
+            TIER2_DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
             assert(oparg == 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
             values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
@@ -923,8 +923,8 @@
             PyObject **values;
             seq = stack_pointer[-1];
             values = stack_pointer - 1;
-            DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
-            DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
+            TIER2_DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
+            TIER2_DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
@@ -941,8 +941,8 @@
             PyObject **values;
             seq = stack_pointer[-1];
             values = stack_pointer - 1;
-            DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
-            DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
+            TIER2_DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
+            TIER2_DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
@@ -1148,8 +1148,8 @@
         case _GUARD_GLOBALS_VERSION: {
             uint16_t version = (uint16_t)next_uop[-1].operand;
             PyDictObject *dict = (PyDictObject *)GLOBALS();
-            DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_GLOBALS_VERSION);
-            DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_GLOBALS_VERSION);
+            TIER2_DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_GLOBALS_VERSION);
+            TIER2_DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_GLOBALS_VERSION);
             assert(DK_IS_UNICODE(dict->ma_keys));
             break;
         }
@@ -1157,8 +1157,8 @@
         case _GUARD_BUILTINS_VERSION: {
             uint16_t version = (uint16_t)next_uop[-1].operand;
             PyDictObject *dict = (PyDictObject *)BUILTINS();
-            DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_BUILTINS_VERSION);
-            DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_BUILTINS_VERSION);
+            TIER2_DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_BUILTINS_VERSION);
+            TIER2_DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_BUILTINS_VERSION);
             assert(DK_IS_UNICODE(dict->ma_keys));
             break;
         }
@@ -1170,7 +1170,7 @@
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             res = entries[index].me_value;
-            DEOPT_IF(res == NULL, _LOAD_GLOBAL_MODULE);
+            TIER2_DEOPT_IF(res == NULL, _LOAD_GLOBAL_MODULE);
             Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
@@ -1188,7 +1188,7 @@
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             res = entries[index].me_value;
-            DEOPT_IF(res == NULL, _LOAD_GLOBAL_BUILTINS);
+            TIER2_DEOPT_IF(res == NULL, _LOAD_GLOBAL_BUILTINS);
             Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
@@ -1539,8 +1539,8 @@
             class = stack_pointer[-2];
             global_super = stack_pointer[-3];
             assert(!(oparg & 1));
-            DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
-            DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
+            TIER2_DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
+            TIER2_DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
@@ -1563,8 +1563,8 @@
             class = stack_pointer[-2];
             global_super = stack_pointer[-3];
             assert(oparg & 1);
-            DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
-            DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
+            TIER2_DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
+            TIER2_DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
@@ -1636,7 +1636,7 @@
             uint32_t type_version = (uint32_t)next_uop[-1].operand;
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version, _GUARD_TYPE_VERSION);
+            TIER2_DEOPT_IF(tp->tp_version_tag != type_version, _GUARD_TYPE_VERSION);
             break;
         }
 
@@ -1646,7 +1646,7 @@
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), _CHECK_MANAGED_OBJECT_HAS_VALUES);
+            TIER2_DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), _CHECK_MANAGED_OBJECT_HAS_VALUES);
             break;
         }
 
@@ -1658,7 +1658,7 @@
             uint16_t index = (uint16_t)next_uop[-1].operand;
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
-            DEOPT_IF(attr == NULL, _LOAD_ATTR_INSTANCE_VALUE);
+            TIER2_DEOPT_IF(attr == NULL, _LOAD_ATTR_INSTANCE_VALUE);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1673,10 +1673,10 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)next_uop[-1].operand;
-            DEOPT_IF(!PyModule_CheckExact(owner), _CHECK_ATTR_MODULE);
+            TIER2_DEOPT_IF(!PyModule_CheckExact(owner), _CHECK_ATTR_MODULE);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
-            DEOPT_IF(dict->ma_keys->dk_version != type_version, _CHECK_ATTR_MODULE);
+            TIER2_DEOPT_IF(dict->ma_keys->dk_version != type_version, _CHECK_ATTR_MODULE);
             break;
         }
 
@@ -1691,7 +1691,7 @@
             assert(index < dict->ma_keys->dk_nentries);
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
             attr = ep->me_value;
-            DEOPT_IF(attr == NULL, _LOAD_ATTR_MODULE);
+            TIER2_DEOPT_IF(attr == NULL, _LOAD_ATTR_MODULE);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1707,9 +1707,9 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv), _CHECK_ATTR_WITH_HINT);
+            TIER2_DEOPT_IF(_PyDictOrValues_IsValues(dorv), _CHECK_ATTR_WITH_HINT);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
-            DEOPT_IF(dict == NULL, _CHECK_ATTR_WITH_HINT);
+            TIER2_DEOPT_IF(dict == NULL, _CHECK_ATTR_WITH_HINT);
             assert(PyDict_CheckExact((PyObject *)dict));
             break;
         }
@@ -1722,19 +1722,19 @@
             uint16_t hint = (uint16_t)next_uop[-1].operand;
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
-            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, _LOAD_ATTR_WITH_HINT);
+            TIER2_DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, _LOAD_ATTR_WITH_HINT);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
+                TIER2_DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
                 attr = ep->me_value;
             }
             else {
                 PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-                DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
+                TIER2_DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
                 attr = ep->me_value;
             }
-            DEOPT_IF(attr == NULL, _LOAD_ATTR_WITH_HINT);
+            TIER2_DEOPT_IF(attr == NULL, _LOAD_ATTR_WITH_HINT);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1753,7 +1753,7 @@
             uint16_t index = (uint16_t)next_uop[-1].operand;
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
-            DEOPT_IF(attr == NULL, _LOAD_ATTR_SLOT);
+            TIER2_DEOPT_IF(attr == NULL, _LOAD_ATTR_SLOT);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1768,9 +1768,9 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)next_uop[-1].operand;
-            DEOPT_IF(!PyType_Check(owner), _CHECK_ATTR_CLASS);
+            TIER2_DEOPT_IF(!PyType_Check(owner), _CHECK_ATTR_CLASS);
             assert(type_version != 0);
-            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version, _CHECK_ATTR_CLASS);
+            TIER2_DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version, _CHECK_ATTR_CLASS);
             break;
         }
 
@@ -1796,7 +1796,7 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), _GUARD_DORV_VALUES);
+            TIER2_DEOPT_IF(!_PyDictOrValues_IsValues(dorv), _GUARD_DORV_VALUES);
             break;
         }
 
@@ -1866,8 +1866,8 @@
             PyObject *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+            TIER2_DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
+            TIER2_DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
@@ -1888,10 +1888,10 @@
             PyObject *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
-            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
-            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
+            TIER2_DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
+            TIER2_DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
+            TIER2_DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
                    _PyLong_DigitCount((PyLongObject *)right) <= 1);
@@ -1914,8 +1914,8 @@
             PyObject *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
+            TIER2_DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
+            TIER2_DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
             assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
@@ -2152,7 +2152,7 @@
         case _ITER_CHECK_LIST: {
             PyObject *iter;
             iter = stack_pointer[-1];
-            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, _ITER_CHECK_LIST);
+            TIER2_DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, _ITER_CHECK_LIST);
             break;
         }
 
@@ -2197,7 +2197,7 @@
         case _ITER_CHECK_TUPLE: {
             PyObject *iter;
             iter = stack_pointer[-1];
-            DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, _ITER_CHECK_TUPLE);
+            TIER2_DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type, _ITER_CHECK_TUPLE);
             break;
         }
 
@@ -2243,7 +2243,7 @@
             PyObject *iter;
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
-            DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, _ITER_CHECK_RANGE);
+            TIER2_DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, _ITER_CHECK_RANGE);
             break;
         }
 
@@ -2378,7 +2378,7 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT);
+            TIER2_DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT);
             break;
         }
 
@@ -2388,7 +2388,7 @@
             uint32_t keys_version = (uint32_t)next_uop[-1].operand;
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-            DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version, _GUARD_KEYS_VERSION);
+            TIER2_DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version, _GUARD_KEYS_VERSION);
             break;
         }
 
@@ -2466,7 +2466,7 @@
             assert(dictoffset > 0);
             PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
             /* This object has a __dict__, just not yet created */
-            DEOPT_IF(dict != NULL, _CHECK_ATTR_METHOD_LAZY_DICT);
+            TIER2_DEOPT_IF(dict != NULL, _CHECK_ATTR_METHOD_LAZY_DICT);
             break;
         }
 
@@ -2493,8 +2493,8 @@
             PyObject *callable;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            DEOPT_IF(null != NULL, _CHECK_CALL_BOUND_METHOD_EXACT_ARGS);
-            DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, _CHECK_CALL_BOUND_METHOD_EXACT_ARGS);
+            TIER2_DEOPT_IF(null != NULL, _CHECK_CALL_BOUND_METHOD_EXACT_ARGS);
+            TIER2_DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type, _CHECK_CALL_BOUND_METHOD_EXACT_ARGS);
             break;
         }
 
@@ -2515,7 +2515,7 @@
         }
 
         case _CHECK_PEP_523: {
-            DEOPT_IF(tstate->interp->eval_frame, _CHECK_PEP_523);
+            TIER2_DEOPT_IF(tstate->interp->eval_frame, _CHECK_PEP_523);
             break;
         }
 
@@ -2525,11 +2525,11 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)next_uop[-1].operand;
-            DEOPT_IF(!PyFunction_Check(callable), _CHECK_FUNCTION_EXACT_ARGS);
+            TIER2_DEOPT_IF(!PyFunction_Check(callable), _CHECK_FUNCTION_EXACT_ARGS);
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != func_version, _CHECK_FUNCTION_EXACT_ARGS);
+            TIER2_DEOPT_IF(func->func_version != func_version, _CHECK_FUNCTION_EXACT_ARGS);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
-            DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), _CHECK_FUNCTION_EXACT_ARGS);
+            TIER2_DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), _CHECK_FUNCTION_EXACT_ARGS);
             break;
         }
 
@@ -2538,8 +2538,8 @@
             callable = stack_pointer[-2 - oparg];
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), _CHECK_STACK_SPACE);
-            DEOPT_IF(tstate->py_recursion_remaining <= 1, _CHECK_STACK_SPACE);
+            TIER2_DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), _CHECK_STACK_SPACE);
+            TIER2_DEOPT_IF(tstate->py_recursion_remaining <= 1, _CHECK_STACK_SPACE);
             break;
         }
 
@@ -2600,9 +2600,9 @@
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             assert(oparg == 1);
-            DEOPT_IF(null != NULL, CALL);
+            TIER2_DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
-            DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
+            TIER2_DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
             res = Py_NewRef(Py_TYPE(obj));
             Py_DECREF(obj);
@@ -2622,8 +2622,8 @@
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             assert(oparg == 1);
-            DEOPT_IF(null != NULL, CALL);
-            DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
+            TIER2_DEOPT_IF(null != NULL, CALL);
+            TIER2_DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
             res = PyObject_Str(arg);
@@ -2646,8 +2646,8 @@
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             assert(oparg == 1);
-            DEOPT_IF(null != NULL, CALL);
-            DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
+            TIER2_DEOPT_IF(null != NULL, CALL);
+            TIER2_DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
             res = PySequence_Tuple(arg);
@@ -2688,9 +2688,9 @@
                 args--;
                 total_args++;
             }
-            DEOPT_IF(!PyType_Check(callable), CALL);
+            TIER2_DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
-            DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
+            TIER2_DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
             res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
             /* Free the arguments. */
@@ -2720,9 +2720,9 @@
                 args--;
                 total_args++;
             }
-            DEOPT_IF(total_args != 1, CALL);
-            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
-            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL);
+            TIER2_DEOPT_IF(total_args != 1, CALL);
+            TIER2_DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            TIER2_DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             // This is slower but CPython promises to check all non-vectorcall
@@ -2759,8 +2759,8 @@
                 args--;
                 total_args++;
             }
-            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
-            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL, CALL);
+            TIER2_DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            TIER2_DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL, CALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
@@ -2802,8 +2802,8 @@
                 args--;
                 total_args++;
             }
-            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
-            DEOPT_IF(PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS), CALL);
+            TIER2_DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            TIER2_DEOPT_IF(PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS), CALL);
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
             _PyCFunctionFastWithKeywords cfunc =
@@ -2839,9 +2839,9 @@
                 args--;
                 total_args++;
             }
-            DEOPT_IF(total_args != 1, CALL);
+            TIER2_DEOPT_IF(total_args != 1, CALL);
             PyInterpreterState *interp = tstate->interp;
-            DEOPT_IF(callable != interp->callable_cache.len, CALL);
+            TIER2_DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
@@ -2874,9 +2874,9 @@
                 args--;
                 total_args++;
             }
-            DEOPT_IF(total_args != 2, CALL);
+            TIER2_DEOPT_IF(total_args != 2, CALL);
             PyInterpreterState *interp = tstate->interp;
-            DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
+            TIER2_DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
             PyObject *inst = args[0];
@@ -2911,13 +2911,13 @@
                 total_args++;
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            DEOPT_IF(total_args != 2, CALL);
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
+            TIER2_DEOPT_IF(total_args != 2, CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = method->d_method;
-            DEOPT_IF(meth->ml_flags != METH_O, CALL);
+            TIER2_DEOPT_IF(meth->ml_flags != METH_O, CALL);
             PyObject *arg = args[1];
             PyObject *self = args[0];
-            DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
@@ -2953,12 +2953,12 @@
                 total_args++;
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = method->d_method;
-            DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
+            TIER2_DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
             PyTypeObject *d_type = method->d_common.d_type;
             PyObject *self = args[0];
-            DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
             _PyCFunctionFastWithKeywords cfunc =
@@ -2993,13 +2993,13 @@
                 args--;
                 total_args++;
             }
-            DEOPT_IF(total_args != 1, CALL);
+            TIER2_DEOPT_IF(total_args != 1, CALL);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = method->d_method;
             PyObject *self = args[0];
-            DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
-            DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
+            TIER2_DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
@@ -3035,11 +3035,11 @@
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
             /* Builtin METH_FASTCALL methods, without keywords */
-            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
             PyMethodDef *meth = method->d_method;
-            DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL);
+            TIER2_DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL);
             PyObject *self = args[0];
-            DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
+            TIER2_DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             _PyCFunctionFast cfunc =
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;

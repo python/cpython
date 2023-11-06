@@ -209,7 +209,10 @@ class Instruction:
                 space, cond = m.groups()
                 space = extra + space
                 target = family.name if family else self.name
-                out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
+                if tier == TIER_TWO:
+                    out.write_raw(f"{space}TIER2_DEOPT_IF({cond}, {target});\n")
+                else:
+                    out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
             elif "DEOPT" in line:
                 filename = context.owner.filename
                 lineno = context.owner.tokens[context.begin].line

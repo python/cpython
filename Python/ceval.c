@@ -960,6 +960,13 @@ enter_tier_two:
     if ((COND)) {                \
         goto deoptimize;\
     }
+#undef TIER2_DEOPT_IF
+
+#define TIER2_DEOPT_IF(COND, INSTNAME)    \
+    if ((COND)) {                         \
+        next_uop = current_executor->trace + (next_uop-1)->target;            \
+        break;                        \
+    }
 
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
