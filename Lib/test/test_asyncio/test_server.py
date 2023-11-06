@@ -149,9 +149,11 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await task2
 
 
+# Test the various corner cases of Unix server socket removal
 class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
     @socket_helper.skip_unless_bind_unix_socket
     async def test_unix_server_addr_cleanup(self):
+        # Default scenario
         with test_utils.unix_socket_path() as addr:
             async def serve(*args):
                 pass
@@ -163,6 +165,7 @@ class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
 
     @socket_helper.skip_unless_bind_unix_socket
     async def test_unix_server_sock_cleanup(self):
+        # Using already bound socket
         with test_utils.unix_socket_path() as addr:
             async def serve(*args):
                 pass
@@ -177,6 +180,7 @@ class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
 
     @socket_helper.skip_unless_bind_unix_socket
     async def test_unix_server_cleanup_gone(self):
+        # Someone else has already cleaned up the socket
         with test_utils.unix_socket_path() as addr:
             async def serve(*args):
                 pass
@@ -192,6 +196,7 @@ class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
 
     @socket_helper.skip_unless_bind_unix_socket
     async def test_unix_server_cleanup_replaced(self):
+        # Someone else has replaced the socket with their own
         with test_utils.unix_socket_path() as addr:
             async def serve(*args):
                 pass
@@ -207,6 +212,7 @@ class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
 
     @socket_helper.skip_unless_bind_unix_socket
     async def test_unix_server_cleanup_prevented(self):
+        # Automatic cleanup explicitly disabled
         with test_utils.unix_socket_path() as addr:
             async def serve(*args):
                 pass
