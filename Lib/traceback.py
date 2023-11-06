@@ -251,7 +251,7 @@ def clear_frames(tb):
     "Clear all references to local variables in the frames of a traceback."
     while tb is not None:
         try:
-            tb.tb_frame.clear()
+            tb.tb_frame.clear(True)
         except RuntimeError:
             # Ignore the exception raised if the frame is still executing.
             pass

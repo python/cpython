@@ -2518,6 +2518,25 @@ class MiscTracebackCases(unittest.TestCase):
         # Local variable dict should now be empty.
         self.assertEqual(len(inner_frame.f_locals), 0)
 
+    def test_do_not_clear_frame_of_suspended_generator(self):
+        # See gh-79932
+
+        def f():
+            try:
+                raise TypeError
+            except Exception as e:
+                yield e
+            yield 42
+
+        def g():
+            yield from f()
+
+        gen = g()
+        e = next(gen)
+        self.assertIsInstance(e, TypeError)
+        traceback.clear_frames(e.__traceback__)
+        self.assertEqual(next(gen), 42)
+
     def test_extract_stack(self):
         def extract():
             return traceback.extract_stack()
