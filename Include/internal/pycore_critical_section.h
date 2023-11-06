@@ -14,35 +14,64 @@ extern "C" {
 #endif
 
 // Implementation of Python critical sections: helpers to replace the global
-// interpreter lock with fine grained locking.
+// interpreter lock with per-object locks, while avoiding deadlocks.
 //
-// A Python critical section is a region of code that can only be executed by
-// a single thread at at time. The regions begin with a call to
-// Py_BEGIN_CRITICAL_SECTION and ends with Py_END_CRITICAL_SECTION. Active
-// critical sections are *implicitly* suspended whenever the thread calls
-// `_PyThreadState_Detach()` (i.e., at tiems when the interpreter would have
-// released the GIL).
+// NOTE: These APIs are no-ops in non-free-threaded builds.
 //
-// The most recent critical section is resumed when `_PyThreadState_Attach()`
-// is called. See `_PyCriticalSection_Resume()`.
+// Straightforward per-object locking could introduce deadlocks that were not
+// present when running with the GIL. Threads may hold locks for multiple
+// objects simultaneously because Python operations can nest. If threads were
+// to acquire the same locks in different orders, they would deadlock.
 //
-// The purpose of implicitly ending critical sections is to avoid deadlocks
-// when locking multiple objects. Any time a thread would have released the
-// GIL, it releases all locks from active critical sections. This includes
-// times when a thread blocks while attempting to acquire a lock.
+// One way to avoid deadlocks is to allow threads to hold only the lock (or
+// locks) for a single operation at a time (typically a single lock, but some
+// operations involve two locks). When a thread begins a nested operation it
+// could suspend the locks for any outer operation: before beginning the nested
+// operation, the locks for the outer operation are released and when the
+// nested operation completes, the locks for the outer operation are
+// reacquired.
 //
-// Note that the macros Py_BEGIN_CRITICAL_SECTION and Py_END_CRITICAL_SECTION
-// are no-ops in non-free-threaded builds.
+// To improve performance, this API uses a variation of the above scheme.
+// Instead of immediately suspending locks any time a nested operation begins,
+// locks are only suspended if the thread would block. This reduces the number
+// of lock acquisitions and releases for nested operations, while avoiding
+// deadlocks.
+//
+// Additionally, the locks for any active operation are suspended around
+// other potentially blocking operations, such as I/O. This is because the
+// interaction between locks and blocking operations can lead to deadlocks in
+// the same way as the interaction between multiple locks.
+//
+// Each thread's critical sections and their corresponding locks are tracked in
+// a stack in `PyThreadState.critical_section`. When a thread calls
+// `_PyThreadState_Detach()`, such as before a blocking I/O operation or when
+// waiting to acquiring a lock, the thread suspends all of it's active critical
+// sections, temporarily releasing the associated locks. When the thread calls
+// `_PyThreadState_Attach()`, it resumes the top-most (i.e., most recent)
+// critical section by reacquiring the associated lock or locks.  See
+// `_PyCriticalSection_Resume()`.
+//
+// NOTE: Only the top-most critical section is guaranteed to be active.
+// Operations that need to lock two objects at once must use
+// `Py_BEGIN_CRITICAL_SECTION2()`. You *CANNOT* use nested critical sections
+// to lock more than objects at once, because the inner critical section may
+// suspend the outer critical sections. This API does not provide a way to
+// lock more than two objects at once.
+//
+// NOTE: Critical sections implicitly behave like reentrant locks because
+// attempting to acquire the same lock will suspend any outer (earlier)
+// critical sections. However, they are less efficient for this use case than
+// purposefully designed reentrant locks.
 //
 // Example usage:
 //  Py_BEGIN_CRITICAL_SECTION(op);
 //  ...
-//  Py_END_CRITICAL_SECTION;
+//  Py_END_CRITICAL_SECTION();
 //
 // To lock two objects at once:
 //  Py_BEGIN_CRITICAL_SECTION2(op1, op2);
 //  ...
-//  Py_END_CRITICAL_SECTION2;
+//  Py_END_CRITICAL_SECTION2();
 
 
 // Tagged pointers to critical sections use the two least significant bits to
@@ -53,28 +82,30 @@ extern "C" {
 #define _Py_CRITICAL_SECTION_MASK           0x3
 
 #ifdef Py_NOGIL
-#define Py_BEGIN_CRITICAL_SECTION(op) {                             \
-    _PyCriticalSection _cs;                                          \
-    _PyCriticalSection_Begin(&_cs, &_PyObject_CAST(op)->ob_mutex)
+# define Py_BEGIN_CRITICAL_SECTION(op)                                  \
+    {                                                                   \
+        _PyCriticalSection _cs;                                         \
+        _PyCriticalSection_Begin(&_cs, &_PyObject_CAST(op)->ob_mutex)
 
-#define Py_END_CRITICAL_SECTION                                     \
-    _PyCriticalSection_End(&_cs);                                    \
-}
+# define Py_END_CRITICAL_SECTION()                                      \
+        _PyCriticalSection_End(&_cs);                                   \
+    }
 
-#define Py_BEGIN_CRITICAL_SECTION2(a, b) {                          \
-    _PyCriticalSection2 _cs2;                                        \
-    _PyCriticalSection2_Begin(&_cs2, &_PyObject_CAST(a)->ob_mutex, &_PyObject_CAST(b)->ob_mutex)
+# define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
+    {                                                                   \
+        _PyCriticalSection2 _cs2;                                       \
+        _PyCriticalSection2_Begin(&_cs2, &_PyObject_CAST(a)->ob_mutex, &_PyObject_CAST(b)->ob_mutex)
 
-#define Py_END_CRITICAL_SECTION2                                    \
-    _PyCriticalSection2_End(&_cs2);                                  \
-}
-#else
+# define Py_END_CRITICAL_SECTION2()                                     \
+        _PyCriticalSection2_End(&_cs2);                                 \
+    }
+#else  /* !Py_NOGIL */
 // The critical section APIs are no-ops with the GIL.
-#define Py_BEGIN_CRITICAL_SECTION(op)
-#define Py_END_CRITICAL_SECTION
-#define Py_BEGIN_CRITICAL_SECTION2(a, b)
-#define Py_END_CRITICAL_SECTION2
-#endif
+# define Py_BEGIN_CRITICAL_SECTION(op)
+# define Py_END_CRITICAL_SECTION()
+# define Py_BEGIN_CRITICAL_SECTION2(a, b)
+# define Py_END_CRITICAL_SECTION2()
+#endif  /* !Py_NOGIL */
 
 typedef struct {
     // Tagged pointer to an outer active critical section (or 0).
@@ -126,7 +157,7 @@ _PyCriticalSection_Begin(_PyCriticalSection *c, PyMutex *m)
     }
 }
 
-// Removes the top-most critical section from the thread's of critical
+// Removes the top-most critical section from the thread's stack of critical
 // sections. If the new top-most critical section is inactive, then it is
 // resumed.
 static inline void
@@ -161,6 +192,8 @@ _PyCriticalSection2_Begin(_PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
 
     if ((uintptr_t)m2 < (uintptr_t)m1) {
         // Sort the mutexes so that the lower address is locked first.
+        // We need to acquire the mutexes in a consistent order to avoid
+        // lock ordering deadlocks.
         PyMutex *tmp = m1;
         m1 = m2;
         m2 = tmp;

@@ -30,18 +30,24 @@ test_critical_sections(PyObject *self, PyObject *Py_UNUSED(args))
     assert_nogil(PyMutex_IsLocked(&d1->ob_mutex));
     assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
     assert_gil(PyThreadState_GET()->critical_section == 0);
-    Py_END_CRITICAL_SECTION;
+    Py_END_CRITICAL_SECTION();
     assert_nogil(!PyMutex_IsLocked(&d1->ob_mutex));
 
+    assert(!PyMutex_IsLocked(&d1->ob_mutex));
+    assert(!PyMutex_IsLocked(&d2->ob_mutex));
     Py_BEGIN_CRITICAL_SECTION2(d1, d2);
     assert_nogil(PyMutex_IsLocked(&d1->ob_mutex));
     assert_nogil(PyMutex_IsLocked(&d2->ob_mutex));
-    Py_END_CRITICAL_SECTION2;
+    Py_END_CRITICAL_SECTION2();
+    assert(!PyMutex_IsLocked(&d1->ob_mutex));
+    assert(!PyMutex_IsLocked(&d2->ob_mutex));
 
     // Passing the same object twice should work (and not deadlock).
+    assert(!PyMutex_IsLocked(&d2->ob_mutex));
     Py_BEGIN_CRITICAL_SECTION2(d2, d2);
     assert_nogil(PyMutex_IsLocked(&d2->ob_mutex));
-    Py_END_CRITICAL_SECTION2;
+    Py_END_CRITICAL_SECTION2();
+    assert(!PyMutex_IsLocked(&d2->ob_mutex));
 
     Py_DECREF(d2);
     Py_DECREF(d1);
@@ -55,7 +61,7 @@ lock_unlock_object(PyObject *obj, int recurse_depth)
     if (recurse_depth > 0) {
         lock_unlock_object(obj, recurse_depth - 1);
     }
-    Py_END_CRITICAL_SECTION;
+    Py_END_CRITICAL_SECTION();
 }
 
 static void
@@ -65,7 +71,7 @@ lock_unlock_two_objects(PyObject *a, PyObject *b, int recurse_depth)
     if (recurse_depth > 0) {
         lock_unlock_two_objects(a, b, recurse_depth - 1);
     }
-    Py_END_CRITICAL_SECTION2;
+    Py_END_CRITICAL_SECTION2();
 }
 
 
@@ -80,24 +86,27 @@ test_critical_sections_nest(PyObject *self, PyObject *Py_UNUSED(args))
     assert(b != NULL);
 
     // Locking an object recursively with this API should not deadlock.
+    assert(!PyMutex_IsLocked(&a->ob_mutex));
     Py_BEGIN_CRITICAL_SECTION(a);
+    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
     lock_unlock_object(a, 10);
     assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    Py_END_CRITICAL_SECTION;
+    Py_END_CRITICAL_SECTION();
+    assert(!PyMutex_IsLocked(&a->ob_mutex));
 
     // Same test but with two objects.
     Py_BEGIN_CRITICAL_SECTION2(b, a);
     lock_unlock_two_objects(a, b, 10);
     assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
     assert_nogil(PyMutex_IsLocked(&b->ob_mutex));
-    Py_END_CRITICAL_SECTION2;
+    Py_END_CRITICAL_SECTION2();
 
     Py_DECREF(b);
     Py_DECREF(a);
     Py_RETURN_NONE;
 }
 
-// Test that a critical section is suspened by a Py_BEGIN_ALLOW_THREADS and
+// Test that a critical section is suspended by a Py_BEGIN_ALLOW_THREADS and
 // resumed by a Py_END_ALLOW_THREADS.
 static PyObject *
 test_critical_sections_suspend(PyObject *self, PyObject *Py_UNUSED(args))
@@ -115,7 +124,7 @@ test_critical_sections_suspend(PyObject *self, PyObject *Py_UNUSED(args))
 
     // After Py_END_ALLOW_THREADS the critical section should be resumed.
     assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    Py_END_CRITICAL_SECTION;
+    Py_END_CRITICAL_SECTION();
 
     Py_DECREF(a);
     Py_RETURN_NONE;
@@ -138,20 +147,20 @@ thread_critical_sections(void *arg)
 
     for (Py_ssize_t i = 0; i < NUM_ITERS; i++) {
         Py_BEGIN_CRITICAL_SECTION(test_data->obj1);
-        Py_END_CRITICAL_SECTION;
+        Py_END_CRITICAL_SECTION();
 
         Py_BEGIN_CRITICAL_SECTION(test_data->obj2);
         lock_unlock_object(test_data->obj1, 1);
-        Py_END_CRITICAL_SECTION;
+        Py_END_CRITICAL_SECTION();
 
         Py_BEGIN_CRITICAL_SECTION2(test_data->obj3, test_data->obj1);
         lock_unlock_object(test_data->obj2, 2);
-        Py_END_CRITICAL_SECTION2;
+        Py_END_CRITICAL_SECTION2();
 
         Py_BEGIN_CRITICAL_SECTION(test_data->obj3);
         Py_BEGIN_ALLOW_THREADS
         Py_END_ALLOW_THREADS
-        Py_END_CRITICAL_SECTION;
+        Py_END_CRITICAL_SECTION();
     }
 
     PyGILState_Release(gil);
