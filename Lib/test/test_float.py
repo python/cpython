@@ -1517,34 +1517,6 @@ EPSILON = {
 
 @unittest.skipIf(_testcapi is None, 'needs _testcapi')
 class PackTests(unittest.TestCase):
-    def test_pack(self):
-        self.assertEqual(_testcapi.float_pack(2, 1.5, BIG_ENDIAN),
-                         b'>\x00')
-        self.assertEqual(_testcapi.float_pack(4, 1.5, BIG_ENDIAN),
-                         b'?\xc0\x00\x00')
-        self.assertEqual(_testcapi.float_pack(8, 1.5, BIG_ENDIAN),
-                         b'?\xf8\x00\x00\x00\x00\x00\x00')
-        self.assertEqual(_testcapi.float_pack(2, 1.5, LITTLE_ENDIAN),
-                         b'\x00>')
-        self.assertEqual(_testcapi.float_pack(4, 1.5, LITTLE_ENDIAN),
-                         b'\x00\x00\xc0?')
-        self.assertEqual(_testcapi.float_pack(8, 1.5, LITTLE_ENDIAN),
-                         b'\x00\x00\x00\x00\x00\x00\xf8?')
-
-    def test_unpack(self):
-        self.assertEqual(_testcapi.float_unpack(b'>\x00', BIG_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'?\xc0\x00\x00', BIG_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'?\xf8\x00\x00\x00\x00\x00\x00', BIG_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'\x00>', LITTLE_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\xc0?', LITTLE_ENDIAN),
-                         1.5)
-        self.assertEqual(_testcapi.float_unpack(b'\x00\x00\x00\x00\x00\x00\xf8?', LITTLE_ENDIAN),
-                         1.5)
-
     def test_roundtrip(self):
         large = 2.0 ** 100
         values = [1.0, 1.5, large, 1.0/7, math.pi]

@@ -12,6 +12,10 @@ _testcapi = import_helper.import_module('_testcapi')
 
 NULL = None
 
+# For PyFloat_Pack/Unpack*
+BIG_ENDIAN = 0
+LITTLE_ENDIAN = 1
+
 
 class CAPIFloatTest(unittest.TestCase):
     def test_check(self):
@@ -111,6 +115,32 @@ class CAPIFloatTest(unittest.TestCase):
         getmin = _testcapi.float_getmin
 
         self.assertEqual(getmin(), sys.float_info.min)
+
+    def test_pack(self):
+        # Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
+        pack = _testcapi.float_pack
+
+        self.assertEqual(pack(2, 1.5, BIG_ENDIAN), b'>\x00')
+        self.assertEqual(pack(4, 1.5, BIG_ENDIAN), b'?\xc0\x00\x00')
+        self.assertEqual(pack(8, 1.5, BIG_ENDIAN),
+                         b'?\xf8\x00\x00\x00\x00\x00\x00')
+        self.assertEqual(pack(2, 1.5, LITTLE_ENDIAN), b'\x00>')
+        self.assertEqual(pack(4, 1.5, LITTLE_ENDIAN), b'\x00\x00\xc0?')
+        self.assertEqual(pack(8, 1.5, LITTLE_ENDIAN),
+                         b'\x00\x00\x00\x00\x00\x00\xf8?')
+
+    def test_unpack(self):
+        # Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
+        unpack = _testcapi.float_unpack
+
+        self.assertEqual(unpack(b'>\x00', BIG_ENDIAN), 1.5)
+        self.assertEqual(unpack(b'?\xc0\x00\x00', BIG_ENDIAN), 1.5)
+        self.assertEqual(unpack(b'?\xf8\x00\x00\x00\x00\x00\x00', BIG_ENDIAN),
+                         1.5)
+        self.assertEqual(unpack(b'\x00>', LITTLE_ENDIAN), 1.5)
+        self.assertEqual(unpack(b'\x00\x00\xc0?', LITTLE_ENDIAN), 1.5)
+        self.assertEqual(unpack(b'\x00\x00\x00\x00\x00\x00\xf8?', LITTLE_ENDIAN),
+                         1.5)
 
 
 if __name__ == "__main__":
