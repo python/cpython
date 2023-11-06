@@ -130,7 +130,7 @@ class TestResults:
             self.add_junit(xml_data)
 
     def get_coverage_results(self) -> trace.CoverageResults:
-        counts = {loc: 1 for loc in frozenset(self. covered_lines)}
+        counts = {loc: 1 for loc in self.covered_lines}
         return trace.CoverageResults(counts=counts)
 
     def need_rerun(self):
