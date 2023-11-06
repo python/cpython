@@ -1084,14 +1084,14 @@ def no_tracing(func):
     """Decorator to temporarily turn off tracing for the duration of a test."""
     trace_wrapper = func
     if hasattr(sys, 'gettrace'):
-      @functools.wraps(func)
-      def trace_wrapper(*args, **kwargs):
-          original_trace = sys.gettrace()
-          try:
-              sys.settrace(None)
-              return func(*args, **kwargs)
-          finally:
-              sys.settrace(original_trace)
+        @functools.wraps(func)
+        def trace_wrapper(*args, **kwargs):
+            original_trace = sys.gettrace()
+            try:
+                sys.settrace(None)
+                return func(*args, **kwargs)
+            finally:
+                sys.settrace(original_trace)
 
     coverage_wrapper = trace_wrapper
     if 'test.cov' in sys.modules:  # -Xpresite=test.cov used
