@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
 "do_handshake($self, /)\n"
@@ -236,10 +237,6 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = _ssl__SSLSocket_write_impl(self, &b);
 
 exit:
@@ -394,13 +391,8 @@ _ssl__SSLSocket_get_channel_binding(PySSLSocket *self, PyObject *const *args, Py
         _PyArg_BadArgument("get_channel_binding", "argument 'cb_type'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t cb_type_length;
-    cb_type = PyUnicode_AsUTF8AndSize(args[0], &cb_type_length);
+    cb_type = PyUnicode_AsUTF8(args[0]);
     if (cb_type == NULL) {
-        goto exit;
-    }
-    if (strlen(cb_type) != (size_t)cb_type_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -445,7 +437,7 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
-    proto_version = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    proto_version = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
     if (proto_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -476,13 +468,8 @@ _ssl__SSLContext_set_ciphers(PySSLContext *self, PyObject *arg)
         _PyArg_BadArgument("set_ciphers", "argument", "str", arg);
         goto exit;
     }
-    Py_ssize_t cipherlist_length;
-    cipherlist = PyUnicode_AsUTF8AndSize(arg, &cipherlist_length);
+    cipherlist = PyUnicode_AsUTF8(arg);
     if (cipherlist == NULL) {
-        goto exit;
-    }
-    if (strlen(cipherlist) != (size_t)cipherlist_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _ssl__SSLContext_set_ciphers_impl(self, cipherlist);
@@ -527,10 +514,6 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
     Py_buffer protos = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_alpn_protocols", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
@@ -1073,7 +1056,7 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
     if (nargs < 1) {
         goto skip_optional;
     }
-    len = _PyLong_AsInt(args[0]);
+    len = PyLong_AsInt(args[0]);
     if (len == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1105,10 +1088,6 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
     Py_buffer b = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
@@ -1179,10 +1158,6 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (PyObject_GetBuffer(args[0], &view, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&view, 'C')) {
-            _PyArg_BadArgument("RAND_add", "argument 1", "contiguous buffer", args[0]);
-            goto exit;
-        }
     }
     if (PyFloat_CheckExact(args[1])) {
         entropy = PyFloat_AS_DOUBLE(args[1]);
@@ -1223,7 +1198,7 @@ _ssl_RAND_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    n = _PyLong_AsInt(arg);
+    n = PyLong_AsInt(arg);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1331,13 +1306,8 @@ _ssl_txt2obj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("txt2obj", "argument 'txt'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t txt_length;
-    txt = PyUnicode_AsUTF8AndSize(args[0], &txt_length);
+    txt = PyUnicode_AsUTF8(args[0]);
     if (txt == NULL) {
-        goto exit;
-    }
-    if (strlen(txt) != (size_t)txt_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -1372,7 +1342,7 @@ _ssl_nid2obj(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int nid;
 
-    nid = _PyLong_AsInt(arg);
+    nid = PyLong_AsInt(arg);
     if (nid == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1442,13 +1412,8 @@ _ssl_enum_certificates(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("enum_certificates", "argument 'store_name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t store_name_length;
-    store_name = PyUnicode_AsUTF8AndSize(args[0], &store_name_length);
+    store_name = PyUnicode_AsUTF8(args[0]);
     if (store_name == NULL) {
-        goto exit;
-    }
-    if (strlen(store_name) != (size_t)store_name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _ssl_enum_certificates_impl(module, store_name);
@@ -1518,13 +1483,8 @@ _ssl_enum_crls(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         _PyArg_BadArgument("enum_crls", "argument 'store_name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t store_name_length;
-    store_name = PyUnicode_AsUTF8AndSize(args[0], &store_name_length);
+    store_name = PyUnicode_AsUTF8(args[0]);
     if (store_name == NULL) {
-        goto exit;
-    }
-    if (strlen(store_name) != (size_t)store_name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _ssl_enum_crls_impl(module, store_name);
@@ -1542,4 +1502,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4d9b81fa81f520f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8350af68e0a56792 input=a9049054013a1b77]*/

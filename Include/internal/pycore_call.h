@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
@@ -22,8 +23,8 @@ extern "C" {
 #define _PY_FASTCALL_SMALL_STACK 5
 
 
-// Export for 'math' shared extension, function used
-// via inlined _PyObject_VectorcallTstate() function.
+// Export for 'math' shared extension, used via _PyObject_VectorcallTstate()
+// static inline function.
 PyAPI_FUNC(PyObject*) _Py_CheckFunctionResult(
     PyThreadState *tstate,
     PyObject *callable,
@@ -120,8 +121,8 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
 // Call callable using tp_call. Arguments are like PyObject_Vectorcall(),
 // except that nargs is plainly the number of arguments without flags.
 //
-// Export for 'math' shared extension, function used
-// via inlined _PyObject_VectorcallTstate() function.
+// Export for 'math' shared extension, used via _PyObject_VectorcallTstate()
+// static inline function.
 PyAPI_FUNC(PyObject*) _PyObject_MakeTpCall(
     PyThreadState *tstate,
     PyObject *callable,

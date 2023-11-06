@@ -1,8 +1,30 @@
+import contextlib
+import os
+import sys
 import tempfile
 import unittest
-import os
 
+from test import support
 from test import test_tools
+
+
+def skip_if_different_mount_drives():
+    if sys.platform != 'win32':
+        return
+    ROOT = os.path.dirname(os.path.dirname(__file__))
+    root_drive = os.path.splitroot(ROOT)[0]
+    cwd_drive = os.path.splitroot(os.getcwd())[0]
+    if root_drive != cwd_drive:
+        # generate_cases.py uses relpath() which raises ValueError if ROOT
+        # and the current working different have different mount drives
+        # (on Windows).
+        raise unittest.SkipTest(
+            f"the current working directory and the Python source code "
+            f"directory have different mount drives "
+            f"({cwd_drive} and {root_drive})"
+        )
+skip_if_different_mount_drives()
+
 
 test_tools.skip_if_missing('cases_generator')
 with test_tools.imports_under_tool('cases_generator'):
@@ -11,6 +33,12 @@ with test_tools.imports_under_tool('cases_generator'):
     import formatting
     from parsing import StackEffect
 
+
+def handle_stderr():
+    if support.verbose > 1:
+        return contextlib.nullcontext()
+    else:
+        return support.captured_stderr()
 
 class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
@@ -81,25 +109,28 @@ class TestGeneratedCases(unittest.TestCase):
             temp_input.flush()
 
         a = generate_cases.Generator([self.temp_input_filename])
-        a.parse()
-        a.analyze()
-        if a.errors:
-            raise RuntimeError(f"Found {a.errors} errors")
-        a.write_instructions(self.temp_output_filename, False)
+        with handle_stderr():
+            a.parse()
+            a.analyze()
+            if a.errors:
+                raise RuntimeError(f"Found {a.errors} errors")
+            a.write_instructions(self.temp_output_filename, False)
 
         with open(self.temp_output_filename) as temp_output:
             lines = temp_output.readlines()
-            while lines and lines[0].startswith("// "):
+            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
                 lines.pop(0)
+            while lines and lines[-1].startswith(("#", "\n")):
+                lines.pop(-1)
         actual = "".join(lines)
-        # if actual.rstrip() != expected.rstrip():
+        # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
         #     print("Expected:")
         #     print(expected)
         #     print("End")
 
-        self.assertEqual(actual.rstrip(), expected.rstrip())
+        self.assertEqual(actual.strip(), expected.strip())
 
     def test_inst_no_args(self):
         input = """
@@ -109,6 +140,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             spam();
             DISPATCH();
         }
@@ -123,6 +157,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *value;
             value = stack_pointer[-1];
             spam();
@@ -140,6 +177,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *res;
             spam();
             STACK_GROW(1);
@@ -157,6 +197,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -175,6 +218,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -196,6 +242,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *right;
             PyObject *left;
             PyObject *result;
@@ -210,20 +259,32 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_predictions_and_eval_breaker(self):
         input = """
-        inst(OP1, (--)) {
+        inst(OP1, (arg -- rest)) {
         }
         inst(OP3, (arg -- res)) {
-            DEOPT_IF(xxx, OP1);
+            DEOPT_IF(xxx);
             CHECK_EVAL_BREAKER();
         }
+        family(OP1, INLINE_CACHE_ENTRIES_OP1) = { OP3 };
     """
         output = """
         TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
             PREDICTED(OP1);
+            static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
+            PyObject *arg;
+            PyObject *rest;
+            arg = stack_pointer[-1];
+            stack_pointer[-1] = rest;
             DISPATCH();
         }
 
         TARGET(OP3) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP3);
             PyObject *arg;
             PyObject *res;
             arg = stack_pointer[-1];
@@ -243,6 +304,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             if (cond) goto label;
             DISPATCH();
         }
@@ -257,6 +321,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             if (cond) goto label;
             DISPATCH();
         }
@@ -271,6 +338,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -291,12 +361,14 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(OP);
             PyObject *value;
             value = stack_pointer[-1];
-            uint16_t counter = read_u16(&next_instr[0].cache);
-            uint32_t extra = read_u32(&next_instr[1].cache);
+            uint16_t counter = read_u16(&this_instr[1].cache);
+            uint32_t extra = read_u32(&this_instr[2].cache);
             STACK_SHRINK(1);
-            next_instr += 3;
             DISPATCH();
         }
     """
@@ -310,6 +382,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             goto somewhere;
         }
     """
@@ -331,17 +406,24 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(OP1);
             PyObject *right;
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            uint16_t counter = read_u16(&next_instr[0].cache);
+            uint16_t counter = read_u16(&this_instr[1].cache);
             op1(left, right);
-            next_instr += 1;
             DISPATCH();
         }
 
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(OP);
+            PREDICTED(OP);
+            _Py_CODEUNIT *this_instr = next_instr - 6;
             static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             PyObject *right;
             PyObject *left;
@@ -351,22 +433,24 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             {
-                uint16_t counter = read_u16(&next_instr[0].cache);
+                uint16_t counter = read_u16(&this_instr[1].cache);
                 op1(left, right);
             }
             // OP2
             arg2 = stack_pointer[-3];
             {
-                uint32_t extra = read_u32(&next_instr[3].cache);
+                uint32_t extra = read_u32(&this_instr[4].cache);
                 res = op2(arg2, left, right);
             }
             STACK_SHRINK(2);
             stack_pointer[-1] = res;
-            next_instr += 5;
             DISPATCH();
         }
 
         TARGET(OP3) {
+            frame->instr_ptr = next_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(OP3);
             PyObject *right;
             PyObject *left;
             PyObject *arg2;
@@ -377,7 +461,6 @@ class TestGeneratedCases(unittest.TestCase):
             res = op3(arg2, left, right);
             STACK_SHRINK(2);
             stack_pointer[-1] = res;
-            next_instr += 5;
             DISPATCH();
         }
     """
@@ -391,6 +474,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *above;
             PyObject **values;
             PyObject *below;
@@ -413,6 +499,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *below;
             PyObject **values;
             PyObject *above;
@@ -434,6 +523,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject **values;
             PyObject *above;
             values = stack_pointer - oparg;
@@ -453,6 +545,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject **values;
             PyObject *extra;
             values = stack_pointer - oparg;
@@ -473,6 +568,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *cc;
             PyObject *input = NULL;
             PyObject *aa;
@@ -505,6 +603,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
             PyObject *right;
             PyObject *middle;
             PyObject *left;
@@ -530,6 +631,80 @@ class TestGeneratedCases(unittest.TestCase):
             DISPATCH();
         }
     """
+        self.run_cases_test(input, output)
+
+    def test_macro_push_push(self):
+        input = """
+        op(A, (-- val1)) {
+            val1 = spam();
+        }
+        op(B, (-- val2)) {
+            val2 = spam();
+        }
+        macro(M) = A + B;
+        """
+        output = """
+        TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
+            PyObject *val1;
+            PyObject *val2;
+            // A
+            {
+                val1 = spam();
+            }
+            // B
+            {
+                val2 = spam();
+            }
+            STACK_GROW(2);
+            stack_pointer[-2] = val1;
+            stack_pointer[-1] = val2;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_override_inst(self):
+        input = """
+        inst(OP, (--)) {
+            spam();
+        }
+        override inst(OP, (--)) {
+            ham();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            ham();
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_override_op(self):
+        input = """
+        op(OP, (--)) {
+            spam();
+        }
+        macro(M) = OP;
+        override op(OP, (--)) {
+            ham();
+        }
+        """
+        output = """
+        TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
+            ham();
+            DISPATCH();
+        }
+        """
         self.run_cases_test(input, output)
 
 

@@ -1,13 +1,11 @@
 import unittest
-import sys
 from collections import OrderedDict, UserDict
 from types import MappingProxyType
-from test import support
-from test.support import import_helper
 import _testcapi
 
 
 NULL = None
+INVALID_UTF8 = b'\xff'
 
 class DictSubclass(dict):
     def __getitem__(self, key):
@@ -137,7 +135,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitemstring(dct2, b'a'), 1)
         self.assertIs(getitemstring(dct2, b'b'), KeyError)
 
-        self.assertIs(getitemstring({}, b'\xff'), KeyError)
+        self.assertIs(getitemstring({}, INVALID_UTF8), KeyError)
         self.assertIs(getitemstring(42, b'a'), KeyError)
         self.assertIs(getitemstring([], b'a'), KeyError)
         # CRASHES getitemstring({}, NULL)
@@ -173,7 +171,7 @@ class CAPITest(unittest.TestCase):
         self.assertIs(getitemstring(dct2, b'b'), KeyError)
 
         self.assertRaises(SystemError, getitemstring, 42, b'a')
-        self.assertRaises(UnicodeDecodeError, getitemstring, {}, b'\xff')
+        self.assertRaises(UnicodeDecodeError, getitemstring, {}, INVALID_UTF8)
         self.assertRaises(SystemError, getitemstring, [], b'a')
         # CRASHES getitemstring({}, NULL)
         # CRASHES getitemstring(NULL, b'a')
@@ -213,6 +211,21 @@ class CAPITest(unittest.TestCase):
         # CRASHES contains(42, 'a')
         # CRASHES contains(NULL, 'a')
 
+    def test_dict_contains_string(self):
+        contains_string = _testcapi.dict_containsstring
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertTrue(contains_string(dct, b'a'))
+        self.assertFalse(contains_string(dct, b'b'))
+        self.assertTrue(contains_string(dct, '\U0001f40d'.encode()))
+        self.assertRaises(UnicodeDecodeError, contains_string, dct, INVALID_UTF8)
+
+        dct2 = DictSubclass(dct)
+        self.assertTrue(contains_string(dct2, b'a'))
+        self.assertFalse(contains_string(dct2, b'b'))
+
+        # CRASHES contains({}, NULL)
+        # CRASHES contains(NULL, b'a')
+
     def test_dict_setitem(self):
         setitem = _testcapi.dict_setitem
         dct = {}
@@ -245,7 +258,7 @@ class CAPITest(unittest.TestCase):
         setitemstring(dct2, b'a', 5)
         self.assertEqual(dct2, {'a': 5})
 
-        self.assertRaises(UnicodeDecodeError, setitemstring, {}, b'\xff', 5)
+        self.assertRaises(UnicodeDecodeError, setitemstring, {}, INVALID_UTF8, 5)
         self.assertRaises(SystemError, setitemstring, UserDict(), b'a', 5)
         self.assertRaises(SystemError, setitemstring, 42, b'a', 5)
         # CRASHES setitemstring({}, NULL, 5)
@@ -287,7 +300,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(dct2, {'c': 2})
         self.assertRaises(KeyError, delitemstring, dct2, b'b')
 
-        self.assertRaises(UnicodeDecodeError, delitemstring, {}, b'\xff')
+        self.assertRaises(UnicodeDecodeError, delitemstring, {}, INVALID_UTF8)
         self.assertRaises(SystemError, delitemstring, UserDict({'a': 1}), b'a')
         self.assertRaises(SystemError, delitemstring, 42, b'a')
         # CRASHES delitemstring({}, NULL)
