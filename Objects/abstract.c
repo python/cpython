@@ -2470,7 +2470,7 @@ PyMapping_HasKeyWithError(PyObject *obj, PyObject *key)
 int
 PyMapping_HasKeyString(PyObject *obj, const char *key)
 {
-    PyObject *dummy;
+    PyObject *value;
     int rc;
     if (obj == NULL) {
         // For backward compatibility.
@@ -2479,7 +2479,7 @@ PyMapping_HasKeyString(PyObject *obj, const char *key)
         rc = -1;
     }
     else {
-        rc = PyMapping_GetOptionalItemString(obj, key, &dummy);
+        rc = PyMapping_GetOptionalItemString(obj, key, &value);
     }
     if (rc < 0) {
         PyErr_FormatUnraisable(
@@ -2497,14 +2497,14 @@ PyMapping_HasKeyString(PyObject *obj, const char *key)
             "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()");
         return 0;
     }
-    Py_XDECREF(dummy);
+    Py_XDECREF(value);
     return rc;
 }
 
 int
 PyMapping_HasKey(PyObject *obj, PyObject *key)
 {
-    PyObject *dummy;
+    PyObject *value;
     int rc;
     if (obj == NULL || key == NULL) {
         // For backward compatibility.
@@ -2513,7 +2513,7 @@ PyMapping_HasKey(PyObject *obj, PyObject *key)
         rc = -1;
     }
     else {
-        rc = PyMapping_GetOptionalItem(obj, key, &dummy);
+        rc = PyMapping_GetOptionalItem(obj, key, &value);
     }
     if (rc < 0) {
         PyErr_FormatUnraisable(
@@ -2531,7 +2531,7 @@ PyMapping_HasKey(PyObject *obj, PyObject *key)
             "PyMapping_GetOptionalItem() or PyObject_GetItem()");
         return 0;
     }
-    Py_XDECREF(dummy);
+    Py_XDECREF(value);
     return rc;
 }
 
