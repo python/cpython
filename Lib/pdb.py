@@ -142,9 +142,9 @@ class _ScriptTarget(str):
             print('Error:', self.orig, 'is a directory')
             sys.exit(1)
 
-        # Replace pdb's dir with script's dir in front of module search path
-        # if safe_path is not set, otherwise sys.path[0] is not pdb's dir
-        if not getattr(sys.flags, 'safe_path', None):
+        # If safe_path(-P) is not set, sys.path[0] would be the directory
+        # of pdb, and we should replace it with the directory of the script
+        if not sys.flags.safe_path:
             sys.path[0] = os.path.dirname(self)
 
     @property
