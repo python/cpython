@@ -664,7 +664,7 @@ extern const struct _PyCode_DEF(8) _Py_InitCleanup;
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
 
-#pragma optimize(off)
+#pragma optimize("", off)
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1082,6 +1082,7 @@ exit_trace:
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
 #endif
+#pragma optimize("", on)
 
 static void
 format_missing(PyThreadState *tstate, const char *kind,
