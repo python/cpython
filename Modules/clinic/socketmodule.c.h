@@ -177,35 +177,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_socket_socket_htonl__doc__,
-"htonl($self, x, /)\n"
-"--\n"
-"\n"
-"Convert a 32-bit integer from host to network byte order.");
-
-#define _SOCKET_SOCKET_HTONL_METHODDEF    \
-    {"htonl", (PyCFunction)_socket_socket_htonl, METH_O, _socket_socket_htonl__doc__},
-
-static PyObject *
-_socket_socket_htonl_impl(PySocketSockObject *self, unsigned long x);
-
-static PyObject *
-_socket_socket_htonl(PySocketSockObject *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    unsigned long x;
-
-    if (!PyLong_Check(arg)) {
-        _PyArg_BadArgument("htonl", "argument", "int", arg);
-        goto exit;
-    }
-    x = PyLong_AsUnsignedLongMask(arg);
-    return_value = _socket_socket_htonl_impl(self, x);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_socket_socket_inet_aton__doc__,
 "inet_aton($self, ip_addr, /)\n"
 "--\n"
@@ -312,4 +283,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=bf08c9f291c95a68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f71189edaff55d1d input=a9049054013a1b77]*/
