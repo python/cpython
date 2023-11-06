@@ -743,7 +743,7 @@ _tuple_shared_free(void* data)
 {
     struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data);
 #ifndef NDEBUG
-    int64_t interpid = PyInterpreterState_GetID(_PyInterpreterState_GET()));
+    int64_t interpid = PyInterpreterState_GetID(_PyInterpreterState_GET());
 #endif
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         if (shared->data[i] != NULL) {
@@ -788,7 +788,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
         PyObject *item = PyTuple_GET_ITEM(obj, i);
 
         int res = -1;
-        if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple") {
+        if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
             res = _PyObject_GetCrossInterpreterData(item, data);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
@@ -800,7 +800,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
     }
     data->free = _tuple_shared_free;
     return 0;
-    
+
 error:
     _tuple_shared_free(shared);
     return -1;
