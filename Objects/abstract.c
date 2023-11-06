@@ -2474,7 +2474,7 @@ PyMapping_HasKeyString(PyObject *obj, const char *key)
     int rc;
     if (obj == NULL) {
         // For backward compatibility.
-        // PyMapping_GetOptionalItemString() crashes if it is NULL.
+        // PyMapping_GetOptionalItemString() crashes if obj is NULL.
         null_error();
         rc = -1;
     }
@@ -2488,7 +2488,7 @@ PyMapping_HasKeyString(PyObject *obj, const char *key)
             "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()");
         return 0;
     }
-    // PyMapping_HasKeyString() also clears the error set before it's call
+    // PyMapping_HasKeyString() also clears the error set before it's called
     // if the key is not found.
     if (rc == 0 && PyErr_Occurred()) {
         PyErr_FormatUnraisable(
