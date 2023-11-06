@@ -530,7 +530,7 @@ static int fuzz_pycompile(const char* data, size_t size) {
     int optimize = optimize_vals[optimize_idx % NUM_OPTIMIZE_VALS];
 
     // Create a null-terminated C string from the remaining input
-    memcpy(pycompile_scratch, data, size - 2);
+    memcpy(pycompile_scratch, data + 2, size - 2);
     pycompile_scratch[size - 2 - 1] = '\0';
 
     // XXX: instead of always using NULL for the `flags` value to
