@@ -277,6 +277,9 @@ traceback
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
+* :meth:`traceback.clear_frames` no longer clears suspended frames.
+  (Contributed by Irit Katriel in :gh:`111792`.)
+
 typing
 ------
 

@@ -202,6 +202,9 @@ The module defines the following functions:
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      Suspended frames are no cleared.
+
 .. function:: walk_stack(f)
 
    Walk a stack following ``f.f_back`` from the given frame, yielding the frame
