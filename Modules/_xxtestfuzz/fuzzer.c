@@ -439,6 +439,68 @@ static int fuzz_ast_literal_eval(const char* data, size_t size) {
     return 0;
 }
 
+#define MAX_ELEMENTTREE_PARSEWHOLE_TEST_SIZE 0x100000
+PyObject* xmlparser_type = NULL;
+PyObject* bytesio_type = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_elementtree_parsewhole(void) {
+    PyObject* elementtree_module = PyImport_ImportModule("_elementtree");
+    if (elementtree_module == NULL) {
+        return 0;
+    }
+    xmlparser_type = PyObject_GetAttrString(elementtree_module, "XMLParser");
+    Py_DECREF(elementtree_module);
+    if (xmlparser_type == NULL) {
+        return 0;
+    }
+
+
+    PyObject* io_module = PyImport_ImportModule("io");
+    if (io_module == NULL) {
+        return 0;
+    }
+    bytesio_type = PyObject_GetAttrString(io_module, "BytesIO");
+    Py_DECREF(io_module);
+    if (bytesio_type == NULL) {
+        return 0;
+    }
+
+    return 1;
+}
+/* Fuzz _elementtree.XMLParser._parse_whole(x) */
+static int fuzz_elementtree_parsewhole(const char* data, size_t size) {
+    if (size > MAX_ELEMENTTREE_PARSEWHOLE_TEST_SIZE) {
+        return 0;
+    }
+
+    PyObject *input = PyObject_CallFunction(bytesio_type, "y#", data, (Py_ssize_t)size);
+    if (input == NULL) {
+        assert(PyErr_Occurred());
+        PyErr_Print();
+        abort();
+    }
+
+    PyObject *xmlparser_instance = PyObject_CallObject(xmlparser_type, NULL);
+    if (xmlparser_instance == NULL) {
+        assert(PyErr_Occurred());
+        PyErr_Print();
+        abort();
+    }
+
+    PyObject *result = PyObject_CallMethod(xmlparser_instance, "_parse_whole", "O", input);
+    if (result == NULL) {
+        /* Ignore exception here, which can be caused by invalid XML input */
+        PyErr_Clear();
+    } else {
+        Py_DECREF(result);
+    }
+
+    Py_DECREF(xmlparser_instance);
+    Py_DECREF(input);
+
+    return 0;
+}
+
 /* Run fuzzer and abort on failure. */
 static int _run_fuzz(const uint8_t *data, size_t size, int(*fuzzer)(const char* , size_t)) {
     int rv = fuzzer((const char*) data, size);
@@ -569,6 +631,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
 
     rv |= _run_fuzz(data, size, fuzz_ast_literal_eval);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_elementtree_parsewhole)
+    static int ELEMENTTREE_PARSEWHOLE_INITIALIZED = 0;
+    if (!ELEMENTTREE_PARSEWHOLE_INITIALIZED && !init_elementtree_parsewhole()) {
+        PyErr_Print();
+        abort();
+    } else {
+        ELEMENTTREE_PARSEWHOLE_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_elementtree_parsewhole);
 #endif
   return rv;
 }
