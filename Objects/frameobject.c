@@ -933,12 +933,31 @@ frame_tp_clear(PyFrameObject *f)
 }
 
 static PyObject *
-frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
+frame_clear(PyFrameObject *f, PyObject *args, PyObject *kwds)
 {
+    bool raise_if_suspended = false;
+    PyObject *v = NULL;
+    if (!PyArg_UnpackTuple(args, "clear", 0, 1, &v)) {
+        return NULL;
+    }
+    if (v != NULL && PyObject_IsTrue(v)) {
+        raise_if_suspended = true;
+    }
+
     if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyFrame_GetGenerator(f->f_frame);
         if (gen->gi_frame_state == FRAME_EXECUTING) {
             goto running;
+        }
+        if (FRAME_STATE_SUSPENDED(gen->gi_frame_state)) {
+            if (raise_if_suspended) {
+                PyErr_SetString(PyExc_RuntimeError, "cannot clear a suspended frame");
+                return NULL;
+            }
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "clearing a suspended frame is deprecated", 1) < 0) {
+                return NULL;
+            }
         }
         _PyGen_Finalize((PyObject *)gen);
     }
@@ -983,7 +1002,7 @@ frame_repr(PyFrameObject *f)
 }
 
 static PyMethodDef frame_methods[] = {
-    {"clear",           (PyCFunction)frame_clear,       METH_NOARGS,
+    {"clear",           (PyCFunction)frame_clear,       METH_VARARGS,
      clear__doc__},
     {"__sizeof__",      (PyCFunction)frame_sizeof,      METH_NOARGS,
      sizeof__doc__},

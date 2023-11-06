@@ -1206,7 +1206,7 @@ by writing to f_lineno.
 
 Frame objects support one method:
 
-.. method:: frame.clear()
+.. method:: frame.clear([raise_if_suspended])
 
    This method clears all references to local variables held by the
    frame.  Also, if the frame belonged to a generator, the generator
@@ -1216,8 +1216,16 @@ Frame objects support one method:
 
    :exc:`RuntimeError` is raised if the frame is currently executing.
 
+   Clearing a suspended frame is deprecated.
+   The optional argument *raise_if_suspended* can be passed ``True`` to
+   make this function raise a :exc:`RuntimeError` instead of issuing a
+   deprecation warning if the frame is suspended.
+
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      Clearing a suspended frame is deprecated. Added the *raise_if_suspended*
+      argument.
 
 .. _traceback-objects:
 

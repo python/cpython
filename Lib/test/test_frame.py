@@ -6,6 +6,7 @@ import textwrap
 import threading
 import types
 import unittest
+import warnings
 import weakref
 try:
     import _testcapi
@@ -80,8 +81,19 @@ class ClearTest(unittest.TestCase):
         gen = g()
         next(gen)
         self.assertFalse(endly)
+
+        # Raise exception when attempting to clear a suspended frame
+        with self.assertRaisesRegex(RuntimeError, r'suspended frame'):
+            gen.gi_frame.clear(True)
+        self.assertFalse(endly)
+
         # Clearing the frame closes the generator
-        gen.gi_frame.clear()
+        try:
+            with self.assertWarnsRegex(DeprecationWarning, r'suspended frame'):
+                gen.gi_frame.clear()
+        except DeprecationWarning:
+            # Suppress the warning when running with -We
+            pass
         self.assertTrue(endly)
 
     def test_clear_executing(self):
@@ -115,7 +127,10 @@ class ClearTest(unittest.TestCase):
         f = next(gen)
         self.assertFalse(endly)
         # Clearing the frame closes the generator
-        f.clear()
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            f.clear()
+
         self.assertTrue(endly)
 
     def test_lineno_with_tracing(self):
