@@ -765,14 +765,12 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
     if (len < 0) {
         return -1;
     }
-    if (_PyCrossInterpreterData_InitWithSize(
-            data, tstate->interp, sizeof(struct _shared_tuple_data), obj,
-            _new_tuple_object
-            ) < 0)
-    {
+    struct _shared_tuple_data *shared = PyMem_RawMalloc(sizeof(struct _shared_tuple_data));
+    if (shared == NULL){
+        PyErr_NoMemory();
         return -1;
     }
-    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)data->data;
+
     shared->len = len;
     shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
     if (shared->data == NULL) {
@@ -798,6 +796,8 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
         }
         shared->data[i] = data;
     }
+    _PyCrossInterpreterData_Init(
+            data, tstate->interp, shared, obj, _new_tuple_object);
     data->free = _tuple_shared_free;
     return 0;
 
