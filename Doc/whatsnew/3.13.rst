@@ -149,6 +149,7 @@ asyncio
 
 * :meth:`asyncio.loop.create_unix_server` will now automatically remove
   the Unix socket when the server is closed.
+  (Contributed by Pierre Ossman in :gh:`111246`.)
 
 copy
 ----
