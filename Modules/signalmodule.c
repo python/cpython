@@ -244,8 +244,7 @@ report_wakeup_write_error(void *data)
     errno = (int) (intptr_t) data;
     PyObject *exc = PyErr_GetRaisedException();
     PyErr_SetFromErrno(PyExc_OSError);
-    _PyErr_WriteUnraisableMsg("when trying to write to the signal wakeup fd",
-                              NULL);
+    PyErr_FormatUnraisable("Exception ignored when trying to write to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     errno = save_errno;
     return 0;
@@ -262,7 +261,7 @@ report_wakeup_send_error(void* data)
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
     PyErr_SetExcFromWindowsErr(PyExc_OSError, send_errno);
-    _PyErr_WriteUnraisableMsg("when trying to send to the signal wakeup fd", NULL);
+    PyErr_FormatUnraisable("Exception ignored when trying to send to the signal wakeup fd");
     PyErr_SetRaisedException(exc);
     return 0;
 }
