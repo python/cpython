@@ -1693,7 +1693,7 @@ Python-level trace functions in previous versions.
 
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions (but not
    profiling functions) when a new opcode is about to be executed.  This event is
-   not emitted by default: it must be explicitly requested by 
+   not emitted by default: it must be explicitly requested by
    ``PyObject_SetAttrString(frame, "f_trace_opcodes", Py_True)`` call.
 
 
