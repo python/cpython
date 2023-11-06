@@ -108,8 +108,7 @@ class Cmd:
                 import readline
                 self.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
-                readline_doc = getattr(readline, '__doc__', '')
-                if readline_doc is not None and 'libedit' in readline_doc:
+                if 'libedit' in getattr(readline, '__doc__', ''):
                     if self.completekey == 'tab':
                         self.completekey = r'"\t"'
                     readline.parse_and_bind("bind "+self.completekey+" rl_complete")
