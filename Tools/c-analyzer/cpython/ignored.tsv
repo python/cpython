@@ -589,6 +589,7 @@ Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
 Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
 Modules/_xxtestfuzz/fuzzer.c	-	ast_literal_eval_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	bytesio_type	-
 Modules/_xxtestfuzz/fuzzer.c	-	compiled_patterns	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_module	-
@@ -598,12 +599,14 @@ Modules/_xxtestfuzz/fuzzer.c	-	re_compile_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	xmlparser_type	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	JSON_LOADS_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_COMPILE_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_MATCH_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	STRUCT_UNPACK_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	ELEMENTTREE_PARSEWHOLE_INITIALIZED	-
 
 ##-----------------------
 ## the analyzer should have ignored these
