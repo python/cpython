@@ -1,1 +1,1 @@
-Support a tab completion for Libedit in :mod:`cmd `, :mod:`site`, and :mod:`pdb`.
+Support a tab completion in :mod:`cmd` for Libedit.
