@@ -775,23 +775,29 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj,
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        shared->data[i] = _PyCrossInterpreterData_New();
-        if (shared->data[i] == NULL){
-            _tuple_shared_free(shared);
-            return -1; // PyErr_NoMemory already set
+        _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+        if (data == NULL) {
+            goto error;  // PyErr_NoMemory already set
         }
         PyObject *item = PyTuple_GET_ITEM(obj, i);
 
-        if (_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple") ||
-            _PyObject_GetCrossInterpreterData(item, shared->data[i]) != 0) {
-            PyMem_RawFree(shared->data[i]);
-            _tuple_shared_free(shared);
-            return -1;
+        int res = -1;
+        if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple") {
+            res = _PyObject_GetCrossInterpreterData(item, data);
+            _Py_LeaveRecursiveCallTstate(tstate);
         }
-        _Py_LeaveRecursiveCallTstate(tstate);
+        if (res < 0) {
+            PyMem_RawFree(data);
+            goto error;
+        }
+        shared->data[i] = data;
     }
     data->free = _tuple_shared_free;
     return 0;
+    
+error:
+    _tuple_shared_free(shared);
+    return -1;
 }
 
 static void
