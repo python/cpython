@@ -9,7 +9,7 @@
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_opcode_utils.h"  // RESUME_WITH_SUBITERATOR
+#include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -341,7 +341,7 @@ _PyGen_yf(PyGenObject *gen)
     if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
         assert(is_resume(frame->instr_ptr));
-        assert(RESUME_WITH_SUBITERATOR(frame->instr_ptr->op.arg));
+        assert((frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM);
         return Py_NewRef(_PyFrame_StackPeek(frame));
     }
     return NULL;

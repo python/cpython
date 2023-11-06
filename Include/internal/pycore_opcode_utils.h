@@ -67,10 +67,6 @@ extern "C" {
 #define RESUME_OPARG_LOCATION_MASK 0x3
 #define RESUME_OPARG_DEPTH1_MASK 0x4
 
-
-#define RESUME_WITH_SUBITERATOR(V) \
-            (((V) & RESUME_OPARG_LOCATION_MASK) >= RESUME_AFTER_YIELD_FROM)
-
 #ifdef __cplusplus
 }
 #endif
