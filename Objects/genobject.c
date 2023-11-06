@@ -65,7 +65,7 @@ _PyGen_Finalize(PyObject *self)
 {
     PyGenObject *gen = (PyGenObject *)self;
 
-    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
+    if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
         /* Generator isn't paused, so no need to close */
         return;
     }
@@ -188,7 +188,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         PyErr_SetString(PyExc_ValueError, msg);
         return PYGEN_ERROR;
     }
-    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
+    if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
         if (PyCoro_CheckExact(gen) && !closing) {
             /* `gen` is an exhausted coroutine: raise an error,
                except when called from gen_close(), which should
@@ -358,7 +358,7 @@ gen_close(PyGenObject *gen, PyObject *args)
         gen->gi_frame_state = FRAME_COMPLETED;
         Py_RETURN_NONE;
     }
-    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
+    if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
         Py_RETURN_NONE;
     }
     PyObject *yf = _PyGen_yf(gen);
@@ -2087,7 +2087,7 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
         return NULL;
     }
 
-    if (FRAME_STATE_CLOSED(gen->gi_frame_state)) {
+    if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
         o->agt_state = AWAITABLE_STATE_CLOSED;
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
