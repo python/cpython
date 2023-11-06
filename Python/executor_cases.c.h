@@ -806,7 +806,7 @@
             PyObject *exc_value;
             exc_value = stack_pointer[-1];
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            Py_XSETREF(exc_info->exc_value, exc_value);
+            Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
             stack_pointer += -1;
             break;
         }
