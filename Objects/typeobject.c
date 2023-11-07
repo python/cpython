@@ -3423,6 +3423,7 @@ type_new_set_module(PyTypeObject *type)
     r = PyDict_GetItemRef(globals, &_Py_ID(__name__), &module);
     if (module) {
         r = PyDict_SetItem(dict, &_Py_ID(__module__), module);
+        Py_DECREF(module);
     }
     return r;
 }

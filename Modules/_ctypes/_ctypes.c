@@ -244,17 +244,11 @@ static int
 _PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
 {
     int rc = PyDict_GetItemRef(dict, key, presult);
-    if (rc <= 0) {  // error or not found
-        *presult = NULL;
-        return rc;
-    }
-
     PyObject *item = *presult;
-    if (!PyWeakref_CheckProxy(item)) {
-        return 1;
+    if (item && PyWeakref_CheckProxy(item)) {
+        rc = PyWeakref_GetRef(item, presult);
+        Py_DECREF(item);
     }
-    rc = PyWeakref_GetRef(item, presult);
-    Py_DECREF(item);
     return rc;
 }
 

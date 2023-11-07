@@ -648,7 +648,7 @@ dummy_func(
                 _PyErr_SetKeyError(sub);
             }
             DECREF_INPUTS();
-            ERROR_IF(rc <= 0, error);
+            ERROR_IF(rc <= 0, error); // not found or error
         }
 
         inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub -- unused)) {
