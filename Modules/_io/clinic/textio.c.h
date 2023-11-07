@@ -185,8 +185,13 @@ _io__TextIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
         _PyArg_BadArgument("write", "argument 1", "str", args[0]);
         goto exit;
     }
-    s = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t s_length;
+    s = PyUnicode_AsUTF8AndSize(args[0], &s_length);
     if (s == NULL) {
+        goto exit;
+    }
+    if (strlen(s) != (size_t)s_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _io__TextIOBase_write_impl(self, cls, s);
@@ -470,8 +475,13 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             encoding = NULL;
         }
         else if (PyUnicode_Check(fastargs[1])) {
-            encoding = PyUnicode_AsUTF8(fastargs[1]);
+            Py_ssize_t encoding_length;
+            encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
             if (encoding == NULL) {
+                goto exit;
+            }
+            if (strlen(encoding) != (size_t)encoding_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -494,8 +504,13 @@ _io_TextIOWrapper___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             newline = NULL;
         }
         else if (PyUnicode_Check(fastargs[3])) {
-            newline = PyUnicode_AsUTF8(fastargs[3]);
+            Py_ssize_t newline_length;
+            newline = PyUnicode_AsUTF8AndSize(fastargs[3], &newline_length);
             if (newline == NULL) {
+                goto exit;
+            }
+            if (strlen(newline) != (size_t)newline_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
                 goto exit;
             }
         }
@@ -965,4 +980,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=c9ffb48a5278cbd4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e58ce89b7354e77a input=a9049054013a1b77]*/

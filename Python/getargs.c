@@ -932,15 +932,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         } else {
             /* "s" or "z" */
             const char **p = va_arg(*p_va, const char **);
+            Py_ssize_t len;
             sarg = NULL;
 
             if (c == 'z' && arg == Py_None)
                 *p = NULL;
             else if (PyUnicode_Check(arg)) {
-                sarg = PyUnicode_AsUTF8(arg);
-                if (sarg == NULL) {
+                sarg = PyUnicode_AsUTF8AndSize(arg, &len);
+                if (sarg == NULL)
                     return converterr(CONV_UNICODE,
                                       arg, msgbuf, bufsize);
+                if (strlen(sarg) != (size_t)len) {
+                    PyErr_SetString(PyExc_ValueError, "embedded null character");
+                    RETURN_ERR_OCCURRED;
                 }
                 *p = sarg;
             }

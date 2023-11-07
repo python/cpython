@@ -914,10 +914,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8('abc', 4), b'abc\0')
         self.assertEqual(unicode_asutf8('абв', 7), b'\xd0\xb0\xd0\xb1\xd0\xb2\0')
         self.assertEqual(unicode_asutf8('\U0001f600', 5), b'\xf0\x9f\x98\x80\0')
-
-        # disallow embedded null characters
-        self.assertRaises(ValueError, unicode_asutf8, 'abc\0', 0)
-        self.assertRaises(ValueError, unicode_asutf8, 'abc\0def', 0)
+        self.assertEqual(unicode_asutf8('abc\0def', 8), b'abc\0def\0')
 
         self.assertRaises(UnicodeEncodeError, unicode_asutf8, '\ud8ff', 0)
         self.assertRaises(TypeError, unicode_asutf8, b'abc', 0)
