@@ -50,6 +50,11 @@
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
 
+/* Annotations */
+#define guard
+#define override
+#define specializing
+
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
@@ -312,7 +317,7 @@ dummy_func(
             TO_BOOL_STR,
         };
 
-        op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
+        specializing op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -537,7 +542,7 @@ dummy_func(
             BINARY_SUBSCR_TUPLE_INT,
         };
 
-        op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
+        specializing op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -689,7 +694,7 @@ dummy_func(
             STORE_SUBSCR_LIST_INT,
         };
 
-        op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
+        specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -974,7 +979,7 @@ dummy_func(
             SEND_GEN,
         };
 
-        op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
+        specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -1208,7 +1213,7 @@ dummy_func(
             UNPACK_SEQUENCE_LIST,
         };
 
-        op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
+        specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -1277,7 +1282,7 @@ dummy_func(
             STORE_ATTR_WITH_HINT,
         };
 
-        op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
+        specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -1404,7 +1409,7 @@ dummy_func(
             LOAD_GLOBAL_BUILTIN,
         };
 
-        op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
+        specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -1744,7 +1749,7 @@ dummy_func(
             LOAD_SUPER_ATTR_METHOD,
         };
 
-        op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super, class, unused -- global_super, class, unused)) {
+        specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super, class, unused -- global_super, class, unused)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             int load_method = oparg & 1;
@@ -1860,7 +1865,7 @@ dummy_func(
             LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
         };
 
-        op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
+        specializing op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -2182,7 +2187,7 @@ dummy_func(
             COMPARE_OP_STR,
         };
 
-        op(_SPECIALIZE_COMPARE_OP, (counter/1, left, right -- left, right)) {
+        specializing op(_SPECIALIZE_COMPARE_OP, (counter/1, left, right -- left, right)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -2506,7 +2511,7 @@ dummy_func(
             FOR_ITER_GEN,
         };
 
-        op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
+        specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -3000,7 +3005,7 @@ dummy_func(
             CALL_ALLOC_AND_ENTER_INIT,
         };
 
-        op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -3865,7 +3870,7 @@ dummy_func(
             top = Py_NewRef(bottom);
         }
 
-        op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {
+        specializing op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
