@@ -44,7 +44,7 @@ import typing
 import weakref
 import types
 
-from test.support import captured_stderr, cpython_only
+from test.support import captured_stderr, cpython_only, infinite_recursion
 from test import mod_generics_cache
 from test import _typed_dict_helper
 
@@ -5622,10 +5622,11 @@ class ForwardRefTests(BaseTestCase):
         def cmp(o1, o2):
             return o1 == o2
 
-        r1 = namespace1()
-        r2 = namespace2()
-        self.assertIsNot(r1, r2)
-        self.assertRaises(RecursionError, cmp, r1, r2)
+        with infinite_recursion(25):  # magic number, small but reasonable
+            r1 = namespace1()
+            r2 = namespace2()
+            self.assertIsNot(r1, r2)
+            self.assertRaises(RecursionError, cmp, r1, r2)
 
     def test_union_forward_recursion(self):
         ValueList = List['Value']
