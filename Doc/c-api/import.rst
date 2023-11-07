@@ -100,28 +100,26 @@ Importing Modules
 
 .. c:function:: int PyImport_ImportOrAddModule(const char *name, PyObject **module)
 
-   Create a new module and store it in :data:`sys.modules`, or get an already
-   imported module from :data:`sys.modules`.
+   Get an already imported module from :data:`sys.modules`. If *name* is not
+   :data:`sys.modules`, create a new module and store it in
+   :data:`sys.modules`.
 
-   First check the modules dictionary if there's one there, and if not, create
-   a new one and insert it in the modules dictionary.
-
-   The *name* argument may be of the form ``package.module``.
-
+   - If the module was already imported, set *\*module* to a :term:`strong
+     reference` to the existing module, and return 0.
    - If the module does not exist, create a module, store it in
      :data:`sys.modules`, set *\*module* to a :term:`strong reference` to the
      module, and return 1.
-   - If the module was already imported, set *\*module* to a :term:`strong
-     reference` to the existing module, and return 0.
    - On error, raise an exception, set *\*module* to NULL, and return -1.
+
+   The *name* argument may be of the form ``package.module``. Package
+   structures implied by a dotted name for *name* are not created if not
+   already present.
 
    The module name *name* is decoded from UTF-8.
 
    This function does not load or import the module; if the module wasn't
    already loaded, you will get an empty module object. Use
    :c:func:`PyImport_ImportModule` or one of its variants to import a module.
-   Package structures implied by a dotted name for *name* are not created if
-   not already present.
 
    .. versionadded:: 3.13
 
@@ -138,8 +136,8 @@ Importing Modules
 .. c:function:: PyObject* PyImport_AddModule(const char *name)
 
    Similar to :c:func:`PyImport_ImportOrAddModule`, but return a :term:`borrowed
-   reference`, and don't provide the information if the module was created or
-   was already imported.
+   reference`, and don't provide the information if the module was already
+   imported or was created.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModule(const char *name, PyObject *co)
