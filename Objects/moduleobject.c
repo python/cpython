@@ -522,6 +522,7 @@ PyModule_GetNameObject(PyObject *mod)
     }
     PyObject *name;
     if (PyDict_GetItemRef(dict, &_Py_ID(__name__), &name) <= 0) {
+        // error or not found
         goto error;
     }
     if (!PyUnicode_Check(name)) {
@@ -562,6 +563,7 @@ PyModule_GetFilenameObject(PyObject *mod)
     }
     PyObject *fileobj;
     if (PyDict_GetItemRef(dict, &_Py_ID(__file__), &fileobj) <= 0) {
+        // error or not found
         goto error;
     }
     if (!PyUnicode_Check(fileobj)) {

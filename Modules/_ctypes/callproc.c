@@ -1922,8 +1922,10 @@ create_pointer_type(PyObject *module, PyObject *cls)
     PyObject *key;
 
     if (PyDict_GetItemRef(_ctypes_ptrtype_cache, cls, &result) != 0) {
+        // error or found
         return result;
     }
+    // not found
     if (PyUnicode_CheckExact(cls)) {
         PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),

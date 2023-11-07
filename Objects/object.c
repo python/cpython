@@ -1489,10 +1489,12 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     if (dict != NULL) {
         Py_INCREF(dict);
         if (PyDict_GetItemRef(dict, name, method) != 0) {
+            // error or found
             Py_DECREF(dict);
             Py_XDECREF(descr);
             return 0;
         }
+        // not found
         Py_DECREF(dict);
     }
 

@@ -1120,6 +1120,7 @@ local_getattro(localobject *self, PyObject *name)
     /* Optimization: just look in dict ourselves */
     PyObject *value;
     if (PyDict_GetItemRef(ldict, name, &value) != 0) {
+        // error or found
         return value;
     }
 

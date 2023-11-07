@@ -4872,7 +4872,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         Py_DECREF(key);
         return result;
     }
-
+    // not found
     if (!PyType_Check(itemtype)) {
         PyErr_SetString(PyExc_TypeError,
                         "Expected a type object");
