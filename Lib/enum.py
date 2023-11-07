@@ -573,8 +573,11 @@ class EnumType(type):
             # is tacked on to the error instead of raising a RuntimeError
             # recreate the exception to discard
             exc = type(e)(str(e))
+            exc.__cause__ = e.__cause__
+            exc.__context__ = e.__context__
+            tb = e.__traceback__
         if exc is not None:
-            raise exc
+            raise exc.with_traceback(tb)
         #
         # update classdict with any changes made by __init_subclass__
         classdict.update(enum_class.__dict__)
