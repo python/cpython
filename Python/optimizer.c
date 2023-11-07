@@ -854,7 +854,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     if (executor == NULL) {
         return NULL;
     }
-
     int dest = length - 1;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {

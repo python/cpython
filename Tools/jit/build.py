@@ -594,8 +594,7 @@ class Compiler:
         self._target = target
 
     def _use_ghccc(self, ll: pathlib.Path) -> None:
-        """LLVM's GHCC calling convention is perfect for our needs"""
-        # TODO: Explore
+        # https://discourse.llvm.org/t/rfc-exposing-ghccc-calling-convention-as-preserve-none-to-clang/74233/16
         if self._ghccc:
             before = ll.read_text()
             after = re.sub(
