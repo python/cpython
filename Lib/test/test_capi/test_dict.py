@@ -1,6 +1,7 @@
 import unittest
 from collections import OrderedDict, UserDict
 from types import MappingProxyType
+from test import support
 import _testcapi
 
 
@@ -30,7 +31,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(UserDict({1: 2})))
         self.assertFalse(check([1, 2]))
         self.assertFalse(check(object()))
-        #self.assertFalse(check(NULL))
+        # CRASHES check(NULL)
 
     def test_dict_checkexact(self):
         check = _testcapi.dict_checkexact
@@ -39,7 +40,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(UserDict({1: 2})))
         self.assertFalse(check([1, 2]))
         self.assertFalse(check(object()))
-        #self.assertFalse(check(NULL))
+        # CRASHES check(NULL)
 
     def test_dict_new(self):
         dict_new = _testcapi.dict_new
@@ -118,7 +119,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitem(dct2, 'a'), 1)
         self.assertIs(getitem(dct2, 'b'), KeyError)
 
-        self.assertIs(getitem({}, []), KeyError)  # unhashable
+        with support.catch_unraisable_exception() as cm:
+            self.assertIs(getitem({}, []), KeyError)  # unhashable
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "unhashable type: 'list'")
+
         self.assertIs(getitem(42, 'a'), KeyError)
         self.assertIs(getitem([1], 0), KeyError)
         # CRASHES getitem({}, NULL)
@@ -135,7 +141,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitemstring(dct2, b'a'), 1)
         self.assertIs(getitemstring(dct2, b'b'), KeyError)
 
-        self.assertIs(getitemstring({}, INVALID_UTF8), KeyError)
+        with support.catch_unraisable_exception() as cm:
+            self.assertIs(getitemstring({}, INVALID_UTF8), KeyError)
+            self.assertEqual(cm.unraisable.exc_type, UnicodeDecodeError)
+            self.assertRegex(str(cm.unraisable.exc_value),
+                             "'utf-8' codec can't decode")
+
         self.assertIs(getitemstring(42, b'a'), KeyError)
         self.assertIs(getitemstring([], b'a'), KeyError)
         # CRASHES getitemstring({}, NULL)

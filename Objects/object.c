@@ -1040,7 +1040,10 @@ PyObject_HasAttrString(PyObject *obj, const char *name)
 {
     int rc = PyObject_HasAttrStringWithError(obj, name);
     if (rc < 0) {
-        PyErr_Clear();
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyObject_HasAttrString(); consider using "
+            "PyObject_HasAttrStringWithError(), "
+            "PyObject_GetOptionalAttrString() or PyObject_GetAttrString()");
         return 0;
     }
     return rc;
@@ -1275,7 +1278,10 @@ PyObject_HasAttr(PyObject *obj, PyObject *name)
 {
     int rc = PyObject_HasAttrWithError(obj, name);
     if (rc < 0) {
-        PyErr_Clear();
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyObject_HasAttr(); consider using "
+            "PyObject_HasAttrWithError(), "
+            "PyObject_GetOptionalAttr() or PyObject_GetAttr()");
         return 0;
     }
     return rc;
