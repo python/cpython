@@ -397,6 +397,10 @@ Deprecated
   and methods that consider plural forms even if the translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
 
+* Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
+  (as has always been the case for an executing frame).
+  (Contributed by Irit Katriel in :gh:`79932`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------

@@ -1214,9 +1214,14 @@ Frame objects support one method:
    objects (for example when catching an exception and storing its
    traceback for later use).
 
-   :exc:`RuntimeError` is raised if the frame is currently executing.
+   :exc:`RuntimeError` is raised if the frame is currently executing
+   or suspended.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.13
+      Attempting to clear a suspended frame raises :exc:`RuntimeError`
+      (as has always been the case for executing frames).
 
 
 .. _traceback-objects:
