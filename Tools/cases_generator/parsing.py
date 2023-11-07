@@ -171,8 +171,8 @@ class Parser(PLexer):
 
     @contextual
     def inst_header(self) -> InstHeader | None:
-        # [annotation] inst(NAME, (inputs -- outputs))
-        # | [annotation] op(NAME, (inputs -- outputs))
+        # annotation* inst(NAME, (inputs -- outputs))
+        # | annotation* op(NAME, (inputs -- outputs))
         annotations = []
         while anno := self.expect(lx.ANNOTATION):
             annotations.append(anno.text)
