@@ -980,6 +980,15 @@ Changes in the Python API
   The result is now the same if ``wantobjects`` is set to ``0``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
+* Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
+  :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
+  :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
+  :c:func:`PySys_GetObject`, which clear all errors occurred during calling
+  the function, report now them using :func:`sys.unraisablehook`.
+  You can consider to replace these functions with other functions as
+  recomended in the documentation.
+  (Contributed by Serhiy Storchaka in :gh:`106672`.)
+
 
 Build Changes
 =============
