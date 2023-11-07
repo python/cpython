@@ -69,7 +69,6 @@ def compile_host_python(context):
     Returns the path to the new interpreter and it's major.minor version.
     """
     build_dir = CROSS_BUILD_DIR / "build"
-    build_dir.mkdir(parents=True, exist_ok=True)
 
     section(build_dir)
 
@@ -80,9 +79,11 @@ def compile_host_python(context):
     if not context.build_python:
         print("Skipping build (--skip-build-python)...")
     else:
-        if context.clean:
+        if context.clean and build_dir.exists():
             print(f"Deleting {build_dir} (--clean)...")
-            shutil.rmtree(build_dir, ignore_errors=True)
+            shutil.rmtree(build_dir)
+
+        build_dir.mkdir(parents=True, exist_ok=True)
 
         with contextlib.chdir(build_dir):
             call(configure, quiet=context.quiet)
@@ -148,9 +149,9 @@ def compile_wasi_python(context, build_python, version):
 
     section(build_dir)
 
-    if context.clean:
+    if context.clean and build_dir.exists():
         print(f"Deleting {build_dir} (--clean)...")
-        shutil.rmtree(build_dir, ignore_errors=True)
+        shutil.rmtree(build_dir)
 
     build_dir.mkdir(exist_ok=True)
 
