@@ -242,10 +242,6 @@
             break;
         }
 
-        case _SPECIALIZE_UNPACK_SEQUENCE: {
-            break;
-        }
-
         case _UNPACK_SEQUENCE: {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
