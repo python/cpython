@@ -225,7 +225,7 @@ creating a new cursor, then querying the database:
 
 .. testcleanup::
 
-   con.close()
+   new_con.close()
 
    import os
    os.remove("tutorial.db")
@@ -409,6 +409,8 @@ Module functions
    .. testsetup:: sqlite3.trace
 
       import sqlite3
+      import sys
+      old_hook = sys.unraisablehook
 
    .. doctest:: sqlite3.trace
 
@@ -421,15 +423,15 @@ Module functions
       >>> def debug(unraisable):
       ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
       ...     print(f"Error message: {unraisable.err_msg}")
-      >>> import sys
       >>> sys.unraisablehook = debug
       >>> cur = con.execute("SELECT 1")
       ZeroDivisionError('division by zero') in callback evil_trace
       Error message: None
 
-   .. testcleanup::
+   .. testcleanup:: sqlite3.trace
 
       con.close()
+      sys.unraisablehook = old_hook
 
 .. function:: register_adapter(type, adapter, /)
 
