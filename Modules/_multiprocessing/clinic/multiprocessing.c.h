@@ -138,7 +138,7 @@ _multiprocessing_sem_unlink(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("sem_unlink", "argument", "str", arg);
         goto exit;
     }
-    name = PyUnicode_AsUTF8Safe(arg);
+    name = PyUnicode_AsUTF8NoNUL(arg);
     if (name == NULL) {
         goto exit;
     }
@@ -159,4 +159,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=346ada1e6b04e86d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=104ba2e58e5c696f input=a9049054013a1b77]*/

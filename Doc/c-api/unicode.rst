@@ -1015,7 +1015,7 @@ These are the UTF-8 codec APIs:
    .. versionchanged:: 3.13
       Raise an exception if the string contains embedded null characters.
 
-.. c:function:: const char* PyUnicode_AsUTF8Safe(PyObject *unicode)
+.. c:function:: const char* PyUnicode_AsUTF8NoNUL(PyObject *unicode)
 
    Similar to :c:func:`PyUnicode_AsUTF8`, but raise :exc:`ValueError` if the
    string contains embedded null characters.

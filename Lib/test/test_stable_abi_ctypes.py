@@ -747,7 +747,7 @@ SYMBOL_NAMES = (
     "PyUnicode_AsUTF32String",
     "PyUnicode_AsUTF8",
     "PyUnicode_AsUTF8AndSize",
-    "PyUnicode_AsUTF8Safe",
+    "PyUnicode_AsUTF8NoNUL",
     "PyUnicode_AsUTF8String",
     "PyUnicode_AsUnicodeEscapeString",
     "PyUnicode_AsWideChar",

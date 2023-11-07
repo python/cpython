@@ -2935,7 +2935,7 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f1", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8Safe(args[0]);
+    path = PyUnicode_AsUTF8NoNUL(args[0]);
     if (path == NULL) {
         goto exit;
     }
@@ -2996,7 +2996,7 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f2", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8Safe(args[0]);
+    path = PyUnicode_AsUTF8NoNUL(args[0]);
     if (path == NULL) {
         goto exit;
     }
@@ -3131,4 +3131,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=086bbd3dec1a1222 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de4e5e1ce2e8a314 input=a9049054013a1b77]*/

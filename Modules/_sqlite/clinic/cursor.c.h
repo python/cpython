@@ -135,7 +135,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *arg)
         _PyArg_BadArgument("executescript", "argument", "str", arg);
         goto exit;
     }
-    sql_script = PyUnicode_AsUTF8Safe(arg);
+    sql_script = PyUnicode_AsUTF8NoNUL(arg);
     if (sql_script == NULL) {
         goto exit;
     }
@@ -308,4 +308,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=89633fccfefc9fd3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd45cf70827f462f input=a9049054013a1b77]*/

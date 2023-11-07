@@ -928,14 +928,14 @@ class CAPITest(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
-    def test_asutf8safe(self):
-        """Test PyUnicode_AsUTF8Safe()"""
-        from _testcapi import unicode_asutf8safe
-        self.check_asutf8(unicode_asutf8safe)
+    def test_asutf8nonul(self):
+        """Test PyUnicode_AsUTF8NoNUL()"""
+        from _testcapi import unicode_asutf8nonul
+        self.check_asutf8(unicode_asutf8nonul)
 
         # disallow embedded null characters
-        self.assertRaises(ValueError, unicode_asutf8safe, 'abc\0', 0)
-        self.assertRaises(ValueError, unicode_asutf8safe, 'abc\0def', 0)
+        self.assertRaises(ValueError, unicode_asutf8nonul, 'abc\0', 0)
+        self.assertRaises(ValueError, unicode_asutf8nonul, 'abc\0def', 0)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')

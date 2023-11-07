@@ -1,3 +1,3 @@
-Add :c:func:`PyUnicode_AsUTF8Safe` function: similar to
+Add :c:func:`PyUnicode_AsUTF8NoNUL` function: similar to
 :c:func:`PyUnicode_AsUTF8`, but raise :exc:`ValueError` if the string
 contains embedded null characters. Patch by Victor Stinner.

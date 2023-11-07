@@ -60,7 +60,7 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
         _PyArg_BadArgument("complete_statement", "argument 'statement'", "str", args[0]);
         goto exit;
     }
-    statement = PyUnicode_AsUTF8Safe(args[0]);
+    statement = PyUnicode_AsUTF8NoNUL(args[0]);
     if (statement == NULL) {
         goto exit;
     }
@@ -203,4 +203,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3c2461ca73f8e1f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab6619583fb1ce4d input=a9049054013a1b77]*/

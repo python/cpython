@@ -619,9 +619,9 @@ unicode_asutf8(PyObject *self, PyObject *args)
     return PyBytes_FromStringAndSize(s, buflen);
 }
 
-/* Test PyUnicode_AsUTF8Safe() */
+/* Test PyUnicode_AsUTF8NoNUL() */
 static PyObject *
-unicode_asutf8safe(PyObject *self, PyObject *args)
+unicode_asutf8nonul(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
     Py_ssize_t buflen;
@@ -631,7 +631,7 @@ unicode_asutf8safe(PyObject *self, PyObject *args)
         return NULL;
 
     NULLABLE(unicode);
-    s = PyUnicode_AsUTF8Safe(unicode);
+    s = PyUnicode_AsUTF8NoNUL(unicode);
     if (s == NULL)
         return NULL;
 
@@ -2050,7 +2050,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4copy",       unicode_asucs4copy,             METH_VARARGS},
     {"unicode_fromordinal",      unicode_fromordinal,            METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
-    {"unicode_asutf8safe",       unicode_asutf8safe,             METH_VARARGS},
+    {"unicode_asutf8nonul",       unicode_asutf8nonul,             METH_VARARGS},
     {"unicode_asutf8andsize",    unicode_asutf8andsize,          METH_VARARGS},
     {"unicode_asutf8andsize_null",unicode_asutf8andsize_null,    METH_VARARGS},
     {"unicode_getdefaultencoding",unicode_getdefaultencoding,    METH_NOARGS},

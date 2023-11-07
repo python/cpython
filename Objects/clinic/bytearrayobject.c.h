@@ -68,7 +68,7 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("bytearray", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8Safe(fastargs[1]);
+        encoding = PyUnicode_AsUTF8NoNUL(fastargs[1]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -80,7 +80,7 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("bytearray", "argument 'errors'", "str", fastargs[2]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8Safe(fastargs[2]);
+    errors = PyUnicode_AsUTF8NoNUL(fastargs[2]);
     if (errors == NULL) {
         goto exit;
     }
@@ -950,7 +950,7 @@ bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
             _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8Safe(args[0]);
+        encoding = PyUnicode_AsUTF8NoNUL(args[0]);
         if (encoding == NULL) {
             goto exit;
         }
@@ -962,7 +962,7 @@ bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
         _PyArg_BadArgument("decode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8Safe(args[1]);
+    errors = PyUnicode_AsUTF8NoNUL(args[1]);
     if (errors == NULL) {
         goto exit;
     }
@@ -1241,4 +1241,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=a281a52dbaa681d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7c208d5ae6cadfc input=a9049054013a1b77]*/

@@ -305,7 +305,7 @@ memoryview_tobytes(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t n
         order = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        order = PyUnicode_AsUTF8Safe(args[0]);
+        order = PyUnicode_AsUTF8NoNUL(args[0]);
         if (order == NULL) {
             goto exit;
         }
@@ -408,4 +408,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=57d1155eefda3fa9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9cf520557bc4094a input=a9049054013a1b77]*/
