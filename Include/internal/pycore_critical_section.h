@@ -192,8 +192,8 @@ _PyCriticalSection2_Begin(_PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
 
     if ((uintptr_t)m2 < (uintptr_t)m1) {
         // Sort the mutexes so that the lower address is locked first.
-        // We need to acquire the mutexes in a consistent order to avoid
-        // lock ordering deadlocks.
+        // The exact order does not matter, but we need to acquire the mutexes
+        // in a consistent order to avoid lock ordering deadlocks.
         PyMutex *tmp = m1;
         m1 = m2;
         m2 = tmp;
