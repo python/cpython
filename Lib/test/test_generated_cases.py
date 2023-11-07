@@ -707,6 +707,49 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_annotated_inst(self):
+        input = """
+        guard inst(OP, (--)) {
+            ham();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            ham();
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_annotated_op(self):
+        input = """
+        guard op(OP, (--)) {
+            spam();
+        }
+        macro(M) = OP;
+        """
+        output = """
+        TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
+            spam();
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+        input = """
+        guard register specializing op(OP, (--)) {
+            spam();
+        }
+        macro(M) = OP;
+        """
+        self.run_cases_test(input, output)
+
 
 if __name__ == "__main__":
     unittest.main()

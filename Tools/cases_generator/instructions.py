@@ -46,6 +46,7 @@ class Instruction:
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
     name: str
+    annotations: list[str]
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
     block_line: int  # First line of block in original code
@@ -70,6 +71,7 @@ class Instruction:
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
         self.name = inst.name
+        self.annotations = inst.annotations
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
             self.block
@@ -118,6 +120,8 @@ class Instruction:
 
         if self.name == "_EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
+        if self.name == "_SAVE_RETURN_OFFSET":
+            return True  # Adjusts next_instr, but only in tier 1 code
         if self.always_exits:
             dprint(f"Skipping {self.name} because it always exits: {self.always_exits}")
             return False
