@@ -871,24 +871,6 @@
             break;
         }
 
-        case _SPECIALIZE_UNPACK_SEQUENCE: {
-            PyObject *seq;
-            seq = stack_pointer[-1];
-            uint16_t counter = (uint16_t)next_uop[-1].operand;
-            #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
-                next_instr = this_instr;
-                _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(UNPACK_SEQUENCE, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
-            #endif  /* ENABLE_SPECIALIZATION */
-            (void)seq;
-            (void)counter;
-            break;
-        }
-
         case _UNPACK_SEQUENCE: {
             PyObject *seq;
             seq = stack_pointer[-1];

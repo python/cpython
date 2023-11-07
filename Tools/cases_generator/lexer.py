@@ -80,10 +80,11 @@ opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.item
 
 # Macros
 macro = r"# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)"
-MACRO = "MACRO"
+CMACRO = "CMACRO"
 
 id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
 IDENTIFIER = "IDENTIFIER"
+
 
 suffix = r"([uU]?[lL]?[lL]?)"
 octal = r"0[0-7]+" + suffix
@@ -173,10 +174,6 @@ INT = "INT"
 kwds.append(INT)
 LONG = "LONG"
 kwds.append(LONG)
-OVERRIDE = "OVERRIDE"
-kwds.append(OVERRIDE)
-REGISTER = "REGISTER"
-kwds.append(REGISTER)
 OFFSETOF = "OFFSETOF"
 kwds.append(OFFSETOF)
 RESTRICT = "RESTRICT"
@@ -207,7 +204,19 @@ VOLATILE = "VOLATILE"
 kwds.append(VOLATILE)
 WHILE = "WHILE"
 kwds.append(WHILE)
+# An instruction in the DSL
+INST = "INST"
+kwds.append(INST)
+# A micro-op in the DSL
+OP = "OP"
+kwds.append(OP)
+# A macro in the DSL
+MACRO = "MACRO"
+kwds.append(MACRO)
 keywords = {name.lower(): name for name in kwds}
+
+ANNOTATION = "ANNOTATION"
+annotations = {"specializing", "guard", "override", "register"}
 
 __all__ = []
 __all__.extend(kwds)
@@ -270,6 +279,8 @@ def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[T
         text = m.group(0)
         if text in keywords:
             kind = keywords[text]
+        elif text in annotations:
+            kind = ANNOTATION
         elif letter.match(text):
             kind = IDENTIFIER
         elif text == "...":
@@ -289,7 +300,7 @@ def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[T
         elif text[0] == "'":
             kind = CHARACTER
         elif text[0] == "#":
-            kind = MACRO
+            kind = CMACRO
         elif text[0] == "/" and text[1] in "/*":
             kind = COMMENT
         else:
