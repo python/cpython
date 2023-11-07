@@ -440,10 +440,6 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromKindAndData(
     const void *buffer,
     Py_ssize_t size);
 
-// Similar to PyUnicode_AsUTF8(), but raise ValueError if the string contains
-// embedded null characters.
-PyAPI_FUNC(const char *) PyUnicode_AsUTF8Safe(PyObject *unicode);
-
 
 /* === Characters Type APIs =============================================== */
 

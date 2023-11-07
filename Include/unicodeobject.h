@@ -453,6 +453,10 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
 // when the Unicode object is deallocated.
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 
+// Similar to PyUnicode_AsUTF8(), but raise ValueError if the string contains
+// embedded null characters.
+PyAPI_FUNC(const char *) PyUnicode_AsUTF8Safe(PyObject *unicode);
+
 // Returns a pointer to the UTF-8 encoding of the
 // Unicode object unicode and the size of the encoded representation
 // in bytes stored in `*size` (if size is not NULL).
