@@ -1296,7 +1296,7 @@ Connection objects
          >>> con.getlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH)
          1000000000
 
-      .. testcleanup::
+      .. testcleanup:: sqlite3.limits
 
          con.close()
 
@@ -1536,10 +1536,6 @@ Cursor objects
 
       (1,)
 
-   .. testcleanup::
-
-      con.close()
-
    .. _database cursor: https://en.wikipedia.org/wiki/Cursor_(databases)
 
 .. class:: Cursor
@@ -1616,6 +1612,10 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. testcleanup:: sqlite3.cursor
+
+         con.close()
 
       .. note::
 
