@@ -289,9 +289,8 @@ PyImport_GetModule(PyObject *name)
 /* Get the module object corresponding to a module name.
    First check the modules dictionary if there's one there,
    if not, create a new one and insert it in the modules dictionary. */
-
 static PyObject *
-import_add_module(PyThreadState *tstate, PyObject *name, int *is_new)
+import_import_or_add_module(PyThreadState *tstate, PyObject *name, int *is_new)
 {
     PyObject *modules = MODULES(tstate->interp);
     if (modules == NULL) {
@@ -327,6 +326,14 @@ import_add_module(PyThreadState *tstate, PyObject *name, int *is_new)
     return m;
 }
 
+
+static PyObject *
+import_add_module(PyThreadState *tstate, PyObject *name)
+{
+    return import_import_or_add_module(tstate, name, NULL);
+}
+
+
 int
 PyImport_ImportOrAddModule(const char *name, PyObject **pmodule)
 {
@@ -337,7 +344,7 @@ PyImport_ImportOrAddModule(const char *name, PyObject **pmodule)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     int is_new;
-    PyObject *module = import_add_module(tstate, name_obj, &is_new);
+    PyObject *module = import_import_or_add_module(tstate, name_obj, &is_new);
     Py_DECREF(name_obj);
 
     *pmodule = module;
@@ -353,7 +360,7 @@ PyObject *
 PyImport_AddModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *mod = import_add_module(tstate, name, NULL);
+    PyObject *mod = import_add_module(tstate, name);
     if (!mod) {
         return NULL;
     }
@@ -1274,7 +1281,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
                 return NULL;
             }
         }
-        mod = import_add_module(tstate, name, NULL);
+        mod = import_add_module(tstate, name);
         if (mod == NULL) {
             return NULL;
         }
@@ -1402,7 +1409,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
-                return import_add_module(tstate, name, NULL);
+                return import_add_module(tstate, name);
             }
             mod = (*p->initfunc)();
             if (mod == NULL) {
@@ -1685,14 +1692,14 @@ error:
 static PyObject *
 module_dict_for_exec(PyThreadState *tstate, PyObject *name)
 {
-    PyObject *m, *d;
-
-    m = import_add_module(tstate, name, NULL);
-    if (m == NULL)
+    PyObject *m = import_add_module(tstate, name);
+    if (m == NULL) {
         return NULL;
+    }
+
     /* If the module is being reloaded, we get the old module back
        and re-use its dict to exec the new code. */
-    d = PyModule_GetDict(m);
+    PyObject *d = PyModule_GetDict(m);
     int r = PyDict_Contains(d, &_Py_ID(__builtins__));
     if (r == 0) {
         r = PyDict_SetItem(d, &_Py_ID(__builtins__), PyEval_GetBuiltins());
@@ -2126,7 +2133,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (info.is_package) {
         /* Set __path__ to the empty list */
         PyObject *l;
-        m = import_add_module(tstate, name, NULL);
+        m = import_add_module(tstate, name);
         if (m == NULL)
             goto err_return;
         d = PyModule_GetDict(m);
@@ -3480,7 +3487,7 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
     if (ret == 0) {
         Py_RETURN_NONE;
     }
-    return import_add_module(tstate, name, NULL);
+    return import_add_module(tstate, name);
 }
 
 /*[clinic input]
