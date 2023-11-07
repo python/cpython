@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
@@ -64,13 +65,8 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("tokenizeriter", "argument 'encoding'", "str", fastargs[2]);
         goto exit;
     }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(fastargs[2], &encoding_length);
+    encoding = PyUnicode_AsUTF8(fastargs[2]);
     if (encoding == NULL) {
-        goto exit;
-    }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
@@ -79,4 +75,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=406b5a433a59069c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92cb8176149f0924 input=a9049054013a1b77]*/

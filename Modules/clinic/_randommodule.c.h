@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_random_Random_random__doc__,
 "random($self, /)\n"
 "--\n"
@@ -109,4 +111,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e7e05d756a7e1c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c800a28c2d7b9d1 input=a9049054013a1b77]*/

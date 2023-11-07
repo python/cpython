@@ -118,6 +118,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
 #ifdef Py_STATS
     SPEC(_pystats, UINT),
 #endif
+#ifdef Py_DEBUG
+    SPEC(run_presite, WSTR_OPT),
+#endif
     {NULL, 0, 0},
 };
 
@@ -241,6 +244,11 @@ The following implementation-specific options are available:\n\
 \n\
 -X pystats: Enable pystats collection at startup."
 #endif
+#ifdef Py_DEBUG
+"\n\
+\n\
+-X presite=package.module: import this module before site.py is run."
+#endif
 ;
 
 /* Envvars that don't have equivalent command-line options are listed first */
@@ -277,11 +285,14 @@ static const char usage_envvars[] =
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
-"PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
+"PYTHONNODEBUGRANGES: if this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
 "   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n"
+"PYTHON_FROZEN_MODULES   : if this variable is set, it determines whether or not \n"
+"   frozen modules should be used. The default is \"on\" (or \"off\" if you are \n"
+"   running a local build).\n"
 "These variables have equivalent command-line parameters (see --help for details):\n"
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
@@ -296,6 +307,9 @@ static const char usage_envvars[] =
 "PYTHONWARNINGS=arg      : warning control (-W arg)\n"
 #ifdef Py_STATS
 "PYTHONSTATS             : turns on statistics gathering\n"
+#endif
+#ifdef Py_DEBUG
+"PYTHON_PRESITE=pkg.mod  : import this module before site.py is run\n"
 #endif
 ;
 
@@ -790,6 +804,9 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
+#ifdef Py_DEBUG
+    CLEAR(config->run_presite);
+#endif
 
     _PyWideStringList_Clear(&config->orig_argv);
 #undef CLEAR
@@ -1806,6 +1823,36 @@ config_init_pycache_prefix(PyConfig *config)
 }
 
 
+#ifdef Py_DEBUG
+static PyStatus
+config_init_run_presite(PyConfig *config)
+{
+    assert(config->run_presite == NULL);
+
+    const wchar_t *xoption = config_get_xoption(config, L"presite");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep && wcslen(sep) > 1) {
+            config->run_presite = _PyMem_RawWcsdup(sep + 1);
+            if (config->run_presite == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
+        }
+        else {
+            // PYTHON_PRESITE env var ignored
+            // if "-X presite=" option is used
+            config->run_presite = NULL;
+        }
+        return _PyStatus_OK();
+    }
+
+    return CONFIG_GET_ENV_DUP(config, &config->run_presite,
+                              L"PYTHON_PRESITE",
+                              "PYTHON_PRESITE");
+}
+#endif
+
+
 static PyStatus
 config_read_complex_options(PyConfig *config)
 {
@@ -1861,6 +1908,16 @@ config_read_complex_options(PyConfig *config)
             return status;
         }
     }
+
+#ifdef Py_DEBUG
+    if (config->run_presite == NULL) {
+        status = config_init_run_presite(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
+
     return _PyStatus_OK();
 }
 
@@ -2076,6 +2133,19 @@ config_init_import(PyConfig *config, int compute_path_config)
     status = _PyConfig_InitPathConfig(config, compute_path_config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    const char *env = config_get_env(config, "PYTHON_FROZEN_MODULES");
+    if (env == NULL) {
+    }
+    else if (strcmp(env, "on") == 0) {
+        config->use_frozen_modules = 1;
+    }
+    else if (strcmp(env, "off") == 0) {
+        config->use_frozen_modules = 0;
+    } else {
+        return PyStatus_Error("bad value for PYTHON_FROZEN_MODULES "
+                              "(expected \"on\" or \"off\")");
     }
 
     /* -X frozen_modules=[on|off] */

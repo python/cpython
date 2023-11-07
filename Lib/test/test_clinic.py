@@ -359,6 +359,20 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=8)
 
+    def test_multiple_star_in_args(self):
+        err = "'my_test_func' uses '*' more than once."
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                *args: object
+                *
+                kw_arg: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
+
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
         block = """
@@ -3154,6 +3168,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg(b=4)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg(1, 2, 3, b=4)
 
     def test_vararg_and_posonly(self):
         with self.assertRaises(TypeError):
@@ -3203,6 +3221,37 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(TypeError, err):
             ac_tester.gh_99240_double_free('a', '\0b')
+
+    def test_null_or_tuple_for_varargs(self):
+        # All of these should not crash:
+        valid_args_for_test = [
+            (('a',), {},
+             ('a', (), False)),
+            (('a', 1, 2, 3), {'covariant': True},
+             ('a', (1, 2, 3), True)),
+            ((), {'name': 'a'},
+             ('a', (), False)),
+            ((), {'name': 'a', 'covariant': True},
+             ('a', (), True)),
+            ((), {'covariant': True, 'name': 'a'},
+             ('a', (), True)),
+        ]
+        for args, kwargs, expected in valid_args_for_test:
+            with self.subTest(args=args, kwargs=kwargs):
+                self.assertEqual(
+                    ac_tester.null_or_tuple_for_varargs(*args, **kwargs),
+                    expected,
+                )
+
+    def test_null_or_tuple_for_varargs_error(self):
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(covariant=True)
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, name='a')
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, 2, 3, name='a', covariant=True)
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str

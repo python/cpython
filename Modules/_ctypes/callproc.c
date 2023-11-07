@@ -1405,7 +1405,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 #ifdef _WIN64
     return PyLong_FromVoidPtr(hMod);
 #else
-    return Py_BuildValue("i", hMod);
+    return PyLong_FromLong((int)hMod);
 #endif
 }
 

@@ -424,8 +424,6 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
 
     The fs iterable must not be empty.
 
-    Coroutines will be wrapped in Tasks.
-
     Returns two sets of Future: (done, pending).
 
     Usage:

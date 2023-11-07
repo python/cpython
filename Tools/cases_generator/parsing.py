@@ -105,8 +105,7 @@ UOp = OpName | CacheEffect
 
 @dataclass
 class InstHeader(Node):
-    override: bool
-    register: bool
+    annotations : list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
@@ -115,8 +114,7 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
-    override: bool
-    register: bool
+    annotations : list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
@@ -146,14 +144,14 @@ class Pseudo(Node):
 class Parser(PLexer):
     @contextual
     def definition(self) -> InstDef | Macro | Pseudo | Family | None:
-        if inst := self.inst_def():
-            return inst
         if macro := self.macro_def():
             return macro
         if family := self.family_def():
             return family
         if pseudo := self.pseudo_def():
             return pseudo
+        if inst := self.inst_def():
+            return inst
         return None
 
     @contextual
@@ -161,8 +159,7 @@ class Parser(PLexer):
         if hdr := self.inst_header():
             if block := self.block():
                 return InstDef(
-                    hdr.override,
-                    hdr.register,
+                    hdr.annotations,
                     hdr.kind,
                     hdr.name,
                     hdr.inputs,
@@ -174,13 +171,15 @@ class Parser(PLexer):
 
     @contextual
     def inst_header(self) -> InstHeader | None:
-        # [override] inst(NAME)
-        #   | [override] [register] inst(NAME, (inputs -- outputs))
-        #   | [override] [register] op(NAME, (inputs -- outputs))
-        # TODO: Make INST a keyword in the lexer.
-        override = bool(self.expect(lx.OVERRIDE))
-        register = bool(self.expect(lx.REGISTER))
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text in ("inst", "op"):
+        # annotation* inst(NAME, (inputs -- outputs))
+        # | annotation* op(NAME, (inputs -- outputs))
+        annotations = []
+        while anno := self.expect(lx.ANNOTATION):
+            annotations.append(anno.text)
+        tkn = self.expect(lx.INST)
+        if not tkn:
+            tkn = self.expect(lx.OP)
+        if tkn:
             kind = cast(Literal["inst", "op"], tkn.text)
             if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
                 name = tkn.text
@@ -188,7 +187,7 @@ class Parser(PLexer):
                     inp, outp = self.io_effect()
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
-                            return InstHeader(override, register, kind, name, inp, outp)
+                            return InstHeader(annotations, kind, name, inp, outp)
         return None
 
     def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
@@ -312,7 +311,7 @@ class Parser(PLexer):
 
     @contextual
     def macro_def(self) -> Macro | None:
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "macro":
+        if tkn := self.expect(lx.MACRO):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.RPAREN):
