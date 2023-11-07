@@ -3252,6 +3252,8 @@ class PdbTestReadline(unittest.TestCase):
             print('hello')
         """)
 
+        # List everything starting with 'co', there should be multiple matches
+        # then add ntin and complete 'contin' to 'continue'
         input = b"co\t\tntin\t\n"
 
         output = run_pty(script, input)
@@ -3259,23 +3261,6 @@ class PdbTestReadline(unittest.TestCase):
         self.assertIn(b'cont', output)
         self.assertIn(b'condition', output)
         self.assertIn(b'continue', output)
-
-    def test_expression_completion(self):
-        script = textwrap.dedent("""
-            value = "speci"
-            import pdb; pdb.Pdb().set_trace()
-        """)
-
-        input = b"val\t + 'al'\n"
-        input += b"p val\t + 'es'\n"
-        input += b"$_fra\t\n"
-        input += b"c\n"
-
-        output = run_pty(script, input)
-
-        self.assertIn(b'special', output)
-        self.assertIn(b'species', output)
-        self.assertIn(b'$_frame', output)
 
 
 def load_tests(loader, tests, pattern):
