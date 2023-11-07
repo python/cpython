@@ -557,6 +557,20 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
+
+    PyObject *func_code = PyFunction_GET_CODE(op);
+    int old_flags = ((PyCodeObject *)func_code)->co_flags;
+    int new_flags = ((PyCodeObject *)value)->co_flags;
+    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
+    if ((old_flags & mask) != (new_flags & mask)) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+            "Assigning a code object of non-matching type is deprecated "
+            "(e.g., from a generator to a plain function)") < 0)
+        {
+            return -1;
+        }
+    }
+
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
     _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_code, Py_NewRef(value));
