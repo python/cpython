@@ -86,6 +86,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
         return NULL;
     }
     if (PyDict_GetItemRef(state->psyco_adapters, key, &adapter) < 0) {
+        Py_DECREF(key);
         return NULL;
     }
     Py_DECREF(key);
