@@ -207,3 +207,21 @@ Examining Symbol Tables
 
       Return the namespace bound to this name. If more than one or no namespace
       is bound to this name, a :exc:`ValueError` is raised.
+
+
+.. _symtable-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.13
+
+The :mod:`symtable` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m symtable [infile...]
+
+Symbol tables are generated for the specified Python source files and
+dumped to stdout.
+If no input file is specified, the content is read from stdin.
