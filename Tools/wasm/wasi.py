@@ -192,6 +192,10 @@ def compile_wasi_python(context, build_python, version):
              env=os.environ | env_additions,
              quiet=context.quiet)
 
+    if not pathlib.Path(sysconfig_data).exists():
+        raise FileNotFoundError(f"Unable to find {sysconfig_data}; "
+                                 "check if build Python is a different build type")
+
     exec_script = build_dir / "python.sh"
     with exec_script.open("w", encoding="utf-8") as file:
         file.write(f'#!/bin/sh\nexec {host_runner} "$@"\n')
