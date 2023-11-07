@@ -95,6 +95,11 @@ extern PyTypeObject _PyExc_MemoryError;
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        .xi = { \
+            .registry = { \
+                .global = 1, \
+            }, \
+        }, \
         /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
            in accordance with the specification. */ \
         .autoTSSkey = Py_tss_NEEDS_INIT, \

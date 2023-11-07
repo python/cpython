@@ -1145,16 +1145,13 @@ These can be used as types in annotations. They all support subscription using
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Concatenate, ParamSpec, TypeVar
-
-      P = ParamSpec('P')
-      R = TypeVar('R')
+      from typing import Concatenate
 
       # Use this lock to ensure that only one thread is executing a function
       # at any time.
       my_lock = Lock()
 
-      def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
+      def with_lock[**P, R](f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
           '''A type-safe decorator which provides a lock.'''
           def inner(*args: P.args, **kwargs: P.kwargs) -> R:
               # Provide the lock as the first argument.
@@ -1954,7 +1951,7 @@ without the dedicated syntax, as documented below.
 
    .. doctest::
 
-      >>> from typing import ParamSpec
+      >>> from typing import ParamSpec, get_origin
       >>> P = ParamSpec("P")
       >>> get_origin(P.args) is P
       True
@@ -3059,14 +3056,14 @@ Introspection helpers
 
    Return the set of members defined in a :class:`Protocol`.
 
-   ::
+   .. doctest::
 
       >>> from typing import Protocol, get_protocol_members
       >>> class P(Protocol):
       ...     def a(self) -> str: ...
       ...     b: int
-      >>> get_protocol_members(P)
-      frozenset({'a', 'b'})
+      >>> get_protocol_members(P) == frozenset({'a', 'b'})
+      True
 
    Raise :exc:`TypeError` for arguments that are not Protocols.
 

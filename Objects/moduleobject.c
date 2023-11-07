@@ -647,7 +647,7 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_WriteUnraisable(NULL);
+                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
                 }
             }
         }
@@ -668,7 +668,7 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_WriteUnraisable(NULL);
+                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
                 }
             }
         }
@@ -902,10 +902,9 @@ module_clear(PyModuleObject *m)
     {
         int res = m->md_def->m_clear((PyObject*)m);
         if (PyErr_Occurred()) {
-            PySys_FormatStderr("Exception ignored in m_clear of module%s%V\n",
-                               m->md_name ? " " : "",
-                               m->md_name, "");
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored in m_clear of module%s%V",
+                                   m->md_name ? " " : "",
+                                   m->md_name, "");
         }
         if (res)
             return res;

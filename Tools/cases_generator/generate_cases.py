@@ -651,7 +651,10 @@ class Generator(Analyzer):
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         for part in parts:
             if isinstance(part, Component):
-                # All component instructions must be viable uops
+                # Skip specializations
+                if "specializing" in part.instr.annotations:
+                    continue
+                # All other component instructions must be viable uops
                 if not part.instr.is_viable_uop():
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
@@ -758,6 +761,12 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_TWO\n")
+            self.out.write_raw("    #error \"This file is for Tier 1 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_ONE 1\n")
+
             # Write and count instructions of all kinds
             n_macros = 0
             for thing in self.everything:
@@ -773,6 +782,9 @@ class Generator(Analyzer):
                     case _:
                         assert_never(thing)
 
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_ONE\n")
+
         print(
             f"Wrote {n_macros} cases to {output_filename}",
             file=sys.stderr,
@@ -786,6 +798,13 @@ class Generator(Analyzer):
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_ONE\n")
+            self.out.write_raw("    #error \"This file is for Tier 2 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_TWO 2\n")
+
             for instr in self.instrs.values():
                 if instr.is_viable_uop():
                     n_uops += 1
@@ -795,6 +814,10 @@ class Generator(Analyzer):
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
                         self.out.emit("break;")
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_TWO\n")
+
         print(
             f"Wrote {n_uops} cases to {executor_filename}",
             file=sys.stderr,

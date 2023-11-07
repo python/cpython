@@ -120,6 +120,11 @@ Other Language Changes
   is rejected when the global is used in the :keyword:`else` block.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
+* Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
+  determines whether or not frozen modules are ignored by the import machinery,
+  equivalent of the :option:`-X frozen_modules <-X>` command-line option.
+  (Contributed by Yilei Yang in :gh:`111374`.)
+
 New Modules
 ===========
 
@@ -179,6 +184,12 @@ The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
 and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
+
+ipaddress
+---------
+
+* Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
+  (Contributed by Charles Machalow in :gh:`109466`.)
 
 opcode
 ------
@@ -385,6 +396,16 @@ Deprecated
 * Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
   and methods that consider plural forms even if the translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
+* Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
+  (as has always been the case for an executing frame).
+  (Contributed by Irit Katriel in :gh:`79932`.)
+
+* Assignment to a function's ``__code__`` attribute where the new code
+  object's type does not match the function's type, is deprecated. The
+  different types are: plain function, generator, async generator and
+  coroutine.
+  (Contributed by Irit Katriel in :gh:`81137`.)
 
 
 Pending Removal in Python 3.14
@@ -940,6 +961,15 @@ Others
 
 * None yet
 
+CPython bytecode changes
+========================
+
+* The oparg of ``YIELD_VALUE`` is now ``1`` if the yield is part of a
+  yield-from or await, and ``0`` otherwise. The oparg of ``RESUME`` was
+  changed to add a bit indicating whether the except-depth is 1, which
+  is needed to optimize closing of generators.
+  (Contributed by Irit Katriel in :gh:`111354`.)
+
 Porting to Python 3.13
 ======================
 
@@ -955,6 +985,15 @@ Changes in the Python API
   option ``"update"`` was specified) or ``None`` if no items found.
   The result is now the same if ``wantobjects`` is set to ``0``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
+
+* Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
+  :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
+  :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
+  :c:func:`PySys_GetObject`, which clear all errors occurred during calling
+  the function, report now them using :func:`sys.unraisablehook`.
+  You can consider to replace these functions with other functions as
+  recomended in the documentation.
+  (Contributed by Serhiy Storchaka in :gh:`106672`.)
 
 
 Build Changes
@@ -1035,7 +1074,6 @@ New Features
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
-  If the assertion fails, make sure that the size is set before.
   (Contributed by Victor Stinner in :gh:`106168`.)
 
 * Add :c:func:`PyModule_Add` function: similar to
