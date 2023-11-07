@@ -737,12 +737,8 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             if (!binding_name_obj) {
                 return;
             }
-            if (PyDict_CheckExact(parameters)) {
-                PyObject *item = PyDict_GetItemWithError(parameters, binding_name_obj);
-                current_param = Py_XNewRef(item);
-            } else {
-                current_param = PyObject_GetItem(parameters, binding_name_obj);
-            }
+            PyObject *current_param;
+            (void)PyMapping_GetOptionalItem(parameters, binding_name_obj, &current_param);
             Py_DECREF(binding_name_obj);
             if (!current_param) {
                 if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_LookupError)) {
