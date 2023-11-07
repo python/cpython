@@ -401,6 +401,12 @@ Deprecated
   (as has always been the case for an executing frame).
   (Contributed by Irit Katriel in :gh:`79932`.)
 
+* Assignment to a function's ``__code__`` attribute where the new code
+  object's type does not match the function's type, is deprecated. The
+  different types are: plain function, generator, async generator and
+  coroutine.
+  (Contributed by Irit Katriel in :gh:`81137`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
