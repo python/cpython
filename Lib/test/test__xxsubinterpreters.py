@@ -105,6 +105,7 @@ class IsShareableTests(unittest.TestCase):
                 True,
                 False,
                 100.0,
+                (1, ('spam', 'eggs')),
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -194,6 +195,33 @@ class ShareableTypeTests(unittest.TestCase):
 
     def test_float(self):
         self._assert_values([0.0, 1.1, -1.0, 0.12345678, -0.12345678])
+
+    def test_tuple(self):
+        self._assert_values([(), (1,), ("hello", "world", ), (1, True, "hello")])
+        # Test nesting
+        self._assert_values([
+            ((1,),),
+            ((1, 2), (3, 4)),
+            ((1, 2), (3, 4), (5, 6)),
+        ])
+
+    def test_tuples_containing_non_shareable_types(self):
+        non_shareables = [
+                Exception(),
+                object(),
+        ]
+        for s in non_shareables:
+            value = tuple([0, 1.0, s])
+            with self.subTest(repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
+            # Check nested as well
+            value = tuple([0, 1., (s,)])
+            with self.subTest("nested " + repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
 
 
 class ModuleTests(TestBase):
