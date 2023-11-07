@@ -344,6 +344,10 @@
             break;
         }
 
+        case MAKE_CELL: {
+            break;
+        }
+
         case DELETE_DEREF: {
             break;
         }
@@ -668,6 +672,13 @@
             break;
         }
 
+        case BEFORE_ASYNC_WITH: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
         case WITH_EXCEPT_START: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
@@ -920,7 +931,7 @@
             break;
         }
 
-        case _SAVE_CURRENT_IP: {
+        case _SAVE_RETURN_OFFSET: {
             break;
         }
 

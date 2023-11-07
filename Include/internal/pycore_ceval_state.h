@@ -22,6 +22,7 @@ struct _pending_calls {
     struct _pending_call {
         _Py_pending_call_func func;
         void *arg;
+        int flags;
     } calls[NPENDINGCALLS];
     int first;
     int last;
@@ -54,6 +55,7 @@ struct _ceval_runtime_state {
         struct code_arena_st *code_arena;
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
+        Py_ssize_t persist_after_fork;
 #else
         int _not_used;
 #endif
@@ -67,6 +69,7 @@ struct _ceval_runtime_state {
     { \
         .status = PERF_STATUS_NO_INIT, \
         .extra_code_index = -1, \
+        .persist_after_fork = 0, \
     }
 #else
 # define _PyEval_RUNTIME_PERF_INIT {0}

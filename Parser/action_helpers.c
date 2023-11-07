@@ -1,7 +1,6 @@
 #include <Python.h>
 
 #include "pegen.h"
-#include "tokenizer.h"
 #include "string_parser.h"
 #include "pycore_runtime.h"         // _PyRuntime
 

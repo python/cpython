@@ -1,41 +1,51 @@
-
 /* Errno module */
 
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
+#endif
+
 #include "Python.h"
+#include <errno.h>                // EPIPE
 
 /* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-/* The following constants were added to errno.h in VS2010 but have
-   preferred WSA equivalents. */
-#undef EADDRINUSE
-#undef EADDRNOTAVAIL
-#undef EAFNOSUPPORT
-#undef EALREADY
-#undef ECONNABORTED
-#undef ECONNREFUSED
-#undef ECONNRESET
-#undef EDESTADDRREQ
-#undef EHOSTUNREACH
-#undef EINPROGRESS
-#undef EISCONN
-#undef ELOOP
-#undef EMSGSIZE
-#undef ENETDOWN
-#undef ENETRESET
-#undef ENETUNREACH
-#undef ENOBUFS
-#undef ENOPROTOOPT
-#undef ENOTCONN
-#undef ENOTSOCK
-#undef EOPNOTSUPP
-#undef EPROTONOSUPPORT
-#undef EPROTOTYPE
-#undef ETIMEDOUT
-#undef EWOULDBLOCK
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+
+   // The following constants were added to errno.h in VS2010 but have
+   // preferred WSA equivalents.
+#  undef EADDRINUSE
+#  undef EADDRNOTAVAIL
+#  undef EAFNOSUPPORT
+#  undef EALREADY
+#  undef ECONNABORTED
+#  undef ECONNREFUSED
+#  undef ECONNRESET
+#  undef EDESTADDRREQ
+#  undef EHOSTUNREACH
+#  undef EINPROGRESS
+#  undef EISCONN
+#  undef ELOOP
+#  undef EMSGSIZE
+#  undef ENETDOWN
+#  undef ENETRESET
+#  undef ENETUNREACH
+#  undef ENOBUFS
+#  undef ENOPROTOOPT
+#  undef ENOTCONN
+#  undef ENOTSOCK
+#  undef EOPNOTSUPP
+#  undef EPROTONOSUPPORT
+#  undef EPROTOTYPE
+#  undef ETIMEDOUT
+#  undef EWOULDBLOCK
 #endif
 
 /*

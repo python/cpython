@@ -102,15 +102,6 @@ class SampleClass:
 
     a_class_attribute = 42
 
-    @classmethod
-    @property
-    def a_classmethod_property(cls):
-        """
-        >>> print(SampleClass.a_classmethod_property)
-        42
-        """
-        return cls.a_class_attribute
-
     @functools.cached_property
     def a_cached_property(self):
         """
@@ -525,7 +516,6 @@ methods, classmethods, staticmethods, properties, and nested classes.
      1  SampleClass.__init__
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -582,7 +572,6 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass.__init__
      1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
-     1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
@@ -625,7 +614,6 @@ By default, an object with no doctests doesn't create any tests:
      1  SampleClass.__init__
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -647,7 +635,6 @@ displays.
      1  SampleClass.__init__
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -3212,25 +3199,155 @@ def test_run_doctestsuite_multiple_times():
     """
 
 
+def test_exception_with_note(note):
+    """
+    >>> test_exception_with_note('Note')
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('Note')  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('''Note
+    ... multiline
+    ... example''')
+    Traceback (most recent call last):
+    ValueError: Text
+    Note
+    multiline
+    example
+
+    Different note will fail the test:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = ValueError('message')
+    ...     >>> exc.add_note('note')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     ValueError: message
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 5, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        ValueError: message
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        ValueError: message
+        note
+    TestResults(failed=1, attempted=...)
+    """
+    exc = ValueError('Text')
+    exc.add_note(note)
+    raise exc
+
+
+def test_exception_with_multiple_notes():
+    """
+    >>> test_exception_with_multiple_notes()
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    One
+    Two
+    """
+    exc = ValueError('Text')
+    exc.add_note('One')
+    exc.add_note('Two')
+    raise exc
+
+
+def test_syntax_error_with_note(cls, multiline=False):
+    """
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+      ...
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+      ...
+      File "x.py", line 23
+        bad syntax
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(IndentationError)
+    Traceback (most recent call last):
+      ...
+    IndentationError: error
+    Note
+
+    >>> test_syntax_error_with_note(TabError, multiline=True)
+    Traceback (most recent call last):
+      ...
+    TabError: error
+    Note
+    Line
+    """
+    exc = cls("error", ("x.py", 23, None, "bad syntax"))
+    exc.add_note('Note\nLine' if multiline else 'Note')
+    raise exc
+
+
+def test_syntax_error_with_incorrect_expected_note():
+    """
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
+    ...     >>> exc.add_note('note1')
+    ...     >>> exc.add_note('note2')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     SyntaxError: error
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        SyntaxError: error
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        SyntaxError: error
+        note1
+        note2
+    TestResults(failed=1, attempted=...)
+    """
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(doctest))
     tests.addTest(doctest.DocTestSuite())
     return tests
 
 
-def test_coverage(coverdir):
-    trace = import_helper.import_module('trace')
-    tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
-                         trace=0, count=1)
-    tracer.run('test_main()')
-    r = tracer.results()
-    print('Writing coverage results...')
-    r.write_results(show_missing=True, summary=True,
-                    coverdir=coverdir)
-
-
 if __name__ == '__main__':
-    if '-c' in sys.argv:
-        test_coverage('/tmp/doctest.cover')
-    else:
-        unittest.main()
+    unittest.main(module='test.test_doctest')

@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(dict_fromkeys__doc__,
 "fromkeys($type, iterable, value=None, /)\n"
 "--\n"
@@ -191,4 +193,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=582766ac0154c8bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17c3c4cf9a9b95a7 input=a9049054013a1b77]*/

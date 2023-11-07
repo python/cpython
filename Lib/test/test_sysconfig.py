@@ -16,7 +16,8 @@ import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes, _main)
+                       _expand_vars, _get_preferred_schemes)
+from sysconfig.__main__ import _main, _parse_makefile
 import _imp
 import _osx_support
 import _sysconfig
@@ -539,7 +540,7 @@ class MakefileTests(unittest.TestCase):
             print("var5=dollar$$5", file=makefile)
             print("var6=${var3}/lib/python3.5/config-$(VAR2)$(var5)"
                   "-x86_64-linux-gnu", file=makefile)
-        vars = sysconfig._parse_makefile(TESTFN)
+        vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
             'VAR2': 'b42',

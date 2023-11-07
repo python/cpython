@@ -94,9 +94,9 @@ Two additional methods are supported:
 Restrictions
 ------------
 
-  .. index::
-     pair: module; dbm.ndbm
-     pair: module; dbm.gnu
+.. index::
+   pair: module; dbm.ndbm
+   pair: module; dbm.gnu
 
 * The choice of which database package will be used (such as :mod:`dbm.ndbm` or
   :mod:`dbm.gnu`) depends on which interface is available.  Therefore it is not

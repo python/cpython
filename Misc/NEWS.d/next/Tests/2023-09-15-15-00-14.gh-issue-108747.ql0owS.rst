@@ -1,0 +1,2 @@
+Add unit test for ``usercustomize`` and ``sitecustomize`` hooks from
+:class:`site`.

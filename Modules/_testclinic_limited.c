@@ -4,8 +4,14 @@
 #undef Py_BUILD_CORE_MODULE
 #undef Py_BUILD_CORE_BUILTIN
 
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
 // For now, only limited C API 3.13 is supported
+#ifndef Py_NOGIL
 #define Py_LIMITED_API 0x030d0000
+#endif
 
 /* Always enable assertions */
 #undef NDEBUG
