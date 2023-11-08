@@ -591,16 +591,17 @@ class StressTests(TestBase):
         support.gc_collect()
 
     @support.requires_resource('cpu')
-    def test_create_many_threaded(self):
+    @support.bigmemtest(size=6.39*2**30, memuse=1, dry_run=False)
+    def test_create_many_threaded(self, size):
         alive = []
         start = threading.Event()
         def task():
+            # try to create all interpreters simultaneously
             if not start.wait(10):
                 raise TimeoutError
-            for _ in range(20):
-                interp = interpreters.create()
-                alive.append(interp)
-        threads = [threading.Thread(target=task) for _ in range(10)]
+            interp = interpreters.create()
+            alive.append(interp)
+        threads = [threading.Thread(target=task) for _ in range(200)]
         with threading_helper.start_threads(threads):
             start.set()
         del alive
