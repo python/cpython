@@ -125,7 +125,6 @@ __all__ = [
     'cast',
     'clear_overloads',
     'dataclass_transform',
-    'deprecated',
     'final',
     'get_args',
     'get_origin',

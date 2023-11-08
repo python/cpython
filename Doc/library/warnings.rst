@@ -522,6 +522,52 @@ Available Functions
    and calls to :func:`simplefilter`.
 
 
+.. decorator:: deprecated(msg, *, category=DeprecationWarning, stacklevel=1)
+
+   Decorator to indicate that a class, function or overload is deprecated.
+
+   Usage::
+
+      from warnings import deprecated
+      from typing import overload
+
+      @deprecated("Use B instead")
+      class A:
+          pass
+
+      @deprecated("Use g instead")
+      def f():
+          pass
+
+      @overload
+      @deprecated("int support is deprecated")
+      def g(x: int) -> int: ...
+      @overload
+      def g(x: str) -> int: ...
+
+   When this decorator is applied to an object,
+   :term:`static type checkers <static type checker>`
+   will generate a diagnostic on usage of the deprecated object.
+
+   The warning specified by ``category`` will be emitted on use
+   of deprecated objects. For functions, that happens on calls;
+   for classes, on instantiation. If the ``category`` is ``None``,
+   no warning is emitted. The ``stacklevel`` determines where the
+   warning is emitted. If it is ``1`` (the default), the warning
+   is emitted at the direct caller of the deprecated object; if it
+   is higher, it is emitted further up the stack.
+
+   The decorator sets the ``__deprecated__``
+   attribute on the decorated object to the deprecation message
+   passed to the decorator. If applied to an overload, the decorator
+   must be after the :func:`@overload <typing.overload>` decorator
+   for the attribute to exist on the overload as returned by
+   :func:`typing.get_overloads`.
+
+   .. versionadded:: 3.13
+      See :pep:`702`.
+
+
 Available Context Managers
 --------------------------
 
