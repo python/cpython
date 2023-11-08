@@ -39,7 +39,8 @@ are:
 #. Once your dependencies are no longer blocking you, use continuous integration
    to make sure you stay compatible with Python 2 and 3 (tox_ can help test
    against multiple versions of Python; ``python -m pip install tox``)
-#. Consider using optional static type checking to make sure your type usage
+#. Consider using optional :term:`static type checking <static type checker>`
+   to make sure your type usage
    works in both Python 2 and 3 (e.g. use mypy_ to check your typing under both
    Python 2 and Python 3; ``python -m pip install mypy``).
 
@@ -395,7 +396,7 @@ comparisons occur, making the mistake much easier to track down.
 Consider using optional static type checking
 --------------------------------------------
 
-Another way to help port your code is to use a static type checker like
+Another way to help port your code is to use a :term:`static type checker` like
 mypy_ or pytype_ on your code. These tools can be used to analyze your code as
 if it's being run under Python 2, then you can run the tool a second time as if
 your code is running under Python 3. By running a static type checker twice like
