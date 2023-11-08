@@ -93,6 +93,7 @@ class MmapTests(unittest.TestCase):
             self.assertEqual(end, PAGESIZE + 6)
 
         # test seeking around (try to overflow the seek implementation)
+        self.assertTrue(m.seekable())
         m.seek(0,0)
         self.assertEqual(m.tell(), 0)
         m.seek(42,1)
