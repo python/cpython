@@ -508,6 +508,121 @@ class catch_warnings(object):
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
+
+def deprecated(
+    msg: str,
+    /,
+    *,
+    category: type[Warning] | None = DeprecationWarning,
+    stacklevel: int = 1,
+):
+    """Indicate that a class, function or overload is deprecated.
+
+    Usage:
+
+        @deprecated("Use B instead")
+        class A:
+            pass
+
+        @deprecated("Use g instead")
+        def f():
+            pass
+
+        @overload
+        @deprecated("int support is deprecated")
+        def g(x: int) -> int: ...
+        @overload
+        def g(x: str) -> int: ...
+
+    When this decorator is applied to an object, the type checker
+    will generate a diagnostic on usage of the deprecated object.
+
+    The warning specified by ``category`` will be emitted on use
+    of deprecated objects. For functions, that happens on calls;
+    for classes, on instantiation. If the ``category`` is ``None``,
+    no warning is emitted. The ``stacklevel`` determines where the
+    warning is emitted. If it is ``1`` (the default), the warning
+    is emitted at the direct caller of the deprecated object; if it
+    is higher, it is emitted further up the stack.
+
+    The decorator sets the ``__deprecated__``
+    attribute on the decorated object to the deprecation message
+    passed to the decorator. If applied to an overload, the decorator
+    must be after the ``@overload`` decorator for the attribute to
+    exist on the overload as returned by ``get_overloads()``.
+
+    See PEP 702 for details.
+
+    """
+
+    def decorator(arg, /):
+        if category is None:
+            arg.__deprecated__ = msg
+            return arg
+        elif isinstance(arg, type):
+            import functools
+            from types import MethodType
+
+            original_new = arg.__new__
+
+            @functools.wraps(original_new)
+            def __new__(cls, *args, **kwargs):
+                if cls is arg:
+                    warn(msg, category=category, stacklevel=stacklevel + 1)
+                if original_new is not object.__new__:
+                    return original_new(cls, *args, **kwargs)
+                # Mirrors a similar check in object.__new__.
+                elif cls.__init__ is object.__init__ and (args or kwargs):
+                    raise TypeError(f"{cls.__name__}() takes no arguments")
+                else:
+                    return original_new(cls)
+
+            arg.__new__ = staticmethod(__new__)
+
+            original_init_subclass = arg.__init_subclass__
+            # We need slightly different behavior if __init_subclass__
+            # is a bound method (likely if it was implemented in Python)
+            if isinstance(original_init_subclass, MethodType):
+                original_init_subclass = original_init_subclass.__func__
+
+                @functools.wraps(original_init_subclass)
+                def __init_subclass__(*args, **kwargs):
+                    warn(msg, category=category, stacklevel=stacklevel + 1)
+                    return original_init_subclass(*args, **kwargs)
+
+                arg.__init_subclass__ = classmethod(__init_subclass__)
+            # Or otherwise, which likely means it's a builtin such as
+            # type's implementation of __init_subclass__.
+            else:
+                @functools.wraps(original_init_subclass)
+                def __init_subclass__(*args, **kwargs):
+                    warn(msg, category=category, stacklevel=stacklevel + 1)
+                    return original_init_subclass(*args, **kwargs)
+
+                arg.__init_subclass__ = __init_subclass__
+
+            arg.__deprecated__ = __new__.__deprecated__ = msg
+            __init_subclass__.__deprecated__ = msg
+            return arg
+        elif callable(arg):
+            import functools
+
+            @functools.wraps(arg)
+            def wrapper(*args, **kwargs):
+                warn(msg, category=category, stacklevel=stacklevel + 1)
+                return arg(*args, **kwargs)
+
+            arg.__deprecated__ = wrapper.__deprecated__ = msg
+            return wrapper
+        else:
+            raise TypeError(
+                "@deprecated decorator with non-None category must be applied to "
+                f"a class or callable, not {arg!r}"
+            )
+
+    return decorator
+
+
 _DEPRECATED_MSG = "{name!r} is deprecated and slated for removal in Python {remove}"
 
 def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_info):
