@@ -171,7 +171,6 @@ rem batch is, shall we say, "lackluster"
 echo on
 %MSBUILD% "%dir%pcbuild.proj" /t:%target% %parallel% %verbose%^
  /p:Configuration=%conf% /p:Platform=%platf%^
- /p:UsePGO=%do_pgo%^
  /p:IncludeExternals=%IncludeExternals%^
  /p:IncludeCTypes=%IncludeCTypes%^
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
