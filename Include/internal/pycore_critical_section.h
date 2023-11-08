@@ -13,8 +13,12 @@
 extern "C" {
 #endif
 
-// Implementation of Python critical sections: helpers to replace the global
-// interpreter lock with per-object locks, while avoiding deadlocks.
+// Implementation of Python critical sections
+//
+// Conceptually, critical sections are a deadlock avoidance layer on top of
+// per-object locks. These helpers, in combination with those locks, replace
+// our usage of the global interpreter lock to provide thread-safety for
+// otherwise thread-unsafe objects, such as dict.
 //
 // NOTE: These APIs are no-ops in non-free-threaded builds.
 //
@@ -34,8 +38,8 @@ extern "C" {
 // To improve performance, this API uses a variation of the above scheme.
 // Instead of immediately suspending locks any time a nested operation begins,
 // locks are only suspended if the thread would block. This reduces the number
-// of lock acquisitions and releases for nested operations, while avoiding
-// deadlocks.
+// of lock acquisitions and releases for nested operations, while still
+// avoiding deadlocks.
 //
 // Additionally, the locks for any active operation are suspended around
 // other potentially blocking operations, such as I/O. This is because the
@@ -45,7 +49,7 @@ extern "C" {
 // Each thread's critical sections and their corresponding locks are tracked in
 // a stack in `PyThreadState.critical_section`. When a thread calls
 // `_PyThreadState_Detach()`, such as before a blocking I/O operation or when
-// waiting to acquiring a lock, the thread suspends all of it's active critical
+// waiting to acquire a lock, the thread suspends all of its active critical
 // sections, temporarily releasing the associated locks. When the thread calls
 // `_PyThreadState_Attach()`, it resumes the top-most (i.e., most recent)
 // critical section by reacquiring the associated lock or locks.  See
@@ -54,9 +58,10 @@ extern "C" {
 // NOTE: Only the top-most critical section is guaranteed to be active.
 // Operations that need to lock two objects at once must use
 // `Py_BEGIN_CRITICAL_SECTION2()`. You *CANNOT* use nested critical sections
-// to lock more than objects at once, because the inner critical section may
-// suspend the outer critical sections. This API does not provide a way to
-// lock more than two objects at once.
+// to lock more than one object at once, because the inner critical section
+// may  suspend the outer critical sections. This API does not provide a way
+// to lock more than two objects at once (though it could be added later
+// if actually needed).
 //
 // NOTE: Critical sections implicitly behave like reentrant locks because
 // attempting to acquire the same lock will suspend any outer (earlier)
