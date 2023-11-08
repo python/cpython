@@ -6332,14 +6332,18 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 #endif /* HAVE_SOCKETPAIR */
 
 
-static PyObject *
-socket_ntohs(PyObject *self, PyObject *args)
-{
-    int x;
+/*[clinic input]
+_socket.socket.ntohs
+    x: int
+    /
 
-    if (!PyArg_ParseTuple(args, "i:ntohs", &x)) {
-        return NULL;
-    }
+Convert a 16-bit unsigned integer from network to host byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_ntohs_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=a828a61a9fb205b2 input=9a79cb3a71652147]*/
+{
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "ntohs: can't convert negative Python int to C "
@@ -6354,11 +6358,6 @@ socket_ntohs(PyObject *self, PyObject *args)
     }
     return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
-
-PyDoc_STRVAR(ntohs_doc,
-"ntohs(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from network to host byte order.");
 
 
 static PyObject *
@@ -6395,14 +6394,18 @@ PyDoc_STRVAR(ntohl_doc,
 Convert a 32-bit integer from network to host byte order.");
 
 
-static PyObject *
-socket_htons(PyObject *self, PyObject *args)
-{
-    int x;
+/*[clinic input]
+_socket.socket.htons
+    x: int
+    /
 
-    if (!PyArg_ParseTuple(args, "i:htons", &x)) {
-        return NULL;
-    }
+Convert a 16-bit unsigned integer from host to network byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_htons_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=d785ee692312da47 input=053252d8416f4337]*/
+{
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "htons: can't convert negative Python int to C "
@@ -6417,11 +6420,6 @@ socket_htons(PyObject *self, PyObject *args)
     }
     return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
-
-PyDoc_STRVAR(htons_doc,
-"htons(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from host to network byte order.");
 
 
 static PyObject *
@@ -6459,14 +6457,17 @@ Convert a 32-bit integer from host to network byte order.");
 
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
-PyDoc_STRVAR(inet_aton_doc,
-"inet_aton(string) -> bytes giving packed 32-bit IP representation\n\
-\n\
-Convert an IP address in string format (123.45.67.89) to the 32-bit packed\n\
-binary format used in low-level network functions.");
+/*[clinic input]
+_socket.socket.inet_aton
+    ip_addr: str
+    /
 
-static PyObject*
-socket_inet_aton(PyObject *self, PyObject *args)
+Convert an IP address in string format (123.45.67.89) to the 32-bit packed binary format used in low-level network functions.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
+/*[clinic end generated code: output=5bfe11a255423d8c input=a120e20cb52b9488]*/
 {
 #ifdef HAVE_INET_ATON
     struct in_addr buf;
@@ -6479,11 +6480,6 @@ socket_inet_aton(PyObject *self, PyObject *args)
     /* Have to use inet_addr() instead */
     unsigned int packed_addr;
 #endif
-    const char *ip_addr;
-
-    if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr))
-        return NULL;
-
 
 #ifdef HAVE_INET_ATON
 
@@ -6532,30 +6528,29 @@ socket_inet_aton(PyObject *self, PyObject *args)
 }
 
 #ifdef HAVE_INET_NTOA
-PyDoc_STRVAR(inet_ntoa_doc,
-"inet_ntoa(packed_ip) -> ip_address_string\n\
-\n\
-Convert an IP address from 32-bit packed binary format to string format");
+/*[clinic input]
+_socket.socket.inet_ntoa
+    packed_ip: Py_buffer
+    /
 
-static PyObject*
-socket_inet_ntoa(PyObject *self, PyObject *args)
+Convert an IP address from 32-bit packed binary format to string format.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip)
+/*[clinic end generated code: output=b671880a3f62461b input=95c2c4a1b2ee957c]*/
 {
-    Py_buffer packed_ip;
     struct in_addr packed_addr;
 
-    if (!PyArg_ParseTuple(args, "y*:inet_ntoa", &packed_ip)) {
-        return NULL;
-    }
-
-    if (packed_ip.len != sizeof(packed_addr)) {
+    if (packed_ip->len != sizeof(packed_addr)) {
         PyErr_SetString(PyExc_OSError,
             "packed IP wrong length for inet_ntoa");
-        PyBuffer_Release(&packed_ip);
+        PyBuffer_Release(packed_ip);
         return NULL;
     }
 
-    memcpy(&packed_addr, packed_ip.buf, packed_ip.len);
-    PyBuffer_Release(&packed_ip);
+    memcpy(&packed_addr, packed_ip->buf, packed_ip->len);
+    PyBuffer_Release(packed_ip);
 
     SUPPRESS_DEPRECATED_CALL
     return PyUnicode_FromString(inet_ntoa(packed_addr));
@@ -7049,18 +7044,23 @@ PyDoc_STRVAR(if_nameindex_doc,
 \n\
 Returns a list of network interface information (index, name) tuples.");
 
+/*[clinic input]
+_socket.socket.if_nametoindex
+    oname: object(converter="PyUnicode_FSConverter")
+    /
+
+Returns the interface index corresponding to the interface name if_name.
+[clinic start generated code]*/
+
 static PyObject *
-socket_if_nametoindex(PyObject *self, PyObject *args)
+_socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
+/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
 {
-    PyObject *oname;
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
 #else
     unsigned long index;
 #endif
-    if (!PyArg_ParseTuple(args, "O&:if_nametoindex",
-                          PyUnicode_FSConverter, &oname))
-        return NULL;
 
     index = if_nametoindex(PyBytes_AS_STRING(oname));
     Py_DECREF(oname);
@@ -7073,10 +7073,6 @@ socket_if_nametoindex(PyObject *self, PyObject *args)
     return PyLong_FromUnsignedLong(index);
 }
 
-PyDoc_STRVAR(if_nametoindex_doc,
-"if_nametoindex(if_name)\n\
-\n\
-Returns the interface index corresponding to the interface name if_name.");
 
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
@@ -7215,19 +7211,15 @@ static PyMethodDef socket_methods[] = {
     {"socketpair",              socket_socketpair,
      METH_VARARGS, socketpair_doc},
 #endif
-    {"ntohs",                   socket_ntohs,
-     METH_VARARGS, ntohs_doc},
+    _SOCKET_SOCKET_NTOHS_METHODDEF
     {"ntohl",                   socket_ntohl,
      METH_O, ntohl_doc},
-    {"htons",                   socket_htons,
-     METH_VARARGS, htons_doc},
+    _SOCKET_SOCKET_HTONS_METHODDEF
     {"htonl",                   socket_htonl,
      METH_O, htonl_doc},
-    {"inet_aton",               socket_inet_aton,
-     METH_VARARGS, inet_aton_doc},
+    _SOCKET_SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
-    {"inet_ntoa",               socket_inet_ntoa,
-     METH_VARARGS, inet_ntoa_doc},
+    _SOCKET_SOCKET_INET_NTOA_METHODDEF
 #endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
@@ -7250,8 +7242,7 @@ static PyMethodDef socket_methods[] = {
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
-    {"if_nametoindex", socket_if_nametoindex,
-     METH_VARARGS, if_nametoindex_doc},
+    _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     {"if_indextoname", socket_if_indextoname,
      METH_O, if_indextoname_doc},
 #endif
