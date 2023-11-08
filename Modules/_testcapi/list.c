@@ -40,7 +40,7 @@ list_getitem(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj;
     Py_ssize_t i;
-    if (!PyArg_ParseTuple(args, "On", &obj, &i)){
+    if (!PyArg_ParseTuple(args, "On", &obj, &i)) {
         return NULL;
     }
     NULLABLE(obj);
@@ -52,7 +52,7 @@ list_get_item(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj;
     Py_ssize_t i;
-    if (!PyArg_ParseTuple(args, "On", &obj, &i)){
+    if (!PyArg_ParseTuple(args, "On", &obj, &i)) {
         return NULL;
     }
     NULLABLE(obj);
@@ -64,7 +64,7 @@ list_setitem(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value;
     Py_ssize_t i;
-    if ( !PyArg_ParseTuple(args, "OnO", &obj, &i, &value)){
+    if (!PyArg_ParseTuple(args, "OnO", &obj, &i, &value)) {
         return NULL;
     }
     NULLABLE(obj);
@@ -78,7 +78,7 @@ list_set_item(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value;
     Py_ssize_t i;
-    if ( !PyArg_ParseTuple(args, "OnO", &obj, &i, &value)){
+    if (!PyArg_ParseTuple(args, "OnO", &obj, &i, &value)) {
         return NULL;
     }
     NULLABLE(obj);
@@ -93,7 +93,7 @@ list_insert(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value;
     Py_ssize_t where;
-    if ( !PyArg_ParseTuple(args, "OnO", &obj, &where, &value)){
+    if (!PyArg_ParseTuple(args, "OnO", &obj, &where, &value)) {
         return NULL;
     }
     NULLABLE(obj);
@@ -106,7 +106,7 @@ static PyObject *
 list_append(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value;
-    if ( !PyArg_ParseTuple(args, "OO", &obj, &value)){
+    if (!PyArg_ParseTuple(args, "OO", &obj, &value)) {
         return NULL;
     }
     NULLABLE(obj);
@@ -119,7 +119,7 @@ list_getslice(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj;
     Py_ssize_t ilow, ihigh;
-    if ( !PyArg_ParseTuple(args, "Onn", &obj, &ilow, &ihigh)){
+    if (!PyArg_ParseTuple(args, "Onn", &obj, &ilow, &ihigh)) {
         return NULL;
     }
     NULLABLE(obj);
@@ -132,13 +132,12 @@ list_setslice(PyObject *Py_UNUSED(module), PyObject *args)
 {
     PyObject *obj, *value;
     Py_ssize_t ilow, ihigh;
-    if ( !PyArg_ParseTuple(args, "OnnO", &obj, &ilow, &ihigh, &value)){
+    if (!PyArg_ParseTuple(args, "OnnO", &obj, &ilow, &ihigh, &value)) {
         return NULL;
     }
     NULLABLE(obj);
     NULLABLE(value);
     RETURN_INT(PyList_SetSlice(obj, ilow, ihigh, value));
-
 }
 
 static PyObject *
@@ -188,7 +187,7 @@ static PyMethodDef test_methods[] = {
 int
 _PyTestCapi_Init_List(PyObject *m)
 {
-    if (PyModule_AddFunctions(m, test_methods) < 0){
+    if (PyModule_AddFunctions(m, test_methods) < 0) {
         return -1;
     }
 

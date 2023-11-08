@@ -78,12 +78,14 @@ class CAPITest(unittest.TestCase):
         getitem = _testcapi.list_getitem
         lst = [1, 2, 3]
         self.assertEqual(getitem(lst, 0), 1)
-        self.assertEqual(getitem(lst, len(lst)-1), 3)
+        self.assertEqual(getitem(lst, 2), 3)
+        self.assertRaises(IndexError, getitem, lst, 3)
         self.assertRaises(IndexError, getitem, lst, -1)
         self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MIN)
         self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MAX)
-        self.assertRaises(IndexError, getitem, lst, len(lst))
         self.assertRaises(SystemError, getitem, 42, 1)
+        self.assertRaises(SystemError, getitem, (1, 2, 3), 1)
+        self.assertRaises(SystemError, getitem, {1: 2}, 1)
 
         # CRASHES getitem(NULL, 1)
 
@@ -94,11 +96,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(get_item(lst, 0), 1)
         self.assertEqual(get_item(lst, 2), [1, 2, 3])
 
+        # CRASHES for out of index: get_item(lst, 3)
         # CRASHES for get_item(lst, PY_SSIZE_T_MIN)
         # CRASHES for get_item(lst, PY_SSIZE_T_MAX)
-        # CRASHES for out of index: get_item(lst, 3)
         # CRASHES get_item(21, 2)
-        # CRASHES get_item(Null,1)
+        # CRASHES get_item(NULL, 1)
 
 
     def test_list_setitem(self):
@@ -106,16 +108,15 @@ class CAPITest(unittest.TestCase):
         setitem = _testcapi.list_setitem
         lst = [1, 2, 3]
         setitem(lst, 0, 10)
-        self.assertEqual(lst[0], 10)
-        setitem(lst, len(lst)-1, 12)
-        self.assertEqual(lst[-1], 12)
+        self.assertEqual(lst, [10, 2, 3])
+        setitem(lst, 2, 12)
+        self.assertEqual(lst, [10, 2, 12])
+        self.assertRaises(IndexError, setitem, lst, 3 , 5)
+        self.assertRaises(IndexError, setitem, lst, -1, 5)
         self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MIN, 5)
         self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MAX, 5)
-        self.assertRaises(IndexError, setitem, lst, -1, 5)
-        self.assertRaises(IndexError, setitem, lst, len(lst) , 5)
-        self.assertRaises(TypeError, setitem, lst, 1.5, 10)
-        self.assertRaises(TypeError, setitem, 23, 'a', 5)
-        self.assertRaises(SystemError, setitem, {}, 0, 5)
+        self.assertRaises(SystemError, setitem, (1, 2, 3), 1, 5)
+        self.assertRaises(SystemError, setitem, {1: 2}, 1, 5)
 
         # CRASHES setitem(NULL, 'a', 5)
 
@@ -125,11 +126,11 @@ class CAPITest(unittest.TestCase):
         lst = [1, 2, 3]
         set_item(lst, 1, 10)
         set_item(lst, 2, [1, 2, 3])
-        self.assertEqual(lst[2], [1, 2, 3])
+        self.assertEqual(lst, [1, 10, [1, 2, 3]])
 
+        # CRASHES for set_item([1], -1, 5)
         # CRASHES for set_item([1], PY_SSIZE_T_MIN, 5)
         # CRASHES for set_item([1], PY_SSIZE_T_MAX, 5)
-        # CRASHES for set_item([1], -1, 5)
         # CRASHES for set_item([], 0, 1)
         # CRASHES for set_item(NULL, 0, 1)
 
@@ -139,9 +140,9 @@ class CAPITest(unittest.TestCase):
         insert = _testcapi.list_insert
         lst = [1, 2, 3]
         insert(lst, 0, 23)
-        self.assertEqual(lst[0], 23)
+        self.assertEqual(lst, [23, 1, 2, 3])
         insert(lst, -1, 22)
-        self.assertEqual(lst[-2], 22)
+        self.assertEqual(lst, [23, 1, 2, 22, 3])
         insert(lst, PY_SSIZE_T_MIN, 1)
         self.assertEqual(lst[0], 1)
         insert(lst, len(lst), 123)
@@ -151,27 +152,28 @@ class CAPITest(unittest.TestCase):
         insert(lst, PY_SSIZE_T_MAX, 223)
         self.assertEqual(lst[-1], 223)
 
-        self.assertRaises(TypeError, insert, lst, 1.5, 10)
-        self.assertRaises(TypeError, insert, 23, 'a', 5)
-        self.assertRaises(SystemError, insert, {}, 0, 5)
+        self.assertRaises(SystemError, insert, (1, 2, 3), 1, 5)
+        self.assertRaises(SystemError, insert, {1: 2}, 1, 5)
 
-        # CRASHES insert(NULL, 'a', 5)
+        # CRASHES insert(NULL, 1, 5)
 
     def test_list_append(self):
         # Test PyList_Append()
         append = _testcapi.list_append
         lst = [1, 2, 3]
-        append(lst, 1)
-        self.assertEqual(lst[-1], 1)
-        append(lst, [4,5,6])
-        self.assertEqual(lst[-1], [4,5,6])
+        append(lst, 10)
+        self.assertEqual(lst, [1, 2, 3, 10])
+        append(lst, [4, 5])
+        self.assertEqual(lst, [1, 2, 3, 10, [4, 5]])
         self.assertRaises(SystemError, append, lst, NULL)
+        self.assertRaises(SystemError, append, (), 0)
+        self.assertRaises(SystemError, append, 42, 0)
         # CRASHES append(NULL, 0)
 
     def test_list_getslice(self):
         # Test PyList_GetSlice()
         getslice = _testcapi.list_getslice
-        lst = [1,2,3]
+        lst = [1, 2, 3]
 
         # empty
         self.assertEqual(getslice(lst, PY_SSIZE_T_MIN, 0), [])
@@ -186,15 +188,18 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getslice(lst, 0, 100), lst)
         self.assertEqual(getslice(lst, -100, 100), lst)
 
-        self.assertRaises(TypeError, lst, 'a', '2')
+        self.assertRaises(SystemError, getslice, (1, 2, 3), 0, 0)
+        self.assertRaises(SystemError, getslice, 'abc', 0, 0)
+        self.assertRaises(SystemError, getslice, 42, 0, 0)
 
         # CRASHES getslice(NULL, 0, 0)
 
     def test_list_setslice(self):
         # Test PyList_SetSlice()
+        setslice = _testcapi.list_setslice
         def set_slice(lst, low, high, value):
             lst = lst.copy()
-            self.assertEqual(_testcapi.list_setslice(lst, low, high, value), 0)
+            self.assertEqual(setslice(lst, low, high, value), 0)
             return lst
 
         # insert items
@@ -226,7 +231,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(set_slice(lst, 0, len(lst), NULL), [])
         self.assertEqual(set_slice(lst, 3, len(lst), NULL), list("abc"))
 
-        # CRASHES PyList_SetSlice(NULL, 0, 0, ["x"])
+        self.assertRaises(SystemError, setslice, (), 0, 0, [])
+        self.assertRaises(SystemError, setslice, 42, 0, 0, [])
+
+        # CRASHES setslice(NULL, 0, 0, [])
 
     def test_list_sort(self):
         # Test PyList_Sort()
@@ -239,6 +247,7 @@ class CAPITest(unittest.TestCase):
         sort(lst2)
         self.assertEqual(lst2, list(range(10)))
 
+        self.assertRaises(SystemError, sort, ())
         self.assertRaises(SystemError, sort, object())
         self.assertRaises(SystemError, sort, NULL)
 
@@ -253,6 +262,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(list_reverse([]), [])
         self.assertEqual(list_reverse([2, 5, 10]), [10, 5, 2])
 
+        self.assertRaises(SystemError, reverse, ())
         self.assertRaises(SystemError, reverse, object())
         self.assertRaises(SystemError, reverse, NULL)
 
@@ -262,5 +272,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(astuple([]), ())
         self.assertEqual(astuple([2, 5, 10]), (2, 5, 10))
 
+        self.assertRaises(SystemError, astuple, ())
         self.assertRaises(SystemError, astuple, object())
         self.assertRaises(SystemError, astuple, NULL)
