@@ -397,6 +397,16 @@ Deprecated
   and methods that consider plural forms even if the translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
 
+* Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
+  (as has always been the case for an executing frame).
+  (Contributed by Irit Katriel in :gh:`79932`.)
+
+* Assignment to a function's ``__code__`` attribute where the new code
+  object's type does not match the function's type, is deprecated. The
+  different types are: plain function, generator, async generator and
+  coroutine.
+  (Contributed by Irit Katriel in :gh:`81137`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -976,6 +986,15 @@ Changes in the Python API
   The result is now the same if ``wantobjects`` is set to ``0``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
+* Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
+  :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
+  :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
+  :c:func:`PySys_GetObject`, which clear all errors occurred during calling
+  the function, report now them using :func:`sys.unraisablehook`.
+  You can consider to replace these functions with other functions as
+  recomended in the documentation.
+  (Contributed by Serhiy Storchaka in :gh:`106672`.)
+
 
 Build Changes
 =============
@@ -1130,9 +1149,6 @@ New Features
   :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
-* Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
-  (Contributed by Victor Stinner in :gh:`111089`.)
-
 
 Porting to Python 3.13
 ----------------------
@@ -1202,12 +1218,6 @@ Porting to Python 3.13
 
   Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
   should be the deallocation function it is in.
-
-* The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
-  contains embedded null characters. To accept embedded null characters and
-  truncate on purpose at the first null byte,
-  ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
-  (Contributed by Victor Stinner in :gh:`111089`.)
 
 * On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
   header file. If needed, it should now be included explicitly. For example, it

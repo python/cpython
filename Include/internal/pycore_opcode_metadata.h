@@ -81,15 +81,15 @@
 #define _FOR_ITER 353
 #define _ITER_CHECK_LIST 354
 #define _ITER_JUMP_LIST 355
-#define _IS_ITER_EXHAUSTED_LIST 356
+#define _GUARD_NOT_EXHAUSTED_LIST 356
 #define _ITER_NEXT_LIST 357
 #define _ITER_CHECK_TUPLE 358
 #define _ITER_JUMP_TUPLE 359
-#define _IS_ITER_EXHAUSTED_TUPLE 360
+#define _GUARD_NOT_EXHAUSTED_TUPLE 360
 #define _ITER_NEXT_TUPLE 361
 #define _ITER_CHECK_RANGE 362
 #define _ITER_JUMP_RANGE 363
-#define _IS_ITER_EXHAUSTED_RANGE 364
+#define _GUARD_NOT_EXHAUSTED_RANGE 364
 #define _ITER_NEXT_RANGE 365
 #define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 366
 #define _GUARD_KEYS_VERSION 367
@@ -542,7 +542,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_LIST:
             return 1;
-        case _IS_ITER_EXHAUSTED_LIST:
+        case _GUARD_NOT_EXHAUSTED_LIST:
             return 1;
         case _ITER_NEXT_LIST:
             return 1;
@@ -552,7 +552,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_TUPLE:
             return 1;
-        case _IS_ITER_EXHAUSTED_TUPLE:
+        case _GUARD_NOT_EXHAUSTED_TUPLE:
             return 1;
         case _ITER_NEXT_TUPLE:
             return 1;
@@ -562,7 +562,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_RANGE:
             return 1;
-        case _IS_ITER_EXHAUSTED_RANGE:
+        case _GUARD_NOT_EXHAUSTED_RANGE:
             return 1;
         case _ITER_NEXT_RANGE:
             return 1;
@@ -1170,8 +1170,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_LIST:
             return 1;
-        case _IS_ITER_EXHAUSTED_LIST:
-            return 2;
+        case _GUARD_NOT_EXHAUSTED_LIST:
+            return 1;
         case _ITER_NEXT_LIST:
             return 2;
         case FOR_ITER_LIST:
@@ -1180,8 +1180,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_TUPLE:
             return 1;
-        case _IS_ITER_EXHAUSTED_TUPLE:
-            return 2;
+        case _GUARD_NOT_EXHAUSTED_TUPLE:
+            return 1;
         case _ITER_NEXT_TUPLE:
             return 2;
         case FOR_ITER_TUPLE:
@@ -1190,8 +1190,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_JUMP_RANGE:
             return 1;
-        case _IS_ITER_EXHAUSTED_RANGE:
-            return 2;
+        case _GUARD_NOT_EXHAUSTED_RANGE:
+            return 1;
         case _ITER_NEXT_RANGE:
             return 2;
         case FOR_ITER_RANGE:
@@ -1651,17 +1651,17 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [INSTRUMENTED_FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [_ITER_CHECK_LIST] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_JUMP_LIST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [_IS_ITER_EXHAUSTED_LIST] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_NOT_EXHAUSTED_LIST] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_NEXT_LIST] = { true, INSTR_FMT_IX, 0 },
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG },
     [_ITER_CHECK_TUPLE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_JUMP_TUPLE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [_IS_ITER_EXHAUSTED_TUPLE] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_NOT_EXHAUSTED_TUPLE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_NEXT_TUPLE] = { true, INSTR_FMT_IX, 0 },
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG },
     [_ITER_CHECK_RANGE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_JUMP_RANGE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [_IS_ITER_EXHAUSTED_RANGE] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_NOT_EXHAUSTED_RANGE] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_ITER_NEXT_RANGE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG },
     [FOR_ITER_GEN] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
@@ -1771,6 +1771,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [END_SEND] = { .nuops = 1, .uops = { { END_SEND, 0, 0 } } },
     [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { UNARY_NEGATIVE, 0, 0 } } },
     [UNARY_NOT] = { .nuops = 1, .uops = { { UNARY_NOT, 0, 0 } } },
+    [TO_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL, 0, 0 } } },
     [TO_BOOL_BOOL] = { .nuops = 1, .uops = { { TO_BOOL_BOOL, 0, 0 } } },
     [TO_BOOL_INT] = { .nuops = 1, .uops = { { TO_BOOL_INT, 0, 0 } } },
     [TO_BOOL_LIST] = { .nuops = 1, .uops = { { TO_BOOL_LIST, 0, 0 } } },
@@ -1785,6 +1786,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [BINARY_OP_ADD_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_ADD_FLOAT, 0, 0 } } },
     [BINARY_OP_SUBTRACT_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_SUBTRACT_FLOAT, 0, 0 } } },
     [BINARY_OP_ADD_UNICODE] = { .nuops = 2, .uops = { { _GUARD_BOTH_UNICODE, 0, 0 }, { _BINARY_OP_ADD_UNICODE, 0, 0 } } },
+    [BINARY_SUBSCR] = { .nuops = 1, .uops = { { _BINARY_SUBSCR, 0, 0 } } },
     [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
@@ -1793,6 +1795,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_DICT, 0, 0 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { LIST_APPEND, 0, 0 } } },
     [SET_ADD] = { .nuops = 1, .uops = { { SET_ADD, 0, 0 } } },
+    [STORE_SUBSCR] = { .nuops = 1, .uops = { { _STORE_SUBSCR, 0, 0 } } },
     [STORE_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { STORE_SUBSCR_LIST_INT, 0, 0 } } },
     [STORE_SUBSCR_DICT] = { .nuops = 1, .uops = { { STORE_SUBSCR_DICT, 0, 0 } } },
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { DELETE_SUBSCR, 0, 0 } } },
@@ -1808,17 +1811,19 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [LOAD_BUILD_CLASS] = { .nuops = 1, .uops = { { LOAD_BUILD_CLASS, 0, 0 } } },
     [STORE_NAME] = { .nuops = 1, .uops = { { STORE_NAME, 0, 0 } } },
     [DELETE_NAME] = { .nuops = 1, .uops = { { DELETE_NAME, 0, 0 } } },
-    [UNPACK_SEQUENCE] = { .nuops = 2, .uops = { { _SPECIALIZE_UNPACK_SEQUENCE, 1, 0 }, { _UNPACK_SEQUENCE, 0, 0 } } },
+    [UNPACK_SEQUENCE] = { .nuops = 1, .uops = { { _UNPACK_SEQUENCE, 0, 0 } } },
     [UNPACK_SEQUENCE_TWO_TUPLE] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_TWO_TUPLE, 0, 0 } } },
     [UNPACK_SEQUENCE_TUPLE] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_TUPLE, 0, 0 } } },
     [UNPACK_SEQUENCE_LIST] = { .nuops = 1, .uops = { { UNPACK_SEQUENCE_LIST, 0, 0 } } },
     [UNPACK_EX] = { .nuops = 1, .uops = { { UNPACK_EX, 0, 0 } } },
+    [STORE_ATTR] = { .nuops = 1, .uops = { { _STORE_ATTR, 0, 0 } } },
     [DELETE_ATTR] = { .nuops = 1, .uops = { { DELETE_ATTR, 0, 0 } } },
     [STORE_GLOBAL] = { .nuops = 1, .uops = { { STORE_GLOBAL, 0, 0 } } },
     [DELETE_GLOBAL] = { .nuops = 1, .uops = { { DELETE_GLOBAL, 0, 0 } } },
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { LOAD_LOCALS, 0, 0 } } },
     [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
     [LOAD_NAME] = { .nuops = 1, .uops = { { LOAD_NAME, 0, 0 } } },
+    [LOAD_GLOBAL] = { .nuops = 1, .uops = { { _LOAD_GLOBAL, 0, 0 } } },
     [LOAD_GLOBAL_MODULE] = { .nuops = 2, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _LOAD_GLOBAL_MODULE, 1, 3 } } },
     [LOAD_GLOBAL_BUILTIN] = { .nuops = 3, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION, 1, 2 }, { _LOAD_GLOBAL_BUILTINS, 1, 3 } } },
     [DELETE_FAST] = { .nuops = 1, .uops = { { DELETE_FAST, 0, 0 } } },
@@ -1842,6 +1847,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [MAP_ADD] = { .nuops = 1, .uops = { { MAP_ADD, 0, 0 } } },
     [LOAD_SUPER_ATTR_ATTR] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_ATTR, 0, 0 } } },
     [LOAD_SUPER_ATTR_METHOD] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_METHOD, 0, 0 } } },
+    [LOAD_ATTR] = { .nuops = 1, .uops = { { _LOAD_ATTR, 0, 0 } } },
     [LOAD_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_MANAGED_OBJECT_HAS_VALUES, 0, 0 }, { _LOAD_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [LOAD_ATTR_MODULE] = { .nuops = 2, .uops = { { _CHECK_ATTR_MODULE, 2, 1 }, { _LOAD_ATTR_MODULE, 1, 3 } } },
     [LOAD_ATTR_WITH_HINT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_WITH_HINT, 0, 0 }, { _LOAD_ATTR_WITH_HINT, 1, 3 } } },
@@ -1849,6 +1855,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [LOAD_ATTR_CLASS] = { .nuops = 2, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _LOAD_ATTR_CLASS, 4, 5 } } },
     [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES, 0, 0 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [STORE_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 } } },
+    [COMPARE_OP] = { .nuops = 1, .uops = { { _COMPARE_OP, 0, 0 } } },
     [COMPARE_OP_FLOAT] = { .nuops = 1, .uops = { { COMPARE_OP_FLOAT, 0, 0 } } },
     [COMPARE_OP_INT] = { .nuops = 1, .uops = { { COMPARE_OP_INT, 0, 0 } } },
     [COMPARE_OP_STR] = { .nuops = 1, .uops = { { COMPARE_OP_STR, 0, 0 } } },
@@ -1863,7 +1870,11 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [MATCH_KEYS] = { .nuops = 1, .uops = { { MATCH_KEYS, 0, 0 } } },
     [GET_ITER] = { .nuops = 1, .uops = { { GET_ITER, 0, 0 } } },
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
+    [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, 0, 0 }, { _ITER_JUMP_LIST, 0, 0 }, { _ITER_NEXT_LIST, 0, 0 } } },
+    [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, 0, 0 }, { _ITER_JUMP_TUPLE, 0, 0 }, { _ITER_NEXT_TUPLE, 0, 0 } } },
+    [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, 0, 0 }, { _ITER_JUMP_RANGE, 0, 0 }, { _ITER_NEXT_RANGE, 0, 0 } } },
     [BEFORE_ASYNC_WITH] = { .nuops = 1, .uops = { { BEFORE_ASYNC_WITH, 0, 0 } } },
+    [BEFORE_WITH] = { .nuops = 1, .uops = { { BEFORE_WITH, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 0 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
@@ -1894,6 +1905,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { FORMAT_SIMPLE, 0, 0 } } },
     [FORMAT_WITH_SPEC] = { .nuops = 1, .uops = { { FORMAT_WITH_SPEC, 0, 0 } } },
     [COPY] = { .nuops = 1, .uops = { { COPY, 0, 0 } } },
+    [BINARY_OP] = { .nuops = 1, .uops = { { _BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
 #endif // NEED_OPCODE_METADATA
@@ -1957,15 +1969,15 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_FOR_ITER] = "_FOR_ITER",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
     [_ITER_JUMP_LIST] = "_ITER_JUMP_LIST",
-    [_IS_ITER_EXHAUSTED_LIST] = "_IS_ITER_EXHAUSTED_LIST",
+    [_GUARD_NOT_EXHAUSTED_LIST] = "_GUARD_NOT_EXHAUSTED_LIST",
     [_ITER_NEXT_LIST] = "_ITER_NEXT_LIST",
     [_ITER_CHECK_TUPLE] = "_ITER_CHECK_TUPLE",
     [_ITER_JUMP_TUPLE] = "_ITER_JUMP_TUPLE",
-    [_IS_ITER_EXHAUSTED_TUPLE] = "_IS_ITER_EXHAUSTED_TUPLE",
+    [_GUARD_NOT_EXHAUSTED_TUPLE] = "_GUARD_NOT_EXHAUSTED_TUPLE",
     [_ITER_NEXT_TUPLE] = "_ITER_NEXT_TUPLE",
     [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
     [_ITER_JUMP_RANGE] = "_ITER_JUMP_RANGE",
-    [_IS_ITER_EXHAUSTED_RANGE] = "_IS_ITER_EXHAUSTED_RANGE",
+    [_GUARD_NOT_EXHAUSTED_RANGE] = "_GUARD_NOT_EXHAUSTED_RANGE",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",

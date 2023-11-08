@@ -76,8 +76,13 @@ isolation_level_converter(PyObject *str_or_none, const char **result)
         *result = NULL;
     }
     else if (PyUnicode_Check(str_or_none)) {
-        const char *str = PyUnicode_AsUTF8(str_or_none);
+        Py_ssize_t sz;
+        const char *str = PyUnicode_AsUTF8AndSize(str_or_none, &sz);
         if (str == NULL) {
+            return 0;
+        }
+        if (strlen(str) != (size_t)sz) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             return 0;
         }
 

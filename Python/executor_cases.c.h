@@ -871,24 +871,6 @@
             break;
         }
 
-        case _SPECIALIZE_UNPACK_SEQUENCE: {
-            PyObject *seq;
-            seq = stack_pointer[-1];
-            uint16_t counter = (uint16_t)next_uop[-1].operand;
-            #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
-                next_instr = this_instr;
-                _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(UNPACK_SEQUENCE, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
-            #endif  /* ENABLE_SPECIALIZATION */
-            (void)seq;
-            (void)counter;
-            break;
-        }
-
         case _UNPACK_SEQUENCE: {
             PyObject *seq;
             seq = stack_pointer[-1];
@@ -2156,26 +2138,14 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_LIST: {
+        case _GUARD_NOT_EXHAUSTED_LIST: {
             PyObject *iter;
-            PyObject *exhausted;
             iter = stack_pointer[-1];
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyList_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
-            STACK_GROW(1);
-            stack_pointer[-1] = exhausted;
+            DEOPT_IF(seq == NULL, _GUARD_NOT_EXHAUSTED_LIST);
+            DEOPT_IF(it->it_index >= PyList_GET_SIZE(seq), _GUARD_NOT_EXHAUSTED_LIST);
             break;
         }
 
@@ -2201,26 +2171,14 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_TUPLE: {
+        case _GUARD_NOT_EXHAUSTED_TUPLE: {
             PyObject *iter;
-            PyObject *exhausted;
             iter = stack_pointer[-1];
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyTuple_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
-            STACK_GROW(1);
-            stack_pointer[-1] = exhausted;
+            DEOPT_IF(seq == NULL, _GUARD_NOT_EXHAUSTED_TUPLE);
+            DEOPT_IF(it->it_index >= PyTuple_GET_SIZE(seq), _GUARD_NOT_EXHAUSTED_TUPLE);
             break;
         }
 
@@ -2247,15 +2205,12 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_RANGE: {
+        case _GUARD_NOT_EXHAUSTED_RANGE: {
             PyObject *iter;
-            PyObject *exhausted;
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            exhausted = r->len <= 0 ? Py_True : Py_False;
-            STACK_GROW(1);
-            stack_pointer[-1] = exhausted;
+            DEOPT_IF(r->len <= 0, _GUARD_NOT_EXHAUSTED_RANGE);
             break;
         }
 
@@ -2304,7 +2259,50 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgs(enter);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            Py_DECREF(enter);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error_tier_two;
+            }
+            STACK_GROW(1);
+            stack_pointer[-2] = exit;
+            stack_pointer[-1] = res;
+            break;
+        }
+
+        case BEFORE_WITH: {
+            PyObject *mgr;
+            PyObject *exit;
+            PyObject *res;
+            mgr = stack_pointer[-1];
+            /* pop the context manager, push its __exit__ and the
+             * value returned from calling its __enter__
+             */
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
+            if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                GOTO_ERROR(error);
+            }
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
+            if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol "
+                                  "(missed __exit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                Py_DECREF(enter);
+                GOTO_ERROR(error);
+            }
+            Py_DECREF(mgr);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
