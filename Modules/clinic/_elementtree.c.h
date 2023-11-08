@@ -1131,8 +1131,13 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
         encoding = NULL;
     }
     else if (PyUnicode_Check(fastargs[1])) {
-        encoding = PyUnicode_AsUTF8(fastargs[1]);
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
         if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1214,4 +1219,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=399d9d5c9435070b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fdaa17d3262800a input=a9049054013a1b77]*/
