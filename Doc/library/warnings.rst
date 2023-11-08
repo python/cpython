@@ -549,10 +549,10 @@ Available Functions
    :term:`static type checkers <static type checker>`
    will generate a diagnostic on usage of the deprecated object.
 
-   The warning specified by ``category`` will be emitted on use
+   The warning specified by *category* will be emitted on use
    of deprecated objects. For functions, that happens on calls;
-   for classes, on instantiation. If the ``category`` is ``None``,
-   no warning is emitted. The ``stacklevel`` determines where the
+   for classes, on instantiation. If the *category* is ``None``,
+   no warning is emitted. The *stacklevel* determines where the
    warning is emitted. If it is ``1`` (the default), the warning
    is emitted at the direct caller of the deprecated object; if it
    is higher, it is emitted further up the stack.
