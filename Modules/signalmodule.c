@@ -417,6 +417,12 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         return NULL;
     }
 #endif
+
+    if (fd != -1 && fstat(fd, &buf) != 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid fd");
+        return NULL;
+    }
+
     old_fd = wakeup_fd;
     wakeup_fd = fd;
     return PyLong_FromLong(old_fd);
