@@ -1,4 +1,6 @@
 import asyncio
+import os
+import socket
 import time
 import threading
 import unittest
@@ -175,6 +177,80 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await srv.wait_closed()
 
 
+
+
+# Test the various corner cases of Unix server socket removal
+class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_addr_cleanup(self):
+        # Default scenario
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            srv = await asyncio.start_unix_server(serve, addr)
+
+            srv.close()
+            self.assertFalse(os.path.exists(addr))
+
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_sock_cleanup(self):
+        # Using already bound socket
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.bind(addr)
+
+            srv = await asyncio.start_unix_server(serve, sock=sock)
+
+            srv.close()
+            self.assertFalse(os.path.exists(addr))
+
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_cleanup_gone(self):
+        # Someone else has already cleaned up the socket
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.bind(addr)
+
+            srv = await asyncio.start_unix_server(serve, sock=sock)
+
+            os.unlink(addr)
+
+            srv.close()
+
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_cleanup_replaced(self):
+        # Someone else has replaced the socket with their own
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            srv = await asyncio.start_unix_server(serve, addr)
+
+            os.unlink(addr)
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.bind(addr)
+
+            srv.close()
+            self.assertTrue(os.path.exists(addr))
+
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_cleanup_prevented(self):
+        # Automatic cleanup explicitly disabled
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            srv = await asyncio.start_unix_server(serve, addr, cleanup_socket=False)
+
+            srv.close()
+            self.assertTrue(os.path.exists(addr))
 
 
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')
