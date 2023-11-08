@@ -2258,89 +2258,6 @@
             break;
         }
 
-        case BEFORE_ASYNC_WITH: {
-            PyObject *mgr;
-            PyObject *exit;
-            PyObject *res;
-            mgr = stack_pointer[-1];
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                GOTO_ERROR(error);
-            }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol "
-                                  "(missed __aexit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                GOTO_ERROR(error);
-            }
-            Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                if (true) goto pop_1_error_tier_two;
-            }
-            STACK_GROW(1);
-            stack_pointer[-2] = exit;
-            stack_pointer[-1] = res;
-            break;
-        }
-
-        case BEFORE_WITH: {
-            PyObject *mgr;
-            PyObject *exit;
-            PyObject *res;
-            mgr = stack_pointer[-1];
-            /* pop the context manager, push its __exit__ and the
-             * value returned from calling its __enter__
-             */
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                GOTO_ERROR(error);
-            }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol "
-                                  "(missed __exit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                GOTO_ERROR(error);
-            }
-            Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                if (true) goto pop_1_error_tier_two;
-            }
-            STACK_GROW(1);
-            stack_pointer[-2] = exit;
-            stack_pointer[-1] = res;
-            break;
-        }
-
         case WITH_EXCEPT_START: {
             PyObject *val;
             PyObject *lasti;
@@ -3288,15 +3205,6 @@
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
             GOTO_TIER_ONE();
-            break;
-        }
-
-        case _INSERT: {
-            PyObject *top;
-            top = stack_pointer[-1];
-            // Inserts TOS at position specified by oparg;
-            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
-            stack_pointer[-1 - oparg] = top;
             break;
         }
 

@@ -672,20 +672,6 @@
             break;
         }
 
-        case BEFORE_ASYNC_WITH: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
-            break;
-        }
-
-        case BEFORE_WITH: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
-            break;
-        }
-
         case WITH_EXCEPT_START: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
@@ -943,10 +929,5 @@
         }
 
         case _EXIT_TRACE: {
-            break;
-        }
-
-        case _INSERT: {
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - oparg)), true);
             break;
         }

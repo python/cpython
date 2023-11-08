@@ -2747,6 +2747,7 @@ dummy_func(
         }
 
         inst(BEFORE_ASYNC_WITH, (mgr -- exit, res)) {
+            TIER_ONE_ONLY // XXX: Need trampoline for memcpy!
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2779,6 +2780,7 @@ dummy_func(
         }
 
         inst(BEFORE_WITH, (mgr -- exit, res)) {
+            TIER_ONE_ONLY // XXX: Need trampoline for memcpy!
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
              */
@@ -4035,6 +4037,7 @@ dummy_func(
         }
 
         op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {
+            TIER_ONE_ONLY // XXX: Need trampoline for memmove!
             // Inserts TOS at position specified by oparg;
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
         }
