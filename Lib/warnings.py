@@ -518,6 +518,9 @@ def deprecated(
 ):
     """Indicate that a class, function or overload is deprecated.
 
+    When this decorator is applied to an object, the type checker
+    will generate a diagnostic on usage of the deprecated object.
+
     Usage:
 
         @deprecated("Use B instead")
@@ -534,20 +537,18 @@ def deprecated(
         @overload
         def g(x: str) -> int: ...
 
-    When this decorator is applied to an object, the type checker
-    will generate a diagnostic on usage of the deprecated object.
-
     The warning specified by ``category`` will be emitted on use
     of deprecated objects. For functions, that happens on calls;
-    for classes, on instantiation. If the ``category`` is ``None``,
+    for classes, on instantiation and on creation of subclasses.
+    If the ``category`` is ``None``,
     no warning is emitted. The ``stacklevel`` determines where the
     warning is emitted. If it is ``1`` (the default), the warning
     is emitted at the direct caller of the deprecated object; if it
     is higher, it is emitted further up the stack.
 
-    The decorator sets the ``__deprecated__``
-    attribute on the decorated object to the deprecation message
-    passed to the decorator. If applied to an overload, the decorator
+    The deprecation message passed to the decorator is saved in the
+    ``__deprecated__`` attribute on the decorated object.
+    If applied to an overload, the decorator
     must be after the ``@overload`` decorator for the attribute to
     exist on the overload as returned by ``get_overloads()``.
 
