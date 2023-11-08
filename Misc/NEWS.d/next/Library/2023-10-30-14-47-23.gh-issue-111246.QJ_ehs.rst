@@ -1,0 +1,2 @@
+:meth:`asyncio.loop.create_unix_server` will now automatically remove the
+Unix socket when the server is closed.
