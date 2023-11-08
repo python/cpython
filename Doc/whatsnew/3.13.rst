@@ -185,6 +185,14 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+
+mmap
+----
+
+* The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
+  that can be used where it requires a file-like object with seekable.
+  (Contributed by Donghee Na in :gh:`111835`.)
+
 ipaddress
 ---------
 
