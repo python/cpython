@@ -1,12 +1,15 @@
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import sysconfig
 import unittest
 from test import support
 
+
+GDB_PROGRAM = shutil.which('gdb') or 'gdb'
 
 # Location of custom hooks file in a repository checkout.
 CHECKOUT_HOOK_PATH = os.path.join(os.path.dirname(sys.executable),
@@ -27,7 +30,7 @@ def clean_environment():
 # Temporary value until it's initialized by get_gdb_version() below
 GDB_VERSION = (0, 0)
 
-def run_gdb(*args, exitcode=0, **env_vars):
+def run_gdb(*args, exitcode=0, check=True, **env_vars):
     """Runs gdb in --batch mode with the additional arguments given by *args.
 
     Returns its (stdout, stderr) decoded from utf-8 using the replace handler.
@@ -36,7 +39,7 @@ def run_gdb(*args, exitcode=0, **env_vars):
     if env_vars:
         env.update(env_vars)
 
-    cmd = ['gdb',
+    cmd = [GDB_PROGRAM,
            # Batch mode: Exit after processing all the command files
            # specified with -x/--command
            '--batch',
@@ -59,7 +62,7 @@ def run_gdb(*args, exitcode=0, **env_vars):
 
     stdout = proc.stdout
     stderr = proc.stderr
-    if proc.returncode != exitcode:
+    if check and proc.returncode != exitcode:
         cmd_text = shlex.join(cmd)
         raise Exception(f"{cmd_text} failed with exit code {proc.returncode}, "
                         f"expected exit code {exitcode}:\n"
@@ -72,10 +75,10 @@ def run_gdb(*args, exitcode=0, **env_vars):
 def get_gdb_version():
     try:
         stdout, stderr = run_gdb('--version')
-    except OSError:
+    except OSError as exc:
         # This is what "no gdb" looks like.  There may, however, be other
         # errors that manifest this way too.
-        raise unittest.SkipTest("Couldn't find gdb program on the path")
+        raise unittest.SkipTest(f"Couldn't find gdb program on the path: {exc}")
 
     # Regex to parse:
     # 'GNU gdb (GDB; SUSE Linux Enterprise 12) 7.7\n' -> 7.7
@@ -106,7 +109,8 @@ def check_usable_gdb():
     # disallow this without a customized .gdbinit.
     stdout, stderr = run_gdb(
         '--eval-command=python import sys; print(sys.version_info)',
-        '--args', sys.executable)
+        '--args', sys.executable,
+        check=False)
 
     if "auto-loading has been declined" in stderr:
         raise unittest.SkipTest(
@@ -144,6 +148,7 @@ def setup_module():
         print(f"gdb version {GDB_VERSION[0]}.{GDB_VERSION[1]}:")
         for line in GDB_VERSION_TEXT.splitlines():
             print(" " * 4 + line)
+        print(f"    path: {GDB_PROGRAM}")
         print()
 
 

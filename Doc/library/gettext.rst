@@ -167,7 +167,7 @@ install themselves in the built-in namespace as the function :func:`!_`.
    :class:`NullTranslations` instance if *fallback* is true.
 
    .. versionchanged:: 3.3
-      :exc:`IOError` used to be raised instead of :exc:`OSError`.
+      :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
 
    .. versionchanged:: 3.11
       *codeset* parameter is removed.

@@ -8,6 +8,7 @@ import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 
+from .filter import set_match_tests
 from .runtests import RunTests
 from .utils import (
     setup_unraisable_hook, setup_threading_excepthook, fix_umask,
@@ -92,11 +93,11 @@ def setup_tests(runtests: RunTests):
     support.PGO = runtests.pgo
     support.PGO_EXTENDED = runtests.pgo_extended
 
-    support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
+    set_match_tests(runtests.match_tests)
 
     if runtests.use_junit:
         support.junit_xml_list = []
-        from test.support.testresult import RegressionTestResult
+        from .testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
     else:
         support.junit_xml_list = None
@@ -111,6 +112,8 @@ def setup_tests(runtests: RunTests):
     timeout = runtests.timeout
     if timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.LOOPBACK_TIMEOUT = max(support.LOOPBACK_TIMEOUT, timeout / 120)
+        # don't increase INTERNET_TIMEOUT
         support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
         support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 

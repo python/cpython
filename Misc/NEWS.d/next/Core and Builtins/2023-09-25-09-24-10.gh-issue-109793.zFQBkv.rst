@@ -1,4 +1,0 @@
-The main thread no longer exits prematurely when a subinterpreter
-is cleaned up during runtime finalization.  The bug was a problem
-particularly because, when triggered, the Python process would
-always return with a 0 exitcode, even if it failed.

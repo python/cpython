@@ -2,8 +2,10 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_pybuffer.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_crossinterp.h"   // _Py_CallInInterpreter()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_long.h"          // _Py_IsNegative
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -804,6 +806,27 @@ PyBuffer_Release(Py_buffer *view)
     }
     view->obj = NULL;
     Py_DECREF(obj);
+}
+
+static int
+_buffer_release_call(void *arg)
+{
+    PyBuffer_Release((Py_buffer *)arg);
+    return 0;
+}
+
+int
+_PyBuffer_ReleaseInInterpreter(PyInterpreterState *interp,
+                               Py_buffer *view)
+{
+    return _Py_CallInInterpreter(interp, _buffer_release_call, view);
+}
+
+int
+_PyBuffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
+                                         Py_buffer *view)
+{
+    return _Py_CallInInterpreterAndRawFree(interp, _buffer_release_call, view);
 }
 
 PyObject *
@@ -2445,31 +2468,53 @@ PyMapping_HasKeyWithError(PyObject *obj, PyObject *key)
 }
 
 int
-PyMapping_HasKeyString(PyObject *o, const char *key)
+PyMapping_HasKeyString(PyObject *obj, const char *key)
 {
-    PyObject *v;
-
-    v = PyMapping_GetItemString(o, key);
-    if (v) {
-        Py_DECREF(v);
-        return 1;
+    PyObject *value;
+    int rc;
+    if (obj == NULL) {
+        // For backward compatibility.
+        // PyMapping_GetOptionalItemString() crashes if obj is NULL.
+        null_error();
+        rc = -1;
     }
-    PyErr_Clear();
-    return 0;
+    else {
+        rc = PyMapping_GetOptionalItemString(obj, key, &value);
+    }
+    if (rc < 0) {
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyMapping_HasKeyString(); consider using "
+            "PyMapping_HasKeyStringWithError(), "
+            "PyMapping_GetOptionalItemString() or PyMapping_GetItemString()");
+        return 0;
+    }
+    Py_XDECREF(value);
+    return rc;
 }
 
 int
-PyMapping_HasKey(PyObject *o, PyObject *key)
+PyMapping_HasKey(PyObject *obj, PyObject *key)
 {
-    PyObject *v;
-
-    v = PyObject_GetItem(o, key);
-    if (v) {
-        Py_DECREF(v);
-        return 1;
+    PyObject *value;
+    int rc;
+    if (obj == NULL || key == NULL) {
+        // For backward compatibility.
+        // PyMapping_GetOptionalItem() crashes if any of them is NULL.
+        null_error();
+        rc = -1;
     }
-    PyErr_Clear();
-    return 0;
+    else {
+        rc = PyMapping_GetOptionalItem(obj, key, &value);
+    }
+    if (rc < 0) {
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyMapping_HasKey(); consider using "
+            "PyMapping_HasKeyWithError(), "
+            "PyMapping_GetOptionalItem() or PyObject_GetItem()");
+        return 0;
+    }
+    Py_XDECREF(value);
+    return rc;
 }
 
 /* This function is quite similar to PySequence_Fast(), but specialized to be

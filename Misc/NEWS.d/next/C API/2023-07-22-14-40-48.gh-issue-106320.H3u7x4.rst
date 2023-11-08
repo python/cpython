@@ -1,5 +1,0 @@
-Remove private ``_PyUnicode_AsString()`` alias to
-:c:func:`PyUnicode_AsUTF8`. It was kept for backward compatibility with
-Python 3.0 - 3.2. The :c:func:`PyUnicode_AsUTF8` is available since Python
-3.3. The :c:func:`PyUnicode_AsUTF8String` function can be used to keep
-compatibility with Python 3.2 and older. Patch by Victor Stinner.

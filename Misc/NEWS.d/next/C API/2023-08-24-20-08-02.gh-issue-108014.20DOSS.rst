@@ -1,4 +1,0 @@
-Add :c:func:`PyLong_AsInt` function: similar to :c:func:`PyLong_AsLong`, but
-store the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
-Previously, it was known as the private function :c:func:`!_PyLong_AsInt`
-(with an underscore prefix). Patch by Victor Stinner.
