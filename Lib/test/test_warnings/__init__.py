@@ -93,7 +93,7 @@ class PublicAPITests(BaseTest):
         self.assertTrue(hasattr(self.module, '__all__'))
         target_api = ["warn", "warn_explicit", "showwarning",
                       "formatwarning", "filterwarnings", "simplefilter",
-                      "resetwarnings", "catch_warnings"]
+                      "resetwarnings", "catch_warnings", "deprecated"]
         self.assertSetEqual(set(self.module.__all__),
                             set(target_api))
 
