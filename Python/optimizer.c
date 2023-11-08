@@ -464,7 +464,7 @@ translate_bytecode_to_trace(
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
 
-// Reserve space for main+stub uops, plus 2 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+// Reserve space for main+stub uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
 #define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 3, uop_name(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
