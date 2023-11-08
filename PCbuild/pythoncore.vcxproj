@@ -216,6 +216,7 @@
     <ClInclude Include="..\Include\internal\pycore_complexobject.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_critical_section.h" />
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
@@ -548,6 +549,7 @@
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
+    <ClCompile Include="..\Python\critical_section.c" />
     <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />

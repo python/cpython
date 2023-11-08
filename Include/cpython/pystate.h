@@ -149,6 +149,13 @@ struct _ts {
 
     struct _py_trashcan trash;
 
+    /* Tagged pointer to top-most critical section, or zero if there is no
+     * active critical section. Critical sections are only used in
+     * `--disable-gil` builds (i.e., when Py_NOGIL is defined to 1). In the
+     * default build, this field is always zero.
+     */
+    uintptr_t critical_section;
+
     /* Called when a thread state is deleted normally, but not when it
      * is destroyed after fork().
      * Pain:  to prevent rare but fatal shutdown errors (issue 18808),

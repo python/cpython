@@ -119,7 +119,7 @@ check by comparing the reference count field to the immortality reference count.
     {                               \
         0,                          \
         0,                          \
-        0,                          \
+        { 0 },                      \
         0,                          \
         _Py_IMMORTAL_REFCNT_LOCAL,  \
         0,                          \
@@ -204,10 +204,14 @@ struct _object {
 // Create a shared field from a refcnt and desired flags
 #define _Py_REF_SHARED(refcnt, flags) (((refcnt) << _Py_REF_SHARED_SHIFT) + (flags))
 
+// NOTE: In non-free-threaded builds, `struct _PyMutex` is defined in
+// pycore_lock.h. See pycore_lock.h for more details.
+struct _PyMutex { uint8_t v; };
+
 struct _object {
     uintptr_t ob_tid;           // thread id (or zero)
     uint16_t _padding;
-    uint8_t ob_mutex;           // per-object lock
+    struct _PyMutex ob_mutex;   // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
