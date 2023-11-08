@@ -94,11 +94,11 @@ class MmapTests(unittest.TestCase):
 
         # test seeking around (try to overflow the seek implementation)
         self.assertTrue(m.seekable())
-        m.seek(0,0)
+        self.assertEqual(m.seek(0,0), 0)
         self.assertEqual(m.tell(), 0)
-        m.seek(42,1)
+        self.assertEqual(m.seek(42,1), 42)
         self.assertEqual(m.tell(), 42)
-        m.seek(0,2)
+        self.assertEqual(m.seek(0,2), len(m))
         self.assertEqual(m.tell(), len(m))
 
         # Try to seek to negative position...
