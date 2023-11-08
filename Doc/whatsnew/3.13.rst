@@ -166,7 +166,7 @@ dbm
 
 * Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
   from the database.
-  (Contributed by Donghee Na and Sylvie Liberman in :gh:`107122`.)
+  (Contributed by Donghee Na in :gh:`107122`.)
 
 doctest
 -------
@@ -192,7 +192,7 @@ mmap
 * The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
   that can be used where it requires a file-like object with seekable and
   the :meth:`~mmap.mmap.seek` method return the current position.
-  (Contributed by Donghee Na in :gh:`111835`.)
+  (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
 
 ipaddress
 ---------
