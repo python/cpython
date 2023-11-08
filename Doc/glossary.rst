@@ -1219,8 +1219,8 @@ Glossary
       attribute, or a function parameter or return value.
 
       Type hints are optional and are not enforced by Python but
-      they are useful to :term:`static type checkers <static type checker>`,
-      and aid IDEs with code completion and refactoring.
+      they are useful to :term:`static type checkers <static type checker>`.
+      They can also aid IDEs with code completion and refactoring.
 
       Type hints of global variables, class attributes, and functions,
       but not local variables, can be accessed using
