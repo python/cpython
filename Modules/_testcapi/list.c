@@ -137,7 +137,7 @@ list_setslice(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(obj);
     NULLABLE(value);
-    RETURN_INT(PyList_SetSlice(obj, ilow, ihigh, Py_XNewRef(value)));
+    RETURN_INT(PyList_SetSlice(obj, ilow, ihigh, value));
 
 }
 
