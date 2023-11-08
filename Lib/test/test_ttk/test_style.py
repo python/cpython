@@ -262,11 +262,11 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         if 'xpnative' not in style.theme_names():
             self.skipTest("requires 'xpnative' theme")
-        style.element_create('smallclose', 'vsapi', 'WINDOW', 19,
+        style.element_create('smallclose', 'vsapi', 'WINDOW', 19, [
                              ('disabled', 4),
                              ('pressed', 3),
                              ('active', 2),
-                             ('', 1))
+                             ('', 1)])
         style.layout('CloseButton',
                      [('CloseButton.smallclose', {'sticky': 'news'})])
         b = ttk.Button(self.root, style='CloseButton')
@@ -278,13 +278,13 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         if 'xpnative' not in style.theme_names():
             self.skipTest("requires 'xpnative' theme")
-        style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3,
+        style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3, [
                              ('pressed', '!selected', 3),
                              ('active', '!selected', 2),
                              ('pressed', 'selected', 6),
                              ('active', 'selected', 5),
                              ('selected', 4),
-                             ('', 1))
+                             ('', 1)])
         style.layout('Explorer.Pin',
                      [('Explorer.Pin.pin', {'sticky': 'news'})])
         pin = ttk.Checkbutton(self.root, style='Explorer.Pin')
@@ -296,10 +296,10 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         if 'xpnative' not in style.theme_names():
             self.skipTest("requires 'xpnative' theme")
-        style.element_create('headerclose', 'vsapi', 'EXPLORERBAR', 2,
+        style.element_create('headerclose', 'vsapi', 'EXPLORERBAR', 2, [
                              ('pressed', 3),
                              ('active', 2),
-                             ('', 1))
+                             ('', 1)])
         style.layout('Explorer.CloseButton',
                      [('Explorer.CloseButton.headerclose', {'sticky': 'news'})])
         b = ttk.Button(self.root, style='Explorer.CloseButton')
@@ -415,13 +415,13 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         new_theme = 'testtheme5'
         style.theme_create(new_theme, settings={
             'pin' : {
-                'element create': ['vsapi', 'EXPLORERBAR', 3,
+                'element create': ['vsapi', 'EXPLORERBAR', 3, [
                                    ('pressed', '!selected', 3),
                                    ('active', '!selected', 2),
                                    ('pressed', 'selected', 6),
                                    ('active', 'selected', 5),
                                    ('selected', 4),
-                                   ('', 1)],
+                                   ('', 1)]],
             },
             'Explorer.Pin' : {
                 'layout': [('Explorer.Pin.pin', {'sticky': 'news'})],

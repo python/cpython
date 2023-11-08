@@ -8,8 +8,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
 
-static PyObject* func_repr(PyFunctionObject *op);
-
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
     switch (event) {
@@ -35,21 +33,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                // Don't risk resurrecting the func if an unraisablehook keeps a
-                // reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = func_repr(func);
-                if (repr != NULL) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        func_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event), func->func_qualname, func);
             }
         }
         i++;
@@ -571,6 +557,20 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
+
+    PyObject *func_code = PyFunction_GET_CODE(op);
+    int old_flags = ((PyCodeObject *)func_code)->co_flags;
+    int new_flags = ((PyCodeObject *)value)->co_flags;
+    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
+    if ((old_flags & mask) != (new_flags & mask)) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+            "Assigning a code object of non-matching type is deprecated "
+            "(e.g., from a generator to a plain function)") < 0)
+        {
+            return -1;
+        }
+    }
+
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
     _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_code, Py_NewRef(value));

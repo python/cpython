@@ -3844,13 +3844,7 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 const char *
 PyUnicode_AsUTF8(PyObject *unicode)
 {
-    Py_ssize_t size;
-    const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &size);
-    if (utf8 != NULL && strlen(utf8) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        return NULL;
-    }
-    return utf8;
+    return PyUnicode_AsUTF8AndSize(unicode, NULL);
 }
 
 /*
@@ -14967,7 +14961,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             // Skip the Immortal Instance check and restore
             // the two references (key and value) ignored
             // by PyUnicode_InternInPlace().
-            s->ob_refcnt = 2;
+            _Py_SetMortal(s, 2);
 #ifdef INTERNED_STATS
             total_length += PyUnicode_GET_LENGTH(s);
 #endif

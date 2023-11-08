@@ -248,6 +248,9 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
         }
+        if (stats->opcode[i].miss) {
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
+        }
     }
 
     for (int i = 0; i < 256; i++) {
@@ -739,7 +742,7 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr, int sto
         if (desc_cls == &PyMemberDescr_Type) {
             PyMemberDescrObject *member = (PyMemberDescrObject *)descriptor;
             struct PyMemberDef *dmem = member->d_member;
-            if (dmem->type == Py_T_OBJECT_EX) {
+            if (dmem->type == Py_T_OBJECT_EX || dmem->type == _Py_T_OBJECT) {
                 return OBJECT_SLOT;
             }
             return OTHER_SLOT;
@@ -939,7 +942,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
                 goto fail;
             }
-            assert(dmem->type == Py_T_OBJECT_EX);
+            assert(dmem->type == Py_T_OBJECT_EX || dmem->type == _Py_T_OBJECT);
             assert(offset > 0);
             cache->index = (uint16_t)offset;
             write_u32(cache->version, type->tp_version_tag);
@@ -1079,7 +1082,7 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OUT_OF_RANGE);
                 goto fail;
             }
-            assert(dmem->type == Py_T_OBJECT_EX);
+            assert(dmem->type == Py_T_OBJECT_EX || dmem->type == _Py_T_OBJECT);
             assert(offset > 0);
             cache->index = (uint16_t)offset;
             write_u32(cache->version, type->tp_version_tag);
@@ -2525,7 +2528,7 @@ static const PyBytesObject no_location = {
 };
 
 const struct _PyCode_DEF(8) _Py_InitCleanup = {
-    _PyVarObject_HEAD_INIT(&PyCode_Type, 3)
+    _PyVarObject_HEAD_INIT(&PyCode_Type, 3),
     .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),

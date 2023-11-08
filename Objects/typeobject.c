@@ -828,7 +828,9 @@ PyType_Modified(PyTypeObject *type)
             if (bits & 1) {
                 PyType_WatchCallback cb = interp->type_watchers[i];
                 if (cb && (cb(type) < 0)) {
-                    PyErr_WriteUnraisable((PyObject *)type);
+                    PyErr_FormatUnraisable(
+                        "Exception ignored in type watcher callback #%d for %R",
+                        i, type);
                 }
             }
             i++;
@@ -3499,14 +3501,13 @@ type_new_set_doc(PyTypeObject *type)
         return 0;
     }
 
-    Py_ssize_t doc_size;
-    const char *doc_str = PyUnicode_AsUTF8AndSize(doc, &doc_size);
+    const char *doc_str = PyUnicode_AsUTF8(doc);
     if (doc_str == NULL) {
         return -1;
     }
 
     // Silently truncate the docstring if it contains a null byte
-    Py_ssize_t size = doc_size + 1;
+    Py_ssize_t size = strlen(doc_str) + 1;
     char *tp_doc = (char *)PyObject_Malloc(size);
     if (tp_doc == NULL) {
         PyErr_NoMemory();
@@ -9291,7 +9292,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         // from a Python __buffer__ function.
         mv = PyMemoryView_FromBuffer(buffer);
         if (mv == NULL) {
-            PyErr_WriteUnraisable(self);
+            PyErr_FormatUnraisable("Exception ignored in bf_releasebuffer of %s", Py_TYPE(self)->tp_name);
             goto end;
         }
         // Set the memoryview to restricted mode, which forbids
@@ -9304,7 +9305,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
     if (ret == NULL) {
-        PyErr_WriteUnraisable(self);
+        PyErr_FormatUnraisable("Exception ignored in __release_buffer__ of %s", Py_TYPE(self)->tp_name);
     }
     else {
         Py_DECREF(ret);
@@ -9312,7 +9313,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
     if (!is_buffer_wrapper) {
         PyObject *res = PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
         if (res == NULL) {
-            PyErr_WriteUnraisable(self);
+            PyErr_FormatUnraisable("Exception ignored in bf_releasebuffer of %s", Py_TYPE(self)->tp_name);
         }
         else {
             Py_DECREF(res);

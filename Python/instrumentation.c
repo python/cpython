@@ -19,17 +19,9 @@
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
 
-PyObject _PyInstrumentation_DISABLE =
-{
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &PyBaseObject_Type
-};
+PyObject _PyInstrumentation_DISABLE = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
-PyObject _PyInstrumentation_MISSING =
-{
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &PyBaseObject_Type
-};
+PyObject _PyInstrumentation_MISSING = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
 static const int8_t EVENT_FOR_OPCODE[256] = {
     [RETURN_CONST] = PY_MONITORING_EVENT_PY_RETURN,
@@ -1838,6 +1830,23 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     if (_Py_Instrument(code, interp)) {
         return -1;
     }
+    return 0;
+}
+
+int
+_PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet *events)
+{
+    assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (check_tool(interp, tool_id)) {
+        return -1;
+    }
+    if (code->_co_monitoring == NULL) {
+        *events = 0;
+        return 0;
+    }
+    _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
+    *events = get_local_events(local, tool_id);
     return 0;
 }
 

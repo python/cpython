@@ -110,6 +110,9 @@ PySys_GetObject(const char *name)
     PyObject *value = _PySys_GetObject(tstate->interp, name);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
+    if (_PyErr_Occurred(tstate)) {
+        PyErr_FormatUnraisable("Exception ignored in PySys_GetObject()");
+    }
     _PyErr_SetRaisedException(tstate, exc);
     return value;
 }

@@ -1391,8 +1391,8 @@ option. If you don't know the class name of a widget, use the method
    .. method:: element_create(elementname, etype, *args, **kw)
 
       Create a new element in the current theme, of the given *etype* which is
-      expected to be either "image", "from" or "vsapi". The latter is only
-      available in Tk 8.6 on Windows.
+      expected to be either "image", "from" or "vsapi".
+      The latter is only available in Tk 8.6 on Windows.
 
       If "image" is used, *args* should contain the default image name followed
       by statespec/value pairs (this is the imagespec), and *kw* may have the
@@ -1445,8 +1445,9 @@ option. If you don't know the class name of a widget, use the method
       is drawn using the Microsoft Visual Styles API which is responsible
       for the themed styles on Windows XP and Vista.
       *args* is expected to contain the Visual Styles class and part as
-      given in the Microsoft documentation followed by tuples of ttk states
-      and the corresponding Visual Styles API state value.
+      given in the Microsoft documentation followed by an optional sequence
+      of tuples of ttk states and the corresponding Visual Styles API state
+      value.
       *kw* may have the following options:
 
       padding=padding
@@ -1458,7 +1459,7 @@ option. If you don't know the class name of a widget, use the method
          In other words, a list of three numbers specify the left, vertical,
          and right padding; a list of two numbers specify the horizontal
          and the vertical padding; a single number specifies the same
-         padding all  the  way  around the widget.
+         padding all the way around the widget.
          This option may not be mixed with any other options.
 
       margins=padding
@@ -1482,18 +1483,20 @@ option. If you don't know the class name of a widget, use the method
       Example::
 
          style = ttk.Style(root)
-         style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3,
+         style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3, [
                               ('pressed', '!selected', 3),
                               ('active', '!selected', 2),
                               ('pressed', 'selected', 6),
                               ('active', 'selected', 5),
                               ('selected', 4),
-                              ('', 1))
+                              ('', 1)])
          style.layout('Explorer.Pin',
                       [('Explorer.Pin.pin', {'sticky': 'news'})])
          pin = ttk.Checkbutton(style='Explorer.Pin')
          pin.pack(expand=True, fill='both')
 
+      .. versionchanged:: 3.13
+         Added support of the "vsapi" element factory.
 
    .. method:: element_names()
 

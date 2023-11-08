@@ -203,17 +203,19 @@ class InternalFunctionsTest(unittest.TestCase):
         # don't format returned values as a tcl script
         # minimum acceptable for vsapi
         self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b'),
-            ('a', 'b', (), ()))
+            ('a', 'b', ('', 1), ()))
         # now with a state spec with multiple states
         self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
-            ('a', 'b', 'c')), ('a', 'b', ('a b', 'c'), ()))
+            [('a', 'b', 'c')]), ('a', 'b', ('a b', 'c'), ()))
         # state spec and option
         self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
-            ('a', 'b'), opt='x'), ('a', 'b', ('a', 'b'), ("-opt", "x")))
+            [('a', 'b')], opt='x'), ('a', 'b', ('a', 'b'), ("-opt", "x")))
         # format returned values as a tcl script
         # state spec with a multivalue and an option
         self.assertEqual(ttk._format_elemcreate('vsapi', True, 'a', 'b',
-            ('a', 'b', [1, 2]), opt='x'), ("a b {{a b} {1 2}}", "-opt x"))
+            opt='x'), ("a b {{} 1}", "-opt x"))
+        self.assertEqual(ttk._format_elemcreate('vsapi', True, 'a', 'b',
+            [('a', 'b', [1, 2])], opt='x'), ("a b {{a b} {1 2}}", "-opt x"))
 
         # Testing type = from
         # from type expects at least a type name
@@ -327,13 +329,13 @@ class InternalFunctionsTest(unittest.TestCase):
             "-opt {3 2m}")
 
         vsapi = {'pin': {'element create':
-            ['vsapi', 'EXPLORERBAR', 3,
+            ['vsapi', 'EXPLORERBAR', 3, [
              ('pressed', '!selected', 3),
              ('active', '!selected', 2),
              ('pressed', 'selected', 6),
              ('active', 'selected', 5),
              ('selected', 4),
-             ('', 1)]}}
+             ('', 1)]]}}
         self.assertEqual(ttk._script_from_settings(vsapi),
             "ttk::style element create pin vsapi EXPLORERBAR 3 {"
             "{pressed !selected} 3 "

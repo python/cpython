@@ -1663,8 +1663,8 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
  * function hits a stack-depth error, which can cause this to return NULL
  * even if the key is present.
  */
-PyObject *
-PyDict_GetItem(PyObject *op, PyObject *key)
+static PyObject *
+dict_getitem(PyObject *op, PyObject *key, const char *warnmsg)
 {
     if (!PyDict_Check(op)) {
         return NULL;
@@ -1675,7 +1675,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1) {
-            PyErr_Clear();
+            PyErr_FormatUnraisable(warnmsg);
             return NULL;
         }
     }
@@ -1696,10 +1696,22 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     ix = _Py_dict_lookup(mp, key, hash, &value);
 
     /* Ignore any exception raised by the lookup */
+    PyObject *exc2 = _PyErr_Occurred(tstate);
+    if (exc2 && !PyErr_GivenExceptionMatches(exc2, PyExc_KeyError)) {
+        PyErr_FormatUnraisable(warnmsg);
+    }
     _PyErr_SetRaisedException(tstate, exc);
 
     assert(ix >= 0 || value == NULL);
     return value;  // borrowed reference
+}
+
+PyObject *
+PyDict_GetItem(PyObject *op, PyObject *key)
+{
+    return dict_getitem(op, key,
+            "Exception ignored in PyDict_GetItem(); consider using "
+            "PyDict_GetItemRef() or PyDict_GetItemWithError()");
 }
 
 Py_ssize_t
@@ -3925,10 +3937,14 @@ PyDict_GetItemString(PyObject *v, const char *key)
     PyObject *kv, *rv;
     kv = PyUnicode_FromString(key);
     if (kv == NULL) {
-        PyErr_Clear();
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyDict_GetItemString(); consider using "
+            "PyDict_GetItemRefString()");
         return NULL;
     }
-    rv = PyDict_GetItem(v, kv);
+    rv = dict_getitem(v, kv,
+            "Exception ignored in PyDict_GetItemString(); consider using "
+            "PyDict_GetItemRefString()");
     Py_DECREF(kv);
     return rv;  // borrowed reference
 }
@@ -5912,14 +5928,9 @@ _PyDict_SendEvent(int watcher_bits,
                 // unraisablehook keep a reference to it, so we don't pass the
                 // dict as context, just an informative string message.  Dict
                 // repr can call arbitrary code, so we invent a simpler version.
-                PyObject *context = PyUnicode_FromFormat(
-                    "%s watcher callback for <dict at %p>",
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for <dict at %p>",
                     dict_event_name(event), mp);
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
             }
         }
         watcher_bits >>= 1;

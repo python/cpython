@@ -114,7 +114,11 @@ def _format_elemcreate(etype, script=False, *args, **kw):
         # Microsoft Visual Styles API which is responsible for the
         # themed styles on Windows XP and Vista.
         # Availability: Tk 8.6, Windows XP and Vista.
-        class_name, part_id, *statemap = args
+        if len(args) < 3:
+            class_name, part_id = args
+            statemap = (((), 1),)
+        else:
+            class_name, part_id, statemap = args
         specs = (class_name, part_id, tuple(_mapdict_values(statemap)))
         opts = _format_optdict(kw, script)
 
