@@ -20,8 +20,8 @@
 
 #include "opcode.h"
 
-extern void _JIT_OPARG;
-extern void _JIT_OPERAND;
+void _JIT_OPARG(void);  // XXX
+void _JIT_OPERAND(void);  // XXX
 
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
@@ -40,13 +40,13 @@ extern void _JIT_OPERAND;
         _jump_taken = true; \
     } while (0)
 
-#define TAIL_CALL(WHERE)                                                \
-    do {                                                                \
-        extern _PyInterpreterFrame *(WHERE)(_PyInterpreterFrame *frame, \
-                                            PyObject **stack_pointer,   \
-                                            PyThreadState *tstate);     \
-        __attribute__((musttail))                                       \
-        return (WHERE)(frame, stack_pointer, tstate);                   \
+#define TAIL_CALL(WHERE)                                              \
+    do {                                                              \
+        _PyInterpreterFrame *(WHERE)(_PyInterpreterFrame *frame,      \
+                                            PyObject **stack_pointer, \
+                                            PyThreadState *tstate);   \
+        __attribute__((musttail))                                     \
+        return (WHERE)(frame, stack_pointer, tstate);                 \
     } while (0)
 
 _PyInterpreterFrame *
@@ -55,8 +55,8 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
 {
     // Locals that the instruction implementations expect to exist:
     uint32_t opcode = _JIT_OPCODE;
-    int32_t oparg = (uintptr_t)&_JIT_OPARG;
-    uint64_t operand = (uintptr_t)&_JIT_OPERAND;
+    int32_t oparg = (uintptr_t)_JIT_OPARG;
+    uint64_t operand = (uintptr_t)_JIT_OPERAND;
     // Pretend to modify the values to keep clang from being clever and
     // optimizing them based on valid extern addresses, which must be in
     // range(1, 2**31 - 2**24):

@@ -2,7 +2,7 @@
 
 #include "pycore_frame.h"
 
-extern _PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
+_PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
 
 _PyInterpreterFrame *
 _JIT_TRAMPOLINE(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)

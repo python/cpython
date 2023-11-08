@@ -484,8 +484,6 @@ class Parser:
 @dataclasses.dataclass(frozen=True)
 class Target:
     pattern: str
-    frontend: str
-    backend: str
     model: str
     ghccc: bool
     pyconfig: pathlib.Path
@@ -495,8 +493,6 @@ class Target:
 TARGETS = [
     Target(
         pattern=r"aarch64-apple-darwin.*",
-        frontend="aarch64-apple-darwin",
-        backend="aarch64-elf",
         model="large",
         ghccc=False,
         pyconfig=PYCONFIG_H,
@@ -504,8 +500,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"aarch64-.*-linux-gnu",
-        frontend="aarch64-unknown-linux-gnu",
-        backend="aarch64-elf",
         model="large",
         ghccc=False,
         pyconfig=PYCONFIG_H,
@@ -513,8 +507,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"i686-pc-windows-msvc",
-        frontend="i686-pc-windows-msvc",
-        backend="i686-pc-windows-msvc-elf",
         model="small",
         ghccc=True,
         pyconfig=PC_PYCONFIG_H,
@@ -522,8 +514,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"x86_64-apple-darwin.*",
-        frontend="x86_64-apple-darwin",
-        backend="x86_64-elf",
         model="medium",
         ghccc=True,
         pyconfig=PYCONFIG_H,
@@ -531,8 +521,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"x86_64-pc-windows-msvc",
-        frontend="x86_64-pc-windows-msvc",
-        backend="x86_64-pc-windows-msvc-elf",
         model="medium",
         ghccc=True,
         pyconfig=PC_PYCONFIG_H,
@@ -540,8 +528,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"x86_64-.*-linux-gnu",
-        frontend="x86_64-unknown-linux-gnu",
-        backend="x86_64-elf",
         model="medium",
         ghccc=True,
         pyconfig=PYCONFIG_H,
@@ -559,7 +545,6 @@ def get_target(host: str) -> Target:
 
 CFLAGS = [
     "-O3",
-    "-Wno-override-module",
     # Keep library calls from sneaking in:
     "-ffreestanding",  # XXX
     # Position-independent code adds indirection to every load and jump:
@@ -584,6 +569,7 @@ class Compiler:
         verbose: bool = False,
         ghccc: bool,
         target: Target,
+        host: str,
     ) -> None:
         self._stencils_built: dict[str, Stencil] = {}
         self._verbose = verbose
@@ -592,6 +578,7 @@ class Compiler:
         self._objdump = find_llvm_tool("llvm-objdump")
         self._ghccc = ghccc
         self._target = target
+        self._host = host
 
     def _use_ghccc(self, ll: pathlib.Path) -> None:
         # https://discourse.llvm.org/t/rfc-exposing-ghccc-calling-convention-as-preserve-none-to-clang/74233/16
@@ -612,7 +599,7 @@ class Compiler:
         o = tempdir / f"{opname}.o"
         backend_flags = [
             *CFLAGS,
-            f"--target={self._target.backend}",
+            f"--target={self._host}",
             f"-c",
             # We have three options for code model:
             # - "small": assumes that code and data reside in the lowest 2GB of
@@ -630,7 +617,7 @@ class Compiler:
         frontend_flags = [
             *CFLAGS,
             *CPPFLAGS,
-            f"--target={self._target.frontend}",
+            f"--target={self._host}",
             f"-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG",  # XXX
             f"-D_JIT_OPCODE={opname}",
             f"-I{self._target.pyconfig.parent}",
@@ -782,7 +769,7 @@ def main(host: str) -> None:
         with PYTHON_JIT_STENCILS_H.open() as file:
             if file.readline().removeprefix("// ").removesuffix("\n") == digest:
                 return
-    compiler = Compiler(verbose=True, ghccc=target.ghccc, target=target)
+    compiler = Compiler(verbose=True, ghccc=target.ghccc, target=target, host=host)
     asyncio.run(compiler.build())
     with PYTHON_JIT_STENCILS_H.open("w") as file:
         file.write(f"// {digest}\n")
