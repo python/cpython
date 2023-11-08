@@ -665,6 +665,35 @@ PyUnstable_Code_NewWithPosOnlyArgs(
         _Py_set_localsplus_info(offset, name, CO_FAST_FREE,
                                localsplusnames, localspluskinds);
     }
+
+    // gh-110543: Make sure the CO_FAST_HIDDEN flag is set correctly.
+    if (!(flags & CO_OPTIMIZED)) {
+        Py_ssize_t code_len = PyBytes_GET_SIZE(code);
+        _Py_CODEUNIT *code_data = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
+        Py_ssize_t num_code_units = code_len / sizeof(_Py_CODEUNIT);
+        int extended_arg = 0;
+        for (int i = 0; i < num_code_units; i += 1 + _PyOpcode_Caches[code_data[i].op.code]) {
+            _Py_CODEUNIT *instr = &code_data[i];
+            uint8_t opcode = instr->op.code;
+            if (opcode == EXTENDED_ARG) {
+                extended_arg = extended_arg << 8 | instr->op.arg;
+                continue;
+            }
+            if (opcode == LOAD_FAST_AND_CLEAR) {
+                int oparg = extended_arg << 8 | instr->op.arg;
+                if (oparg >= nlocalsplus) {
+                    PyErr_Format(PyExc_ValueError,
+                                "code: LOAD_FAST_AND_CLEAR oparg %d out of range",
+                                oparg);
+                    goto error;
+                }
+                _PyLocals_Kind kind = _PyLocals_GetKind(localspluskinds, oparg);
+                _PyLocals_SetKind(localspluskinds, oparg, kind | CO_FAST_HIDDEN);
+            }
+            extended_arg = 0;
+        }
+    }
+
     // If any cells were args then nlocalsplus will have shrunk.
     if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
         if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0
