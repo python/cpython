@@ -45,13 +45,13 @@ PyAPI_FUNC(PyObject *) PyImport_AddModule(
     );
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
-// Get an already imported module from sys.modules. If name is not in
-// sys.modules, create a new module and store it in sys.modules.
+// Get an already imported module, or create a new empty one.
 //
-// - If the module was already imported, set '*module' to a strong reference
-//   to the existing module, and return 0.
-// - If the module does not exist, create a module, store it in sys.modules,
-//   set '*module' to a strong reference to the module, and return 1.
+// - If the module name is already present in sys.modules, set '*module' to
+//   a strong reference to the existing module, and return 0.
+// - If the module does not exist in sys.modules, create a new empty module,
+//   store it in sys.modules, set '*module' to a strong reference to the
+//   module, and return 1.
 // - On error, raise an exception, set '*module' to NULL, and return -1.
 PyAPI_FUNC(int) PyImport_ImportOrAddModule(
     const char *name,  // UTF-8 encoded string
