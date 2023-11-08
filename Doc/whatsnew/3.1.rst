@@ -370,14 +370,14 @@ New, Improved, and Deprecated Modules
 * The :mod:`io` module has three new constants for the :meth:`seek`
   method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
 
-* The :attr:`sys.version_info` tuple is now a named tuple::
+* The :data:`sys.version_info` tuple is now a named tuple::
 
     >>> sys.version_info
     sys.version_info(major=3, minor=1, micro=0, releaselevel='alpha', serial=2)
 
   (Contributed by Ross Light; :issue:`4285`.)
 
-* The :mod:`nntplib` and :mod:`imaplib` modules now support IPv6.
+* The :mod:`!nntplib` and :mod:`imaplib` modules now support IPv6.
 
   (Contributed by Derek Morr; :issue:`1655` and :issue:`1664`.)
 
@@ -486,7 +486,7 @@ Changes to Python's build process and to the C API include:
 
   Apart from the performance improvements this change should be invisible to
   end users, with one exception: for testing and debugging purposes there's a
-  new :attr:`sys.int_info` that provides information about the
+  new :data:`sys.int_info` that provides information about the
   internal format, giving the number of bits per digit and the size in bytes
   of the C type used to store each digit::
 
@@ -501,16 +501,16 @@ Changes to Python's build process and to the C API include:
 
   (Contributed by Mark Dickinson and Lisandro Dalcrin; :issue:`5175`.)
 
-* Deprecated :c:func:`PyNumber_Int`.  Use :c:func:`PyNumber_Long` instead.
+* Deprecated :c:func:`!PyNumber_Int`.  Use :c:func:`PyNumber_Long` instead.
 
   (Contributed by Mark Dickinson; :issue:`4910`.)
 
 * Added a new :c:func:`PyOS_string_to_double` function to replace the
-  deprecated functions :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof`.
+  deprecated functions :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof`.
 
   (Contributed by Mark Dickinson; :issue:`5914`.)
 
-* Added :c:type:`PyCapsule` as a replacement for the :c:type:`PyCObject` API.
+* Added :c:type:`PyCapsule` as a replacement for the :c:type:`!PyCObject` API.
   The principal difference is that the new type has a well defined interface
   for passing typing safety information and a less complicated signature
   for calling a destructor.  The old type had a problematic API and is now

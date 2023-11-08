@@ -35,8 +35,6 @@ iskeyword = frozenset(kwlist).__contains__
 issoftkeyword = frozenset(softkwlist).__contains__
 '''.lstrip()
 
-EXTRA_KEYWORDS = ["async", "await"]
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -62,7 +60,7 @@ def main() -> None:
     gen.collect_rules()
 
     with args.keyword_file as thefile:
-        all_keywords = sorted(list(gen.keywords.keys()) + EXTRA_KEYWORDS)
+        all_keywords = sorted(list(gen.keywords.keys()))
         all_soft_keywords = sorted(gen.soft_keywords)
 
         keywords = "" if not all_keywords else "    " + ",\n    ".join(map(repr, all_keywords))

@@ -1,6 +1,13 @@
+import re
+import sys
 import unittest
-from ctypes import *
-import re, sys
+from ctypes import (CFUNCTYPE, POINTER, sizeof, Union,
+                    Structure, LittleEndianStructure, BigEndianStructure,
+                    c_char, c_byte, c_ubyte,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_uint64,
+                    c_bool, c_float, c_double, c_longdouble, py_object)
+
 
 if sys.byteorder == "little":
     THIS_ENDIAN = "<"
@@ -8,6 +15,7 @@ if sys.byteorder == "little":
 else:
     THIS_ENDIAN = ">"
     OTHER_ENDIAN = "<"
+
 
 def normalize(format):
     # Remove current endian specifier and white space from a format
@@ -17,63 +25,54 @@ def normalize(format):
     format = format.replace(OTHER_ENDIAN, THIS_ENDIAN)
     return re.sub(r"\s", "", format)
 
-class Test(unittest.TestCase):
 
+class Test(unittest.TestCase):
     def test_native_types(self):
         for tp, fmt, shape, itemtp in native_types:
             ob = tp()
             v = memoryview(ob)
-            try:
-                self.assertEqual(normalize(v.format), normalize(fmt))
-                if shape:
-                    self.assertEqual(len(v), shape[0])
-                else:
-                    self.assertRaises(TypeError, len, v)
-                self.assertEqual(v.itemsize, sizeof(itemtp))
-                self.assertEqual(v.shape, shape)
-                # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
-                #     if requested. memoryview currently reconstructs missing
-                #     stride information, so this assert will fail.
-                # self.assertEqual(v.strides, ())
+            self.assertEqual(normalize(v.format), normalize(fmt))
+            if shape:
+                self.assertEqual(len(v), shape[0])
+            else:
+                self.assertRaises(TypeError, len, v)
+            self.assertEqual(v.itemsize, sizeof(itemtp))
+            self.assertEqual(v.shape, shape)
+            # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
+            #     if requested. memoryview currently reconstructs missing
+            #     stride information, so this assert will fail.
+            # self.assertEqual(v.strides, ())
 
-                # they are always read/write
-                self.assertFalse(v.readonly)
+            # they are always read/write
+            self.assertFalse(v.readonly)
 
-                n = 1
-                for dim in v.shape:
-                    n = n * dim
-                self.assertEqual(n * v.itemsize, len(v.tobytes()))
-            except:
-                # so that we can see the failing type
-                print(tp)
-                raise
+            n = 1
+            for dim in v.shape:
+                n = n * dim
+            self.assertEqual(n * v.itemsize, len(v.tobytes()))
 
     def test_endian_types(self):
         for tp, fmt, shape, itemtp in endian_types:
             ob = tp()
             v = memoryview(ob)
-            try:
-                self.assertEqual(v.format, fmt)
-                if shape:
-                    self.assertEqual(len(v), shape[0])
-                else:
-                    self.assertRaises(TypeError, len, v)
-                self.assertEqual(v.itemsize, sizeof(itemtp))
-                self.assertEqual(v.shape, shape)
-                # XXX Issue #12851
-                # self.assertEqual(v.strides, ())
+            self.assertEqual(v.format, fmt)
+            if shape:
+                self.assertEqual(len(v), shape[0])
+            else:
+                self.assertRaises(TypeError, len, v)
+            self.assertEqual(v.itemsize, sizeof(itemtp))
+            self.assertEqual(v.shape, shape)
+            # XXX Issue #12851
+            # self.assertEqual(v.strides, ())
 
-                # they are always read/write
-                self.assertFalse(v.readonly)
+            # they are always read/write
+            self.assertFalse(v.readonly)
 
-                n = 1
-                for dim in v.shape:
-                    n = n * dim
-                self.assertEqual(n * v.itemsize, len(v.tobytes()))
-            except:
-                # so that we can see the failing type
-                print(tp)
-                raise
+            n = 1
+            for dim in v.shape:
+                n = n * dim
+            self.assertEqual(n * v.itemsize, len(v.tobytes()))
+
 
 # define some structure classes
 
@@ -118,6 +117,7 @@ class Complete(Structure):
     pass
 PComplete = POINTER(Complete)
 Complete._fields_ = [("a", c_long)]
+
 
 ################################################################
 #
@@ -228,23 +228,23 @@ native_types = [
 
     ]
 
+
 class BEPoint(BigEndianStructure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
 class LEPoint(LittleEndianStructure):
     _fields_ = [("x", c_long), ("y", c_long)]
 
-################################################################
-#
+
 # This table contains format strings as they really look, on both big
 # and little endian machines.
-#
 endian_types = [
     (BEPoint, "T{>l:x:>l:y:}".replace('l', s_long), (), BEPoint),
     (LEPoint * 1, "T{<l:x:<l:y:}".replace('l', s_long), (1,), LEPoint),
     (POINTER(BEPoint), "&T{>l:x:>l:y:}".replace('l', s_long), (), POINTER(BEPoint)),
     (POINTER(LEPoint), "&T{<l:x:<l:y:}".replace('l', s_long), (), POINTER(LEPoint)),
     ]
+
 
 if __name__ == "__main__":
     unittest.main()

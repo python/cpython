@@ -774,6 +774,10 @@ class StructTest(unittest.TestCase):
         test_error_propagation('N')
         test_error_propagation('n')
 
+    def test_repr(self):
+        s = struct.Struct('=i2H')
+        self.assertEqual(repr(s), f'Struct({s.format!r})')
+
 class UnpackIteratorTest(unittest.TestCase):
     """
     Tests for iterative unpacking (struct.Struct.iter_unpack).

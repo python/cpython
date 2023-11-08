@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
@@ -200,10 +199,6 @@ write_str(stringio *self, PyObject *obj)
         return -1;
 
     assert(PyUnicode_Check(decoded));
-    if (PyUnicode_READY(decoded)) {
-        Py_DECREF(decoded);
-        return -1;
-    }
     len = PyUnicode_GET_LENGTH(decoded);
     assert(len >= 0);
 
@@ -542,8 +537,6 @@ _io_StringIO_write(stringio *self, PyObject *obj)
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
-    if (PyUnicode_READY(obj))
-        return NULL;
     CHECK_CLOSED(self);
     size = PyUnicode_GET_LENGTH(obj);
 
@@ -583,6 +576,9 @@ static int
 stringio_traverse(stringio *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->readnl);
+    Py_VISIT(self->writenl);
+    Py_VISIT(self->decoder);
     Py_VISIT(self->dict);
     return 0;
 }
@@ -590,6 +586,9 @@ stringio_traverse(stringio *self, visitproc visit, void *arg)
 static int
 stringio_clear(stringio *self)
 {
+    Py_CLEAR(self->readnl);
+    Py_CLEAR(self->writenl);
+    Py_CLEAR(self->decoder);
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -605,10 +604,7 @@ stringio_dealloc(stringio *self)
         self->buf = NULL;
     }
     _PyUnicodeWriter_Dealloc(&self->writer);
-    Py_CLEAR(self->readnl);
-    Py_CLEAR(self->writenl);
-    Py_CLEAR(self->decoder);
-    Py_CLEAR(self->dict);
+    (void)stringio_clear(self);
     if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
     }
@@ -716,9 +712,10 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         self->writenl = Py_NewRef(self->readnl);
     }
 
+    _PyIO_State *module_state = find_io_state_by_def(Py_TYPE(self));
     if (self->readuniversal) {
         self->decoder = PyObject_CallFunctionObjArgs(
-            (PyObject *)&PyIncrementalNewlineDecoder_Type,
+            (PyObject *)module_state->PyIncrementalNewlineDecoder_Type,
             Py_None, self->readtranslate ? Py_True : Py_False, NULL);
         if (self->decoder == NULL)
             return -1;
@@ -750,7 +747,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         self->state = STATE_ACCUMULATING;
     }
     self->pos = 0;
-    self->module_state = find_io_state_by_def(Py_TYPE(self));
+    self->module_state = module_state;
     self->closed = 0;
     self->ok = 1;
     return 0;
@@ -1005,8 +1002,8 @@ static PyGetSetDef stringio_getset[] = {
 };
 
 static struct PyMemberDef stringio_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(stringio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(stringio, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(stringio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(stringio, dict), Py_READONLY},
     {NULL},
 };
 

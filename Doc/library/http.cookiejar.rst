@@ -44,8 +44,8 @@ The module defines the following exception:
    cookies from a file.  :exc:`LoadError` is a subclass of :exc:`OSError`.
 
    .. versionchanged:: 3.3
-      LoadError was made a subclass of :exc:`OSError` instead of
-      :exc:`IOError`.
+      :exc:`LoadError` used to be a subtype of :exc:`IOError`, which is now an
+      alias of :exc:`OSError`.
 
 
 The following classes are provided:

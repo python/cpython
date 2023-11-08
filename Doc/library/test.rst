@@ -472,7 +472,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :data:`_testcapi.WITH_PYMALLOC`.
+   Return :const:`_testcapi.WITH_PYMALLOC`.
 
 
 .. function:: requires(resource, msg=None)
@@ -496,44 +496,6 @@ The :mod:`test.support` module defines the following functions:
 
    Setting *subdir* indicates a relative path to use to find the file
    rather than looking directly in the path directories.
-
-
-.. function:: match_test(test)
-
-   Determine whether *test* matches the patterns set in :func:`set_match_tests`.
-
-
-.. function:: set_match_tests(accept_patterns=None, ignore_patterns=None)
-
-   Define match patterns on test filenames and test method names for filtering tests.
-
-
-.. function:: run_unittest(*classes)
-
-   Execute :class:`unittest.TestCase` subclasses passed to the function. The
-   function scans the classes for methods starting with the prefix ``test_``
-   and executes the tests individually.
-
-   It is also legal to pass strings as parameters; these should be keys in
-   ``sys.modules``. Each associated module will be scanned by
-   ``unittest.TestLoader.loadTestsFromModule()``. This is usually seen in the
-   following :func:`test_main` function::
-
-      def test_main():
-          support.run_unittest(__name__)
-
-   This will run all tests defined in the named module.
-
-
-.. function:: run_doctest(module, verbosity=None, optionflags=0)
-
-   Run :func:`doctest.testmod` on the given *module*.  Return
-   ``(failure_count, test_count)``.
-
-   If *verbosity* is ``None``, :func:`doctest.testmod` is run with verbosity
-   set to :data:`verbose`.  Otherwise, it is run with verbosity set to
-   ``None``.  *optionflags* is passed as ``optionflags`` to
-   :func:`doctest.testmod`.
 
 
 .. function:: get_pagesize()
@@ -803,7 +765,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_limited_api
 
-   Decorator for only running the test if :ref:`Limited C API <stable>`
+   Decorator for only running the test if :ref:`Limited C API <limited-c-api>`
    is available.
 
 
@@ -1040,10 +1002,10 @@ The :mod:`test.support` module defines the following classes:
    `SetErrorMode <https://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx>`_.
 
    On UNIX, :func:`resource.setrlimit` is used to set
-   :attr:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
+   :const:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
    creation.
 
-   On both platforms, the old value is restored by :meth:`__exit__`.
+   On both platforms, the old value is restored by :meth:`~object.__exit__`.
 
 
 .. class:: SaveSignals()

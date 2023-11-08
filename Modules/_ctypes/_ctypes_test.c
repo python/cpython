@@ -1,10 +1,27 @@
-#include <Python.h>
-
-#ifdef MS_WIN32
-#include <windows.h>
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
 #endif
 
+#ifndef Py_NOGIL
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
+#endif
+
+// gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
+// linking the extension to python3.lib (which fails). Py_BUILD_CORE_MODULE is
+// needed to import Python symbols. Then Python.h undefines Py_BUILD_CORE and
+// Py_BUILD_CORE_MODULE if Py_LIMITED_API is defined.
+#define Py_BUILD_CORE
+#define Py_BUILD_CORE_MODULE
+
+#include <Python.h>
+
+#include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
+#include <string.h>               // memset()
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
 
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
 
@@ -1036,7 +1053,7 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #ifdef MS_WIN32
 
-// i38748: c stub for testing stack corruption 
+// i38748: c stub for testing stack corruption
 // When executing a Python callback with a long and a long long
 
 typedef long(__stdcall *_test_i38748_funcType)(long, long long);
@@ -1054,6 +1071,7 @@ _testfunc_pylist_append(PyObject *list, PyObject *item)
 }
 
 static struct PyModuleDef_Slot _ctypes_test_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

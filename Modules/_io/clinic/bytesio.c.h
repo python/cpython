@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "readable($self, /)\n"
@@ -87,15 +88,19 @@ PyDoc_STRVAR(_io_BytesIO_getbuffer__doc__,
 "Get a read-write view over the contents of the BytesIO object.");
 
 #define _IO_BYTESIO_GETBUFFER_METHODDEF    \
-    {"getbuffer", (PyCFunction)_io_BytesIO_getbuffer, METH_NOARGS, _io_BytesIO_getbuffer__doc__},
+    {"getbuffer", _PyCFunction_CAST(_io_BytesIO_getbuffer), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_BytesIO_getbuffer__doc__},
 
 static PyObject *
-_io_BytesIO_getbuffer_impl(bytesio *self);
+_io_BytesIO_getbuffer_impl(bytesio *self, PyTypeObject *cls);
 
 static PyObject *
-_io_BytesIO_getbuffer(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_getbuffer(bytesio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io_BytesIO_getbuffer_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "getbuffer() takes no arguments");
+        return NULL;
+    }
+    return _io_BytesIO_getbuffer_impl(self, cls);
 }
 
 PyDoc_STRVAR(_io_BytesIO_getvalue__doc__,
@@ -324,12 +329,7 @@ _io_BytesIO_readinto(bytesio *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_BytesIO_readinto_impl(self, &buffer);
@@ -423,7 +423,7 @@ _io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[1]);
+    whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -534,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a44770efbaeb80dd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2be0e05a8871b7e2 input=a9049054013a1b77]*/

@@ -4,6 +4,7 @@
    All the utility functions (_Py_Hash*()) return "-1" to signify an error.
 */
 #include "Python.h"
+#include "pycore_pyhash.h"        // _Py_HashSecret_t
 
 #ifdef __APPLE__
 #  include <libkern/OSByteOrder.h>
@@ -11,10 +12,6 @@
 #  include <endian.h>
 #elif defined(HAVE_LE64TOH) && defined(HAVE_SYS_ENDIAN_H)
 #  include <sys/endian.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 _Py_HashSecret_t _Py_HashSecret = {{0}};
@@ -501,8 +498,4 @@ pysiphash(const void *src, Py_ssize_t src_sz) {
 }
 
 static PyHash_FuncDef PyHash_Func = {pysiphash, "siphash24", 64, 128};
-#endif
-
-#ifdef __cplusplus
-}
 #endif

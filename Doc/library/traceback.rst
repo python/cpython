@@ -14,7 +14,7 @@ interpreter when it prints a stack trace.  This is useful when you want to print
 stack traces under program control, such as in a "wrapper" around the
 interpreter.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
 The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
 which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.
@@ -86,10 +86,9 @@ The module defines the following functions:
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
-   sys.last_traceback, limit, file, chain)``.  In general it will work only
-   after an exception has reached an interactive prompt (see
-   :data:`sys.last_type`).
+   This is a shorthand for ``print_exception(sys.last_exc, limit, file,
+   chain)``.  In general it will work only after an exception has reached
+   an interactive prompt (see :data:`sys.last_exc`).
 
 
 .. function:: print_stack(f=None, limit=None, file=None)
@@ -136,23 +135,33 @@ The module defines the following functions:
    text line is not ``None``.
 
 
-.. function:: format_exception_only(exc, /[, value])
+.. function:: format_exception_only(exc, /[, value], *, show_group=False)
 
    Format the exception part of a traceback using an exception value such as
    given by ``sys.last_value``.  The return value is a list of strings, each
-   ending in a newline.  Normally, the list contains a single string; however,
-   for :exc:`SyntaxError` exceptions, it contains several lines that (when
-   printed) display detailed information about where the syntax error occurred.
-   The message indicating which exception occurred is the always last string in
-   the list.
+   ending in a newline.  The list contains the exception's message, which is
+   normally a single string; however, for :exc:`SyntaxError` exceptions, it
+   contains several lines that (when printed) display detailed information
+   about where the syntax error occurred. Following the message, the list
+   contains the exception's :attr:`notes <BaseException.__notes__>`.
 
    Since Python 3.10, instead of passing *value*, an exception object
    can be passed as the first argument.  If *value* is provided, the first
    argument is ignored in order to provide backwards compatibility.
 
+   When *show_group* is ``True``, and the exception is an instance of
+   :exc:`BaseExceptionGroup`, the nested exceptions are included as
+   well, recursively, with indentation relative to their nesting depth.
+
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
+
+   .. versionchanged:: 3.11
+      The returned list now includes any notes attached to the exception.
+
+   .. versionchanged:: 3.13
+      *show_group* parameter was added.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
@@ -218,7 +227,7 @@ The module also defines the following classes:
 :class:`TracebackException` objects are created from actual exceptions to
 capture data for later printing in a lightweight fashion.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
    Capture an exception for later rendering. *limit*, *lookup_lines* and
    *capture_locals* are as for the :class:`StackSummary` class.
@@ -230,6 +239,18 @@ capture data for later printing in a lightweight fashion.
 
    Note that when locals are captured, they are also shown in the traceback.
 
+   *max_group_width* and *max_group_depth* control the formatting of exception
+   groups (see :exc:`BaseExceptionGroup`). The depth refers to the nesting
+   level of the group, and the width refers to the size of a single exception
+   group's exceptions array. The formatted output is truncated when either
+   limit is exceeded.
+
+   .. versionchanged:: 3.10
+      Added the *compact* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *max_group_width* and *max_group_depth* parameters.
+
    .. attribute:: __cause__
 
       A :class:`TracebackException` of the original ``__cause__``.
@@ -237,6 +258,14 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: __context__
 
       A :class:`TracebackException` of the original ``__context__``.
+
+   .. attribute:: exceptions
+
+      If ``self`` represents an :exc:`ExceptionGroup`, this field holds a list of
+      :class:`TracebackException` instances representing the nested exceptions.
+      Otherwise it is ``None``.
+
+      .. versionadded:: 3.11
 
    .. attribute:: __suppress_context__
 
@@ -266,6 +295,13 @@ capture data for later printing in a lightweight fashion.
 
       For syntax errors - the line number where the error occurred.
 
+   .. attribute:: end_lineno
+
+      For syntax errors - the end line number where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
+
    .. attribute:: text
 
       For syntax errors - the text where the error occurred.
@@ -273,6 +309,13 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: offset
 
       For syntax errors - the offset into the text where the error occurred.
+
+   .. attribute:: end_offset
+
+      For syntax errors - the end offset into the text where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
 
    .. attribute:: msg
 
@@ -303,25 +346,27 @@ capture data for later printing in a lightweight fashion.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-      The message indicating which exception occurred is always the last
-      string in the output.
-
-   .. method::  format_exception_only()
+   .. method::  format_exception_only(*, show_group=False)
 
       Format the exception part of the traceback.
 
       The return value is a generator of strings, each ending in a newline.
 
-      Normally, the generator emits a single string; however, for
-      :exc:`SyntaxError` exceptions, it emits several lines that (when
-      printed) display detailed information about where the syntax
-      error occurred.
+      When *show_group* is ``False``, the generator emits the exception's
+      message followed by its notes (if it has any). The exception message
+      is normally a single string; however, for :exc:`SyntaxError` exceptions,
+      it consists of several lines that (when printed) display detailed
+      information about where the syntax error occurred.
 
-      The message indicating which exception occurred is always the last
-      string in the output.
+      When *show_group* is ``True``, and the exception is an instance of
+      :exc:`BaseExceptionGroup`, the nested exceptions are included as
+      well, recursively, with indentation relative to their nesting depth.
 
-   .. versionchanged:: 3.10
-      Added the *compact* parameter.
+      .. versionchanged:: 3.11
+         The exception's notes are now included in the output.
+
+      .. versionchanged:: 3.13
+         Added the *show_group* parameter.
 
 
 :class:`StackSummary` Objects

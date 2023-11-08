@@ -33,8 +33,8 @@ if __name__ == '__main__':
 else:
     file = __file__
 test_dir = os.path.dirname(file) or os.curdir
-math_testcases = os.path.join(test_dir, 'math_testcases.txt')
-test_file = os.path.join(test_dir, 'cmath_testcases.txt')
+math_testcases = os.path.join(test_dir, 'mathdata', 'math_testcases.txt')
+test_file = os.path.join(test_dir, 'mathdata', 'cmath_testcases.txt')
 
 
 def to_ulps(x):
@@ -235,6 +235,10 @@ class MyIndexable(object):
     def __index__(self):
         return self.value
 
+class BadDescr:
+    def __get__(self, obj, objtype=None):
+        raise ValueError
+
 class MathTests(unittest.TestCase):
 
     def ftest(self, name, got, expected, ulp_tol=5, abs_tol=0.0):
@@ -324,6 +328,7 @@ class MathTests(unittest.TestCase):
         self.ftest('atan2(0, 1)', math.atan2(0, 1), 0)
         self.ftest('atan2(1, 1)', math.atan2(1, 1), math.pi/4)
         self.ftest('atan2(1, 0)', math.atan2(1, 0), math.pi/2)
+        self.ftest('atan2(1, -1)', math.atan2(1, -1), 3*math.pi/4)
 
         # math.atan2(0, x)
         self.ftest('atan2(0., -inf)', math.atan2(0., NINF), math.pi)
@@ -417,15 +422,21 @@ class MathTests(unittest.TestCase):
                 return 42
         class TestNoCeil:
             pass
+        class TestBadCeil:
+            __ceil__ = BadDescr()
         self.assertEqual(math.ceil(TestCeil()), 42)
         self.assertEqual(math.ceil(FloatCeil()), 42)
         self.assertEqual(math.ceil(FloatLike(42.5)), 43)
         self.assertRaises(TypeError, math.ceil, TestNoCeil())
+        self.assertRaises(ValueError, math.ceil, TestBadCeil())
 
         t = TestNoCeil()
         t.__ceil__ = lambda *args: args
         self.assertRaises(TypeError, math.ceil, t)
         self.assertRaises(TypeError, math.ceil, t, 0)
+
+        self.assertEqual(math.ceil(FloatLike(+1.0)), +1.0)
+        self.assertEqual(math.ceil(FloatLike(-1.0)), -1.0)
 
     @requires_IEEE_754
     def testCopysign(self):
@@ -567,15 +578,21 @@ class MathTests(unittest.TestCase):
                 return 42
         class TestNoFloor:
             pass
+        class TestBadFloor:
+            __floor__ = BadDescr()
         self.assertEqual(math.floor(TestFloor()), 42)
         self.assertEqual(math.floor(FloatFloor()), 42)
         self.assertEqual(math.floor(FloatLike(41.9)), 41)
         self.assertRaises(TypeError, math.floor, TestNoFloor())
+        self.assertRaises(ValueError, math.floor, TestBadFloor())
 
         t = TestNoFloor()
         t.__floor__ = lambda *args: args
         self.assertRaises(TypeError, math.floor, t)
         self.assertRaises(TypeError, math.floor, t, 0)
+
+        self.assertEqual(math.floor(FloatLike(+1.0)), +1.0)
+        self.assertEqual(math.floor(FloatLike(-1.0)), -1.0)
 
     def testFmod(self):
         self.assertRaises(TypeError, math.fmod)
@@ -598,6 +615,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.fmod(-3.0, NINF), -3.0)
         self.assertEqual(math.fmod(0.0, 3.0), 0.0)
         self.assertEqual(math.fmod(0.0, NINF), 0.0)
+        self.assertRaises(ValueError, math.fmod, INF, INF)
 
     def testFrexp(self):
         self.assertRaises(TypeError, math.frexp)
@@ -713,6 +731,11 @@ class MathTests(unittest.TestCase):
 
             s = msum(vals)
             self.assertEqual(msum(vals), math.fsum(vals))
+
+        self.assertEqual(math.fsum([1.0, math.inf]), math.inf)
+        self.assertRaises(OverflowError, math.fsum, [1e+308, 1e+308])
+        self.assertRaises(ValueError, math.fsum, [math.inf, -math.inf])
+        self.assertRaises(TypeError, math.fsum, ['spam'])
 
     def testGcd(self):
         gcd = math.gcd
@@ -830,6 +853,8 @@ class MathTests(unittest.TestCase):
         for exp in range(32):
             scale = FLOAT_MIN / 2.0 ** exp
             self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
+
+        self.assertRaises(TypeError, math.hypot, *([1.0]*18), 'spam')
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
@@ -966,6 +991,8 @@ class MathTests(unittest.TestCase):
             dist((1, 2, 3, 4), (5, 6, 7))
         with self.assertRaises(ValueError):        # Check dimension agree
             dist((1, 2, 3), (4, 5, 6, 7))
+        with self.assertRaises(TypeError):
+            dist((1,)*17 + ("spam",), (1,)*18)
         with self.assertRaises(TypeError):         # Rejects invalid types
             dist("abc", "xyz")
         int_too_big_for_float = 10 ** (sys.float_info.max_10_exp + 5)
@@ -973,6 +1000,10 @@ class MathTests(unittest.TestCase):
             dist((1, int_too_big_for_float), (2, 3))
         with self.assertRaises((ValueError, OverflowError)):
             dist((2, 3), (1, int_too_big_for_float))
+        with self.assertRaises(TypeError):
+            dist((1,), 2)
+        with self.assertRaises(TypeError):
+            dist([1], 2)
 
         # Verify that the one dimensional case is equivalent to abs()
         for i in range(20):
@@ -1111,6 +1142,7 @@ class MathTests(unittest.TestCase):
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
+        self.assertRaises(TypeError, math.ldexp, 2.0, 1.1)
         self.ftest('ldexp(0,1)', math.ldexp(0,1), 0)
         self.ftest('ldexp(1,1)', math.ldexp(1,1), 2)
         self.ftest('ldexp(1,-1)', math.ldexp(1,-1), 0.5)
@@ -1153,6 +1185,7 @@ class MathTests(unittest.TestCase):
                    2302.5850929940457)
         self.assertRaises(ValueError, math.log, -1.5)
         self.assertRaises(ValueError, math.log, -10**1000)
+        self.assertRaises(ValueError, math.log, 10, -10)
         self.assertRaises(ValueError, math.log, NINF)
         self.assertEqual(math.log(INF), INF)
         self.assertTrue(math.isnan(math.log(NAN)))
@@ -1292,6 +1325,7 @@ class MathTests(unittest.TestCase):
         sumprod = math.sumprod
         self.assertEqual(sumprod([0.1] * 10, [1]*10), 1.0)
         self.assertEqual(sumprod([0.1] * 20, [True, False] * 10), 1.0)
+        self.assertEqual(sumprod([True, False] * 10, [0.1] * 20), 1.0)
         self.assertEqual(sumprod([1.0, 10E100, 1.0, -10E100], [1.0]*4), 2.0)
 
     @support.requires_resource('cpu')
@@ -1881,11 +1915,11 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isinf(0.))
         self.assertFalse(math.isinf(1.))
 
-    @requires_IEEE_754
     def test_nan_constant(self):
+        # `math.nan` must be a quiet NaN with positive sign bit
         self.assertTrue(math.isnan(math.nan))
+        self.assertEqual(math.copysign(1., math.nan), 1.)
 
-    @requires_IEEE_754
     def test_inf_constant(self):
         self.assertTrue(math.isinf(math.inf))
         self.assertGreater(math.inf, 0.0)
@@ -2296,11 +2330,20 @@ class MathTests(unittest.TestCase):
                          float.fromhex('0x1.fffffffffffffp-1'))
         self.assertEqual(math.nextafter(1.0, INF),
                          float.fromhex('0x1.0000000000001p+0'))
+        self.assertEqual(math.nextafter(1.0, -INF, steps=1),
+                         float.fromhex('0x1.fffffffffffffp-1'))
+        self.assertEqual(math.nextafter(1.0, INF, steps=1),
+                         float.fromhex('0x1.0000000000001p+0'))
+        self.assertEqual(math.nextafter(1.0, -INF, steps=3),
+                         float.fromhex('0x1.ffffffffffffdp-1'))
+        self.assertEqual(math.nextafter(1.0, INF, steps=3),
+                         float.fromhex('0x1.0000000000003p+0'))
 
         # x == y: y is returned
-        self.assertEqual(math.nextafter(2.0, 2.0), 2.0)
-        self.assertEqualSign(math.nextafter(-0.0, +0.0), +0.0)
-        self.assertEqualSign(math.nextafter(+0.0, -0.0), -0.0)
+        for steps in range(1, 5):
+            self.assertEqual(math.nextafter(2.0, 2.0, steps=steps), 2.0)
+            self.assertEqualSign(math.nextafter(-0.0, +0.0, steps=steps), +0.0)
+            self.assertEqualSign(math.nextafter(+0.0, -0.0, steps=steps), -0.0)
 
         # around 0.0
         smallest_subnormal = sys.float_info.min * sys.float_info.epsilon
@@ -2324,6 +2367,11 @@ class MathTests(unittest.TestCase):
         self.assertIsNaN(math.nextafter(NAN, 1.0))
         self.assertIsNaN(math.nextafter(1.0, NAN))
         self.assertIsNaN(math.nextafter(NAN, NAN))
+
+        self.assertEqual(1.0, math.nextafter(1.0, INF, steps=0))
+        with self.assertRaises(ValueError):
+            math.nextafter(1.0, INF, steps=-1)
+
 
     @requires_IEEE_754
     def test_ulp(self):
@@ -2363,6 +2411,14 @@ class MathTests(unittest.TestCase):
             # There should not have been any attempt to convert the second
             # argument to a float.
             self.assertFalse(getattr(y, "converted", False))
+
+    def test_input_exceptions(self):
+        self.assertRaises(TypeError, math.exp, "spam")
+        self.assertRaises(TypeError, math.erf, "spam")
+        self.assertRaises(TypeError, math.atan2, "spam", 1.0)
+        self.assertRaises(TypeError, math.atan2, 1.0, "spam")
+        self.assertRaises(TypeError, math.atan2, 1.0)
+        self.assertRaises(TypeError, math.atan2, 1.0, 2.0, 3.0)
 
     # Custom assertions.
 
@@ -2504,7 +2560,7 @@ class IsCloseTests(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocFileSuite
-    tests.addTest(DocFileSuite("ieee754.txt"))
+    tests.addTest(DocFileSuite(os.path.join("mathdata", "ieee754.txt")))
     return tests
 
 if __name__ == '__main__':
