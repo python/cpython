@@ -1132,6 +1132,11 @@ Glossary
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
+   static type checker
+      An external tool that reads Python code and analyzes it, looking for
+      issues such as incorrect types. See also :term:`type hints <type hint>`
+      and the :mod:`typing` module.
+
    strong reference
       In Python's C API, a strong reference is a reference to an object
       which is owned by the code holding the reference.  The strong
@@ -1208,8 +1213,8 @@ Glossary
       attribute, or a function parameter or return value.
 
       Type hints are optional and are not enforced by Python but
-      they are useful to static type analysis tools, and aid IDEs with code
-      completion and refactoring.
+      they are useful to :term:`static type checkers <static type checker>`.
+      They can also aid IDEs with code completion and refactoring.
 
       Type hints of global variables, class attributes, and functions,
       but not local variables, can be accessed using
