@@ -737,6 +737,14 @@ mmap_seek_method(mmap_object *self, PyObject *args)
     return NULL;
 }
 
+
+static PyObject *
+mmap_seekable_method(mmap_object *self, PyObject *unused)
+{
+    Py_RETURN_TRUE;
+}
+
+
 static PyObject *
 mmap_move_method(mmap_object *self, PyObject *args)
 {
@@ -905,6 +913,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"readline",        (PyCFunction) mmap_read_line_method,    METH_NOARGS},
     {"resize",          (PyCFunction) mmap_resize_method,       METH_VARARGS},
     {"seek",            (PyCFunction) mmap_seek_method,         METH_VARARGS},
+    {"seekable",        (PyCFunction) mmap_seekable_method,     METH_NOARGS},
     {"size",            (PyCFunction) mmap_size_method,         METH_NOARGS},
     {"tell",            (PyCFunction) mmap_tell_method,         METH_NOARGS},
     {"write",           (PyCFunction) mmap_write_method,        METH_VARARGS},
