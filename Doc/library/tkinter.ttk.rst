@@ -1391,8 +1391,7 @@ option. If you don't know the class name of a widget, use the method
    .. method:: element_create(elementname, etype, *args, **kw)
 
       Create a new element in the current theme, of the given *etype* which is
-      expected to be either "image", "from" or "vsapi". The latter is only
-      available in Tk 8.6a for Windows XP and Vista and is not described here.
+      expected to be either "image" or "from".
 
       If "image" is used, *args* should contain the default image name followed
       by statespec/value pairs (this is the imagespec), and *kw* may have the
@@ -1418,12 +1417,27 @@ option. If you don't know the class name of a widget, use the method
          Specifies a minimum width for the element. If less than zero, the
          base image's width is used as a default.
 
+      Example::
+
+         img1 = tkinter.PhotoImage(master=root, file='button.png')
+         img1 = tkinter.PhotoImage(master=root, file='button-pressed.png')
+         img1 = tkinter.PhotoImage(master=root, file='button-active.png')
+         style = ttk.Style(root)
+         style.element_create('Button.button', 'image',
+                              img1, ('pressed', img2), ('active', img3),
+                              border=(2, 4), sticky='we')
+
       If "from" is used as the value of *etype*,
       :meth:`element_create` will clone an existing
       element. *args* is expected to contain a themename, from which
       the element will be cloned, and optionally an element to clone from.
       If this element to clone from is not specified, an empty element will
       be used. *kw* is discarded.
+
+      Example::
+
+         style = ttk.Style(root)
+         style.element_create('plain.background', 'from', 'default')
 
 
    .. method:: element_names()
