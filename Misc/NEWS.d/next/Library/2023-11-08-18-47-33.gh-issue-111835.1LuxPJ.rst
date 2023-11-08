@@ -1,0 +1,1 @@
+The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method that can be used where a file-like object with a seekable method is required. (Contributed by Sylvie Liberman in :gh:`111865`.)
