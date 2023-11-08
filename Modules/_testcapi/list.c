@@ -111,7 +111,7 @@ list_append(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(obj);
     NULLABLE(value);
-    RETURN_INT(PyList_Append(obj, Py_XNewRef(value)));
+    RETURN_INT(PyList_Append(obj, value));
 }
 
 static PyObject *
