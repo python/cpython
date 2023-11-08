@@ -216,7 +216,7 @@ kwds.append(MACRO)
 keywords = {name.lower(): name for name in kwds}
 
 ANNOTATION = "ANNOTATION"
-annotations = {"specializing", "guard", "override", "register"}
+annotations = {"specializing", "guard", "override", "register", "replaced"}
 
 __all__ = []
 __all__.extend(kwds)

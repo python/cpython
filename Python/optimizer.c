@@ -384,6 +384,14 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
 };
 
+/* TO DO -- Generate this table */
+static const uint16_t
+_PyUop_Replacements[OPCODE_METADATA_SIZE] = {
+    [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
+    [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
+    [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
+};
+
 #define TRACE_STACK_SIZE 5
 
 /* Returns 1 on success,
@@ -586,46 +594,6 @@ pop_jump_if_bool:
                 break;
             }
 
-            case FOR_ITER_LIST:
-            case FOR_ITER_TUPLE:
-            case FOR_ITER_RANGE:
-            {
-                RESERVE(4, 3);
-                int check_op, exhausted_op, next_op;
-                switch (opcode) {
-                    case FOR_ITER_LIST:
-                        check_op = _ITER_CHECK_LIST;
-                        exhausted_op = _IS_ITER_EXHAUSTED_LIST;
-                        next_op = _ITER_NEXT_LIST;
-                        break;
-                    case FOR_ITER_TUPLE:
-                        check_op = _ITER_CHECK_TUPLE;
-                        exhausted_op = _IS_ITER_EXHAUSTED_TUPLE;
-                        next_op = _ITER_NEXT_TUPLE;
-                        break;
-                    case FOR_ITER_RANGE:
-                        check_op = _ITER_CHECK_RANGE;
-                        exhausted_op = _IS_ITER_EXHAUSTED_RANGE;
-                        next_op = _ITER_NEXT_RANGE;
-                        break;
-                    default:
-                        Py_UNREACHABLE();
-                }
-                // Assume jump unlikely (can a for-loop exit be likely?)
-                _Py_CODEUNIT *target_instr =  // +1 at the end skips over END_FOR
-                    instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg + 1;
-                max_length -= 3;  // Really the start of the stubs
-                ADD_TO_TRACE(check_op, 0, 0);
-                ADD_TO_TRACE(exhausted_op, 0, 0);
-                ADD_TO_TRACE(_POP_JUMP_IF_TRUE, max_length, 0);
-                ADD_TO_TRACE(next_op, 0, 0);
-
-                ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
-                ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
-                ADD_TO_STUB(max_length + 2, _EXIT_TRACE, 0, 0);
-                break;
-            }
-
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
@@ -660,6 +628,9 @@ pop_jump_if_bool:
                                         assert(opcode != JUMP_BACKWARD);
                                         oparg += extras;
                                     }
+                                }
+                                if (_PyUop_Replacements[uop]) {
+                                    uop = _PyUop_Replacements[uop];
                                 }
                                 break;
                             case OPARG_CACHE_1:

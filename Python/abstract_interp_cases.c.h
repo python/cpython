@@ -628,9 +628,7 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_LIST: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+        case _GUARD_NOT_EXHAUSTED_LIST: {
             break;
         }
 
@@ -644,9 +642,7 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_TUPLE: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+        case _GUARD_NOT_EXHAUSTED_TUPLE: {
             break;
         }
 
@@ -660,9 +656,7 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_RANGE: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+        case _GUARD_NOT_EXHAUSTED_RANGE: {
             break;
         }
 

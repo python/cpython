@@ -2580,7 +2580,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type);
         }
 
-        op(_ITER_JUMP_LIST, (iter -- iter)) {
+        replaced op(_ITER_JUMP_LIST, (iter -- iter)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2599,21 +2599,12 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_LIST, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_LIST, (iter -- iter)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyList_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
+            DEOPT_IF(seq == NULL);
+            DEOPT_IF(it->it_index >= PyList_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_LIST, (iter -- iter, next)) {
@@ -2635,7 +2626,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type);
         }
 
-        op(_ITER_JUMP_TUPLE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2654,21 +2645,12 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_TUPLE, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyTuple_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
+            DEOPT_IF(seq == NULL);
+            DEOPT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
@@ -2691,7 +2673,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type);
         }
 
-        op(_ITER_JUMP_RANGE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2705,10 +2687,10 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            exhausted = r->len <= 0 ? Py_True : Py_False;
+            DEOPT_IF(r->len <= 0);
         }
 
         op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
