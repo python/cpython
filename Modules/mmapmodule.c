@@ -729,7 +729,7 @@ mmap_seek_method(mmap_object *self, PyObject *args)
         if (where > self->size || where < 0)
             goto onoutofrange;
         self->pos = where;
-        return PyLong_FromLong(self->pos);
+        return PyLong_FromSsize_t(self->pos);
     }
 
   onoutofrange:
