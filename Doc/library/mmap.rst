@@ -287,7 +287,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. method:: seekable()
 
-      Return whether the file supports seeking.
+      Return whether the file supports seeking, and the return value is always ``True``.
 
       .. versionadded:: 3.13
 
