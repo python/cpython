@@ -657,17 +657,21 @@ extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(push)
 #  pragma warning(disable:4102)
-/* gh-111786: _PyEval_EvalFrameDefault is too large to optimize for speed on MSVC.
-   Disable that optimization temporarily. If this is fixed upstream, we should gate
-   this on the version of MSVC.
- */
-#  pragma optimize("t", off)
 #endif
 
 
 /* _PyEval_EvalFrameDefault() is a *big* function,
  * so consume 3 units of C stack */
 #define PY_EVAL_C_STACK_UNITS 2
+
+#if defined(_MSC_VER) && defined(_Py_USING_PGO)
+/* gh-111786: _PyEval_EvalFrameDefault is too large to optimize for speed with
+   PGO on MSVC. Disable that optimization temporarily. If this is fixed
+   upstream, we should gate this on the version of MSVC.
+ */
+#  pragma optimize("t", off)
+/* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
