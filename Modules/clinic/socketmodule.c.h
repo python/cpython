@@ -170,8 +170,13 @@ _socket_socket_inet_aton(PySocketSockObject *self, PyObject *arg)
         _PyArg_BadArgument("inet_aton", "argument", "str", arg);
         goto exit;
     }
-    ip_addr = PyUnicode_AsUTF8(arg);
+    Py_ssize_t ip_addr_length;
+    ip_addr = PyUnicode_AsUTF8AndSize(arg, &ip_addr_length);
     if (ip_addr == NULL) {
+        goto exit;
+    }
+    if (strlen(ip_addr) != (size_t)ip_addr_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _socket_socket_inet_aton_impl(self, ip_addr);
@@ -254,4 +259,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=a6621b09bcb88f6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb37b5d88a1e4661 input=a9049054013a1b77]*/
