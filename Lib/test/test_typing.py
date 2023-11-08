@@ -44,8 +44,7 @@ import weakref
 import types
 
 from test.support import import_helper, captured_stderr, cpython_only
-from test import mod_generics_cache
-from test import _typed_dict_helper
+from test.typinganndata import mod_generics_cache, _typed_dict_helper
 
 
 py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
