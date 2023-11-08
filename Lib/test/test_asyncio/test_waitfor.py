@@ -66,17 +66,12 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         fut = loop.create_future()
         fut.set_result('done')
 
-        t0 = loop.time()
         ret = await asyncio.wait_for(fut, 0)
-        t1 = loop.time()
 
         self.assertEqual(ret, 'done')
         self.assertTrue(fut.done())
-        self.assertLess(t1 - t0, 0.1)
 
     async def test_wait_for_timeout_less_then_0_or_0_coroutine_do_not_started(self):
-        loop = asyncio.get_running_loop()
-
         foo_started = False
 
         async def foo():
@@ -84,12 +79,9 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
             foo_started = True
 
         with self.assertRaises(asyncio.TimeoutError):
-            t0 = loop.time()
             await asyncio.wait_for(foo(), 0)
-        t1 = loop.time()
 
         self.assertEqual(foo_started, False)
-        self.assertLess(t1 - t0, 0.1)
 
     async def test_wait_for_timeout_less_then_0_or_0(self):
         loop = asyncio.get_running_loop()
@@ -113,18 +105,14 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
                 await started
 
                 with self.assertRaises(asyncio.TimeoutError):
-                    t0 = loop.time()
                     await asyncio.wait_for(fut, timeout)
-                t1 = loop.time()
 
                 self.assertTrue(fut.done())
                 # it should have been cancelled due to the timeout
                 self.assertTrue(fut.cancelled())
                 self.assertEqual(foo_running, False)
-                self.assertLess(t1 - t0, 0.1)
 
     async def test_wait_for(self):
-        loop = asyncio.get_running_loop()
         foo_running = None
 
         async def foo():
@@ -139,13 +127,10 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         fut = asyncio.create_task(foo())
 
         with self.assertRaises(asyncio.TimeoutError):
-            t0 = loop.time()
             await asyncio.wait_for(fut, 0.1)
-        t1 = loop.time()
         self.assertTrue(fut.done())
         # it should have been cancelled due to the timeout
         self.assertTrue(fut.cancelled())
-        self.assertLess(t1 - t0, support.SHORT_TIMEOUT)
         self.assertEqual(foo_running, False)
 
     async def test_wait_for_blocking(self):

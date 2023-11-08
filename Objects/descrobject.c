@@ -6,6 +6,7 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_emscripten_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
+#include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()

@@ -1684,7 +1684,7 @@ class datetime(date):
     The year, month and day arguments are required. tzinfo may be None, or an
     instance of a tzinfo subclass. The remaining arguments may be ints.
     """
-    __slots__ = date.__slots__ + time.__slots__
+    __slots__ = time.__slots__
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0):
