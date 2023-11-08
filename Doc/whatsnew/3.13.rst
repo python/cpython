@@ -149,6 +149,13 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+asyncio
+-------
+
+* :meth:`asyncio.loop.create_unix_server` will now automatically remove
+  the Unix socket when the server is closed.
+  (Contributed by Pierre Ossman in :gh:`111246`.)
+
 copy
 ----
 
