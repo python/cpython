@@ -286,7 +286,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       position) and ``os.SEEK_END`` or ``2`` (seek relative to the file's end).
 
       .. versionchanged:: 3.13
-          Return the current position instead of ``None``.
+         Return the current position instead of ``None``.
 
    .. method:: seekable()
 

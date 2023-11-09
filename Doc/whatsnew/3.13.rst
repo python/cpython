@@ -185,6 +185,11 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+ipaddress
+---------
+
+* Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
+  (Contributed by Charles Machalow in :gh:`109466`.)
 
 mmap
 ----
@@ -193,12 +198,6 @@ mmap
   that can be used where it requires a file-like object with seekable and
   the :meth:`~mmap.mmap.seek` method return the current position.
   (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
-
-ipaddress
----------
-
-* Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
-  (Contributed by Charles Machalow in :gh:`109466`.)
 
 opcode
 ------
