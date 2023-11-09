@@ -198,6 +198,14 @@ ipaddress
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
 
+mmap
+----
+
+* The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
+  that can be used where it requires a file-like object with seekable and
+  the :meth:`~mmap.mmap.seek` method return the new absolute position.
+  (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
+
 opcode
 ------
 
