@@ -97,6 +97,7 @@ SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
 _ONE = 1
+_sha512 = None
 
 
 class Random(_random.Random):
@@ -151,13 +152,15 @@ class Random(_random.Random):
             a = -2 if x == -1 else x
 
         elif version == 2 and isinstance(a, (str, bytes, bytearray)):
-            try:
-                # hashlib is pretty heavy to load, try lean internal
-                # module first
-                from _sha2 import sha512 as _sha512
-            except ImportError:
-                # fallback to official implementation
-                from hashlib import sha512 as _sha512
+            global _sha512
+            if _sha512 is None:
+                try:
+                    # hashlib is pretty heavy to load, try lean internal
+                    # module first
+                    from _sha2 import sha512 as _sha512
+                except ImportError:
+                    # fallback to official implementation
+                    from hashlib import sha512 as _sha512
 
             if isinstance(a, str):
                 a = a.encode()
