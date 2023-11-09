@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
@@ -240,8 +244,7 @@ _opcode_get_nb_ops_impl(PyObject *module)
     }
 #define ADD_NB_OP(NUM, STR) \
     do { \
-        PyObject *pair = Py_BuildValue( \
-            "NN", PyUnicode_FromString(#NUM), PyUnicode_FromString(STR)); \
+        PyObject *pair = Py_BuildValue("ss", #NUM, STR); \
         if (pair == NULL) { \
             Py_DECREF(list); \
             return NULL; \
@@ -306,7 +309,7 @@ _opcode_get_intrinsic1_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_1; i++) {
-        PyObject *name = _PyUnstable_GetUnaryIntrinsicName(i);
+        PyObject *name = PyUnstable_GetUnaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -333,7 +336,7 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_2; i++) {
-        PyObject *name = _PyUnstable_GetBinaryIntrinsicName(i);
+        PyObject *name = PyUnstable_GetBinaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;

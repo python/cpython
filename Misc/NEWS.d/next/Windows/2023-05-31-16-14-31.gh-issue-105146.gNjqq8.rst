@@ -1,2 +1,0 @@
-Updated the links at the end of the installer to point to Discourse rather
-than the mailing lists.

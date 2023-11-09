@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_random_Random_random__doc__,
 "random($self, /)\n"
@@ -106,7 +102,7 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int k;
 
-    k = _PyLong_AsInt(arg);
+    k = PyLong_AsInt(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -115,4 +111,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bc17406a886824fc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c800a28c2d7b9d1 input=a9049054013a1b77]*/

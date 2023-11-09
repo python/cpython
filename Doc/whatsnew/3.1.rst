@@ -501,12 +501,12 @@ Changes to Python's build process and to the C API include:
 
   (Contributed by Mark Dickinson and Lisandro Dalcrin; :issue:`5175`.)
 
-* Deprecated :c:func:`PyNumber_Int`.  Use :c:func:`PyNumber_Long` instead.
+* Deprecated :c:func:`!PyNumber_Int`.  Use :c:func:`PyNumber_Long` instead.
 
   (Contributed by Mark Dickinson; :issue:`4910`.)
 
 * Added a new :c:func:`PyOS_string_to_double` function to replace the
-  deprecated functions :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof`.
+  deprecated functions :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof`.
 
   (Contributed by Mark Dickinson; :issue:`5914`.)
 

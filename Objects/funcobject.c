@@ -3,12 +3,10 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
-#include "pycore_code.h"          // _Py_next_func_version
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
-
-static PyObject* func_repr(PyFunctionObject *op);
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -35,21 +33,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                // Don't risk resurrecting the func if an unraisablehook keeps a
-                // reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = func_repr(func);
-                if (repr != NULL) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        func_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event), func->func_qualname, func);
             }
         }
         i++;
@@ -252,11 +238,9 @@ When the function version is 0, the `CALL` bytecode is not specialized.
 Code object versions
 --------------------
 
-So where to code objects get their `co_version`? There is a single
-static global counter, `_Py_next_func_version`. This is initialized in
-the generated (!) file `Python/deepfreeze/deepfreeze.c`, to 1 plus the
-number of deep-frozen function objects in that file.
-(In `_bootstrap_python.c` and `freeze_module.c` it is initialized to 1.)
+So where to code objects get their `co_version`?
+There is a per-interpreter counter, `next_func_version`.
+This is initialized to 1 when the interpreter is created.
 
 Code objects get a new `co_version` allocated from this counter upon
 creation. Since code objects are nominally immutable, `co_version` can
@@ -268,9 +252,17 @@ code objects have been created during the process's lifetime.
 void
 _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (func->func_version != 0) {
+        PyFunctionObject **slot =
+            interp->func_state.func_version_cache
+            + (func->func_version % FUNC_VERSION_CACHE_SIZE);
+        if (*slot == func) {
+            *slot = NULL;
+        }
+    }
     func->func_version = version;
     if (version != 0) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
         interp->func_state.func_version_cache[
             version % FUNC_VERSION_CACHE_SIZE] = func;
     }
@@ -283,7 +275,7 @@ _PyFunction_LookupByVersion(uint32_t version)
     PyFunctionObject *func = interp->func_state.func_version_cache[
         version % FUNC_VERSION_CACHE_SIZE];
     if (func != NULL && func->func_version == version) {
-        return (PyFunctionObject *)Py_NewRef(func);
+        return func;
     }
     return NULL;
 }
@@ -370,7 +362,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
     }
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS,
                       (PyFunctionObject *) op, defaults);
-    ((PyFunctionObject *)op)->func_version = 0;
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
 }
@@ -379,7 +371,7 @@ void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
     assert(func != NULL);
-    func->func_version = 0;
+    _PyFunction_SetVersion(func, 0);
     func->vectorcall = vectorcall;
 }
 
@@ -412,7 +404,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
     }
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS,
                       (PyFunctionObject *) op, defaults);
-    ((PyFunctionObject *)op)->func_version = 0;
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
 }
@@ -445,7 +437,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
-    ((PyFunctionObject *)op)->func_version = 0;
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
 }
@@ -507,7 +499,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
-    ((PyFunctionObject *)op)->func_version = 0;
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
     return 0;
 }
@@ -565,8 +557,22 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
+
+    PyObject *func_code = PyFunction_GET_CODE(op);
+    int old_flags = ((PyCodeObject *)func_code)->co_flags;
+    int new_flags = ((PyCodeObject *)value)->co_flags;
+    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
+    if ((old_flags & mask) != (new_flags & mask)) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+            "Assigning a code object of non-matching type is deprecated "
+            "(e.g., from a generator to a plain function)") < 0)
+        {
+            return -1;
+        }
+    }
+
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
-    op->func_version = 0;
+    _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_code, Py_NewRef(value));
     return 0;
 }
@@ -646,7 +652,7 @@ func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
-    op->func_version = 0;
+    _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_defaults, Py_XNewRef(value));
     return 0;
 }
@@ -687,7 +693,7 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
     }
 
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
-    op->func_version = 0;
+    _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_kwdefaults, Py_XNewRef(value));
     return 0;
 }
@@ -717,7 +723,7 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    op->func_version = 0;
+    _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_annotations, Py_XNewRef(value));
     return 0;
 }
@@ -881,7 +887,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 static int
 func_clear(PyFunctionObject *op)
 {
-    op->func_version = 0;
+    _PyFunction_SetVersion(op, 0);
     Py_CLEAR(op->func_globals);
     Py_CLEAR(op->func_builtins);
     Py_CLEAR(op->func_module);
@@ -917,15 +923,7 @@ func_dealloc(PyFunctionObject *op)
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
     }
-    if (op->func_version != 0) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        PyFunctionObject **slot =
-            interp->func_state.func_version_cache
-            + (op->func_version % FUNC_VERSION_CACHE_SIZE);
-        if (*slot == op) {
-            *slot = NULL;
-        }
-    }
+    _PyFunction_SetVersion(op, 0);
     (void)func_clear(op);
     // These aren't cleared by func_clear().
     Py_DECREF(op->func_code);
@@ -1112,10 +1110,6 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
     if (type == NULL)
         type = (PyObject *)(Py_TYPE(obj));
-    if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL) {
-        return Py_TYPE(cm->cm_callable)->tp_descr_get(cm->cm_callable, type,
-                                                      type);
-    }
     return PyMethod_New(cm->cm_callable, type);
 }
 

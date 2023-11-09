@@ -1,10 +1,9 @@
 #include "Python.h"
+#include "pycore_code.h"          // _PyCode_GetVarnames()
 #include "pycore_frame.h"
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_pyerrors.h"      // export _Py_UTF8_Edit_Cost()
+#include "pycore_runtime.h"       // _Py_ID()
 
-#include "pycore_pyerrors.h"
-#include "pycore_code.h"        // _PyCode_GetVarnames()
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
 
 #define MAX_CANDIDATE_ITEMS 750
@@ -246,14 +245,12 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
             goto error;
         }
 
-        PyObject *value;
-        res = PyObject_GetOptionalAttr(self, name, &value);
+        res = PyObject_HasAttrWithError(self, name);
         Py_DECREF(locals);
         if (res < 0) {
             goto error;
         }
-        if (value) {
-            Py_DECREF(value);
+        if (res) {
             Py_DECREF(dir);
             return PyUnicode_FromFormat("self.%U", name);
         }

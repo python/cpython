@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_io__TextIOBase_detach__doc__,
 "detach($self, /)\n"
@@ -75,7 +76,7 @@ _io__TextIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -129,7 +130,7 @@ _io__TextIOBase_readline(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -756,9 +757,27 @@ exit:
 }
 
 PyDoc_STRVAR(_io_TextIOWrapper_seek__doc__,
-"seek($self, cookie, whence=0, /)\n"
+"seek($self, cookie, whence=os.SEEK_SET, /)\n"
 "--\n"
-"\n");
+"\n"
+"Set the stream position, and return the new stream position.\n"
+"\n"
+"  cookie\n"
+"    Zero or an opaque number returned by tell().\n"
+"  whence\n"
+"    The relative position to seek from.\n"
+"\n"
+"Four operations are supported, given by the following argument\n"
+"combinations:\n"
+"\n"
+"- seek(0, SEEK_SET): Rewind to the start of the stream.\n"
+"- seek(cookie, SEEK_SET): Restore a previous position;\n"
+"  \'cookie\' must be a number returned by tell().\n"
+"- seek(0, SEEK_END): Fast-forward to the end of the stream.\n"
+"- seek(0, SEEK_CUR): Leave the current stream position unchanged.\n"
+"\n"
+"Any other argument combinations are invalid,\n"
+"and may raise exceptions.");
 
 #define _IO_TEXTIOWRAPPER_SEEK_METHODDEF    \
     {"seek", _PyCFunction_CAST(_io_TextIOWrapper_seek), METH_FASTCALL, _io_TextIOWrapper_seek__doc__},
@@ -780,7 +799,7 @@ _io_TextIOWrapper_seek(textio *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[1]);
+    whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -794,7 +813,11 @@ exit:
 PyDoc_STRVAR(_io_TextIOWrapper_tell__doc__,
 "tell($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Return the stream position as an opaque number.\n"
+"\n"
+"The return value of tell() can be given as input to seek(), to restore a\n"
+"previous stream position.");
 
 #define _IO_TEXTIOWRAPPER_TELL_METHODDEF    \
     {"tell", (PyCFunction)_io_TextIOWrapper_tell, METH_NOARGS, _io_TextIOWrapper_tell__doc__},
@@ -957,4 +980,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=e1060638b65e8a63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e58ce89b7354e77a input=a9049054013a1b77]*/

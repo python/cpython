@@ -10,6 +10,11 @@ module instead.
 
 #define MODULE_VERSION "1.0"
 
+// clinic/_csv.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include <stddef.h>               // offsetof()
@@ -233,7 +238,7 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
                          "\"%s\" must be an integer", name);
             return -1;
         }
-        value = _PyLong_AsInt(src);
+        value = PyLong_AsInt(src);
         if (value == -1 && PyErr_Occurred()) {
             return -1;
         }

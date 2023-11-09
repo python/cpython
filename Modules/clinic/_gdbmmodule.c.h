@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
@@ -334,7 +330,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -344,4 +340,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8c613cbd88e57480 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5ee922363d5a81f input=a9049054013a1b77]*/
