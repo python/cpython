@@ -670,11 +670,14 @@ class Compiler:
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> None:
-        ll = tempdir / f"{opname}.ll"
         o = tempdir / f"{opname}.o"
-        backend_flags = [
+        flags = [
             *CFLAGS,
+            *CPPFLAGS,
             f"--target={self._host}",
+            f"-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG",  # XXX
+            f"-D_JIT_OPCODE={opname}",
+            f"-I{self._target.pyconfig.parent}",
             f"-c",
             # We have three options for code model:
             # - "small": assumes that code and data reside in the lowest 2GB of
@@ -689,18 +692,7 @@ class Compiler:
             # direct jumps and immediate data loads on basically all platforms:
             f"-mcmodel={self._target.model}",
         ]
-        frontend_flags = [
-            *CFLAGS,
-            *CPPFLAGS,
-            f"--target={self._host}",
-            f"-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG",  # XXX
-            f"-D_JIT_OPCODE={opname}",
-            f"-I{self._target.pyconfig.parent}",
-            f"-S",
-            f"-emit-llvm",
-        ]
-        await run(self._clang, *frontend_flags, "-o", ll, c)
-        await run(self._clang, *backend_flags, "-o", o, ll)
+        await run(self._clang, *flags, "-o", o, c)
         self._stencils_built[opname] = await self._target.parser(
             o, self._readobj, self._objdump, self._target
         ).parse()
