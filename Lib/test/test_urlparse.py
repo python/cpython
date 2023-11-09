@@ -9,6 +9,23 @@ import unicodedata
 import unittest
 import urlparse
 
+# Add ability to run sub-tests
+def sub_test(param_list):
+    """Decorates a test case to run it as a set of subtests."""
+
+    def decorator(f):
+
+        @functools.wraps(f)
+        def wrapped(self):
+            for param in param_list:
+                with self.subTest(**param):
+                    f(self, **param)
+
+        return wrapped
+
+    return decorator
+
+
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
 RFC3986_BASE = 'http://a/b/c/d;p?q'
@@ -667,19 +684,18 @@ class UrlParseTestCase(unittest.TestCase):
         for bytes in (False, True):
             for parse in (urlparse.urlsplit, urlparse.urlparse):
                 for port in ("foo", "1.5", "-1", "0x10", "-0", "1_1", " 1", "1 ", "६"):
-                    with self.subTest(bytes=bytes, parse=parse, port=port):
-                        netloc = "www.example.net:" + port
-                        url = "http://" + netloc + "/"
-                        if bytes:
-                            if netloc.isascii() and port.isascii():
-                                netloc = netloc.encode("ascii")
-                                url = url.encode("ascii")
-                            else:
-                                continue
-                        p = parse(url)
-                        self.assertEqual(p.netloc, netloc)
-                        with self.assertRaises(ValueError):
-                            p.port
+                    netloc = "www.example.net:" + port
+                    url = "http://" + netloc + "/"
+                    if bytes:
+                        if netloc.isascii() and port.isascii():
+                            netloc = netloc.encode("ascii")
+                            url = url.encode("ascii")
+                        else:
+                            continue
+                    p = parse(url)
+                    self.assertEqual(p.netloc, netloc)
+                    with self.assertRaises(ValueError):
+                        p.port
 
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
