@@ -1,0 +1,10 @@
+- init: mkdir -p debug; cd debug; ../configure --with-pydebug; cd -
+- cleanup:
+- deps: sudo apt install -y build-essential gdb lcov pkg-config libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev lzma lzma-dev tk-dev uuid-dev zlib1g-dev; pipx install ruff
+- build: cd debug; make -j8; cd -
+- install: cd debug; sudo make install; cd-
+- package:
+- test: cd debug; make test; cd -
+- lint: 
+- format:
+- release:

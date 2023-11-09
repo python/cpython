@@ -48,8 +48,8 @@ jobs:
               };
 
               const data = {
-                from: "CPython Issues <github@mailgun.python.org>",
-                to: "new-bugs-announce@python.org",
+                from: "CPython Issues <github@openxpu.ai>",
+                to: "micah.villmow@openxpu.ai"
                 subject: `[Issue ${issue.data.number}] ${issue.data.title}`,
                 template: "new-github-issue",
                 'o:tracking-clicks': 'no',

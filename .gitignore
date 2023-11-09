@@ -159,3 +159,6 @@ Python/frozen_modules/MANIFEST
 
 # main branch only: ABI files are not checked/maintained
 Doc/data/python*.abi
+
+# build directory
+/debug
