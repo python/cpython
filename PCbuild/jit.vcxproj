@@ -35,4 +35,7 @@
           Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc -d'
           WorkingDirectory="$(PySourcePath)"/>
   </Target>
+  <Target Name="CleanAll">
+    <Delete Files="$(PySourcePath)Python\jit_stencils.h"/>
+  </Target>
 </Project>

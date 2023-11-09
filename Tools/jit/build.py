@@ -35,6 +35,10 @@ STUBS = ["deoptimize", "error", "trampoline"]
 
 
 HoleKind: typing.TypeAlias = typing.Literal[
+    "IMAGE_REL_AMD64_ADDR64",
+    "IMAGE_REL_AMD64_REL32",
+    "IMAGE_REL_I386_DIR32",
+    "IMAGE_REL_I386_REL32",
     "R_386_32",
     "R_386_PC32",
     "R_AARCH64_ABS64",
@@ -253,7 +257,7 @@ class Parser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, readobj: str, objdump: str | None, alignment: int) -> None:
+    def __init__(self, path: pathlib.Path, readobj: str, objdump: str | None, target: "Target") -> None:
         self.path = path
         self.body = bytearray()
         self.data = bytearray()
@@ -266,7 +270,7 @@ class Parser:
         self.data_relocations: list[tuple[int, RelocationType]] = []
         self.readobj = readobj
         self.objdump = objdump
-        self.alignment = alignment
+        self.target = target
 
     async def parse(self) -> Stencil:
         if self.objdump is not None:
@@ -282,11 +286,10 @@ class Parser:
             disassembly = []
         output = await run(self.readobj, *self._ARGS, self.path, capture=True)
         assert output is not None
-        self._data: ObjectType = json.loads(output)
-        file = self._data[0]
-        if str(self.path) in file:
-            file = typing.cast(dict[str, FileType], file)[str(self.path)]
-        for section in unwrap(typing.cast(SectionsType, file["Sections"]), "Section"):
+        start = output.index(b"[", 1)  # XXX: Mach-O, COFF
+        end = output.rindex(b"]", start, -1) + 1  # XXX: Mach-O, COFF
+        self._data = json.loads(output[start:end])
+        for section in unwrap(typing.cast(SectionsType, self._data), "Section"):
             self._handle_section(section)
         if "_JIT_ENTRY" in self.body_symbols:
             entry = self.body_symbols["_JIT_ENTRY"]
@@ -296,7 +299,7 @@ class Parser:
         holes = []
         holes_data = []
         padding = 0
-        while len(self.body) % self.alignment:
+        while len(self.body) % self.target.alignment:
             self.body.append(0)
             padding += 1
         offset_data = 0
@@ -367,60 +370,16 @@ class Parser:
         assert offset_data == len(self.data), (offset_data, len(self.data), self.data, disassembly_data)
         return Stencil(self.body, holes, disassembly, self.data, holes_data, disassembly_data)
 
-    def _handle_section(self, section: SectionType) -> None:
-        type = section["Type"]["Value"]
-        flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
-        if type in {"SHT_REL", "SHT_RELA"}:
-            assert "SHF_INFO_LINK" in flags, flags
-            assert not section["Symbols"]
-            if section["Info"] in self.body_offsets:
-                base = self.body_offsets[section["Info"]]
-                for relocation in unwrap(section["Relocations"], "Relocation"):
-                    self.body_relocations.append((base, relocation))
-            else:
-                base = self.data_offsets[section["Info"]]
-                for relocation in unwrap(section["Relocations"], "Relocation"):
-                    self.data_relocations.append((base, relocation))
-        elif type == "SHT_PROGBITS":
-            if "SHF_ALLOC" not in flags:
-                return
-            elif flags & {"SHF_EXECINSTR"}:
-                self.body_offsets[section["Index"]] = len(self.body)
-                for symbol in unwrap(section["Symbols"], "Symbol"):
-                    offset = len(self.body) + symbol["Value"]
-                    name = symbol["Name"]["Value"]
-                    assert name not in self.body_symbols
-                    self.body_symbols[name] = offset
-                section_data = section["SectionData"]
-                self.body.extend(section_data["Bytes"])
-            else:
-                self.data_offsets[section["Index"]] = len(self.data)
-                for symbol in unwrap(section["Symbols"], "Symbol"):
-                    offset = len(self.data) + symbol["Value"]
-                    name = symbol["Name"]["Value"]
-                    assert name not in self.data_symbols
-                    self.data_symbols[name] = offset
-                section_data = section["SectionData"]
-                self.data.extend(section_data["Bytes"])
-            assert not section["Relocations"]
-        else:
-            assert type in {
-                "SHT_GROUP",
-                "SHT_LLVM_ADDRSIG",
-                "SHT_NULL",
-                "SHT_STRTAB",
-                "SHT_SYMTAB",
-            }, type
-
     def _got_lookup(self, symbol: str | None) -> int:
         while len(self.data) % 8:
             self.data.append(0)
         if symbol is None:
             return len(self.data)
+        symbol = symbol.removeprefix(self.target.prefix)
         return len(self.data) + self.got.setdefault(symbol, 8 * len(self.got))
 
-    @staticmethod
-    def _symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
+    def _symbol_to_value(self, symbol: str) -> tuple[HoleValue, str | None]:
+        symbol = symbol.removeprefix(self.target.prefix)
         try:
             return HoleValue[symbol], None
         except KeyError:
@@ -476,9 +435,133 @@ class Parser:
                 offset += base
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
+            case {
+                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
+                "Symbol": s,
+                "Offset": offset,
+            }:
+                offset += base
+                value, symbol = self._symbol_to_value(s)
+                addend = int.from_bytes(raw[offset : offset + 8], "little")
+            case {
+                "Type": {"Value": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind},
+                "Symbol": s,
+                "Offset": offset,
+            }:
+                offset += base
+                value, symbol = self._symbol_to_value(s)
+                addend = int.from_bytes(raw[offset : offset + 4], "little") - 4  # XXX
+            case {
+                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
+                "Symbol": s,
+                "Offset": offset,
+            }:
+                offset += base
+                value, symbol = self._symbol_to_value(s)
+                addend = int.from_bytes(raw[offset : offset + 4], "little")
             case _:
                 raise NotImplementedError(relocation)
         return Hole(offset, kind, value, symbol, addend)
+
+class ELF(Parser):
+
+    def _handle_section(self, section: SectionType) -> None:
+        type = section["Type"]["Value"]
+        flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
+        if type in {"SHT_REL", "SHT_RELA"}:
+            assert "SHF_INFO_LINK" in flags, flags
+            assert not section["Symbols"]
+            if section["Info"] in self.body_offsets:
+                base = self.body_offsets[section["Info"]]
+                for relocation in unwrap(section["Relocations"], "Relocation"):
+                    self.body_relocations.append((base, relocation))
+            else:
+                base = self.data_offsets[section["Info"]]
+                for relocation in unwrap(section["Relocations"], "Relocation"):
+                    self.data_relocations.append((base, relocation))
+        elif type == "SHT_PROGBITS":
+            if "SHF_ALLOC" not in flags:
+                return
+            elif flags & {"SHF_EXECINSTR"}:
+                self.body_offsets[section["Index"]] = len(self.body)
+                for symbol in unwrap(section["Symbols"], "Symbol"):
+                    offset = len(self.body) + symbol["Value"]
+                    name = symbol["Name"]["Value"]
+                    name = name.removeprefix(self.target.prefix)
+                    assert name not in self.body_symbols
+                    self.body_symbols[name] = offset
+                section_data = section["SectionData"]
+                self.body.extend(section_data["Bytes"])
+            else:
+                self.data_offsets[section["Index"]] = len(self.data)
+                for symbol in unwrap(section["Symbols"], "Symbol"):
+                    offset = len(self.data) + symbol["Value"]
+                    name = symbol["Name"]["Value"]
+                    name = name.removeprefix(self.target.prefix)
+                    assert name not in self.data_symbols
+                    self.data_symbols[name] = offset
+                section_data = section["SectionData"]
+                self.data.extend(section_data["Bytes"])
+            assert not section["Relocations"]
+        else:
+            assert type in {
+                "SHT_GROUP",
+                "SHT_LLVM_ADDRSIG",
+                "SHT_NULL",
+                "SHT_STRTAB",
+                "SHT_SYMTAB",
+            }, type
+
+class COFF(Parser):
+
+    def _handle_section(self, section: SectionType) -> None:
+        # COFF
+        # type = section["Type"]["Value"]
+        flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
+        if "SectionData" not in section:
+            return
+        section_data = section["SectionData"]
+        if flags & {
+            "IMAGE_SCN_LINK_COMDAT",
+            "IMAGE_SCN_MEM_EXECUTE",
+            "IMAGE_SCN_MEM_READ",
+            "IMAGE_SCN_MEM_WRITE",
+        } == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
+            base = self.data_offsets[section["Number"]] = len(self.data)
+            self.data.extend(section_data["Bytes"])
+            for symbol in unwrap(section["Symbols"], "Symbol"):
+                offset = base + symbol["Value"]
+                name = symbol["Name"]
+                name = name.removeprefix(self.target.prefix)
+                self.data_symbols[name] = offset
+            for relocation in unwrap(section["Relocations"], "Relocation"):
+                self.data_relocations.append((base, relocation))
+        elif flags & {"IMAGE_SCN_MEM_EXECUTE"}:
+            assert not self.data, self.data
+            base = self.body_offsets[section["Number"]] = len(self.body)
+            self.body.extend(section_data["Bytes"])
+            for symbol in unwrap(section["Symbols"], "Symbol"):
+                offset = base + symbol["Value"]
+                name = symbol["Name"]
+                name = name.removeprefix(self.target.prefix)
+                self.body_symbols[name] = offset
+            for relocation in unwrap(section["Relocations"], "Relocation"):
+                self.body_relocations.append((base, relocation))
+        elif flags & {"IMAGE_SCN_MEM_READ"}:
+            base = self.data_offsets[section["Number"]] = len(self.data)
+            self.data.extend(section_data["Bytes"])
+            for symbol in unwrap(section["Symbols"], "Symbol"):
+                offset = base + symbol["Value"]
+                name = symbol["Name"]
+                name = name.removeprefix(self.target.prefix)
+                self.data_symbols[name] = offset
+            for relocation in unwrap(section["Relocations"], "Relocation"):
+                self.data_relocations.append((base, relocation))
+        else:
+            return
+
+class MachO(Parser):
+    ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -488,6 +571,8 @@ class Target:
     ghccc: bool
     pyconfig: pathlib.Path
     alignment: int
+    prefix: str
+    parser: type[Parser]
 
 
 TARGETS = [
@@ -497,6 +582,8 @@ TARGETS = [
         ghccc=False,
         pyconfig=PYCONFIG_H,
         alignment=8,
+        prefix="_",
+        parser=MachO,
     ),
     Target(
         pattern=r"aarch64-.*-linux-gnu",
@@ -504,6 +591,8 @@ TARGETS = [
         ghccc=False,
         pyconfig=PYCONFIG_H,
         alignment=8,
+        prefix="",
+        parser=ELF,
     ),
     Target(
         pattern=r"i686-pc-windows-msvc",
@@ -511,6 +600,8 @@ TARGETS = [
         ghccc=True,
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
+        prefix="_",
+        parser=COFF,
     ),
     Target(
         pattern=r"x86_64-apple-darwin.*",
@@ -518,6 +609,8 @@ TARGETS = [
         ghccc=True,
         pyconfig=PYCONFIG_H,
         alignment=1,
+        prefix="_",
+        parser=MachO,
     ),
     Target(
         pattern=r"x86_64-pc-windows-msvc",
@@ -525,6 +618,8 @@ TARGETS = [
         ghccc=True,
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
+        prefix="",
+        parser=COFF
     ),
     Target(
         pattern=r"x86_64-.*-linux-gnu",
@@ -532,6 +627,8 @@ TARGETS = [
         ghccc=True,
         pyconfig=PYCONFIG_H,
         alignment=1,
+        prefix="",
+        parser=ELF,
     ),
 ]
 
@@ -551,6 +648,7 @@ CFLAGS = [
     "-fno-pic",
     # The GHC calling convention uses %rbp as an argument-passing register:
     "-fomit-frame-pointer",  # XXX
+    "-fno-jump-tables",  # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds
 ]
 
 CPPFLAGS = [
@@ -627,8 +725,8 @@ class Compiler:
         await run(self._clang, *frontend_flags, "-o", ll, c)
         self._use_ghccc(ll)
         await run(self._clang, *backend_flags, "-o", o, ll)
-        self._stencils_built[opname] = await Parser(
-            o, self._readobj, self._objdump, self._target.alignment
+        self._stencils_built[opname] = await self._target.parser(
+            o, self._readobj, self._objdump, self._target
         ).parse()
 
     async def build(self) -> None:
@@ -660,7 +758,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f""
     yield f"typedef enum {{"
     for kind in sorted(typing.get_args(HoleKind)):
-        yield f"    {kind},"
+        yield f"    HoleKind_{kind},"
     yield f"}} HoleKind;"
     yield f""
     yield f"typedef enum {{"
@@ -700,7 +798,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
             for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
                 parts = [
                     hex(hole.offset),
-                    hole.kind,
+                    f"HoleKind_{hole.kind}",
                     hole.value.name,
                     format_addend(hole.symbol, hole.addend),
                 ]
@@ -720,7 +818,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
             for hole in sorted(stencil.holes_data, key=lambda hole: hole.offset):
                 parts = [
                     hex(hole.offset),
-                    hole.kind,
+                    f"HoleKind_{hole.kind}",
                     hole.value.name,
                     format_addend(hole.symbol, hole.addend),
                 ]
@@ -764,6 +862,7 @@ def main(host: str) -> None:
     hasher.update(target.pyconfig.read_bytes())
     for source in sorted(TOOLS_JIT.iterdir()):
         hasher.update(source.read_bytes())
+    hasher.update(b"\x00" * ("-d" in sys.argv))  # XXX
     digest = hasher.hexdigest()
     if PYTHON_JIT_STENCILS_H.exists():
         with PYTHON_JIT_STENCILS_H.open() as file:
