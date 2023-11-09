@@ -470,6 +470,10 @@ class CRenderData:
         # The C statements required to clean up after the impl call.
         self.cleanup: list[str] = []
 
+        # The C statements to generate critical sections (per-object locking).
+        self.lock_statement = []
+        self.unlock_statement = []
+
 
 class FormatCounterFormatter(string.Formatter):
     """
@@ -1183,7 +1187,9 @@ class CLanguage(Language):
             """) + "\n"
             finale = normalize_snippet("""
                     {modifications}
+                    {lock_statement}
                     {return_value} = {c_basename}_impl({impl_arguments});
+                    {unlock_statement}
                     {return_conversion}
                     {post_parsing}
 
@@ -1228,7 +1234,7 @@ class CLanguage(Language):
                     }}
                     """ % return_error, indent=4)]
 
-            if default_return_converter:
+            if default_return_converter and not f.critical_section:
                 parser_definition = '\n'.join([
                     parser_prototype,
                     '{{',
@@ -1245,7 +1251,7 @@ class CLanguage(Language):
                 converters[0].format_unit == 'O'):
                 meth_o_prototype = self.METH_O_PROTOTYPE
 
-                if default_return_converter:
+                if default_return_converter and not f.critical_section:
                     # maps perfectly to METH_O, doesn't need a return converter.
                     # so we skip making a parse function
                     # and call directly into the impl function.
@@ -1858,6 +1864,10 @@ class CLanguage(Language):
         selfless = parameters[1:]
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
+        if f.critical_section:
+            data.lock_statement.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
+            data.unlock_statement.append('Py_END_CRITICAL_SECTION();')
+
         last_group = 0
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
@@ -1937,6 +1947,8 @@ class CLanguage(Language):
         template_dict['post_parsing'] = format_escape("".join(data.post_parsing).rstrip())
         template_dict['cleanup'] = format_escape("".join(data.cleanup))
         template_dict['return_value'] = data.return_value
+        template_dict['lock_statement'] = "\n".join(data.lock_statement)
+        template_dict['unlock_statement'] = "\n".join(data.unlock_statement)
 
         # used by unpack tuple code generator
         unpack_min = first_optional
@@ -1961,6 +1973,8 @@ class CLanguage(Language):
                 modifications=template_dict['modifications'],
                 post_parsing=template_dict['post_parsing'],
                 cleanup=template_dict['cleanup'],
+                lock_statement=template_dict['lock_statement'],
+                unlock_statement=template_dict['unlock_statement'],
                 )
 
             # Only generate the "exit:" label
@@ -2954,6 +2968,7 @@ class Function:
     # functions with optional groups because we can't represent
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
+    critical_section: bool = False
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -5110,6 +5125,7 @@ class DSLParser:
     coexist: bool
     parameter_continuation: str
     preserve_output: bool
+    critical_section: bool
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
 
     def __init__(self, clinic: Clinic) -> None:
@@ -5144,6 +5160,7 @@ class DSLParser:
         self.forced_text_signature: str | None = None
         self.parameter_continuation = ''
         self.preserve_output = False
+        self.critical_section = False
 
     def directive_version(self, required: str) -> None:
         global version
@@ -5271,6 +5288,9 @@ class DSLParser:
         if self.kind is not CALLABLE:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
+
+    def at_critical_section(self) -> None:
+        self.critical_section = True
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
@@ -5460,6 +5480,7 @@ class DSLParser:
                 return
 
         line, _, returns = line.partition('->')
+
         returns = returns.strip()
         full_name, c_basename = self.parse_function_names(line)
 
@@ -5494,7 +5515,8 @@ class DSLParser:
             return_converter = CReturnConverter()
 
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
-                                 return_converter=return_converter, kind=self.kind, coexist=self.coexist)
+                                 return_converter=return_converter, kind=self.kind, coexist=self.coexist,
+                                 critical_section=self.critical_section)
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically
