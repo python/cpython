@@ -487,7 +487,6 @@ class Target:
     frontend: str
     backend: str
     model: str
-    ghccc: bool
     pyconfig: pathlib.Path
     alignment: int
 
@@ -498,7 +497,6 @@ TARGETS = [
         frontend="aarch64-apple-darwin",
         backend="aarch64-elf",
         model="large",
-        ghccc=False,
         pyconfig=PYCONFIG_H,
         alignment=8,
     ),
@@ -507,7 +505,6 @@ TARGETS = [
         frontend="aarch64-unknown-linux-gnu",
         backend="aarch64-elf",
         model="large",
-        ghccc=False,
         pyconfig=PYCONFIG_H,
         alignment=8,
     ),
@@ -516,7 +513,6 @@ TARGETS = [
         frontend="i686-pc-windows-msvc",
         backend="i686-pc-windows-msvc-elf",
         model="small",
-        ghccc=True,
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
     ),
@@ -525,7 +521,6 @@ TARGETS = [
         frontend="x86_64-apple-darwin",
         backend="x86_64-elf",
         model="medium",
-        ghccc=True,
         pyconfig=PYCONFIG_H,
         alignment=1,
     ),
@@ -534,7 +529,6 @@ TARGETS = [
         frontend="x86_64-pc-windows-msvc",
         backend="x86_64-pc-windows-msvc-elf",
         model="medium",
-        ghccc=True,
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
     ),
@@ -543,7 +537,6 @@ TARGETS = [
         frontend="x86_64-unknown-linux-gnu",
         backend="x86_64-elf",
         model="medium",
-        ghccc=True,
         pyconfig=PYCONFIG_H,
         alignment=1,
     ),
@@ -564,8 +557,6 @@ CFLAGS = [
     "-ffreestanding",  # XXX
     # Position-independent code adds indirection to every load and jump:
     "-fno-pic",
-    # The GHC calling convention uses %rbp as an argument-passing register:
-    "-fomit-frame-pointer",  # XXX
 ]
 
 CPPFLAGS = [
@@ -582,7 +573,6 @@ class Compiler:
         self,
         *,
         verbose: bool = False,
-        ghccc: bool,
         target: Target,
     ) -> None:
         self._stencils_built: dict[str, Stencil] = {}
@@ -590,20 +580,7 @@ class Compiler:
         self._clang = require_llvm_tool("clang")
         self._readobj = require_llvm_tool("llvm-readobj")
         self._objdump = find_llvm_tool("llvm-objdump")
-        self._ghccc = ghccc
         self._target = target
-
-    def _use_ghccc(self, ll: pathlib.Path) -> None:
-        # https://discourse.llvm.org/t/rfc-exposing-ghccc-calling-convention-as-preserve-none-to-clang/74233/16
-        if self._ghccc:
-            before = ll.read_text()
-            after = re.sub(
-                r"((?:noalias )?(?:ptr|%struct._PyInterpreterFrame\*) @_JIT_(?:CONTINUE|DEOPTIMIZE|ENTRY|ERROR|JUMP)\b)",
-                r"ghccc \1",
-                before,
-            )
-            assert before != after, after
-            ll.write_text(after)
 
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
@@ -638,7 +615,6 @@ class Compiler:
             f"-emit-llvm",
         ]
         await run(self._clang, *frontend_flags, "-o", ll, c)
-        self._use_ghccc(ll)
         await run(self._clang, *backend_flags, "-o", o, ll)
         self._stencils_built[opname] = await Parser(
             o, self._readobj, self._objdump, self._target.alignment
@@ -782,7 +758,7 @@ def main(host: str) -> None:
         with PYTHON_JIT_STENCILS_H.open() as file:
             if file.readline().removeprefix("// ").removesuffix("\n") == digest:
                 return
-    compiler = Compiler(verbose=True, ghccc=target.ghccc, target=target)
+    compiler = Compiler(verbose=True, target=target)
     asyncio.run(compiler.build())
     with PYTHON_JIT_STENCILS_H.open("w") as file:
         file.write(f"// {digest}\n")
