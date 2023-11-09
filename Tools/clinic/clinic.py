@@ -471,8 +471,8 @@ class CRenderData:
         self.cleanup: list[str] = []
 
         # The C statements to generate critical sections (per-object locking).
-        self.lock_statement = []
-        self.unlock_statement = []
+        self.lock = []
+        self.unlock = []
 
 
 class FormatCounterFormatter(string.Formatter):
@@ -1187,9 +1187,9 @@ class CLanguage(Language):
             """) + "\n"
             finale = normalize_snippet("""
                     {modifications}
-                    {lock_statement}
+                    {lock}
                     {return_value} = {c_basename}_impl({impl_arguments});
-                    {unlock_statement}
+                    {unlock}
                     {return_conversion}
                     {post_parsing}
 
@@ -1865,8 +1865,8 @@ class CLanguage(Language):
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         if f.critical_section:
-            data.lock_statement.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
-            data.unlock_statement.append('Py_END_CRITICAL_SECTION();')
+            data.lock.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
+            data.unlock.append('Py_END_CRITICAL_SECTION();')
 
         last_group = 0
         first_optional = len(selfless)
@@ -1947,8 +1947,8 @@ class CLanguage(Language):
         template_dict['post_parsing'] = format_escape("".join(data.post_parsing).rstrip())
         template_dict['cleanup'] = format_escape("".join(data.cleanup))
         template_dict['return_value'] = data.return_value
-        template_dict['lock_statement'] = "\n".join(data.lock_statement)
-        template_dict['unlock_statement'] = "\n".join(data.unlock_statement)
+        template_dict['lock'] = "\n".join(data.lock)
+        template_dict['unlock'] = "\n".join(data.unlock)
 
         # used by unpack tuple code generator
         unpack_min = first_optional
@@ -1973,8 +1973,8 @@ class CLanguage(Language):
                 modifications=template_dict['modifications'],
                 post_parsing=template_dict['post_parsing'],
                 cleanup=template_dict['cleanup'],
-                lock_statement=template_dict['lock_statement'],
-                unlock_statement=template_dict['unlock_statement'],
+                lock=template_dict['lock'],
+                unlock=template_dict['unlock'],
                 )
 
             # Only generate the "exit:" label
@@ -5480,7 +5480,6 @@ class DSLParser:
                 return
 
         line, _, returns = line.partition('->')
-
         returns = returns.strip()
         full_name, c_basename = self.parse_function_names(line)
 
