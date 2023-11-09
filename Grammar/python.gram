@@ -131,6 +131,7 @@ compound_stmt[stmt_ty]:
     | &('for' | 'async') for_stmt
     | &'try' try_stmt
     | &'while' while_stmt
+    | &'until' until_stmt
     | match_stmt
 
 # SIMPLE STATEMENTS
@@ -374,6 +375,11 @@ else_block[asdl_stmt_seq*]:
 while_stmt[stmt_ty]:
     | invalid_while_stmt
     | 'while' a=named_expression ':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
+
+
+until_stmt[stmt_ty]:
+    | invalid_until_stmt
+    | 'until' a=named_expression ':' b=block c=[else_block] { _PyAST_While(_PyAST_UnaryOp(Not, a, EXTRA), b, c, EXTRA) }
 
 # For statement
 # -------------
@@ -1364,6 +1370,10 @@ invalid_while_stmt:
     | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='while' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'while' statement on line %d", a->lineno) }
+invalid_until_stmt:
+    | 'until' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='until' named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'until' statement on line %d", a->lineno) }
 invalid_for_stmt:
     | ['async'] 'for' star_targets 'in' star_expressions NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | ['async'] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
