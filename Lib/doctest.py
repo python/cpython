@@ -93,9 +93,7 @@ __all__ = [
 ]
 
 import __future__
-import difflib
 import inspect
-import linecache
 import os
 import pdb
 import re
@@ -932,6 +930,8 @@ class DocTestFinder:
             if file is None:
                 source_lines = None
             else:
+                import linecache
+
                 if module is not None:
                     # Supply the module globals in case the module was
                     # originally loaded via a PEP 302 loader and
@@ -1528,6 +1528,8 @@ class DocTestRunner:
         self.debugger.reset()
         pdb.set_trace = self.debugger.set_trace
 
+        import linecache
+
         # Patch linecache.getlines, so we can see the example's source
         # when we're inside the debugger.
         self.save_linecache_getlines = linecache.getlines
@@ -1738,6 +1740,8 @@ class OutputChecker:
 
         # Check if we should use diff.
         if self._do_a_fancy_diff(want, got, optionflags):
+            import difflib
+
             # Split want & got into lines.
             want_lines = want.splitlines(keepends=True)
             got_lines = got.splitlines(keepends=True)
