@@ -3040,7 +3040,6 @@ check_pyimport_addmodule(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "si", &name, &is_new)) {
         return NULL;
     }
-    // name must be the name of a module which is already in sys.modules
 
     // test PyImport_ImportOrAddModule()
     PyObject *module = UNINITIALIZED_PTR;
