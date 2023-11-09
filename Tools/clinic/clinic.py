@@ -471,8 +471,8 @@ class CRenderData:
         self.cleanup: list[str] = []
 
         # The C statements to generate critical sections (per-object locking).
-        self.lock = []
-        self.unlock = []
+        self.lock: list[str] = []
+        self.unlock: list[str] = []
 
 
 class FormatCounterFormatter(string.Formatter):
