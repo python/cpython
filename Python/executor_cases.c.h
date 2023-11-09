@@ -3273,4 +3273,10 @@
             break;
         }
 
+        case _CHECK_VALIDITY: {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->base.vm_data.valid, _CHECK_VALIDITY);
+            break;
+        }
+
 #undef TIER_TWO

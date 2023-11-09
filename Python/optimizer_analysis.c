@@ -12,13 +12,13 @@
 #include <stddef.h>
 #include "pycore_optimizer.h"
 
-
 static void
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
     // Note that we don't enter stubs, those SET_IPs are needed.
     int last_set_ip = -1;
     bool need_ip = true;
+    bool maybe_invalid = false;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         if (opcode == _SET_IP) {
@@ -28,6 +28,16 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             need_ip = false;
             last_set_ip = pc;
         }
+        else if (opcode == _CHECK_VALIDITY) {
+            if (maybe_invalid) {
+                /* Exiting the trace requires that IP is correct */
+                need_ip = true;
+                maybe_invalid = false;
+            }
+            else {
+                buffer[pc].opcode = NOP;
+            }
+        }
         else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             break;
         }
@@ -35,6 +45,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             // If opcode has ERROR or DEOPT, set need_ip to true
             if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG) || opcode == _PUSH_FRAME) {
                 need_ip = true;
+            }
+            if (_PyOpcode_opcode_metadata[opcode].flags & HAS_ESCAPES_FLAG) {
+                maybe_invalid = true;
             }
         }
     }

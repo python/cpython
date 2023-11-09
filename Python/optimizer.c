@@ -472,8 +472,8 @@ translate_bytecode_to_trace(
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
 
-// Reserve space for main+stub uops, plus 2 for _SET_IP and _EXIT_TRACE
-#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 2, uop_name(opcode))
+// Reserve space for main+stub uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 3, uop_name(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
 #define TRACE_STACK_PUSH() \
@@ -503,8 +503,9 @@ translate_bytecode_to_trace(
 
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
+        RESERVE_RAW(3, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
         ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
