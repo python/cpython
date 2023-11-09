@@ -3249,7 +3249,8 @@ class PdbTestReadline(unittest.TestCase):
     def test_basic_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
-            print('hello')
+            # Concatenate strings so that the output doesn't appear in the source
+            print('hello' + '!')
         """)
 
         # List everything starting with 'co', there should be multiple matches
