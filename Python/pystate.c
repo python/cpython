@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
+#include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
 #include "pycore_frame.h"
@@ -1911,6 +1912,12 @@ _PyThreadState_Attach(PyThreadState *tstate)
         Py_FatalError("thread attach failed");
     }
 
+    // Resume previous critical section. This acquires the lock(s) from the
+    // top-most critical section.
+    if (tstate->critical_section != 0) {
+        _PyCriticalSection_Resume(tstate);
+    }
+
 #if defined(Py_DEBUG)
     errno = err;
 #endif
@@ -1922,6 +1929,9 @@ _PyThreadState_Detach(PyThreadState *tstate)
     // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(tstate->state == _Py_THREAD_ATTACHED);
     assert(tstate == current_fast_get(&_PyRuntime));
+    if (tstate->critical_section != 0) {
+        _PyCriticalSection_SuspendAll(tstate);
+    }
     tstate_set_detached(tstate);
     tstate_deactivate(tstate);
     current_fast_clear(&_PyRuntime);
