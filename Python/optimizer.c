@@ -107,6 +107,7 @@ error_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
+    assert(0);
     PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
     return -1;
 }
@@ -122,8 +123,8 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = error_optimize,
-    .resume_threshold = UINT16_MAX,
-    .backedge_threshold = UINT16_MAX,
+    .resume_threshold = INT16_MAX,
+    .backedge_threshold = INT16_MAX,
 };
 
 _PyOptimizerObject *
@@ -309,7 +310,7 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.resume_threshold = UINT16_MAX;
+    opt->base.resume_threshold = INT16_MAX;
     opt->base.backedge_threshold = 0;
     opt->count = 0;
     return (PyObject *)opt;
@@ -915,7 +916,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = UINT16_MAX;
+    opt->resume_threshold = INT16_MAX;
     // Need at least 3 iterations to settle specializations.
     // A few lower bits of the counter are reserved for other flags.
     opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
