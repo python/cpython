@@ -7519,6 +7519,55 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CallNamedTuple.__orig_bases__, (NamedTuple,))
 
+    def test_setname_called_on_non_members(self):
+        class Vanilla:
+            def __set_name__(self, owner, name):
+                self.name = name
+
+        class Foo(NamedTuple):
+            attr = Vanilla()
+
+        foo = Foo()
+        self.assertEqual(len(foo), 0)
+        self.assertNotIn('attr', Foo._fields)
+        self.assertIsInstance(foo.attr, Vanilla)
+        self.assertEqual(foo.attr.name, "attr")
+
+    def test_setname_raises_the_same_as_on_other_classes(self):
+        class CustomException(Exception): pass
+
+        class Annoying:
+            def __set_name__(self, owner, name):
+                raise CustomException("Cannot do that!")
+
+        with self.assertRaisesRegex(CustomException, "Cannot do that!") as cm:
+            class NormalClass:
+                attr = Annoying()
+        normal_exception = cm.exception
+
+        with self.assertRaisesRegex(CustomException, "Cannot do that!") as cm:
+            class NamedTupleClass:
+                attr = Annoying()
+        namedtuple_exception = cm.exception
+
+        self.assertIs(type(namedtuple_exception), CustomException)
+        self.assertIs(type(namedtuple_exception), type(normal_exception))
+
+        self.assertEqual(len(namedtuple_exception.__notes__), 1)
+        self.assertEqual(
+            len(namedtuple_exception.__notes__), len(normal_exception.__notes__)
+        )
+
+        expected_note = (
+            "Error calling __set_name__ on 'Annoying' instance "
+            "'attr' in 'NamedTupleClass'"
+        )
+        self.assertEqual(namedtuple_exception.__notes__[0], expected_note)
+        self.assertEqual(
+            namedtuple_exception.__notes__[0],
+            normal_exception.__notes__[0].replace("NormalClass", "NamedTupleClass")
+        )
+
 
 class TypedDictTests(BaseTestCase):
     def test_basics_functional_syntax(self):
