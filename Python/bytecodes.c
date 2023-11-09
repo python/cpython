@@ -4021,6 +4021,11 @@ dummy_func(
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
         }
 
+        op(_CHECK_VALIDITY, (--)) {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->base.vm_data.valid);
+        }
+
 
 // END BYTECODES //
 
