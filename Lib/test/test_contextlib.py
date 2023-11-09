@@ -1297,6 +1297,10 @@ class TestSuppress(ExceptionIsLikeMixin, unittest.TestCase):
                 [KeyError("ke1"), KeyError("ke2")],
             ),
         )
+        # Check handling of BaseExceptionGroup, using GeneratorExit so that
+        # we don't accidentally discard a ctrl-c with KeyboardInterrupt.
+        with suppress(GeneratorExit):
+            raise BaseExceptionGroup("message", [GeneratorExit()])
 
 
 class TestChdir(unittest.TestCase):
