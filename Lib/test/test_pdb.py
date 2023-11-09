@@ -3259,9 +3259,10 @@ class PdbTestReadline(unittest.TestCase):
 
         output = run_pty(script, input)
 
-        self.assertIn(b'cont', output)
+        self.assertIn(b'commands', output)
         self.assertIn(b'condition', output)
         self.assertIn(b'continue', output)
+        self.assertIn(b'hello!', output)
 
 
 def load_tests(loader, tests, pattern):
