@@ -170,6 +170,7 @@ thread_critical_sections(void *arg)
     }
 }
 
+#ifdef Py_CAN_START_THREADS
 static PyObject *
 test_critical_sections_threads(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -194,12 +195,15 @@ test_critical_sections_threads(PyObject *self, PyObject *Py_UNUSED(args))
     Py_DECREF(test_data.obj1);
     Py_RETURN_NONE;
 }
+#endif
 
 static PyMethodDef test_methods[] = {
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"test_critical_sections_nest", test_critical_sections_nest, METH_NOARGS},
     {"test_critical_sections_suspend", test_critical_sections_suspend, METH_NOARGS},
+#ifdef Py_CAN_START_THREADS
     {"test_critical_sections_threads", test_critical_sections_threads, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 

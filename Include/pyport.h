@@ -470,6 +470,14 @@ extern "C" {
 #  define WITH_THREAD
 #endif
 
+/* Some WebAssembly platforms do not provide a working pthread implementation.
+ * Thread support is stubbed and any attempt to create a new thread fails.
+ */
+#if (!defined(HAVE_PTHREAD_STUBS) && \
+      (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
+#  define Py_CAN_START_THREADS 1
+#endif
+
 #ifdef WITH_THREAD
 #  ifdef Py_BUILD_CORE
 #    ifdef HAVE_THREAD_LOCAL
