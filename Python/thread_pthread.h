@@ -20,6 +20,8 @@
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
 #elif defined(__FreeBSD__)
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
+#elif defined(__FreeBSD_kernel__)
+#   include <sys/syscall.h>     /* syscall(SYS_thr_self) */
 #elif defined(__OpenBSD__)
 #   include <unistd.h>          /* getthrid() */
 #elif defined(_AIX)
@@ -384,6 +386,9 @@ PyThread_get_thread_native_id(void)
 #elif defined(__FreeBSD__)
     int native_id;
     native_id = pthread_getthreadid_np();
+#elif defined(__FreeBSD_kernel__)
+    long native_id;
+    syscall(SYS_thr_self, &native_id);
 #elif defined(__OpenBSD__)
     pid_t native_id;
     native_id = getthrid();
