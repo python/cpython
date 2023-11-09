@@ -1,4 +1,3 @@
-import doctest
 import faulthandler
 import gc
 import importlib
@@ -94,17 +93,20 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
 
     stats: TestStats | None
 
-    match test_result:
-        case TestStats():
-            stats = test_result
-        case unittest.TestResult():
-            stats = TestStats.from_unittest(test_result)
-        case doctest.TestResults():
+    if isinstance(test_result, TestStats):
+        stats = test_result
+    elif isinstance(test_result, unittest.TestResult):
+        stats = TestStats.from_unittest(test_result)
+    elif test_result is None:
+        print_warning(f"{result.test_name} test runner returned None: {test_func}")
+        stats = None
+    else:
+        # Don't import doctest at top level since only few tests return
+        # a doctest.TestResult instance.
+        import doctest
+        if isinstance(test_result, doctest.TestResults):
             stats = TestStats.from_doctest(test_result)
-        case None:
-            print_warning(f"{result.test_name} test runner returned None: {test_func}")
-            stats = None
-        case _:
+        else:
             print_warning(f"Unknown test result type: {type(test_result)}")
             stats = None
 
