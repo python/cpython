@@ -2,7 +2,6 @@
 
 import collections.abc
 import itertools
-import linecache
 import sys
 import textwrap
 from contextlib import suppress
@@ -333,6 +332,7 @@ class FrameSummary:
         if self._line is None:
             if self.lineno is None:
                 return None
+            import linecache
             self._line = linecache.getline(self.filename, self.lineno)
         return self._line.strip()
 
@@ -429,6 +429,8 @@ class StackSummary(list):
                 frame_gen = itertools.islice(frame_gen, limit)
             else:
                 frame_gen = collections.deque(frame_gen, maxlen=-limit)
+
+        import linecache
 
         result = klass()
         fnames = set()
