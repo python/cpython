@@ -1,0 +1,4 @@
+The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
+that can be used where it requires a file-like object with seekable and
+the :meth:`~mmap.mmap.seek` method return the new absolute position.
+Patch by Donghee Na.
