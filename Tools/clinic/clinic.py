@@ -1113,7 +1113,8 @@ class CLanguage(Language):
                                    condition=include.condition)
 
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
-        default_return_converter = f.return_converter.type == 'PyObject *'
+        simple_return = (f.return_converter.type == 'PyObject *'
+                         and not f.critical_section)
         new_or_init = f.kind.new_or_init
 
         vararg: int | str = NO_VARARG
@@ -1225,7 +1226,7 @@ class CLanguage(Language):
 
                 flags = "METH_METHOD|METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
-                return_error = ('return NULL;' if default_return_converter
+                return_error = ('return NULL;' if simple_return
                                 else 'goto exit;')
                 parser_code = [normalize_snippet("""
                     if (nargs) {{
@@ -1234,7 +1235,7 @@ class CLanguage(Language):
                     }}
                     """ % return_error, indent=4)]
 
-            if default_return_converter and not f.critical_section:
+            if simple_return:
                 parser_definition = '\n'.join([
                     parser_prototype,
                     '{{',
@@ -1251,7 +1252,7 @@ class CLanguage(Language):
                 converters[0].format_unit == 'O'):
                 meth_o_prototype = self.METH_O_PROTOTYPE
 
-                if default_return_converter and not f.critical_section:
+                if simple_return:
                     # maps perfectly to METH_O, doesn't need a return converter.
                     # so we skip making a parse function
                     # and call directly into the impl function.
