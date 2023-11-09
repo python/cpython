@@ -321,11 +321,12 @@ and breadth first tree searches::
 
    unsearched = deque([starting_node])
    def breadth_first_search(unsearched):
-       node = unsearched.popleft()
-       for m in gen_moves(node):
-           if is_goal(m):
-               return m
-           unsearched.append(m)
+       while unsearched:
+           node = unsearched.popleft()
+           if is_goal(node):
+               return node
+           for m in gen_moves(node):
+               unsearched.append(m)
 
 In addition to alternative list implementations, the library also offers other
 tools such as the :mod:`bisect` module with functions for manipulating sorted
