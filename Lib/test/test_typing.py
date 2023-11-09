@@ -8101,6 +8101,23 @@ class TypedDictTests(BaseTestCase):
                 self.assertEqual(klass.__optional_keys__, set())
                 self.assertIsInstance(klass(), dict)
 
+    def test_setname_called_on_things_in_class_namespace(self):
+        class CustomException(Exception): pass
+
+        class Annoying:
+            def __set_name__(self, owner, name):
+                raise CustomException("Cannot do that!")
+
+        with self.assertRaisesRegex(CustomException, "Cannot do that!") as cm:
+            class Foo(TypedDict):
+                attr = Annoying()
+
+        expected_note = (
+            "Error calling __set_name__ on 'Annoying' instance "
+            "'attr' in 'Foo'"
+        )
+        self.assertIn(expected_note, cm.exception.__notes__)
+
 
 class RequiredTests(BaseTestCase):
 
