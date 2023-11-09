@@ -50,6 +50,11 @@
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
 
+/* Annotations */
+#define guard
+#define override
+#define specializing
+
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
@@ -312,7 +317,7 @@ dummy_func(
             TO_BOOL_STR,
         };
 
-        op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
+        specializing op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -537,7 +542,7 @@ dummy_func(
             BINARY_SUBSCR_TUPLE_INT,
         };
 
-        op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
+        specializing op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -689,7 +694,7 @@ dummy_func(
             STORE_SUBSCR_LIST_INT,
         };
 
-        op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
+        specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -974,7 +979,7 @@ dummy_func(
             SEND_GEN,
         };
 
-        op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
+        specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -1208,7 +1213,7 @@ dummy_func(
             UNPACK_SEQUENCE_LIST,
         };
 
-        op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
+        specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -1277,7 +1282,7 @@ dummy_func(
             STORE_ATTR_WITH_HINT,
         };
 
-        op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
+        specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -1404,7 +1409,7 @@ dummy_func(
             LOAD_GLOBAL_BUILTIN,
         };
 
-        op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
+        specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -1744,7 +1749,7 @@ dummy_func(
             LOAD_SUPER_ATTR_METHOD,
         };
 
-        op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super, class, unused -- global_super, class, unused)) {
+        specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super, class, unused -- global_super, class, unused)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             int load_method = oparg & 1;
@@ -1860,7 +1865,7 @@ dummy_func(
             LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
         };
 
-        op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
+        specializing op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -2182,7 +2187,7 @@ dummy_func(
             COMPARE_OP_STR,
         };
 
-        op(_SPECIALIZE_COMPARE_OP, (counter/1, left, right -- left, right)) {
+        specializing op(_SPECIALIZE_COMPARE_OP, (counter/1, left, right -- left, right)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -2330,10 +2335,12 @@ dummy_func(
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (this_instr[1].cache > tstate->interp->optimizer_backedge_threshold &&
-                // Double-check that the opcode isn't instrumented or something:
-                this_instr->op.code == JUMP_BACKWARD)
-            {
+            /* We are using unsigned values, but we really want signed values, so
+             * do the 2s complement comparison manually */
+            uint16_t ucounter = this_instr[1].cache + (1 << 15);
+            uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
+            // Double-check that the opcode isn't instrumented or something:
+            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
@@ -2341,8 +2348,19 @@ dummy_func(
                     // Rewind and enter the executor:
                     assert(this_instr->op.code == ENTER_EXECUTOR);
                     next_instr = this_instr;
+                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
-                this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                else {
+                    int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    if (backoff < MINIMUM_TIER2_BACKOFF) {
+                        backoff = MINIMUM_TIER2_BACKOFF;
+                    }
+                    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
+                        backoff++;
+                    }
+                    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
+                    this_instr[1].cache = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
+                }
             }
             #endif  /* ENABLE_SPECIALIZATION */
         }
@@ -2506,7 +2524,7 @@ dummy_func(
             FOR_ITER_GEN,
         };
 
-        op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
+        specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -2575,7 +2593,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type);
         }
 
-        op(_ITER_JUMP_LIST, (iter -- iter)) {
+        replaced op(_ITER_JUMP_LIST, (iter -- iter)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2594,21 +2612,12 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_LIST, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_LIST, (iter -- iter)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyList_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
+            DEOPT_IF(seq == NULL);
+            DEOPT_IF(it->it_index >= PyList_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_LIST, (iter -- iter, next)) {
@@ -2630,7 +2639,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type);
         }
 
-        op(_ITER_JUMP_TUPLE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2649,21 +2658,12 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_TUPLE, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyTuple_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
+            DEOPT_IF(seq == NULL);
+            DEOPT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
@@ -2686,7 +2686,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type);
         }
 
-        op(_ITER_JUMP_RANGE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2700,10 +2700,10 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            exhausted = r->len <= 0 ? Py_True : Py_False;
+            DEOPT_IF(r->len <= 0);
         }
 
         op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
@@ -2765,7 +2765,7 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgs(enter);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2774,7 +2774,6 @@ dummy_func(
         }
 
         inst(BEFORE_WITH, (mgr -- exit, res)) {
-            TIER_ONE_ONLY
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
              */
@@ -2801,7 +2800,7 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgs(enter);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -3001,7 +3000,7 @@ dummy_func(
             CALL_ALLOC_AND_ENTER_INIT,
         };
 
-        op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+        specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -3866,7 +3865,7 @@ dummy_func(
             top = Py_NewRef(bottom);
         }
 
-        op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {
+        specializing op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {
             TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -4033,6 +4032,11 @@ dummy_func(
         op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {
             // Inserts TOS at position specified by oparg;
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
+        }
+
+        op(_CHECK_VALIDITY, (--)) {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->base.vm_data.valid);
         }
 
 
