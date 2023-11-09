@@ -205,11 +205,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
     Note that we don't break the components up in smaller bits
     (e.g. netloc is a single string) and we don't expand % escapes."""
 
-    # Only lstrip url as some applications rely on preserving trailing space.
-    # (https://url.spec.whatwg.org/#concept-basic-url-parser would strip both)
-    url = url.lstrip(_WHATWG_C0_CONTROL_OR_SPACE)
-    scheme = scheme.strip(_WHATWG_C0_CONTROL_OR_SPACE)
-
     allow_fragments = bool(allow_fragments)
     key = url, scheme, allow_fragments, type(url), type(scheme)
     cached = _parse_cache.get(key, None)
@@ -217,6 +212,12 @@ def urlsplit(url, scheme='', allow_fragments=True):
         return cached
     if len(_parse_cache) >= MAX_CACHE_SIZE: # avoid runaway growth
         clear_cache()
+
+    # Only lstrip url as some applications rely on preserving trailing space.
+    # (https://url.spec.whatwg.org/#concept-basic-url-parser would strip both)
+    url = url.lstrip(_WHATWG_C0_CONTROL_OR_SPACE)
+    scheme = scheme.strip(_WHATWG_C0_CONTROL_OR_SPACE)
+
     netloc = query = fragment = ''
     i = url.find(':')
     if i > 0:
