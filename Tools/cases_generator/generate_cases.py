@@ -514,6 +514,14 @@ class Generator(Analyzer):
                         )
 
             with self.metadata_item(
+                "const int8_t _PyUop_OperandSize[OPCODE_METADATA_SIZE]",
+                "=",
+                ";",
+            ):
+                for instr in self.instrs.values():
+                    self.out.emit(f"[{instr.name}] = {instr.operand_size()},")
+
+            with self.metadata_item(
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
             ):
                 self.write_uop_items(lambda name, counter: f'[{name}] = "{name}",')

@@ -137,6 +137,15 @@ class Instruction:
                 res = False
         return res
 
+    def operand_size(self):
+        size = 0
+        for effect in self.cache_effects:
+            if effect.name != "unused":
+                if size != 0:
+                    return -1
+                size = effect.size
+        return size
+
     def write_body(
         self,
         out: Formatter,
@@ -166,7 +175,18 @@ class Instruction:
                     f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
-                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})next_uop[-1].operand;")
+                if bits == 16 and not self.instr_flags.HAS_ARG_FLAG:
+                    out.emit(f"{typ}{ceffect.name} = ({typ.strip()})oparg;")
+                    length = 1
+                elif bits == 64:
+                    out.emit(f"{typ}{ceffect.name} = ({typ.strip()})read_u64x(&next_uop->operand);")
+                    out.emit("next_uop += 2;")
+                    length = 3
+                else:
+                    out.emit(f"{typ}{ceffect.name} = ({typ.strip()})next_uop->operand;")
+                    out.emit("next_uop += 1;")
+                    length = 2
+                out.emit(f"assert(_PyUop_CodeSize(opcode) == {length});")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0

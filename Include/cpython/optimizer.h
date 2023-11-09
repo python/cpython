@@ -75,6 +75,8 @@ extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
+extern int _PyUop_CodeSize(int);
+
 #define OPTIMIZER_BITS_IN_COUNTER 4
 
 #ifdef __cplusplus

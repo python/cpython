@@ -18,9 +18,19 @@ typedef struct {
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
+/* Tier 2 instruction */
+
+typedef union {
+    uint32_t operand;
+    struct {
+        uint16_t code;
+        uint16_t arg;
+    } op;
+} _PyUopCodeUnit;
+
 typedef struct {
     _PyExecutorObject base;
-    _PyUOpInstruction trace[1];
+    _PyUopCodeUnit trace[1];
 } _PyUOpExecutorObject;
 
 _PyInterpreterFrame *_PyUopExecute(

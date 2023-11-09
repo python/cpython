@@ -2524,7 +2524,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_SET_IP", uops)
         self.assertIn("LOAD_FAST", uops)
 
@@ -2573,7 +2573,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertIn(("LOAD_FAST", 259, 0), list(ex))
+        self.assertIn(("LOAD_FAST", 259), list(ex))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -2594,7 +2594,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_UNPACK_SEQUENCE", uops)
 
     def test_pop_jump_if_false(self):
@@ -2609,7 +2609,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_FALSE", uops)
 
     def test_pop_jump_if_none(self):
@@ -2624,7 +2624,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
     def test_pop_jump_if_not_none(self):
@@ -2640,7 +2640,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_FALSE", uops)
 
     def test_pop_jump_if_true(self):
@@ -2655,7 +2655,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
     def test_jump_backward(self):
@@ -2670,7 +2670,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_JUMP_TO_TOP", uops)
 
     def test_jump_forward(self):
@@ -2690,7 +2690,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         # Since there is no JUMP_FORWARD instruction,
         # look for indirect evidence: the += operator
         self.assertIn("_BINARY_OP_ADD_INT", uops)
@@ -2711,7 +2711,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_GUARD_NOT_EXHAUSTED_RANGE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -2733,7 +2733,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_GUARD_NOT_EXHAUSTED_LIST", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -2755,7 +2755,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_GUARD_NOT_EXHAUSTED_TUPLE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -2787,7 +2787,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
@@ -2805,7 +2805,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = {opname for opname, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
 

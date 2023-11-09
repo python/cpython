@@ -982,26 +982,19 @@ enter_tier_two:
 #endif
 
     OPT_STAT_INC(traces_executed);
-    _PyUOpInstruction *next_uop = current_executor->trace;
-#ifdef Py_DEBUG
-    uint64_t operand;  // Used by several DPRINTF() calls
-#endif
+    _PyUopCodeUnit *next_uop = current_executor->trace;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
     for (;;) {
-        opcode = next_uop->opcode;
-        oparg = next_uop->oparg;
-#ifdef Py_DEBUG
-        operand = next_uop->operand;
-#endif
+        opcode = next_uop->op.code;
+        oparg = next_uop->op.arg;
         DPRINTF(3,
-                "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
+                "%4d: uop %s, oparg %d, stack_level %d\n",
                 (int)(next_uop - current_executor->trace),
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
                 oparg,
-                operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         next_uop++;
         OPT_STAT_INC(uops_executed);
@@ -1017,8 +1010,8 @@ enter_tier_two:
             default:
 #ifdef Py_DEBUG
             {
-                fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 "\n",
-                        opcode, oparg, operand);
+                fprintf(stderr, "Unknown uop %d, oparg %d\n",
+                        opcode, oparg);
                 Py_FatalError("Unknown uop");
             }
 #else
@@ -1046,7 +1039,7 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    DPRINTF(2, "Error: [Opcode %d]\n", opcode);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1057,7 +1050,7 @@ error_tier_two:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-    DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    DPRINTF(2, "DEOPT: [Opcode %d]\n", opcode);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(opcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr

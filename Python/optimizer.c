@@ -345,27 +345,32 @@ uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
         PyErr_SetNone(PyExc_IndexError);
         return NULL;
     }
-    const char *name = uop_name(self->trace[index].opcode);
-    if (name == NULL) {
-        name = "<nil>";
+    const char *name;
+    uint32_t oparg;
+
+    if (self->trace[index].op.code < OPCODE_UOP_NAME_SIZE) {
+        name = uop_name(self->trace[index].op.code);
+        if (name == NULL) {
+            name = "<nil>";
+        }
+        oparg = self->trace[index].op.arg;
     }
+    else {
+        name = "operand";
+        oparg = self->trace[index].operand;
+    }
+
     PyObject *oname = _PyUnicode_FromASCII(name, strlen(name));
     if (oname == NULL) {
         return NULL;
     }
-    PyObject *oparg = PyLong_FromUnsignedLong(self->trace[index].oparg);
-    if (oparg == NULL) {
-        Py_DECREF(oname);
-        return NULL;
-    }
-    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
+    PyObject *operand = PyLong_FromUnsignedLong(oparg);
     if (operand == NULL) {
-        Py_DECREF(oparg);
         Py_DECREF(oname);
         return NULL;
     }
-    PyObject *args[3] = { oname, oparg, operand };
-    return _PyTuple_FromArraySteal(args, 3);
+    PyObject *args[3] = { oname, operand };
+    return _PyTuple_FromArraySteal(args, 2);
 }
 
 PySequenceMethods uop_as_sequence = {
@@ -770,6 +775,38 @@ done:
 #undef DPRINTF
 }
 
+static bool has_oparg(int opcode)
+{
+    return _PyOpcode_opcode_metadata[opcode].flags & HAS_ARG_FLAG;
+}
+
+static int operand_size(int opcode)
+{
+    int size = _PyUop_OperandSize[opcode];
+    assert(size >= 0 && size <= 4);
+    return size;
+}
+
+static const uint8_t SIZE_TABLE[5][2] =
+{
+    [0][0] = 1,
+    [0][1] = 1,
+    [1][0] = 1,
+    [1][1] = 2,
+    [2][0] = 2,
+    [2][1] = 2,
+    [4][0] = 3,
+    [4][1] = 3,
+};
+
+int
+_PyUop_CodeSize(int opcode)
+{
+    int size = _PyUop_OperandSize[opcode];
+    int arg = has_oparg(opcode);
+    return SIZE_TABLE[size][arg];
+}
+
 #define UNSET_BIT(array, bit) (array[(bit)>>5] &= ~(1<<((bit)&31)))
 #define SET_BIT(array, bit) (array[(bit)>>5] |= (1<<((bit)&31)))
 #define BIT_IS_SET(array, bit) (array[(bit)>>5] & (1<<((bit)&31)))
@@ -782,14 +819,14 @@ done:
 static int
 compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 {
-    int count = 0;
+    int length = 0;
     SET_BIT(used, 0);
     for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
-        count++;
         int opcode = buffer[i].opcode;
+        length += _PyUop_CodeSize(opcode);
         if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             continue;
         }
@@ -798,7 +835,8 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
         switch(opcode) {
             case NOP:
                 /* Don't count NOPs as used */
-                count--;
+                assert(_PyUop_CodeSize(NOP) == 1);
+                length--;
                 UNSET_BIT(used, i);
                 break;
             case _POP_JUMP_IF_FALSE:
@@ -807,7 +845,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
                 SET_BIT(used, buffer[i].oparg);
         }
     }
-    return count;
+    return length;
 }
 
 /* Makes an executor from a buffer of uops.
@@ -824,30 +862,62 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     if (executor == NULL) {
         return NULL;
     }
-    int dest = length - 1;
+    int dest = length;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
-        executor->trace[dest] = buffer[i];
         int opcode = buffer[i].opcode;
+        dest -= _PyUop_CodeSize(opcode);
+        executor->trace[dest].op.code = opcode;
+        int size = operand_size(opcode);
+        if (has_oparg(opcode)) {
+            executor->trace[dest].op.arg = buffer[i].oparg;
+        }
+        else if (size == 1) {
+            executor->trace[dest].op.arg = (uint16_t)buffer[i].operand;
+            size = 0;
+        }
+        if (size == 1 || size == 2) {
+            executor->trace[dest+1].operand = (uint32_t)buffer[i].operand;
+        }
+        else if (size == 4) {
+            write_u64x(&executor->trace[dest+1].operand, buffer[i].operand);
+        }
+        assert(1+((size+1)/2) == _PyUop_CodeSize(opcode));
         if (opcode == _POP_JUMP_IF_FALSE ||
             opcode == _POP_JUMP_IF_TRUE)
         {
             /* The oparg of the target will already have been set to its new offset */
-            int oparg = executor->trace[dest].oparg;
-            executor->trace[dest].oparg = buffer[oparg].oparg;
+            int oparg = executor->trace[dest].op.arg;
+            executor->trace[dest].op.arg = buffer[oparg].oparg;
         }
         /* Set the oparg to be the destination offset,
          * so that we can set the oparg of earlier jumps correctly. */
         buffer[i].oparg = dest;
-        dest--;
     }
-    assert(dest == -1);
+    assert(dest == 0);
     executor->base.execute = _PyUopExecute;
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
     return (_PyExecutorObject *)executor;
+}
+
+static void
+dump_executor(_PyExecutorObject *obj)
+{
+    _PyUOpExecutorObject *exe = (_PyUOpExecutorObject *)obj;
+    printf("Executor:\n");
+    for (int i = 0; i < Py_SIZE(exe);) {
+        _PyUopCodeUnit code = exe->trace[i];
+        int opcode = code.op.code;
+        int length = _PyUop_CodeSize(opcode);
+        printf("%d: %s %d\n", i, opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode], code.op.arg);
+        for (int j = 1; j < length; j++) {
+            printf("%d:   %d\n", i, exe->trace[i+j].operand);
+        }
+        i+= length;
+    }
 }
 
 static int
@@ -878,6 +948,7 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
+    // dump_executor(executor);
     OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
     *exec_ptr = executor;
     return 1;

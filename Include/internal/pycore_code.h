@@ -337,6 +337,12 @@ write_u64(uint16_t *p, uint64_t val)
 }
 
 static inline void
+write_u64x(uint32_t *p, uint64_t val)
+{
+    memcpy(p, &val, sizeof(val));
+}
+
+static inline void
 write_obj(uint16_t *p, PyObject *val)
 {
     memcpy(p, &val, sizeof(val));
@@ -358,6 +364,14 @@ read_u32(uint16_t *p)
 
 static inline uint64_t
 read_u64(uint16_t *p)
+{
+    uint64_t val;
+    memcpy(&val, p, sizeof(val));
+    return val;
+}
+
+static inline uint64_t
+read_u64x(uint32_t *p)
 {
     uint64_t val;
     memcpy(&val, p, sizeof(val));
