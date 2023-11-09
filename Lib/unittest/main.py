@@ -1,8 +1,7 @@
 """Unittest main program"""
 
-import sys
-import argparse
 import os
+import sys
 
 from . import loader, runner
 from .signals import installHandler
@@ -159,6 +158,7 @@ class TestProgram(object):
         self._discovery_parser = self._getDiscoveryArgParser(parent_parser)
 
     def _getParentArgParser(self):
+        import argparse
         parser = argparse.ArgumentParser(add_help=False)
 
         parser.add_argument('-v', '--verbose', dest='verbosity',
@@ -197,6 +197,7 @@ class TestProgram(object):
         return parser
 
     def _getMainArgParser(self, parent):
+        import argparse
         parser = argparse.ArgumentParser(parents=[parent])
         parser.prog = self.progName
         parser.print_help = self._print_help
@@ -208,6 +209,7 @@ class TestProgram(object):
         return parser
 
     def _getDiscoveryArgParser(self, parent):
+        import argparse
         parser = argparse.ArgumentParser(parents=[parent])
         parser.prog = '%s discover' % self.progName
         parser.epilog = ('For test discovery all test modules must be '

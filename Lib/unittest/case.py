@@ -2,7 +2,6 @@
 
 import sys
 import functools
-import difflib
 import pprint
 import re
 import warnings
@@ -1065,6 +1064,8 @@ class TestCase(object):
                 except (TypeError, IndexError, NotImplementedError):
                     differing += ('Unable to index element %d '
                                   'of second %s\n' % (len1, seq_type_name))
+
+        import difflib
         standardMsg = differing
         diffMsg = '\n' + '\n'.join(
             difflib.ndiff(pprint.pformat(seq1).splitlines(),
@@ -1178,6 +1179,7 @@ class TestCase(object):
         self.assertIsInstance(d2, dict, 'Second argument is not a dictionary')
 
         if d1 != d2:
+            import difflib
             standardMsg = '%s != %s' % _common_shorten_repr(d1, d2)
             diff = ('\n' + '\n'.join(difflib.ndiff(
                            pprint.pformat(d1).splitlines(),
@@ -1247,6 +1249,7 @@ class TestCase(object):
             secondlines = second_presplit.splitlines(keepends=True)
 
             # Generate the message and diff, then raise the exception
+            import difflib
             standardMsg = '%s != %s' % _common_shorten_repr(first, second)
             diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
             standardMsg = self._truncateMessage(standardMsg, diff)

@@ -7,8 +7,6 @@ import traceback
 import types
 import functools
 
-from fnmatch import fnmatch, fnmatchcase
-
 from . import case, suite, util
 
 __unittest = True
@@ -219,8 +217,12 @@ class TestLoader(object):
             fullName = f'%s.%s.%s' % (
                 testCaseClass.__module__, testCaseClass.__qualname__, attrname
             )
-            return self.testNamePatterns is None or \
-                any(fnmatchcase(fullName, pattern) for pattern in self.testNamePatterns)
+            if self.testNamePatterns is None:
+                return True
+            else:
+                from fnmatch import fnmatchcase
+                return any(fnmatchcase(fullName, pattern) for pattern in self.testNamePatterns)
+
         testFnNames = list(filter(shouldIncludeMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
             testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
@@ -339,6 +341,7 @@ class TestLoader(object):
 
     def _match_path(self, path, full_path, pattern):
         # override this method to use alternative matching strategy
+        from fnmatch import fnmatch
         return fnmatch(path, pattern)
 
     def _find_tests(self, start_dir, pattern):
