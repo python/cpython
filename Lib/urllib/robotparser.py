@@ -25,7 +25,7 @@ class RobotFileParser:
 
     """
 
-    def __init__(self, url=''):
+    def __init__(self, url='', sslcontext=None):
         self.entries = []
         self.sitemaps = []
         self.default_entry = None
@@ -33,6 +33,7 @@ class RobotFileParser:
         self.allow_all = False
         self.set_url(url)
         self.last_checked = 0
+        self.sslcontext = sslcontext
 
     def mtime(self):
         """Returns the time the robots.txt file was last fetched.
@@ -59,7 +60,7 @@ class RobotFileParser:
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
         try:
-            f = urllib.request.urlopen(self.url)
+            f = urllib.request.urlopen(self.url, context=self.sslcontext)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
                 self.disallow_all = True

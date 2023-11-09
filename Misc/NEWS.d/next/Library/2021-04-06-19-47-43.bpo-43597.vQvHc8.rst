@@ -1,0 +1,3 @@
+:meth:`urllib.robotparser.RobotFileParser.read` supports passing an additional argument -
+*sslcontext*. This allows a user to override the sslcontext when reading a
+robots.txt from a remote url. Patch by Tarun Chinmai Sekar.
