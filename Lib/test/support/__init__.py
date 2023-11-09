@@ -6,7 +6,6 @@ if __name__ != 'test.support':
 import contextlib
 import dataclasses
 import functools
-import getpass
 import opcode
 import os
 import re
@@ -382,6 +381,7 @@ def requires_mac_ver(*min_version):
 
 def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
+    import getpass
     if not reason:
         reason = 'not suitable for buildbots'
     try:
