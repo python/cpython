@@ -3036,8 +3036,8 @@ static PyObject *
 check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
     const char *name;
-    int is_new;
-    if (!PyArg_ParseTuple(args, "si", &name, &is_new)) {
+    int expected;
+    if (!PyArg_ParseTuple(args, "si", &name, &expected)) {
         return NULL;
     }
 
@@ -3047,7 +3047,7 @@ check_pyimport_addmodule(PyObject *self, PyObject *args)
     if (res < 0) {
         return NULL;
     }
-    assert(res == is_new);
+    assert(res == expected);
     assert(PyModule_Check(module));
     // module is a strong reference
 

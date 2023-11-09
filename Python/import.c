@@ -290,7 +290,7 @@ PyImport_GetModule(PyObject *name)
    First check the modules dictionary if there's one there,
    if not, create a new one and insert it in the modules dictionary. */
 static PyObject *
-import_import_or_add_module(PyThreadState *tstate, PyObject *name, int *is_new)
+import_import_or_add_module(PyThreadState *tstate, PyObject *name, int *exists)
 {
     PyObject *modules = MODULES(tstate->interp);
     if (modules == NULL) {
@@ -304,8 +304,8 @@ import_import_or_add_module(PyThreadState *tstate, PyObject *name, int *is_new)
         return NULL;
     }
     if (m != NULL && PyModule_Check(m)) {
-        if (is_new) {
-            *is_new = 0;
+        if (exists) {
+            *exists = 1;
         }
         return m;
     }
@@ -320,8 +320,8 @@ import_import_or_add_module(PyThreadState *tstate, PyObject *name, int *is_new)
         return NULL;
     }
 
-    if (is_new) {
-        *is_new = 1;
+    if (exists) {
+        *exists = 0;
     }
     return m;
 }
@@ -343,8 +343,8 @@ PyImport_ImportOrAddModule(const char *name, PyObject **pmodule)
         return -1;
     }
     PyThreadState *tstate = _PyThreadState_GET();
-    int is_new;
-    PyObject *module = import_import_or_add_module(tstate, name_obj, &is_new);
+    int exists;
+    PyObject *module = import_import_or_add_module(tstate, name_obj, &exists);
     Py_DECREF(name_obj);
 
     *pmodule = module;
@@ -352,7 +352,7 @@ PyImport_ImportOrAddModule(const char *name, PyObject **pmodule)
         assert(PyErr_Occurred());
         return -1;
     }
-    return is_new;
+    return exists;
 }
 
 

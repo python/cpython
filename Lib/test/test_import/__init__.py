@@ -2678,7 +2678,7 @@ class CAPITests(unittest.TestCase):
             __name__,  # package.module
         ):
             self.assertIn(name, sys.modules)
-            _testcapi.check_pyimport_addmodule(name, False)
+            _testcapi.check_pyimport_addmodule(name, True)
 
     def test_pyimport_addmodule_create(self):
         # gh-105922: Test PyImport_ImportOrAddModule(): create a new module.
@@ -2687,7 +2687,7 @@ class CAPITests(unittest.TestCase):
         self.assertNotIn(name, sys.modules)
         self.addCleanup(unload, name)
 
-        mod = _testcapi.check_pyimport_addmodule(name, True)
+        mod = _testcapi.check_pyimport_addmodule(name, False)
         self.assertIs(mod, sys.modules[name])
 
 
