@@ -9,6 +9,7 @@ import itertools
 import pickle
 import re
 import sys
+import warnings
 from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
