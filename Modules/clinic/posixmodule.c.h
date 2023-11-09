@@ -8558,7 +8558,7 @@ exit:
 
 #endif /* (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
 
-#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG))
+#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__))
 
 PyDoc_STRVAR(os_posix_fallocate__doc__,
 "posix_fallocate($module, fd, offset, length, /)\n"
@@ -8603,7 +8603,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG)) */
+#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__)) */
 
 #if (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG))
 
@@ -12403,4 +12403,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a05abdc48e3def44 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f216bf44ea358f9 input=a9049054013a1b77]*/

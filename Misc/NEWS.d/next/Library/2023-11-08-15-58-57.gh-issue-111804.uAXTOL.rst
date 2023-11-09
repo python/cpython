@@ -1,0 +1,2 @@
+Remove posix.fallocate() under WASI as the underlying posix_fallocate() is
+not available in WASI preview2.
