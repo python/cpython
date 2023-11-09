@@ -905,23 +905,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     return (_PyExecutorObject *)executor;
 }
 
-static void
-dump_executor(_PyExecutorObject *obj)
-{
-    _PyUOpExecutorObject *exe = (_PyUOpExecutorObject *)obj;
-    printf("Executor:\n");
-    for (int i = 0; i < Py_SIZE(exe);) {
-        _PyUopCodeUnit code = exe->trace[i];
-        int opcode = code.op.code;
-        int length = _PyUop_CodeSize(opcode);
-        printf("%d: %s %d\n", i, opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode], code.op.arg);
-        for (int j = 1; j < length; j++) {
-            printf("%d:   %d\n", i, exe->trace[i+j].operand);
-        }
-        i+= length;
-    }
-}
-
 static int
 uop_optimize(
     _PyOptimizerObject *self,
@@ -950,7 +933,6 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
-    // dump_executor(executor);
     OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
     *exec_ptr = executor;
     return 1;
