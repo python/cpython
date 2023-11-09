@@ -20,8 +20,8 @@
 
 #include "opcode.h"
 
-void _JIT_OPARG(void);  // XXX
-void _JIT_OPERAND(void);  // XXX
+extern void _JIT_OPARG;
+extern void _JIT_OPERAND;
 
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
@@ -55,8 +55,8 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
 {
     // Locals that the instruction implementations expect to exist:
     uint32_t opcode = _JIT_OPCODE;
-    int32_t oparg = (uintptr_t)_JIT_OPARG;
-    uint64_t operand = (uintptr_t)_JIT_OPERAND;
+    int32_t oparg = (uintptr_t)&_JIT_OPARG;
+    uint64_t operand = (uintptr_t)&_JIT_OPERAND;
     // Pretend to modify the values to keep clang from being clever and
     // optimizing them based on valid extern addresses, which must be in
     // range(1, 2**31 - 2**24):
