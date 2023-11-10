@@ -244,6 +244,21 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) *** Unknown syntax: EOF\n"))
 
 
+class CmdPrintExceptionClass(cmd.Cmd):
+    """
+    GH-80731
+    cmd.Cmd should print the correct exception in default()
+    >>> mycmd = CmdPrintExceptionClass()
+    >>> try:
+    ...     raise ValueError("test")
+    ... except ValueError:
+    ...     mycmd.onecmd("not important")
+    (<class 'ValueError'>, ValueError('test'))
+    """
+
+    def default(self, line):
+        print(sys.exc_info()[:2])
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests

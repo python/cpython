@@ -1,0 +1,1 @@
+Avoid executing the default function in :class:`cmd.Cmd` in an except block
