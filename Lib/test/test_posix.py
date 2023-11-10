@@ -19,14 +19,10 @@ import warnings
 import textwrap
 from contextlib import contextmanager
 
-# Skip these tests if there is no posix or nt module.
 try:
     import posix
 except ImportError:
-    try:
-        import nt as posix
-    except ImportError:
-        raise unittest.SkipTest("requires 'posix' or 'nt' module")
+    import nt as posix
 
 try:
     import pwd
