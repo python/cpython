@@ -1087,8 +1087,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        The cache dict holds one reference to the link.
        We created one other reference when the link was created.
        The linked list only has borrowed references. */
-    popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
-                                      link->hash, Py_None);
+    (void)_PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
+                                link->hash, Py_None, &popresult);
     if (popresult == Py_None) {
         /* Getting here means that the user function call or another
            thread has already removed the old key from the dictionary.

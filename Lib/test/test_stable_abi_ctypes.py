@@ -154,6 +154,7 @@ SYMBOL_NAMES = (
     "PyDict_MergeFromSeq2",
     "PyDict_New",
     "PyDict_Next",
+    "PyDict_Pop",
     "PyDict_SetItem",
     "PyDict_SetItemString",
     "PyDict_Size",

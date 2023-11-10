@@ -1049,7 +1049,7 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
             return NULL;
         }
         /* Now delete the value from the dict. */
-        value = _PyDict_Pop_KnownHash(od, key, hash, failobj);
+        (void)_PyDict_Pop_KnownHash((PyDictObject *)od, key, hash, failobj, &value);
     }
     else if (value == NULL && !PyErr_Occurred()) {
         /* Apply the fallback value, if necessary. */

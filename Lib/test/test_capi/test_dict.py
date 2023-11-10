@@ -432,6 +432,49 @@ class CAPITest(unittest.TestCase):
         # CRASHES mergefromseq2({}, NULL, 0)
         # CRASHES mergefromseq2(NULL, {}, 0)
 
+    def test_dict_pop(self):
+        # Test PyDict_Pop()
+        dict_pop = _testcapi.dict_pop
+        default = object()
+
+        def expect_value(mydict, key, expected_value):
+            self.assertEqual(dict_pop(mydict.copy(), key, default),
+                             (1, expected_value))
+            self.assertEqual(dict_pop(mydict.copy(), key, NULL),
+                             (1, expected_value))
+
+        def check_default(mydict, key):
+            result, value = dict_pop(mydict, key, default)
+            self.assertIs(value, default)
+            self.assertEqual(result, 0)
+
+        # key present
+        mydict = {"key": 2, "key2": 5}
+        expect_value(mydict, "key", 2)
+        expect_value(mydict, "key2", 5)
+
+        # key missing
+        check_default({}, "key")  # empty dict has a fast path
+        check_default({"a": 1}, "key")
+        self.assertRaises(KeyError, dict_pop, {}, "key", NULL)
+        self.assertRaises(KeyError, dict_pop, {"a": 1}, "key", NULL)
+
+        # dict error
+        not_dict = "string"
+        self.assertRaises(SystemError, dict_pop, not_dict, "key", default)
+
+        # key error
+        not_hashable_key = ["list"]
+        check_default({}, not_hashable_key)  # don't hash key if dict is empty
+        with self.assertRaises(TypeError):
+            dict_pop({'key': 1}, not_hashable_key, NULL)
+        with self.assertRaises(TypeError):
+            dict_pop({'key': 1}, not_hashable_key, default)
+        dict_pop({}, NULL, default)  # don't check key if dict is empty
+
+        # CRASHES dict_pop(NULL, "key")
+        # CRASHES dict_pop({"a": 1}, NULL, default)
+
 
 if __name__ == "__main__":
     unittest.main()

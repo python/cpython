@@ -1164,6 +1164,10 @@ New Features
   :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
+* Add :c:func:`PyDict_Pop` function: remove a key from a dictionary and return
+  the removed value. This is the same as :meth:`dict.pop`.
+  (Contributed by Victor Stinner in :gh:`111262`.)
+
 
 Porting to Python 3.13
 ----------------------

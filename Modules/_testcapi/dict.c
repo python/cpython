@@ -331,6 +331,25 @@ dict_mergefromseq2(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+dict_pop(PyObject *self, PyObject *args)
+{
+    PyObject *dict, *key, *default_value;
+    if (!PyArg_ParseTuple(args, "OOO", &dict, &key, &default_value)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    NULLABLE(key);
+    NULLABLE(default_value);
+    PyObject *result = UNINITIALIZED_PTR;
+    int res = PyDict_Pop(dict, key, default_value, &result);
+    if (result == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("iN", res, result);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_check", dict_check, METH_O},
     {"dict_checkexact", dict_checkexact, METH_O},
@@ -358,7 +377,7 @@ static PyMethodDef test_methods[] = {
     {"dict_merge", dict_merge, METH_VARARGS},
     {"dict_update", dict_update, METH_VARARGS},
     {"dict_mergefromseq2", dict_mergefromseq2, METH_VARARGS},
-
+    {"dict_pop", dict_pop, METH_VARARGS},
     {NULL},
 };
 

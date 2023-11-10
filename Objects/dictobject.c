@@ -2226,63 +2226,93 @@ PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
     return _PyDict_Next(op, ppos, pkey, pvalue, NULL);
 }
 
-/* Internal version of dict.pop(). */
-PyObject *
-_PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *deflt)
-{
-    Py_ssize_t ix;
-    PyObject *old_value;
-    PyDictObject *mp;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    assert(PyDict_Check(dict));
-    mp = (PyDictObject *)dict;
+/* Internal version of dict.pop(). */
+int
+_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                      PyObject *default_value, PyObject **result)
+{
+    assert(PyDict_Check(mp));
 
     if (mp->ma_used == 0) {
-        if (deflt) {
-            return Py_NewRef(deflt);
+        if (default_value) {
+            *result = Py_NewRef(default_value);
+            return 0;
         }
+        *result = NULL;
         _PyErr_SetKeyError(key);
-        return NULL;
+        return -1;
     }
-    ix = _Py_dict_lookup(mp, key, hash, &old_value);
-    if (ix == DKIX_ERROR)
-        return NULL;
+
+    PyObject *old_value;
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
+    if (ix == DKIX_ERROR) {
+        *result = NULL;
+        return -1;
+    }
+
     if (ix == DKIX_EMPTY || old_value == NULL) {
-        if (deflt) {
-            return Py_NewRef(deflt);
+        if (default_value) {
+            *result = Py_NewRef(default_value);
+            return 0;
         }
+        *result = NULL;
         _PyErr_SetKeyError(key);
-        return NULL;
+        return -1;
     }
+
     assert(old_value != NULL);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     uint64_t new_version = _PyDict_NotifyEvent(
             interp, PyDict_EVENT_DELETED, mp, key, NULL);
     delitem_common(mp, hash, ix, Py_NewRef(old_value), new_version);
 
     ASSERT_CONSISTENT(mp);
-    return old_value;
+    *result = old_value;
+    return 1;
 }
 
-PyObject *
-_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
-{
-    Py_hash_t hash;
 
-    if (((PyDictObject *)dict)->ma_used == 0) {
-        if (deflt) {
-            return Py_NewRef(deflt);
-        }
-        _PyErr_SetKeyError(key);
-        return NULL;
+int
+PyDict_Pop(PyObject *op, PyObject *key, PyObject *default_value, PyObject **result)
+{
+    if (!PyDict_Check(op)) {
+        *result = NULL;
+        PyErr_BadInternalCall();
+        return -1;
     }
+    PyDictObject *dict = (PyDictObject *)op;
+
+    if (dict->ma_used == 0) {
+        if (default_value) {
+            *result = Py_NewRef(default_value);
+            return 0;
+        }
+        *result = NULL;
+        _PyErr_SetKeyError(key);
+        return -1;
+    }
+
+    Py_hash_t hash;
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
+        if (hash == -1) {
+            *result = NULL;
+            return -1;
+        }
     }
-    return _PyDict_Pop_KnownHash(dict, key, hash, deflt);
+    return _PyDict_Pop_KnownHash(dict, key, hash, default_value, result);
 }
+
+
+PyObject *
+_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
+{
+    PyObject *result;
+    (void)PyDict_Pop(dict, key, default_value, &result);
+    return result;
+}
+
 
 /* Internal version of dict.from_keys().  It is subclass-friendly. */
 PyObject *
