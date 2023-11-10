@@ -306,13 +306,23 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertEqual(ns.use_mp, 2)
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid int value')
-                self.checkError([opt, '2', '-T'], "don't go together")
-                self.checkError([opt, '0', '-T'], "don't go together")
 
-    def test_coverage(self):
+    def test_coverage_sequential(self):
         for opt in '-T', '--coverage':
             with self.subTest(opt=opt):
-                ns = self.parse_args([opt])
+                with support.captured_stderr() as stderr:
+                    ns = self.parse_args([opt])
+                self.assertTrue(ns.trace)
+                self.assertIn(
+                    "collecting coverage without -j is imprecise",
+                    stderr.getvalue(),
+                )
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    def test_coverage_mp(self):
+        for opt in '-T', '--coverage':
+            with self.subTest(opt=opt):
+                ns = self.parse_args([opt, '-j1'])
                 self.assertTrue(ns.trace)
 
     def test_coverdir(self):
