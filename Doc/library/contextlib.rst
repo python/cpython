@@ -312,10 +312,6 @@ Functions and classes provided:
 
    .. versionchanged:: 3.12
       ``suppress`` now supports suppressing exceptions raised as
-      part of an :exc:`ExceptionGroup`.
-
-   .. versionchanged:: 3.12.1
-      ``suppress`` now supports suppressing exceptions raised as
       part of an :exc:`BaseExceptionGroup`.
 
 .. function:: redirect_stdout(new_target)
