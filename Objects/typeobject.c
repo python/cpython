@@ -4560,6 +4560,12 @@ PyType_GetQualName(PyTypeObject *type)
     return type_qualname(type, NULL);
 }
 
+PyObject *
+_PyType_GetModuleName(PyTypeObject *type)
+{
+    return type_module(type, NULL);
+}
+
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
