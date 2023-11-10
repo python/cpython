@@ -3123,9 +3123,7 @@ def add_legacy_c_converter(
         if not kwargs:
             added_f = f
         else:
-            # mypy's special-casing for functools.partial
-            # can't quite grapple with this code here
-            added_f = functools.partial(f, **kwargs)  # type: ignore[arg-type]
+            added_f = functools.partial(f, **kwargs)
         if format_unit:
             legacy_converters[format_unit] = added_f
         return f
