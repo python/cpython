@@ -1223,7 +1223,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
     @unittest.skipIf(support.is_wasi, "No dynamic linking on WASI")
-    @unittest.skipUnless(os.name == 'posix', "requires Posix")
+    @unittest.skipUnless(os.name == 'posix', "POSIX-only test")
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
         posix.RTLD_LAZY
