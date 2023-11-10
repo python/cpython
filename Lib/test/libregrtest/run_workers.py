@@ -277,7 +277,7 @@ class WorkerThread(threading.Thread):
         # Python finalization: too late for libregrtest.
         if not support.is_wasi:
             # Don't check for leaked temporary files and directories if Python is
-            # run on WASI. WASI don't pass environment variables like TMPDIR to
+            # run on WASI. WASI doesn't pass environment variables like TMPDIR to
             # worker processes.
             tmp_dir = tempfile.mkdtemp(prefix="test_python_")
             tmp_dir = os.path.abspath(tmp_dir)
