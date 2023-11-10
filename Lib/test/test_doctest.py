@@ -3279,6 +3279,24 @@ def test_syntax_error_with_note(cls, multiline=False):
     raise exc
 
 
+def test_syntax_error_subclass_from_stdlib():
+    """
+    `ParseError` is a subclass of `SyntaxError`, but it is not a builtin:
+
+    >>> test_syntax_error_subclass_from_stdlib()
+    Traceback (most recent call last):
+      ...
+    xml.etree.ElementTree.ParseError: error
+    error
+    Note
+    Line
+    """
+    from xml.etree.ElementTree import ParseError
+    exc = ParseError("error\nerror")
+    exc.add_note('Note\nLine')
+    raise exc
+
+
 def test_syntax_error_with_incorrect_expected_note():
     """
     >>> def f(x):
@@ -3318,19 +3336,5 @@ def load_tests(loader, tests, pattern):
     return tests
 
 
-def test_coverage(coverdir):
-    trace = import_helper.import_module('trace')
-    tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
-                         trace=0, count=1)
-    tracer.run('test_main()')
-    r = tracer.results()
-    print('Writing coverage results...')
-    r.write_results(show_missing=True, summary=True,
-                    coverdir=coverdir)
-
-
 if __name__ == '__main__':
-    if '-c' in sys.argv:
-        test_coverage('/tmp/doctest.cover')
-    else:
-        unittest.main()
+    unittest.main(module='test.test_doctest')

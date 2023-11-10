@@ -1,2 +1,2 @@
 # Requirements file for external linters and checks we run on Tools/clinic/ in CI
-mypy==1.6.0
+mypy==1.6.1

@@ -13,7 +13,6 @@ on:
     - '3.10'
     - '3.9'
     - '3.8'
-    - '3.7'
   pull_request:
     branches:
     - 'main'
@@ -22,7 +21,6 @@ on:
     - '3.10'
     - '3.9'
     - '3.8'
-    - '3.7'
 
 permissions:
   contents: read
@@ -155,14 +153,14 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Restore config.cache
         uses: actions/cache@v3
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -310,7 +308,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install Dependencies
+    - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |

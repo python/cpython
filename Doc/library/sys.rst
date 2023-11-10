@@ -173,7 +173,11 @@ always available.
 
    Call ``func(*args)``, while tracing is enabled.  The tracing state is saved,
    and restored afterwards.  This is intended to be called from a debugger from
-   a checkpoint, to recursively debug some other code.
+   a checkpoint, to recursively debug or profile some other code.
+
+   Tracing is suspended while calling a tracing function set by
+   :func:`settrace` or :func:`setprofile` to avoid infinite recursion.
+   :func:`!call_tracing` enables explicit recursion of the tracing function.
 
 
 .. data:: copyright
@@ -1471,12 +1475,15 @@ always available.
    its return value is not used, so it can simply return ``None``.  Error in the profile
    function will cause itself unset.
 
+   .. note::
+      The same tracing mechanism is used for :func:`!setprofile` as :func:`settrace`.
+      To trace calls with :func:`!setprofile` inside a tracing function
+      (e.g. in a debugger breakpoint), see :func:`call_tracing`.
+
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
-
-   .. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1498,6 +1505,9 @@ always available.
 
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
+
+   .. audit-event:: sys.setprofile "" sys.setprofile
+
 
 .. function:: setrecursionlimit(limit)
 
@@ -1557,6 +1567,10 @@ always available.
 
    If there is any error occurred in the trace function, it will be unset, just
    like ``settrace(None)`` is called.
+
+   .. note::
+      Tracing is disabled while calling the trace function (e.g. a function set by
+      :func:`!settrace`). For recursive tracing see :func:`call_tracing`.
 
    The events have the following meaning:
 
