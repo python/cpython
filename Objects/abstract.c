@@ -1542,11 +1542,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
     if (!runerr) {
         goto finish;
     }
-
-    /* Error handling code -- only manage OverflowError differently */
-    if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
-        goto finish;
-    }
+    assert(PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError));
     _PyErr_Clear(tstate);
 
     /* If no error-handling desired then the default clipping
