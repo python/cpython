@@ -2121,6 +2121,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
+		test/configdata \
 		test/data \
 		test/decimaltestdata \
 		test/dtracedata \
