@@ -3847,6 +3847,18 @@ PyUnicode_AsUTF8(PyObject *unicode)
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
 }
 
+const char *
+_PyUnicode_AsUTF8NoNUL(PyObject *unicode)
+{
+    Py_ssize_t size;
+    const char *s = PyUnicode_AsUTF8AndSize(unicode, &size);
+    if (s && strlen(s) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return s;
+}
+
 /*
 PyUnicode_GetSize() has been deprecated since Python 3.3
 because it returned length of Py_UNICODE.
