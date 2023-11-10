@@ -76,7 +76,7 @@ isolation_level_converter(PyObject *str_or_none, const char **result)
         *result = NULL;
     }
     else if (PyUnicode_Check(str_or_none)) {
-        const char *str = _PyUnicode_AsUTF8(str_or_none);
+        const char *str = _PyUnicode_AsUTF8NoNUL(str_or_none);
         if (str == NULL) {
             return 0;
         }

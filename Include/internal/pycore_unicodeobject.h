@@ -436,7 +436,7 @@ extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.
 // Export for '_sqlite3' shared extension.
-PyAPI_FUNC(const char *) _PyUnicode_AsUTF8(PyObject *);
+PyAPI_FUNC(const char *) _PyUnicode_AsUTF8NoNUL(PyObject *);
 
 
 #ifdef __cplusplus

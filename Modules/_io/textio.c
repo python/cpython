@@ -1020,7 +1020,7 @@ io_check_errors(PyObject *errors)
         return 0;
     }
 
-    const char *name = _PyUnicode_AsUTF8(errors);
+    const char *name = _PyUnicode_AsUTF8NoNUL(errors);
     if (name == NULL) {
         return -1;
     }

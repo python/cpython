@@ -3848,7 +3848,7 @@ PyUnicode_AsUTF8(PyObject *unicode)
 }
 
 const char *
-_PyUnicode_AsUTF8(PyObject *unicode)
+_PyUnicode_AsUTF8NoNUL(PyObject *unicode)
 {
     Py_ssize_t size;
     const char *s = PyUnicode_AsUTF8AndSize(unicode, &size);
