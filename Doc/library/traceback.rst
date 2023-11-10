@@ -135,7 +135,7 @@ The module defines the following functions:
    text line is not ``None``.
 
 
-.. function:: format_exception_only(exc, /[, value], *, show_group=False)
+.. function:: format_exception_only(exc, /[, value], *, show_group=False, limit_group=True)
 
    Format the exception part of a traceback using an exception value such as
    given by ``sys.last_value``.  The return value is a list of strings, each
@@ -153,6 +153,12 @@ The module defines the following functions:
    :exc:`BaseExceptionGroup`, the nested exceptions are included as
    well, recursively, with indentation relative to their nesting depth.
 
+   When *limit_group* is ``True``, and the exception is an instance of
+   :exc:`BaseExceptionGroup`, and *show_group* is ``True``,
+   the number of nested exception groups
+   and the number of exceptions in each exception group is limited
+   the same way :meth:`TracebackException.format` does.
+
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
@@ -161,7 +167,7 @@ The module defines the following functions:
       The returned list now includes any notes attached to the exception.
 
    .. versionchanged:: 3.13
-      *show_group* parameter was added.
+      *show_group* and *limit_group* parameters were added.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
@@ -346,7 +352,7 @@ capture data for later printing in a lightweight fashion.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-   .. method::  format_exception_only(*, show_group=False)
+   .. method::  format_exception_only(*, show_group=False, limit_group=True)
 
       Format the exception part of the traceback.
 
@@ -362,11 +368,17 @@ capture data for later printing in a lightweight fashion.
       :exc:`BaseExceptionGroup`, the nested exceptions are included as
       well, recursively, with indentation relative to their nesting depth.
 
+      When *limit_group* is ``True``, and the exception is an instance of
+      :exc:`BaseExceptionGroup`, and *show_group* is ``True``,
+      the number of nested exception groups
+      and the number of exceptions in each exception group is limited
+      the same way :meth:`TracebackException.format` does.
+
       .. versionchanged:: 3.11
          The exception's notes are now included in the output.
 
       .. versionchanged:: 3.13
-         Added the *show_group* parameter.
+         *show_group* and *limit_group* parameters were added.
 
 
 :class:`StackSummary` Objects

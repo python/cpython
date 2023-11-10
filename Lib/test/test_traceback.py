@@ -111,8 +111,11 @@ class TracebackCases(unittest.TestCase):
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
         err = traceback.format_exception_only(SyntaxError, exc)
-        self.assertEqual(len(err), 3)
-        self.assertEqual(err[1].strip(), "bad syntax")
+        self.assertEqual(err, [
+            '  File "x.py", line 23\n',
+            '    bad syntax\n',
+            'SyntaxError: error\n',
+        ])
 
     def test_no_caret_with_no_debug_ranges_flag(self):
         # Make sure that if `-X no_debug_ranges` is used, there are no carets
@@ -364,6 +367,232 @@ class TracebackCases(unittest.TestCase):
             '   ValueError: 0\n',
         ])
 
+    def test_format_exception_group_width_limit(self):
+        eg = ExceptionGroup('A', [ValueError(i) for i in range(100)])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (100 sub-exceptions)\n',
+            '   ValueError: 0\n',
+            '   ValueError: 1\n',
+            '   ValueError: 2\n',
+            '   ValueError: 3\n',
+            '   ValueError: 4\n',
+            '   ValueError: 5\n',
+            '   ValueError: 6\n',
+            '   ValueError: 7\n',
+            '   ValueError: 8\n',
+            '   ValueError: 9\n',
+            '   ValueError: 10\n',
+            '   ValueError: 11\n',
+            '   ValueError: 12\n',
+            '   ValueError: 13\n',
+            '   ValueError: 14\n',
+            '   and 85 more exceptions\n',
+        ])
+
+    def test_format_exception_group_width_limit_n_plus_1(self):
+        # bigger than `TracebackException.max_group_width`
+        eg = ExceptionGroup('A', [ValueError(i) for i in range(16)])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (16 sub-exceptions)\n',
+            '   ValueError: 0\n',
+            '   ValueError: 1\n',
+            '   ValueError: 2\n',
+            '   ValueError: 3\n',
+            '   ValueError: 4\n',
+            '   ValueError: 5\n',
+            '   ValueError: 6\n',
+            '   ValueError: 7\n',
+            '   ValueError: 8\n',
+            '   ValueError: 9\n',
+            '   ValueError: 10\n',
+            '   ValueError: 11\n',
+            '   ValueError: 12\n',
+            '   ValueError: 13\n',
+            '   ValueError: 14\n',
+            '   and 1 more exception\n',
+        ])
+
+    def test_format_exception_group_width_limit_of_syntax_errors(self):
+        eg = ExceptionGroup('A', [
+            SyntaxError(i, ("x.py", 23, None, "bad syntax"))
+            for i in range(16)
+        ])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (16 sub-exceptions)\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: <no detail available>\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 1\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 2\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 3\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 4\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 5\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 6\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 7\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 8\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 9\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 10\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 11\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 12\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 13\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: 14\n',
+            '   and 1 more exception\n',
+        ])
+
+    def test_format_exception_group_no_width_limit(self):
+        eg = ExceptionGroup('A', [ValueError(i) for i in range(17)])
+        err = traceback.format_exception_only(eg, show_group=True, limit_group=False)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (17 sub-exceptions)\n',
+            '   ValueError: 0\n',
+            '   ValueError: 1\n',
+            '   ValueError: 2\n',
+            '   ValueError: 3\n',
+            '   ValueError: 4\n',
+            '   ValueError: 5\n',
+            '   ValueError: 6\n',
+            '   ValueError: 7\n',
+            '   ValueError: 8\n',
+            '   ValueError: 9\n',
+            '   ValueError: 10\n',
+            '   ValueError: 11\n',
+            '   ValueError: 12\n',
+            '   ValueError: 13\n',
+            '   ValueError: 14\n',
+            '   ValueError: 15\n',
+            '   ValueError: 16\n',
+        ])
+
+    def test_format_nested_exception_group_nesting_limit(self):
+        exc = TypeError('bad type')
+        for i in range(11):  # bigger than `TracebackException.max_group_depth`
+            exc = ExceptionGroup(f'eg{i}', [ValueError(i), exc, ValueError(-i)])
+        err = traceback.format_exception_only(exc, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: eg10 (3 sub-exceptions)\n',
+            '   ValueError: 10\n',
+            '   ExceptionGroup: eg9 (3 sub-exceptions)\n',
+            '      ValueError: 9\n',
+            '      ExceptionGroup: eg8 (3 sub-exceptions)\n',
+            '         ValueError: 8\n',
+            '         ExceptionGroup: eg7 (3 sub-exceptions)\n',
+            '            ValueError: 7\n',
+            '            ExceptionGroup: eg6 (3 sub-exceptions)\n',
+            '               ValueError: 6\n',
+            '               ExceptionGroup: eg5 (3 sub-exceptions)\n',
+            '                  ValueError: 5\n',
+            '                  ExceptionGroup: eg4 (3 sub-exceptions)\n',
+            '                     ValueError: 4\n',
+            '                     ExceptionGroup: eg3 (3 sub-exceptions)\n',
+            '                        ValueError: 3\n',
+            '                        ExceptionGroup: eg2 (3 sub-exceptions)\n',
+            '                           ValueError: 2\n',
+            '                           ExceptionGroup: eg1 (3 sub-exceptions)\n',
+            '                              ValueError: 1\n',
+            '                              ... (max_group_depth is 10)\n',
+            '                              ValueError: -1\n',
+            '                           ValueError: -2\n',
+            '                        ValueError: -3\n',
+            '                     ValueError: -4\n',
+            '                  ValueError: -5\n',
+            '               ValueError: -6\n',
+            '            ValueError: -7\n',
+            '         ValueError: -8\n',
+            '      ValueError: -9\n',
+            '   ValueError: -10\n',
+        ])
+
+    def test_format_nested_exception_group_nesting_no_limit(self):
+        exc = TypeError('bad type')
+        for i in range(11):
+            exc = ExceptionGroup(f'eg{i}', [ValueError(i), exc, ValueError(-i)])
+        err = traceback.format_exception_only(exc, show_group=True, limit_group=False)
+        self.assertEqual(err, [
+            'ExceptionGroup: eg10 (3 sub-exceptions)\n',
+            '   ValueError: 10\n',
+            '   ExceptionGroup: eg9 (3 sub-exceptions)\n',
+            '      ValueError: 9\n',
+            '      ExceptionGroup: eg8 (3 sub-exceptions)\n',
+            '         ValueError: 8\n',
+            '         ExceptionGroup: eg7 (3 sub-exceptions)\n',
+            '            ValueError: 7\n',
+            '            ExceptionGroup: eg6 (3 sub-exceptions)\n',
+            '               ValueError: 6\n',
+            '               ExceptionGroup: eg5 (3 sub-exceptions)\n',
+            '                  ValueError: 5\n',
+            '                  ExceptionGroup: eg4 (3 sub-exceptions)\n',
+            '                     ValueError: 4\n',
+            '                     ExceptionGroup: eg3 (3 sub-exceptions)\n',
+            '                        ValueError: 3\n',
+            '                        ExceptionGroup: eg2 (3 sub-exceptions)\n',
+            '                           ValueError: 2\n',
+            '                           ExceptionGroup: eg1 (3 sub-exceptions)\n',
+            '                              ValueError: 1\n',
+            '                              ExceptionGroup: eg0 (3 sub-exceptions)\n',
+            '                                 ValueError: 0\n',
+            '                                 TypeError: bad type\n',
+            '                                 ValueError: 0\n',
+            '                              ValueError: -1\n',
+            '                           ValueError: -2\n',
+            '                        ValueError: -3\n',
+            '                     ValueError: -4\n',
+            '                  ValueError: -5\n',
+            '               ValueError: -6\n',
+            '            ValueError: -7\n',
+            '         ValueError: -8\n',
+            '      ValueError: -9\n',
+            '   ValueError: -10\n',
+        ])
+
+    def test_format_exception_group_no_width_limit_reursion_error(self):
+        rec_limit = 100
+        exc = TypeError('bad type')
+        for i in range(rec_limit + 1):
+            exc = ExceptionGroup(f'eg{i}', [ValueError(i), exc, ValueError(-i)])
+
+        with support.infinite_recursion(rec_limit):
+            # Does not raise:
+            traceback.format_exception_only(
+                exc, show_group=True, limit_group=True,
+            )
+
+            # Raises:
+            with self.assertRaises(RecursionError):
+                traceback.format_exception_only(
+                    exc, show_group=True, limit_group=False,
+                )
+
     @requires_subprocess()
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
@@ -494,6 +723,18 @@ class TracebackCases(unittest.TestCase):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
 
+    def test_format_exception_only_exc_limit_group_false(self):
+        # Extra kwargs do not affect regular exceptions:
+        output = traceback.format_exception_only(
+            Exception("projector"), limit_group=True,
+        )
+        self.assertEqual(output, ["Exception: projector\n"])
+
+        output = traceback.format_exception_only(
+            Exception("projector"), show_group=True, limit_group=True,
+        )
+        self.assertEqual(output, ["Exception: projector\n"])
+
     def test_exception_is_None(self):
         NONE_EXC_STRING = 'NoneType: None\n'
         excfile = StringIO()
@@ -530,7 +771,7 @@ class TracebackCases(unittest.TestCase):
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
-            '(exc, /, value=<implicit>, *, show_group=False)')
+            '(exc, /, value=<implicit>, *, show_group=False, limit_group=True)')
 
 
 class PurePythonExceptionFormattingMixin:

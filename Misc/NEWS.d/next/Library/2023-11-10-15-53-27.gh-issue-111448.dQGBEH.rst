@@ -1,0 +1,3 @@
+Add *limit_group* parameter to :func:`traceback.format_exception_only` and
+:meth:`traceback.TracebackException.format_exception_only`, which limits how
+many nested exceptions and exception groups can be shown.
