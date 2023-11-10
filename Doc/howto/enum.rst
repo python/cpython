@@ -607,9 +607,9 @@ The complete signature is::
         start=1,
         )
 
-:value: What the new enum class will record as its name.
+* *value*: What the new enum class will record as its name.
 
-:names: The enum members.  This can be a whitespace- or comma-separated string
+* *names*: The enum members.  This can be a whitespace- or comma-separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
@@ -626,13 +626,13 @@ The complete signature is::
 
     {'CHARTREUSE': 7, 'SEA_GREEN': 11, 'ROSEMARY': 42}
 
-:module: name of module where new enum class can be found.
+* *module*: name of module where new enum class can be found.
 
-:qualname: where in module new enum class can be found.
+* *qualname*: where in module new enum class can be found.
 
-:type: type to mix in to new enum class.
+* *type*: type to mix in to new enum class.
 
-:start: number to start counting at if only names are passed in.
+* *start*: number to start counting at if only names are passed in.
 
 .. versionchanged:: 3.5
    The *start* parameter was added.

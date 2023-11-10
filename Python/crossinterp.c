@@ -713,6 +713,99 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
     return 0;
 }
 
+struct _shared_tuple_data {
+    Py_ssize_t len;
+    _PyCrossInterpreterData **data;
+};
+
+static PyObject *
+_new_tuple_object(_PyCrossInterpreterData *data)
+{
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
+    PyObject *tuple = PyTuple_New(shared->len);
+    if (tuple == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
+        if (item == NULL){
+            Py_DECREF(tuple);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(tuple, i, item);
+    }
+    return tuple;
+}
+
+static void
+_tuple_shared_free(void* data)
+{
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data);
+#ifndef NDEBUG
+    int64_t interpid = PyInterpreterState_GetID(_PyInterpreterState_GET());
+#endif
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        if (shared->data[i] != NULL) {
+            assert(shared->data[i]->interpid == interpid);
+            _PyCrossInterpreterData_Release(shared->data[i]);
+            PyMem_RawFree(shared->data[i]);
+            shared->data[i] = NULL;
+        }
+    }
+    PyMem_Free(shared->data);
+    PyMem_RawFree(shared);
+}
+
+static int
+_tuple_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
+{
+    Py_ssize_t len = PyTuple_GET_SIZE(obj);
+    if (len < 0) {
+        return -1;
+    }
+    struct _shared_tuple_data *shared = PyMem_RawMalloc(sizeof(struct _shared_tuple_data));
+    if (shared == NULL){
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    shared->len = len;
+    shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
+    if (shared->data == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+        if (data == NULL) {
+            goto error;  // PyErr_NoMemory already set
+        }
+        PyObject *item = PyTuple_GET_ITEM(obj, i);
+
+        int res = -1;
+        if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
+            res = _PyObject_GetCrossInterpreterData(item, data);
+            _Py_LeaveRecursiveCallTstate(tstate);
+        }
+        if (res < 0) {
+            PyMem_RawFree(data);
+            goto error;
+        }
+        shared->data[i] = data;
+    }
+    _PyCrossInterpreterData_Init(
+            data, tstate->interp, shared, obj, _new_tuple_object);
+    data->free = _tuple_shared_free;
+    return 0;
+
+error:
+    _tuple_shared_free(shared);
+    return -1;
+}
+
 static void
 _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
 {
@@ -744,6 +837,11 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     // float
     if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
         Py_FatalError("could not register float for cross-interpreter sharing");
+    }
+
+    // tuple
+    if (_xidregistry_add_type(xidregistry, &PyTuple_Type, _tuple_shared) != 0) {
+        Py_FatalError("could not register tuple for cross-interpreter sharing");
     }
 }
 
@@ -801,6 +899,17 @@ _xidregistry_fini(struct _xidregistry *registry)
 /*************************/
 
 static const char *
+_copy_raw_string(const char *str)
+{
+    char *copied = PyMem_RawMalloc(strlen(str)+1);
+    if (copied == NULL) {
+        return NULL;
+    }
+    strcpy(copied, str);
+    return copied;
+}
+
+static const char *
 _copy_string_obj_raw(PyObject *strobj)
 {
     const char *str = PyUnicode_AsUTF8(strobj);
@@ -832,6 +941,118 @@ _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
     }
     PyErr_SetRaisedException(exc);
     return res;
+}
+
+
+/* exception snapshots */
+
+static int
+_exc_type_name_as_utf8(PyObject *exc, const char **p_typename)
+{
+    // XXX Use PyObject_GetAttrString(Py_TYPE(exc), '__name__')?
+    PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
+    if (nameobj == NULL) {
+        assert(PyErr_Occurred());
+        *p_typename = "unable to format exception type name";
+        return -1;
+    }
+    const char *name = PyUnicode_AsUTF8(nameobj);
+    if (name == NULL) {
+        assert(PyErr_Occurred());
+        Py_DECREF(nameobj);
+        *p_typename = "unable to encode exception type name";
+        return -1;
+    }
+    name = _copy_raw_string(name);
+    Py_DECREF(nameobj);
+    if (name == NULL) {
+        *p_typename = "out of memory copying exception type name";
+        return -1;
+    }
+    *p_typename = name;
+    return 0;
+}
+
+static int
+_exc_msg_as_utf8(PyObject *exc, const char **p_msg)
+{
+    PyObject *msgobj = PyObject_Str(exc);
+    if (msgobj == NULL) {
+        assert(PyErr_Occurred());
+        *p_msg = "unable to format exception message";
+        return -1;
+    }
+    const char *msg = PyUnicode_AsUTF8(msgobj);
+    if (msg == NULL) {
+        assert(PyErr_Occurred());
+        Py_DECREF(msgobj);
+        *p_msg = "unable to encode exception message";
+        return -1;
+    }
+    msg = _copy_raw_string(msg);
+    Py_DECREF(msgobj);
+    if (msg == NULL) {
+        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
+        *p_msg = "out of memory copying exception message";
+        return -1;
+    }
+    *p_msg = msg;
+    return 0;
+}
+
+static void
+_Py_excinfo_Clear(_Py_excinfo *info)
+{
+    if (info->type != NULL) {
+        PyMem_RawFree((void *)info->type);
+    }
+    if (info->msg != NULL) {
+        PyMem_RawFree((void *)info->msg);
+    }
+    *info = (_Py_excinfo){ NULL };
+}
+
+static const char *
+_Py_excinfo_InitFromException(_Py_excinfo *info, PyObject *exc)
+{
+    assert(exc != NULL);
+
+    // Extract the exception type name.
+    const char *typename = NULL;
+    if (_exc_type_name_as_utf8(exc, &typename) < 0) {
+        assert(typename != NULL);
+        return typename;
+    }
+
+    // Extract the exception message.
+    const char *msg = NULL;
+    if (_exc_msg_as_utf8(exc, &msg) < 0) {
+        assert(msg != NULL);
+        return msg;
+    }
+
+    info->type = typename;
+    info->msg = msg;
+    return NULL;
+}
+
+static void
+_Py_excinfo_Apply(_Py_excinfo *info, PyObject *exctype)
+{
+    if (info->type != NULL) {
+        if (info->msg != NULL) {
+            PyErr_Format(exctype, "%s: %s",  info->type, info->msg);
+        }
+        else {
+            PyErr_SetString(exctype, info->type);
+        }
+    }
+    else if (info->msg != NULL) {
+        PyErr_SetString(exctype, info->msg);
+    }
+    else {
+        PyErr_SetNone(exctype);
+    }
 }
 
 
