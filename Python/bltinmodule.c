@@ -2611,7 +2611,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 // Improved Kahan–Babuška algorithm by Arnold Neumaier
-                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                // https://web.archive.org/web/20220804051351/https://www.mat.univie.ac.at/~neum/scan/01.pdf
                 double x = PyFloat_AS_DOUBLE(item);
                 double t = f_result + x;
                 if (fabs(f_result) >= fabs(x)) {
