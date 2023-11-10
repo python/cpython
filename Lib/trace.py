@@ -202,7 +202,7 @@ class CoverageResults:
         for key in other_callers:
             callers[key] = 1
 
-    def write_results(self, show_missing=True, summary=False, coverdir=None,
+    def write_results(self, show_missing=True, summary=False, coverdir=None, *,
                       ignore_missing_files=False):
         """
         Write the coverage results.

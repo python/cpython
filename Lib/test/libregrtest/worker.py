@@ -91,7 +91,7 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     result = run_single_test(test_name, runtests)
     if runtests.coverage:
         if "test.cov" in sys.modules:  # imported by -Xpresite=
-            result.covered_lines = list(sys.modules["test.cov"].COVERAGE)
+            result.covered_lines = list(sys.modules["test.cov"].coverage)
         elif not Py_DEBUG:
             print(
                 "Gathering coverage in worker processes requires --with-pydebug",

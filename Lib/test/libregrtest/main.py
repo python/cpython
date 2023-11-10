@@ -295,6 +295,7 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
+            result.covered_lines = list(tracer.counts)
         else:
             result = run_single_test(test_name, runtests)
 
@@ -302,7 +303,7 @@ class Regrtest:
 
         return result
 
-    def run_tests_sequentially(self, runtests) -> trace.CoverageResults | None:
+    def run_tests_sequentially(self, runtests) -> None:
         if self.coverage:
             tracer = trace.Trace(trace=False, count=True)
         else:
@@ -350,8 +351,6 @@ class Regrtest:
 
         if previous_test:
             print(previous_test)
-
-        return tracer.results() if tracer else None
 
     def get_state(self):
         state = self.results.get_state(self.fail_env_changed)
@@ -461,10 +460,10 @@ class Regrtest:
         try:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
-                coverage = self.results.get_coverage_results()
             else:
-                coverage = self.run_tests_sequentially(runtests)
+                self.run_tests_sequentially(runtests)
 
+            coverage = self.results.get_coverage_results()
             self.display_result(runtests)
 
             if self.want_rerun and self.results.need_rerun():
