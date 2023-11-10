@@ -679,25 +679,33 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(p.scheme, "https")
             self.assertEqual(p.geturl(), "https://www.python.org/")
 
-    def test_attributes_bad_port(self):
+    def test_attributes_bad_port_a(self):
         """Check handling of invalid ports."""
         for bytes in (False, True):
             for parse in (urlparse.urlsplit, urlparse.urlparse):
-                # Spaces are stripped now, so they can't cause issues
+                # Spaces and invalid characters are stripped now, so the missing one's can't cause issues
                 # for port in ("foo", "1.5", "-1", "0x10", "-0", "1_1", " 1", "1 ", "६"):
-                for port in ("foo", "1.5", "-1", "0x10", "-0", "1_1", "६"):
+                for port in ("foo", "1.5",  "0x10",  "1_1"):
                     netloc = "www.example.net:" + port
                     url = "http://" + netloc + "/"
                     if bytes:
-                        if netloc.isascii() and port.isascii():
-                            netloc = netloc.encode("ascii")
-                            url = url.encode("ascii")
-                        else:
-                            continue
+                        netloc = netloc.encode("ascii")
+                        url = url.encode("ascii")
                     p = parse(url)
                     self.assertEqual(p.netloc, netloc)
                     with self.assertRaises(ValueError):
                         p.port
+
+    def test_attributes_bad_port_b(self):
+        """Check handling of invalid ports."""
+        for parse in (urlparse.urlsplit, urlparse.urlparse):
+            for port in ("६"):
+                netloc = "www.example.net:" + port
+                url = "http://" + netloc + "/"
+                p = parse(url)
+                self.assertEqual(p.netloc, netloc)
+                with self.assertRaises(ValueError):
+                    p.port
 
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
