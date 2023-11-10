@@ -35,6 +35,7 @@
 #include "complexobject.h"
 #include "mpdecimal.h"
 
+#include <ctype.h>                // isascii()
 #include <stdlib.h>
 
 #include "docstrings.h"
@@ -314,14 +315,12 @@ value_error_int(const char *mesg)
     return -1;
 }
 
-#ifdef CONFIG_32
 static PyObject *
 value_error_ptr(const char *mesg)
 {
     PyErr_SetString(PyExc_ValueError, mesg);
     return NULL;
 }
-#endif
 
 static int
 type_error_int(const char *mesg)
@@ -608,6 +607,8 @@ getround(decimal_state *state, PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
+static const char *INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
+
 static int
 signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
 {
@@ -616,14 +617,20 @@ signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
 }
 
 static Py_ssize_t
-signaldict_len(PyObject *self UNUSED)
+signaldict_len(PyObject *self)
 {
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+    }
     return SIGNAL_MAP_LEN;
 }
 
 static PyObject *
 signaldict_iter(PyObject *self)
 {
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     return PyTuple_Type.tp_iter(state->SignalTuple);
 }
@@ -632,6 +639,9 @@ static PyObject *
 signaldict_getitem(PyObject *self, PyObject *key)
 {
     uint32_t flag;
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
 
     flag = exception_as_flag(state, key);
@@ -648,11 +658,15 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
     uint32_t flag;
     int x;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+    }
+
     if (value == NULL) {
         return value_error_int("signal keys cannot be deleted");
     }
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     flag = exception_as_flag(state, key);
     if (flag & DEC_ERRORS) {
         return -1;
@@ -697,6 +711,10 @@ signaldict_repr(PyObject *self)
     const char *b[SIGNAL_MAP_LEN]; /* bool */
     int i;
 
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
+
     assert(SIGNAL_MAP_LEN == 9);
 
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
@@ -720,6 +738,10 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 
     decimal_state *state = find_state_left_or_right(v, w);
     assert(PyDecSignalDict_Check(state, v));
+
+    if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
 
     if (op == Py_EQ || op == Py_NE) {
         if (PyDecSignalDict_Check(state, w)) {
@@ -748,6 +770,9 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 static PyObject *
 signaldict_copy(PyObject *self, PyObject *args UNUSED)
 {
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     return flags_as_dict(state, SdFlags(self));
 }
@@ -3568,6 +3593,12 @@ dec_format(PyObject *dec, PyObject *args)
     if (replace_fillchar) {
         dec_replace_fillchar(decstring);
     }
+    if (strchr(fmt, 'N') != NULL) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Format specifier 'N' is deprecated", 1) < 0) {
+            goto finish;
+        }
+    }
 
     result = PyUnicode_DecodeUTF8(decstring, size, NULL);
 
@@ -5852,6 +5883,7 @@ error:
     return NULL;
 }
 
+static int minalloc_is_set = 0;
 
 static int
 _decimal_exec(PyObject *m)
@@ -5874,7 +5906,12 @@ _decimal_exec(PyObject *m)
     mpd_reallocfunc = PyMem_Realloc;
     mpd_callocfunc = mpd_callocfunc_em;
     mpd_free = PyMem_Free;
-    mpd_setminalloc(_Py_DEC_MINALLOC);
+
+    /* Suppress the warning caused by multi-phase initialization */
+    if (!minalloc_is_set) {
+        mpd_setminalloc(_Py_DEC_MINALLOC);
+        minalloc_is_set = 1;
+    }
 
     decimal_state *state = get_module_state(m);
 

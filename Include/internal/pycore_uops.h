@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#define _Py_UOP_MAX_TRACE_LENGTH 32
+#include "pycore_frame.h"         // _PyInterpreterFrame
+
+#define _Py_UOP_MAX_TRACE_LENGTH 128
 
 typedef struct {
     uint32_t opcode;
@@ -18,7 +20,7 @@ typedef struct {
 
 typedef struct {
     _PyExecutorObject base;
-    _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];  // TODO: variable length
+    _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
 _PyInterpreterFrame *_PyUopExecute(

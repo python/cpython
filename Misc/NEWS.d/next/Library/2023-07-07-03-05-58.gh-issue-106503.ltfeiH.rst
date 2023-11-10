@@ -1,2 +1,0 @@
-Fix ref cycle in :class:`!asyncio._SelectorSocketTransport` by removing
-``_write_ready`` in ``close``.

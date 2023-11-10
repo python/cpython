@@ -136,16 +136,16 @@ Using :func:`new` with an algorithm name:
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 
-.. function:: md5([, data], \*, usedforsecurity=True)
-.. function:: sha1([, data], \*, usedforsecurity=True)
-.. function:: sha224([, data], \*, usedforsecurity=True)
-.. function:: sha256([, data], \*, usedforsecurity=True)
-.. function:: sha384([, data], \*, usedforsecurity=True)
-.. function:: sha512([, data], \*, usedforsecurity=True)
-.. function:: sha3_224([, data], \*, usedforsecurity=True)
-.. function:: sha3_256([, data], \*, usedforsecurity=True)
-.. function:: sha3_384([, data], \*, usedforsecurity=True)
-.. function:: sha3_512([, data], \*, usedforsecurity=True)
+.. function:: md5([, data], *, usedforsecurity=True)
+.. function:: sha1([, data], *, usedforsecurity=True)
+.. function:: sha224([, data], *, usedforsecurity=True)
+.. function:: sha256([, data], *, usedforsecurity=True)
+.. function:: sha384([, data], *, usedforsecurity=True)
+.. function:: sha512([, data], *, usedforsecurity=True)
+.. function:: sha3_224([, data], *, usedforsecurity=True)
+.. function:: sha3_256([, data], *, usedforsecurity=True)
+.. function:: sha3_384([, data], *, usedforsecurity=True)
+.. function:: sha3_512([, data], *, usedforsecurity=True)
 
 Named constructors such as these are faster than passing an algorithm name to
 :func:`new`.
@@ -234,8 +234,8 @@ A hash object has the following methods:
 SHAKE variable length digests
 -----------------------------
 
-.. function:: shake_128([, data], \*, usedforsecurity=True)
-.. function:: shake_256([, data], \*, usedforsecurity=True)
+.. function:: shake_128([, data], *, usedforsecurity=True)
+.. function:: shake_256([, data], *, usedforsecurity=True)
 
 The :func:`shake_128` and :func:`shake_256` algorithms provide variable
 length digests with length_in_bits//2 up to 128 or 256 bits of security.
@@ -244,7 +244,7 @@ by the SHAKE algorithm.
 
 .. method:: shake.digest(length)
 
-   Return the digest of the data passed to the :meth:`update` method so far.
+   Return the digest of the data passed to the :meth:`~hash.update` method so far.
    This is a bytes object of size *length* which may contain bytes in
    the whole range from 0 to 255.
 
@@ -363,6 +363,8 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    .. versionadded:: 3.6
 
+
+.. _hashlib-blake2:
 
 BLAKE2
 ------
@@ -507,9 +509,9 @@ Simple hashing
 
 To calculate hash of some data, you should first construct a hash object by
 calling the appropriate constructor function (:func:`blake2b` or
-:func:`blake2s`), then update it with the data by calling :meth:`update` on the
+:func:`blake2s`), then update it with the data by calling :meth:`~hash.update` on the
 object, and, finally, get the digest out of the object by calling
-:meth:`digest` (or :meth:`hexdigest` for hex-encoded string).
+:meth:`~hash.digest` (or :meth:`~hash.hexdigest` for hex-encoded string).
 
     >>> from hashlib import blake2b
     >>> h = blake2b()

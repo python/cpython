@@ -1,5 +1,0 @@
-A new debug structure of offsets has been added to the ``_PyRuntimeState``
-that will help out-of-process debuggers and profilers to obtain the offsets
-to relevant interpreter structures in a way that is agnostic of how Python
-was compiled and that doesn't require copying the headers. Patch by Pablo
-Galindo

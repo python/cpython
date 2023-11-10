@@ -37,8 +37,7 @@ class StreamTests(test_utils.TestCase):
         # just in case if we have transport close callbacks
         test_utils.run_briefly(self.loop)
 
-        self.loop.close()
-        gc.collect()
+        # set_event_loop() takes care of closing self.loop in a safe way
         super().tearDown()
 
     def _basetest_open_connection(self, open_connection_fut):
@@ -1073,6 +1072,59 @@ os.close(fd)
             self.assertEqual(data, b'')
 
         self.assertEqual(messages, [])
+
+    def test_unclosed_resource_warnings(self):
+        async def inner(httpd):
+            rd, wr = await asyncio.open_connection(*httpd.address)
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            data = await rd.readline()
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            data = await rd.read()
+            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            with self.assertWarns(ResourceWarning):
+                del wr
+                gc.collect()
+
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with test_utils.run_test_server() as httpd:
+            self.loop.run_until_complete(inner(httpd))
+
+        self.assertEqual(messages, [])
+
+    def test_unhandled_exceptions(self) -> None:
+        port = socket_helper.find_unused_port()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        async def client():
+            rd, wr = await asyncio.open_connection('localhost', port)
+            wr.write(b'test msg')
+            await wr.drain()
+            wr.close()
+            await wr.wait_closed()
+
+        async def main():
+            async def handle_echo(reader, writer):
+                raise Exception('test')
+
+            server = await asyncio.start_server(
+                handle_echo, 'localhost', port)
+            await server.start_serving()
+            await client()
+            server.close()
+            await server.wait_closed()
+
+        self.loop.run_until_complete(main())
+
+        self.assertEqual(messages[0]['message'],
+                         'Unhandled exception in client_connected_cb')
+        # Break explicitly reference cycle
+        messages = None
 
 
 if __name__ == '__main__':

@@ -725,7 +725,7 @@ Fail:
 }
 
 PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial]) -> value\n\
+"reduce(function, iterable[, initial], /) -> value\n\
 \n\
 Apply a function of two arguments cumulatively to the items of a sequence\n\
 or iterable, from left to right, so as to reduce the iterable to a single\n\

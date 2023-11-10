@@ -1,5 +1,0 @@
-The new :c:func:`PyType_GetDict` provides the dictionary for the given type
-object that is normally exposed by ``cls.__dict__``.  Normally it's
-sufficient to use :c:member:`~PyTypeObject.tp_dict`, but for the static
-builtin types :c:member:`!tp_dict` is now always ``NULL``.  :c:func:`!PyType_GetDict()`
-provides the correct dict object instead.

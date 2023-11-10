@@ -564,7 +564,7 @@ APIs:
 
    Copy an instance of a Unicode subtype to a new true Unicode object if
    necessary. If *obj* is already a true Unicode object (not a subtype),
-   return the reference with incremented refcount.
+   return a new :term:`strong reference` to the object.
 
    Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
@@ -971,8 +971,8 @@ These are the UTF-8 codec APIs:
    returned buffer always has an extra null byte appended (not included in
    *size*), regardless of whether there are any other null code points.
 
-   In the case of an error, ``NULL`` is returned with an exception set and no
-   *size* is stored.
+   On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
+   return ``NULL``.
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
@@ -1292,7 +1292,7 @@ the user settings on the machine running the codec.
 
    Encode the Unicode object using the specified code page and return a Python
    bytes object.  Return ``NULL`` if an exception was raised by the codec. Use
-   :c:macro:`CP_ACP` code page to get the MBCS encoder.
+   :c:macro:`!CP_ACP` code page to get the MBCS encoder.
 
    .. versionadded:: 3.3
 
@@ -1396,6 +1396,28 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    :c:func:`PyErr_Occurred` to check for errors.
 
 
+.. c:function:: int PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *string, Py_ssize_t size)
+
+   Compare a Unicode object with a char buffer which is interpreted as
+   being UTF-8 or ASCII encoded and return true (``1``) if they are equal,
+   or false (``0``) otherwise.
+   If the Unicode object contains surrogate characters or
+   the C string is not valid UTF-8, false (``0``) is returned.
+
+   This function does not raise exceptions.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyUnicode_EqualToUTF8(PyObject *unicode, const char *string)
+
+   Similar to :c:func:`PyUnicode_EqualToUTF8AndSize`, but compute *string*
+   length using :c:func:`!strlen`.
+   If the Unicode object contains null characters, false (``0``) is returned.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, const char *string)
 
    Compare a Unicode object, *uni*, with *string* and return ``-1``, ``0``, ``1`` for less
@@ -1438,11 +1460,11 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Intern the argument *\*string* in place.  The argument must be the address of a
    pointer variable pointing to a Python Unicode string object.  If there is an
    existing interned string that is the same as *\*string*, it sets *\*string* to
-   it (decrementing the reference count of the old string object and incrementing
-   the reference count of the interned string object), otherwise it leaves
-   *\*string* alone and interns it (incrementing its reference count).
-   (Clarification: even though there is a lot of talk about reference counts, think
-   of this function as reference-count-neutral; you own the object after the call
+   it (releasing the reference to the old string object and creating a new
+   :term:`strong reference` to the interned string object), otherwise it leaves
+   *\*string* alone and interns it (creating a new :term:`strong reference`).
+   (Clarification: even though there is a lot of talk about references, think
+   of this function as reference-neutral; you own the object after the call
    if and only if you owned it before the call.)
 
 
