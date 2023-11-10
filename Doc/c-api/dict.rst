@@ -173,6 +173,23 @@ Dictionary Objects
 
    .. versionadded:: 3.4
 
+
+.. c:function:: int PyDict_Pop(PyObject *p, PyObject *key, PyObject **result)
+
+   Remove *key* from dictionary *p* and optionally return the removed value.
+   Do not raise :exc:`KeyError` if the key missing.
+
+   - If the key is present, set *\*result* to a new reference to the removed
+     value if *result* is not ``NULL``, and return ``1``.
+   - If the key is missing, set *\*result* to ``NULL`` if *result* is not
+     ``NULL``, and return ``0``.
+   - On error, raise an exception and return ``-1``.
+
+   This is the similar to :meth:`dict.pop`, but without the default value and
+   do not raise :exc:`KeyError` if the key missing.
+
+   .. versionadded:: 3.13
+
 .. c:function:: PyObject* PyDict_Items(PyObject *p)
 
    Return a :c:type:`PyListObject` containing all the items from the dictionary.
