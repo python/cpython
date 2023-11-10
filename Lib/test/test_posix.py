@@ -19,14 +19,10 @@ import warnings
 import textwrap
 from contextlib import contextmanager
 
-# Skip these tests if there is no posix or nt module.
 try:
     import posix
 except ImportError:
-    try:
-        import nt as posix
-    except ImportError:
-        raise unittest.SkipTest("requires 'posix' or 'nt' module")
+    import nt as posix
 
 try:
     import pwd
@@ -1227,7 +1223,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
     @unittest.skipIf(support.is_wasi, "No dynamic linking on WASI")
-    @unittest.skipUnless(os.name == 'posix', "requires Posix")
+    @unittest.skipUnless(os.name == 'posix', "POSIX-only test")
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
         posix.RTLD_LAZY
