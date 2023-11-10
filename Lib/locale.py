@@ -556,10 +556,11 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     """
 
     import warnings
-    warnings.warn(
-        "Use setlocale(), getencoding() and getlocale() instead",
-        DeprecationWarning, stacklevel=2
-    )
+    warnings._deprecated(
+        "locale.getdefaultlocale",
+        "{name!r} is deprecated and slated for removal in Python {remove}. "
+        "Use setlocale(), getencoding() and getlocale() instead.",
+        remove=(3, 15))
 
     try:
         # check if it's supported by the _locale module

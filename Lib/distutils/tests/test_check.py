@@ -2,7 +2,6 @@
 import os
 import textwrap
 import unittest
-from test.support import run_unittest
 
 from distutils.command.check import check, HAS_DOCUTILS
 from distutils.tests import support
@@ -156,8 +155,5 @@ class CheckTestCase(support.LoggingSilencer,
                           {}, **{'strict': 1,
                                  'restructuredtext': 1})
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(CheckTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

@@ -10,7 +10,7 @@ import unittest
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
-from test.support import run_unittest, swap_item, requires_subprocess, is_wasi
+from test.support import swap_item, requires_subprocess, is_wasi
 from test.support.os_helper import TESTFN
 from test.support.warnings_helper import check_warnings
 
@@ -254,11 +254,5 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertEqual(0, p.returncode, "Subprocess failed: " + outs)
 
 
-def test_suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(SysconfigTestCase))
-    return suite
-
-
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    unittest.main()

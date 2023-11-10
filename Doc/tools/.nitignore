@@ -31,7 +31,6 @@ Doc/howto/urllib2.rst
 Doc/library/__future__.rst
 Doc/library/abc.rst
 Doc/library/ast.rst
-Doc/library/asyncio-eventloop.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
 Doc/library/asyncio-stream.rst

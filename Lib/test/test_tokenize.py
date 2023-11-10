@@ -1624,7 +1624,7 @@ class TestRoundtrip(TestCase):
         # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
-        for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
+        for f in ('buffer', 'builtin', 'fileio', 'os', 'platform', 'sys'):
             testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
         if not support.is_resource_enabled("cpu"):

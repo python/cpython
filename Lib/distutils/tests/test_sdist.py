@@ -6,7 +6,7 @@ import warnings
 import zipfile
 from os.path import join
 from textwrap import dedent
-from test.support import captured_stdout, run_unittest
+from test.support import captured_stdout
 from test.support.warnings_helper import check_warnings
 
 try:
@@ -486,8 +486,5 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
         finally:
             archive.close()
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(SDistTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()
