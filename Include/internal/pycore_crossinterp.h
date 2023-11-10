@@ -170,9 +170,14 @@ extern void _PyXI_Fini(PyInterpreterState *interp);
 // of the exception in the calling interpreter.
 
 typedef struct _excinfo {
-    const char *type;
+    struct _excinfo_type {
+        PyTypeObject *builtin;
+        const char *name;
+        const char *qualname;
+        const char *module;
+    } type;
     const char *msg;
-} _Py_excinfo;
+} _PyXI_excinfo;
 
 
 typedef enum error_code {
@@ -193,13 +198,15 @@ typedef struct _sharedexception {
     // The kind of error to propagate.
     _PyXI_errcode code;
     // The exception information to propagate, if applicable.
-    // This is populated only for _PyXI_ERR_UNCAUGHT_EXCEPTION.
-    _Py_excinfo uncaught;
-} _PyXI_exception_info;
+    // This is populated only for some error codes,
+    // but always for _PyXI_ERR_UNCAUGHT_EXCEPTION.
+    _PyXI_excinfo uncaught;
+} _PyXI_error;
 
-PyAPI_FUNC(void) _PyXI_ApplyExceptionInfo(
-    _PyXI_exception_info *info,
+PyAPI_FUNC(void) _PyXI_ApplyError(
+    _PyXI_error *err,
     PyObject *exctype);
+
 
 typedef struct xi_session _PyXI_session;
 typedef struct _sharedns _PyXI_namespace;
@@ -251,13 +258,13 @@ struct xi_session {
 
     // This is set if the interpreter is entered and raised an exception
     // that needs to be handled in some special way during exit.
-    _PyXI_errcode *exc_override;
+    _PyXI_errcode *error_override;
     // This is set if exit captured an exception to propagate.
-    _PyXI_exception_info *exc;
+    _PyXI_error *error;
 
     // -- pre-allocated memory --
-    _PyXI_exception_info _exc;
-    _PyXI_errcode _exc_override;
+    _PyXI_error _error;
+    _PyXI_errcode _error_override;
 };
 
 PyAPI_FUNC(int) _PyXI_Enter(

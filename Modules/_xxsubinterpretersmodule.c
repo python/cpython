@@ -237,7 +237,7 @@ _run_in_interpreter(PyInterpreterState *interp,
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
         assert(!PyErr_Occurred());
-        _PyXI_ApplyExceptionInfo(session.exc, excwrapper);
+        _PyXI_ApplyError(session.error, excwrapper);
         assert(PyErr_Occurred());
         return -1;
     }
