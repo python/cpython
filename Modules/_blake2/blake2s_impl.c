@@ -17,6 +17,7 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
+#include <stdbool.h>
 #include "Python.h"
 #include "pycore_strhex.h"       // _Py_strhex()
 
@@ -42,7 +43,8 @@ typedef struct {
     PyObject_HEAD
     blake2s_param    param;
     blake2s_state    state;
-    PyThread_type_lock lock;
+    bool use_mutex;
+    PyMutex mutex;
 } BLAKE2sObject;
 
 #include "clinic/blake2s_impl.c.h"
@@ -51,7 +53,7 @@ typedef struct {
 module _blake2
 class _blake2.blake2s "BLAKE2sObject *" "&PyBlake2_BLAKE2sType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b79d7ffe07286ce]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d47b0527b39c673f]*/
 
 
 static BLAKE2sObject *
@@ -59,9 +61,11 @@ new_BLAKE2sObject(PyTypeObject *type)
 {
     BLAKE2sObject *self;
     self = (BLAKE2sObject *)type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->lock = NULL;
+    if (self == NULL) {
+        return NULL;
     }
+    INIT_MUTEX(self);
+
     return self;
 }
 
@@ -93,7 +97,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity)
-/*[clinic end generated code: output=556181f73905c686 input=4dda87723f23abb0]*/
+/*[clinic end generated code: output=32bfd8f043c6896f input=b947312abff46977]*/
 {
     BLAKE2sObject *self = NULL;
     Py_buffer buf;
@@ -247,7 +251,7 @@ Return a copy of the hash object.
 
 static PyObject *
 _blake2_blake2s_copy_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=5b90131c4eae275e input=0b9d44942f0fe4b2]*/
+/*[clinic end generated code: output=ff6acee5f93656ae input=e383c2d199fd8a2e]*/
 {
     BLAKE2sObject *cpy;
 
@@ -272,24 +276,23 @@ Update this hash object's state with the provided bytes-like object.
 
 static PyObject *
 _blake2_blake2s_update(BLAKE2sObject *self, PyObject *data)
-/*[clinic end generated code: output=757dc087fec37815 input=97500db2f9de4aaa]*/
+/*[clinic end generated code: output=010dfcbe22654359 input=ffc4aa6a6a225d31]*/
 {
     Py_buffer buf;
 
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
 
-    if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE)
-        self->lock = PyThread_allocate_lock();
-
-    if (self->lock != NULL) {
-       Py_BEGIN_ALLOW_THREADS
-       PyThread_acquire_lock(self->lock, 1);
-       blake2s_update(&self->state, buf.buf, buf.len);
-       PyThread_release_lock(self->lock);
-       Py_END_ALLOW_THREADS
+    self->use_mutex = true;
+    if (buf.len >= HASHLIB_GIL_MINSIZE) {
+        Py_BEGIN_ALLOW_THREADS
+        PyMutex_Lock(&self->mutex);
+        blake2s_update(&self->state, buf.buf, buf.len);
+        PyMutex_Unlock(&self->mutex);
+        Py_END_ALLOW_THREADS
     } else {
         blake2s_update(&self->state, buf.buf, buf.len);
     }
+
     PyBuffer_Release(&buf);
 
     Py_RETURN_NONE;
@@ -303,7 +306,7 @@ Return the digest value as a bytes object.
 
 static PyObject *
 _blake2_blake2s_digest_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=40c566ca4bc6bc51 input=f41e0b8d6d937454]*/
+/*[clinic end generated code: output=a5864660f4bfc61a input=7d21659e9c5fff02]*/
 {
     uint8_t digest[BLAKE2S_OUTBYTES];
     blake2s_state state_cpy;
@@ -324,7 +327,7 @@ Return the digest value as a string of hexadecimal digits.
 
 static PyObject *
 _blake2_blake2s_hexdigest_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=15153eb5e59c52eb input=c77a1321567e8952]*/
+/*[clinic end generated code: output=b5598a87d8794a60 input=76930f6946351f56]*/
 {
     uint8_t digest[BLAKE2S_OUTBYTES];
     blake2s_state state_cpy;
@@ -389,10 +392,6 @@ py_blake2s_dealloc(PyObject *self)
     /* Try not to leave state in memory. */
     secure_zero_memory(&obj->param, sizeof(obj->param));
     secure_zero_memory(&obj->state, sizeof(obj->state));
-    if (obj->lock) {
-        PyThread_free_lock(obj->lock);
-        obj->lock = NULL;
-    }
 
     PyTypeObject *type = Py_TYPE(self);
     PyObject_Free(self);
