@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_fileutils.h"     // _Py_error_handler
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 /* --- Characters Type APIs ----------------------------------------------- */
@@ -432,6 +433,10 @@ struct _Py_unicode_state {
 
 extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
+
+// Like PyUnicode_AsUTF8(), but check for embedded null characters.
+// Export for '_sqlite3' shared extension.
+PyAPI_FUNC(const char *) _PyUnicode_AsUTF8NoNUL(PyObject *);
 
 
 #ifdef __cplusplus

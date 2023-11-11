@@ -13,7 +13,6 @@ import inspect
 import os.path
 import re
 import sys
-import types
 import unittest
 
 test_tools.skip_if_missing('clinic')
@@ -22,16 +21,9 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
-def default_namespace():
-    ns = types.SimpleNamespace()
-    ns.force = False
-    ns.limited_capi = clinic.DEFAULT_LIMITED_CAPI
-    return ns
-
-
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(None)
-    c = clinic.Clinic(clang, filename=filename)
+    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -58,11 +50,6 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     if lineno is not None:
         tc.assertEqual(cm.exception.lineno, lineno)
     return cm.exception
-
-
-class MockClinic:
-    def __init__(self):
-        self.limited_capi = clinic.DEFAULT_LIMITED_CAPI
 
 
 class ClinicWholeFileTest(TestCase):
@@ -138,7 +125,7 @@ class ClinicWholeFileTest(TestCase):
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c")
+        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -371,6 +358,20 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=8)
+
+    def test_multiple_star_in_args(self):
+        err = "'my_test_func' uses '*' more than once."
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                *args: object
+                *
+                kw_arg: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
 
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
@@ -704,9 +705,8 @@ class ParseFileUnitTest(TestCase):
         self, *, filename, expected_error, verify=True, output=None
     ):
         errmsg = re.escape(dedent(expected_error).strip())
-        ns = default_namespace()
         with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename, ns=ns)
+            clinic.parse_file(filename, limited_capi=False)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -846,9 +846,9 @@ class ClinicBlockParserTest(TestCase):
 
         blocks = list(clinic.BlockParser(input, language))
         writer = clinic.BlockPrinter(language)
-        mock_clinic = MockClinic()
+        c = _make_clinic()
         for block in blocks:
-            writer.print_block(block, clinic=mock_clinic)
+            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -874,7 +874,7 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file")
+        c = clinic.Clinic(language, filename="file", limited_capi=False)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
@@ -2324,10 +2324,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module 'z' does not exist"
+        err = "Parent class or module 'baz' does not exist"
         block = """
             module m
-            z.func
+            baz.func
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -2412,7 +2412,7 @@ class ClinicExternalTest(TestCase):
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
         source = support.findfile(CLINIC_TEST)
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, encoding='utf-8') as f:
             orig_contents = f.read()
 
         # Run clinic CLI and verify that it does not complain.
@@ -2420,7 +2420,7 @@ class ClinicExternalTest(TestCase):
         out = self.expect_success("-f", "-o", TESTFN, source)
         self.assertEqual(out, "")
 
-        with open(TESTFN, 'r', encoding='utf-8') as f:
+        with open(TESTFN, encoding='utf-8') as f:
             new_contents = f.read()
 
         self.assertEqual(new_contents, orig_contents)
@@ -2480,7 +2480,7 @@ class ClinicExternalTest(TestCase):
                 "/*[clinic end generated code: "
                 "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
             )
-            with open(fn, 'r', encoding='utf-8') as f:
+            with open(fn, encoding='utf-8') as f:
                 generated = f.read()
             self.assertTrue(generated.endswith(checksum),
                             (generated, checksum))
@@ -2687,12 +2687,6 @@ class ClinicExternalTest(TestCase):
             preserve
             [clinic start generated code]*/
 
-            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-            #  include "pycore_gc.h"            // PyGC_Head
-            #  include "pycore_runtime.h"       // _Py_ID()
-            #endif
-
-
             PyDoc_VAR(func__doc__);
 
             PyDoc_STRVAR(func__doc__,
@@ -2705,7 +2699,7 @@ class ClinicExternalTest(TestCase):
 
             static PyObject *
             func(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+            /*[clinic end generated code: output=3dde2d13002165b9 input=a9049054013a1b77]*/
         """)
         with os_helper.temp_dir() as tmp_dir:
             in_fn = os.path.join(tmp_dir, "test.c")
@@ -3174,6 +3168,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg(b=4)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg(1, 2, 3, b=4)
 
     def test_vararg_and_posonly(self):
         with self.assertRaises(TypeError):
@@ -3223,6 +3221,37 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(TypeError, err):
             ac_tester.gh_99240_double_free('a', '\0b')
+
+    def test_null_or_tuple_for_varargs(self):
+        # All of these should not crash:
+        valid_args_for_test = [
+            (('a',), {},
+             ('a', (), False)),
+            (('a', 1, 2, 3), {'covariant': True},
+             ('a', (1, 2, 3), True)),
+            ((), {'name': 'a'},
+             ('a', (), False)),
+            ((), {'name': 'a', 'covariant': True},
+             ('a', (), True)),
+            ((), {'covariant': True, 'name': 'a'},
+             ('a', (), True)),
+        ]
+        for args, kwargs, expected in valid_args_for_test:
+            with self.subTest(args=args, kwargs=kwargs):
+                self.assertEqual(
+                    ac_tester.null_or_tuple_for_varargs(*args, **kwargs),
+                    expected,
+                )
+
+    def test_null_or_tuple_for_varargs_error(self):
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(covariant=True)
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, name='a')
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, 2, 3, name='a', covariant=True)
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str

@@ -553,16 +553,13 @@ _io__Buffered_close_impl(buffered *self)
     }
     /* flush() will most probably re-take the lock, so drop it first */
     LEAVE_BUFFERED(self)
-    res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
+    r = _PyFile_Flush((PyObject *)self);
     if (!ENTER_BUFFERED(self)) {
         return NULL;
     }
     PyObject *exc = NULL;
-    if (res == NULL) {
+    if (r < 0) {
         exc = PyErr_GetRaisedException();
-    }
-    else {
-        Py_DECREF(res);
     }
 
     res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(close));
@@ -593,12 +590,11 @@ static PyObject *
 _io__Buffered_detach_impl(buffered *self)
 /*[clinic end generated code: output=dd0fc057b8b779f7 input=482762a345cc9f44]*/
 {
-    PyObject *raw, *res;
+    PyObject *raw;
     CHECK_INITIALIZED(self)
-    res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
-    if (res == NULL)
+    if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
-    Py_DECREF(res);
+    }
     raw = self->raw;
     self->raw = NULL;
     self->detached = 1;

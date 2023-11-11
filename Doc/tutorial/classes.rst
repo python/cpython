@@ -276,7 +276,7 @@ definition looked like this::
 then ``MyClass.i`` and ``MyClass.f`` are valid attribute references, returning
 an integer and a function object, respectively. Class attributes can also be
 assigned to, so you can change the value of ``MyClass.i`` by assignment.
-:attr:`__doc__` is also a valid attribute, returning the docstring belonging to
+:attr:`!__doc__` is also a valid attribute, returning the docstring belonging to
 the class: ``"A simple example class"``.
 
 Class *instantiation* uses function notation.  Just pretend that the class

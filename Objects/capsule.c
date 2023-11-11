@@ -1,6 +1,7 @@
 /* Wrap void * pointers to be passed between C modules */
 
 #include "Python.h"
+#include "pycore_capsule.h"       // export _PyCapsule_SetTraverse()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
