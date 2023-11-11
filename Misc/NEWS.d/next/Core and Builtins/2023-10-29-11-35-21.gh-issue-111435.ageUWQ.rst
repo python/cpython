@@ -1,1 +1,2 @@
-Added support for sharing of bool type with interpreters API.
+Add support for sharing of True and False between interpreters using the cross-interpreter
+API.  Patch by Anthony Shaw.
