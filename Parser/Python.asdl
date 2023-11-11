@@ -34,6 +34,7 @@ module Python
           | For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)
           | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)
           | While(expr test, stmt* body, stmt* orelse)
+          | Until(expr test, stmt* body, stmt* orelse)
           | If(expr test, stmt* body, stmt* orelse)
           | With(withitem* items, stmt* body, string? type_comment)
           | AsyncWith(withitem* items, stmt* body, string? type_comment)

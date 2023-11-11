@@ -1443,6 +1443,10 @@ find_ann(asdl_stmt_seq *stmts)
             res = find_ann(st->v.While.body) ||
                   find_ann(st->v.While.orelse);
             break;
+        case Until_kind:
+            res = find_ann(st->v.Until.body) ||
+                  find_ann(st->v.Until.orelse);
+            break;
         case If_kind:
             res = find_ann(st->v.If.body) ||
                   find_ann(st->v.If.orelse);
@@ -3161,7 +3165,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 }
 
 static int
-compiler_while(struct compiler *c, stmt_ty s)
+compiler_boolean_eval_loop(struct compiler *c, stmt_ty s, int continue_if_test)
 {
     NEW_JUMP_TARGET_LABEL(c, loop);
     NEW_JUMP_TARGET_LABEL(c, body);
@@ -3171,11 +3175,11 @@ compiler_while(struct compiler *c, stmt_ty s)
     USE_LABEL(c, loop);
 
     RETURN_IF_ERROR(compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
-    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
+    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 1 - continue_if_test));
 
     USE_LABEL(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, body, 1));
+    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, body, continue_if_test));
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
@@ -3186,6 +3190,18 @@ compiler_while(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, end);
     return SUCCESS;
+}
+
+static int
+compiler_until(struct compiler *c, stmt_ty s)
+{
+    compiler_boolean_eval_loop(c, s, 0);
+}
+
+static int
+compiler_while(struct compiler *c, stmt_ty s)
+{
+    compiler_boolean_eval_loop(c, s, 1);
 }
 
 static int
@@ -4024,6 +4040,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_for(c, s);
     case While_kind:
         return compiler_while(c, s);
+    case Until_kind:
+        return compiler_until(c, s);
     case If_kind:
         return compiler_if(c, s);
     case Match_kind:

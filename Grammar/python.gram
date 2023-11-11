@@ -379,7 +379,7 @@ while_stmt[stmt_ty]:
 
 until_stmt[stmt_ty]:
     | invalid_until_stmt
-    | 'until' a=named_expression ':' b=block c=[else_block] { _PyAST_While(_PyAST_UnaryOp(Not, a, EXTRA), b, c, EXTRA) }
+    | 'until' a=named_expression ':' b=block c=[else_block] { _PyAST_Until(a, b, c, EXTRA) }
 
 # For statement
 # -------------

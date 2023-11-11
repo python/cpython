@@ -187,12 +187,12 @@ struct _mod {
 enum _stmt_kind {FunctionDef_kind=1, AsyncFunctionDef_kind=2, ClassDef_kind=3,
                   Return_kind=4, Delete_kind=5, Assign_kind=6,
                   TypeAlias_kind=7, AugAssign_kind=8, AnnAssign_kind=9,
-                  For_kind=10, AsyncFor_kind=11, While_kind=12, If_kind=13,
-                  With_kind=14, AsyncWith_kind=15, Match_kind=16,
-                  Raise_kind=17, Try_kind=18, TryStar_kind=19, Assert_kind=20,
-                  Import_kind=21, ImportFrom_kind=22, Global_kind=23,
-                  Nonlocal_kind=24, Expr_kind=25, Pass_kind=26, Break_kind=27,
-                  Continue_kind=28};
+                  For_kind=10, AsyncFor_kind=11, While_kind=12, Until_kind=13,
+                  If_kind=14, With_kind=15, AsyncWith_kind=16, Match_kind=17,
+                  Raise_kind=18, Try_kind=19, TryStar_kind=20, Assert_kind=21,
+                  Import_kind=22, ImportFrom_kind=23, Global_kind=24,
+                  Nonlocal_kind=25, Expr_kind=26, Pass_kind=27, Break_kind=28,
+                  Continue_kind=29};
 struct _stmt {
     enum _stmt_kind kind;
     union {
@@ -279,6 +279,12 @@ struct _stmt {
             asdl_stmt_seq *body;
             asdl_stmt_seq *orelse;
         } While;
+
+        struct {
+            expr_ty test;
+            asdl_stmt_seq *body;
+            asdl_stmt_seq *orelse;
+        } Until;
 
         struct {
             expr_ty test;
@@ -723,6 +729,9 @@ stmt_ty _PyAST_AsyncFor(expr_ty target, expr_ty iter, asdl_stmt_seq * body,
                         lineno, int col_offset, int end_lineno, int
                         end_col_offset, PyArena *arena);
 stmt_ty _PyAST_While(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq *
+                     orelse, int lineno, int col_offset, int end_lineno, int
+                     end_col_offset, PyArena *arena);
+stmt_ty _PyAST_Until(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq *
                      orelse, int lineno, int col_offset, int end_lineno, int
                      end_col_offset, PyArena *arena);
 stmt_ty _PyAST_If(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse,
