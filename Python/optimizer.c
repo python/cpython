@@ -765,7 +765,7 @@ done:
 #define BIT_IS_SET(array, bit) (array[(bit)>>5] & (1<<((bit)&31)))
 
 static bool
-is_branch(opcode) {
+is_branch(int opcode) {
     /* Currently there are no jumps in the buffer,
      * but we expect the optimizer to add them
      * in the future. */

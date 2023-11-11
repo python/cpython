@@ -3985,18 +3985,28 @@ dummy_func(
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
             DEOPT_IF(Py_IsFalse(flag));
+            assert(Py_IsTrue(flag));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
             DEOPT_IF(Py_IsTrue(flag));
+            assert(Py_IsFalse(flag));
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
-            DEOPT_IF(!Py_IsNone(val));
+            if (!Py_IsNone(val)) {
+                Py_DECREF(val);
+                DEOPT_IF(true);
+            }
         }
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
-            DEOPT_IF(Py_IsNone(val));
+            if (Py_IsNone(val)) {
+                DEOPT_IF(true);
+            }
+            else {
+                Py_DECREF(val);
+            }
         }
 
         op(_JUMP_TO_TOP, (--)) {
