@@ -155,6 +155,7 @@ ObjectType = list[dict[str, FileType] | FileType]
 class HoleValue(enum.Enum):
     _JIT_BODY = enum.auto()
     _JIT_CONTINUE = enum.auto()
+    _JIT_CURRENT_EXECUTOR = enum.auto()
     _JIT_DATA = enum.auto()
     _JIT_DEOPTIMIZE = enum.auto()
     _JIT_ERROR = enum.auto()

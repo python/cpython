@@ -328,7 +328,7 @@ initialize_jit(void)
 
 // The world's smallest compiler?
 _PyJITFunction
-_PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
+_PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, int size)
 {
     if (initialize_jit()) {
         return NULL;
@@ -379,6 +379,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         patches[_JIT_BODY] = (uintptr_t)head;
         patches[_JIT_DATA] = (uintptr_t)(stencil->nholes_data ? head_data : stencil->bytes_data);
         patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+        patches[_JIT_CURRENT_EXECUTOR] = (uintptr_t)executor;
         patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
         patches[_JIT_ERROR] = (uintptr_t)error_stub;
         patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
