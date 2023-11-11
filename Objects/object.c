@@ -297,15 +297,17 @@ _Py_DecRef(PyObject *o)
 }
 
 #ifdef Py_NOGIL
+# ifdef Py_REF_DEBUG
 static inline int
 is_shared_refcnt_dead(Py_ssize_t shared)
 {
-#if SIZEOF_SIZE_T == 8
+#  if SIZEOF_SIZE_T == 8
     return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
-#else
+#  else
     return shared == (Py_ssize_t)0xDDDDDDDD;
-#endif
+#  endif
 }
+# endif
 
 void
 _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
@@ -412,7 +414,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     return refcnt;
 }
-#endif
+#endif  /* Py_NOGIL */
 
 
 /**************************************/
@@ -1040,7 +1042,10 @@ PyObject_HasAttrString(PyObject *obj, const char *name)
 {
     int rc = PyObject_HasAttrStringWithError(obj, name);
     if (rc < 0) {
-        PyErr_Clear();
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyObject_HasAttrString(); consider using "
+            "PyObject_HasAttrStringWithError(), "
+            "PyObject_GetOptionalAttrString() or PyObject_GetAttrString()");
         return 0;
     }
     return rc;
@@ -1275,7 +1280,10 @@ PyObject_HasAttr(PyObject *obj, PyObject *name)
 {
     int rc = PyObject_HasAttrWithError(obj, name);
     if (rc < 0) {
-        PyErr_Clear();
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyObject_HasAttr(); consider using "
+            "PyObject_HasAttrWithError(), "
+            "PyObject_GetOptionalAttr() or PyObject_GetAttr()");
         return 0;
     }
     return rc;
@@ -2365,7 +2373,7 @@ new_reference(PyObject *op)
 #else
     op->ob_tid = _Py_ThreadId();
     op->_padding = 0;
-    op->ob_mutex = 0;
+    op->ob_mutex = (struct _PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
     op->ob_ref_shared = 0;

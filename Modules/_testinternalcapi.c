@@ -1687,6 +1687,9 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
         return 1;
     }
+    if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
+        return 1;
+    }
 
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
                         PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {

@@ -3123,9 +3123,7 @@ def add_legacy_c_converter(
         if not kwargs:
             added_f = f
         else:
-            # mypy's special-casing for functools.partial
-            # can't quite grapple with this code here
-            added_f = functools.partial(f, **kwargs)  # type: ignore[arg-type]
+            added_f = functools.partial(f, **kwargs)
         if format_unit:
             legacy_converters[format_unit] = added_f
         return f
@@ -4350,21 +4348,32 @@ class str_converter(CConverter):
                     {bad_argument}
                     goto exit;
                 }}}}
-                {paramname} = PyUnicode_AsUTF8({argname});
+                Py_ssize_t {length_name};
+                {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
                 if ({paramname} == NULL) {{{{
+                    goto exit;
+                }}}}
+                if (strlen({paramname}) != (size_t){length_name}) {{{{
+                    PyErr_SetString(PyExc_ValueError, "embedded null character");
                     goto exit;
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi))
+                bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi),
+                length_name=self.length_name)
         if self.format_unit == 'z':
             return self.format_code("""
                 if ({argname} == Py_None) {{{{
                     {paramname} = NULL;
                 }}}}
                 else if (PyUnicode_Check({argname})) {{{{
-                    {paramname} = PyUnicode_AsUTF8({argname});
+                    Py_ssize_t {length_name};
+                    {paramname} = PyUnicode_AsUTF8AndSize({argname}, &{length_name});
                     if ({paramname} == NULL) {{{{
+                        goto exit;
+                    }}}}
+                    if (strlen({paramname}) != (size_t){length_name}) {{{{
+                        PyErr_SetString(PyExc_ValueError, "embedded null character");
                         goto exit;
                     }}}}
                 }}}}
@@ -4374,7 +4383,8 @@ class str_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str or None', limited_capi=limited_capi))
+                bad_argument=self.bad_argument(displayname, 'str or None', limited_capi=limited_capi),
+                length_name=self.length_name)
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 #
