@@ -121,6 +121,8 @@ results to a file by specifying a filename to the :func:`run` function::
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
+.. _profile-cli:
+
 The files :mod:`cProfile` and :mod:`profile` can also be invoked as a script to
 profile another script.  For example::
 
@@ -133,11 +135,11 @@ the output by. This only applies when ``-o`` is not supplied.
 
 ``-m`` specifies that a module is being profiled instead of a script.
 
-   .. versionadded:: 3.7
-      Added the ``-m`` option to :mod:`cProfile`.
+.. versionadded:: 3.7
+   Added the ``-m`` option to :mod:`cProfile`.
 
-   .. versionadded:: 3.8
-      Added the ``-m`` option to :mod:`profile`.
+.. versionadded:: 3.8
+   Added the ``-m`` option to :mod:`profile`.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::

@@ -2066,9 +2066,9 @@ environment.  (Contributed by Brett Cannon in :issue:`25154`.)
 Deprecated functions and types of the C API
 -------------------------------------------
 
-Undocumented functions :c:func:`PyUnicode_AsEncodedObject`,
-:c:func:`PyUnicode_AsDecodedObject`, :c:func:`PyUnicode_AsEncodedUnicode`
-and :c:func:`PyUnicode_AsDecodedUnicode` are deprecated now.
+Undocumented functions :c:func:`!PyUnicode_AsEncodedObject`,
+:c:func:`!PyUnicode_AsDecodedObject`, :c:func:`!PyUnicode_AsEncodedUnicode`
+and :c:func:`!PyUnicode_AsDecodedUnicode` are deprecated now.
 Use the :ref:`generic codec based API <codec-registry>` instead.
 
 

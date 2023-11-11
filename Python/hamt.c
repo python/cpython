@@ -1,9 +1,10 @@
 #include "Python.h"
-
-#include "pycore_bitutils.h"      // _Py_popcount32
+#include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_hamt.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_Format()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+
 #include <stddef.h>               // offsetof()
 
 /*

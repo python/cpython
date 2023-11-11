@@ -1,0 +1,1 @@
+Make sure that tier 2 traces are de-optimized if the code is instrumented

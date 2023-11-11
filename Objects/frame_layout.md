@@ -130,3 +130,28 @@ returns. This extra frame is inserted so that `RETURN_VALUE`, `YIELD_VALUE`, and
 `RETURN_GENERATOR` do not need to check whether the current frame is the entry frame.
 The shim frame points to a special code object containing the `INTERPRETER_EXIT`
 instruction which cleans up the shim frame and returns.
+
+
+### The Instruction Pointer
+
+`_PyInterpreterFrame` has two fields which are used to maintain the instruction
+pointer: `instr_ptr` and `return_offset`.
+
+When a frame is executing, `instr_ptr` points to the instruction currently being
+executed. In a suspended frame, it points to the instruction that would execute
+if the frame were to resume. After `frame.f_lineno` is set, `instr_ptr` points to
+the next instruction to be executed. During a call to a python function,
+`instr_ptr` points to the call instruction, because this is what we would expect
+to see in an exception traceback.
+
+The `return_offset` field determines where a `RETURN` should go in the caller,
+relative to `instr_ptr`.  It is only meaningful to the callee, so it needs to
+be set in any instruction that implements a call (to a Python function),
+including CALL, SEND and BINARY_SUBSCR_GETITEM, among others. If there is no
+callee, then return_offset is meaningless.  It is necessary to have a separate
+field for the return offset because (1) if we apply this offset to `instr_ptr`
+while executing the `RETURN`, this is too early and would lose us information
+about the previous instruction which we could need for introspecting and
+debugging. (2) `SEND` needs to pass two offsets to the generator: one for
+`RETURN` and one for `YIELD`. It uses the `oparg` for one, and the
+`return_offset` for the other.

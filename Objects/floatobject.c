@@ -4,6 +4,7 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -15,8 +16,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
-#include <ctype.h>
-#include <float.h>
+#include <float.h>                // DBL_MAX
 #include <stdlib.h>               // strtol()
 
 /*[clinic input]
@@ -646,7 +646,7 @@ float_rem(PyObject *v, PyObject *w)
     CONVERT_TO_DOUBLE(w, wx);
     if (wx == 0.0) {
         PyErr_SetString(PyExc_ZeroDivisionError,
-                        "float modulo");
+                        "float modulo by zero");
         return NULL;
     }
     mod = fmod(vx, wx);

@@ -1,10 +1,16 @@
 
 /* UNIX group file access module */
 
+// clinic/grpmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "posixmodule.h"
 
-#include <grp.h>
+#include <grp.h>                  // getgrgid_r()
+#include <unistd.h>               // sysconf()
 
 #include "clinic/grpmodule.c.h"
 /*[clinic input]

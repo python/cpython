@@ -698,14 +698,6 @@ class GlobalsTest(unittest.TestCase):
                             'missing name "%s" in __all__' % name)
 
 
-class DocTests(unittest.TestCase):
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -OO and above")
-    def test_doc_tests(self):
-        failed, tried = doctest.testmod(statistics, optionflags=doctest.ELLIPSIS)
-        self.assertGreater(tried, 0)
-        self.assertEqual(failed, 0)
-
 class StatisticsErrorTest(unittest.TestCase):
     def test_has_exception(self):
         errmsg = (
@@ -2145,6 +2137,7 @@ class TestSqrtHelpers(unittest.TestCase):
             self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
 
     @requires_IEEE_754
+    @support.requires_resource('cpu')
     def test_float_sqrt_of_frac(self):
 
         def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
@@ -2461,6 +2454,11 @@ class TestQuantiles(unittest.TestCase):
             data = random.choices(range(100), k=k)
             q1, q2, q3 = quantiles(data, method='inclusive')
             self.assertEqual(q2, statistics.median(data))
+        # Base case with a single data point:  When estimating quantiles from
+        # a sample, we want to be able to add one sample point at a time,
+        # getting increasingly better estimates.
+        self.assertEqual(quantiles([10], n=4), [10.0, 10.0, 10.0])
+        self.assertEqual(quantiles([10], n=4, method='exclusive'), [10.0, 10.0, 10.0])
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles
@@ -2511,7 +2509,7 @@ class TestQuantiles(unittest.TestCase):
         with self.assertRaises(ValueError):
             quantiles([10, 20, 30], method='X') # method is unknown
         with self.assertRaises(StatisticsError):
-            quantiles([10], n=4)                # not enough data points
+            quantiles([], n=4)                  # not enough data points
         with self.assertRaises(TypeError):
             quantiles([10, None, 30], n=4)      # data is non-numeric
 
@@ -2849,6 +2847,7 @@ class TestNormalDist:
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_inv_cdf(self):
         NormalDist = self.module.NormalDist
 
@@ -3143,6 +3142,7 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
+    tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

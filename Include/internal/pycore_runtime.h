@@ -8,24 +8,23 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atexit.h"          // struct atexit_runtime_state
-#include "pycore_atomic.h"          /* _Py_atomic_address */
+#include "pycore_atexit.h"          // struct _atexit_runtime_state
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
-#include "pycore_floatobject.h"     // struct _Py_float_runtime_state
+#include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
-#include "pycore_global_objects.h"  // struct _Py_global_objects
+#include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_object_state.h"    // struct _py_object_runtime_state
 #include "pycore_parser.h"          // struct _parser_runtime_state
-#include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
+#include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
 #include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
-#include "pycore_typeobject.h"      // struct types_runtime_state
-#include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
+#include "pycore_typeobject.h"      // struct _types_runtime_state
+#include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
 struct _getargs_runtime_state {
     PyThread_type_lock mutex;
@@ -89,7 +88,7 @@ typedef struct _Py_DebugOffsets {
     struct _interpreter_frame {
         off_t previous;
         off_t executable;
-        off_t prev_instr;
+        off_t instr_ptr;
         off_t localsplus;
         off_t owner;
     } interpreter_frame;
@@ -171,7 +170,9 @@ typedef struct pyruntimestate {
 
        Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
        to access it, don't access it directly. */
-    _Py_atomic_address _finalizing;
+    PyThreadState *_finalizing;
+    /* The ID of the OS thread in which we are finalizing. */
+    unsigned long _finalizing_id;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
@@ -199,11 +200,8 @@ typedef struct pyruntimestate {
      possible to facilitate out-of-process observability
      tools. */
 
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry {
-        PyThread_type_lock mutex;
-        struct _xidregitem *head;
-    } xidregistry;
+    /* cross-interpreter data and utils */
+    struct _xi_runtime_state xi;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
@@ -268,11 +266,21 @@ typedef struct pyruntimestate {
 
     /* PyInterpreterState.interpreters.main */
     PyInterpreterState _main_interpreter;
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+    // Used in "Python/emscripten_trampoline.c" to choose between type
+    // reflection trampoline and EM_JS trampoline.
+    bool wasm_type_reflection_available;
+#endif
+
 } _PyRuntimeState;
 
 
 /* other API */
 
+// Export _PyRuntime for shared extensions which use it in static inline
+// functions for best performance, like _Py_IsMainThread() or _Py_ID().
+// It's also made accessible for debuggers and profilers.
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 
 extern PyStatus _PyRuntimeState_Init(_PyRuntimeState *runtime);
@@ -291,12 +299,26 @@ extern void _PyRuntime_Finalize(void);
 
 static inline PyThreadState*
 _PyRuntimeState_GetFinalizing(_PyRuntimeState *runtime) {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->_finalizing);
+    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&runtime->_finalizing);
+}
+
+static inline unsigned long
+_PyRuntimeState_GetFinalizingID(_PyRuntimeState *runtime) {
+    return _Py_atomic_load_ulong_relaxed(&runtime->_finalizing_id);
 }
 
 static inline void
 _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
-    _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
+    _Py_atomic_store_ptr_relaxed(&runtime->_finalizing, tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_ulong_relaxed(&runtime->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_ulong_relaxed(&runtime->_finalizing_id,
+                                       tstate->thread_id);
+    }
 }
 
 #ifdef __cplusplus

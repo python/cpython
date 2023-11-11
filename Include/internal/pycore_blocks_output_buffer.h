@@ -40,6 +40,10 @@ extern "C" {
 
 #include "Python.h"
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 typedef struct {
     // List of bytes objects
     PyObject *list;
