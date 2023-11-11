@@ -87,13 +87,14 @@ class SequenceTreeItem(ObjectTreeItem):
                 continue
             def setfunction(value, key=key, object=self.object):
                 object[key] = value
-            item = make_objecttreeitem("%r:" % (key,), value, setfunction)
+            item = make_objecttreeitem(f"{key!r}:", value, setfunction)
             sublist.append(item)
         return sublist
 
 class DictTreeItem(SequenceTreeItem):
     def keys(self):
-        keys = list(self.object.keys())
+        # TODO return sorted(self.object)
+        keys = list(self.object)
         try:
             keys.sort()
         except:

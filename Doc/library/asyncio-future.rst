@@ -54,6 +54,9 @@ Future Functions
       See also the :func:`create_task` function which is the
       preferred way for creating new Tasks.
 
+      Save a reference to the result of this function, to avoid
+      a task disappearing mid-execution.
+
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 
@@ -82,7 +85,8 @@ Future Object
 
    Future is an :term:`awaitable` object.  Coroutines can await on
    Future objects until they either have a result or an exception
-   set, or until they are cancelled.
+   set, or until they are cancelled. A Future can be awaited multiple
+   times and the result is same.
 
    Typically Futures are used to enable low-level
    callback-based code (e.g. in protocols implemented using asyncio
@@ -191,7 +195,7 @@ Future Object
       schedule the callbacks, and return ``True``.
 
       .. versionchanged:: 3.9
-         Added the ``msg`` parameter.
+         Added the *msg* parameter.
 
    .. method:: exception()
 
@@ -272,4 +276,4 @@ the Future has a result::
      :func:`concurrent.futures.as_completed` functions.
 
    - :meth:`asyncio.Future.cancel` accepts an optional ``msg`` argument,
-     but :func:`concurrent.futures.cancel` does not.
+     but :meth:`concurrent.futures.Future.cancel` does not.

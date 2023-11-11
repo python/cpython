@@ -1,4 +1,5 @@
 from collections import deque
+import doctest
 import unittest
 from test import support, seq_tests
 import gc
@@ -780,6 +781,9 @@ class TestVariousIteratorArgs(unittest.TestCase):
 class Deque(deque):
     pass
 
+class DequeWithSlots(deque):
+    __slots__ = ('x', 'y', '__dict__')
+
 class DequeWithBadIter(deque):
     def __iter__(self):
         raise TypeError
@@ -809,40 +813,28 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(len(d), 0)
 
     def test_copy_pickle(self):
+        for cls in Deque, DequeWithSlots:
+            for d in cls('abc'), cls('abcde', maxlen=4):
+                d.x = ['x']
+                d.z = ['z']
 
-        d = Deque('abc')
+                e = d.__copy__()
+                self.assertEqual(type(d), type(e))
+                self.assertEqual(list(d), list(e))
 
-        e = d.__copy__()
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
+                e = cls(d)
+                self.assertEqual(type(d), type(e))
+                self.assertEqual(list(d), list(e))
 
-        e = Deque(d)
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(d, proto)
-            e = pickle.loads(s)
-            self.assertNotEqual(id(d), id(e))
-            self.assertEqual(type(d), type(e))
-            self.assertEqual(list(d), list(e))
-
-        d = Deque('abcde', maxlen=4)
-
-        e = d.__copy__()
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        e = Deque(d)
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(d, proto)
-            e = pickle.loads(s)
-            self.assertNotEqual(id(d), id(e))
-            self.assertEqual(type(d), type(e))
-            self.assertEqual(list(d), list(e))
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(d, proto)
+                    e = pickle.loads(s)
+                    self.assertNotEqual(id(d), id(e))
+                    self.assertEqual(type(d), type(e))
+                    self.assertEqual(list(d), list(e))
+                    self.assertEqual(e.x, d.x)
+                    self.assertEqual(e.z, d.z)
+                    self.assertFalse(hasattr(e, 'y'))
 
     def test_pickle_recursive(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -870,6 +862,7 @@ class TestSubclass(unittest.TestCase):
         p = weakref.proxy(d)
         self.assertEqual(str(p), str(d))
         d = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, str, p)
 
     def test_strange_subclass(self):
@@ -1032,31 +1025,10 @@ h
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main(verbose=None):
-    import sys
-    test_classes = (
-        TestBasic,
-        TestVariousIteratorArgs,
-        TestSubclass,
-        TestSubclassWithKwargs,
-        TestSequence,
-    )
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-    # doctests
-    from test import test_deque
-    support.run_doctest(test_deque, verbose)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

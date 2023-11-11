@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 PyDoc_STRVAR(_io_open__doc__,
 "open($module, /, file, mode=\'r\', buffering=-1, encoding=None,\n"
 "     errors=None, newline=None, closefd=True, opener=None)\n"
@@ -22,9 +28,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'a\' for appending (which on some Unix systems, means that all writes\n"
 "append to the end of the file regardless of the current seek position).\n"
 "In text mode, if encoding is not specified the encoding used is platform\n"
-"dependent: locale.getpreferredencoding(False) is called to get the\n"
-"current locale encoding. (For reading and writing raw bytes use binary\n"
-"mode and leave encoding unspecified.) The available modes are:\n"
+"dependent: locale.getencoding() is called to get the current locale encoding.\n"
+"(For reading and writing raw bytes use binary mode and leave encoding\n"
+"unspecified.) The available modes are:\n"
 "\n"
 "========= ===============================================================\n"
 "Character Meaning\n"
@@ -36,7 +42,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'b\'       binary mode\n"
 "\'t\'       text mode (default)\n"
 "\'+\'       open a disk file for updating (reading and writing)\n"
-"\'U\'       universal newline mode (deprecated)\n"
 "========= ===============================================================\n"
 "\n"
 "The default mode is \'rt\' (open for reading text). For binary random\n"
@@ -51,10 +56,6 @@ PyDoc_STRVAR(_io_open__doc__,
 "\'t\' is appended to the mode argument), the contents of the file are\n"
 "returned as strings, the bytes having been first decoded using a\n"
 "platform-dependent encoding or using the specified encoding if given.\n"
-"\n"
-"\'U\' mode is deprecated and will raise an exception in future versions\n"
-"of Python.  It has no effect in Python 3.  Use newline to control\n"
-"universal newlines mode.\n"
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to select\n"
@@ -127,7 +128,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "opened in a binary mode.");
 
 #define _IO_OPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))_io_open, METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
+    {"open", _PyCFunction_CAST(_io_open), METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
 
 static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
@@ -138,8 +139,31 @@ static PyObject *
 _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 8
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(file), &_Py_ID(mode), &_Py_ID(buffering), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(newline), &_Py_ID(closefd), &_Py_ID(opener), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "open",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *file;
@@ -178,7 +202,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[2]) {
-        buffering = _PyLong_AsInt(args[2]);
+        buffering = PyLong_AsInt(args[2]);
         if (buffering == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -256,8 +280,8 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[6]) {
-        closefd = _PyLong_AsInt(args[6]);
-        if (closefd == -1 && PyErr_Occurred()) {
+        closefd = PyObject_IsTrue(args[6]);
+        if (closefd < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -278,8 +302,9 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
 "\n"
 "A helper function to choose the text encoding.\n"
 "\n"
-"When encoding is not None, just return it.\n"
-"Otherwise, return the default text encoding (i.e. \"locale\").\n"
+"When encoding is not None, this function returns it.\n"
+"Otherwise, this function returns the default text encoding\n"
+"(i.e. \"locale\" or \"utf-8\" depends on UTF-8 mode).\n"
 "\n"
 "This function emits an EncodingWarning if encoding is None and\n"
 "sys.flags.warn_default_encoding is true.\n"
@@ -288,7 +313,7 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
 "However, please consider using encoding=\"utf-8\" for new APIs.");
 
 #define _IO_TEXT_ENCODING_METHODDEF    \
-    {"text_encoding", (PyCFunction)(void(*)(void))_io_text_encoding, METH_FASTCALL, _io_text_encoding__doc__},
+    {"text_encoding", _PyCFunction_CAST(_io_text_encoding), METH_FASTCALL, _io_text_encoding__doc__},
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel);
@@ -307,7 +332,7 @@ _io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    stacklevel = _PyLong_AsInt(args[1]);
+    stacklevel = PyLong_AsInt(args[1]);
     if (stacklevel == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -328,7 +353,7 @@ PyDoc_STRVAR(_io_open_code__doc__,
 "with calling open(path, \'rb\').");
 
 #define _IO_OPEN_CODE_METHODDEF    \
-    {"open_code", (PyCFunction)(void(*)(void))_io_open_code, METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
+    {"open_code", _PyCFunction_CAST(_io_open_code), METH_FASTCALL|METH_KEYWORDS, _io_open_code__doc__},
 
 static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path);
@@ -337,8 +362,31 @@ static PyObject *
 _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"path", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "open_code", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "open_code",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *path;
 
@@ -350,13 +398,10 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         _PyArg_BadArgument("open_code", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     path = args[0];
     return_value = _io_open_code_impl(module, path);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=06e055d1d80b835d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d60f4e778a600a4 input=a9049054013a1b77]*/

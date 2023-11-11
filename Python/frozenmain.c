@@ -1,8 +1,13 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
-#include "pycore_runtime.h"  // _PyRuntime_Initialize()
-#include <locale.h>
+#include "pycore_pystate.h"       // _Py_GetConfig()
+#include "pycore_runtime.h"       // _PyRuntime_Initialize()
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
+
 
 #ifdef MS_WINDOWS
 extern void PyWinFreeze_ExeInit(void);
@@ -53,7 +58,7 @@ Py_FrozenMain(int argc, char **argv)
     PyWinFreeze_ExeInit();
 #endif
 
-    if (Py_VerboseFlag) {
+    if (_Py_GetConfig()->verbose) {
         fprintf(stderr, "Python %s\n%s\n",
                 Py_GetVersion(), Py_GetCopyright());
     }

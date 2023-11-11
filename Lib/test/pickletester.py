@@ -1,3 +1,4 @@
+import builtins
 import collections
 import copyreg
 import dbm
@@ -11,6 +12,7 @@ import shutil
 import struct
 import sys
 import threading
+import types
 import unittest
 import weakref
 from textwrap import dedent
@@ -828,7 +830,7 @@ def create_data():
     return x
 
 
-class AbstractUnpickleTests(unittest.TestCase):
+class AbstractUnpickleTests:
     # Subclass must define self.loads.
 
     _testdata = create_data()
@@ -1380,6 +1382,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.check_unpickling_error(self.truncated_errors, p)
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_unpickle_module_race(self):
         # https://bugs.python.org/issue34572
         locker_module = dedent("""
@@ -1441,7 +1444,7 @@ class AbstractUnpickleTests(unittest.TestCase):
 
 
 
-class AbstractPickleTests(unittest.TestCase):
+class AbstractPickleTests:
     # Subclass must define self.dumps, self.loads.
 
     optimized = False
@@ -1979,6 +1982,33 @@ class AbstractPickleTests(unittest.TestCase):
                 u = self.loads(s)
                 self.assertIs(type(singleton), u)
 
+    def test_builtin_types(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, type) and not issubclass(t, BaseException):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    self.assertIs(self.loads(s), t)
+
+    def test_builtin_exceptions(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, type) and issubclass(t, BaseException):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    u = self.loads(s)
+                    if proto <= 2 and issubclass(t, OSError) and t is not BlockingIOError:
+                        self.assertIs(u, OSError)
+                    elif proto <= 2 and issubclass(t, ImportError):
+                        self.assertIs(u, ImportError)
+                    else:
+                        self.assertIs(u, t)
+
+    def test_builtin_functions(self):
+        for t in builtins.__dict__.values():
+            if isinstance(t, types.BuiltinFunctionType):
+                for proto in protocols:
+                    s = self.dumps(t, proto)
+                    self.assertIs(self.loads(s), t)
+
     # Tests for protocol 2
 
     def test_proto(self):
@@ -2378,12 +2408,31 @@ class AbstractPickleTests(unittest.TestCase):
             y = self.loads(s)
             self.assertEqual(y._reduce_called, 1)
 
+    def test_reduce_ex_None(self):
+        c = REX_None()
+        with self.assertRaises(TypeError):
+            self.dumps(c)
+
+    def test_reduce_None(self):
+        c = R_None()
+        with self.assertRaises(TypeError):
+            self.dumps(c)
+
+    def test_pickle_setstate_None(self):
+        c = C_None_setstate()
+        p = self.dumps(c)
+        with self.assertRaises(TypeError):
+            self.loads(p)
+
     @no_tracing
     def test_bad_getattr(self):
         # Issue #3514: crash when there is an infinite loop in __getattr__
         x = BadGetattr()
-        for proto in protocols:
-            self.assertRaises(RuntimeError, self.dumps, x, proto)
+        for proto in range(2):
+            with support.infinite_recursion():
+                self.assertRaises(RuntimeError, self.dumps, x, proto)
+        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+            s = self.dumps(x, proto)
 
     def test_reduce_bad_iterator(self):
         # Issue4176: crash when 4th and 5th items of __reduce__()
@@ -2543,6 +2592,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_framing_many_objects(self):
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -2772,6 +2822,15 @@ class AbstractPickleTests(unittest.TestCase):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(obj), unpickled(obj))
 
+        descriptors = (
+            PyMethodsTest.__dict__['cheese'],  # static method descriptor
+            PyMethodsTest.__dict__['wine'],  # class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
+
     def test_c_methods(self):
         global Subclass
         class Subclass(tuple):
@@ -2806,6 +2865,15 @@ class AbstractPickleTests(unittest.TestCase):
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(*args), unpickled(*args))
+
+        descriptors = (
+            bytearray.__dict__['maketrans'],  # built-in static method descriptor
+            dict.__dict__['fromkeys'],  # built-in class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
 
     def test_compat_pickle(self):
         tests = [
@@ -3031,8 +3099,69 @@ class AbstractPickleTests(unittest.TestCase):
         # 2-D, non-contiguous
         check_array(arr[::2])
 
+    def test_evil_class_mutating_dict(self):
+        # https://github.com/python/cpython/issues/92930
+        from random import getrandbits
 
-class BigmemPickleTests(unittest.TestCase):
+        global Bad
+        class Bad:
+            def __eq__(self, other):
+                return ENABLED
+            def __hash__(self):
+                return 42
+            def __reduce__(self):
+                if getrandbits(6) == 0:
+                    collection.clear()
+                return (Bad, ())
+
+        for proto in protocols:
+            for _ in range(20):
+                ENABLED = False
+                collection = {Bad(): Bad() for _ in range(20)}
+                for bad in collection:
+                    bad.bad = bad
+                    bad.collection = collection
+                ENABLED = True
+                try:
+                    data = self.dumps(collection, proto)
+                    self.loads(data)
+                except RuntimeError as e:
+                    expected = "changed size during iteration"
+                    self.assertIn(expected, str(e))
+
+    def test_evil_pickler_mutating_collection(self):
+        # https://github.com/python/cpython/issues/92930
+        if not hasattr(self, "pickler"):
+            raise self.skipTest(f"{type(self)} has no associated pickler type")
+
+        global Clearer
+        class Clearer:
+            pass
+
+        def check(collection):
+            class EvilPickler(self.pickler):
+                def persistent_id(self, obj):
+                    if isinstance(obj, Clearer):
+                        collection.clear()
+                    return None
+            pickler = EvilPickler(io.BytesIO(), proto)
+            try:
+                pickler.dump(collection)
+            except RuntimeError as e:
+                expected = "changed size during iteration"
+                self.assertIn(expected, str(e))
+
+        for proto in protocols:
+            check([Clearer()])
+            check([Clearer(), Clearer()])
+            check({Clearer()})
+            check({Clearer(), Clearer()})
+            check({Clearer(): 1})
+            check({Clearer(): 1, Clearer(): 2})
+            check({1: Clearer(), 2: Clearer()})
+
+
+class BigmemPickleTests:
 
     # Binary protocols can serialize longs of up to 2 GiB-1
 
@@ -3236,6 +3365,21 @@ class REX_state(object):
     def __reduce__(self):
         return type(self), (), self.state
 
+class REX_None:
+    """ Setting __reduce_ex__ to None should fail """
+    __reduce_ex__ = None
+
+class R_None:
+    """ Setting __reduce__ to None should fail """
+    __reduce__ = None
+
+class C_None_setstate:
+    """  Setting __setstate__ to None should fail """
+    def __getstate__(self):
+        return 1
+
+    __setstate__ = None
+
 
 # Test classes for newobj
 
@@ -3305,7 +3449,7 @@ class BadGetattr:
         self.foo
 
 
-class AbstractPickleModuleTests(unittest.TestCase):
+class AbstractPickleModuleTests:
 
     def test_dump_closed_file(self):
         f = open(TESTFN, "wb")
@@ -3412,7 +3556,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.check_dumps_loads_oob_buffers(dumps, loads)
 
 
-class AbstractPersistentPicklerTests(unittest.TestCase):
+class AbstractPersistentPicklerTests:
 
     # This class defines persistent_id() and persistent_load()
     # functions that should be used by the pickler.  All even integers
@@ -3452,7 +3596,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
             self.assertEqual(self.load_false_count, 1)
 
 
-class AbstractIdentityPersistentPicklerTests(unittest.TestCase):
+class AbstractIdentityPersistentPicklerTests:
 
     def persistent_id(self, obj):
         return obj
@@ -3481,7 +3625,7 @@ class AbstractIdentityPersistentPicklerTests(unittest.TestCase):
         self.assertRaises(pickle.UnpicklingError, self.loads, pickled)
 
 
-class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
+class AbstractPicklerUnpicklerObjectTests:
 
     pickler_class = None
     unpickler_class = None
@@ -3639,6 +3783,25 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
                 unpickler = self.unpickler_class(f)
                 self.assertEqual(unpickler.load(), data)
 
+    def test_pickle_invalid_reducer_override(self):
+        # gh-103035
+        obj = object()
+
+        f = io.BytesIO()
+        class MyPickler(self.pickler_class):
+            pass
+        pickler = MyPickler(f)
+        pickler.dump(obj)
+
+        pickler.clear_memo()
+        pickler.reducer_override = None
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
+
+        pickler.clear_memo()
+        pickler.reducer_override = 10
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
 
 # Tests for dispatch_table attribute
 
@@ -3695,7 +3858,7 @@ class AbstractCustomPicklerClass:
 
         return NotImplemented
 
-class AbstractHookTests(unittest.TestCase):
+class AbstractHookTests:
     def test_pickler_hook(self):
         # test the ability of a custom, user-defined CPickler subclass to
         # override the default reducing routines of any type using the method
@@ -3723,7 +3886,7 @@ class AbstractHookTests(unittest.TestCase):
 
                 self.assertEqual(new_f, 5)
                 self.assertEqual(some_str, 'some str')
-                # math.log does not have its usual reducer overriden, so the
+                # math.log does not have its usual reducer overridden, so the
                 # custom reduction callback should silently direct the pickler
                 # to the default pickling by attribute, by returning
                 # NotImplemented
@@ -3740,7 +3903,7 @@ class AbstractHookTests(unittest.TestCase):
     def test_reducer_override_no_reference_cycle(self):
         # bpo-39492: reducer_override used to induce a spurious reference cycle
         # inside the Pickler object, that could prevent all serialized objects
-        # from being garbage-collected without explicity invoking gc.collect.
+        # from being garbage-collected without explicitly invoking gc.collect.
 
         for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -3761,7 +3924,7 @@ class AbstractHookTests(unittest.TestCase):
                 self.assertIsNone(wr())
 
 
-class AbstractDispatchTableTests(unittest.TestCase):
+class AbstractDispatchTableTests:
 
     def test_default_dispatch_table(self):
         # No dispatch_table attribute by default
@@ -3800,6 +3963,15 @@ class AbstractDispatchTableTests(unittest.TestCase):
             return f.getvalue()
 
         self._test_dispatch_table(dumps, dt)
+
+    def test_dispatch_table_None_item(self):
+        # gh-93627
+        obj = object()
+        f = io.BytesIO()
+        pickler = self.pickler_class(f)
+        pickler.dispatch_table = {type(obj): None}
+        with self.assertRaises(TypeError):
+            pickler.dump(obj)
 
     def _test_dispatch_table(self, dumps, dispatch_table):
         def custom_load_dump(obj):

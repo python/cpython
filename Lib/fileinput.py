@@ -217,15 +217,10 @@ class FileInput:
                           EncodingWarning, 2)
 
         # restrict mode argument to reading modes
-        if mode not in ('r', 'rU', 'U', 'rb'):
-            raise ValueError("FileInput opening mode must be one of "
-                             "'r', 'rU', 'U' and 'rb'")
-        if 'U' in mode:
-            import warnings
-            warnings.warn("'U' mode is deprecated",
-                          DeprecationWarning, 2)
+        if mode not in ('r', 'rb'):
+            raise ValueError("FileInput opening mode must be 'r' or 'rb'")
         self._mode = mode
-        self._write_mode = mode.replace('r', 'w') if 'U' not in mode else 'w'
+        self._write_mode = mode.replace('r', 'w')
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")
@@ -261,21 +256,6 @@ class FileInput:
                 raise StopIteration
             self.nextfile()
             # repeat with next file
-
-    def __getitem__(self, i):
-        import warnings
-        warnings.warn(
-            "Support for indexing FileInput objects is deprecated. "
-            "Use iterator protocol instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        if i != self.lineno():
-            raise RuntimeError("accessing lines out of order")
-        try:
-            return self.__next__()
-        except StopIteration:
-            raise IndexError("end of input reached")
 
     def nextfile(self):
         savestdout = self._savestdout
@@ -355,18 +335,21 @@ class FileInput:
                     pass
                 # The next few lines may raise OSError
                 os.rename(self._filename, self._backupfilename)
-                self._file = open(self._backupfilename, self._mode, encoding=encoding)
+                self._file = open(self._backupfilename, self._mode,
+                                  encoding=encoding, errors=self._errors)
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, self._write_mode, encoding=encoding)
+                    self._output = open(self._filename, self._write_mode,
+                                        encoding=encoding, errors=self._errors)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, self._write_mode, encoding=encoding)
+                    self._output = os.fdopen(fd, self._write_mode,
+                                             encoding=encoding, errors=self._errors)
                     try:
                         os.chmod(self._filename, perm)
                     except OSError:
@@ -416,7 +399,7 @@ class FileInput:
 
 
 def hook_compressed(filename, mode, *, encoding=None, errors=None):
-    if encoding is None:  # EncodingWarning is emitted in FileInput() already.
+    if encoding is None and "b" not in mode:  # EncodingWarning is emitted in FileInput() already.
         encoding = "locale"
     ext = os.path.splitext(filename)[1]
     if ext == '.gz':

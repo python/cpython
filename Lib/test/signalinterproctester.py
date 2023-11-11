@@ -1,3 +1,4 @@
+import gc
 import os
 import signal
 import subprocess
@@ -28,16 +29,15 @@ class InterProcessSignalTests(unittest.TestCase):
             # (if set)
             child.wait()
 
-        timeout = support.SHORT_TIMEOUT
-        deadline = time.monotonic() + timeout
-
-        while time.monotonic() < deadline:
+        start_time = time.monotonic()
+        for _ in support.busy_retry(support.SHORT_TIMEOUT, error=False):
             if self.got_signals[signame]:
                 return
             signal.pause()
-
-        self.fail('signal %s not received after %s seconds'
-                  % (signame, timeout))
+        else:
+            dt = time.monotonic() - start_time
+            self.fail('signal %s not received after %.1f seconds'
+                      % (signame, dt))
 
     def subprocess_send_signal(self, pid, signame):
         code = 'import os, signal; os.kill(%s, signal.%s)' % (pid, signame)
@@ -59,6 +59,13 @@ class InterProcessSignalTests(unittest.TestCase):
             self.wait_signal(child, 'SIGHUP')
         self.assertEqual(self.got_signals, {'SIGHUP': 1, 'SIGUSR1': 0,
                                             'SIGALRM': 0})
+
+        # gh-110033: Make sure that the subprocess.Popen is deleted before
+        # the next test which raises an exception. Otherwise, the exception
+        # may be raised when Popen.__del__() is executed and so be logged
+        # as "Exception ignored in: <function Popen.__del__ at ...>".
+        child = None
+        gc.collect()
 
         with self.assertRaises(SIGUSR1Exception):
             with self.subprocess_send_signal(pid, "SIGUSR1") as child:
