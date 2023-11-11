@@ -384,7 +384,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
 };
 
-/* TO DO -- Generate this table */
+/* TO DO -- Generate these tables */
 static const uint16_t
 _PyUop_Replacements[OPCODE_METADATA_SIZE] = {
     [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
@@ -764,6 +764,16 @@ done:
 #define SET_BIT(array, bit) (array[(bit)>>5] |= (1<<((bit)&31)))
 #define BIT_IS_SET(array, bit) (array[(bit)>>5] & (1<<((bit)&31)))
 
+static bool
+is_branch(opcode) {
+    /* Currently there are no jumps in the buffer,
+     * but we expect the optimizer to add them
+     * in the future. */
+    assert(opcode != _POP_JUMP_IF_FALSE &&
+           opcode != _POP_JUMP_IF_TRUE);
+    return false;
+}
+
 /* Count the number of used uops, and mark them in the bit vector `used`.
  * This can be done in a single pass using simple reachability analysis,
  * as there are no backward jumps.
@@ -785,16 +795,13 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
         }
         /* All other micro-ops fall through, so i+1 is reachable */
         SET_BIT(used, i+1);
-        switch(opcode) {
-            case NOP:
-                /* Don't count NOPs as used */
-                count--;
-                UNSET_BIT(used, i);
-                break;
-            case _POP_JUMP_IF_FALSE:
-            case _POP_JUMP_IF_TRUE:
-                /* Mark target as reachable */
-                SET_BIT(used, buffer[i].oparg);
+        if (is_branch(opcode)) {
+            /* Mark target as reachable */
+            SET_BIT(used, buffer[i].oparg);
+        }
+        if (opcode == NOP) {
+            count--;
+            UNSET_BIT(used, i);
         }
     }
     return count;
