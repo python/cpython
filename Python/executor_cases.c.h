@@ -3236,10 +3236,7 @@
         case _GUARD_IS_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
-            if (!Py_IsNone(val)) {
-                Py_DECREF(val);
-                DEOPT_IF(true, _GUARD_IS_NONE_POP);
-            }
+            DEOPT_IF(!Py_IsNone(val), _GUARD_IS_NONE_POP);
             STACK_SHRINK(1);
             break;
         }
@@ -3247,12 +3244,8 @@
         case _GUARD_IS_NOT_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
-            if (Py_IsNone(val)) {
-                DEOPT_IF(true, _GUARD_IS_NOT_NONE_POP);
-            }
-            else {
-                Py_DECREF(val);
-            }
+            DEOPT_IF(Py_IsNone(val), _GUARD_IS_NOT_NONE_POP);
+            Py_DECREF(val);
             STACK_SHRINK(1);
             break;
         }
@@ -3292,6 +3285,12 @@
             // Inserts TOS at position specified by oparg;
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
             stack_pointer[-1 - oparg] = top;
+            break;
+        }
+
+        case _CHECK_VALIDITY: {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->base.vm_data.valid, _CHECK_VALIDITY);
             break;
         }
 

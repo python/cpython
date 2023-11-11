@@ -45,8 +45,7 @@ import weakref
 import types
 
 from test.support import captured_stderr, cpython_only, infinite_recursion
-from test import mod_generics_cache
-from test import _typed_dict_helper
+from test.typinganndata import mod_generics_cache, _typed_dict_helper
 
 
 CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'

@@ -1020,13 +1020,8 @@ io_check_errors(PyObject *errors)
         return 0;
     }
 
-    Py_ssize_t name_length;
-    const char *name = PyUnicode_AsUTF8AndSize(errors, &name_length);
+    const char *name = _PyUnicode_AsUTF8NoNUL(errors);
     if (name == NULL) {
-        return -1;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character in errors");
         return -1;
     }
     PyObject *handler = PyCodec_LookupError(name);
