@@ -25,6 +25,8 @@ try:
 except ImportError:
     gzip = None
 
+support.requires_working_socket(module=True)
+
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
           'anint': 2**20,
@@ -287,6 +289,16 @@ class XMLRPCTestCase(unittest.TestCase):
         check('<bigdecimal>9876543210.0123456789</bigdecimal>',
               decimal.Decimal('9876543210.0123456789'))
 
+    def test_limit_int(self):
+        check = self.check_loads
+        maxdigits = 5000
+        with support.adjust_int_max_str_digits(maxdigits):
+            s = '1' * (maxdigits + 1)
+            with self.assertRaises(ValueError):
+                check(f'<int>{s}</int>', None)
+            with self.assertRaises(ValueError):
+                check(f'<biginteger>{s}</biginteger>', None)
+
     def test_get_host_info(self):
         # see bug #3613, this raised a TypeError
         transp = xmlrpc.client.Transport()
@@ -492,9 +504,15 @@ class DateTimeTestCase(unittest.TestCase):
         self.assertEqual(str(t), time.strftime("%Y%m%dT%H:%M:%S", d))
 
     def test_datetime_datetime(self):
+        # naive (no tzinfo)
         d = datetime.datetime(2007,1,2,3,4,5)
         t = xmlrpclib.DateTime(d)
         self.assertEqual(str(t), '20070102T03:04:05')
+
+        # aware (with tzinfo): the timezone is ignored
+        d = datetime.datetime(2023, 6, 12, 13, 30, tzinfo=datetime.UTC)
+        t = xmlrpclib.DateTime(d)
+        self.assertEqual(str(t), '20230612T13:30:00')
 
     def test_repr(self):
         d = datetime.datetime(2007,1,2,3,4,5)
@@ -561,7 +579,7 @@ class DateTimeTestCase(unittest.TestCase):
 
 class BinaryTestCase(unittest.TestCase):
 
-    # XXX What should str(Binary(b"\xff")) return?  I'm chosing "\xff"
+    # XXX What should str(Binary(b"\xff")) return?  I'm choosing "\xff"
     # for now (i.e. interpreting the binary data as Latin-1-encoded
     # text).  But this feels very unsatisfactory.  Perhaps we should
     # only define repr(), and return r"Binary(b'\xff')" instead?
@@ -1019,38 +1037,47 @@ class MultiPathServerTestCase(BaseServerTestCase):
         self.assertEqual(p.add(6,8), 6+8)
         self.assertRaises(xmlrpclib.Fault, p.pow, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_path3(self):
         p = xmlrpclib.ServerProxy(URL+"/is/broken")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_invalid_path(self):
         p = xmlrpclib.ServerProxy(URL+"/invalid")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_path_query_fragment(self):
         p = xmlrpclib.ServerProxy(URL+"/foo?k=v#frag")
         self.assertEqual(p.test(), "/foo?k=v#frag")
 
+    @support.requires_resource('walltime')
     def test_path_fragment(self):
         p = xmlrpclib.ServerProxy(URL+"/foo#frag")
         self.assertEqual(p.test(), "/foo#frag")
 
+    @support.requires_resource('walltime')
     def test_path_query(self):
         p = xmlrpclib.ServerProxy(URL+"/foo?k=v")
         self.assertEqual(p.test(), "/foo?k=v")
 
+    @support.requires_resource('walltime')
     def test_empty_path(self):
         p = xmlrpclib.ServerProxy(URL)
         self.assertEqual(p.test(), "/RPC2")
 
+    @support.requires_resource('walltime')
     def test_root_path(self):
         p = xmlrpclib.ServerProxy(URL + "/")
         self.assertEqual(p.test(), "/")
 
+    @support.requires_resource('walltime')
     def test_empty_path_query(self):
         p = xmlrpclib.ServerProxy(URL + "?k=v")
         self.assertEqual(p.test(), "?k=v")
 
+    @support.requires_resource('walltime')
     def test_empty_path_fragment(self):
         p = xmlrpclib.ServerProxy(URL + "#frag")
         self.assertEqual(p.test(), "#frag")
@@ -1504,16 +1531,10 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
-@threading_helper.reap_threads
-def test_main():
-    support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
-            BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
-            SimpleServerTestCase, SimpleServerEncodingTestCase,
-            KeepaliveServerTestCase1, KeepaliveServerTestCase2,
-            GzipServerTestCase, GzipUtilTestCase, HeadersServerTestCase,
-            MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
-            CGIHandlerTestCase, SimpleXMLRPCDispatcherTestCase)
+def setUpModule():
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

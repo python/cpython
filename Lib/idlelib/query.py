@@ -83,6 +83,7 @@ class Query(Toplevel):
 
         if not _utest:
             self.deiconify()  # Unhide now that geometry set.
+            self.entry.focus_set()
             self.wait_window()
 
     def create_widgets(self, ok_text='OK'):  # Do not replace.
@@ -100,7 +101,6 @@ class Query(Toplevel):
                            text=self.message)
         self.entryvar = StringVar(self, self.text0)
         self.entry = Entry(frame, width=30, textvariable=self.entryvar)
-        self.entry.focus_set()
         self.error_font = Font(name='TkCaptionFont',
                                exists=True, root=self.parent)
         self.entry_error = Label(frame, text=' ', foreground='red',

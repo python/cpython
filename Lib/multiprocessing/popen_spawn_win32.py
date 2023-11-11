@@ -14,6 +14,7 @@ __all__ = ['Popen']
 #
 #
 
+# Exit code used by Popen.terminate()
 TERMINATE = 0x10000
 WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
 WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
@@ -54,18 +55,19 @@ class Popen(object):
         wfd = msvcrt.open_osfhandle(whandle, 0)
         cmd = spawn.get_command_line(parent_pid=os.getpid(),
                                      pipe_handle=rhandle)
-        cmd = ' '.join('"%s"' % x for x in cmd)
 
         python_exe = spawn.get_executable()
 
         # bpo-35797: When running in a venv, we bypass the redirect
         # executor and launch our base Python.
         if WINENV and _path_eq(python_exe, sys.executable):
-            python_exe = sys._base_executable
+            cmd[0] = python_exe = sys._base_executable
             env = os.environ.copy()
             env["__PYVENV_LAUNCHER__"] = sys.executable
         else:
             env = None
+
+        cmd = ' '.join('"%s"' % x for x in cmd)
 
         with open(wfd, 'wb', closefd=True) as to_child:
             # start process
@@ -121,9 +123,15 @@ class Popen(object):
         if self.returncode is None:
             try:
                 _winapi.TerminateProcess(int(self._handle), TERMINATE)
-            except OSError:
-                if self.wait(timeout=1.0) is None:
+            except PermissionError:
+                # ERROR_ACCESS_DENIED (winerror 5) is received when the
+                # process already died.
+                code = _winapi.GetExitCodeProcess(int(self._handle))
+                if code == _winapi.STILL_ACTIVE:
                     raise
+                self.returncode = code
+            else:
+                self.returncode = -signal.SIGTERM
 
     kill = terminate
 

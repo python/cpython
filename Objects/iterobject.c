@@ -1,15 +1,16 @@
 /* Iterator objects */
 
 #include "Python.h"
-#include "pycore_object.h"
+#include "pycore_abstract.h"      // _PyObject_HasLen()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 typedef struct {
     PyObject_HEAD
     Py_ssize_t it_index;
     PyObject *it_seq; /* Set to NULL when iterator is exhausted */
 } seqiterobject;
-
-_Py_IDENTIFIER(iter);
 
 PyObject *
 PySeqIter_New(PyObject *seq)
@@ -24,8 +25,7 @@ PySeqIter_New(PyObject *seq)
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = seq;
+    it->it_seq = Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -104,11 +104,16 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL)
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", iter);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -184,10 +189,8 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
     it = PyObject_GC_New(calliterobject, &PyCallIter_Type);
     if (it == NULL)
         return NULL;
-    Py_INCREF(callable);
-    it->it_callable = callable;
-    Py_INCREF(sentinel);
-    it->it_sentinel = sentinel;
+    it->it_callable = Py_NewRef(callable);
+    it->it_sentinel = Py_NewRef(sentinel);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -217,8 +220,8 @@ calliter_iternext(calliterobject *it)
         return NULL;
     }
 
-    result = _PyObject_CallNoArg(it->it_callable);
-    if (result != NULL) {
+    result = _PyObject_CallNoArgs(it->it_callable);
+    if (result != NULL && it->it_sentinel != NULL){
         int ok;
 
         ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
@@ -226,7 +229,6 @@ calliter_iternext(calliterobject *it)
             return result; /* Common case, fast path */
         }
 
-        Py_DECREF(result);
         if (ok > 0) {
             Py_CLEAR(it->it_callable);
             Py_CLEAR(it->it_sentinel);
@@ -237,17 +239,23 @@ calliter_iternext(calliterobject *it)
         Py_CLEAR(it->it_callable);
         Py_CLEAR(it->it_sentinel);
     }
+    Py_XDECREF(result);
     return NULL;
 }
 
 static PyObject *
 calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_iter),
-                             it->it_callable, it->it_sentinel);
+        return Py_BuildValue("N(OO)", iter, it->it_callable, it->it_sentinel);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", iter);
 }
 
 static PyMethodDef calliter_methods[] = {
@@ -314,6 +322,36 @@ anextawaitable_traverse(anextawaitableobject *obj, visitproc visit, void *arg)
 }
 
 static PyObject *
+anextawaitable_getiter(anextawaitableobject *obj)
+{
+    assert(obj->wrapped != NULL);
+    PyObject *awaitable = _PyCoro_GetAwaitableIter(obj->wrapped);
+    if (awaitable == NULL) {
+        return NULL;
+    }
+    if (Py_TYPE(awaitable)->tp_iternext == NULL) {
+        /* _PyCoro_GetAwaitableIter returns a Coroutine, a Generator,
+         * or an iterator. Of these, only coroutines lack tp_iternext.
+         */
+        assert(PyCoro_CheckExact(awaitable));
+        unaryfunc getter = Py_TYPE(awaitable)->tp_as_async->am_await;
+        PyObject *new_awaitable = getter(awaitable);
+        if (new_awaitable == NULL) {
+            Py_DECREF(awaitable);
+            return NULL;
+        }
+        Py_SETREF(awaitable, new_awaitable);
+        if (!PyIter_Check(awaitable)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "__await__ returned a non-iterable");
+            Py_DECREF(awaitable);
+            return NULL;
+        }
+    }
+    return awaitable;
+}
+
+static PyObject *
 anextawaitable_iternext(anextawaitableobject *obj)
 {
     /* Consider the following class:
@@ -336,29 +374,9 @@ anextawaitable_iternext(anextawaitableobject *obj)
      * Then `await anext(gen)` can just call
      * gen.__anext__().__next__()
      */
-    assert(obj->wrapped != NULL);
-    PyObject *awaitable = _PyCoro_GetAwaitableIter(obj->wrapped);
+    PyObject *awaitable = anextawaitable_getiter(obj);
     if (awaitable == NULL) {
         return NULL;
-    }
-    if (Py_TYPE(awaitable)->tp_iternext == NULL) {
-        /* _PyCoro_GetAwaitableIter returns a Coroutine, a Generator,
-         * or an iterator. Of these, only coroutines lack tp_iternext.
-         */
-        assert(PyCoro_CheckExact(awaitable));
-        unaryfunc getter = Py_TYPE(awaitable)->tp_as_async->am_await;
-        PyObject *new_awaitable = getter(awaitable);
-        if (new_awaitable == NULL) {
-            Py_DECREF(awaitable);
-            return NULL;
-        }
-        Py_SETREF(awaitable, new_awaitable);
-        if (Py_TYPE(awaitable)->tp_iternext == NULL) {
-            PyErr_SetString(PyExc_TypeError,
-                            "__await__ returned a non-iterable");
-            Py_DECREF(awaitable);
-            return NULL;
-        }
     }
     PyObject *result = (*Py_TYPE(awaitable)->tp_iternext)(awaitable);
     Py_DECREF(awaitable);
@@ -370,6 +388,75 @@ anextawaitable_iternext(anextawaitableobject *obj)
     }
     return NULL;
 }
+
+
+static PyObject *
+anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg) {
+    PyObject *awaitable = anextawaitable_getiter(obj);
+    if (awaitable == NULL) {
+        return NULL;
+    }
+    PyObject *ret = PyObject_CallMethod(awaitable, meth, "O", arg);
+    Py_DECREF(awaitable);
+    if (ret != NULL) {
+        return ret;
+    }
+    if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration)) {
+        /* `anextawaitableobject` is only used by `anext()` when
+         * a default value is provided. So when we have a StopAsyncIteration
+         * exception we replace it with a `StopIteration(default)`, as if
+         * it was the return value of `__anext__()` coroutine.
+         */
+        _PyGen_SetStopIterationValue(obj->default_value);
+    }
+    return NULL;
+}
+
+
+static PyObject *
+anextawaitable_send(anextawaitableobject *obj, PyObject *arg) {
+    return anextawaitable_proxy(obj, "send", arg);
+}
+
+
+static PyObject *
+anextawaitable_throw(anextawaitableobject *obj, PyObject *arg) {
+    return anextawaitable_proxy(obj, "throw", arg);
+}
+
+
+static PyObject *
+anextawaitable_close(anextawaitableobject *obj, PyObject *arg) {
+    return anextawaitable_proxy(obj, "close", arg);
+}
+
+
+PyDoc_STRVAR(send_doc,
+"send(arg) -> send 'arg' into the wrapped iterator,\n\
+return next yielded value or raise StopIteration.");
+
+
+PyDoc_STRVAR(throw_doc,
+"throw(value)\n\
+throw(typ[,val[,tb]])\n\
+\n\
+raise exception in the wrapped iterator, return next yielded value\n\
+or raise StopIteration.\n\
+the (type, val, tb) signature is deprecated, \n\
+and may be removed in a future version of Python.");
+
+
+PyDoc_STRVAR(close_doc,
+"close() -> raise GeneratorExit inside generator.");
+
+
+static PyMethodDef anextawaitable_methods[] = {
+    {"send",(PyCFunction)anextawaitable_send, METH_O, send_doc},
+    {"throw",(PyCFunction)anextawaitable_throw, METH_VARARGS, throw_doc},
+    {"close",(PyCFunction)anextawaitable_close, METH_VARARGS, close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
 
 static PyAsyncMethods anextawaitable_as_async = {
     PyObject_SelfIter,                          /* am_await */
@@ -407,7 +494,7 @@ PyTypeObject _PyAnextAwaitable_Type = {
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
     (unaryfunc)anextawaitable_iternext,         /* tp_iternext */
-    0,                                          /* tp_methods */
+    anextawaitable_methods,                     /* tp_methods */
 };
 
 PyObject *
@@ -418,10 +505,8 @@ PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
     if (anext == NULL) {
         return NULL;
     }
-    Py_INCREF(awaitable);
-    anext->wrapped = awaitable;
-    Py_INCREF(default_value);
-    anext->default_value = default_value;
+    anext->wrapped = Py_NewRef(awaitable);
+    anext->default_value = Py_NewRef(default_value);
     _PyObject_GC_TRACK(anext);
     return (PyObject *)anext;
 }

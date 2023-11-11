@@ -41,32 +41,22 @@ def translate_key(key, modifiers):
     return f'Key-{key}'
 
 
-class GetKeysDialog(Toplevel):
+class GetKeysFrame(Frame):
 
     # Dialog title for invalid key sequence
     keyerror_title = 'Key Sequence Error'
 
-    def __init__(self, parent, title, action, current_key_sequences,
-                 *, _htest=False, _utest=False):
+    def __init__(self, parent, action, current_key_sequences):
         """
         parent - parent of this dialog
-        title - string which is the title of the popup dialog
-        action - string, the name of the virtual event these keys will be
+        action - the name of the virtual event these keys will be
                  mapped to
-        current_key_sequences - list, a list of all key sequence lists
+        current_key_sequences - a list of all key sequence lists
                  currently mapped to virtual events, for overlap checking
-        _htest - bool, change box location when running htest
-        _utest - bool, do not wait when running unittest
         """
-        Toplevel.__init__(self, parent)
-        self.withdraw()  # Hide while setting geometry.
-        self.configure(borderwidth=5)
-        self.resizable(height=False, width=False)
-        self.title(title)
-        self.transient(parent)
-        _setup_dialog(self)
-        self.grab_set()
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        super().__init__(parent)
+        self['borderwidth'] = 2
+        self['relief'] = 'sunken'
         self.parent = parent
         self.action = action
         self.current_key_sequences = current_key_sequences
@@ -82,39 +72,14 @@ class GetKeysDialog(Toplevel):
             self.modifier_vars.append(variable)
         self.advanced = False
         self.create_widgets()
-        self.update_idletasks()
-        self.geometry(
-                "+%d+%d" % (
-                    parent.winfo_rootx() +
-                    (parent.winfo_width()/2 - self.winfo_reqwidth()/2),
-                    parent.winfo_rooty() +
-                    ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
-                    if not _htest else 150)
-                ) )  # Center dialog over parent (or below htest box).
-        if not _utest:
-            self.deiconify()  # Geometry set, unhide.
-            self.wait_window()
 
     def showerror(self, *args, **kwargs):
         # Make testing easier.  Replace in #30751.
         messagebox.showerror(*args, **kwargs)
 
     def create_widgets(self):
-        self.frame = frame = Frame(self, borderwidth=2, relief='sunken')
-        frame.pack(side='top', expand=True, fill='both')
-
-        frame_buttons = Frame(self)
-        frame_buttons.pack(side='bottom', fill='x')
-
-        self.button_ok = Button(frame_buttons, text='OK',
-                                width=8, command=self.ok)
-        self.button_ok.grid(row=0, column=0, padx=5, pady=5)
-        self.button_cancel = Button(frame_buttons, text='Cancel',
-                                   width=8, command=self.cancel)
-        self.button_cancel.grid(row=0, column=1, padx=5, pady=5)
-
         # Basic entry key sequence.
-        self.frame_keyseq_basic = Frame(frame, name='keyseq_basic')
+        self.frame_keyseq_basic = Frame(self, name='keyseq_basic')
         self.frame_keyseq_basic.grid(row=0, column=0, sticky='nsew',
                                       padx=5, pady=5)
         basic_title = Label(self.frame_keyseq_basic,
@@ -127,7 +92,7 @@ class GetKeysDialog(Toplevel):
         basic_keys.pack(ipadx=5, ipady=5, fill='x')
 
         # Basic entry controls.
-        self.frame_controls_basic = Frame(frame)
+        self.frame_controls_basic = Frame(self)
         self.frame_controls_basic.grid(row=1, column=0, sticky='nsew', padx=5)
 
         # Basic entry modifiers.
@@ -169,7 +134,7 @@ class GetKeysDialog(Toplevel):
         self.button_clear.grid(row=2, column=0, columnspan=4)
 
         # Advanced entry key sequence.
-        self.frame_keyseq_advanced = Frame(frame, name='keyseq_advanced')
+        self.frame_keyseq_advanced = Frame(self, name='keyseq_advanced')
         self.frame_keyseq_advanced.grid(row=0, column=0, sticky='nsew',
                                          padx=5, pady=5)
         advanced_title = Label(self.frame_keyseq_advanced, justify='left',
@@ -181,7 +146,7 @@ class GetKeysDialog(Toplevel):
         self.advanced_keys.pack(fill='x')
 
         # Advanced entry help text.
-        self.frame_help_advanced = Frame(frame)
+        self.frame_help_advanced = Frame(self)
         self.frame_help_advanced.grid(row=1, column=0, sticky='nsew', padx=5)
         help_advanced = Label(self.frame_help_advanced, justify='left',
             text="Key bindings are specified using Tkinter keysyms as\n"+
@@ -196,7 +161,7 @@ class GetKeysDialog(Toplevel):
         help_advanced.grid(row=0, column=0, sticky='nsew')
 
         # Switch between basic and advanced.
-        self.button_level = Button(frame, command=self.toggle_level,
+        self.button_level = Button(self, command=self.toggle_level,
                                   text='<< Basic Key Binding Entry')
         self.button_level.grid(row=2, column=0, stick='ew', padx=5, pady=5)
         self.toggle_level()
@@ -257,7 +222,8 @@ class GetKeysDialog(Toplevel):
             variable.set('')
         self.key_string.set('')
 
-    def ok(self, event=None):
+    def ok(self):
+        self.result = ''
         keys = self.key_string.get().strip()
         if not keys:
             self.showerror(title=self.keyerror_title, parent=self,
@@ -265,13 +231,7 @@ class GetKeysDialog(Toplevel):
             return
         if (self.advanced or self.keys_ok(keys)) and self.bind_ok(keys):
             self.result = keys
-        self.grab_release()
-        self.destroy()
-
-    def cancel(self, event=None):
-        self.result = ''
-        self.grab_release()
-        self.destroy()
+        return
 
     def keys_ok(self, keys):
         """Validity check on user's 'basic' keybinding selection.
@@ -317,6 +277,73 @@ class GetKeysDialog(Toplevel):
         else:
             self.unbind(keys, binding)
             return True
+
+
+class GetKeysWindow(Toplevel):
+
+    def __init__(self, parent, title, action, current_key_sequences,
+                 *, _htest=False, _utest=False):
+        """
+        parent - parent of this dialog
+        title - string which is the title of the popup dialog
+        action - string, the name of the virtual event these keys will be
+                 mapped to
+        current_key_sequences - list, a list of all key sequence lists
+                 currently mapped to virtual events, for overlap checking
+        _htest - bool, change box location when running htest
+        _utest - bool, do not wait when running unittest
+        """
+        super().__init__(parent)
+        self.withdraw()  # Hide while setting geometry.
+        self['borderwidth'] = 5
+        self.resizable(height=False, width=False)
+        # Needed for winfo_reqwidth().
+        self.update_idletasks()
+        # Center dialog over parent (or below htest box).
+        x = (parent.winfo_rootx() +
+             (parent.winfo_width()//2 - self.winfo_reqwidth()//2))
+        y = (parent.winfo_rooty() +
+             ((parent.winfo_height()//2 - self.winfo_reqheight()//2)
+              if not _htest else 150))
+        self.geometry(f"+{x}+{y}")
+
+        self.title(title)
+        self.frame = frame = GetKeysFrame(self, action, current_key_sequences)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        frame_buttons = Frame(self)
+        self.button_ok = Button(frame_buttons, text='OK',
+                                width=8, command=self.ok)
+        self.button_cancel = Button(frame_buttons, text='Cancel',
+                                   width=8, command=self.cancel)
+        self.button_ok.grid(row=0, column=0, padx=5, pady=5)
+        self.button_cancel.grid(row=0, column=1, padx=5, pady=5)
+        frame.pack(side='top', expand=True, fill='both')
+        frame_buttons.pack(side='bottom', fill='x')
+
+        self.transient(parent)
+        _setup_dialog(self)
+        self.grab_set()
+        if not _utest:
+            self.deiconify()  # Geometry set, unhide.
+            self.wait_window()
+
+    @property
+    def result(self):
+        return self.frame.result
+
+    @result.setter
+    def result(self, value):
+        self.frame.result = value
+
+    def ok(self, event=None):
+        self.frame.ok()
+        self.grab_release()
+        self.destroy()
+
+    def cancel(self, event=None):
+        self.result = ''
+        self.grab_release()
+        self.destroy()
 
 
 if __name__ == '__main__':
