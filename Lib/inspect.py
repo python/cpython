@@ -2281,9 +2281,13 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         if annotation:
             expr = ast.unparse(annotation)
             try:
-                return eval(expr, sys_module_dict)
+                value = eval(expr, module_dict)
             except NameError:
-                raise ValueError
+                try:
+                    value = eval(expr, sys_module_dict)
+                except NameError:
+                    raise ValueError
+            return value
         return empty
 
     def wrap_value(s):

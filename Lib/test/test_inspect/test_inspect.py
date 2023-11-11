@@ -4810,6 +4810,8 @@ class TestSignatureDefinitions(unittest.TestCase):
         self.assertEqual(str(sig), '(raw, buffer_size=8192)')
 
     def test_annotations_in_text_signature(self):
+        import fractions
+
         def func(*args, **kwargs):
             pass
 
@@ -4828,13 +4830,18 @@ class TestSignatureDefinitions(unittest.TestCase):
         self.assertIsNotNone(sig)
         self.assertEqual(str(sig), '(self, /, a: tuple[int, ...])')
 
-        func.__text_signature__ = '(self, x: spam)'
+        func.__text_signature__ = '($self, x: spam)'
         with self.assertRaises(ValueError):
             inspect.signature(func)
 
-        func.__text_signature__ = '(self, x) -> spam'
+        func.__text_signature__ = '($self, x) -> spam'
         with self.assertRaises(ValueError):
             inspect.signature(func)
+
+        func.__text_signature__ = '($self, x) -> fractions.Fraction'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, x) -> fractions.Fraction')
 
 
 class NTimesUnwrappable:
