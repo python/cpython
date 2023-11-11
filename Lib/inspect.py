@@ -2278,12 +2278,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         assert isinstance(node, ast.arg)
         return node.arg
 
-    def parse_annotation(node):
-        assert isinstance(node, (ast.arg, ast.FunctionDef))
-        if isinstance(node, ast.arg):
-            annotation = node.annotation
-        else:
-            annotation = node.returns
+    def parse_annotation(annotation):
         if annotation:
             expr = ast.unparse(annotation)
             try:
@@ -2347,7 +2342,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except ValueError:
                 raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
         try:
-            annotation = parse_annotation(name_node)
+            annotation = parse_annotation(name_node.annotation)
         except ValueError:
             raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
         parameters.append(Parameter(name, kind, default=default, annotation=annotation))
@@ -2398,7 +2393,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             parameters[0] = p
 
     try:
-        return_annotation = parse_annotation(f)
+        return_annotation = parse_annotation(f.returns)
     except ValueError:
         raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
 
