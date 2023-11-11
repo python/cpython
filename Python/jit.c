@@ -119,17 +119,23 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
         case HoleKind_R_X86_64_GOTPCRELX:
         case HoleKind_R_X86_64_PC32:
         case HoleKind_R_X86_64_PLT32:
-        case HoleKind_R_X86_64_REX_GOTPCRELX: {
+        case HoleKind_R_X86_64_REX_GOTPCRELX:
+        case HoleKind_X86_64_RELOC_BRANCH: 
+        case HoleKind_X86_64_RELOC_GOT:
+        case HoleKind_X86_64_RELOC_GOT_LOAD: {
             patch -= (uintptr_t)location;
             *addr = (uint32_t)patch;
             return;
         }
+        case HoleKind_ARM64_RELOC_UNSIGNED:
         case HoleKind_IMAGE_REL_AMD64_ADDR64:
         case HoleKind_R_AARCH64_ABS64:
-        case HoleKind_R_X86_64_64: {
+        case HoleKind_R_X86_64_64: 
+        case HoleKind_X86_64_RELOC_UNSIGNED:{
             *(uint64_t *)addr = patch;
             return;
         }
+        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
         case HoleKind_R_AARCH64_ADR_GOT_PAGE: {
             patch = ((patch >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
             assert((*addr & 0x9F000000) == 0x90000000);
@@ -148,6 +154,7 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
             *addr = (*addr & 0xFC000000) | ((uint32_t)(patch >> 2) & 0x03FFFFFF);
             return;
         }
+        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
         case HoleKind_R_AARCH64_LD64_GOT_LO12_NC: {
             patch &= (1 << 12) - 1;
             assert(((*addr & 0x3B000000) == 0x39000000) ||

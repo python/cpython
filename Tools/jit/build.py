@@ -35,6 +35,9 @@ STUBS = ["deoptimize", "error", "trampoline"]
 
 
 HoleKind: typing.TypeAlias = typing.Literal[
+    "ARM64_RELOC_GOT_LOAD_PAGE21",
+    "ARM64_RELOC_GOT_LOAD_PAGEOFF12",
+    "ARM64_RELOC_UNSIGNED",
     "IMAGE_REL_AMD64_ADDR64",
     "IMAGE_REL_AMD64_REL32",
     "IMAGE_REL_I386_DIR32",
@@ -57,6 +60,10 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "R_X86_64_PC32",
     "R_X86_64_PLT32",
     "R_X86_64_REX_GOTPCRELX",
+    "X86_64_RELOC_BRANCH",
+    "X86_64_RELOC_GOT",
+    "X86_64_RELOC_GOT_LOAD",
+    "X86_64_RELOC_UNSIGNED",
 ]
 
 
@@ -286,6 +293,8 @@ class Parser:
             disassembly = []
         output = await run(self.readobj, *self._ARGS, self.path, capture=True)
         assert output is not None
+        output = output.replace(b"PrivateExtern\n", b"\n") # XXX: MachO
+        output = output.replace(b"Extern\n", b"\n") # XXX: MachO
         start = output.index(b"[", 1)  # XXX: Mach-O, COFF
         end = output.rindex(b"]", start, -1) + 1  # XXX: Mach-O, COFF
         self._data = json.loads(output[start:end])
@@ -375,11 +384,9 @@ class Parser:
             self.data.append(0)
         if symbol is None:
             return len(self.data)
-        symbol = symbol.removeprefix(self.target.prefix)
         return len(self.data) + self.got.setdefault(symbol, 8 * len(self.got))
 
     def _symbol_to_value(self, symbol: str) -> tuple[HoleValue, str | None]:
-        symbol = symbol.removeprefix(self.target.prefix)
         try:
             return HoleValue[symbol], None
         except KeyError:
@@ -399,6 +406,7 @@ class Parser:
                 "Addend": addend,
             }:
                 offset += base
+                s = s.removeprefix(self.target.prefix)
                 value, symbol = HoleValue._JIT_DATA, None
                 addend += self._got_lookup(s)
             case {
@@ -408,6 +416,7 @@ class Parser:
                 "Addend": addend,
             }:
                 offset += base
+                s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)  # XXX
                 addend -= self._got_lookup(None)
             case {
@@ -426,6 +435,7 @@ class Parser:
                 "Addend": addend,
             }:
                 offset += base
+                s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
             case {
                 "Type": {"Value": "R_386_32" | "R_386_PC32" as kind},
@@ -433,6 +443,7 @@ class Parser:
                 "Offset": offset,
             }:
                 offset += base
+                s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
             case {
@@ -441,6 +452,7 @@ class Parser:
                 "Offset": offset,
             }:
                 offset += base
+                s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 8], "little")
             case {
@@ -449,16 +461,65 @@ class Parser:
                 "Offset": offset,
             }:
                 offset += base
+                s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little") - 4  # XXX
+                addend = int.from_bytes(raw[offset : offset + 4], "little") - 4
             case {
                 "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
                 "Symbol": s,
                 "Offset": offset,
             }:
                 offset += base
+                s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
+            case {
+                "Type": {
+                    "Value": "ARM64_RELOC_GOT_LOAD_PAGEOFF12" | "ARM64_RELOC_GOT_LOAD_PAGE21" as kind
+                },
+                "Symbol": {"Value": s},
+                "Offset": offset,
+            }:
+                offset += base
+                s = s.removeprefix(self.target.prefix)
+                value, symbol = HoleValue._JIT_DATA, None
+                addend = self._got_lookup(s)
+            case {
+                "Type": {"Value": kind},
+                "Section": {"Value": s},
+                "Offset": offset,
+            }:
+                offset += base
+                s = s.removeprefix(self.target.prefix)
+                value, symbol = self._symbol_to_value(s)
+                addend = 0
+            case {
+                "Type": {"Value": "X86_64_RELOC_BRANCH" as kind},
+                "Symbol": {"Value": s},
+                "Offset": offset,
+            }:
+                offset += base
+                s = s.removeprefix(self.target.prefix)
+                value, symbol = self._symbol_to_value(s)
+                addend = int.from_bytes(self.body[offset: offset + 4], sys.byteorder) - 4
+            case {
+                 "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
+                 "Symbol": {"Value": s},
+                 "Offset": offset
+             }:
+                offset += base
+                s = s.removeprefix(self.target.prefix)
+                value, symbol = HoleValue._JIT_DATA, None
+                addend = int.from_bytes(raw[offset : offset + 4], "little") + self._got_lookup(s) - 4
+            case {
+                "Type": {"Value": kind},
+                "Symbol": {"Value": s},
+                "Offset": offset,
+            }:
+                offset += base
+                s = s.removeprefix(self.target.prefix)
+                value, symbol = self._symbol_to_value(s)
+                addend = 0
             case _:
                 raise NotImplementedError(relocation)
         return Hole(offset, kind, value, symbol, addend)
@@ -561,7 +622,40 @@ class COFF(Parser):
             return
 
 class MachO(Parser):
-    ...
+    
+    def _handle_section(self, section: SectionType) -> None:
+        assert section["Address"] >= len(self.body)
+        section_data = section["SectionData"]
+        flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
+        name = section["Name"]["Value"]
+        name = name.removeprefix(self.target.prefix)
+        if name == "_eh_frame":
+            return
+        if flags & {"SomeInstructions"}:
+            assert not self.data, self.data
+            self.body.extend([0] * (section["Address"] - len(self.body)))
+            before = self.body_offsets[section["Index"]] = section["Address"]
+            self.body.extend(section_data["Bytes"])
+            self.body_symbols[name] = before
+            for symbol in unwrap(section["Symbols"], "Symbol"):
+                offset = symbol["Value"]
+                name = symbol["Name"]["Value"]
+                name = name.removeprefix(self.target.prefix)
+                self.body_symbols[name] = offset
+            for relocation in unwrap(section["Relocations"], "Relocation"):
+                self.body_relocations.append((before, relocation))
+        else:
+            self.data.extend([0] * (section["Address"] - len(self.data) - len(self.body)))
+            before = self.data_offsets[section["Index"]] = section["Address"] - len(self.body)
+            self.data.extend(section_data["Bytes"])
+            self.data_symbols[name] = len(self.body)
+            for symbol in unwrap(section["Symbols"], "Symbol"):
+                offset = symbol["Value"] - len(self.body)
+                name = symbol["Name"]["Value"]
+                name = name.removeprefix(self.target.prefix)
+                self.data_symbols[name] = offset
+            for relocation in unwrap(section["Relocations"], "Relocation"):
+                self.data_relocations.append((before, relocation))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -640,6 +734,7 @@ CFLAGS = [
     # Position-independent code adds indirection to every load and jump:
     "-fno-pic",
     "-fno-jump-tables",  # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds
+    "-fno-stack-protector",
 ]
 
 CPPFLAGS = [
