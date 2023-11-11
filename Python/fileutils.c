@@ -2,8 +2,11 @@
 #include "pycore_fileutils.h"     // fileutils definitions
 #include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
-#include <locale.h>
+
 #include <stdlib.h>               // mbstowcs()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getcwd()
+#endif
 
 #ifdef MS_WINDOWS
 #  include <malloc.h>
@@ -19,7 +22,7 @@ extern int winerror_to_errno(int);
 #endif
 
 #ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 
 #ifdef HAVE_SYS_IOCTL_H
@@ -27,12 +30,12 @@ extern int winerror_to_errno(int);
 #endif
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
-#include <iconv.h>
+#  include <iconv.h>              // iconv_open()
 #endif
 
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif /* HAVE_FCNTL_H */
+#  include <fcntl.h>              // fcntl(F_GETFD)
+#endif
 
 #ifdef O_CLOEXEC
 /* Does open() support the O_CLOEXEC flag? Possible values:

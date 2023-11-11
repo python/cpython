@@ -1,4 +1,3 @@
-import atexit
 import contextlib
 import faulthandler
 import locale
@@ -6,6 +5,9 @@ import math
 import os.path
 import platform
 import random
+import shlex
+import signal
+import subprocess
 import sys
 import sysconfig
 import tempfile
@@ -16,8 +18,6 @@ from test import support
 from test.support import os_helper
 from test.support import threading_helper
 
-
-MS_WINDOWS = (sys.platform == 'win32')
 
 # All temporary files and temporary directories created by libregrtest should
 # use TMP_PREFIX so cleanup_temp_dir() can remove them all.
@@ -31,6 +31,19 @@ WORKER_WORK_DIR_PREFIX = WORK_DIR_PREFIX + 'worker_'
 EXIT_TIMEOUT = 120.0
 
 
+ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
+
+# Other resources excluded from --use=all:
+#
+# - extralagefile (ex: test_zipfile64): really too slow to be enabled
+#   "by default"
+# - tzdata: while needed to validate fully test_datetime, it makes
+#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
+#   default (see bpo-30822).
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
+
+
 # Types for types hints
 StrPath = str
 TestName = str
@@ -39,6 +52,7 @@ TestTuple = tuple[TestName, ...]
 TestList = list[TestName]
 # --match and --ignore options: list of patterns
 # ('*' joker character can be used)
+TestFilter = list[tuple[TestName, bool]]
 FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 
@@ -356,11 +370,13 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
             if not support.is_wasi:
                 tmp_dir = sysconfig.get_config_var('abs_builddir')
                 if tmp_dir is None:
-                    # bpo-30284: On Windows, only srcdir is available. Using
-                    # abs_builddir mostly matters on UNIX when building Python
-                    # out of the source tree, especially when the source tree
-                    # is read only.
-                    tmp_dir = sysconfig.get_config_var('srcdir')
+                    tmp_dir = sysconfig.get_config_var('abs_srcdir')
+                    if not tmp_dir:
+                        # gh-74470: On Windows, only srcdir is available. Using
+                        # abs_builddir mostly matters on UNIX when building
+                        # Python out of the source tree, especially when the
+                        # source tree is read only.
+                        tmp_dir = sysconfig.get_config_var('srcdir')
                 tmp_dir = os.path.join(tmp_dir, 'build')
             else:
                 # WASI platform
@@ -495,32 +511,6 @@ def normalize_test_name(test_full_name, *, is_error=False):
     return short_name
 
 
-def replace_stdout():
-    """Set stdout encoder error handler to backslashreplace (as stderr error
-    handler) to avoid UnicodeEncodeError when printing a traceback"""
-    stdout = sys.stdout
-    try:
-        fd = stdout.fileno()
-    except ValueError:
-        # On IDLE, sys.stdout has no file descriptor and is not a TextIOWrapper
-        # object. Leaving sys.stdout unchanged.
-        #
-        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
-        # and ValueError on a closed stream.
-        return
-
-    sys.stdout = open(fd, 'w',
-        encoding=stdout.encoding,
-        errors="backslashreplace",
-        closefd=False,
-        newline='\n')
-
-    def restore_stdout():
-        sys.stdout.close()
-        sys.stdout = stdout
-    atexit.register(restore_stdout)
-
-
 def adjust_rlimit_nofile():
     """
     On macOS the default fd limit (RLIMIT_NOFILE) is sometimes too low (256)
@@ -547,27 +537,87 @@ def adjust_rlimit_nofile():
                           f"{new_fd_limit}: {err}.")
 
 
-def display_header():
-    encoding = sys.stdout.encoding
+def get_host_runner():
+    if (hostrunner := os.environ.get("_PYTHON_HOSTRUNNER")) is None:
+        hostrunner = sysconfig.get_config_var("HOSTRUNNER")
+    return hostrunner
 
+
+def is_cross_compiled():
+    return ('_PYTHON_HOST_PLATFORM' in os.environ)
+
+
+def format_resources(use_resources: tuple[str, ...]):
+    use_resources = set(use_resources)
+    all_resources = set(ALL_RESOURCES)
+
+    # Express resources relative to "all"
+    relative_all = ['all']
+    for name in sorted(all_resources - use_resources):
+        relative_all.append(f'-{name}')
+    for name in sorted(use_resources - all_resources):
+        relative_all.append(f'{name}')
+    all_text = ','.join(relative_all)
+    all_text = f"resources: {all_text}"
+
+    # List of enabled resources
+    text = ','.join(sorted(use_resources))
+    text = f"resources ({len(use_resources)}): {text}"
+
+    # Pick the shortest string (prefer relative to all if lengths are equal)
+    if len(all_text) <= len(text):
+        return all_text
+    else:
+        return text
+
+
+def display_header(use_resources: tuple[str, ...],
+                   python_cmd: tuple[str, ...] | None):
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
     print("==", platform.platform(aliased=True),
                   "%s-endian" % sys.byteorder)
     print("== Python build:", ' '.join(get_build_info()))
-
-    cwd = os.getcwd()
-    # gh-109508: support.os_helper.FS_NONASCII, used by get_work_dir(), cannot
-    # be encoded to the filesystem encoding on purpose, escape non-encodable
-    # characters with backslashreplace error handler.
-    formatted_cwd = cwd.encode(encoding, "backslashreplace").decode(encoding)
-    print("== cwd:", formatted_cwd)
+    print("== cwd:", os.getcwd())
 
     cpu_count = os.cpu_count()
     if cpu_count:
+        process_cpu_count = os.process_cpu_count()
+        if process_cpu_count and process_cpu_count != cpu_count:
+            cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
-    print("== encodings: locale=%s, FS=%s"
+    print("== encodings: locale=%s FS=%s"
           % (locale.getencoding(), sys.getfilesystemencoding()))
+
+    if use_resources:
+        text = format_resources(use_resources)
+        print(f"== {text}")
+    else:
+        print("== resources: all test resources are disabled, "
+              "use -u option to unskip tests")
+
+    cross_compile = is_cross_compiled()
+    if cross_compile:
+        print("== cross compiled: Yes")
+    if python_cmd:
+        cmd = shlex.join(python_cmd)
+        print(f"== host python: {cmd}")
+
+        get_cmd = [*python_cmd, '-m', 'platform']
+        proc = subprocess.run(
+            get_cmd,
+            stdout=subprocess.PIPE,
+            text=True,
+            cwd=os_helper.SAVEDCWD)
+        stdout = proc.stdout.replace('\n', ' ').strip()
+        if stdout:
+            print(f"== host platform: {stdout}")
+        elif proc.returncode:
+            print(f"== host platform: <command failed with exit code {proc.returncode}>")
+    else:
+        hostrunner = get_host_runner()
+        if hostrunner:
+            print(f"== host runner: {hostrunner}")
 
     # This makes it easier to remember what to set in your local
     # environment when trying to reproduce a sanitizer failure.
@@ -581,18 +631,18 @@ def display_header():
         sanitizers.append("memory")
     if ubsan:
         sanitizers.append("undefined behavior")
-    if not sanitizers:
-        return
+    if sanitizers:
+        print(f"== sanitizers: {', '.join(sanitizers)}")
+        for sanitizer, env_var in (
+            (asan, "ASAN_OPTIONS"),
+            (msan, "MSAN_OPTIONS"),
+            (ubsan, "UBSAN_OPTIONS"),
+        ):
+            options= os.environ.get(env_var)
+            if sanitizer and options is not None:
+                print(f"== {env_var}={options!r}")
 
-    print(f"== sanitizers: {', '.join(sanitizers)}")
-    for sanitizer, env_var in (
-        (asan, "ASAN_OPTIONS"),
-        (msan, "MSAN_OPTIONS"),
-        (ubsan, "UBSAN_OPTIONS"),
-    ):
-        options= os.environ.get(env_var)
-        if sanitizer and options is not None:
-            print(f"== {env_var}={options!r}")
+    print(flush=True)
 
 
 def cleanup_temp_dir(tmp_dir: StrPath):
@@ -607,3 +657,24 @@ def cleanup_temp_dir(tmp_dir: StrPath):
         else:
             print("Remove file: %s" % name)
             os_helper.unlink(name)
+
+WINDOWS_STATUS = {
+    0xC0000005: "STATUS_ACCESS_VIOLATION",
+    0xC00000FD: "STATUS_STACK_OVERFLOW",
+    0xC000013A: "STATUS_CONTROL_C_EXIT",
+}
+
+def get_signal_name(exitcode):
+    if exitcode < 0:
+        signum = -exitcode
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    try:
+        return WINDOWS_STATUS[exitcode]
+    except KeyError:
+        pass
+
+    return None

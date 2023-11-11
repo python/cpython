@@ -446,7 +446,7 @@ readline_set_completion_display_matches_hook_impl(PyObject *module,
        default completion display. */
     rl_completion_display_matches_hook =
         readlinestate_global->completion_display_matches_hook ?
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(HAVE_RL_COMPDISP_FUNC_T)
         (rl_compdisp_func_t *)on_completion_display_matches_hook : 0;
 #else
         (VFunction *)on_completion_display_matches_hook : 0;
@@ -1018,6 +1018,8 @@ on_hook(PyObject *func)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
+#elif defined(WITH_APPLE_EDITLINE)
+on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
 on_startup_hook(void)
 #endif
@@ -1033,6 +1035,8 @@ on_startup_hook(void)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
+#elif defined(WITH_APPLE_EDITLINE)
+on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
 on_pre_input_hook(void)
 #endif

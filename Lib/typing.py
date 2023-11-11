@@ -937,13 +937,6 @@ def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
 
 
-class _PickleUsingNameMixin:
-    """Mixin enabling pickling based on self.__name__."""
-
-    def __reduce__(self):
-        return self.__name__
-
-
 def _typevar_subst(self, arg):
     msg = "Parameters to generic types must be types."
     arg = _type_check(arg, msg, is_argument=True)
@@ -1676,7 +1669,8 @@ _TYPING_INTERNALS = frozenset({
 _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
-    '__subclasshook__', '__weakref__', '__class_getitem__'
+    '__subclasshook__', '__weakref__', '__class_getitem__',
+    '__match_args__',
 })
 
 # These special attributes will be not collected as protocol members.

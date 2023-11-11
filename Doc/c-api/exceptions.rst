@@ -88,8 +88,28 @@ Printing and clearing
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
+   If *obj* is ``NULL``, only the traceback is printed.
 
    An exception must be set when calling this function.
+
+   .. versionchanged:: 3.4
+      Print a traceback. Print only traceback if *obj* is ``NULL``.
+
+   .. versionchanged:: 3.8
+      Use :func:`sys.unraisablehook`.
+
+
+.. c:function:: void PyErr_FormatUnraisable(const char *format, ...)
+
+   Similar to :c:func:`PyErr_WriteUnraisable`, but the *format* and subsequent
+   parameters help format the warning message; they have the same meaning and
+   values as in :c:func:`PyUnicode_FromFormat`.
+   ``PyErr_WriteUnraisable(obj)`` is roughtly equivalent to
+   ``PyErr_FormatUnraisable("Exception ignored in: %R, obj)``.
+   If *format* is ``NULL``, only the traceback is printed.
+
+   .. versionadded:: 3.13
+
 
 .. c:function:: void PyErr_DisplayException(PyObject *exc)
 
@@ -97,6 +117,7 @@ Printing and clearing
    chained exceptions and notes.
 
    .. versionadded:: 3.12
+
 
 Raising exceptions
 ==================

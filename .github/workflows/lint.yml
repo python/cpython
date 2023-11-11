@@ -7,7 +7,7 @@ permissions:
 
 env:
   FORCE_COLOR: 1
-  RUFF_FORMAT: github
+  RUFF_OUTPUT_FORMAT: github
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

@@ -1,5 +1,0 @@
-Fix a race condition in ``concurrent.futures``. When a process in the
-process pool was terminated abruptly (while the future was running or
-pending), close the connection write end. If the call queue is blocked on
-sending bytes to a worker process, closing the connection write end interrupts
-the send, so the queue can be closed. Patch by Victor Stinner.
