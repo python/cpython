@@ -1,3 +1,4 @@
+import contextlib
 import importlib.abc
 import importlib.util
 import os
@@ -903,11 +904,12 @@ class EditorWindow:
         # Called from configdialog.deactivate_current_config.
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         for event, keylist in keydefs.items():
-            self.text.event_delete(event, *keylist)
+            with contextlib.suppress(ValueError):
+                self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
-            if xkeydefs:
-                for event, keylist in xkeydefs.items():
+            for event, keylist in xkeydefs.items():
+                with contextlib.suppress(ValueError):
                     self.text.event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
