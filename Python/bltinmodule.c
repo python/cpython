@@ -2611,6 +2611,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 // Improved Kahan–Babuška algorithm by Arnold Neumaier
+                // Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren zur Summation endlicher Summen.
+                // Z. angew. Math. Mech., 54: 39-51. https://doi.org/10.1002/zamm.19740540106
                 // https://web.archive.org/web/20220804051351/https://www.mat.univie.ac.at/~neum/scan/01.pdf
                 double x = PyFloat_AS_DOUBLE(item);
                 double t = f_result + x;
