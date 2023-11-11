@@ -405,7 +405,7 @@ class Maildir(Mailbox):
     def set_info(self, key, info: str):
         """Set the keyed message's "info" string."""
         if not isinstance(info, str):
-            raise TypeError('info must be a string: %s' % type(info))
+            raise TypeError(f'info must be a string: {type(info)}')
         old_subpath = self._lookup(key)
         new_subpath = old_subpath.split(self.colon)[0]
         if info:
@@ -427,21 +427,21 @@ class Maildir(Mailbox):
     def set_flags(self, key, flags: str):
         """Set the given flags and unset all others on the keyed message."""
         if not isinstance(flags, str):
-            raise TypeError('flags must be a string: %s' % type(flags))
+            raise TypeError(f'flags must be a string: {type(flags)}')
         # TODO: check if flags are valid standard flag characters?
         self.set_info(key, '2,' + ''.join(sorted(set(flags))))
 
     def add_flag(self, key, flag: str):
         """Set the given flag(s) without changing others on the keyed message."""
         if not isinstance(flag, str):
-            raise TypeError('flag must be a string: %s' % type(flag))
+            raise TypeError(f'flag must be a string: {type(flag)}')
         # TODO: check that flag is a valid standard flag character?
         self.set_flags(key, ''.join(set(self.get_flags(key)) | set(flag)))
 
     def remove_flag(self, key, flag: str):
         """Unset the given string flag(s) without changing others on the keyed message."""
         if not isinstance(flag, str):
-            raise TypeError('flag must be a string: %s' % type(flag))
+            raise TypeError(f'flag must be a string: {type(flag)}')
         if self.get_flags(key):
             self.set_flags(key, ''.join(set(self.get_flags(key)) - set(flag)))
 
