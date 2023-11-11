@@ -137,7 +137,7 @@ class Instruction:
                 res = False
         return res
 
-    def operand_size(self):
+    def operand_size(self) -> int:
         size = 0
         for effect in self.cache_effects:
             if effect.name != "unused":
