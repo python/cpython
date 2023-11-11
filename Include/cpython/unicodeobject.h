@@ -440,6 +440,22 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromKindAndData(
     const void *buffer,
     Py_ssize_t size);
 
+/* --- Manage the default encoding ---------------------------------------- */
+
+/* Returns a pointer to the default encoding (UTF-8) of the
+   Unicode object unicode.
+
+   Like PyUnicode_AsUTF8AndSize(), this also caches the UTF-8 representation
+   in the unicodeobject.
+
+   _PyUnicode_AsString is a #define for PyUnicode_AsUTF8 to
+   support the previous internal function with the same behaviour.
+
+   Use of this API is DEPRECATED since no size information can be
+   extracted from the returned data.
+*/
+
+PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 
 /* === Characters Type APIs =============================================== */
 

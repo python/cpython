@@ -2935,8 +2935,13 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f1", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
     if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f1_impl(module, path);
@@ -2996,8 +3001,13 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f2", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
     if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f2_impl(module, path);
@@ -3131,4 +3141,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32dc6ac90757da7a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90743ac900d60f9f input=a9049054013a1b77]*/

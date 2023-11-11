@@ -108,6 +108,7 @@ error_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
+    assert(0);
     PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
     return -1;
 }
@@ -123,8 +124,8 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = error_optimize,
-    .resume_threshold = UINT16_MAX,
-    .backedge_threshold = UINT16_MAX,
+    .resume_threshold = INT16_MAX,
+    .backedge_threshold = INT16_MAX,
 };
 
 _PyOptimizerObject *
@@ -310,7 +311,7 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.resume_threshold = UINT16_MAX;
+    opt->base.resume_threshold = INT16_MAX;
     opt->base.backedge_threshold = 0;
     opt->count = 0;
     return (PyObject *)opt;
@@ -383,6 +384,14 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
     .tp_methods = executor_methods,
+};
+
+/* TO DO -- Generate this table */
+static const uint16_t
+_PyUop_Replacements[OPCODE_METADATA_SIZE] = {
+    [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
+    [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
+    [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
 };
 
 #define TRACE_STACK_SIZE 5
@@ -465,8 +474,8 @@ translate_bytecode_to_trace(
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
 
-// Reserve space for main+stub uops, plus 2 for _SET_IP and _EXIT_TRACE
-#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 2, uop_name(opcode))
+// Reserve space for main+stub uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 3, uop_name(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
 #define TRACE_STACK_PUSH() \
@@ -496,8 +505,9 @@ translate_bytecode_to_trace(
 
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
+        RESERVE_RAW(3, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
         ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -587,46 +597,6 @@ pop_jump_if_bool:
                 break;
             }
 
-            case FOR_ITER_LIST:
-            case FOR_ITER_TUPLE:
-            case FOR_ITER_RANGE:
-            {
-                RESERVE(4, 3);
-                int check_op, exhausted_op, next_op;
-                switch (opcode) {
-                    case FOR_ITER_LIST:
-                        check_op = _ITER_CHECK_LIST;
-                        exhausted_op = _IS_ITER_EXHAUSTED_LIST;
-                        next_op = _ITER_NEXT_LIST;
-                        break;
-                    case FOR_ITER_TUPLE:
-                        check_op = _ITER_CHECK_TUPLE;
-                        exhausted_op = _IS_ITER_EXHAUSTED_TUPLE;
-                        next_op = _ITER_NEXT_TUPLE;
-                        break;
-                    case FOR_ITER_RANGE:
-                        check_op = _ITER_CHECK_RANGE;
-                        exhausted_op = _IS_ITER_EXHAUSTED_RANGE;
-                        next_op = _ITER_NEXT_RANGE;
-                        break;
-                    default:
-                        Py_UNREACHABLE();
-                }
-                // Assume jump unlikely (can a for-loop exit be likely?)
-                _Py_CODEUNIT *target_instr =  // +1 at the end skips over END_FOR
-                    instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg + 1;
-                max_length -= 3;  // Really the start of the stubs
-                ADD_TO_TRACE(check_op, 0, 0);
-                ADD_TO_TRACE(exhausted_op, 0, 0);
-                ADD_TO_TRACE(_POP_JUMP_IF_TRUE, max_length, 0);
-                ADD_TO_TRACE(next_op, 0, 0);
-
-                ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
-                ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
-                ADD_TO_STUB(max_length + 2, _EXIT_TRACE, 0, 0);
-                break;
-            }
-
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
@@ -661,6 +631,9 @@ pop_jump_if_bool:
                                         assert(opcode != JUMP_BACKWARD);
                                         oparg += extras;
                                     }
+                                }
+                                if (_PyUop_Replacements[uop]) {
+                                    uop = _PyUop_Replacements[uop];
                                 }
                                 break;
                             case OPARG_CACHE_1:
@@ -875,7 +848,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
-    _PyJITFunction execute = _PyJIT_CompileTrace(executor->trace, length);
+    _PyJITFunction execute = _PyJIT_CompileTrace(executor, executor->trace, length);
     if (execute == NULL) {
         if (PyErr_Occurred()) {
             Py_DECREF(executor);
@@ -952,7 +925,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = UINT16_MAX;
+    opt->resume_threshold = INT16_MAX;
     // Need at least 3 iterations to settle specializations.
     // A few lower bits of the counter are reserved for other flags.
     opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;

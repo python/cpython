@@ -20,6 +20,7 @@
 
 #include "opcode.h"
 
+extern _PyUOpExecutorObject _JIT_CURRENT_EXECUTOR;
 extern void _JIT_OPARG;
 extern void _JIT_OPERAND;
 
@@ -54,12 +55,14 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
            PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
+    _PyUOpExecutorObject *current_executor = &_JIT_CURRENT_EXECUTOR;
     uint32_t opcode = _JIT_OPCODE;
     int32_t oparg = (uintptr_t)&_JIT_OPARG;
     uint64_t operand = (uintptr_t)&_JIT_OPERAND;
     // Pretend to modify the values to keep clang from being clever and
     // optimizing them based on valid extern addresses, which must be in
     // range(1, 2**31 - 2**24):
+    asm("" : "+r" (current_executor));
     asm("" : "+r" (oparg));
     asm("" : "+r" (operand));
     bool _jump_taken = false;
