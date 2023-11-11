@@ -2275,7 +2275,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     sys_module_dict = sys.modules.copy()
 
     def parse_name(node):
-        assert isinstance(node, ast.arg)
         return node.arg
 
     def parse_annotation(annotation):
@@ -2334,6 +2333,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             raise ValueError
 
     def p(name_node, default_node, default=empty):
+        assert isinstance(name_node, ast.arg)
         name = parse_name(name_node)
         if default_node and default_node is not _empty:
             try:
