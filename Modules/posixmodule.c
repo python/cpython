@@ -12006,7 +12006,6 @@ win32_putenv(PyObject *name, PyObject *value)
     }
 
     Py_ssize_t size;
-    /* PyUnicode_AsWideCharString() rejects embedded null characters */
     wchar_t *env = PyUnicode_AsWideCharString(unicode, &size);
     Py_DECREF(unicode);
 
@@ -12017,6 +12016,12 @@ win32_putenv(PyObject *name, PyObject *value)
         PyErr_Format(PyExc_ValueError,
                      "the environment variable is longer than %u characters",
                      _MAX_ENV);
+        PyMem_Free(env);
+        return NULL;
+    }
+    if (wcslen(env) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null character");
         PyMem_Free(env);
         return NULL;
     }
