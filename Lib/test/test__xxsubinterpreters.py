@@ -7,7 +7,7 @@ from textwrap import dedent
 import threading
 import unittest
 
-import _testcapi
+import _testinternalcapi
 from test import support
 from test.support import import_helper
 from test.support import script_helper
@@ -102,6 +102,10 @@ class IsShareableTests(unittest.TestCase):
                 'spam',
                 10,
                 -10,
+                True,
+                False,
+                100.0,
+                (1, ('spam', 'eggs')),
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -120,8 +124,6 @@ class IsShareableTests(unittest.TestCase):
 
         not_shareables = [
                 # singletons
-                True,
-                False,
                 NotImplemented,
                 ...,
                 # builtin types and objects
@@ -129,7 +131,6 @@ class IsShareableTests(unittest.TestCase):
                 object,
                 object(),
                 Exception(),
-                100.0,
                 # user-defined types and objects
                 Cheese,
                 Cheese('Wensleydale'),
@@ -146,8 +147,8 @@ class ShareableTypeTests(unittest.TestCase):
     def _assert_values(self, values):
         for obj in values:
             with self.subTest(obj):
-                xid = _testcapi.get_crossinterp_data(obj)
-                got = _testcapi.restore_crossinterp_data(xid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 self.assertEqual(got, obj)
                 self.assertIs(type(got), type(obj))
@@ -155,8 +156,8 @@ class ShareableTypeTests(unittest.TestCase):
     def test_singletons(self):
         for obj in [None]:
             with self.subTest(obj):
-                xid = _testcapi.get_crossinterp_data(obj)
-                got = _testcapi.restore_crossinterp_data(xid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 # XXX What about between interpreters?
                 self.assertIs(got, obj)
@@ -187,7 +188,40 @@ class ShareableTypeTests(unittest.TestCase):
         for i in ints:
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
-                    _testcapi.get_crossinterp_data(i)
+                    _testinternalcapi.get_crossinterp_data(i)
+
+    def test_bool(self):
+        self._assert_values([True, False])
+
+    def test_float(self):
+        self._assert_values([0.0, 1.1, -1.0, 0.12345678, -0.12345678])
+
+    def test_tuple(self):
+        self._assert_values([(), (1,), ("hello", "world", ), (1, True, "hello")])
+        # Test nesting
+        self._assert_values([
+            ((1,),),
+            ((1, 2), (3, 4)),
+            ((1, 2), (3, 4), (5, 6)),
+        ])
+
+    def test_tuples_containing_non_shareable_types(self):
+        non_shareables = [
+                Exception(),
+                object(),
+        ]
+        for s in non_shareables:
+            value = tuple([0, 1.0, s])
+            with self.subTest(repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
+            # Check nested as well
+            value = tuple([0, 1., (s,)])
+            with self.subTest("nested " + repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
 
 
 class ModuleTests(TestBase):

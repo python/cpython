@@ -92,7 +92,7 @@ class Interpreter:
         return _interpreters.destroy(self._id)
 
     # XXX Rename "run" to "exec"?
-    def run(self, src_str, /, *, channels=None):
+    def run(self, src_str, /, channels=None):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
