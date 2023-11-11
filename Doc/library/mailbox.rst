@@ -440,7 +440,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       methods are not reflected here until the mailbox's
       :meth:`__setitem__` method is called.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
 
    .. method:: set_flags(key, flags)
@@ -460,7 +460,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       changes made with this mailbox method will not be visible to the
       message object's method, :meth:`~MaildirMessage.get_flags`.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
 
    .. method:: add_flag(key, flag)
@@ -473,7 +473,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       :meth:`~MaildirMessage.add_flag` method are similar to
       those for :meth:`set_flags`; see the discussion there.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
 
    .. method:: remove_flag(key, flag)
@@ -486,7 +486,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       :meth:`~MaildirMessage.remove_flag` method are similar to
       those for :meth:`set_flags`; see the discussion there.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
 
    .. method:: get_info(key)
@@ -504,7 +504,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       are not reflected here until the mailbox's :meth:`__setitem__` method
       is called.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
 
    .. method:: set_info(key, info)
@@ -523,7 +523,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       changes made with this mailbox method will not be visible to the
       message object's method, :meth:`~MaildirMessage.get_info`.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
 
 .. seealso::
