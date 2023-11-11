@@ -767,6 +767,29 @@ append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
     return _PyUnicodeWriter_WriteStr(writer, e->v.Attribute.attr);
 }
 
+
+// NOTE: I haven't thought about this at all
+static int
+append_ast_safe_attribute(_PyUnicodeWriter *writer, expr_ty e)
+{
+    const char *question_mark_dot;
+    expr_ty v = e->v.Attribute.value;
+    APPEND_EXPR(v, PR_ATOM);
+
+    /* Special case: integers require a space for attribute access to be
+       unambiguous. */
+    if (v->kind == Constant_kind && PyLong_CheckExact(v->v.Constant.value)) {
+        question_mark_dot = " ?.";
+    }
+    else {
+        question_mark_dot = "?.";
+    }
+    APPEND_STR(question_mark_dot);
+
+    return _PyUnicodeWriter_WriteStr(writer, e->v.SafeAttribute.attr);
+}
+
+
 static int
 append_ast_slice(_PyUnicodeWriter *writer, expr_ty e)
 {
@@ -897,6 +920,8 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         return append_ast_attribute(writer, e);
+    case SafeAttribute_kind:
+        return append_ast_safe_attribute(writer, e);
     case Subscript_kind:
         return append_ast_subscript(writer, e);
     case Starred_kind:

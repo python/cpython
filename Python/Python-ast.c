@@ -138,6 +138,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->RShift_type);
     Py_CLEAR(state->Raise_type);
     Py_CLEAR(state->Return_type);
+    Py_CLEAR(state->SafeAttribute_type);
     Py_CLEAR(state->SetComp_type);
     Py_CLEAR(state->Set_type);
     Py_CLEAR(state->Slice_type);
@@ -629,6 +630,11 @@ static const char * const Constant_fields[]={
     "kind",
 };
 static const char * const Attribute_fields[]={
+    "value",
+    "attr",
+    "ctx",
+};
+static const char * const SafeAttribute_fields[]={
     "value",
     "attr",
     "ctx",
@@ -1383,6 +1389,7 @@ init_types(struct ast_state *state)
         "     | JoinedStr(expr* values)\n"
         "     | Constant(constant value, string? kind)\n"
         "     | Attribute(expr value, identifier attr, expr_context ctx)\n"
+        "     | SafeAttribute(expr value, identifier attr, expr_context ctx)\n"
         "     | Subscript(expr value, expr slice, expr_context ctx)\n"
         "     | Starred(expr value, expr_context ctx)\n"
         "     | Name(identifier id, expr_context ctx)\n"
@@ -1488,6 +1495,11 @@ init_types(struct ast_state *state)
                                       Attribute_fields, 3,
         "Attribute(expr value, identifier attr, expr_context ctx)");
     if (!state->Attribute_type) return 0;
+    state->SafeAttribute_type = make_type(state, "SafeAttribute",
+                                          state->expr_type,
+                                          SafeAttribute_fields, 3,
+        "SafeAttribute(expr value, identifier attr, expr_context ctx)");
+    if (!state->SafeAttribute_type) return 0;
     state->Subscript_type = make_type(state, "Subscript", state->expr_type,
                                       Subscript_fields, 3,
         "Subscript(expr value, expr slice, expr_context ctx)");
@@ -3241,6 +3253,41 @@ _PyAST_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
 }
 
 expr_ty
+_PyAST_SafeAttribute(expr_ty value, identifier attr, expr_context_ty ctx, int
+                     lineno, int col_offset, int end_lineno, int
+                     end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'value' is required for SafeAttribute");
+        return NULL;
+    }
+    if (!attr) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'attr' is required for SafeAttribute");
+        return NULL;
+    }
+    if (!ctx) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'ctx' is required for SafeAttribute");
+        return NULL;
+    }
+    p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = SafeAttribute_kind;
+    p->v.SafeAttribute.value = value;
+    p->v.SafeAttribute.attr = attr;
+    p->v.SafeAttribute.ctx = ctx;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
 _PyAST_Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int lineno,
                  int col_offset, int end_lineno, int end_col_offset, PyArena
                  *arena)
@@ -4861,6 +4908,26 @@ ast2obj_expr(struct ast_state *state, void* _o)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_expr_context(state, o->v.Attribute.ctx);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->ctx, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case SafeAttribute_kind:
+        tp = (PyTypeObject *)state->SafeAttribute_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(state, o->v.SafeAttribute.value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_identifier(state, o->v.SafeAttribute.attr);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->attr, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr_context(state, o->v.SafeAttribute.ctx);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->ctx, value) == -1)
             goto failed;
@@ -10207,6 +10274,72 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->SafeAttribute_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty value;
+        identifier attr;
+        expr_context_ty ctx;
+
+        if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from SafeAttribute");
+            return 1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'SafeAttribute' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr(state, tmp, &value, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->attr, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"attr\" missing from SafeAttribute");
+            return 1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'SafeAttribute' node")) {
+                goto failed;
+            }
+            res = obj2ast_identifier(state, tmp, &attr, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from SafeAttribute");
+            return 1;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'SafeAttribute' node")) {
+                goto failed;
+            }
+            res = obj2ast_expr_context(state, tmp, &ctx, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_SafeAttribute(value, attr, ctx, lineno, col_offset,
+                                    end_lineno, end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     tp = state->Subscript_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -12999,6 +13132,10 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "Attribute", state->Attribute_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "SafeAttribute", state->SafeAttribute_type) <
+        0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "Subscript", state->Subscript_type) < 0) {
