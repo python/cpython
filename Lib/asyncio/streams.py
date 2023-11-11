@@ -406,9 +406,12 @@ class StreamWriter:
 
     def __del__(self, warnings=warnings):
         if not self._transport.is_closing():
-            self.close()
-            warnings.warn(f"unclosed {self!r}", ResourceWarning)
-
+            try:
+                self.close()
+            except RuntimeError:
+                warnings.warn("loop is closed", ResourceWarning)
+            else:
+                warnings.warn(f"unclosed {self!r}", ResourceWarning)
 
 class StreamReader:
 
