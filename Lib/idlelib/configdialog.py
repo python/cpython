@@ -2086,10 +2086,13 @@ class ExtPage(Frame):
         Methods:
             set_extension_value
         """
+        has_changes = False
         for ext_name in self.extensions:
             for opt in self.extensions[ext_name]:
-                self.set_extension_value(ext_name, opt)
-        self.ext_userCfg.Save()
+                if self.set_extension_value(ext_name, opt):
+                    has_changes = True
+        if has_changes:
+            self.ext_userCfg.Save()
 
 
 class HelpFrame(LabelFrame):
