@@ -42,6 +42,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyList_AppendTakeRef",
     "_Py_atomic_load_uintptr_relaxed",
     "_PyFrame_GetCode",
+    "_PyThreadState_HasStackSpace",
 )
 
 ESCAPING_FUNCTIONS = (
