@@ -2349,13 +2349,15 @@ PyObject_GC_Del(void *op)
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
 #ifdef Py_DEBUG
-        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *exc, *exc_value, *exc_tb;
+        PyErr_Fetch(&exc, &exc_value, &exc_tb);
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
                                      "gc", NULL, "Object of type %s is not untracked before destruction",
                                      ((PyObject*)op)->ob_type->tp_name)) {
             PyErr_WriteUnraisable(NULL);
         }
-        PyErr_SetRaisedException(exc);
+        if (exc != NULL)
+            PyErr_Restore(exc, exc_value, exc_tb);
 #endif
     }
     GCState *gcstate = get_gc_state();
