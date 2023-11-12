@@ -341,7 +341,9 @@ class ComplexTest(unittest.TestCase):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
     def test_constructor(self):
-        from test.test_capi.test_getargs import Complex
+        class Complex:
+            def __complex__(self):
+                return 4.25+0.5j
 
         class NS:
             def __init__(self, value): self.value = value
@@ -646,7 +648,8 @@ class ComplexTest(unittest.TestCase):
         test(complex(-0., -0.), "(-0-0j)")
 
     def test_pos(self):
-        from test.test_capi.test_getargs import ComplexSubclass
+        class ComplexSubclass(complex):
+            pass
 
         self.assertEqual(+(1+6j), 1+6j)
         self.assertEqual(+ComplexSubclass(1, 6), 1+6j)
