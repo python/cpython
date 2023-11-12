@@ -1105,8 +1105,8 @@ scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
 
     if (!PyUnicode_Check(pystr)) {
         PyErr_Format(PyExc_TypeError,
-                 "first argument must be a string, not %.80s",
-                 Py_TYPE(pystr)->tp_name);
+                     "first argument must be a string, not %.80s",
+                     Py_TYPE(pystr)->tp_name);
         return NULL;
     }
 
