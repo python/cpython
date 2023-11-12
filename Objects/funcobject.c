@@ -92,8 +92,8 @@ PyFunction_ClearWatcher(int watcher_id)
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
-    PyObject *module = Py_XNewRef(PyDict_GetItemWithError(constr->fc_globals, &_Py_ID(__name__)));
-    if (!module && PyErr_Occurred()) {
+    PyObject *module;
+    if (PyDict_GetItemRef(constr->fc_globals, &_Py_ID(__name__), &module) < 0) {
         return NULL;
     }
 
@@ -158,12 +158,11 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
+    PyObject *module;
     PyObject *builtins = NULL;
-    if (module == NULL && _PyErr_Occurred(tstate)) {
+    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) < 0) {
         goto error;
     }
-    Py_XINCREF(module);
 
     builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {

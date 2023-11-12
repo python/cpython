@@ -793,7 +793,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
         }
         /* All other micro-ops fall through, so i+1 is reachable */
         SET_BIT(used, i+1);
-        if (is_branch(opcode)) {
+        if (OPCODE_HAS_JUMP(opcode)) {
             /* Mark target as reachable */
             SET_BIT(used, buffer[i].oparg);
         }

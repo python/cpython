@@ -1,5 +1,6 @@
+import gc
+import weakref
 import unittest
-import sys
 from test.support import import_helper
 from collections import UserList
 _testcapi = import_helper.import_module('_testcapi')
@@ -10,6 +11,15 @@ PY_SSIZE_T_MAX = _testcapi.PY_SSIZE_T_MAX
 
 class ListSubclass(list):
     pass
+
+
+class DelAppend:
+    def __init__(self, lst, item):
+        self.lst = lst
+        self.item = item
+
+    def __del__(self):
+        self.lst.append(self.item)
 
 
 class CAPITest(unittest.TestCase):
@@ -196,10 +206,10 @@ class CAPITest(unittest.TestCase):
 
     def test_list_setslice(self):
         # Test PyList_SetSlice()
-        setslice = _testcapi.list_setslice
+        list_setslice = _testcapi.list_setslice
         def set_slice(lst, low, high, value):
             lst = lst.copy()
-            self.assertEqual(setslice(lst, low, high, value), 0)
+            self.assertEqual(list_setslice(lst, low, high, value), 0)
             return lst
 
         # insert items
@@ -231,8 +241,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(set_slice(lst, 0, len(lst), NULL), [])
         self.assertEqual(set_slice(lst, 3, len(lst), NULL), list("abc"))
 
-        self.assertRaises(SystemError, setslice, (), 0, 0, [])
-        self.assertRaises(SystemError, setslice, 42, 0, 0, [])
+        self.assertRaises(SystemError, list_setslice, (), 0, 0, [])
+        self.assertRaises(SystemError, list_setslice, 42, 0, 0, [])
+
+        # Item finalizer modify the list (clear the list)
+        lst = []
+        lst.append(DelAppend(lst, 'zombie'))
+        self.assertEqual(list_setslice(lst, 0, len(lst), NULL), 0)
+        self.assertEqual(lst, ['zombie'])
+
+        # Item finalizer modify the list (remove an list item)
+        lst = []
+        lst.append(DelAppend(lst, 'zombie'))
+        lst.extend("abc")
+        self.assertEqual(list_setslice(lst, 0, 1, NULL), 0)
+        self.assertEqual(lst, ['a', 'b', 'c', 'zombie'])
 
         # CRASHES setslice(NULL, 0, 0, [])
 
@@ -275,3 +298,47 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, astuple, ())
         self.assertRaises(SystemError, astuple, object())
         self.assertRaises(SystemError, astuple, NULL)
+
+    def test_list_clear(self):
+        # Test PyList_Clear()
+        list_clear = _testcapi.list_clear
+
+        lst = [1, 2, 3]
+        self.assertEqual(list_clear(lst), 0)
+        self.assertEqual(lst, [])
+
+        lst = []
+        self.assertEqual(list_clear(lst), 0)
+        self.assertEqual(lst, [])
+
+        self.assertRaises(SystemError, list_clear, ())
+        self.assertRaises(SystemError, list_clear, object())
+
+        # Item finalizer modify the list
+        lst = []
+        lst.append(DelAppend(lst, 'zombie'))
+        list_clear(lst)
+        self.assertEqual(lst, ['zombie'])
+
+        # CRASHES list_clear(NULL)
+
+    def test_list_extend(self):
+        # Test PyList_Extend()
+        list_extend = _testcapi.list_extend
+
+        for other_type in (list, tuple, str, iter):
+            lst = list("ab")
+            arg = other_type("def")
+            self.assertEqual(list_extend(lst, arg), 0)
+            self.assertEqual(lst, list("abdef"))
+
+        # PyList_Extend(lst, lst)
+        lst = list("abc")
+        self.assertEqual(list_extend(lst, lst), 0)
+        self.assertEqual(lst, list("abcabc"))
+
+        self.assertRaises(TypeError, list_extend, [], object())
+        self.assertRaises(SystemError, list_extend, (), list("abc"))
+
+        # CRASHES list_extend(NULL, [])
+        # CRASHES list_extend([], NULL)
