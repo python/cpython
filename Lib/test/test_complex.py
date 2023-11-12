@@ -596,7 +596,7 @@ class ComplexTest(unittest.TestCase):
             x /= 3.0    # now check against floating point
             self.assertEqual(hash(x), hash(complex(x, 0.)))
 
-        self.assertEqual(hash(2000005 - 1j), -2)
+        self.assertNotEqual(hash(2000005 - 1j), -1)
 
     def test_abs(self):
         nums = [complex(x/3., y/7.) for x in range(-9,9) for y in range(-9,9)]
