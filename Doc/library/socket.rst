@@ -352,6 +352,11 @@ Constants
    defined then this protocol is unsupported.  More constants may be available
    depending on the system.
 
+.. data:: AF_UNSPEC
+
+   :const:`AF_UNSPEC` means that
+   :func:`getaddrinfo` should return socket addresses for any
+   address family (either IPv4, IPv6, or any other) that can be used.
 
 .. data:: SOCK_STREAM
           SOCK_DGRAM
@@ -379,6 +384,8 @@ Constants
    .. availability:: Linux >= 2.6.27.
 
    .. versionadded:: 3.2
+
+.. _socket-unix-constants:
 
 .. data:: SO_*
           SOMAXCONN

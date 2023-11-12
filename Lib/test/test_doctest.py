@@ -102,15 +102,6 @@ class SampleClass:
 
     a_class_attribute = 42
 
-    @classmethod
-    @property
-    def a_classmethod_property(cls):
-        """
-        >>> print(SampleClass.a_classmethod_property)
-        42
-        """
-        return cls.a_class_attribute
-
     @functools.cached_property
     def a_cached_property(self):
         """
@@ -525,7 +516,6 @@ methods, classmethods, staticmethods, properties, and nested classes.
      1  SampleClass.__init__
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -582,7 +572,6 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass.__init__
      1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
-     1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
@@ -625,7 +614,6 @@ By default, an object with no doctests doesn't create any tests:
      1  SampleClass.__init__
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -647,7 +635,6 @@ displays.
      1  SampleClass.__init__
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -3320,6 +3307,24 @@ def test_syntax_error_with_note(cls, multiline=False):
     """
     exc = cls("error", ("x.py", 23, None, "bad syntax"))
     exc.add_note('Note\nLine' if multiline else 'Note')
+    raise exc
+
+
+def test_syntax_error_subclass_from_stdlib():
+    """
+    `ParseError` is a subclass of `SyntaxError`, but it is not a builtin:
+
+    >>> test_syntax_error_subclass_from_stdlib()
+    Traceback (most recent call last):
+      ...
+    xml.etree.ElementTree.ParseError: error
+    error
+    Note
+    Line
+    """
+    from xml.etree.ElementTree import ParseError
+    exc = ParseError("error\nerror")
+    exc.add_note('Note\nLine')
     raise exc
 
 

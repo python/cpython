@@ -1,0 +1,3 @@
+Speed up :meth:`BaseExceptionGroup.derive`,
+:meth:`BaseExceptionGroup.subgroup`, and :meth:`BaseExceptionGroup.split` by
+changing how they parse passed arguments.
