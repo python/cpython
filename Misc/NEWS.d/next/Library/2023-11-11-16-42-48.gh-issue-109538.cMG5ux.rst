@@ -1,1 +1,1 @@
-Issue warning message instead of having :class:`RuntimeError` be displayed when event loop has already been closed at :method:`StreamWriter.__del__`
+Issue warning message instead of having :class:`RuntimeError` be displayed when event loop has already been closed at :meth:`StreamWriter.__del__`.
