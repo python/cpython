@@ -394,7 +394,7 @@ _PyUop_Replacements[OPCODE_METADATA_SIZE] = {
 };
 
 static const uint16_t
-BRANCH_TO_GUARDS[4][2] = {
+BRANCH_TO_GUARD[4][2] = {
     [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_TRUE_POP,
     [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_FALSE_POP,
     [POP_JUMP_IF_TRUE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_FALSE_POP,
@@ -545,7 +545,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
-                uint32_t uopcode = BRANCH_TO_GUARDS[opcode - POP_JUMP_IF_FALSE][jump_likely];
+                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, uopcode=%s\n",
                         uop_name(opcode), oparg,
@@ -761,16 +761,6 @@ done:
 #define UNSET_BIT(array, bit) (array[(bit)>>5] &= ~(1<<((bit)&31)))
 #define SET_BIT(array, bit) (array[(bit)>>5] |= (1<<((bit)&31)))
 #define BIT_IS_SET(array, bit) (array[(bit)>>5] & (1<<((bit)&31)))
-
-static bool
-is_branch(int opcode) {
-    /* Currently there are no jumps in the buffer,
-     * but we expect the optimizer to add them
-     * in the future. */
-    assert(opcode != _POP_JUMP_IF_FALSE &&
-           opcode != _POP_JUMP_IF_TRUE);
-    return false;
-}
 
 /* Count the number of used uops, and mark them in the bit vector `used`.
  * This can be done in a single pass using simple reachability analysis,

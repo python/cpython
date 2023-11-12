@@ -1062,7 +1062,6 @@ error_tier_two:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-    //assert(next_uop[-1].target + _PyCode_CODE((PyCodeObject *)frame->f_executable) == frame->instr_ptr);
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 " @ %d]\n", opcode, operand, (int)(next_uop-current_executor->trace-1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(opcode, miss);
