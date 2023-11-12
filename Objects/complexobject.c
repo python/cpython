@@ -940,6 +940,8 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
                      Py_TYPE(r)->tp_name);
+        /* Here r is not a complex subtype, hence above
+           try_complex_special_method() call was unsuccessful. */
         assert(!own_r);
         return NULL;
     }
