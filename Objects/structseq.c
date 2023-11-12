@@ -8,7 +8,6 @@
 */
 
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -421,11 +420,12 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
             if (!key) {
                 goto error;
             }
-            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
-            Py_DECREF(key);
-            if (!ob) {
+            PyObject *ob;
+            if (PyDict_Pop(kwargs, key, self->ob_item[i], &ob) < 0) {
+                Py_DECREF(key);
                 goto error;
             }
+            Py_DECREF(key);
             result->ob_item[i] = ob;
         }
         // Check if there are any unexpected fields.

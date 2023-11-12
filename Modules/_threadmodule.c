@@ -967,12 +967,12 @@ local_clear(localobject *self)
         HEAD_UNLOCK(runtime);
         while (tstate) {
             if (tstate->dict) {
-                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-                if (v != NULL) {
-                    Py_DECREF(v);
+                PyObject *v;
+                if (PyDict_Pop(tstate->dict, self->key, Py_None, &v) < 0) {
+                    PyErr_Clear();
                 }
                 else {
-                    PyErr_Clear();
+                    Py_DECREF(v);
                 }
             }
             HEAD_LOCK(runtime);

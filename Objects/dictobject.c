@@ -3493,7 +3493,9 @@ static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 /*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
 {
-    return _PyDict_Pop((PyObject*)self, key, default_value);
+    PyObject *result;
+    PyDict_Pop((PyObject*)self, key, default_value, &result);
+    return result;
 }
 
 /*[clinic input]

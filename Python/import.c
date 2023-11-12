@@ -395,7 +395,8 @@ remove_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *modules = MODULES(tstate->interp);
     if (PyDict_CheckExact(modules)) {
-        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
+        PyObject *mod;
+        (void)PyDict_Pop(modules, name, Py_None, &mod);
         Py_XDECREF(mod);
     }
     else if (PyMapping_DelItem(modules, name) < 0) {

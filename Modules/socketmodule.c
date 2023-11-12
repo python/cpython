@@ -396,11 +396,12 @@ remove_unusable_flags(PyObject *m)
             if (flag_name == NULL) {
                 return -1;
             }
-            PyObject *v = _PyDict_Pop(dict, flag_name, Py_None);
-            Py_DECREF(flag_name);
-            if (v == NULL) {
+            PyObject *v;
+            if (PyDict_Pop(dict, flag_name, Py_None, &v) < 0) {
+                Py_DECREF(flag_name);
                 return -1;
             }
+            Py_DECREF(flag_name);
             Py_DECREF(v);
         }
     }

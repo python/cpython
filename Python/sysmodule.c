@@ -125,8 +125,7 @@ sys_set_object(PyInterpreterState *interp, PyObject *key, PyObject *v)
     }
     PyObject *sd = interp->sysdict;
     if (v == NULL) {
-        v = _PyDict_Pop(sd, key, Py_None);
-        if (v == NULL) {
+        if (PyDict_Pop(sd, key, Py_None, &v) < 0) {
             return -1;
         }
         Py_DECREF(v);
