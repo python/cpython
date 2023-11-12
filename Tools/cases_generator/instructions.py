@@ -176,16 +176,17 @@ class Instruction:
                 )
             else:
                 if bits == 16 and not self.instr_flags.HAS_ARG_FLAG:
-                    out.emit(f"{typ}{ceffect.name} = ({typ.strip()})oparg;")
+                    out.emit(f"operand = oparg;")
                     length = 1
                 elif bits == 64:
-                    out.emit(f"{typ}{ceffect.name} = ({typ.strip()})read_u64x(&next_uop->operand);")
+                    out.emit(f"operand = read_u64x(&next_uop->operand);")
                     out.emit("next_uop += 2;")
                     length = 3
                 else:
-                    out.emit(f"{typ}{ceffect.name} = ({typ.strip()})next_uop->operand;")
+                    out.emit(f"operand = next_uop->operand;")
                     out.emit("next_uop += 1;")
                     length = 2
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
                 out.emit(f"assert(_PyUop_CodeSize(opcode) == {length});")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff

@@ -204,8 +204,9 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            uint32_t version = (uint32_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint32_t version = (uint32_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
@@ -1130,7 +1131,8 @@
         }
 
         case _GUARD_GLOBALS_VERSION: {
-            uint16_t version = (uint16_t)oparg;
+            operand = oparg;
+            uint16_t version = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 1);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_GLOBALS_VERSION);
@@ -1140,7 +1142,8 @@
         }
 
         case _GUARD_BUILTINS_VERSION: {
-            uint16_t version = (uint16_t)oparg;
+            operand = oparg;
+            uint16_t version = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 1);
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_BUILTINS_VERSION);
@@ -1152,8 +1155,9 @@
         case _LOAD_GLOBAL_MODULE: {
             PyObject *res;
             PyObject *null = NULL;
-            uint16_t index = (uint16_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint16_t index = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
@@ -1172,8 +1176,9 @@
         case _LOAD_GLOBAL_BUILTINS: {
             PyObject *res;
             PyObject *null = NULL;
-            uint16_t index = (uint16_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint16_t index = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
@@ -1623,8 +1628,9 @@
         case _GUARD_TYPE_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint32_t type_version = (uint32_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
@@ -1647,8 +1653,9 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint16_t index = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
@@ -1666,8 +1673,9 @@
         case _CHECK_ATTR_MODULE: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint32_t type_version = (uint32_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             DEOPT_IF(!PyModule_CheckExact(owner), _CHECK_ATTR_MODULE);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
@@ -1681,8 +1689,9 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint16_t index = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
@@ -1717,8 +1726,9 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t hint = (uint16_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint16_t hint = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
@@ -1750,8 +1760,9 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint16_t index = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
@@ -1769,8 +1780,9 @@
         case _CHECK_ATTR_CLASS: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint32_t type_version = (uint32_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             DEOPT_IF(!PyType_Check(owner), _CHECK_ATTR_CLASS);
             assert(type_version != 0);
@@ -1783,8 +1795,9 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)read_u64x(&next_uop->operand);
+            operand = read_u64x(&next_uop->operand);
             next_uop += 2;
+            PyObject *descr = (PyObject *)operand;
             assert(_PyUop_CodeSize(opcode) == 3);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -1811,7 +1824,8 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)oparg;
+            operand = oparg;
+            uint16_t index = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 1);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
@@ -1834,7 +1848,8 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)oparg;
+            operand = oparg;
+            uint16_t index = (uint16_t)operand;
             assert(_PyUop_CodeSize(opcode) == 1);
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
@@ -2409,8 +2424,9 @@
         case _GUARD_KEYS_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t keys_version = (uint32_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint32_t keys_version = (uint32_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
@@ -2423,8 +2439,9 @@
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)read_u64x(&next_uop->operand);
+            operand = read_u64x(&next_uop->operand);
             next_uop += 2;
+            PyObject *descr = (PyObject *)operand;
             assert(_PyUop_CodeSize(opcode) == 3);
             assert(oparg & 1);
             /* Cached method object */
@@ -2444,8 +2461,9 @@
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)read_u64x(&next_uop->operand);
+            operand = read_u64x(&next_uop->operand);
             next_uop += 2;
+            PyObject *descr = (PyObject *)operand;
             assert(_PyUop_CodeSize(opcode) == 3);
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
@@ -2464,8 +2482,9 @@
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)read_u64x(&next_uop->operand);
+            operand = read_u64x(&next_uop->operand);
             next_uop += 2;
+            PyObject *descr = (PyObject *)operand;
             assert(_PyUop_CodeSize(opcode) == 3);
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2480,8 +2499,9 @@
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)read_u64x(&next_uop->operand);
+            operand = read_u64x(&next_uop->operand);
             next_uop += 2;
+            PyObject *descr = (PyObject *)operand;
             assert(_PyUop_CodeSize(opcode) == 3);
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
@@ -2509,8 +2529,9 @@
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)read_u64x(&next_uop->operand);
+            operand = read_u64x(&next_uop->operand);
             next_uop += 2;
+            PyObject *descr = (PyObject *)operand;
             assert(_PyUop_CodeSize(opcode) == 3);
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
@@ -2560,8 +2581,9 @@
             PyObject *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)next_uop->operand;
+            operand = next_uop->operand;
             next_uop += 1;
+            uint32_t func_version = (uint32_t)operand;
             assert(_PyUop_CodeSize(opcode) == 2);
             DEOPT_IF(!PyFunction_Check(callable), _CHECK_FUNCTION_EXACT_ARGS);
             PyFunctionObject *func = (PyFunctionObject *)callable;
