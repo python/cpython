@@ -973,6 +973,8 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         cr = ((PyComplexObject*)r)->cval;
         cr_is_complex = 1;
         assert(own_r);
+        /* r was a newly created complex number, rather
+           than the original "real" argument. */
         Py_DECREF(r);
     }
     else {
@@ -980,8 +982,6 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
            nothing in the imaginary direction.
            Just treat it as a double. */
         tmp = PyNumber_Float(r);
-        /* r was a newly created complex number, rather
-           than the original "real" argument. */
         assert(!own_r);
         if (tmp == NULL)
             return NULL;
