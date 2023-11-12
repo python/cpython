@@ -2001,6 +2001,23 @@ class InstructionTests(InstructionTestCase):
                                   positions=None)
         self.assertEqual(10 + 2 + 1*2 + 100*2, instruction.jump_target)
 
+    def test_argval_argrepr(self):
+        f = dis.Instruction._get_argval_argrepr
+
+        offset = 42
+        co_consts = (0, 1, 2, 3)
+        names = {1: 'a', 2: 'b'}
+        varname_from_oparg = lambda i : names[i]
+        args = (offset, co_consts, names, varname_from_oparg)
+        self.assertEqual(f(opcode.opmap["POP_TOP"], None, *args), (None, ''))
+        self.assertEqual(f(opcode.opmap["LOAD_CONST"], 1, *args), (1, '1'))
+        self.assertEqual(f(opcode.opmap["LOAD_GLOBAL"], 2, *args), ('a', 'a'))
+        self.assertEqual(f(opcode.opmap["JUMP_BACKWARD"], 11, *args), (24, 'to 24'))
+        self.assertEqual(f(opcode.opmap["COMPARE_OP"], 3, *args), ('<', '<'))
+        self.assertEqual(f(opcode.opmap["SET_FUNCTION_ATTRIBUTE"], 2, *args), (2, 'kwdefaults'))
+        self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
+        self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
+
     def test_start_offset(self):
         # When no extended args are present,
         # start_offset should be equal to offset
