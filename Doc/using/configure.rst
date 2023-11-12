@@ -579,6 +579,13 @@ also be used to improve performance.
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
 
+.. option:: --without-mimalloc
+
+   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   (enabled by default).
+
+   See also :envvar:`PYTHONMALLOC` environment variable.
+
 .. option:: --without-pymalloc
 
    Disable the specialized Python memory allocator :ref:`pymalloc <pymalloc>`

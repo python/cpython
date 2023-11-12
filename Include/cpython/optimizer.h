@@ -45,6 +45,8 @@ typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_C
 typedef struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
+    /* These thresholds are treated as signed so do not exceed INT16_MAX
+     * Use INT16_MAX to indicate that the optimizer should never be called */
     uint16_t resume_threshold;
     uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
@@ -76,6 +78,8 @@ PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
 #define OPTIMIZER_BITS_IN_COUNTER 4
+/* Minimum of 16 additional executions before retry */
+#define MINIMUM_TIER2_BACKOFF 4
 
 #ifdef __cplusplus
 }

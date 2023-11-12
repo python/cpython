@@ -671,6 +671,14 @@ def test_pdb_alias_command():
     ...     'pi o',
     ...     's',
     ...     'ps',
+    ...     'alias myp p %2',
+    ...     'alias myp',
+    ...     'alias myp p %1',
+    ...     'myp',
+    ...     'myp 1',
+    ...     'myp 1 2',
+    ...     'alias repeat_second_arg p "%* %2"',
+    ...     'repeat_second_arg 1 2 3',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -692,6 +700,20 @@ def test_pdb_alias_command():
     (Pdb) ps
     self.attr1 = 10
     self.attr2 = str
+    (Pdb) alias myp p %2
+    *** Replaceable parameters must be consecutive
+    (Pdb) alias myp
+    *** Unknown alias 'myp'
+    (Pdb) alias myp p %1
+    (Pdb) myp
+    *** Not enough arguments for alias 'myp'
+    (Pdb) myp 1
+    1
+    (Pdb) myp 1 2
+    *** Too many arguments for alias 'myp'
+    (Pdb) alias repeat_second_arg p "%* %2"
+    (Pdb) repeat_second_arg 1 2 3
+    '1 2 3 2'
     (Pdb) continue
     """
 
@@ -2327,6 +2349,31 @@ def test_pdb_issue_gh_108976():
     (Pdb) continue
     """
 
+
+def test_pdb_issue_gh_80731():
+    """See GH-80731
+
+    pdb should correctly print exception info if in an except block.
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'import sys',
+    ...     'sys.exc_info()',
+    ...     'continue'
+    ... ]):
+    ...     try:
+    ...         raise ValueError('Correct')
+    ...     except ValueError:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         pass
+    > <doctest test.test_pdb.test_pdb_issue_gh_80731[0]>(10)<module>()
+    -> pass
+    (Pdb) import sys
+    (Pdb) sys.exc_info()
+    (<class 'ValueError'>, ValueError('Correct'), <traceback object at ...>)
+    (Pdb) continue
+    """
+
+
 def test_pdb_ambiguous_statements():
     """See GH-104301
 
@@ -2347,6 +2394,30 @@ def test_pdb_ambiguous_statements():
     The value of n is 42
     > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
     -> with PdbTestInput([
+    (Pdb) continue
+    """
+
+def test_pdb_f_trace_lines():
+    """GH-80675
+
+    pdb should work even if f_trace_lines is set to False on some frames.
+
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import sys
+    ...     frame = sys._getframe()
+    ...     frame.f_trace_lines = False
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     if frame.f_trace_lines != False:
+    ...         print("f_trace_lines is not reset after continue!")
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_f_trace_lines[1]>(6)test_function()
+    -> if frame.f_trace_lines != False:
     (Pdb) continue
     """
 

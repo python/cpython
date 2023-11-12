@@ -4,7 +4,13 @@
  * foo, bar), only the first one is called the same as the compiled file.
  */
 
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
 #define Py_LIMITED_API 0x03020000
+#endif
 
 #include <Python.h>
 
