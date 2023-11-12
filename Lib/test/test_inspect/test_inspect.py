@@ -4542,7 +4542,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         # This ensures this test will start failing as more signatures are
         # added, so the affected items can be moved into the scope of the
         # regression test above
-        for name in no_signature - needs_null:
+        for name in no_signature - needs_null - needs_groups:
             with self.subTest(builtin=name):
                 self.assertIsNone(ns[name].__text_signature__)
 
