@@ -1088,7 +1088,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        We created one other reference when the link was created.
        The linked list only has borrowed references. */
     if (_PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
-                                link->hash, Py_None, &popresult) < 0) {
+                              link->hash, Py_None, &popresult) < 0) {
         /* An error arose while trying to remove the oldest key (the one
            being evicted) from the cache.  We restore the link to its
            original position as the oldest link.  Then we allow the

@@ -969,6 +969,7 @@ local_clear(localobject *self)
             if (tstate->dict) {
                 PyObject *v;
                 if (PyDict_Pop(tstate->dict, self->key, Py_None, &v) < 0) {
+                    // Silently ignore error
                     PyErr_Clear();
                 }
                 else {
