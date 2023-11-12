@@ -1,0 +1,1 @@
+Make the ``memo`` dict thread safe without the GIL in mod:`json`.
