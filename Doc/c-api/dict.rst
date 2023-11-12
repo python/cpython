@@ -178,10 +178,10 @@ Dictionary Objects
 
    Remove *key* from dictionary *p* and return the removed value.
 
-   - If the key is present, set *\*result* to a :term:`strong reference` to the
-     removed value, and return ``1``.
+   - If the key is present, set *\*result* to a new reference to the removed
+     value, and return ``1``.
    - If the key is missing and *default_value* is not NULL, set *\*result*
-     to a :term:`strong reference` to *default_value*, and return ``0``.
+     to a new reference to *default_value*, and return ``0``.
    - If the key is missing and *default_value* is NULL, raise :exc:`KeyError`,
      and return -1.
    - On error, raise an exception and return ``-1``.
