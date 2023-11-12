@@ -31,6 +31,14 @@ WHITELIST = (
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_CompactValue",
     "_Py_NewRef",
+    "_Py_IsImmortal",
+    "_Py_STR",
+    "_PyLong_Add",
+    "_PyLong_Multiply",
+    "_PyLong_Subtract",
+    "Py_NewRef",
+    "_PyList_ITEMS",
+    "_PyTuple_ITEMS",
 )
 
 def makes_escaping_api_call(instr: parsing.Node) -> bool:
@@ -47,6 +55,8 @@ def makes_escaping_api_call(instr: parsing.Node) -> bool:
         if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
             continue
         if tkn.text.endswith("Check"):
+            continue
+        if tkn.text.startswith("Py_Is"):
             continue
         if tkn.text.endswith("CheckExact"):
             continue
