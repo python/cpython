@@ -174,7 +174,7 @@ Dictionary Objects
    .. versionadded:: 3.4
 
 
-.. c:function:: int PyDict_Pop(PyObject *p, PyObject *key, PyObject *default_value, PyObject *result)
+.. c:function:: int PyDict_Pop(PyObject *p, PyObject *key, PyObject *default_value, PyObject **result)
 
    Remove *key* from dictionary *p* and return the removed value.
 
