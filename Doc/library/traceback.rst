@@ -346,7 +346,7 @@ capture data for later printing in a lightweight fashion.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-   .. method::  format_exception_only(*, show_group=False, limit_group=True)
+   .. method::  format_exception_only(*, show_group=False)
 
       Format the exception part of the traceback.
 
@@ -362,17 +362,11 @@ capture data for later printing in a lightweight fashion.
       :exc:`BaseExceptionGroup`, the nested exceptions are included as
       well, recursively, with indentation relative to their nesting depth.
 
-      When *limit_group* is ``True``, and the exception is an instance of
-      :exc:`BaseExceptionGroup`, and *show_group* is ``True``,
-      the number of nested exception groups
-      and the number of exceptions in each exception group is limited
-      the same way :meth:`TracebackException.format` does.
-
       .. versionchanged:: 3.11
          The exception's notes are now included in the output.
 
       .. versionchanged:: 3.13
-         *show_group* and *limit_group* parameters were added.
+         *show_group* parameter was added.
 
 
 :class:`StackSummary` Objects
