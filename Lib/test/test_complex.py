@@ -185,22 +185,22 @@ class ComplexTest(unittest.TestCase):
         check(2 ** 53, range(-100, 0), lambda delta: True)
 
     def test_add(self):
-        self.assertAlmostEqual(1j + 1, complex(+1, 1))
-        self.assertAlmostEqual(1j + (-1), complex(-1, 1))
+        self.assertEqual(1j + 1, complex(+1, 1))
+        self.assertEqual(1j + (-1), complex(-1, 1))
         self.assertRaises(OverflowError, operator.add, 1j, 10**1000)
         self.assertRaises(TypeError, operator.add, 1j, None)
         self.assertRaises(TypeError, operator.add, None, 1j)
 
     def test_sub(self):
-        self.assertAlmostEqual(1j - 1, complex(-1, 1))
-        self.assertAlmostEqual(1j - (-1), complex(1, 1))
+        self.assertEqual(1j - 1, complex(-1, 1))
+        self.assertEqual(1j - (-1), complex(1, 1))
         self.assertRaises(OverflowError, operator.sub, 1j, 10**1000)
         self.assertRaises(TypeError, operator.sub, 1j, None)
         self.assertRaises(TypeError, operator.sub, None, 1j)
 
     def test_mul(self):
-        self.assertAlmostEqual(1j * 2, complex(0, 2))
-        self.assertAlmostEqual(1j * (-1), complex(0, -1))
+        self.assertEqual(1j * 2, complex(0, 2))
+        self.assertEqual(1j * (-1), complex(0, -1))
         self.assertRaises(OverflowError, operator.mul, 1j, 10**1000)
         self.assertRaises(TypeError, operator.mul, 1j, None)
         self.assertRaises(TypeError, operator.mul, None, 1j)
@@ -237,9 +237,9 @@ class ComplexTest(unittest.TestCase):
     def test_pow(self):
         self.assertAlmostEqual(pow(1+1j, 0+0j), 1.0)
         self.assertAlmostEqual(pow(0+0j, 2+0j), 0.0)
-        self.assertAlmostEqual(pow(0+0j, 2000+0j), 0.0)
-        self.assertAlmostEqual(pow(0, 0+0j), 1.0)
-        self.assertAlmostEqual(pow(-1, 0+0j), 1.0)
+        self.assertEqual(pow(0+0j, 2000+0j), 0.0)
+        self.assertEqual(pow(0, 0+0j), 1.0)
+        self.assertEqual(pow(-1, 0+0j), 1.0)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, 1j)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, -1000)
         self.assertAlmostEqual(pow(1j, -1), 1/1j)
@@ -398,8 +398,8 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex('1e-500'), 0.0 + 0.0j)
         self.assertAlmostEqual(complex('-1e-500j'), 0.0 - 0.0j)
         self.assertAlmostEqual(complex('-1e-500+1e-500j'), -0.0 + 0.0j)
-        self.assertAlmostEqual(complex('1-1j'), 1.0 - 1j)
-        self.assertAlmostEqual(complex('1J'), 1j)
+        self.assertEqual(complex('1-1j'), 1.0 - 1j)
+        self.assertEqual(complex('1J'), 1j)
 
         class complex2(complex): pass
         self.assertAlmostEqual(complex(complex2(1+1j)), 1+1j)
