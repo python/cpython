@@ -269,7 +269,7 @@ _PyIntrinsics_BinaryFunctions[] = {
 #undef INTRINSIC_FUNC_ENTRY
 
 PyObject*
-PyUnstable_GetUnaryIntrinsicName(int index)
+_PyCompile_GetUnaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_1) {
         return NULL;
@@ -278,7 +278,7 @@ PyUnstable_GetUnaryIntrinsicName(int index)
 }
 
 PyObject*
-PyUnstable_GetBinaryIntrinsicName(int index)
+_PyCompile_GetBinaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_2) {
         return NULL;

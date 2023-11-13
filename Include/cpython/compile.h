@@ -69,14 +69,14 @@ typedef struct {
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
 
-PyAPI_FUNC(int) PyUnstable_OpcodeIsValid(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasArg(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasConst(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasName(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasJump(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasFree(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasLocal(int opcode);
-PyAPI_FUNC(int) PyUnstable_OpcodeHasExc(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasName(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasJump(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasFree(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasLocal(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasExc(int opcode);
 
-PyAPI_FUNC(PyObject*) PyUnstable_GetUnaryIntrinsicName(int index);
-PyAPI_FUNC(PyObject*) PyUnstable_GetBinaryIntrinsicName(int index);
+PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
+PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
