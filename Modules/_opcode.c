@@ -6,6 +6,7 @@
 #include "compile.h"
 #include "opcode.h"
 #include "internal/pycore_code.h"
+#include "internal/pycore_compile.h"
 #include "internal/pycore_intrinsics.h"
 
 /*[clinic input]
