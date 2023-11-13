@@ -1,0 +1,2 @@
+Add :func:`glob.translate`. This function converts a pathname with shell-style
+wildcards to a regular expression.

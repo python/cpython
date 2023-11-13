@@ -6,8 +6,8 @@ operating systems.
 """
 
 import contextlib
-import fnmatch
 import functools
+import glob
 import io
 import ntpath
 import os
@@ -76,78 +76,16 @@ def _is_case_sensitive(pathmod):
 #
 
 
-# fnmatch.translate() returns a regular expression that includes a prefix and
-# a suffix, which enable matching newlines and ensure the end of the string is
-# matched, respectively. These features are undesirable for our implementation
-# of PurePatch.match(), which represents path separators as newlines and joins
-# pattern segments together. As a workaround, we define a slice object that
-# can remove the prefix and suffix from any translate() result. See the
-# _compile_pattern_lines() function for more details.
-_FNMATCH_PREFIX, _FNMATCH_SUFFIX = fnmatch.translate('_').split('_')
-_FNMATCH_SLICE = slice(len(_FNMATCH_PREFIX), -len(_FNMATCH_SUFFIX))
-_SWAP_SEP_AND_NEWLINE = {
-    '/': str.maketrans({'/': '\n', '\n': '/'}),
-    '\\': str.maketrans({'\\': '\n', '\n': '\\'}),
-}
-
-
 @functools.lru_cache(maxsize=256)
-def _compile_pattern(pat, case_sensitive):
+def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
-    sensitivity), or None if the pattern should match everything."""
-    if pat == '*':
-        return None
+    sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    return re.compile(fnmatch.translate(pat), flags).match
-
-
-@functools.lru_cache()
-def _compile_pattern_lines(pattern_lines, case_sensitive):
-    """Compile the given pattern lines to an `re.Pattern` object.
-
-    The *pattern_lines* argument is a glob-style pattern (e.g. '**/*.py') with
-    its path separators and newlines swapped (e.g. '**\n*.py`). By using
-    newlines to separate path components, and not setting `re.DOTALL`, we
-    ensure that the `*` wildcard cannot match path separators.
-
-    The returned `re.Pattern` object may have its `match()` method called to
-    match a complete pattern, or `search()` to match from the right. The
-    argument supplied to these methods must also have its path separators and
-    newlines swapped.
-    """
-
-    # Match the start of the path, or just after a path separator
-    parts = ['^']
-    for part in pattern_lines.splitlines(keepends=True):
-        if part == '*\n':
-            part = r'.+\n'
-        elif part == '*':
-            part = r'.+'
-        elif part == '**\n':
-            # '**/' component: we use '(?s:.)' rather than '.' so that path
-            # separators (i.e. newlines) are matched. The trailing '^' ensures
-            # we terminate after a path separator (i.e. on a new line).
-            part = r'(?s:.)*^'
-        elif part == '**':
-            # '**' component.
-            part = r'(?s:.)*'
-        elif '**' in part:
-            raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        else:
-            # Any other component: pass to fnmatch.translate(). We slice off
-            # the common prefix and suffix added by translate() to ensure that
-            # re.DOTALL is not set, and the end of the string not matched,
-            # respectively. With DOTALL not set, '*' wildcards will not match
-            # path separators, because the '.' characters in the pattern will
-            # not match newlines.
-            part = fnmatch.translate(part)[_FNMATCH_SLICE]
-        parts.append(part)
-    # Match the end of the path, always.
-    parts.append(r'\Z')
-    flags = re.MULTILINE
-    if not case_sensitive:
-        flags |= re.IGNORECASE
-    return re.compile(''.join(parts), flags=flags)
+    regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
+    # The string representation of an empty path is a single dot ('.'). Empty
+    # paths shouldn't match wildcards, so we consume it with an atomic group.
+    regex = r'(\.\Z)?+' + regex
+    return re.compile(regex, flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -171,7 +109,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                     except OSError:
                         continue
                 name = entry.name
-                if match is None or match(name):
+                if match(name):
                     yield parent_path._make_child_relpath(name)
 
 
@@ -283,10 +221,6 @@ class _PurePathBase:
         # for the first time. It's used to implement `_str_normcase`
         '_str',
 
-        # The `_lines_cached` slot stores the string path with path separators
-        # and newlines swapped. This is used to implement `match()`.
-        '_lines_cached',
-
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `_PathBase.resolve()`. This prevents duplicate
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
@@ -372,20 +306,6 @@ class _PurePathBase:
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
-
-    @property
-    def _lines(self):
-        # Path with separators and newlines swapped, for pattern matching.
-        try:
-            return self._lines_cached
-        except AttributeError:
-            path_str = str(self)
-            if path_str == '.':
-                self._lines_cached = ''
-            else:
-                trans = _SWAP_SEP_AND_NEWLINE[self.pathmod.sep]
-                self._lines_cached = path_str.translate(trans)
-            return self._lines_cached
 
     @property
     def drive(self):
@@ -629,13 +549,16 @@ class _PurePathBase:
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
-        pattern = _compile_pattern_lines(path_pattern._lines, case_sensitive)
+        sep = path_pattern.pathmod.sep
+        pattern_str = str(path_pattern)
         if path_pattern.drive or path_pattern.root:
-            return pattern.match(self._lines) is not None
+            pass
         elif path_pattern._tail:
-            return pattern.search(self._lines) is not None
+            pattern_str = f'**{sep}{pattern_str}'
         else:
             raise ValueError("empty pattern")
+        match = _compile_pattern(pattern_str, sep, case_sensitive)
+        return match(str(self)) is not None
 
 
 class PurePath(_PurePathBase):
@@ -1081,26 +1004,19 @@ class _PathBase(_PurePathBase):
         return contextlib.nullcontext(self.iterdir())
 
     def _make_child_relpath(self, name):
-        sep = self.pathmod.sep
-        lines_name = name.replace('\n', sep)
-        lines_str = self._lines
         path_str = str(self)
         tail = self._tail
         if tail:
-            path_str = f'{path_str}{sep}{name}'
-            lines_str = f'{lines_str}\n{lines_name}'
+            path_str = f'{path_str}{self.pathmod.sep}{name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
-            lines_str = f'{lines_str}{lines_name}'
         else:
             path_str = name
-            lines_str = lines_name
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
         path._root = self.root
         path._tail_cached = tail + [name]
-        path._lines_cached = lines_str
         return path
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
@@ -1151,6 +1067,7 @@ class _PathBase(_PurePathBase):
         # do not perform any filesystem access, which can be much faster!
         filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
+        sep = self.pathmod.sep
         paths = iter([self] if self.is_dir() else [])
         part_idx = 0
         while part_idx < len(pattern_parts):
@@ -1171,9 +1088,9 @@ class _PathBase(_PurePathBase):
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
 
                     # Filter out paths that don't match pattern.
-                    prefix_len = len(self._make_child_relpath('_')._lines) - 1
-                    match = _compile_pattern_lines(path_pattern._lines, case_sensitive).match
-                    paths = (path for path in paths if match(path._lines[prefix_len:]))
+                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
+                    match = _compile_pattern(str(path_pattern), sep, case_sensitive)
+                    paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
 
                 dir_only = part_idx < len(pattern_parts)
@@ -1186,7 +1103,7 @@ class _PathBase(_PurePathBase):
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
                 dir_only = part_idx < len(pattern_parts)
-                match = _compile_pattern(part, case_sensitive)
+                match = _compile_pattern(part, sep, case_sensitive)
                 paths = _select_children(paths, dir_only, follow_symlinks, match)
         return paths
 

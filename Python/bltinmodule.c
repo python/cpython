@@ -482,6 +482,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
 PyDoc_STRVAR(breakpoint_doc,
 "breakpoint(*args, **kws)\n\
+--\n\
 \n\
 Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
 whatever arguments are passed.\n\
@@ -626,7 +627,8 @@ static PyMethodDef filter_methods[] = {
 };
 
 PyDoc_STRVAR(filter_doc,
-"filter(function or None, iterable) --> filter object\n\
+"filter(function, iterable, /)\n\
+--\n\
 \n\
 Return an iterator yielding those items of iterable for which function(item)\n\
 is true. If function is None, return the items that are true.");
@@ -1449,7 +1451,8 @@ static PyMethodDef map_methods[] = {
 
 
 PyDoc_STRVAR(map_doc,
-"map(func, *iterables) --> map object\n\
+"map(function, /, *iterables)\n\
+--\n\
 \n\
 Make an iterator that computes the function using arguments from\n\
 each of the iterables.  Stops when the shortest iterable is exhausted.");
@@ -1888,7 +1891,7 @@ min(arg1, arg2, *args, *[, key=func]) -> value\n\
 With a single iterable argument, return its smallest item. The\n\
 default keyword-only argument specifies an object to return if\n\
 the provided iterable is empty.\n\
-With two or more arguments, return the smallest argument.");
+With two or more positional arguments, return the smallest argument.");
 
 
 /* AC: cannot convert yet, waiting for *args support */
@@ -1905,7 +1908,7 @@ max(arg1, arg2, *args, *[, key=func]) -> value\n\
 With a single iterable argument, return its biggest item. The\n\
 default keyword-only argument specifies an object to return if\n\
 the provided iterable is empty.\n\
-With two or more arguments, return the largest argument.");
+With two or more positional arguments, return the largest argument.");
 
 
 /*[clinic input]
@@ -2958,10 +2961,8 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables, strict=False) --> Yield tuples until an input is exhausted.\n\
-\n\
-   >>> list(zip('abcdefg', range(3), range(4)))\n\
-   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]\n\
+"zip(*iterables, strict=False)\n\
+--\n\
 \n\
 The zip object yields n-length tuples, where n is the number of iterables\n\
 passed as positional arguments to zip().  The i-th element in every tuple\n\
@@ -2969,7 +2970,10 @@ comes from the i-th iterable argument to zip().  This continues until the\n\
 shortest argument is exhausted.\n\
 \n\
 If strict is true and one of the arguments is exhausted before the others,\n\
-raise a ValueError.");
+raise a ValueError.\n\
+\n\
+   >>> list(zip('abcdefg', range(3), range(4)))\n\
+   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
