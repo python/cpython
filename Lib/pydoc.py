@@ -2087,7 +2087,8 @@ Each module also comes with a one-line summary of what it does; to list
 the modules whose name or summary contain a given string such as "spam",
 type "modules spam".
 
-To quit this help utility and return to the interpreter, just type "quit".
+To quit this help utility and return to the interpreter,
+type "q" or "quit".
 '''.format('%d.%d' % sys.version_info[:2]))
 
     def list(self, items, columns=4, width=80):
