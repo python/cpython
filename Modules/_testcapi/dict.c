@@ -1,5 +1,3 @@
-#include <stddef.h>               // ptrdiff_t
-
 #include "parts.h"
 #include "util.h"
 

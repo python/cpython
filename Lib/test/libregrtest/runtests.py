@@ -8,7 +8,7 @@ from typing import Any
 from test import support
 
 from .utils import (
-    StrPath, StrJSON, TestTuple, FilterTuple, FilterDict)
+    StrPath, StrJSON, TestTuple, TestFilter, FilterTuple, FilterDict)
 
 
 class JsonFileType:
@@ -72,8 +72,7 @@ class RunTests:
     tests: TestTuple
     fail_fast: bool
     fail_env_changed: bool
-    match_tests: FilterTuple | None
-    ignore_tests: FilterTuple | None
+    match_tests: TestFilter
     match_tests_dict: FilterDict | None
     rerun: bool
     forever: bool
@@ -86,12 +85,13 @@ class RunTests:
     hunt_refleak: HuntRefleak | None
     test_dir: StrPath | None
     use_junit: bool
+    coverage: bool
     memory_limit: str | None
     gc_threshold: int | None
     use_resources: tuple[str, ...]
     python_cmd: tuple[str, ...] | None
     randomize: bool
-    random_seed: int | None
+    random_seed: int | str
     json_file: JsonFile | None
 
     def copy(self, **override):

@@ -244,8 +244,7 @@ _opcode_get_nb_ops_impl(PyObject *module)
     }
 #define ADD_NB_OP(NUM, STR) \
     do { \
-        PyObject *pair = Py_BuildValue( \
-            "NN", PyUnicode_FromString(#NUM), PyUnicode_FromString(STR)); \
+        PyObject *pair = Py_BuildValue("ss", #NUM, STR); \
         if (pair == NULL) { \
             Py_DECREF(list); \
             return NULL; \

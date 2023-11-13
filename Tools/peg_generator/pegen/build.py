@@ -123,7 +123,14 @@ def compile_c_extension(
     common_sources = [
         str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
         str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "buffer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "string_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "file_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "utf8_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "readline_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
@@ -133,6 +140,8 @@ def compile_c_extension(
     include_dirs = [
         str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
         str(MOD_DIR.parent.parent.parent / "Parser"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer"),
     ]
     extension = Extension(
         extension_name,
