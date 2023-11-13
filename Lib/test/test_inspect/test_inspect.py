@@ -4734,12 +4734,13 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_null = {"anext"}
         no_signature |= needs_null
         # These need *args support in Argument Clinic
-        needs_varargs = {"breakpoint", "min", "max", "__build_class__"}
+        needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
         # These builtin types are expected to provide introspection info
         types_with_signatures = {
-            'complex', 'enumerate', 'float', 'list', 'memoryview', 'object',
-            'property', 'reversed', 'tuple',
+            'bool', 'classmethod', 'complex', 'enumerate', 'filter', 'float',
+            'frozenset', 'list', 'map', 'memoryview', 'object', 'property',
+            'reversed', 'set', 'staticmethod', 'tuple', 'zip'
         }
         # Check the signatures we expect to be there
         ns = vars(builtins)
@@ -4752,6 +4753,10 @@ class TestSignatureDefinitions(unittest.TestCase):
                 no_signature.add(name)
             if (name in no_signature):
                 # Not yet converted
+                continue
+            if name in {'classmethod', 'staticmethod'}:
+                # Bug gh-112006: inspect.unwrap() does not work with types
+                # with the __wrapped__ data descriptor.
                 continue
             with self.subTest(builtin=name):
                 self.assertIsNotNone(inspect.signature(obj))
