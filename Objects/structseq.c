@@ -416,22 +416,15 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         // We do not support types with unnamed fields, so we can iterate over
         // i >= n_visible_fields case without slicing with (i - n_unnamed_fields).
         for (i = 0; i < n_fields; ++i) {
-            PyObject *key = PyUnicode_FromString(Py_TYPE(self)->tp_members[i].name);
-            if (!key) {
-                goto error;
-            }
             PyObject *ob;
-            if (PyDict_Pop(kwargs, key, &ob) < 0) {
-                Py_DECREF(key);
+            if (PyDict_PopString(kwargs, Py_TYPE(self)->tp_members[i].name,
+                                 &ob) < 0) {
                 goto error;
             }
-            Py_DECREF(key);
-            if (ob != NULL) {
-                result->ob_item[i] = ob;
+            if (ob == NULL) {
+                ob = Py_NewRef(self->ob_item[i]);
             }
-            else {
-                result->ob_item[i] = Py_NewRef(self->ob_item[i]);
-            }
+            result->ob_item[i] = ob;
         }
         // Check if there are any unexpected fields.
         if (PyDict_GET_SIZE(kwargs) > 0) {

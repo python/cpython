@@ -392,15 +392,10 @@ remove_unusable_flags(PyObject *m)
             break;
         }
         else {
-            PyObject *flag_name = PyUnicode_FromString(win_runtime_flags[i].flag_name);
-            if (flag_name == NULL) {
+            if (PyDict_PopString(dict, win_runtime_flags[i].flag_name,
+                                 NULL) < 0) {
                 return -1;
             }
-            if (PyDict_Pop(dict, flag_name, NULL) < 0) {
-                Py_DECREF(flag_name);
-                return -1;
-            }
-            Py_DECREF(flag_name);
         }
     }
     return 0;

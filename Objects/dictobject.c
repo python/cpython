@@ -2307,6 +2307,23 @@ PyDict_Pop(PyObject *op, PyObject *key, PyObject **result)
 }
 
 
+int
+PyDict_PopString(PyObject *op, const char *key, PyObject **result)
+{
+    PyObject *key_obj = PyUnicode_FromString(key);
+    if (key_obj == NULL) {
+        if (result != NULL) {
+            *result = NULL;
+        }
+        return -1;
+    }
+
+    int res = PyDict_Pop(op, key_obj, result);
+    Py_DECREF(key_obj);
+    return res;
+}
+
+
 PyObject *
 _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
 {
