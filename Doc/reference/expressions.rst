@@ -1774,10 +1774,11 @@ Or, when processing a file stream in chunks:
    while chunk := file.read(9000):
        process(chunk)
 
-Assignment expressions must be surrounded by parentheses when used
-as sub-expressions in slicing, conditional, lambda,
-keyword-argument, and comprehension-if expressions
-and in ``assert`` and ``with`` statements.
+Assignment expressions must be surrounded by parentheses when
+used as expression statements and when used as sub-expressions in
+slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions and
+in ``assert``, ``with``, and ``assignment`` statements.
 In all other places where they can be used, parentheses are not required,
 including in ``if`` and ``while`` statements.
 
