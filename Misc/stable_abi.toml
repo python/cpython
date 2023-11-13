@@ -2481,5 +2481,3 @@
 [function._Py_SetRefcnt]
     added = '3.13'
     abi_only = true
-[function.PyDict_Pop]
-    added = '3.13'
