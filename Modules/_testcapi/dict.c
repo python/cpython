@@ -368,11 +368,7 @@ dict_pop_null(PyObject *self, PyObject *args)
     }
     NULLABLE(dict);
     NULLABLE(key);
-    int res = PyDict_Pop(dict, key,  NULL);
-    if (res < 0) {
-        return NULL;
-    }
-    return PyLong_FromLong(res);
+    RETURN_INT(PyDict_Pop(dict, key,  NULL));
 }
 
 
@@ -400,6 +396,20 @@ dict_popstring(PyObject *self, PyObject *args)
         assert(result != NULL);
     }
     return Py_BuildValue("iN", res, result);
+}
+
+
+static PyObject *
+dict_popstring_null(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    const char *key;
+    Py_ssize_t key_size;
+    if (!PyArg_ParseTuple(args, "Oz#", &dict, &key, &key_size)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    RETURN_INT(PyDict_PopString(dict, key,  NULL));
 }
 
 
@@ -433,6 +443,7 @@ static PyMethodDef test_methods[] = {
     {"dict_pop", dict_pop, METH_VARARGS},
     {"dict_pop_null", dict_pop_null, METH_VARARGS},
     {"dict_popstring", dict_popstring, METH_VARARGS},
+    {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
     {NULL},
 };
 

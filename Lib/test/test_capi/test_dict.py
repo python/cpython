@@ -477,23 +477,46 @@ class CAPITest(unittest.TestCase):
     def test_dict_popstring(self):
         # Test PyDict_PopString()
         dict_popstring = _testcapi.dict_popstring
+        dict_popstring_null = _testcapi.dict_popstring_null
 
-        # key present
+        # key present, get removed value
         mydict = {"key": "value", "key2": "value2"}
         self.assertEqual(dict_popstring(mydict, "key"), (1, "value"))
         self.assertEqual(mydict, {"key2": "value2"})
         self.assertEqual(dict_popstring(mydict, "key2"), (1, "value2"))
         self.assertEqual(mydict, {})
 
+        # key present, ignore removed value
+        mydict = {"key": "value", "key2": "value2"}
+        self.assertEqual(dict_popstring_null(mydict, "key"), 1)
+        self.assertEqual(mydict, {"key2": "value2"})
+        self.assertEqual(dict_popstring_null(mydict, "key2"), 1)
+        self.assertEqual(mydict, {})
+
         # key missing; empty dict has a fast path
         self.assertEqual(dict_popstring({}, "key"), (0, NULL))
+        self.assertEqual(dict_popstring_null({}, "key"), 0)
         self.assertEqual(dict_popstring({"a": 1}, "key"), (0, NULL))
+        self.assertEqual(dict_popstring_null({"a": 1}, "key"), 0)
+
+        # non-ASCII key
+        non_ascii = '\U0001f40d'
+        dct = {'\U0001f40d': 123}
+        self.assertEqual(dict_popstring(dct, '\U0001f40d'.encode()), (1, 123))
+        dct = {'\U0001f40d': 123}
+        self.assertEqual(dict_popstring_null(dct, '\U0001f40d'.encode()), 1)
 
         # dict error
         not_dict = UserDict({1: 2})
         self.assertRaises(SystemError, dict_popstring, not_dict, "key")
+        self.assertRaises(SystemError, dict_popstring_null, not_dict, "key")
+
+        # key error
+        self.assertRaises(UnicodeDecodeError, dict_popstring, {1: 2}, INVALID_UTF8)
+        self.assertRaises(UnicodeDecodeError, dict_popstring_null, {1: 2}, INVALID_UTF8)
 
         # CRASHES dict_popstring(NULL, "key")
+        # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
 
