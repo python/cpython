@@ -3501,14 +3501,13 @@ type_new_set_doc(PyTypeObject *type)
         return 0;
     }
 
-    Py_ssize_t doc_size;
-    const char *doc_str = PyUnicode_AsUTF8AndSize(doc, &doc_size);
+    const char *doc_str = PyUnicode_AsUTF8(doc);
     if (doc_str == NULL) {
         return -1;
     }
 
     // Silently truncate the docstring if it contains a null byte
-    Py_ssize_t size = doc_size + 1;
+    Py_ssize_t size = strlen(doc_str) + 1;
     char *tp_doc = (char *)PyObject_Malloc(size);
     if (tp_doc == NULL) {
         PyErr_NoMemory();
@@ -5255,8 +5254,10 @@ static PyMethodDef type_methods[] = {
     TYPE___SUBCLASSES___METHODDEF
     {"__prepare__", _PyCFunction_CAST(type_prepare),
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("__prepare__() -> dict\n"
-               "used to create the namespace for the class statement")},
+     PyDoc_STR("__prepare__($cls, name, bases, /, **kwds)\n"
+               "--\n"
+               "\n"
+               "Create the namespace for the class statement")},
     TYPE___INSTANCECHECK___METHODDEF
     TYPE___SUBCLASSCHECK___METHODDEF
     TYPE___DIR___METHODDEF

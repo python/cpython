@@ -1286,6 +1286,7 @@ class ObjVisitor(PickleVisitor):
         self.emit("state->recursion_depth--;", 1)
         self.emit("return result;", 1)
         self.emit("failed:", 0)
+        self.emit("state->recursion_depth--;", 1)
         self.emit("Py_XDECREF(value);", 1)
         self.emit("Py_XDECREF(result);", 1)
         self.emit("return NULL;", 1)
