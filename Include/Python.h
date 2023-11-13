@@ -40,7 +40,9 @@
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
 #  include <ctype.h>              // tolower()
-#  include <unistd.h>             // close()
+#  ifndef MS_WINDOWS
+#    include <unistd.h>           // close()
+#  endif
 #endif
 
 
