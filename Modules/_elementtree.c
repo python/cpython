@@ -1423,7 +1423,7 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
         PyObject *attrib = Py_NewRef(self->extra->attrib);
         PyObject *value;
         if (PyDict_GetItemRef(attrib, key, &value) != 0) {
-            // error or found
+            // found or error
             Py_DECREF(attrib);
             return value;
         }
