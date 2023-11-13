@@ -55,6 +55,15 @@ Dictionary Objects
    This is equivalent to the Python expression ``key in p``.
 
 
+.. c:function:: int PyDict_ContainsString(PyObject *p, const char *key)
+
+   This is the same as :c:func:`PyDict_Contains`, but *key* is specified as a
+   :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
+   :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: PyObject* PyDict_Copy(PyObject *p)
 
    Return a new dictionary that contains the same key-value pairs as *p*.
@@ -70,12 +79,9 @@ Dictionary Objects
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
 
-   .. index:: single: PyUnicode_FromString()
-
-   Insert *val* into the dictionary *p* using *key* as a key. *key* should
-   be a :c:expr:`const char*`.  The key object is created using
-   ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
-   failure.  This function *does not* steal a reference to *val*.
+   This is the same as :c:func:`PyDict_SetItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
@@ -88,15 +94,31 @@ Dictionary Objects
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
 
-   Remove the entry in dictionary *p* which has a key specified by the string *key*.
-   If *key* is not in the dictionary, :exc:`KeyError` is raised.
-   Return ``0`` on success or ``-1`` on failure.
+   This is the same as :c:func:`PyDict_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
+.. c:function:: int PyDict_GetItemRef(PyObject *p, PyObject *key, PyObject **result)
+
+   Return a new :term:`strong reference` to the object from dictionary *p*
+   which has a key *key*:
+
+   * If the key is present, set *\*result* to a new :term:`strong reference`
+     to the value and return ``1``.
+   * If the key is missing, set *\*result* to ``NULL`` and return ``0``.
+   * On error, raise an exception and return ``-1``.
+
+   .. versionadded:: 3.13
+
+   See also the :c:func:`PyObject_GetItem` function.
 
 
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
 
-   Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
-   if the key *key* is not present, but *without* setting an exception.
+   Return a :term:`borrowed reference` to the object from dictionary *p* which
+   has a key *key*.  Return ``NULL`` if the key *key* is missing *without*
+   setting an exception.
 
    .. note::
 
@@ -120,7 +142,8 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
-   :c:expr:`const char*`, rather than a :c:expr:`PyObject*`.
+   :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
+   :c:expr:`PyObject*`.
 
    .. note::
 
@@ -129,6 +152,15 @@ Dictionary Objects
       object are silently ignored.
       Prefer using the :c:func:`PyDict_GetItemWithError` function with your own
       :c:func:`PyUnicode_FromString` *key* instead.
+
+
+.. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
+
+   Similar than :c:func:`PyDict_GetItemRef`, but *key* is specified as a
+   :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
+   :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)

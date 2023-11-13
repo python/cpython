@@ -34,7 +34,7 @@ Slice Objects
    *length* as errors.
 
    Returns ``0`` on success and ``-1`` on error with no exception set (unless one of
-   the indices was not :const:`None` and failed to be converted to an integer,
+   the indices was not ``None`` and failed to be converted to an integer,
    in which case ``-1`` is returned with an exception set).
 
    You probably do not want to use this function.

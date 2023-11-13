@@ -1078,7 +1078,8 @@ class _ClassFinder(ast.NodeVisitor):
 
             # First, let's see if there are any method definitions
             for member in self.cls.__dict__.values():
-                if isinstance(member, types.FunctionType):
+                if (isinstance(member, types.FunctionType) and
+                    member.__module__ == self.cls.__module__):
                     for lineno, end_lineno in self.lineno_found:
                         if lineno <= member.__code__.co_firstlineno <= end_lineno:
                             return lineno
@@ -2869,6 +2870,8 @@ class Parameter:
 
         return formatted
 
+    __replace__ = replace
+
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self)
 
@@ -3128,6 +3131,8 @@ class Signature:
 
         return type(self)(parameters,
                           return_annotation=return_annotation)
+
+    __replace__ = replace
 
     def _hash_basis(self):
         params = tuple(param for param in self.parameters.values()
