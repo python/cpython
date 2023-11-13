@@ -1922,7 +1922,7 @@ create_pointer_type(PyObject *module, PyObject *cls)
     PyObject *key;
 
     if (PyDict_GetItemRef(_ctypes_ptrtype_cache, cls, &result) != 0) {
-        // error or found
+        // found or error
         return result;
     }
     // not found
