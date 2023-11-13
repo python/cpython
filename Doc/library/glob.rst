@@ -145,6 +145,45 @@ default. For example, consider a directory containing :file:`card.gif` and
    >>> glob.glob('.c*')
    ['.card.gif']
 
+
+.. function:: translate(pathname, *, recursive=False, include_hidden=False, seps=None)
+
+   Convert the given path specification to a regular expression for use with
+   :func:`re.match`. The path specification can contain shell-style wildcards.
+
+   For example:
+
+      >>> import glob, re
+      >>>
+      >>> regex = glob.translate('**/*.txt', recursive=True, include_hidden=True)
+      >>> regex
+      '(?s:(?:.+/)?[^/]*\\.txt)\\Z'
+      >>> reobj = re.compile(regex)
+      >>> reobj.match('foo/bar/baz.txt')
+      <re.Match object; span=(0, 15), match='foo/bar/baz.txt'>
+
+   Path separators and segments are meaningful to this function, unlike
+   :func:`fnmatch.translate`. By default wildcards do not match path
+   separators, and ``*`` pattern segments match precisely one path segment.
+
+   If *recursive* is true, the pattern segment "``**``" will match any number
+   of path segments. If "``**``" occurs in any position other than a full
+   pattern segment, :exc:`ValueError` is raised.
+
+   If *include_hidden* is true, wildcards can match path segments that start
+   with a dot (``.``).
+
+   A sequence of path separators may be supplied to the *seps* argument. If
+   not given, :data:`os.sep` and :data:`~os.altsep` (if available) are used.
+
+   .. seealso::
+
+     :meth:`pathlib.PurePath.match` and :meth:`pathlib.Path.glob` methods,
+     which call this function to implement pattern matching and globbing.
+
+   .. versionadded:: 3.13
+
+
 .. seealso::
 
    Module :mod:`fnmatch`
