@@ -277,20 +277,38 @@ last_dim_is_contiguous(const Py_buffer *dest, const Py_buffer *src)
             src->strides[src->ndim-1] == src->itemsize);
 }
 
+static const char *
+low_adjust_fmt(const char *fmt)
+{
+#ifdef WORDS_BIGENDIAN
+    int native_bigendian = 1;
+#else
+    int native_bigendian = 0;
+#endif
+
+    if (fmt[0] == '@' ||
+        (fmt[0] == '>' && native_bigendian) ||
+        (fmt[0] == '<' && !native_bigendian)) {
+        fmt += 1;
+    }
+
+    return fmt;
+}
+
 /* This is not a general function for determining format equivalence.
    It is used in copy_single() and copy_buffer() to weed out non-matching
-   formats. Skipping the '@' character is specifically used in slice
-   assignments, where the lvalue is already known to have a single character
-   format. This is a performance hack that could be rewritten (if properly
-   benchmarked). */
+   formats. Skipping the '@' character (via low_adjust_fmt()) is specifically
+   used in slice assignments, where the lvalue is already known to have a single
+   character format. This is a performance hack that could be rewritten (if
+   properly benchmarked). */
 static inline int
 equiv_format(const Py_buffer *dest, const Py_buffer *src)
 {
     const char *dfmt, *sfmt;
 
     assert(dest->format && src->format);
-    dfmt = dest->format[0] == '@' ? dest->format+1 : dest->format;
-    sfmt = src->format[0] == '@' ? src->format+1 : src->format;
+    dfmt = low_adjust_fmt(dest->format);
+    sfmt = low_adjust_fmt(src->format);
 
     if (strcmp(dfmt, sfmt) != 0 ||
         dest->itemsize != src->itemsize) {
@@ -1188,7 +1206,7 @@ get_native_fmtchar(char *result, const char *fmt)
 {
     Py_ssize_t size = -1;
 
-    if (fmt[0] == '@') fmt++;
+    fmt = low_adjust_fmt(fmt);
 
     switch (fmt[0]) {
     case 'c': case 'b': case 'B': size = sizeof(char); break;
@@ -1217,10 +1235,11 @@ get_native_fmtstr(const char *fmt)
 {
     int at = 0;
 
-    if (fmt[0] == '@') {
-        at = 1;
-        fmt++;
-    }
+    const char *ofmt = fmt;
+    fmt = low_adjust_fmt(fmt);
+
+    at = fmt - ofmt;
+
     if (fmt[0] == '\0' || fmt[1] != '\0') {
         return NULL;
     }
@@ -2132,7 +2151,7 @@ adjust_fmt(const Py_buffer *view)
 {
     const char *fmt;
 
-    fmt = (view->format[0] == '@') ? view->format+1 : view->format;
+    fmt = low_adjust_fmt(view->format);
     if (fmt[0] && fmt[1] == '\0')
         return fmt;
 
