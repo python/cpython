@@ -10248,7 +10248,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
         assert(dict != NULL && PyDict_Check(dict));
 
         if (PyDict_GetItemRef(dict, name, &res) != 0) {
-            // error or found
+            // found or error
             Py_DECREF(mro);
             return res;
         }
