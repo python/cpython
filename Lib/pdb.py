@@ -689,8 +689,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def completenames(self, text, line, begidx, endidx):
         # Overwrite completenames() of cmd so for the command completion,
         # if no current command matches, check for expressions as well
-        dotext = 'do_' + text
-        commands = [a[3:] for a in self.get_names() if a.startswith(dotext)]
+        commands = super().completenames(text, line, begidx, endidx)
         for alias in self.aliases:
             if alias.startswith(text):
                 commands.append(alias)

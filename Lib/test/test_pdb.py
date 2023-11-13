@@ -3295,9 +3295,13 @@ class PdbTestReadline(unittest.TestCase):
             import pdb; pdb.Pdb().set_trace()
         """)
 
+        # Complete: value + 'al'
         input = b"val\t + 'al'\n"
+        # Complete: p value + 'es'
         input += b"p val\t + 'es'\n"
+        # Complete: $_frame
         input += b"$_fra\t\n"
+        # Continue
         input += b"c\n"
 
         output = run_pty(script, input)
