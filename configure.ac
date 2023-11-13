@@ -6439,9 +6439,11 @@ dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-  dnl If we are here, we found a locally-supplied version of libncursesw.
+  dnl System-supplied ncurses combines libncurses/libpanel and supports wide
+  dnl characters, so we can use it like ncursesw.
+  dnl If a locally-supplied version of libncursesw is found, we will use that.
   dnl There should also be a libpanelw.
   dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
   dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
