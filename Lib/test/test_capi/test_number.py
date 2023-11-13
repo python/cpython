@@ -198,6 +198,7 @@ class CAPITest(unittest.TestCase):
         and_ = _testcapi.number_and
 
         self.assertEqual(and_(0b10, 0b01), 0b10 & 0b01)
+        self.assertEqual(and_({1, 2}, {2, 3}), {1, 2} & {2, 3})
 
         # CRASHES and_(NULL, 1)
         # CRASHES and_(1, NULL)
@@ -207,6 +208,7 @@ class CAPITest(unittest.TestCase):
         xor = _testcapi.number_xor
 
         self.assertEqual(xor(0b10, 0b01), 0b10 ^ 0b01)
+        self.assertEqual(xor({1, 2}, {2, 3}), {1, 2} ^ {2, 3})
 
         # CRASHES xor(NULL, 1)
         # CRASHES xor(1, NULL)
@@ -216,6 +218,7 @@ class CAPITest(unittest.TestCase):
         or_ = _testcapi.number_or
 
         self.assertEqual(or_(0b10, 0b01), 0b10 | 0b01)
+        self.assertEqual(or_({1, 2}, {2, 3}), {1, 2} | {2, 3})
 
         # CRASHES or_(NULL, 1)
         # CRASHES or_(1, NULL)
