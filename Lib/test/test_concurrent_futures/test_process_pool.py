@@ -194,11 +194,11 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         context = self.get_context()
 
-        # gh-109047: Mock the threading.start_new_thread() function to inject
+        # gh-109047: Mock the threading.start_joinable_thread() function to inject
         # RuntimeError: simulate the error raised during Python finalization.
         # Block the second creation: create _ExecutorManagerThread, but block
         # QueueFeederThread.
-        orig_start_new_thread = threading._start_new_thread
+        orig_start_new_thread = threading._start_joinable_thread
         nthread = 0
         def mock_start_new_thread(func, *args):
             nonlocal nthread
@@ -208,7 +208,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             nthread += 1
             return orig_start_new_thread(func, *args)
 
-        with support.swap_attr(threading, '_start_new_thread',
+        with support.swap_attr(threading, '_start_joinable_thread',
                                mock_start_new_thread):
             executor = self.executor_type(max_workers=2, mp_context=context)
             with executor:

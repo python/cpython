@@ -651,8 +651,11 @@ class Generator(Analyzer):
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         for part in parts:
             if isinstance(part, Component):
-                # All component instructions must be viable uops
-                if not part.instr.is_viable_uop():
+                # Skip specializations
+                if "specializing" in part.instr.annotations:
+                    continue
+                # All other component instructions must be viable uops
+                if not part.instr.is_viable_uop() and "replaced" not in part.instr.annotations:
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
                     # It is sometimes emitted for macros that have a

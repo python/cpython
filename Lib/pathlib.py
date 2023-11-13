@@ -647,9 +647,11 @@ class PurePath:
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
                                  remove=(3, 14))
-        other = self.with_segments(other, *_deprecated)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
         for step, path in enumerate([other] + list(other.parents)):
-            if self.is_relative_to(path):
+            if path == self or path in self.parents:
                 break
             elif not walk_up:
                 raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
@@ -658,7 +660,7 @@ class PurePath:
         else:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         parts = ['..'] * step + self._tail[len(path._tail):]
-        return self.with_segments(*parts)
+        return self._from_parsed_parts('', '', parts)
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
@@ -669,7 +671,9 @@ class PurePath:
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
                                  msg, remove=(3, 14))
-        other = self.with_segments(other, *_deprecated)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
         return other == self or other in self.parents
 
     @property
