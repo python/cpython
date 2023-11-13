@@ -1,0 +1,3 @@
+:mod:`curses`: restore wide character support (including
+:func:`curses.unget_wch` and :meth:`~curses.window.get_wch`) on macOS, which
+was unavailable due to a regression in Python 3.12.
