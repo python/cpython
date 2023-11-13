@@ -4862,7 +4862,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
 
     PyObject *result;
     if (_PyDict_GetItemProxy(cache, key, &result) != 0) {
-        // error or found
+        // found or error
         Py_DECREF(key);
         return result;
     }
