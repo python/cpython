@@ -10,7 +10,7 @@ import pickle
 import re
 import sys
 import warnings
-from unittest import TestCase, main, skipUnless, skip
+from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
 
@@ -45,7 +45,7 @@ import typing
 import weakref
 import types
 
-from test.support import import_helper, captured_stderr, cpython_only
+from test.support import captured_stderr, cpython_only
 from test.typinganndata import mod_generics_cache, _typed_dict_helper
 
 
