@@ -439,7 +439,7 @@ GC-tracked objects need to be allocated using GC-aware functions.
 If you use use :c:func:`PyObject_New` or :c:func:`PyObject_NewVar`:
 
 - Get and call type's :c:member:`~PyTypeObject.tp_alloc` slot, if possible.
-  That is, replace ``TYPE *o = PyObject_New(TYPE, typeobj)`` by::
+  That is, replace ``TYPE *o = PyObject_New(TYPE, typeobj)`` with::
 
       TYPE *o = typeobj->tp_alloc(typeobj, 0);
 
