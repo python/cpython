@@ -7534,7 +7534,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(foo.attr.name, "attr")
 
     def test_setname_raises_the_same_as_on_other_classes(self):
-        class CustomException(Exception): pass
+        class CustomException(BaseException): pass
 
         class Annoying:
             def __set_name__(self, owner, name):

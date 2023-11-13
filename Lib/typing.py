@@ -2734,7 +2734,7 @@ class NamedTupleMeta(type):
                 if hasattr(type(val), "__set_name__"):
                     try:
                         type(val).__set_name__(val, nm_tpl, key)
-                    except Exception as e:
+                    except BaseException as e:
                         e.add_note(
                             f"Error calling __set_name__ on {type(val).__name__!r} "
                             f"instance {key!r} in {typename!r}"
