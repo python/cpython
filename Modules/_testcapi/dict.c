@@ -347,8 +347,12 @@ dict_pop(PyObject *self, PyObject *args)
         assert(result == NULL);
         return NULL;
     }
-    if (result == NULL) {
+    if (res == 0) {
+        assert(result == NULL);
         result = Py_NewRef(Py_None);
+    }
+    else {
+        assert(result != NULL);
     }
     return Py_BuildValue("iN", res, result);
 }
@@ -388,8 +392,12 @@ dict_popstring(PyObject *self, PyObject *args)
         assert(result == NULL);
         return NULL;
     }
-    if (result == NULL) {
+    if (res == 0) {
+        assert(result == NULL);
         result = Py_NewRef(Py_None);
+    }
+    else {
+        assert(result != NULL);
     }
     return Py_BuildValue("iN", res, result);
 }
