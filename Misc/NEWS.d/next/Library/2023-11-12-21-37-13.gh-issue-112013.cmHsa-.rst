@@ -1,0 +1,2 @@
+You can now read and write to memoryview objects created from ctypes Array
+objects. Previously it would throw an invalid format exception.
