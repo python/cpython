@@ -5,6 +5,7 @@
 #include "pycore_frame.h"
 #include "pycore_function.h"
 #include "pycore_global_objects.h"
+#include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName, etc
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()

@@ -113,6 +113,9 @@ PyAPI_FUNC(int) _PyCompile_OpcodeHasFree(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasLocal(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasExc(int opcode);
 
+PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
+PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
+
 /* Access compiler internals for unit testing */
 
 // Export for '_testinternalcapi' shared extension

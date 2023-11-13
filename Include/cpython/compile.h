@@ -69,7 +69,3 @@ typedef struct {
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
 
-// Export for '_opcode' extention module
-PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
-PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
-
