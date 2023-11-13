@@ -26,7 +26,6 @@ from instructions import (
     MacroInstruction,
     MacroParts,
     PseudoInstruction,
-    OverriddenInstructionPlaceHolder,
     TIER_ONE,
     TIER_TWO,
 )
@@ -68,7 +67,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SET_IP": 7,
+    "OPARG_SAVE_RETURN_OFFSET": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -179,17 +178,17 @@ class Generator(Analyzer):
                 # for all targets.
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
-                    # Currently target is always an instr. This could change
-                    # in the future, e.g., if we have a pseudo targetting a
-                    # macro instruction.
-                    assert target_instr
-                    target_popped = effect_str(target_instr.input_effects)
-                    target_pushed = effect_str(target_instr.output_effects)
-                    if popped is None:
-                        popped, pushed = target_popped, target_pushed
+                    if target_instr is None:
+                        macro_instr = self.macro_instrs[target]
+                        popped, pushed = stacking.get_stack_effect_info_for_macro(macro_instr)
                     else:
-                        assert popped == target_popped
-                        assert pushed == target_pushed
+                        target_popped = effect_str(target_instr.input_effects)
+                        target_pushed = effect_str(target_instr.output_effects)
+                        if popped is None:
+                            popped, pushed = target_popped, target_pushed
+                        else:
+                            assert popped == target_popped
+                            assert pushed == target_pushed
             case _:
                 assert_never(thing)
         assert popped is not None and pushed is not None
@@ -208,8 +207,6 @@ class Generator(Analyzer):
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
         for thing in self.everything:
-            if isinstance(thing, OverriddenInstructionPlaceHolder):
-                continue
             if isinstance(thing, parsing.Macro) and thing.name in self.instrs:
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
@@ -393,20 +390,14 @@ class Generator(Analyzer):
         for thing in self.everything:
             format: str | None = None
             match thing:
-                case OverriddenInstructionPlaceHolder():
-                    continue
                 case parsing.InstDef():
                     format = self.instrs[thing.name].instr_fmt
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    for target in self.pseudos[thing.name].targets:
-                        target_instr = self.instrs.get(target)
-                        assert target_instr
-                        if format is None:
-                            format = target_instr.instr_fmt
-                        else:
-                            assert format == target_instr.instr_fmt
+                    # Pseudo instructions exist only in the compiler,
+                    # so do not have a format
+                    continue
                 case _:
                     assert_never(thing)
             assert format is not None
@@ -469,12 +460,12 @@ class Generator(Analyzer):
             self.out.emit("")
 
             self.out.emit(
-                "#define OPCODE_METADATA_FMT(OP) "
-                "(_PyOpcode_opcode_metadata[(OP)].instr_format)"
+                "#define OPCODE_METADATA_FLAGS(OP) "
+                "(_PyOpcode_opcode_metadata[(OP)].flags & (HAS_ARG_FLAG | HAS_JUMP_FLAG))"
             )
             self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
             self.out.emit(
-                "        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))"
+                "        (OPCODE_METADATA_FLAGS(OP1) == OPCODE_METADATA_FLAGS(OP2))"
             )
             self.out.emit("")
 
@@ -492,8 +483,6 @@ class Generator(Analyzer):
                 # Write metadata for each instruction
                 for thing in self.everything:
                     match thing:
-                        case OverriddenInstructionPlaceHolder():
-                            continue
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
@@ -552,8 +541,6 @@ class Generator(Analyzer):
                         and not mac.name.startswith("INSTRUMENTED_")
                     ):
                         self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
-                # Irregular case:
-                self.out.emit("[JUMP_BACKWARD] = 1,")
 
             deoptcodes = {}
             for name, op in self.opmap.items():
@@ -664,8 +651,11 @@ class Generator(Analyzer):
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         for part in parts:
             if isinstance(part, Component):
-                # All component instructions must be viable uops
-                if not part.instr.is_viable_uop():
+                # Skip specializations
+                if "specializing" in part.instr.annotations:
+                    continue
+                # All other component instructions must be viable uops
+                if not part.instr.is_viable_uop() and "replaced" not in part.instr.annotations:
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
                     # It is sometimes emitted for macros that have a
@@ -678,8 +668,8 @@ class Generator(Analyzer):
                         )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "_SET_IP":
-                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset
+                    if part.instr.name == "_SAVE_RETURN_OFFSET":
+                        size, offset = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
@@ -739,12 +729,13 @@ class Generator(Analyzer):
             f"{{ .nuops = {len(pieces)}, .uops = {{ {', '.join(pieces)} }} }},"
         )
 
-    def emit_metadata_entry(self, name: str, fmt: str, flags: InstructionFlags) -> None:
+    def emit_metadata_entry(self, name: str, fmt: str | None, flags: InstructionFlags) -> None:
         flag_names = flags.names(value=True)
         if not flag_names:
             flag_names.append("0")
+        fmt_macro = "0" if fmt is None else INSTR_FMT_PREFIX + fmt
         self.out.emit(
-            f"[{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
+            f"[{name}] = {{ true, {fmt_macro},"
             f" {' | '.join(flag_names)} }},"
         )
 
@@ -758,7 +749,7 @@ class Generator(Analyzer):
 
     def write_metadata_for_pseudo(self, ps: PseudoInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.instr_flags)
+        self.emit_metadata_entry(ps.name, None, ps.instr_flags)
 
     def write_instructions(
         self, output_filename: str, emit_line_directives: bool
@@ -770,12 +761,16 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_TWO\n")
+            self.out.write_raw("    #error \"This file is for Tier 1 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_ONE 1\n")
+
             # Write and count instructions of all kinds
             n_macros = 0
             for thing in self.everything:
                 match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        self.write_overridden_instr_place_holder(thing)
                     case parsing.InstDef():
                         pass
                     case parsing.Macro():
@@ -786,6 +781,9 @@ class Generator(Analyzer):
                         pass
                     case _:
                         assert_never(thing)
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_ONE\n")
 
         print(
             f"Wrote {n_macros} cases to {output_filename}",
@@ -800,6 +798,13 @@ class Generator(Analyzer):
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_ONE\n")
+            self.out.write_raw("    #error \"This file is for Tier 2 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_TWO 2\n")
+
             for instr in self.instrs.values():
                 if instr.is_viable_uop():
                     n_uops += 1
@@ -809,6 +814,10 @@ class Generator(Analyzer):
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
                         self.out.emit("break;")
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_TWO\n")
+
         print(
             f"Wrote {n_uops} cases to {executor_filename}",
             file=sys.stderr,
@@ -834,14 +843,6 @@ class Generator(Analyzer):
         print(
             f"Wrote some stuff to {abstract_interpreter_filename}",
             file=sys.stderr,
-        )
-
-    def write_overridden_instr_place_holder(
-        self, place_holder: OverriddenInstructionPlaceHolder
-    ) -> None:
-        self.out.emit("")
-        self.out.emit(
-            f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition"
         )
 
 

@@ -176,7 +176,7 @@ The special characters are:
   ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
   and ``(?>x?)`` correspondingly.
 
-   .. versionadded:: 3.11
+  .. versionadded:: 3.11
 
 .. index::
    single: {} (curly brackets); in regular expressions

@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
@@ -79,4 +80,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=406b5a433a59069c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dcd6ec48f06a092e input=a9049054013a1b77]*/

@@ -3781,6 +3781,217 @@ features:
    .. versionadded:: 3.10
 
 
+Timer File Descriptors
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.13
+
+These functions provide support for Linux's *timer file descriptor* API.
+Naturally, they are all only available on Linux.
+
+.. function:: timerfd_create(clockid, /, *, flags=0)
+
+   Create and return a timer file descriptor (*timerfd*).
+
+   The file descriptor returned by :func:`timerfd_create` supports:
+
+   - :func:`read`
+   - :func:`~select.select`
+   - :func:`~select.poll`
+
+   The file descriptor's :func:`read` method can be called with a buffer size
+   of 8. If the timer has already expired one or more times, :func:`read`
+   returns the number of expirations with the host's endianness, which may be
+   converted to an :class:`int` by ``int.from_bytes(x, byteorder=sys.byteorder)``.
+
+   :func:`~select.select` and :func:`~select.poll` can be used to wait until
+   timer expires and the file descriptor is readable.
+
+   *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
+   as defined in the :py:mod:`time` module:
+
+   - :const:`time.CLOCK_REALTIME`
+   - :const:`time.CLOCK_MONOTONIC`
+   - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15 for timerfd_create)
+
+   If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide
+   real-time clock is used. If system clock is changed, timer setting need
+   to be updated. To cancel timer when system clock is changed, see
+   :const:`TFD_TIMER_CANCEL_ON_SET`.
+
+   If *clockid* is :const:`time.CLOCK_MONOTONIC`, a non-settable monotonically
+   increasing clock is used. Even if the system clock is changed, the timer
+   setting will not be affected.
+
+   If *clockid* is :const:`time.CLOCK_BOOTTIME`, same as :const:`time.CLOCK_MONOTONIC`
+   except it includes any time that the system is suspended.
+
+   The file descriptor's behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
+
+   - :const:`TFD_NONBLOCK`
+   - :const:`TFD_CLOEXEC`
+
+   If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until
+   the timer expires. If it is set as a flag, :func:`read` doesn't block, but
+   If there hasn't been an expiration since the last call to read,
+   :func:`read` raises :class:`OSError` with ``errno`` is set to
+   :const:`errno.EAGAIN`.
+
+   :const:`TFD_CLOEXEC` is always set by Python automatically.
+
+   The file descriptor must be closed with :func:`os.close` when it is no
+   longer needed, or else the file descriptor will be leaked.
+
+   .. seealso:: The :manpage:`timerfd_create(2)` man page.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_settime(fd, /, *, flags=flags, initial=0.0, interval=0.0)
+
+   Alter a timer file descriptor's internal timer.
+   This function operates the same interval timer as :func:`timerfd_settime_ns`.
+
+   *fd* must be a valid timer file descriptor.
+
+   The timer's behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
+
+   - :const:`TFD_TIMER_ABSTIME`
+   - :const:`TFD_TIMER_CANCEL_ON_SET`
+
+   The timer is disabled by setting *initial* to zero (``0``).
+   If *initial* is equal to or greater than zero, the timer is enabled.
+   If *initial* is less than zero, it raises an :class:`OSError` exception
+   with ``errno`` set to :const:`errno.EINVAL`
+
+   By default the timer will fire when *initial* seconds have elapsed.
+   (If *initial* is zero, timer will fire immediately.)
+
+   However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
+   the timer will fire when the timer's clock
+   (set by *clockid* in :func:`timerfd_create`) reaches *initial* seconds.
+
+   The timer's interval is set by the *interval* :py:class:`float`.
+   If *interval* is zero, the timer only fires once, on the initial expiration.
+   If *interval* is greater than zero, the timer fires every time *interval*
+   seconds have elapsed since the previous expiration.
+   If *interval* is less than zero, it raises :class:`OSError` with ``errno``
+   set to :const:`errno.EINVAL`
+
+   If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with
+   :const:`TFD_TIMER_ABSTIME` and the clock for this timer is
+   :const:`time.CLOCK_REALTIME`, the timer is marked as cancelable if the
+   real-time clock is changed discontinuously. Reading the descriptor is
+   aborted with the error ECANCELED.
+
+   Linux manages system clock as UTC. A daylight-savings time transition is
+   done by changing time offset only and doesn't cause discontinuous system
+   clock change.
+
+   Discontinuous system clock change will be caused by the following events:
+
+   - ``settimeofday``
+   - ``clock_settime``
+   - set the system date and time by ``date`` command
+
+   Return a two-item tuple of (``next_expiration``, ``interval``) from
+   the previous timer state, before this function executed.
+
+   .. seealso::
+
+      :manpage:`timerfd_create(2)`, :manpage:`timerfd_settime(2)`,
+      :manpage:`settimeofday(2)`, :manpage:`clock_settime(2)`,
+      and :manpage:`date(1)`.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_settime_ns(fd, /, *, flags=0, initial=0, interval=0)
+
+   Similar to :func:`timerfd_settime`, but use time as nanoseconds.
+   This function operates the same interval timer as :func:`timerfd_settime`.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_gettime(fd, /)
+
+   Return a two-item tuple of floats (``next_expiration``, ``interval``).
+
+   ``next_expiration`` denotes the relative time until next the timer next fires,
+   regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
+
+   ``interval`` denotes the timer's interval.
+   If zero, the timer will only fire once, after ``next_expiration`` seconds
+   have elapsed.
+
+   .. seealso:: :manpage:`timerfd_gettime(2)`
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_gettime_ns(fd, /)
+
+   Similar to :func:`timerfd_gettime`, but return time as nanoseconds.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_NONBLOCK
+
+   A flag for the :func:`timerfd_create` function,
+   which sets the :const:`O_NONBLOCK` status flag for the new timer file
+   descriptor. If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_CLOEXEC
+
+   A flag for the :func:`timerfd_create` function,
+   If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file
+   descriptor.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_TIMER_ABSTIME
+
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
+   If this flag is set, *initial* is interpreted as an absolute value on the
+   timer's clock (in UTC seconds or nanoseconds since the Unix Epoch).
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_TIMER_CANCEL_ON_SET
+
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns`
+   functions along with :const:`TFD_TIMER_ABSTIME`.
+   The timer is cancelled when the time of the underlying clock changes
+   discontinuously.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -5195,6 +5406,10 @@ Miscellaneous System Information
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
+      :func:`cpu_count` returns the overridden value *n*.
+
 
 .. function:: getloadavg()
 
@@ -5213,6 +5428,9 @@ Miscellaneous System Information
 
    The :func:`cpu_count` function can be used to get the number of logical CPUs
    in the **system**.
+
+   If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
+   :func:`process_cpu_count` returns the overridden value *n*.
 
    See also the :func:`sched_getaffinity` functions.
 

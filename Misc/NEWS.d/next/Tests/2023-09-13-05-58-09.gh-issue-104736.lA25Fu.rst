@@ -1,4 +1,0 @@
-Fix test_gdb on Python built with LLVM clang 16 on Linux ppc64le (ex: Fedora
-38). Search patterns in gdb "bt" command output to detect when gdb fails to
-retrieve the traceback. For example, skip a test if ``Backtrace stopped: frame
-did not save the PC`` is found. Patch by Victor Stinner.

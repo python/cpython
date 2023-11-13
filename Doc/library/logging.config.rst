@@ -257,11 +257,11 @@ otherwise, the context is used to determine what to instantiate.
   which correspond to the arguments passed to create a
   :class:`~logging.Formatter` object:
 
-   * ``format``
-   * ``datefmt``
-   * ``style``
-   * ``validate`` (since version >=3.8)
-   * ``defaults`` (since version >=3.12)
+  * ``format``
+  * ``datefmt``
+  * ``style``
+  * ``validate`` (since version >=3.8)
+  * ``defaults`` (since version >=3.12)
 
   An optional ``class`` key indicates the name of the formatter's
   class (as a dotted module and class name).  The instantiation
@@ -544,9 +544,9 @@ valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
 mnemonic that the corresponding value is a callable.
 
-    .. versionchanged:: 3.11
-       The ``filters`` member of ``handlers`` and ``loggers`` can take
-       filter instances in addition to ids.
+.. versionchanged:: 3.11
+   The ``filters`` member of ``handlers`` and ``loggers`` can take
+   filter instances in addition to ids.
 
 You can also specify a special key ``'.'`` whose value is a dictionary is a
 mapping of attribute names to values. If found, the specified attributes will

@@ -1435,7 +1435,7 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(consumed_lines, expected)
 
     def test_latin1_normalization(self):
-        # See get_normal_name() in tokenizer.c.
+        # See get_normal_name() in Parser/tokenizer/helpers.c.
         encodings = ("latin-1", "iso-8859-1", "iso-latin-1", "latin-1-unix",
                      "iso-8859-1-unix", "iso-latin-1-mac")
         for encoding in encodings:
@@ -1460,7 +1460,7 @@ class TestDetectEncoding(TestCase):
 
 
     def test_utf8_normalization(self):
-        # See get_normal_name() in tokenizer.c.
+        # See get_normal_name() in Parser/tokenizer/helpers.c.
         encodings = ("utf-8", "utf-8-mac", "utf-8-unix")
         for encoding in encodings:
             for rep in ("-", "_"):
@@ -1901,18 +1901,8 @@ class TestRoundtrip(TestCase):
         tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
-        # Tokenize is broken on test_pep3131.py because regular expressions are
-        # broken on the obscure unicode identifiers in it. *sigh*
-        # With roundtrip extended to test the 5-tuple mode of untokenize,
-        # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
-
-        testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
-
         # TODO: Remove this once we can untokenize PEP 701 syntax
         testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
-
-        for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
-            testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)

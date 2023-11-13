@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(syslog_openlog__doc__,
 "openlog($module, /, ident=<unrepresentable>, logoption=0,\n"
@@ -250,4 +251,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=68942dad7fb3872e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86ca2fd84b2da98e input=a9049054013a1b77]*/

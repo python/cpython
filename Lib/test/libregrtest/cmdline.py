@@ -2,7 +2,7 @@ import argparse
 import os.path
 import shlex
 import sys
-from test.support import os_helper
+from test.support import os_helper, Py_DEBUG
 from .utils import ALL_RESOURCES, RESOURCE_NAMES
 
 
@@ -161,8 +161,7 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = None
-        self.ignore_tests = None
+        self.match_tests = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
@@ -183,6 +182,20 @@ class _ArgParser(argparse.ArgumentParser):
         super().error(message + "\nPass -h or --help for complete help.")
 
 
+class FilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        items.append((value, self.const))
+
+
+class FromFileFilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        with open(value, encoding='utf-8') as fp:
+            for line in fp:
+                items.append((line.strip(), self.const))
+
+
 def _create_parser():
     # Set prog to prevent the uninformative "__main__.py" from displaying in
     # error messages when using "python -m test ...".
@@ -192,6 +205,7 @@ def _create_parser():
                         epilog=EPILOG,
                         add_help=False,
                         formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.set_defaults(match_tests=[])
 
     # Arguments with this clause added to its help are described further in
     # the epilog's "Additional option details" section.
@@ -251,17 +265,19 @@ def _create_parser():
                        help='single step through a set of tests.' +
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
-                       dest='match_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=True,
                        help='match test cases and methods with glob pattern PAT')
     group.add_argument('-i', '--ignore', metavar='PAT',
-                       dest='ignore_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern PAT')
     group.add_argument('--matchfile', metavar='FILENAME',
-                       dest='match_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=True,
                        help='similar to --match but get patterns from a '
                             'text file, one pattern per line')
     group.add_argument('--ignorefile', metavar='FILENAME',
-                       dest='ignore_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=False,
                        help='similar to --matchfile but it receives patterns '
                             'from text file to ignore')
     group.add_argument('-G', '--failfast', action='store_true',
@@ -406,7 +422,6 @@ def _parse_args(args, **kwargs):
             ns.use_mp = 0
         ns.randomize = True
         ns.fail_env_changed = True
-        ns.fail_rerun = True
         if ns.python is None:
             ns.rerun = True
         ns.print_slow = True
@@ -418,21 +433,31 @@ def _parse_args(args, **kwargs):
     # --slow-ci has the priority
     if ns.slow_ci:
         # Similar to: -u "all" --timeout=1200
-        if not ns.use:
-            ns.use = [['all']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all'])
         if ns.timeout is None:
             ns.timeout = 1200  # 20 minutes
     elif ns.fast_ci:
         # Similar to: -u "all,-cpu" --timeout=600
-        if not ns.use:
-            ns.use = [['all', '-cpu']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all', '-cpu'])
         if ns.timeout is None:
             ns.timeout = 600  # 10 minutes
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
-    if ns.use_mp is not None and ns.trace:
-        parser.error("-T and -j don't go together!")
+    if ns.trace:
+        if ns.use_mp is not None:
+            if not Py_DEBUG:
+                parser.error("need --with-pydebug to use -T and -j together")
+        else:
+            print(
+                "Warning: collecting coverage without -j is imprecise. Configure"
+                " --with-pydebug and run -m test -T -j for best results.",
+                file=sys.stderr
+            )
     if ns.python is not None:
         if ns.use_mp is None:
             parser.error("-p requires -j!")
@@ -476,23 +501,17 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
     if ns.verbose:
         ns.header = True
-    if ns.huntrleaks and ns.verbose3:
+    # When -jN option is used, a worker process does not use --verbose3
+    # and so -R 3:3 -jN --verbose3 just works as expected: there is no false
+    # alarm about memory leak.
+    if ns.huntrleaks and ns.verbose3 and ns.use_mp is None:
         ns.verbose3 = False
+        # run_single_test() replaces sys.stdout with io.StringIO if verbose3
+        # is true. In this case, huntrleaks sees an write into StringIO as
+        # a memory leak, whereas it is not (gh-71290).
         print("WARNING: Disable --verbose3 because it's incompatible with "
-              "--huntrleaks: see http://bugs.python.org/issue27103",
+              "--huntrleaks without -jN option",
               file=sys.stderr)
-    if ns.match_filename:
-        if ns.match_tests is None:
-            ns.match_tests = []
-        with open(ns.match_filename) as fp:
-            for line in fp:
-                ns.match_tests.append(line.strip())
-    if ns.ignore_filename:
-        if ns.ignore_tests is None:
-            ns.ignore_tests = []
-        with open(ns.ignore_filename) as fp:
-            for line in fp:
-                ns.ignore_tests.append(line.strip())
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True
