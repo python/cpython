@@ -309,7 +309,7 @@ BCinfo {
 // struct Bigint is defined in pycore_dtoa.h.
 typedef struct Bigint Bigint;
 
-#ifndef Py_USING_MEMORY_DEBUGGER
+#if !defined(Py_NOGIL) && !defined(Py_USING_MEMORY_DEBUGGER)
 
 /* Memory management: memory is allocated from, and returned to, Kmax+1 pools
    of memory, where pool k (0 <= k <= Kmax) is for Bigints b with b->maxwds ==
@@ -428,7 +428,7 @@ Bfree(Bigint *v)
     }
 }
 
-#endif /* Py_USING_MEMORY_DEBUGGER */
+#endif /* !defined(Py_NOGIL) && !defined(Py_USING_MEMORY_DEBUGGER) */
 
 #define Bcopy(x,y) memcpy((char *)&x->sign, (char *)&y->sign,   \
                           y->wds*sizeof(Long) + 2*sizeof(int))
@@ -673,7 +673,7 @@ mult(Bigint *a, Bigint *b)
 static Bigint *
 pow5mult(Bigint *b, int k)
 {
-    Bigint *b1, *p5, *p51;
+    Bigint *b1, *p5, **p5s;
     int i;
     static const int p05[3] = { 5, 25, 125 };
 
@@ -685,19 +685,12 @@ pow5mult(Bigint *b, int k)
 
     if (!(k >>= 2))
         return b;
+    assert(k < (1 << (Bigint_Pow5max)));
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    p5 = interp->dtoa.p5s;
-    if (!p5) {
-        /* first time */
-        p5 = i2b(625);
-        if (p5 == NULL) {
-            Bfree(b);
-            return NULL;
-        }
-        interp->dtoa.p5s = p5;
-        p5->next = 0;
-    }
+    p5s = interp->dtoa.p5s;
     for(;;) {
+        p5 = *p5s;
+        p5s++;
         if (k & 1) {
             b1 = mult(b, p5);
             Bfree(b);
@@ -707,17 +700,6 @@ pow5mult(Bigint *b, int k)
         }
         if (!(k >>= 1))
             break;
-        p51 = p5->next;
-        if (!p51) {
-            p51 = mult(p5,p5);
-            if (p51 == NULL) {
-                Bfree(b);
-                return NULL;
-            }
-            p51->next = 0;
-            p5->next = p51;
-        }
-        p5 = p51;
     }
     return b;
 }
@@ -2811,3 +2793,42 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
 }
 
 #endif  // _PY_SHORT_FLOAT_REPR == 1
+
+PyStatus
+_PyDtoa_Init(PyInterpreterState *interp)
+{
+#if _PY_SHORT_FLOAT_REPR == 1 && !defined(Py_USING_MEMORY_DEBUGGER)
+    Bigint **p5s = interp->dtoa.p5s;
+
+    // 5**4 = 625
+    Bigint *p5 = i2b(625);
+    if (p5 == NULL) {
+        return PyStatus_NoMemory();
+    }
+    p5s[0] = p5;
+
+    // compute 5**8, 5**16, 5**32, ..., 5**256
+    for (Py_ssize_t i = 1; i < Bigint_Pow5max; i++) {
+        p5 = mult(p5, p5);
+        if (p5 == NULL) {
+            return PyStatus_NoMemory();
+        }
+        p5s[i] = p5;
+    }
+
+#endif
+    return PyStatus_Ok();
+}
+
+void
+_PyDtoa_Fini(PyInterpreterState *interp)
+{
+#if _PY_SHORT_FLOAT_REPR == 1 && !defined(Py_USING_MEMORY_DEBUGGER)
+    Bigint **p5s = interp->dtoa.p5s;
+    for (Py_ssize_t i = 0; i < Bigint_Pow5max; i++) {
+        Bigint *p5 = p5s[i];
+        p5s[i] = NULL;
+        Bfree(p5);
+    }
+#endif
+}
