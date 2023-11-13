@@ -110,9 +110,10 @@ bool_xor(PyObject *a, PyObject *b)
 /* Doc string */
 
 PyDoc_STRVAR(bool_doc,
-"bool(x) -> bool\n\
+"bool(object=False, /)\n\
+--\n\
 \n\
-Returns True when the argument x is true, False otherwise.\n\
+Returns True when the argument is true, False otherwise.\n\
 The builtins True and False are the only two instances of the class bool.\n\
 The class bool is a subclass of the class int, and cannot be subclassed.");
 

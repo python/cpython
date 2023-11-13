@@ -1164,7 +1164,8 @@ cm_repr(classmethod *cm)
 }
 
 PyDoc_STRVAR(classmethod_doc,
-"classmethod(function) -> method\n\
+"classmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a class method.\n\
 \n\
@@ -1359,7 +1360,8 @@ sm_repr(staticmethod *sm)
 }
 
 PyDoc_STRVAR(staticmethod_doc,
-"staticmethod(function) -> method\n\
+"staticmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a static method.\n\
 \n\
