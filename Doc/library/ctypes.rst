@@ -2116,7 +2116,7 @@ Utility functions
    size*.  If *allow_write* is set to a truthy value then the
    memoryview object is mutable.
 
-   This function is similar to :funct:`string_at` with the key difference
+   This function is similar to :func:`string_at` with the key difference
    of not making a copy of the specified memory.
 
    .. audit-event:: ctypes.buffer_at address,size,allow_write ctypes.buffer_at
