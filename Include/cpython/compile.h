@@ -69,7 +69,7 @@ typedef struct {
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
 
-/* The following are exported for use in the _opcode modula (Modules/_opcode.c) */
+/* The following are exported for use in the _opcode module (Modules/_opcode.c) */
 PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);
