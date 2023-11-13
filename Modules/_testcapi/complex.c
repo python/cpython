@@ -1,7 +1,8 @@
 #include "parts.h"
 #include "util.h"
 #define Py_BUILD_CORE
-#include "pycore_complexobject.h" // _Py_c_*
+#include "pycore_complexobject.h" // _Py_c_*()
+#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
 static PyObject *
@@ -112,6 +113,7 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
                                                                  \
         errno = 0;                                               \
         res = _Py_c_##suffix(num, exp);                          \
+        _Py_ADJUST_ERANGE2(res.real, res.imag);                  \
                                                                  \
         if (errno == EDOM) {                                     \
             PyErr_SetString(PyExc_ZeroDivisionError,             \
