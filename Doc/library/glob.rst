@@ -115,38 +115,6 @@ The :mod:`glob` module defines the following functions:
    .. versionadded:: 3.4
 
 
-Examples
---------
-
-Consider a directory containing the following files:
-:file:`1.gif`, :file:`2.txt`, :file:`card.gif` and a subdirectory :file:`sub`
-which contains only the file :file:`3.txt`.  :func:`glob` will produce
-the following results.  Notice how any leading components of the path are
-preserved. ::
-
-   >>> import glob
-   >>> glob.glob('./[0-9].*')
-   ['./1.gif', './2.txt']
-   >>> glob.glob('*.gif')
-   ['1.gif', 'card.gif']
-   >>> glob.glob('?.gif')
-   ['1.gif']
-   >>> glob.glob('**/*.txt', recursive=True)
-   ['2.txt', 'sub/3.txt']
-   >>> glob.glob('./**/', recursive=True)
-   ['./', './sub/']
-
-If the directory contains files starting with ``.`` they won't be matched by
-default. For example, consider a directory containing :file:`card.gif` and
-:file:`.card.gif`::
-
-   >>> import glob
-   >>> glob.glob('*.gif')
-   ['card.gif']
-   >>> glob.glob('.c*')
-   ['.card.gif']
-
-
 .. function:: translate(pathname, *, recursive=False, include_hidden=False, seps=None)
 
    Convert the given path specification to a regular expression for use with
@@ -184,6 +152,37 @@ default. For example, consider a directory containing :file:`card.gif` and
 
    .. versionadded:: 3.13
 
+
+Examples
+--------
+
+Consider a directory containing the following files:
+:file:`1.gif`, :file:`2.txt`, :file:`card.gif` and a subdirectory :file:`sub`
+which contains only the file :file:`3.txt`.  :func:`glob` will produce
+the following results.  Notice how any leading components of the path are
+preserved. ::
+
+   >>> import glob
+   >>> glob.glob('./[0-9].*')
+   ['./1.gif', './2.txt']
+   >>> glob.glob('*.gif')
+   ['1.gif', 'card.gif']
+   >>> glob.glob('?.gif')
+   ['1.gif']
+   >>> glob.glob('**/*.txt', recursive=True)
+   ['2.txt', 'sub/3.txt']
+   >>> glob.glob('./**/', recursive=True)
+   ['./', './sub/']
+
+If the directory contains files starting with ``.`` they won't be matched by
+default. For example, consider a directory containing :file:`card.gif` and
+:file:`.card.gif`::
+
+   >>> import glob
+   >>> glob.glob('*.gif')
+   ['card.gif']
+   >>> glob.glob('.c*')
+   ['.card.gif']
 
 .. seealso::
    The :mod:`fnmatch` module offers shell-style filename (not path) expansion.
