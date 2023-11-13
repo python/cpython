@@ -2807,7 +2807,7 @@ _PyDtoa_Init(PyInterpreterState *interp)
     }
     p5s[0] = p5;
 
-    // compute 5**8, 5**16, 5**32, ..., 5**256
+    // compute 5**8, 5**16, 5**32, ..., 5**512
     for (Py_ssize_t i = 1; i < Bigint_Pow5max; i++) {
         p5 = mult(p5, p5);
         if (p5 == NULL) {

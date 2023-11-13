@@ -36,7 +36,7 @@ struct _dtoa_state {
 #define Bigint_Kmax 7
 
 /* The size of the cached powers of 5 array */
-#define Bigint_Pow5max 7
+#define Bigint_Pow5max 8
 
 #ifndef PRIVATE_MEM
 #define PRIVATE_MEM 2304
