@@ -435,21 +435,34 @@ class CAPITest(unittest.TestCase):
     def test_dict_pop(self):
         # Test PyDict_Pop()
         dict_pop = _testcapi.dict_pop
+        dict_pop_null = _testcapi.dict_pop_null
 
-        # key present
+        # key present, get removed value
         mydict = {"key": "value", "key2": "value2"}
         self.assertEqual(dict_pop(mydict, "key"), (1, "value"))
         self.assertEqual(mydict, {"key2": "value2"})
         self.assertEqual(dict_pop(mydict, "key2"), (1, "value2"))
         self.assertEqual(mydict, {})
 
-        # key missing; empty dict has a fast path
+        # key present, ignore removed value
+        mydict = {"key": "value", "key2": "value2"}
+        self.assertEqual(dict_pop_null(mydict, "key"), 1)
+        self.assertEqual(mydict, {"key2": "value2"})
+        self.assertEqual(dict_pop_null(mydict, "key2"), 1)
+        self.assertEqual(mydict, {})
+
+        # key missing, expect removed value; empty dict has a fast path
         self.assertEqual(dict_pop({}, "key"), (0, NULL))
         self.assertEqual(dict_pop({"a": 1}, "key"), (0, NULL))
 
+        # key missing, ignored removed value; empty dict has a fast path
+        self.assertEqual(dict_pop_null({}, "key"), 0)
+        self.assertEqual(dict_pop_null({"a": 1}, "key"), 0)
+
         # dict error
-        not_dict = "string"
+        not_dict = UserDict({1: 2})
         self.assertRaises(SystemError, dict_pop, not_dict, "key")
+        self.assertRaises(SystemError, dict_pop_null, not_dict, "key")
 
         # key error; don't hash key if dict is empty
         not_hashable_key = ["list"]
@@ -459,7 +472,29 @@ class CAPITest(unittest.TestCase):
         dict_pop({}, NULL)  # key is not checked if dict is empty
 
         # CRASHES dict_pop(NULL, "key")
-        # CRASHES dict_pop({"a": 1}, NULL, default)
+        # CRASHES dict_pop({"a": 1}, NULL)
+
+    def test_dict_popstring(self):
+        # Test PyDict_PopString()
+        dict_popstring = _testcapi.dict_popstring
+
+        # key present
+        mydict = {"key": "value", "key2": "value2"}
+        self.assertEqual(dict_popstring(mydict, "key"), (1, "value"))
+        self.assertEqual(mydict, {"key2": "value2"})
+        self.assertEqual(dict_popstring(mydict, "key2"), (1, "value2"))
+        self.assertEqual(mydict, {})
+
+        # key missing; empty dict has a fast path
+        self.assertEqual(dict_popstring({}, "key"), (0, NULL))
+        self.assertEqual(dict_popstring({"a": 1}, "key"), (0, NULL))
+
+        # dict error
+        not_dict = UserDict({1: 2})
+        self.assertRaises(SystemError, dict_popstring, not_dict, "key")
+
+        # CRASHES dict_popstring(NULL, "key")
+        # CRASHES dict_popstring({"a": 1}, NULL)
 
 
 if __name__ == "__main__":

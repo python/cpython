@@ -334,6 +334,7 @@ dict_mergefromseq2(PyObject *self, PyObject *args)
 static PyObject *
 dict_pop(PyObject *self, PyObject *args)
 {
+    // Test PyDict_Pop(dict, key, &value)
     PyObject *dict, *key;
     if (!PyArg_ParseTuple(args, "OO", &dict, &key)) {
         return NULL;
@@ -342,6 +343,47 @@ dict_pop(PyObject *self, PyObject *args)
     NULLABLE(key);
     PyObject *result = UNINITIALIZED_PTR;
     int res = PyDict_Pop(dict, key,  &result);
+    if (res < 0) {
+        assert(result == NULL);
+        return NULL;
+    }
+    if (result == NULL) {
+        result = Py_NewRef(Py_None);
+    }
+    return Py_BuildValue("iN", res, result);
+}
+
+
+static PyObject *
+dict_pop_null(PyObject *self, PyObject *args)
+{
+    // Test PyDict_Pop(dict, key, NULL)
+    PyObject *dict, *key;
+    if (!PyArg_ParseTuple(args, "OO", &dict, &key)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    NULLABLE(key);
+    int res = PyDict_Pop(dict, key,  NULL);
+    if (res < 0) {
+        return NULL;
+    }
+    return PyLong_FromLong(res);
+}
+
+
+static PyObject *
+dict_popstring(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    const char *key;
+    Py_ssize_t key_size;
+    if (!PyArg_ParseTuple(args, "Oz#", &dict, &key, &key_size)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    PyObject *result = UNINITIALIZED_PTR;
+    int res = PyDict_PopString(dict, key,  &result);
     if (res < 0) {
         assert(result == NULL);
         return NULL;
@@ -381,6 +423,8 @@ static PyMethodDef test_methods[] = {
     {"dict_update", dict_update, METH_VARARGS},
     {"dict_mergefromseq2", dict_mergefromseq2, METH_VARARGS},
     {"dict_pop", dict_pop, METH_VARARGS},
+    {"dict_pop_null", dict_pop_null, METH_VARARGS},
+    {"dict_popstring", dict_popstring, METH_VARARGS},
     {NULL},
 };
 
