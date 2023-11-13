@@ -242,10 +242,6 @@
             break;
         }
 
-        case _SPECIALIZE_UNPACK_SEQUENCE: {
-            break;
-        }
-
         case _UNPACK_SEQUENCE: {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
@@ -632,9 +628,7 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_LIST: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+        case _GUARD_NOT_EXHAUSTED_LIST: {
             break;
         }
 
@@ -648,9 +642,7 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_TUPLE: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+        case _GUARD_NOT_EXHAUSTED_TUPLE: {
             break;
         }
 
@@ -664,9 +656,7 @@
             break;
         }
 
-        case _IS_ITER_EXHAUSTED_RANGE: {
-            STACK_GROW(1);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+        case _GUARD_NOT_EXHAUSTED_RANGE: {
             break;
         }
 
@@ -677,6 +667,13 @@
         }
 
         case BEFORE_ASYNC_WITH: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case BEFORE_WITH: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
@@ -945,5 +942,9 @@
 
         case _INSERT: {
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - oparg)), true);
+            break;
+        }
+
+        case _CHECK_VALIDITY: {
             break;
         }

@@ -937,6 +937,9 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
         if (gen->gi_frame_state == FRAME_EXECUTING) {
             goto running;
         }
+        if (FRAME_STATE_SUSPENDED(gen->gi_frame_state)) {
+            goto suspended;
+        }
         _PyGen_Finalize((PyObject *)gen);
     }
     else if (f->f_frame->owner == FRAME_OWNED_BY_THREAD) {
@@ -950,6 +953,10 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 running:
     PyErr_SetString(PyExc_RuntimeError,
                     "cannot clear an executing frame");
+    return NULL;
+suspended:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "cannot clear a suspended frame");
     return NULL;
 }
 

@@ -2351,6 +2351,31 @@ def test_pdb_issue_gh_108976():
     (Pdb) continue
     """
 
+
+def test_pdb_issue_gh_80731():
+    """See GH-80731
+
+    pdb should correctly print exception info if in an except block.
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'import sys',
+    ...     'sys.exc_info()',
+    ...     'continue'
+    ... ]):
+    ...     try:
+    ...         raise ValueError('Correct')
+    ...     except ValueError:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         pass
+    > <doctest test.test_pdb.test_pdb_issue_gh_80731[0]>(10)<module>()
+    -> pass
+    (Pdb) import sys
+    (Pdb) sys.exc_info()
+    (<class 'ValueError'>, ValueError('Correct'), <traceback object at ...>)
+    (Pdb) continue
+    """
+
+
 def test_pdb_ambiguous_statements():
     """See GH-104301
 
@@ -3249,16 +3274,20 @@ class PdbTestReadline(unittest.TestCase):
     def test_basic_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
-            print('hello')
+            # Concatenate strings so that the output doesn't appear in the source
+            print('hello' + '!')
         """)
 
+        # List everything starting with 'co', there should be multiple matches
+        # then add ntin and complete 'contin' to 'continue'
         input = b"co\t\tntin\t\n"
 
         output = run_pty(script, input)
 
-        self.assertIn(b'cont', output)
+        self.assertIn(b'commands', output)
         self.assertIn(b'condition', output)
         self.assertIn(b'continue', output)
+        self.assertIn(b'hello!', output)
 
     def test_expression_completion(self):
         script = textwrap.dedent("""
