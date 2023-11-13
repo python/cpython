@@ -1164,6 +1164,10 @@ New Features
   :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
+* Add :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions: similar to
+  Python ``list.extend()`` and ``list.clear()`` methods.
+  (Contributed by Victor Stinner in :gh:`111138`.)
+
 
 Porting to Python 3.13
 ----------------------

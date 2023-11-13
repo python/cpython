@@ -162,6 +162,25 @@ list_astuple(PyObject* Py_UNUSED(module), PyObject *obj)
 }
 
 
+static PyObject *
+list_clear(PyObject* Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    RETURN_INT(PyList_Clear(obj));
+}
+
+
+static PyObject *
+list_extend(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj, *arg;
+    if (!PyArg_ParseTuple(args, "OO", &obj, &arg)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    NULLABLE(arg);
+    RETURN_INT(PyList_Extend(obj, arg));
+}
 
 
 static PyMethodDef test_methods[] = {
@@ -181,6 +200,8 @@ static PyMethodDef test_methods[] = {
     {"list_sort", list_sort, METH_O},
     {"list_reverse", list_reverse, METH_O},
     {"list_astuple", list_astuple, METH_O},
+    {"list_clear", list_clear, METH_O},
+    {"list_extend", list_extend, METH_VARARGS},
     {NULL},
 };
 
