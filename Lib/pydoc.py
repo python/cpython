@@ -2075,7 +2075,7 @@ has the same effect as typing a particular string at the help> prompt.
     def intro(self):
         self.output.write('''\
 Welcome to Python {0}'s help utility! If this is your first time using
-Python, you should definitely check out the tutorial on the internet at
+Python, you should definitely check out the tutorial at
 https://docs.python.org/{0}/tutorial/.
 
 Enter the name of any module, keyword, or topic to get help on writing
