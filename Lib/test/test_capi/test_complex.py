@@ -1,3 +1,4 @@
+from math import isnan
 import unittest
 import warnings
 
@@ -140,6 +141,55 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, asccomplex, object())
 
         # CRASHES asccomplex(NULL)
+
+    def test_py_c_sum(self):
+        # Test _Py_c_sum()
+        _py_c_sum = _testcapi._py_c_sum
+
+        self.assertEqual(_py_c_sum(1, 1j), 1+1j)
+
+    def test_py_c_diff(self):
+        # Test _Py_c_diff()
+        _py_c_diff = _testcapi._py_c_diff
+
+        self.assertEqual(_py_c_diff(1, 1j), 1-1j)
+
+    def test_py_c_neg(self):
+        # Test _Py_c_neg()
+        _py_c_neg = _testcapi._py_c_neg
+
+        self.assertEqual(_py_c_neg(1+1j), -1-1j)
+
+    def test_py_c_prod(self):
+        # Test _Py_c_prod()
+        _py_c_prod = _testcapi._py_c_prod
+
+        self.assertEqual(_py_c_prod(2, 1j), 2j)
+
+    def test_py_c_quot(self):
+        # Test _Py_c_quot()
+        _py_c_quot = _testcapi._py_c_quot
+
+        self.assertEqual(_py_c_quot(1, 1j), -1j)
+        self.assertEqual(_py_c_quot(1j, 2), 0.5j)
+        self.assertEqual(_py_c_quot(1, 2j), -0.5j)
+
+        z = _py_c_quot(float('nan'), 1j)
+        self.assertTrue(isnan(z.real))
+        self.assertTrue(isnan(z.imag))
+
+        self.assertRaises(ZeroDivisionError, _py_c_quot, 1, 0j)
+
+    def test_py_c_pow(self):
+        # Test _Py_c_pow()
+        _py_c_pow = _testcapi._py_c_pow
+
+        self.assertEqual(_py_c_pow(1j, 0+0j), 1+0j)
+        self.assertEqual(_py_c_pow(0j, 1), 0j)
+        self.assertAlmostEqual(_py_c_pow(1+1j, -1), 0.5-0.5j)
+
+        self.assertRaises(ZeroDivisionError, _py_c_pow, 0j, -1)
+        self.assertRaises(OverflowError, _py_c_pow, 1e200+1j, 1e200+1j)
 
 
 if __name__ == "__main__":

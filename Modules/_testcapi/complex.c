@@ -1,5 +1,7 @@
 #include "parts.h"
 #include "util.h"
+#define Py_BUILD_CORE
+#include "pycore_complexobject.h" // _Py_c_*
 
 
 static PyObject *
@@ -85,6 +87,52 @@ complex_asccomplex(PyObject *Py_UNUSED(module), PyObject *obj)
     return PyComplex_FromCComplex(complex);
 }
 
+static PyObject*
+_py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
+{
+    Py_complex complex;
+
+    complex = PyComplex_AsCComplex(num);
+    if (complex.real == -1. && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    return PyComplex_FromCComplex(_Py_c_neg(complex));
+}
+
+#define _PY_C_FUNC2(suffix)                                      \
+    static PyObject *                                            \
+    _py_c_##suffix(PyObject *Py_UNUSED(module), PyObject *args)  \
+    {                                                            \
+        Py_complex num, exp, res;                                \
+                                                                 \
+        if (!PyArg_ParseTuple(args, "DD", &num, &exp)) {         \
+            return NULL;                                         \
+        }                                                        \
+                                                                 \
+        errno = 0;                                               \
+        res = _Py_c_##suffix(num, exp);                          \
+                                                                 \
+        if (errno == EDOM) {                                     \
+            PyErr_SetString(PyExc_ZeroDivisionError,             \
+                            "complex division by zero");         \
+            return NULL;                                         \
+        }                                                        \
+        else if (errno == ERANGE) {                              \
+            PyErr_SetString(PyExc_OverflowError,                 \
+                            "complex exponentiation");           \
+            return NULL;                                         \
+        }                                                        \
+                                                                 \
+        return PyComplex_FromCComplex(res);                      \
+    };
+
+_PY_C_FUNC2(sum)
+_PY_C_FUNC2(diff)
+_PY_C_FUNC2(prod)
+_PY_C_FUNC2(quot)
+_PY_C_FUNC2(pow)
+
 
 static PyMethodDef test_methods[] = {
     {"complex_check", complex_check, METH_O},
@@ -94,6 +142,12 @@ static PyMethodDef test_methods[] = {
     {"complex_realasdouble", complex_realasdouble, METH_O},
     {"complex_imagasdouble", complex_imagasdouble, METH_O},
     {"complex_asccomplex", complex_asccomplex, METH_O},
+    {"_py_c_sum", _py_c_sum, METH_VARARGS},
+    {"_py_c_diff", _py_c_diff, METH_VARARGS},
+    {"_py_c_neg", _py_c_neg, METH_O},
+    {"_py_c_prod", _py_c_prod, METH_VARARGS},
+    {"_py_c_quot", _py_c_quot, METH_VARARGS},
+    {"_py_c_pow", _py_c_pow, METH_VARARGS},
     {NULL},
 };
 
