@@ -2373,7 +2373,7 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         return NULL; /* Shouldn't happen */
 
     if (PyDict_GetItemRef(path_importer_cache, p, &importer) != 0) {
-        // error or found
+        // found or error
         return importer;
     }
     // not found
