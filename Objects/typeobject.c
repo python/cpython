@@ -1471,9 +1471,9 @@ type_get_annotations(PyTypeObject *type, void *context)
         return NULL;
     }
     if (annotations) {
-        if (Py_TYPE(annotations)->tp_descr_get) {
-            Py_SETREF(annotations, Py_TYPE(annotations)->tp_descr_get(
-                    annotations, NULL, (PyObject *)type));
+        descrgetfunc get = Py_TYPE(annotations)->tp_descr_get;
+        if (get) {
+            Py_SETREF(annotations, get(annotations, NULL, (PyObject *)type));
         }
     }
     else {
