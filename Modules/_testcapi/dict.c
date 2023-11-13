@@ -343,6 +343,7 @@ dict_pop(PyObject *self, PyObject *args)
     PyObject *result = UNINITIALIZED_PTR;
     int res = PyDict_Pop(dict, key,  &result);
     if (res < 0) {
+        assert(result == NULL);
         return NULL;
     }
     if (result == NULL) {

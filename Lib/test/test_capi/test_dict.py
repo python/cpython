@@ -444,8 +444,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(mydict, {})
 
         # key missing; empty dict has a fast path
-        self.assertEqual(dict_pop({}, "key"), (0, None))
-        self.assertEqual(dict_pop({"a": 1}, "key"), (0, None))
+        self.assertEqual(dict_pop({}, "key"), (0, NULL))
+        self.assertEqual(dict_pop({"a": 1}, "key"), (0, NULL))
 
         # dict error
         not_dict = "string"
@@ -453,7 +453,7 @@ class CAPITest(unittest.TestCase):
 
         # key error; don't hash key if dict is empty
         not_hashable_key = ["list"]
-        self.assertEqual(dict_pop({}, not_hashable_key), (0, None))
+        self.assertEqual(dict_pop({}, not_hashable_key), (0, NULL))
         with self.assertRaises(TypeError):
             dict_pop({'key': 1}, not_hashable_key)
         dict_pop({}, NULL)  # key is not checked if dict is empty
