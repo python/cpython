@@ -5,11 +5,15 @@ PyHash API
 
 See also the :c:member:`PyTypeObject.tp_hash` member.
 
+Types
+^^^^^
+
 .. c:type:: Py_hash_t
 
    Hash value type: signed integer.
 
    .. versionadded:: 3.2
+
 
 .. c:type:: Py_uhash_t
 
@@ -39,6 +43,29 @@ See also the :c:member:`PyTypeObject.tp_hash` member.
       Size of seed input in bits.
 
    .. versionadded:: 3.4
+
+
+Functions
+^^^^^^^^^
+
+.. c:function:: Py_hash_t Py_HashDouble(double value)
+
+   Hash a C double number.
+
+   * If *value* is positive infinity, return :data:`sys.hash_info.inf
+     <sys.hash_info>`.
+   * If *value* is negative infinity, return :data:`-sys.hash_info.inf
+     <sys.hash_info>`.
+   * If *value* is not-a-number (NaN), return :data:`sys.hash_info.nan
+     <sys.hash_info>` (``0``).
+   * Otherwise, return the hash value of the finite *value* number.
+
+   .. note::
+      Return the hash value ``0`` for the floating point numbers ``-0.0`` and
+      ``+0.0``, and for not-a-number (NaN). ``Py_IS_NAN(value)`` can be used to
+      check if *value* is not-a-number.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: PyHash_FuncDef* PyHash_GetFuncDef(void)

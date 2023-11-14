@@ -1,3 +1,4 @@
+import math
 import sys
 import unittest
 from test.support import import_helper
@@ -77,3 +78,43 @@ class CAPITest(unittest.TestCase):
         # Py_HashPointer((void*)(uintptr_t)-1) doesn't return -1 but -2
         VOID_P_MAX = -1 & (2 ** (8 * SIZEOF_VOID_P) - 1)
         self.assertEqual(hash_pointer(VOID_P_MAX), -2)
+
+    def test_hash_double(self):
+        # Test Py_HashDouble()
+        hash_double = _testcapi.hash_double
+
+        # test some integers
+        integers = [
+            *range(1, 30),
+            2**30 - 1,
+            2 ** 233,
+            int(sys.float_info.max),
+        ]
+        for x in integers:
+            with self.subTest(x=x):
+                self.assertEqual(hash_double(float(x)), hash(x))
+                self.assertEqual(hash_double(float(-x)), hash(-x))
+
+        # test positive and negative zeros
+        self.assertEqual(hash_double(float(0.0)), 0)
+        self.assertEqual(hash_double(float(-0.0)), 0)
+
+        # test +inf and -inf
+        inf = float("inf")
+        self.assertEqual(hash_double(inf), sys.hash_info.inf)
+        self.assertEqual(hash_double(-inf), -sys.hash_info.inf)
+
+        # special float values: compare with Python hash() function
+        special_values = (
+            math.nextafter(0.0, 1.0),  # smallest positive subnormal number
+            sys.float_info.min,        # smallest positive normal number
+            sys.float_info.epsilon,
+            sys.float_info.max,        # largest positive finite number
+        )
+        for x in special_values:
+            with self.subTest(x=x):
+                self.assertEqual(hash_double(x), hash(x))
+                self.assertEqual(hash_double(-x), hash(-x))
+
+        # test not-a-number (NaN)
+        self.assertEqual(hash_double(float('nan')), 0)
