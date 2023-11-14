@@ -1,9 +1,5 @@
 /* Common code for use by all hashlib related modules. */
 
-#ifndef Py_BUILD_CORE
-#define Py_BUILD_CORE
-#endif
-
 #include "pycore_lock.h"        // PyMutex
 
 /*
