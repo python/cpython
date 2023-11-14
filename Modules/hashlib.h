@@ -63,13 +63,13 @@
     }
 
 #ifdef Py_NOGIL
-#define INIT_MUTEX(obj) \
+#define HASHLIB_INIT_MUTEX(obj) \
     do { \
         (obj)->mutex = (PyMutex){0}; \
         (obj)->use_mutex = true; \
     } while (0)
 #else
-#define INIT_MUTEX(obj) \
+#define HASHLIB_INIT_MUTEX(obj) \
     do { \
         (obj)->mutex = (PyMutex){0}; \
         (obj)->use_mutex = false; \

@@ -76,7 +76,7 @@ newSHA3object(PyTypeObject *type)
     if (newobj == NULL) {
         return NULL;
     }
-    INIT_MUTEX(newobj);
+    HASHLIB_INIT_MUTEX(newobj);
 
     return newobj;
 }

@@ -77,7 +77,7 @@ newSHA1object(SHA1State *st)
     if (sha == NULL) {
         return NULL;
     }
-    INIT_MUTEX(sha);
+    HASHLIB_INIT_MUTEX(sha);
 
     PyObject_GC_Track(sha);
     return sha;

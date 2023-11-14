@@ -81,7 +81,7 @@ newMD5object(MD5State * st)
     if(!md5) {
         return NULL;
     }
-    INIT_MUTEX(md5);
+    HASHLIB_INIT_MUTEX(md5);
 
     PyObject_GC_Track(md5);
     return md5;

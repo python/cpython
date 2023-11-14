@@ -415,7 +415,7 @@ newEVPobject(PyTypeObject *type)
     if (retval == NULL) {
         return NULL;
     }
-    INIT_MUTEX(retval);
+    HASHLIB_INIT_MUTEX(retval);
 
     retval->ctx = EVP_MD_CTX_new();
     if (retval->ctx == NULL) {

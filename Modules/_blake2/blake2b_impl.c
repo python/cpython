@@ -64,7 +64,7 @@ new_BLAKE2bObject(PyTypeObject *type)
     if (self == NULL) {
         return NULL;
     }
-    INIT_MUTEX(self);
+    HASHLIB_INIT_MUTEX(self);
 
     return self;
 }

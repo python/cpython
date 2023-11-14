@@ -106,7 +106,7 @@ newSHA224object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
-    INIT_MUTEX(sha);
+    HASHLIB_INIT_MUTEX(sha);
 
     PyObject_GC_Track(sha);
     return sha;
@@ -120,7 +120,7 @@ newSHA256object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
-    INIT_MUTEX(sha);
+    HASHLIB_INIT_MUTEX(sha);
 
     PyObject_GC_Track(sha);
     return sha;
@@ -134,7 +134,7 @@ newSHA384object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
-    INIT_MUTEX(sha);
+    HASHLIB_INIT_MUTEX(sha);
 
     PyObject_GC_Track(sha);
     return sha;
@@ -148,7 +148,7 @@ newSHA512object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
-    INIT_MUTEX(sha);
+    HASHLIB_INIT_MUTEX(sha);
 
     PyObject_GC_Track(sha);
     return sha;
