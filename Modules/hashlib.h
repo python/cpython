@@ -55,9 +55,7 @@
 #include "pythread.h"
 #define ENTER_HASHLIB(obj) \
     if ((obj)->use_mutex) { \
-        Py_BEGIN_ALLOW_THREADS \
         PyMutex_Lock(&(obj)->mutex); \
-        Py_END_ALLOW_THREADS \
     }
 #define LEAVE_HASHLIB(obj) \
     if ((obj)->use_mutex) { \
