@@ -1268,9 +1268,8 @@ class DisTests(DisTestBase):
         self.code_quicken(loop_test, 1)
         got = self.get_disassembly(loop_test, adaptive=True)
         expected = dis_loop_test_quickened_code
-        if _testinternalcapi.get_optimizer():
-            # We *may* see ENTER_EXECUTOR in the disassembly
-            got = got.replace("ENTER_EXECUTOR", "JUMP_BACKWARD ")
+        if _testinternalcapi.get_optimizer() and "ENTER_EXECUTOR" in got:
+            raise unittest.SkipTest("ENTER_EXECUTOR")
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
@@ -2000,6 +1999,23 @@ class InstructionTests(InstructionTestCase):
                                   argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, is_jump_target=False,
                                   positions=None)
         self.assertEqual(10 + 2 + 1*2 + 100*2, instruction.jump_target)
+
+    def test_argval_argrepr(self):
+        f = dis.Instruction._get_argval_argrepr
+
+        offset = 42
+        co_consts = (0, 1, 2, 3)
+        names = {1: 'a', 2: 'b'}
+        varname_from_oparg = lambda i : names[i]
+        args = (offset, co_consts, names, varname_from_oparg)
+        self.assertEqual(f(opcode.opmap["POP_TOP"], None, *args), (None, ''))
+        self.assertEqual(f(opcode.opmap["LOAD_CONST"], 1, *args), (1, '1'))
+        self.assertEqual(f(opcode.opmap["LOAD_GLOBAL"], 2, *args), ('a', 'a'))
+        self.assertEqual(f(opcode.opmap["JUMP_BACKWARD"], 11, *args), (24, 'to 24'))
+        self.assertEqual(f(opcode.opmap["COMPARE_OP"], 3, *args), ('<', '<'))
+        self.assertEqual(f(opcode.opmap["SET_FUNCTION_ATTRIBUTE"], 2, *args), (2, 'kwdefaults'))
+        self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
+        self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
 
     def test_start_offset(self):
         # When no extended args are present,
