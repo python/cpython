@@ -1112,7 +1112,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     else if (io_check_errors(errors)) {
         return -1;
     }
-    const char *errors_str = PyUnicode_AsUTF8(errors);
+    const char *errors_str = _PyUnicode_AsUTF8NoNUL(errors);
     if (errors_str == NULL) {
         return -1;
     }
