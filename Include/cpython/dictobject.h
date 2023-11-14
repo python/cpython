@@ -46,6 +46,8 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
 
 PyAPI_FUNC(int) PyDict_ContainsString(PyObject *mp, const char *key);
 
+PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
+PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
 PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value);
 
 /* Dictionary watchers */
