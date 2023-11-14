@@ -185,22 +185,22 @@ class ComplexTest(unittest.TestCase):
         check(2 ** 53, range(-100, 0), lambda delta: True)
 
     def test_add(self):
-        self.assertEqual(1j + 1, complex(+1, 1))
-        self.assertEqual(1j + (-1), complex(-1, 1))
+        self.assertEqual(1j + int(+1), complex(+1, 1))
+        self.assertEqual(1j + int(-1), complex(-1, 1))
         self.assertRaises(OverflowError, operator.add, 1j, 10**1000)
         self.assertRaises(TypeError, operator.add, 1j, None)
         self.assertRaises(TypeError, operator.add, None, 1j)
 
     def test_sub(self):
-        self.assertEqual(1j - 1, complex(-1, 1))
-        self.assertEqual(1j - (-1), complex(1, 1))
+        self.assertEqual(1j - int(+1), complex(-1, 1))
+        self.assertEqual(1j - int(-1), complex(1, 1))
         self.assertRaises(OverflowError, operator.sub, 1j, 10**1000)
         self.assertRaises(TypeError, operator.sub, 1j, None)
         self.assertRaises(TypeError, operator.sub, None, 1j)
 
     def test_mul(self):
-        self.assertEqual(1j * 2, complex(0, 2))
-        self.assertEqual(1j * (-1), complex(0, -1))
+        self.assertEqual(1j * int(20), complex(0, 20))
+        self.assertEqual(1j * int(-1), complex(0, -1))
         self.assertRaises(OverflowError, operator.mul, 1j, 10**1000)
         self.assertRaises(TypeError, operator.mul, 1j, None)
         self.assertRaises(TypeError, operator.mul, None, 1j)
@@ -333,18 +333,12 @@ class ComplexTest(unittest.TestCase):
         for i in range(100):
             self.assertTrue(complex(random() + 1e-6, random() + 1e-6))
         self.assertTrue(not complex(0.0, 0.0))
-
-    def test_bool(self):
         self.assertTrue(1j)
 
     def test_conjugate(self):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
     def test_constructor(self):
-        class Complex:
-            def __complex__(self):
-                return 4.25+0.5j
-
         class NS:
             def __init__(self, value): self.value = value
             def __complex__(self): return self.value
@@ -354,7 +348,7 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, NS(1.5))
         self.assertRaises(TypeError, complex, NS(1))
         self.assertRaises(TypeError, complex, object())
-        self.assertRaises(TypeError, complex, Complex(), object())
+        self.assertRaises(TypeError, complex, NS(4.25+0.5j), object())
 
         self.assertAlmostEqual(complex("1+10j"), 1+10j)
         self.assertAlmostEqual(complex(10), 10+0j)
@@ -653,6 +647,7 @@ class ComplexTest(unittest.TestCase):
 
         self.assertEqual(+(1+6j), 1+6j)
         self.assertEqual(+ComplexSubclass(1, 6), 1+6j)
+        self.assertIs(type(+ComplexSubclass(1, 6)), complex)
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
