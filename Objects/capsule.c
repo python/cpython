@@ -224,6 +224,57 @@ _PyCapsule_SetTraverse(PyObject *op, traverseproc traverse_func, inquiry clear_f
 }
 
 
+PyObject *
+PyCapsule_ImportCapsule(const char *name, int no_block)
+{
+    PyObject *object = NULL;
+    char *trace;
+    size_t name_length = (strlen(name) + 1) * sizeof(char);
+    char *name_dup = (char *)PyMem_Malloc(name_length);
+
+    if (!name_dup) {
+        return PyErr_NoMemory();
+    }
+
+    memcpy(name_dup, name, name_length);
+
+    trace = name_dup;
+    while (trace) {
+        char *dot = strchr(trace, '.');
+        if (dot) {
+            *dot++ = '\0';
+        }
+
+        if (object == NULL) {
+            object = PyImport_ImportModule(trace);
+            if (!object) {
+                PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
+            }
+        } else {
+            PyObject *object2 = PyObject_GetAttrString(object, trace);
+            Py_SETREF(object, object2);
+        }
+        if (!object) {
+            goto EXIT;
+        }
+
+        trace = dot;
+    }
+
+    /* compare attribute name to module.name by hand */
+    if (!PyCapsule_IsValid(object, name)) {
+        PyErr_Format(PyExc_AttributeError,
+                     "PyCapsule_Import \"%s\" is not valid",
+                     name);
+    }
+EXIT:
+    if (name_dup) {
+        PyMem_Free(name_dup);
+    }
+    return object;
+}
+
+
 void *
 PyCapsule_Import(const char *name, int no_block)
 {
