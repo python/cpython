@@ -2368,7 +2368,7 @@ dummy_func(
             goto enter_tier_one;
         }
 
-        inst(POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
+       replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
@@ -2377,7 +2377,7 @@ dummy_func(
             JUMPBY(oparg * flag);
         }
 
-        inst(POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
@@ -2396,9 +2396,13 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_NONE) = _IS_NONE + POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_TRUE) = _POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_FALSE) = _POP_JUMP_IF_FALSE;
+
+        macro(POP_JUMP_IF_NONE) = _IS_NONE + _POP_JUMP_IF_TRUE;
+
+        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + _POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
@@ -3963,16 +3967,23 @@ dummy_func(
 
         ///////// Tier-2 only opcodes /////////
 
-        op(_POP_JUMP_IF_FALSE, (flag -- )) {
-            if (Py_IsFalse(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+        op (_GUARD_IS_TRUE_POP, (flag -- )) {
+            DEOPT_IF(Py_IsFalse(flag));
+            assert(Py_IsTrue(flag));
         }
 
-        op(_POP_JUMP_IF_TRUE, (flag -- )) {
-            if (Py_IsTrue(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+        op (_GUARD_IS_FALSE_POP, (flag -- )) {
+            DEOPT_IF(Py_IsTrue(flag));
+            assert(Py_IsFalse(flag));
+        }
+
+        op (_GUARD_IS_NONE_POP, (val -- )) {
+            DEOPT_IF(!Py_IsNone(val));
+        }
+
+        op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
+            DEOPT_IF(Py_IsNone(val));
+            Py_DECREF(val);
         }
 
         op(_JUMP_TO_TOP, (--)) {

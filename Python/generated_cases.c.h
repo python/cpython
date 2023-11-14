@@ -3435,22 +3435,6 @@
             goto enter_tier_one;
         }
 
-        TARGET(POP_JUMP_IF_FALSE) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
-            PyObject *cond;
-            cond = stack_pointer[-1];
-            assert(PyBool_Check(cond));
-            int flag = Py_IsFalse(cond);
-            #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | flag;
-            #endif
-            JUMPBY(oparg * flag);
-            STACK_SHRINK(1);
-            DISPATCH();
-        }
-
         TARGET(POP_JUMP_IF_TRUE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
@@ -3459,6 +3443,22 @@
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
+            #if ENABLE_SPECIALIZATION
+            this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(POP_JUMP_IF_FALSE) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
+            PyObject *cond;
+            cond = stack_pointer[-1];
+            assert(PyBool_Check(cond));
+            int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
@@ -3485,7 +3485,7 @@
                     Py_DECREF(value);
                 }
             }
-            // POP_JUMP_IF_TRUE
+            // _POP_JUMP_IF_TRUE
             cond = b;
             {
                 assert(PyBool_Check(cond));
@@ -3517,7 +3517,7 @@
                     Py_DECREF(value);
                 }
             }
-            // POP_JUMP_IF_FALSE
+            // _POP_JUMP_IF_FALSE
             cond = b;
             {
                 assert(PyBool_Check(cond));

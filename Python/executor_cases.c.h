@@ -3185,22 +3185,37 @@
             break;
         }
 
-        case _POP_JUMP_IF_FALSE: {
+        case _GUARD_IS_TRUE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsFalse(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+            DEOPT_IF(Py_IsFalse(flag), _GUARD_IS_TRUE_POP);
+            assert(Py_IsTrue(flag));
             STACK_SHRINK(1);
             break;
         }
 
-        case _POP_JUMP_IF_TRUE: {
+        case _GUARD_IS_FALSE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsTrue(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+            DEOPT_IF(Py_IsTrue(flag), _GUARD_IS_FALSE_POP);
+            assert(Py_IsFalse(flag));
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case _GUARD_IS_NONE_POP: {
+            PyObject *val;
+            val = stack_pointer[-1];
+            DEOPT_IF(!Py_IsNone(val), _GUARD_IS_NONE_POP);
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case _GUARD_IS_NOT_NONE_POP: {
+            PyObject *val;
+            val = stack_pointer[-1];
+            DEOPT_IF(Py_IsNone(val), _GUARD_IS_NOT_NONE_POP);
+            Py_DECREF(val);
             STACK_SHRINK(1);
             break;
         }

@@ -2610,7 +2610,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_pop_jump_if_none(self):
         def testfunc(a):
@@ -2625,7 +2625,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
@@ -2641,7 +2641,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+        self.assertIn("_GUARD_IS_NONE_POP", uops)
 
     def test_pop_jump_if_true(self):
         def testfunc(n):
@@ -2656,7 +2656,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_FALSE_POP", uops)
 
     def test_jump_backward(self):
         def testfunc(n):
@@ -2806,7 +2806,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_FALSE_POP", uops)
 
 
 if __name__ == "__main__":
