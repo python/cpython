@@ -114,7 +114,6 @@ class PyMemDebugTests(unittest.TestCase):
 
     # Python built with Py_TRACE_REFS fail with a fatal error in
     # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skip("JIT")
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_set_nomemory(self):
         code = """if 1:
