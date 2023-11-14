@@ -86,7 +86,7 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 Py_hash_t _Py_HashPointer(const void *);
 
 Py_hash_t
-_Py_HashDouble(PyObject *inst, double v)
+PyHash_Double(double v, PyObject *obj)
 {
     int e, sign;
     double m;
@@ -95,8 +95,15 @@ _Py_HashDouble(PyObject *inst, double v)
     if (!Py_IS_FINITE(v)) {
         if (Py_IS_INFINITY(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
-        else
-            return _Py_HashPointer(inst);
+        else {
+            assert(Py_IS_NAN(v));
+            if (obj != NULL) {
+                return _Py_HashPointer(obj);
+            }
+            else {
+                return _PyHASH_NAN;
+            }
+        }
     }
 
     m = frexp(v, &e);
@@ -129,6 +136,12 @@ _Py_HashDouble(PyObject *inst, double v)
     if (x == (Py_uhash_t)-1)
         x = (Py_uhash_t)-2;
     return (Py_hash_t)x;
+}
+
+Py_hash_t
+_Py_HashDouble(PyObject *obj, double v)
+{
+    return PyHash_Double(v, obj);
 }
 
 Py_hash_t

@@ -1,9 +1,11 @@
+import math
 import sys
 import unittest
 from test.support import import_helper
 _testcapi = import_helper.import_module('_testcapi')
 
 
+NULL = None
 SIZEOF_PY_HASH_T = _testcapi.SIZEOF_VOID_P
 
 
@@ -31,3 +33,52 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(func_def.name, hash_info.algorithm)
         self.assertEqual(func_def.hash_bits, hash_info.hash_bits)
         self.assertEqual(func_def.seed_bits, hash_info.seed_bits)
+
+    def test_hash_double(self):
+        # Test PyHash_Double()
+        hash_double = _testcapi.hash_double
+        marker = object()
+        marker_hash = hash(marker)
+
+        # test integers
+        integers = [
+            *range(1, 30),
+            2**30 - 1,
+            2 ** 233,
+            int(sys.float_info.max),
+        ]
+        for x in integers:
+            for obj in (NULL, marker):
+                with self.subTest(x=x, obj=obj):
+                    self.assertEqual(hash_double(float(x), obj), hash(x))
+                    self.assertEqual(hash_double(float(-x), obj), hash(-x))
+
+        # test positive and negataive zeros
+        for obj in (NULL, marker):
+            with self.subTest(x=x, obj=obj):
+                self.assertEqual(hash_double(float(0.0), obj), 0)
+                self.assertEqual(hash_double(float(-0.0), obj), 0)
+
+        # test +inf and -inf
+        inf = float("inf")
+        for obj in (NULL, marker):
+            with self.subTest(obj=obj):
+                self.assertEqual(hash_double(inf), sys.hash_info.inf)
+                self.assertEqual(hash_double(-inf), -sys.hash_info.inf)
+
+        # test not-a-number (NaN)
+        self.assertEqual(hash_double(float('nan'), marker), marker_hash)
+        self.assertEqual(hash_double(float('nan'), NULL), sys.hash_info.nan)
+
+        # special float values: compare with Python hash() function
+        special_values = (
+            math.nextafter(0.0, 1.0),  # smallest positive subnormal number
+            sys.float_info.min,        # smallest positive normal number
+            sys.float_info.epsilon,
+            sys.float_info.max,        # largest positive finite number
+        )
+        for x in special_values:
+            for obj in (NULL, marker):
+                with self.subTest(x=x, obj=obj):
+                    self.assertEqual(hash_double(x, obj), hash(x))
+                    self.assertEqual(hash_double(-x, obj), hash(-x))

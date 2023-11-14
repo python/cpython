@@ -11,3 +11,5 @@ typedef struct {
 } PyHash_FuncDef;
 
 PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
+
+PyAPI_FUNC(Py_hash_t) PyHash_Double(double value, PyObject *obj);

@@ -1,0 +1,2 @@
+Add :c:func:`PyHash_Double` function to hash a C double number. Patch by
+Victor Stinner.
