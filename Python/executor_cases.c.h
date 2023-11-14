@@ -512,13 +512,18 @@
             dict = stack_pointer[-2];
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            int rc = PyDict_GetItemRef(dict, sub, &res);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
+            res = PyDict_GetItemWithError(dict, sub);
+            if (res == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_SetKeyError(sub);
+                }
+                Py_DECREF(dict);
+                Py_DECREF(sub);
+                if (true) goto pop_2_error_tier_two;
             }
+            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             Py_DECREF(dict);
             Py_DECREF(sub);
-            if (rc <= 0) goto pop_2_error_tier_two;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             break;
@@ -1017,10 +1022,14 @@
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
                     GOTO_ERROR(error);
                 }
-                if (v == NULL) {
+                else {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -1050,10 +1059,14 @@
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
                     GOTO_ERROR(error);
                 }
-                if (v == NULL) {
+                else {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -1391,17 +1404,34 @@
                 if (true) goto error_tier_two;
             }
             /* check if __annotations__ in locals()... */
-            if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error_tier_two;
-            if (ann_dict == NULL) {
-                ann_dict = PyDict_New();
-                if (ann_dict == NULL) goto error_tier_two;
-                err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                       ann_dict);
-                Py_DECREF(ann_dict);
-                if (err) goto error_tier_two;
+            if (PyDict_CheckExact(LOCALS())) {
+                ann_dict = _PyDict_GetItemWithError(LOCALS(),
+                                                    &_Py_ID(__annotations__));
+                if (ann_dict == NULL) {
+                    if (_PyErr_Occurred(tstate)) goto error_tier_two;
+                    /* ...if not, create a new one */
+                    ann_dict = PyDict_New();
+                    if (ann_dict == NULL) goto error_tier_two;
+                    err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                         ann_dict);
+                    Py_DECREF(ann_dict);
+                    if (err) goto error_tier_two;
+                }
             }
             else {
-                Py_DECREF(ann_dict);
+                /* do the same if locals() is not a dict */
+                if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error_tier_two;
+                if (ann_dict == NULL) {
+                    ann_dict = PyDict_New();
+                    if (ann_dict == NULL) goto error_tier_two;
+                    err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                           ann_dict);
+                    Py_DECREF(ann_dict);
+                    if (err) goto error_tier_two;
+                }
+                else {
+                    Py_DECREF(ann_dict);
+                }
             }
             break;
         }
