@@ -16,13 +16,8 @@
 
 /* MD5 objects */
 
-#ifndef _MSC_VER
-#include "pyconfig.h"   // Py_NOGIL
-#endif
-
-#ifndef Py_NOGIL
-// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
-#define Py_LIMITED_API 0x030c0000
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
