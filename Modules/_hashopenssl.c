@@ -1627,7 +1627,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return NULL;
     }
     retval->ctx = ctx;
-    retval->mutex = (PyMutex){0};
+    HASHLIB_INIT_MUTEX(retval);
 
     return (PyObject *)retval;
 }
