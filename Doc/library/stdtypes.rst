@@ -4752,14 +4752,17 @@ support membership tests:
 
    .. versionadded:: 3.10
 
-Keys views are set-like since their entries are unique and :term:`hashable`.  If all
-values are hashable, so that ``(key, value)`` pairs are unique and hashable,
-then the items view is also set-like.  (Values views are not treated as set-like
+Keys views are set-like since their entries are unique and :term:`hashable`.
+Items views also have set-like operations since the (key, value) pairs
+are unique and the keys are hashable.
+If all values in an items view are hashable as well,
+then the items view can interoperate with other sets.
+(Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the
 operations defined for the abstract base class :class:`collections.abc.Set` are
 available (for example, ``==``, ``<``, or ``^``).  While using set operators,
-set-like views accept any iterable as the other operand, unlike sets which only
-accept sets as the input.
+set-like views accept any iterable as the other operand,
+unlike sets which only accept sets as the input.
 
 An example of dictionary view usage::
 
