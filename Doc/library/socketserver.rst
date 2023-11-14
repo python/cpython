@@ -528,6 +528,24 @@ The difference is that the ``readline()`` call in the second handler will call
 single ``recv()`` call in the first handler will just return what has been sent
 from the client in one ``sendall()`` call.
 
+The handlers presented above close the connection after handling a single request. 
+It is possible, however, to keep the connection open to handle many requests, 
+until the client hangs up::
+
+   class MyTCPHandler(socketserver.BaseRequestHandler):
+
+       def handle(self):
+           while True:
+               # self.request is the TCP socket connected to the client
+               self.data = self.request.recv(1024)
+               # `socket.recv` indicates that the client has hung up by returning 0 bytes
+               if len(self.data) == 0:
+                   return
+               print("{} wrote:".format(self.client_address[0]))
+               print(self.data)
+               # just send back the same data, but upper-cased
+               self.request.sendall(self.data.upper())
+
 
 This is the client side::
 
