@@ -1274,6 +1274,9 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`Py_HashDouble` function to hash a C double number.
+  (Contributed by Victor Stinner in :gh:`111545`.)
+
 
 Porting to Python 3.13
 ----------------------

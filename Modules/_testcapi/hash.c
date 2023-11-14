@@ -1,6 +1,17 @@
 #include "parts.h"
 #include "util.h"
 
+
+static PyObject *
+long_from_hash(Py_hash_t hash)
+{
+    assert(hash != -1);
+
+    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
+    return PyLong_FromLongLong(hash);
+}
+
+
 static PyObject *
 hash_getfuncdef(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
@@ -54,14 +65,28 @@ hash_pointer(PyObject *Py_UNUSED(module), PyObject *arg)
     }
 
     Py_hash_t hash = Py_HashPointer(ptr);
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
-    return PyLong_FromLongLong(hash);
+    return long_from_hash(hash);
+}
+
+
+static PyObject *
+hash_double(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    double value;
+    if (!PyArg_ParseTuple(args, "d", &value)) {
+        return NULL;
+    }
+
+    Py_hash_t hash;
+    int res = Py_HashDouble(value, &hash);
+    return Py_BuildValue("iN", res, long_from_hash(hash));
 }
 
 
 static PyMethodDef test_methods[] = {
     {"hash_getfuncdef", hash_getfuncdef, METH_NOARGS},
     {"hash_pointer", hash_pointer, METH_O},
+    {"hash_double", hash_double, METH_VARARGS},
     {NULL},
 };
 
