@@ -395,8 +395,8 @@ remove_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *modules = MODULES(tstate->interp);
     if (PyDict_CheckExact(modules)) {
-        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
-        Py_XDECREF(mod);
+        // Error is reported to the caller
+        (void)PyDict_Pop(modules, name, NULL);
     }
     else if (PyMapping_DelItem(modules, name) < 0) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
