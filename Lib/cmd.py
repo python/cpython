@@ -216,9 +216,8 @@ class Cmd:
         if cmd == '':
             return self.default(line)
         else:
-            try:
-                func = getattr(self, 'do_' + cmd)
-            except AttributeError:
+            func = getattr(self, 'do_' + cmd, None)
+            if func is None:
                 return self.default(line)
             return func(arg)
 

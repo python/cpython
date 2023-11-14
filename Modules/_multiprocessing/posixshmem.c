@@ -48,7 +48,7 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 {
     int fd;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
     if (name == NULL) {
         return -1;
     }
@@ -87,7 +87,7 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 {
     int rv;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
     if (name == NULL) {
         return NULL;
     }

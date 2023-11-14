@@ -107,6 +107,7 @@ error_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
+    assert(0);
     PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
     return -1;
 }
@@ -122,8 +123,8 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = error_optimize,
-    .resume_threshold = UINT16_MAX,
-    .backedge_threshold = UINT16_MAX,
+    .resume_threshold = INT16_MAX,
+    .backedge_threshold = INT16_MAX,
 };
 
 _PyOptimizerObject *
@@ -309,7 +310,7 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.resume_threshold = UINT16_MAX;
+    opt->base.resume_threshold = INT16_MAX;
     opt->base.backedge_threshold = 0;
     opt->count = 0;
     return (PyObject *)opt;
@@ -382,6 +383,26 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
     .tp_methods = executor_methods,
+};
+
+/* TO DO -- Generate these tables */
+static const uint16_t
+_PyUop_Replacements[OPCODE_METADATA_SIZE] = {
+    [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
+    [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
+    [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
+};
+
+static const uint16_t
+BRANCH_TO_GUARD[4][2] = {
+    [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_TRUE_POP,
+    [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_FALSE_POP,
+    [POP_JUMP_IF_TRUE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_FALSE_POP,
+    [POP_JUMP_IF_TRUE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_TRUE_POP,
+    [POP_JUMP_IF_NONE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_NOT_NONE_POP,
+    [POP_JUMP_IF_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NONE_POP,
+    [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_NONE_POP,
+    [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NOT_NONE_POP,
 };
 
 #define TRACE_STACK_SIZE 5
@@ -464,8 +485,8 @@ translate_bytecode_to_trace(
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
 
-// Reserve space for main+stub uops, plus 2 for _SET_IP and _EXIT_TRACE
-#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 2, uop_name(opcode))
+// Reserve space for main+stub uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 3, uop_name(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
 #define TRACE_STACK_PUSH() \
@@ -495,8 +516,9 @@ translate_bytecode_to_trace(
 
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
+        RESERVE_RAW(3, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
         ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -518,45 +540,23 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         }
 
         switch (opcode) {
-
             case POP_JUMP_IF_NONE:
-            {
-                RESERVE(2, 2);
-                ADD_TO_TRACE(_IS_NONE, 0, 0);
-                opcode = POP_JUMP_IF_TRUE;
-                goto pop_jump_if_bool;
-            }
-
             case POP_JUMP_IF_NOT_NONE:
-            {
-                RESERVE(2, 2);
-                ADD_TO_TRACE(_IS_NONE, 0, 0);
-                opcode = POP_JUMP_IF_FALSE;
-                goto pop_jump_if_bool;
-            }
-
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             {
-pop_jump_if_bool:
-                RESERVE(1, 2);
-                max_length -= 2;  // Really the start of the stubs
+                RESERVE(1, 0);
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
-                bool jump_likely = bitcount > 8;
-                bool jump_sense = opcode == POP_JUMP_IF_TRUE;
-                uint32_t uopcode = jump_sense ^ jump_likely ?
-                    _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
+                int jump_likely = bitcount > 8;
+                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                _Py_CODEUNIT *target_instr = next_instr + oparg;
-                _Py_CODEUNIT *stub_target = jump_likely ? next_instr : target_instr;
-                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, sense=%d, uopcode=%s\n",
+                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, uopcode=%s\n",
                         uop_name(opcode), oparg,
-                        counter, bitcount, jump_likely, jump_sense, uop_name(uopcode));
+                        counter, bitcount, jump_likely, uop_name(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0);
-                ADD_TO_STUB(max_length, _SET_IP, INSTR_IP(stub_target, code), 0);
-                ADD_TO_STUB(max_length + 1, _EXIT_TRACE, 0, 0);
                 if (jump_likely) {
+                    _Py_CODEUNIT *target_instr = next_instr + oparg;
                     DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
                             instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
                     instr = target_instr;
@@ -583,46 +583,6 @@ pop_jump_if_bool:
                 RESERVE(0, 0);
                 // This will emit two _SET_IP instructions; leave it to the optimizer
                 instr += oparg;
-                break;
-            }
-
-            case FOR_ITER_LIST:
-            case FOR_ITER_TUPLE:
-            case FOR_ITER_RANGE:
-            {
-                RESERVE(4, 3);
-                int check_op, exhausted_op, next_op;
-                switch (opcode) {
-                    case FOR_ITER_LIST:
-                        check_op = _ITER_CHECK_LIST;
-                        exhausted_op = _IS_ITER_EXHAUSTED_LIST;
-                        next_op = _ITER_NEXT_LIST;
-                        break;
-                    case FOR_ITER_TUPLE:
-                        check_op = _ITER_CHECK_TUPLE;
-                        exhausted_op = _IS_ITER_EXHAUSTED_TUPLE;
-                        next_op = _ITER_NEXT_TUPLE;
-                        break;
-                    case FOR_ITER_RANGE:
-                        check_op = _ITER_CHECK_RANGE;
-                        exhausted_op = _IS_ITER_EXHAUSTED_RANGE;
-                        next_op = _ITER_NEXT_RANGE;
-                        break;
-                    default:
-                        Py_UNREACHABLE();
-                }
-                // Assume jump unlikely (can a for-loop exit be likely?)
-                _Py_CODEUNIT *target_instr =  // +1 at the end skips over END_FOR
-                    instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg + 1;
-                max_length -= 3;  // Really the start of the stubs
-                ADD_TO_TRACE(check_op, 0, 0);
-                ADD_TO_TRACE(exhausted_op, 0, 0);
-                ADD_TO_TRACE(_POP_JUMP_IF_TRUE, max_length, 0);
-                ADD_TO_TRACE(next_op, 0, 0);
-
-                ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
-                ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
-                ADD_TO_STUB(max_length + 2, _EXIT_TRACE, 0, 0);
                 break;
             }
 
@@ -660,6 +620,9 @@ pop_jump_if_bool:
                                         assert(opcode != JUMP_BACKWARD);
                                         oparg += extras;
                                     }
+                                }
+                                if (_PyUop_Replacements[uop]) {
+                                    uop = _PyUop_Replacements[uop];
                                 }
                                 break;
                             case OPARG_CACHE_1:
@@ -824,16 +787,13 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
         }
         /* All other micro-ops fall through, so i+1 is reachable */
         SET_BIT(used, i+1);
-        switch(opcode) {
-            case NOP:
-                /* Don't count NOPs as used */
-                count--;
-                UNSET_BIT(used, i);
-                break;
-            case _POP_JUMP_IF_FALSE:
-            case _POP_JUMP_IF_TRUE:
-                /* Mark target as reachable */
-                SET_BIT(used, buffer[i].oparg);
+        if (OPCODE_HAS_JUMP(opcode)) {
+            /* Mark target as reachable */
+            SET_BIT(used, buffer[i].oparg);
+        }
+        if (opcode == NOP) {
+            count--;
+            UNSET_BIT(used, i);
         }
     }
     return count;
@@ -943,7 +903,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = UINT16_MAX;
+    opt->resume_threshold = INT16_MAX;
     // Need at least 3 iterations to settle specializations.
     // A few lower bits of the counter are reserved for other flags.
     opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;

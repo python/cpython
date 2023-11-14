@@ -2610,7 +2610,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_pop_jump_if_none(self):
         def testfunc(a):
@@ -2625,7 +2625,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
@@ -2641,7 +2641,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+        self.assertIn("_GUARD_IS_NONE_POP", uops)
 
     def test_pop_jump_if_true(self):
         def testfunc(n):
@@ -2656,7 +2656,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_FALSE_POP", uops)
 
     def test_jump_backward(self):
         def testfunc(n):
@@ -2712,7 +2712,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_RANGE", uops)
+        self.assertIn("_GUARD_NOT_EXHAUSTED_RANGE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2734,7 +2734,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_LIST", uops)
+        self.assertIn("_GUARD_NOT_EXHAUSTED_LIST", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2756,7 +2756,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_TUPLE", uops)
+        self.assertIn("_GUARD_NOT_EXHAUSTED_TUPLE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2806,7 +2806,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_FALSE_POP", uops)
 
 
 if __name__ == "__main__":

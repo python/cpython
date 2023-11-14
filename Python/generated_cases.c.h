@@ -896,18 +896,13 @@
             dict = stack_pointer[-2];
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            res = PyDict_GetItemWithError(dict, sub);
-            if (res == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_SetKeyError(sub);
-                }
-                Py_DECREF(dict);
-                Py_DECREF(sub);
-                if (true) goto pop_2_error;
+            int rc = PyDict_GetItemRef(dict, sub, &res);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
             }
-            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             Py_DECREF(dict);
             Py_DECREF(sub);
+            if (rc <= 0) goto pop_2_error;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -1950,14 +1945,10 @@
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
                     GOTO_ERROR(error);
                 }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -1990,14 +1981,10 @@
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
                     GOTO_ERROR(error);
                 }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -2422,34 +2409,17 @@
                 if (true) goto error;
             }
             /* check if __annotations__ in locals()... */
-            if (PyDict_CheckExact(LOCALS())) {
-                ann_dict = _PyDict_GetItemWithError(LOCALS(),
-                                                    &_Py_ID(__annotations__));
-                if (ann_dict == NULL) {
-                    if (_PyErr_Occurred(tstate)) goto error;
-                    /* ...if not, create a new one */
-                    ann_dict = PyDict_New();
-                    if (ann_dict == NULL) goto error;
-                    err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                         ann_dict);
-                    Py_DECREF(ann_dict);
-                    if (err) goto error;
-                }
+            if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error;
+            if (ann_dict == NULL) {
+                ann_dict = PyDict_New();
+                if (ann_dict == NULL) goto error;
+                err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                       ann_dict);
+                Py_DECREF(ann_dict);
+                if (err) goto error;
             }
             else {
-                /* do the same if locals() is not a dict */
-                if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error;
-                if (ann_dict == NULL) {
-                    ann_dict = PyDict_New();
-                    if (ann_dict == NULL) goto error;
-                    err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                           ann_dict);
-                    Py_DECREF(ann_dict);
-                    if (err) goto error;
-                }
-                else {
-                    Py_DECREF(ann_dict);
-                }
+                Py_DECREF(ann_dict);
             }
             DISPATCH();
         }
@@ -3409,10 +3379,12 @@
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (this_instr[1].cache > tstate->interp->optimizer_backedge_threshold &&
-                // Double-check that the opcode isn't instrumented or something:
-                this_instr->op.code == JUMP_BACKWARD)
-            {
+            /* We are using unsigned values, but we really want signed values, so
+             * do the 2s complement comparison manually */
+            uint16_t ucounter = this_instr[1].cache + (1 << 15);
+            uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
+            // Double-check that the opcode isn't instrumented or something:
+            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
                 if (optimized < 0) goto error;
@@ -3420,8 +3392,19 @@
                     // Rewind and enter the executor:
                     assert(this_instr->op.code == ENTER_EXECUTOR);
                     next_instr = this_instr;
+                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
-                this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                else {
+                    int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    if (backoff < MINIMUM_TIER2_BACKOFF) {
+                        backoff = MINIMUM_TIER2_BACKOFF;
+                    }
+                    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
+                        backoff++;
+                    }
+                    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
+                    this_instr[1].cache = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
+                }
             }
             #endif  /* ENABLE_SPECIALIZATION */
             DISPATCH();
@@ -3452,22 +3435,6 @@
             goto enter_tier_one;
         }
 
-        TARGET(POP_JUMP_IF_FALSE) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
-            PyObject *cond;
-            cond = stack_pointer[-1];
-            assert(PyBool_Check(cond));
-            int flag = Py_IsFalse(cond);
-            #if ENABLE_SPECIALIZATION
-            this_instr[1].cache = (this_instr[1].cache << 1) | flag;
-            #endif
-            JUMPBY(oparg * flag);
-            STACK_SHRINK(1);
-            DISPATCH();
-        }
-
         TARGET(POP_JUMP_IF_TRUE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
@@ -3476,6 +3443,22 @@
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
+            #if ENABLE_SPECIALIZATION
+            this_instr[1].cache = (this_instr[1].cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(POP_JUMP_IF_FALSE) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
+            PyObject *cond;
+            cond = stack_pointer[-1];
+            assert(PyBool_Check(cond));
+            int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache = (this_instr[1].cache << 1) | flag;
             #endif
@@ -3502,7 +3485,7 @@
                     Py_DECREF(value);
                 }
             }
-            // POP_JUMP_IF_TRUE
+            // _POP_JUMP_IF_TRUE
             cond = b;
             {
                 assert(PyBool_Check(cond));
@@ -3534,7 +3517,7 @@
                     Py_DECREF(value);
                 }
             }
-            // POP_JUMP_IF_FALSE
+            // _POP_JUMP_IF_FALSE
             cond = b;
             {
                 assert(PyBool_Check(cond));
@@ -3967,7 +3950,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgs(enter);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -3987,7 +3970,6 @@
             PyObject *exit;
             PyObject *res;
             mgr = stack_pointer[-1];
-            TIER_ONE_ONLY
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
              */
@@ -4014,7 +3996,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgs(enter);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
