@@ -1,0 +1,3 @@
+Implement "Python Critical Sections" from :pep:`703`. These are macros to
+help replace the GIL with per-object locks in the ``--disable-gil`` build of
+CPython. The macros are no-ops in the default build.

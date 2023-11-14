@@ -168,16 +168,18 @@ _ctypes_get_errobj(int **pspace)
         if (error_object_name == NULL)
             return NULL;
     }
-    errobj = PyDict_GetItemWithError(dict, error_object_name);
+    if (PyDict_GetItemRef(dict, error_object_name, &errobj) < 0) {
+        return NULL;
+    }
     if (errobj) {
         if (!PyCapsule_IsValid(errobj, CTYPES_CAPSULE_NAME_PYMEM)) {
             PyErr_SetString(PyExc_RuntimeError,
                 "ctypes.error_object is an invalid capsule");
+            Py_DECREF(errobj);
             return NULL;
         }
-        Py_INCREF(errobj);
     }
-    else if (!PyErr_Occurred()) {
+    else {
         void *space = PyMem_Calloc(2, sizeof(int));
         if (space == NULL)
             return NULL;
@@ -191,9 +193,6 @@ _ctypes_get_errobj(int **pspace)
             Py_DECREF(errobj);
             return NULL;
         }
-    }
-    else {
-        return NULL;
     }
     *pspace = (int *)PyCapsule_GetPointer(errobj, CTYPES_CAPSULE_NAME_PYMEM);
     return errobj;
@@ -1922,13 +1921,11 @@ create_pointer_type(PyObject *module, PyObject *cls)
     PyTypeObject *typ;
     PyObject *key;
 
-    result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, cls);
-    if (result) {
-        return Py_NewRef(result);
+    if (PyDict_GetItemRef(_ctypes_ptrtype_cache, cls, &result) != 0) {
+        // found or error
+        return result;
     }
-    else if (PyErr_Occurred()) {
-        return NULL;
-    }
+    // not found
     if (PyUnicode_CheckExact(cls)) {
         PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
@@ -1986,16 +1983,14 @@ create_pointer_inst(PyObject *module, PyObject *arg)
     PyObject *result;
     PyObject *typ;
 
-    typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
-    if (typ) {
-        return PyObject_CallOneArg(typ, arg);
-    }
-    else if (PyErr_Occurred()) {
+    if (PyDict_GetItemRef(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg), &typ) < 0) {
         return NULL;
     }
-    typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
-    if (typ == NULL)
-        return NULL;
+    if (typ == NULL) {
+        typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
+        if (typ == NULL)
+            return NULL;
+    }
     result = PyObject_CallOneArg(typ, arg);
     Py_DECREF(typ);
     return result;
