@@ -34,10 +34,9 @@ class StatsTestCase(unittest.TestCase):
     def setUp(self):
         stats_file = support.findfile('pstats.pck')
         self.stats = pstats.Stats(stats_file)
-        to_compile = 'import os'
         self.temp_storage = tempfile.NamedTemporaryFile(delete=False)
-        profiled = compile(to_compile, '<string>', 'exec')
-        cProfile.run(profiled, filename=self.temp_storage.name)
+        script_string = 'import os'
+        cProfile.run(script_string, filename=self.temp_storage.name)
 
     def tearDown(self):
         self.temp_storage.close()
@@ -49,23 +48,25 @@ class StatsTestCase(unittest.TestCase):
         stats.add(self.stats, self.stats)
 
     def test_dump_and_load_works_correctly(self):
-        temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
-        self.stats.dump_stats(filename=temp_storage_new.name)
-        tmp_stats = pstats.Stats(temp_storage_new.name)
-        self.assertEqual(self.stats.stats, tmp_stats.stats)
-        temp_storage_new.close()
-        os.remove(temp_storage_new.name)
+        try:
+            temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
+            self.stats.dump_stats(filename=temp_storage_new.name)
+            tmp_stats = pstats.Stats(temp_storage_new.name)
+            self.assertEqual(self.stats.stats, tmp_stats.stats)
+        finally:
+            temp_storage_new.close()
+            os.remove(temp_storage_new.name)
 
     def test_load_equivalent_to_init(self):
-        empty = pstats.Stats()
-        empty.load_stats(self.temp_storage.name)
+        stats = pstats.Stats()
+        stats.load_stats(self.temp_storage.name)
         created = pstats.Stats(self.temp_storage.name)
-        self.assertEqual(empty.stats, created.stats)
+        self.assertEqual(stats.stats, created.stats)
 
     def test_loading_wrong_types(self):
-        empty = pstats.Stats()
+        stats = pstats.Stats()
         with self.assertRaises(TypeError):
-            empty.load_stats(42)
+            stats.load_stats(42)
 
     def test_sort_stats_int(self):
         valid_args = {-1: 'stdname',
