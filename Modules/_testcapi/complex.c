@@ -115,18 +115,9 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
         res = _Py_c_##suffix(num, exp);                          \
         _Py_ADJUST_ERANGE2(res.real, res.imag);                  \
                                                                  \
-        if (errno == EDOM) {                                     \
-            PyErr_SetString(PyExc_ZeroDivisionError,             \
-                            "complex division by zero");         \
-            return NULL;                                         \
-        }                                                        \
-        else if (errno == ERANGE) {                              \
-            PyErr_SetString(PyExc_OverflowError,                 \
-                            "complex exponentiation");           \
-            return NULL;                                         \
-        }                                                        \
-                                                                 \
-        return PyComplex_FromCComplex(res);                      \
+        return PyTuple_Pack(2,                                   \
+                            PyComplex_FromCComplex(res),         \
+                            PyLong_FromLong(errno));             \
     };
 
 _PY_C_FUNC2(sum)
