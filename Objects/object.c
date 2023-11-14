@@ -1602,7 +1602,6 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        res = PyDict_GetItemWithError(dict, name);
         int rc = PyDict_GetItemRef(dict, name, &res);
         Py_DECREF(dict);
         if (res != NULL) {

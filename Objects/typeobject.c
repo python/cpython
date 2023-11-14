@@ -1432,9 +1432,11 @@ type_get_doc(PyTypeObject *type, void *context)
     if (PyDict_GetItemRef(dict, &_Py_ID(__doc__), &result) == 0) {
         result = Py_NewRef(Py_None);
     }
-    else if (result && Py_TYPE(result)->tp_descr_get) {
-        Py_SETREF(result, Py_TYPE(result)->tp_descr_get(result, NULL,
-                                               (PyObject *)type));
+    else if (result) {
+        descrgetfunc descr_get = Py_TYPE(result)->tp_descr_get;
+        if (descr_get) {
+            Py_SETREF(result, descr_get(result, NULL, (PyObject *)type));
+        }
     }
     return result;
 }
@@ -1469,9 +1471,9 @@ type_get_annotations(PyTypeObject *type, void *context)
         return NULL;
     }
     if (annotations) {
-        if (Py_TYPE(annotations)->tp_descr_get) {
-            Py_SETREF(annotations, Py_TYPE(annotations)->tp_descr_get(
-                    annotations, NULL, (PyObject *)type));
+        descrgetfunc get = Py_TYPE(annotations)->tp_descr_get;
+        if (get) {
+            Py_SETREF(annotations, get(annotations, NULL, (PyObject *)type));
         }
     }
     else {
@@ -1523,7 +1525,7 @@ type_get_type_params(PyTypeObject *type, void *context)
 {
     PyObject *params;
     if (PyDict_GetItemRef(lookup_tp_dict(type), &_Py_ID(__type_params__), &params) == 0) {
-        params =  PyTuple_New(0);
+        return PyTuple_New(0);
     }
     return params;
 }
