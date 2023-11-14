@@ -258,8 +258,10 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *data)
 
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
 
-    self->use_mutex = true;
-    if (buf.len >= HASHLIB_GIL_MINSIZE) {
+    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
+    }
+    if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
         sha3_update(self->hash_state, buf.buf, buf.len);

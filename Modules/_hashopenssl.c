@@ -580,7 +580,10 @@ EVP_update(EVPobject *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &view);
 
-    if (self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
+    if (!self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
+    }
+    if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
         result = EVP_hash(self, view.buf, view.len);
@@ -1533,7 +1536,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     }
 
     self->ctx = ctx;
-    self->mutex = (PyMutex){0};
+    HASHLIB_INIT_MUTEX(self);
 
     if ((msg_obj != NULL) && (msg_obj != Py_None)) {
         if (!_hmac_update(self, msg_obj))
@@ -1575,8 +1578,10 @@ _hmac_update(HMACobject *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return 0);
 
-    self->use_mutex = true;
-    if (view.len >= HASHLIB_GIL_MINSIZE) {
+    if (!self->use_mutex && view.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
+    }
+    if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
         r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);

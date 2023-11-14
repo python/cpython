@@ -374,8 +374,10 @@ SHA256Type_update(SHA256object *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    self->use_mutex = true;
-    if (buf.len >= HASHLIB_GIL_MINSIZE) {
+    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
+    }
+    if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
         update_256(self->state, buf.buf, buf.len);
@@ -406,8 +408,10 @@ SHA512Type_update(SHA512object *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    self->use_mutex = true;
-    if (buf.len >= HASHLIB_GIL_MINSIZE) {
+    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
+    }
+    if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
         update_512(self->state, buf.buf, buf.len);
