@@ -49,3 +49,12 @@ See also the :c:member:`PyTypeObject.tp_hash` member.
       :pep:`456` "Secure and interchangeable hash algorithm".
 
    .. versionadded:: 3.4
+
+
+.. c:function:: Py_hash_t Py_HashPointer(const void *ptr)
+
+   Hash a pointer.
+
+   The function cannot fail: it cannot return ``-1``.
+
+   .. versionadded:: 3.13

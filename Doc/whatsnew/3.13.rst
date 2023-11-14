@@ -1249,6 +1249,9 @@ New Features
   :exc:`KeyError` if the key missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
+* Add :c:func:`Py_HashPointer` function to hash a pointer.
+  (Contributed by Victor Stinner in :gh:`111545`.)
+
 
 Porting to Python 3.13
 ----------------------

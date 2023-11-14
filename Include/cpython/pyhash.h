@@ -33,3 +33,5 @@ typedef struct {
 } PyHash_FuncDef;
 
 PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
+
+PyAPI_FUNC(Py_hash_t) Py_HashPointer(const void *ptr);
