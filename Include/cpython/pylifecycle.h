@@ -2,98 +2,82 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Only used by applications that embed the interpreter and need to
- * override the standard encoding determination mechanism
- */
-PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
-                                             const char *errors);
+/* Py_FrozenMain is kept out of the Limited API until documented and present
+   in all builds of Python */
+PyAPI_FUNC(int) Py_FrozenMain(int argc, char **argv);
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
-    PyInterpreterState **interp,
-    const _PyCoreConfig *);
-PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
+PyAPI_FUNC(PyStatus) Py_PreInitialize(
+    const PyPreConfig *src_config);
+PyAPI_FUNC(PyStatus) Py_PreInitializeFromBytesArgs(
+    const PyPreConfig *src_config,
+    Py_ssize_t argc,
+    char **argv);
+PyAPI_FUNC(PyStatus) Py_PreInitializeFromArgs(
+    const PyPreConfig *src_config,
+    Py_ssize_t argc,
+    wchar_t **argv);
 
-
-PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
-    _PyMainInterpreterConfig *config,
-    const _PyCoreConfig *core_config);
-PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
-PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
-    _PyMainInterpreterConfig *config,
-    const _PyMainInterpreterConfig *config2);
-/* Used by _testcapi.get_main_config() */
-PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
-    const _PyMainInterpreterConfig *config);
-
-PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
-    PyInterpreterState *interp,
-    const _PyMainInterpreterConfig *);
 
 /* Initialization and finalization */
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
-    const _PyCoreConfig *config);
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalInitError(_PyInitError err);
+PyAPI_FUNC(PyStatus) Py_InitializeFromConfig(
+    const PyConfig *config);
 
-/* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
- * exit functions.
- */
-PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
+// Python 3.8 provisional API (PEP 587)
+PyAPI_FUNC(PyStatus) _Py_InitializeMain(void);
 
-/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL. */
-PyAPI_FUNC(void) _Py_RestoreSignals(void);
+PyAPI_FUNC(int) Py_RunMain(void);
+
+
+PyAPI_FUNC(void) _Py_NO_RETURN Py_ExitStatusException(PyStatus err);
 
 PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
-PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
+/* --- PyInterpreterConfig ------------------------------------ */
 
-PyAPI_FUNC(const char *) _Py_gitidentifier(void);
-PyAPI_FUNC(const char *) _Py_gitversion(void);
+#define PyInterpreterConfig_DEFAULT_GIL (0)
+#define PyInterpreterConfig_SHARED_GIL (1)
+#define PyInterpreterConfig_OWN_GIL (2)
 
-/* Internal -- various one-time initializations */
-PyAPI_FUNC(PyObject *) _PyBuiltin_Init(void);
-PyAPI_FUNC(_PyInitError) _PySys_BeginInit(PyObject **sysmod);
-PyAPI_FUNC(int) _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp);
-PyAPI_FUNC(_PyInitError) _PyImport_Init(PyInterpreterState *interp);
-PyAPI_FUNC(void) _PyExc_Init(PyObject * bltinmod);
-PyAPI_FUNC(_PyInitError) _PyImportHooks_Init(void);
-PyAPI_FUNC(int) _PyFloat_Init(void);
-PyAPI_FUNC(int) PyByteArray_Init(void);
-PyAPI_FUNC(_PyInitError) _Py_HashRandomization_Init(const _PyCoreConfig *);
+typedef struct {
+    // XXX "allow_object_sharing"?  "own_objects"?
+    int use_main_obmalloc;
+    int allow_fork;
+    int allow_exec;
+    int allow_threads;
+    int allow_daemon_threads;
+    int check_multi_interp_extensions;
+    int gil;
+} PyInterpreterConfig;
 
-/* Various internal finalizers */
+#define _PyInterpreterConfig_INIT \
+    { \
+        .use_main_obmalloc = 0, \
+        .allow_fork = 0, \
+        .allow_exec = 0, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 0, \
+        .check_multi_interp_extensions = 1, \
+        .gil = PyInterpreterConfig_OWN_GIL, \
+    }
 
-PyAPI_FUNC(void) PyMethod_Fini(void);
-PyAPI_FUNC(void) PyFrame_Fini(void);
-PyAPI_FUNC(void) PyCFunction_Fini(void);
-PyAPI_FUNC(void) PyDict_Fini(void);
-PyAPI_FUNC(void) PyTuple_Fini(void);
-PyAPI_FUNC(void) PyList_Fini(void);
-PyAPI_FUNC(void) PySet_Fini(void);
-PyAPI_FUNC(void) PyBytes_Fini(void);
-PyAPI_FUNC(void) PyByteArray_Fini(void);
-PyAPI_FUNC(void) PyFloat_Fini(void);
-PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
-PyAPI_FUNC(void) PySlice_Fini(void);
-PyAPI_FUNC(void) PyAsyncGen_Fini(void);
+#define _PyInterpreterConfig_LEGACY_INIT \
+    { \
+        .use_main_obmalloc = 1, \
+        .allow_fork = 1, \
+        .allow_exec = 1, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 1, \
+        .check_multi_interp_extensions = 0, \
+        .gil = PyInterpreterConfig_SHARED_GIL, \
+    }
 
-PyAPI_FUNC(int) _Py_IsFinalizing(void);
+PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(
+    PyThreadState **tstate_p,
+    const PyInterpreterConfig *config);
 
-/* Random */
-PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
-PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
-
-/* Legacy locale support */
-PyAPI_FUNC(void) _Py_CoerceLegacyLocale(int warn);
-PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
-PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
-
-#ifdef __cplusplus
-}
-#endif
+typedef void (*atexit_datacallbackfunc)(void *);
+PyAPI_FUNC(int) PyUnstable_AtExit(
+        PyInterpreterState *, atexit_datacallbackfunc, void *);

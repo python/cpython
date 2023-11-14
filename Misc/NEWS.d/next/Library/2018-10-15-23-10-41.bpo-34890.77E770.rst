@@ -1,3 +1,0 @@
-Make :func:`inspect.iscoroutinefunction`,
-:func:`inspect.isgeneratorfunction` and :func:`inspect.isasyncgenfunction`
-work with :func:`functools.partial`. Patch by Pablo Galindo.

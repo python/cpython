@@ -1,2 +1,0 @@
-Avoid failing in multiprocessing.Process if the standard streams are closed
-or None at exit.

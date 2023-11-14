@@ -1,3 +1,0 @@
-:func:`test.support.run_unittest` no longer raise :exc:`TestDidNotRun` if
-the test result contains skipped tests. The exception is now only raised if
-no test have been run and no test have been skipped.

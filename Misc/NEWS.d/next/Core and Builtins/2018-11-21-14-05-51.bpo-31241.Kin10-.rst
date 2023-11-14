@@ -1,4 +1,0 @@
-The *lineno* and *col_offset* attributes of AST nodes for list comprehensions,
-generator expressions and tuples are now point to the opening parenthesis or
-square brace. For tuples without parenthesis they point to the position of
-the first item.

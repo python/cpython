@@ -1,14 +1,29 @@
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
+#endif
+
+// gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
+// linking the extension to python3.lib (which fails). Py_BUILD_CORE_MODULE is
+// needed to import Python symbols. Then Python.h undefines Py_BUILD_CORE and
+// Py_BUILD_CORE_MODULE if Py_LIMITED_API is defined.
+#define Py_BUILD_CORE
+#define Py_BUILD_CORE_MODULE
+
 #include <Python.h>
 
+#include <stdio.h>                // printf()
+#include <stdlib.h>               // qsort()
+#include <string.h>               // memset()
 #ifdef MS_WIN32
-#include <windows.h>
+#  include <windows.h>
 #endif
 
-#if defined(MS_WIN32) || defined(__CYGWIN__)
-#define EXPORT(x) __declspec(dllexport) x
-#else
-#define EXPORT(x) x
-#endif
+#define EXPORT(x) Py_EXPORTED_SYMBOL x
 
 /* some functions handy for testing */
 
@@ -74,6 +89,179 @@ _testfunc_reg_struct_update_value(TestReg in)
     ((volatile TestReg *)&in)->second = 0x0badf00d;
 }
 
+/*
+ * See bpo-22273. Structs containing arrays should work on Linux 64-bit.
+ */
+
+typedef struct {
+    unsigned char data[16];
+} Test2;
+
+EXPORT(int)
+_testfunc_array_in_struct1(Test2 in)
+{
+    int result = 0;
+
+    for (unsigned i = 0; i < 16; i++)
+        result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+typedef struct {
+    double data[2];
+} Test3;
+
+typedef struct {
+    float data[2];
+    float more_data[2];
+} Test3B;
+
+EXPORT(double)
+_testfunc_array_in_struct2(Test3 in)
+{
+    double result = 0;
+
+    for (unsigned i = 0; i < 2; i++)
+        result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+EXPORT(double)
+_testfunc_array_in_struct2a(Test3B in)
+{
+    double result = 0;
+
+    for (unsigned i = 0; i < 2; i++)
+        result += in.data[i];
+    for (unsigned i = 0; i < 2; i++)
+        result += in.more_data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+typedef union {
+    long a_long;
+    struct {
+        int an_int;
+        int another_int;
+    } a_struct;
+} Test4;
+
+typedef struct {
+    int an_int;
+    struct {
+        int an_int;
+        Test4 a_union;
+    } nested;
+    int another_int;
+} Test5;
+
+EXPORT(long)
+_testfunc_union_by_value1(Test4 in) {
+    long result = in.a_long + in.a_struct.an_int + in.a_struct.another_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_value2(Test5 in) {
+    long result = in.an_int + in.nested.an_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference1(Test4 *in) {
+    long result = in->a_long;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference2(Test4 *in) {
+    long result = in->a_struct.an_int + in->a_struct.another_int;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference3(Test5 *in) {
+    long result = in->an_int + in->nested.an_int + in->another_int;
+
+    memset(in, 0, sizeof(Test5));
+    return result;
+}
+
+typedef struct {
+    signed int A: 1, B:2, C:3, D:2;
+} Test6;
+
+EXPORT(long)
+_testfunc_bitfield_by_value1(Test6 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_bitfield_by_reference1(Test6 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test6));
+    return result;
+}
+
+typedef struct {
+    unsigned int A: 1, B:2, C:3, D:2;
+} Test7;
+
+EXPORT(long)
+_testfunc_bitfield_by_reference2(Test7 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test7));
+    return result;
+}
+
+typedef union {
+    signed int A: 1, B:2, C:3, D:2;
+} Test8;
+
+EXPORT(long)
+_testfunc_bitfield_by_value2(Test8 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
 
 EXPORT(void)testfunc_array(int values[4])
 {
@@ -87,7 +275,7 @@ EXPORT(void)testfunc_array(int values[4])
 EXPORT(long double)testfunc_Ddd(double a, double b)
 {
     long double result = (long double)(a * b);
-    printf("testfunc_Ddd(%p, %p)\n", &a, &b);
+    printf("testfunc_Ddd(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_Ddd(%g, %g)\n", a, b);
     return result;
 }
@@ -95,7 +283,7 @@ EXPORT(long double)testfunc_Ddd(double a, double b)
 EXPORT(long double)testfunc_DDD(long double a, long double b)
 {
     long double result = a * b;
-    printf("testfunc_DDD(%p, %p)\n", &a, &b);
+    printf("testfunc_DDD(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_DDD(%Lg, %Lg)\n", a, b);
     return result;
 }
@@ -103,7 +291,7 @@ EXPORT(long double)testfunc_DDD(long double a, long double b)
 EXPORT(int)testfunc_iii(int a, int b)
 {
     int result = a * b;
-    printf("testfunc_iii(%p, %p)\n", &a, &b);
+    printf("testfunc_iii(%p, %p)\n", (void *)&a, (void *)&b);
     return result;
 }
 
@@ -361,7 +549,7 @@ static void _xxx_init(void *(*Xalloc)(int), void (*Xfree)(void *))
 {
     void *ptr;
 
-    printf("_xxx_init got %p %p\n", Xalloc, Xfree);
+    printf("_xxx_init got %p %p\n", (void *)Xalloc, (void *)Xfree);
     printf("calling\n");
     ptr = Xalloc(32);
     Xfree(ptr);
@@ -424,30 +612,6 @@ struct BITS {
      short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 #endif
 };
-
-EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
-{
-    switch (name) {
-    case 'A': bits->A = value; break;
-    case 'B': bits->B = value; break;
-    case 'C': bits->C = value; break;
-    case 'D': bits->D = value; break;
-    case 'E': bits->E = value; break;
-    case 'F': bits->F = value; break;
-    case 'G': bits->G = value; break;
-    case 'H': bits->H = value; break;
-    case 'I': bits->I = value; break;
-#ifdef SIGNED_SHORT_BITFIELDS
-    case 'M': bits->M = value; break;
-    case 'N': bits->N = value; break;
-    case 'O': bits->O = value; break;
-    case 'P': bits->P = value; break;
-    case 'Q': bits->Q = value; break;
-    case 'R': bits->R = value; break;
-    case 'S': bits->S = value; break;
-#endif
-    }
-}
 
 EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 {
@@ -887,14 +1051,37 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
+#ifdef MS_WIN32
+
+// i38748: c stub for testing stack corruption
+// When executing a Python callback with a long and a long long
+
+typedef long(__stdcall *_test_i38748_funcType)(long, long long);
+
+EXPORT(long) _test_i38748_runCallback(_test_i38748_funcType callback, int a, int b) {
+    return callback(a, b);
+}
+
+#endif
+
+EXPORT(int)
+_testfunc_pylist_append(PyObject *list, PyObject *item)
+{
+    return PyList_Append(list, item);
+}
+
+static struct PyModuleDef_Slot _ctypes_test_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
 
 static struct PyModuleDef _ctypes_testmodule = {
     PyModuleDef_HEAD_INIT,
     "_ctypes_test",
     NULL,
-    -1,
+    0,
     module_methods,
-    NULL,
+    _ctypes_test_slots,
     NULL,
     NULL,
     NULL
@@ -903,5 +1090,5 @@ static struct PyModuleDef _ctypes_testmodule = {
 PyMODINIT_FUNC
 PyInit__ctypes_test(void)
 {
-    return PyModule_Create(&_ctypes_testmodule);
+    return PyModuleDef_Init(&_ctypes_testmodule);
 }

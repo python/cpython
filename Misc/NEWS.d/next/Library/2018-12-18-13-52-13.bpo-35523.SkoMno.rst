@@ -1,2 +1,0 @@
-Remove :mod:`ctypes` callback workaround: no longer create a callback at
-startup. Avoid SELinux alert on ``import ctypes`` and ``import uuid``.

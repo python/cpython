@@ -1,6 +1,0 @@
-The *lineno* and *col_offset* attributes of the AST for decorated function
-and class refer now to the position of the corresponding ``def``, ``async
-def`` and ``class`` instead of the position of the first decorator. This
-leads to more correct line reporting in tracing. This is the only case when
-the position of child AST nodes can preceed the position of the parent AST
-node.

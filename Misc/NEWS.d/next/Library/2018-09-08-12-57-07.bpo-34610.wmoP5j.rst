@@ -1,1 +1,0 @@
-Fixed iterator of :class:`multiprocessing.managers.DictProxy`.

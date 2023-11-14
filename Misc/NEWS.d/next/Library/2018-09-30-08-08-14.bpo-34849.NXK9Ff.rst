@@ -1,3 +1,0 @@
-Don't log waiting for ``selector.select`` in asyncio loop iteration. The
-waiting is pretty normal for any asyncio program, logging its time just adds
-a noise to logs without any useful information provided.

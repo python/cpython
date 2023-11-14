@@ -1,3 +1,0 @@
-Implemented unpickling instances of :class:`~datetime.datetime`,
-:class:`~datetime.date` and :class:`~datetime.time` pickled by Python 2.
-``encoding='latin1'`` should be used for successful decoding.

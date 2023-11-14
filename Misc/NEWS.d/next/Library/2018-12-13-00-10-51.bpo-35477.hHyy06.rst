@@ -1,2 +1,0 @@
-:meth:`multiprocessing.Pool.__enter__` now fails if the pool is not running:
-``with pool:`` fails if used more than once.

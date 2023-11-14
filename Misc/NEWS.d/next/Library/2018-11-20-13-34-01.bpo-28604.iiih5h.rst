@@ -1,3 +1,0 @@
-:func:`locale.localeconv` now sets temporarily the ``LC_CTYPE`` locale to the
-``LC_MONETARY`` locale if the two locales are different and monetary strings
-are non-ASCII. This temporary change affects other threads.

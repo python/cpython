@@ -6,19 +6,12 @@ from test.support import requires
 from tkinter import Tk
 
 from idlelib.tree import TreeNode, ScrolledCanvas
-import sys
 
 
 class StackBrowserTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        svs = stackviewer.sys
-        try:
-            abc
-        except NameError:
-            svs.last_type, svs.last_value, svs.last_traceback = (
-                sys.exc_info())
 
         requires('gui')
         cls.root = Tk()
@@ -26,8 +19,6 @@ class StackBrowserTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        svs = stackviewer.sys
-        del svs.last_traceback, svs.last_type, svs.last_value
 
         cls.root.update_idletasks()
 ##        for id in cls.root.tk.call('after', 'info'):
@@ -36,7 +27,10 @@ class StackBrowserTest(unittest.TestCase):
         del cls.root
 
     def test_init(self):
-        sb = stackviewer.StackBrowser(self.root)
+        try:
+            abc
+        except NameError as exc:
+            sb = stackviewer.StackBrowser(self.root, exc)
         isi = self.assertIsInstance
         isi(stackviewer.sc, ScrolledCanvas)
         isi(stackviewer.item, stackviewer.StackTreeItem)

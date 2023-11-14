@@ -18,7 +18,6 @@ import contextlib
 import io
 import os
 import sys
-import warnings
 
 __all__ = ["getpass","getuser","GetPassWarning"]
 
@@ -52,7 +51,7 @@ def unix_getpass(prompt='Password: ', stream=None):
             stack.enter_context(input)
             if not stream:
                 stream = input
-        except OSError as e:
+        except OSError:
             # If that fails, see if stdin can be controlled.
             stack.close()
             try:
@@ -95,7 +94,7 @@ def unix_getpass(prompt='Password: ', stream=None):
 
 
 def win_getpass(prompt='Password: ', stream=None):
-    """Prompt for password with echo off, using Windows getch()."""
+    """Prompt for password with echo off, using Windows getwch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
 
@@ -118,6 +117,7 @@ def win_getpass(prompt='Password: ', stream=None):
 
 
 def fallback_getpass(prompt='Password: ', stream=None):
+    import warnings
     warnings.warn("Can not control echo on the terminal.", GetPassWarning,
                   stacklevel=2)
     if not stream:
