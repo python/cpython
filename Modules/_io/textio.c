@@ -1112,6 +1112,10 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     else if (io_check_errors(errors)) {
         return -1;
     }
+    const char *errors_str = _PyUnicode_AsUTF8NoNUL(errors);
+    if (errors_str == NULL) {
+        return -1;
+    }
 
     if (validate_newline(newline) < 0) {
         return -1;
@@ -1184,11 +1188,11 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Build the decoder object */
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->state = state;
-    if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
+    if (_textiowrapper_set_decoder(self, codec_info, errors_str) != 0)
         goto error;
 
     /* Build the encoder object */
-    if (_textiowrapper_set_encoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
+    if (_textiowrapper_set_encoder(self, codec_info, errors_str) != 0)
         goto error;
 
     /* Finished sorting out the codec details */

@@ -2725,9 +2725,7 @@ class TextIOWrapperTest(unittest.TestCase):
         if support.Py_DEBUG or sys.flags.dev_mode or self.is_C:
             with self.assertRaises(UnicodeEncodeError):
                 t.__init__(b, encoding="utf-8", errors='\udcfe')
-        if support.Py_DEBUG or sys.flags.dev_mode:
-            # TODO: If encoded to UTF-8, should also be checked for
-            # embedded null characters.
+        if support.Py_DEBUG or sys.flags.dev_mode or self.is_C:
             with self.assertRaises(ValueError):
                 t.__init__(b, encoding="utf-8", errors='replace\0')
         with self.assertRaises(TypeError):
