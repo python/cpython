@@ -2,7 +2,7 @@ name: JIT
 on: push
 jobs:
   jit:
-    name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }}, LLVM ${{ matrix.llvm }})
+    name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -21,8 +21,6 @@ jobs:
           - true
           - false
         llvm:
-          - 14
-          - 15
           - 16
         include:
           - target: i686-pc-windows-msvc/msvc
@@ -68,7 +66,6 @@ jobs:
             exclude: test_tools
     env:
       CC: ${{ matrix.compiler }}
-      PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -80,7 +77,6 @@ jobs:
           echo "::group::Install LLVM"
           sudo apt purge --auto-remove llvm python3-lldb-14 llvm-14
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
           echo "::endgroup::"
           echo "::group::Configure Python (Build)"
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
@@ -113,7 +109,6 @@ jobs:
           echo "::group::Install LLVM"
           sudo apt purge --auto-remove llvm python3-lldb-14 llvm-14
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
           echo "::endgroup::"
           echo "::group::Configure Python"
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"

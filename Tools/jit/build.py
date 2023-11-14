@@ -33,6 +33,8 @@ TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 STUBS = ["deoptimize", "error", "trampoline"]
 
+LLVM_VERSION = 16
+
 
 HoleKind: typing.TypeAlias = typing.Literal[
     "ARM64_RELOC_GOT_LOAD_PAGE21",
@@ -67,13 +69,13 @@ HoleKind: typing.TypeAlias = typing.Literal[
 ]
 
 
-class ValueType(typing.TypedDict):
-    Value: str
+class RelocationType(typing.TypedDict):
+    Value: HoleKind
     RawValue: int
 
 
-class RelocationTypeType(typing.TypedDict):
-    Value: HoleKind
+class _Value(typing.TypedDict):
+    Value: str
     RawValue: int
 
 
@@ -92,33 +94,78 @@ class SectionData(typing.TypedDict):
     Bytes: list[int]
 
 
-class RelocationType(typing.TypedDict):
+class _Name(typing.TypedDict):
+    Value: str
     Offset: int
-    Type: RelocationTypeType
-    Symbol: ValueType
+    Bytes: list[int]
+
+
+class ELFRelocation(typing.TypedDict):
+    Offset: int
+    Type: RelocationType
+    Symbol: _Value
     Addend: int
 
 
-RelocationsType = list[dict[typing.Literal["Relocation"], RelocationType]]
+class COFFRelocation(typing.TypedDict):
+    Offset: int
+    Type: RelocationType
+    Symbol: str
+    SymbolIndex: int
 
 
-class SymbolType(typing.TypedDict):
-    Name: ValueType
+class MachORelocation(typing.TypedDict):
+    Offset: int
+    PCRel: int
+    Length: int
+    Type: RelocationType
+    Symbol: _Value  # XXX
+    Section: _Value  # XXX
+
+
+class COFFAuxSectionDef(typing.TypedDict):
+    Length: int
+    RelocationCount: int
+    LineNumberCount: int
+    Checksum: int
+    Number: int
+    Selection: int
+
+
+class COFFSymbol(typing.TypedDict):
+    Name: str
+    Value: int
+    Section: _Value
+    BaseType: _Value
+    ComplexType: _Value
+    StorageClass: int
+    AuxSymbolCount: int
+    AuxSectionDef: COFFAuxSectionDef
+
+
+class ELFSymbol(typing.TypedDict):
+    Name: _Value
     Value: int
     Size: int
-    Binding: ValueType
-    Type: ValueType
+    Binding: _Value
+    Type: _Value
     Other: int
-    Section: ValueType
+    Section: _Value
 
 
-SymbolsType = list[dict[typing.Literal["Symbol"], SymbolType]]
+class MachOSymbol(typing.TypedDict):
+    Name: _Value
+    Type: _Value
+    Section: _Value
+    RefType: _Value
+    Flags: Flags
+    Value: int
 
 
-class SectionType(typing.TypedDict):
+class ELFSection(typing.TypedDict):
     Index: int
-    Name: ValueType
-    Type: ValueType
+    Name: _Value
+    Type: _Value
     Flags: Flags
     Address: int
     Offset: int
@@ -127,28 +174,46 @@ class SectionType(typing.TypedDict):
     Info: int
     AddressAlignment: int
     EntrySize: int
-    Relocations: RelocationsType
-    Symbols: SymbolsType
+    Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
+    Symbols: list[dict[typing.Literal["Symbol"], ELFSymbol]]
     SectionData: SectionData
 
 
-class FileSummaryType(typing.TypedDict):
-    File: str
-    Format: str
-    Arch: str
-    AddressSize: int
-    LoadName: str
+class COFFSection(typing.TypedDict):
+    Number: int
+    Name: _Name
+    VirtualSize: int
+    VirtualAddress: int
+    RawDataSize: int
+    PointerToRawData: int
+    PointerToRelocations: int
+    PointerToLineNumbers: int
+    RelocationCount: int
+    LineNumberCount: int
+    Characteristics: Flags
+    Relocations: list[dict[typing.Literal["Relocation"], COFFRelocation]]
+    Symbols: list[dict[typing.Literal["Symbol"], COFFSymbol]]
+    SectionData: SectionData  # XXX
 
 
-SectionsType = list[dict[typing.Literal["Section"], SectionType]]
-
-
-class FileType(typing.TypedDict):
-    FileSummary: FileSummaryType
-    Sections: SectionsType
-
-
-ObjectType = list[dict[str, FileType] | FileType]
+class MachOSection(typing.TypedDict):
+    Index: int
+    Name: _Name
+    Segment: _Name
+    Address: int
+    Size: int
+    Offset: int
+    Alignment: int
+    RelocationOffset: int
+    RelocationCount: int
+    Type: _Value
+    Attributes: Flags
+    Reserved1: int
+    Reserved2: int
+    Reserved3: int
+    Relocations: list[dict[typing.Literal["Relocation"], MachORelocation]]  # XXX
+    Symbols: list[dict[typing.Literal["Symbol"], MachOSymbol]]  # XXX
+    SectionData: SectionData  # XXX
 
 
 @enum.unique
@@ -203,31 +268,26 @@ def get_llvm_tool_version(name: str) -> int | None:
 
 
 def find_llvm_tool(tool: str) -> str | None:
-    versions = {14, 15, 16}
-    forced_version = os.getenv("PYTHON_LLVM_VERSION")
-    if forced_version:
-        versions &= {int(forced_version)}
     # Unversioned executables:
     path = tool
     version = get_llvm_tool_version(path)
-    if version in versions:
+    if version == LLVM_VERSION:
         return path
-    for version in sorted(versions, reverse=True):
-        # Versioned executables:
-        path = f"{tool}-{version}"
-        if get_llvm_tool_version(path) == version:
+    # Versioned executables:
+    path = f"{tool}-{LLVM_VERSION}"
+    if get_llvm_tool_version(path) == LLVM_VERSION:
+        return path
+    # My homebrew homies:
+    try:
+        args = ["brew", "--prefix", f"llvm@{LLVM_VERSION}"]
+        process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        pass
+    else:
+        prefix = process.stdout.decode().removesuffix("\n")
+        path = f"{prefix}/bin/{tool}"
+        if get_llvm_tool_version(path) == LLVM_VERSION:
             return path
-        # My homebrew homies:
-        try:
-            args = ["brew", "--prefix", f"llvm@{version}"]
-            process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
-        except (FileNotFoundError, subprocess.CalledProcessError):
-            pass
-        else:
-            prefix = process.stdout.decode().removesuffix("\n")
-            path = f"{prefix}/bin/{tool}"
-            if get_llvm_tool_version(path) == version:
-                return path
     return None
 
 
@@ -235,7 +295,7 @@ def require_llvm_tool(tool: str) -> str:
     path = find_llvm_tool(tool)
     if path is not None:
         return path
-    raise RuntimeError(f"Can't find {tool}!")
+    raise RuntimeError(f"Can't find {tool}-{LLVM_VERSION}!")
 
 
 _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
@@ -274,8 +334,8 @@ class Parser:
         self.body_offsets: dict[int, int] = {}
         self.data_offsets: dict[int, int] = {}
         self.got: dict[str, int] = {}
-        self.body_relocations: list[tuple[int, RelocationType]] = []
-        self.data_relocations: list[tuple[int, RelocationType]] = []
+        self.body_relocations: list[tuple[int, COFFRelocation | ELFRelocation | MachORelocation]] = []
+        self.data_relocations: list[tuple[int, COFFRelocation | ELFRelocation | MachORelocation]] = []
         self.readobj = readobj
         self.objdump = objdump
         self.target = target
@@ -298,8 +358,8 @@ class Parser:
         output = output.replace(b"Extern\n", b"\n") # XXX: MachO
         start = output.index(b"[", 1)  # XXX: Mach-O, COFF
         end = output.rindex(b"]", start, -1) + 1  # XXX: Mach-O, COFF
-        self._data = json.loads(output[start:end])
-        for section in unwrap(typing.cast(SectionsType, self._data), "Section"):
+        self._data: list[dict[typing.Literal["Section"], COFFSection | ELFSection | MachOSection]] = json.loads(output[start:end])
+        for section in unwrap(self._data, "Section"):
             self._handle_section(section)
         if "_JIT_ENTRY" in self.body_symbols:
             entry = self.body_symbols["_JIT_ENTRY"]
@@ -393,7 +453,10 @@ class Parser:
         except KeyError:
             return HoleValue._JIT_ZERO, symbol
 
-    def _handle_relocation(self, base: int, relocation: RelocationType, raw: bytes) -> Hole | None:
+    def _handle_section(self, section: typing.Any) -> None:  # XXX
+        raise NotImplementedError()
+
+    def _handle_relocation(self, base: int, relocation: COFFRelocation | ELFRelocation | MachORelocation, raw: bytes) -> Hole | None:
         match relocation:
             case {
                 "Type": {
@@ -406,6 +469,8 @@ class Parser:
                 "Offset": offset,
                 "Addend": addend,
             }:
+                assert isinstance(offset, int)  # XXX
+                assert isinstance(addend, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = HoleValue._JIT_DATA, None
@@ -416,6 +481,8 @@ class Parser:
                 "Offset": offset,
                 "Addend": addend,
             }:
+                assert isinstance(offset, int)  # XXX
+                assert isinstance(addend, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)  # XXX
@@ -426,6 +493,8 @@ class Parser:
                 "Offset": offset,
                 "Addend": addend,
             }:
+                assert isinstance(offset, int)  # XXX
+                assert isinstance(addend, int)  # XXX
                 offset += base
                 value, symbol = HoleValue._JIT_DATA, None
                 addend += self._got_lookup(None)
@@ -435,6 +504,8 @@ class Parser:
                 "Offset": offset,
                 "Addend": addend,
             }:
+                assert isinstance(offset, int)  # XXX
+                assert isinstance(addend, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
@@ -443,6 +514,7 @@ class Parser:
                 "Symbol": {"Value": s},
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
@@ -452,7 +524,9 @@ class Parser:
                 "Symbol": s,
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
+                assert isinstance(s, str)  # XXX
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 8], "little")
@@ -461,7 +535,9 @@ class Parser:
                 "Symbol": s,
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
+                assert isinstance(s, str)  # XXX
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little") - 4
@@ -470,7 +546,9 @@ class Parser:
                 "Symbol": s,
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
+                assert isinstance(s, str)  # XXX
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
@@ -481,6 +559,7 @@ class Parser:
                 "Symbol": {"Value": s},
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = HoleValue._JIT_DATA, None
@@ -490,6 +569,7 @@ class Parser:
                 "Section": {"Value": s},
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
@@ -499,6 +579,7 @@ class Parser:
                 "Symbol": {"Value": s},
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
@@ -508,6 +589,7 @@ class Parser:
                  "Symbol": {"Value": s},
                  "Offset": offset
              }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = HoleValue._JIT_DATA, None
@@ -517,6 +599,7 @@ class Parser:
                 "Symbol": {"Value": s},
                 "Offset": offset,
             }:
+                assert isinstance(offset, int)  # XXX
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
@@ -527,7 +610,7 @@ class Parser:
 
 class ELF(Parser):
 
-    def _handle_section(self, section: SectionType) -> None:
+    def _handle_section(self, section: ELFSection) -> None:
         type = section["Type"]["Value"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if type in {"SHT_REL", "SHT_RELA"}:
@@ -576,7 +659,7 @@ class ELF(Parser):
 
 class COFF(Parser):
 
-    def _handle_section(self, section: SectionType) -> None:
+    def _handle_section(self, section: COFFSection) -> None:
         # COFF
         # type = section["Type"]["Value"]
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
@@ -623,8 +706,8 @@ class COFF(Parser):
             return
 
 class MachO(Parser):
-    
-    def _handle_section(self, section: SectionType) -> None:
+
+    def _handle_section(self, section: MachOSection) -> None:
         assert section["Address"] >= len(self.body)
         section_data = section["SectionData"]
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
