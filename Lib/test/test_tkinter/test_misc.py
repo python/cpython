@@ -429,11 +429,14 @@ class WmTest(AbstractTkTest, unittest.TestCase):
 
     def test_wm_attribute(self):
         w = self.root
-        attributes = w.wm_attributes()
+        attributes = w.wm_attributes(return_python_dict=True)
         self.assertIsInstance(attributes, dict)
-        # silently deprecated
-        attributes2 = w.wm_attributes(None)
+        attributes2 = w.wm_attributes()
         self.assertIsInstance(attributes2, tuple if self.wantobjects else str)
+        # silently deprecated
+        attributes3 = w.wm_attributes(None)
+        self.assertIsInstance(attributes2, tuple if self.wantobjects else str)
+        self.assertEqual(attributes3, attributes2)
         if self.wantobjects:
             self.assertEqual(attributes2[::2],
                              tuple('-' + k for k in attributes))
