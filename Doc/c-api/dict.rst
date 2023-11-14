@@ -185,8 +185,8 @@ Dictionary Objects
      ``NULL``, and return ``0``.
    - On error, raise an exception and return ``-1``.
 
-   This is the similar to :meth:`dict.pop`, but without the default value and
-   do not raise :exc:`KeyError` if the key missing.
+   This is similar to :meth:`dict.pop`, but without the default value and
+   not raising :exc:`KeyError` if the key missing.
 
    .. versionadded:: 3.13
 
