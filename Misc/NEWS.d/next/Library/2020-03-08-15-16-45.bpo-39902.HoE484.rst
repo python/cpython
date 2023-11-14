@@ -1,0 +1,2 @@
+Added support for equality comparisons in ``dis.Bytecode`` objects. Patch by
+Batuhan Taskaya.

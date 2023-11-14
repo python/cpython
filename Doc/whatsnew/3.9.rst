@@ -423,6 +423,12 @@ The :command:`upload` command now creates SHA2-256 and Blake2b-256 hash
 digests. It skips MD5 on platforms that block MD5 digest.
 (Contributed by Christian Heimes in :issue:`40698`.)
 
+dis
+---
+
+:class:`dis.Bytecode` objects now support equality comparisons. (Contributed
+by Batuhan Taskaya in :issue:`39902`.)
+
 fcntl
 -----
 
