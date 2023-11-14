@@ -2250,11 +2250,13 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
         return 1;
     }
 
-    if (PyDict_GetItemRef(state->cache, fmt, ptr) < 0) {
-        return 0;
-    }
-    if (*ptr != NULL) {
+    s_object = PyDict_GetItemWithError(state->cache, fmt);
+    if (s_object != NULL) {
+        *ptr = (PyStructObject *)Py_NewRef(s_object);
         return Py_CLEANUP_SUPPORTED;
+    }
+    else if (PyErr_Occurred()) {
+        return 0;
     }
 
     s_object = PyObject_CallOneArg(state->PyStructType, fmt);
