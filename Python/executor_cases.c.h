@@ -204,7 +204,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            uint32_t version = (uint32_t)next_uop[-1].operand;
+            uint32_t version = (uint32_t)operand;
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
             DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
@@ -1128,7 +1128,7 @@
         }
 
         case _GUARD_GLOBALS_VERSION: {
-            uint16_t version = (uint16_t)next_uop[-1].operand;
+            uint16_t version = (uint16_t)operand;
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_GLOBALS_VERSION);
             DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_GLOBALS_VERSION);
@@ -1137,7 +1137,7 @@
         }
 
         case _GUARD_BUILTINS_VERSION: {
-            uint16_t version = (uint16_t)next_uop[-1].operand;
+            uint16_t version = (uint16_t)operand;
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_BUILTINS_VERSION);
             DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_BUILTINS_VERSION);
@@ -1148,7 +1148,7 @@
         case _LOAD_GLOBAL_MODULE: {
             PyObject *res;
             PyObject *null = NULL;
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)operand;
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             res = entries[index].me_value;
@@ -1166,7 +1166,7 @@
         case _LOAD_GLOBAL_BUILTINS: {
             PyObject *res;
             PyObject *null = NULL;
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)operand;
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             res = entries[index].me_value;
@@ -1615,7 +1615,7 @@
         case _GUARD_TYPE_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop[-1].operand;
+            uint32_t type_version = (uint32_t)operand;
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, _GUARD_TYPE_VERSION);
@@ -1637,7 +1637,7 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)operand;
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(attr == NULL, _LOAD_ATTR_INSTANCE_VALUE);
@@ -1654,7 +1654,7 @@
         case _CHECK_ATTR_MODULE: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop[-1].operand;
+            uint32_t type_version = (uint32_t)operand;
             DEOPT_IF(!PyModule_CheckExact(owner), _CHECK_ATTR_MODULE);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
@@ -1667,7 +1667,7 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)operand;
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < dict->ma_keys->dk_nentries);
@@ -1701,7 +1701,7 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t hint = (uint16_t)next_uop[-1].operand;
+            uint16_t hint = (uint16_t)operand;
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, _LOAD_ATTR_WITH_HINT);
@@ -1732,7 +1732,7 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)operand;
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
             DEOPT_IF(attr == NULL, _LOAD_ATTR_SLOT);
@@ -1749,7 +1749,7 @@
         case _CHECK_ATTR_CLASS: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop[-1].operand;
+            uint32_t type_version = (uint32_t)operand;
             DEOPT_IF(!PyType_Check(owner), _CHECK_ATTR_CLASS);
             assert(type_version != 0);
             DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version, _CHECK_ATTR_CLASS);
@@ -1761,7 +1761,7 @@
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)operand;
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
@@ -1787,7 +1787,7 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)operand;
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
@@ -1809,7 +1809,7 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)operand;
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
@@ -2383,7 +2383,7 @@
         case _GUARD_KEYS_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t keys_version = (uint32_t)next_uop[-1].operand;
+            uint32_t keys_version = (uint32_t)operand;
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
             DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version, _GUARD_KEYS_VERSION);
@@ -2395,7 +2395,7 @@
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)operand;
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -2414,7 +2414,7 @@
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)operand;
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2432,7 +2432,7 @@
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)operand;
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2446,7 +2446,7 @@
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)operand;
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2473,7 +2473,7 @@
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)operand;
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2522,7 +2522,7 @@
             PyObject *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)next_uop[-1].operand;
+            uint32_t func_version = (uint32_t)operand;
             DEOPT_IF(!PyFunction_Check(callable), _CHECK_FUNCTION_EXACT_ARGS);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, _CHECK_FUNCTION_EXACT_ARGS);
