@@ -44,3 +44,6 @@ PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 }
 #define PyList_SET_ITEM(op, index, value) \
     PyList_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))
+
+PyAPI_FUNC(int) PyList_Extend(PyObject *self, PyObject *iterable);
+PyAPI_FUNC(int) PyList_Clear(PyObject *self);
