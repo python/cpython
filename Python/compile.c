@@ -883,49 +883,49 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 int
-PyUnstable_OpcodeIsValid(int opcode)
+_PyCompile_OpcodeIsValid(int opcode)
 {
     return IS_VALID_OPCODE(opcode);
 }
 
 int
-PyUnstable_OpcodeHasArg(int opcode)
+_PyCompile_OpcodeHasArg(int opcode)
 {
     return OPCODE_HAS_ARG(opcode);
 }
 
 int
-PyUnstable_OpcodeHasConst(int opcode)
+_PyCompile_OpcodeHasConst(int opcode)
 {
     return OPCODE_HAS_CONST(opcode);
 }
 
 int
-PyUnstable_OpcodeHasName(int opcode)
+_PyCompile_OpcodeHasName(int opcode)
 {
     return OPCODE_HAS_NAME(opcode);
 }
 
 int
-PyUnstable_OpcodeHasJump(int opcode)
+_PyCompile_OpcodeHasJump(int opcode)
 {
     return OPCODE_HAS_JUMP(opcode);
 }
 
 int
-PyUnstable_OpcodeHasFree(int opcode)
+_PyCompile_OpcodeHasFree(int opcode)
 {
     return OPCODE_HAS_FREE(opcode);
 }
 
 int
-PyUnstable_OpcodeHasLocal(int opcode)
+_PyCompile_OpcodeHasLocal(int opcode)
 {
     return OPCODE_HAS_LOCAL(opcode);
 }
 
 int
-PyUnstable_OpcodeHasExc(int opcode)
+_PyCompile_OpcodeHasExc(int opcode)
 {
     return IS_BLOCK_PUSH_OPCODE(opcode);
 }
