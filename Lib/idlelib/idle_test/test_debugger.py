@@ -20,7 +20,7 @@ TEST_CODE = dedent("""
 
 
 class MockFrame:
-    "Minimal mock"
+    "Minimal mock frame."
 
     def __init__(self, code, lineno):
         self.f_code = code
@@ -152,17 +152,6 @@ class DebuggerTest(unittest.TestCase):
         self.assertEqual(test_debugger.pyshell, self.pyshell)
         self.assertIsNone(test_debugger.frame)
 
-
-    def test_run_debugger_no_idb(self):
-        # Test Debugger.run() with no Idb instance.
-        test_debugger = debugger.Debugger(self.pyshell, idb=None)
-        self.assertIsNotNone(test_debugger.idb)
-        test_debugger.idb.run = mock.Mock()
-        test_debugger.run(1, 'two')
-        test_debugger.idb.run.assert_called_once()
-        test_debugger.idb.run.assert_called_once_with(1, 'two')
-        self.assertEqual(test_debugger.interacting, 0)
-
     def test_close(self):
         # Test closing the window in an idle state.
         self.debugger.close()
@@ -230,7 +219,7 @@ class DebuggerIdbTest(unittest.TestCase):
         test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
         test_debugger.run(1, 'two')
         self.idb.run.assert_called_once()
-        self.idb.run.called_with(1, 'two')
+        self.idb.run.assert_called_once_with(1, 'two')
         self.assertEqual(test_debugger.interacting, 0)
 
     def test_cont(self):
