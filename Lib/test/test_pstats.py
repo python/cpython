@@ -35,9 +35,6 @@ class StatsTestCase(unittest.TestCase):
         stats_file = support.findfile('pstats.pck')
         self.stats = pstats.Stats(stats_file)
 
-    def tearDown(self):
-        pass
-
     def test_add(self):
         stream = StringIO()
         stats = pstats.Stats(stream=stream)
