@@ -226,6 +226,31 @@ dict_setdefault(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+dict_setdefaultref(PyObject *self, PyObject *args)
+{
+    PyObject *obj, *key, *default_value, *result = UNINITIALIZED_PTR;
+    if (!PyArg_ParseTuple(args, "OOO", &obj, &key, &default_value)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    NULLABLE(key);
+    NULLABLE(default_value);
+    switch (PyDict_SetDefaultRef(obj, key, default_value, &result)) {
+        case -1:
+            assert(result == NULL);
+            return NULL;
+        case 0:
+            assert(result == default_value);
+            return result;
+        case 1:
+            return result;
+        default:
+            Py_FatalError("PyDict_SetDefaultRef() returned invalid code");
+            Py_UNREACHABLE();
+    }
+}
+
+static PyObject *
 dict_delitem(PyObject *self, PyObject *args)
 {
     PyObject *mapping, *key;
@@ -433,6 +458,7 @@ static PyMethodDef test_methods[] = {
     {"dict_delitem", dict_delitem, METH_VARARGS},
     {"dict_delitemstring", dict_delitemstring, METH_VARARGS},
     {"dict_setdefault", dict_setdefault, METH_VARARGS},
+    {"dict_setdefaultref", dict_setdefaultref, METH_VARARGS},
     {"dict_keys", dict_keys, METH_O},
     {"dict_values", dict_values, METH_O},
     {"dict_items", dict_items, METH_O},
