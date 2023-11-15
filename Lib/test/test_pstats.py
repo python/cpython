@@ -34,13 +34,9 @@ class StatsTestCase(unittest.TestCase):
     def setUp(self):
         stats_file = support.findfile('pstats.pck')
         self.stats = pstats.Stats(stats_file)
-        self.temp_storage = tempfile.NamedTemporaryFile(delete=False)
-        script_string = 'import os'
-        cProfile.run(script_string, filename=self.temp_storage.name)
 
     def tearDown(self):
-        self.temp_storage.close()
-        os.remove(self.temp_storage.name)
+        pass
 
     def test_add(self):
         stream = StringIO()
@@ -58,10 +54,16 @@ class StatsTestCase(unittest.TestCase):
             os.remove(temp_storage_new.name)
 
     def test_load_equivalent_to_init(self):
-        stats = pstats.Stats()
-        stats.load_stats(self.temp_storage.name)
-        created = pstats.Stats(self.temp_storage.name)
-        self.assertEqual(stats.stats, created.stats)
+        try:
+            stats = pstats.Stats()
+            self.temp_storage = tempfile.NamedTemporaryFile(delete=False)
+            cProfile.run('import os', filename=self.temp_storage.name)
+            stats.load_stats(self.temp_storage.name)
+            created = pstats.Stats(self.temp_storage.name)
+            self.assertEqual(stats.stats, created.stats)
+        finally:
+            self.temp_storage.close()
+            os.remove(self.temp_storage.name)
 
     def test_loading_wrong_types(self):
         stats = pstats.Stats()
