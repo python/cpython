@@ -103,10 +103,11 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(check(1))
         self.assertTrue(check(IndexLike(1)))
         self.assertTrue(check(Int()))
-        self.assertTrue(check(1.0))
+        self.assertTrue(check(0.5))
         self.assertTrue(check(Float()))
         self.assertTrue(check(1+2j))
         self.assertFalse(check([]))
+        self.assertFalse(check("1 + 1j"))
         self.assertFalse(check(object()))
         self.assertFalse(check(NULL))
 
