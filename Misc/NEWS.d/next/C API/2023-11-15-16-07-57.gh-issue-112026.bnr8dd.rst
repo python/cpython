@@ -1,0 +1,51 @@
+Restore removed private C API functions, macros and structures which have no
+simple replacement for now:
+
+* _PyDict_GetItem_KnownHash()
+* _PyDict_NewPresized()
+* _PyHASH_BITS
+* _PyHASH_IMAG
+* _PyHASH_INF
+* _PyHASH_MODULUS
+* _PyHASH_MULTIPLIER
+* _PyLong_Copy()
+* _PyLong_FromDigits()
+* _PyLong_New()
+* _PyLong_Sign()
+* _PyObject_CallMethodId()
+* _PyObject_CallMethodNoArgs()
+* _PyObject_CallMethodOneArg()
+* _PyObject_CallOneArg()
+* _PyObject_EXTRA_INIT
+* _PyObject_FastCallDict()
+* _PyObject_GetAttrId()
+* _PyObject_Vectorcall()
+* _PyObject_VectorcallMethod()
+* _PyStack_AsDict()
+* _PyThread_CurrentFrames()
+* _PyUnicodeWriter structure
+* _PyUnicodeWriter_Dealloc()
+* _PyUnicodeWriter_Finish()
+* _PyUnicodeWriter_Init()
+* _PyUnicodeWriter_Prepare()
+* _PyUnicodeWriter_PrepareKind()
+* _PyUnicodeWriter_WriteASCIIString()
+* _PyUnicodeWriter_WriteChar()
+* _PyUnicodeWriter_WriteLatin1String()
+* _PyUnicodeWriter_WriteStr()
+* _PyUnicodeWriter_WriteSubstring()
+* _PyUnicode_AsString()
+* _PyUnicode_FromId()
+* _PyVectorcall_Function()
+* _Py_IDENTIFIER()
+* _Py_c_abs()
+* _Py_c_diff()
+* _Py_c_neg()
+* _Py_c_pow()
+* _Py_c_prod()
+* _Py_c_quot()
+* _Py_c_sum()
+* _Py_static_string()
+* _Py_static_string_init()
+
+Patch by Victor Stinner.
