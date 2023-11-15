@@ -4,6 +4,7 @@ Test script for doctest.
 
 from test import support
 from test.support import import_helper
+from test.support.pty_helper import FakeInput  # used in doctests
 import doctest
 import functools
 import os
@@ -155,25 +156,6 @@ class SampleNewStyleClass(object):
         -5
         """
         return self.val
-
-######################################################################
-## Fake stdin (for testing interactive debugging)
-######################################################################
-
-class _FakeInput:
-    """
-    A fake input stream for pdb's interactive debugger.  Whenever a
-    line is read, print it (to simulate the user typing it), and then
-    return it.  The set of lines to return is specified in the
-    constructor; they should not have trailing newlines.
-    """
-    def __init__(self, lines):
-        self.lines = lines
-
-    def readline(self):
-        line = self.lines.pop(0)
-        print(line)
-        return line+'\n'
 
 ######################################################################
 ## Test Cases
@@ -1950,7 +1932,7 @@ Create a docstring that we want to debug:
 Create some fake stdin input, to feed to the debugger:
 
     >>> real_stdin = sys.stdin
-    >>> sys.stdin = _FakeInput(['next', 'print(x)', 'continue'])
+    >>> sys.stdin = FakeInput(['next', 'print(x)', 'continue'])
 
 Run the debugger on the docstring, and then restore sys.stdin.
 
@@ -1993,7 +1975,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         captures our debugger input:
 
           >>> real_stdin = sys.stdin
-          >>> sys.stdin = _FakeInput([
+          >>> sys.stdin = FakeInput([
           ...    'print(x)',  # print data defined by the example
           ...    'continue', # stop debugging
           ...    ''])
@@ -2020,7 +2002,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           ... '''
           >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
           >>> real_stdin = sys.stdin
-          >>> sys.stdin = _FakeInput([
+          >>> sys.stdin = FakeInput([
           ...    'print(y)',  # print data defined in the function
           ...    'up',       # out of function
           ...    'print(x)',  # print data defined by the example
@@ -2057,7 +2039,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
           ... '''
           >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
           >>> real_stdin = sys.stdin
-          >>> sys.stdin = _FakeInput([
+          >>> sys.stdin = FakeInput([
           ...    'list',     # list source from example 2
           ...    'next',     # return from g()
           ...    'list',     # list source from example 1
@@ -2129,7 +2111,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         >>> runner = doctest.DocTestRunner(verbose=False)
         >>> test = parser.get_doctest(doc, globals(), "foo-bar@baz", "foo-bar@baz.py", 0)
         >>> real_stdin = sys.stdin
-        >>> sys.stdin = _FakeInput([
+        >>> sys.stdin = FakeInput([
         ...    'print(y)',  # print data defined in the function
         ...    'step', 'step', 'step', 'step', 'step', 'step', 'print(z)',
         ...    'up', 'print(x)',

@@ -134,7 +134,7 @@ That's all you need to know to start making productive use of :mod:`doctest`!
 Jump in.  The following sections provide full details.  Note that there are many
 examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
-:file:`Lib/test/test_doctest.py`.
+:file:`Lib/test/test_doctest/test_doctest.py`.
 
 
 .. _doctest-simple-testmod:
