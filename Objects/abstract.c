@@ -1012,7 +1012,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
   Calling scheme used for ternary operations:
 
   Order operations are tried until either a valid result or error:
-    v.op(v,w,z), w.op(v,w,z), z.op(v,w,z)
+    v.op(v,w,z), w.op(v,w,z)
  */
 
 static PyObject *
@@ -1069,22 +1069,6 @@ ternary_op(PyObject *v,
             return x;
         }
         Py_DECREF(x); /* can't do it */
-    }
-
-    PyNumberMethods *mz = Py_TYPE(z)->tp_as_number;
-    if (mz != NULL) {
-        ternaryfunc slotz = NB_TERNOP(mz, op_slot);
-        if (slotz == slotv || slotz == slotw) {
-            slotz = NULL;
-        }
-        if (slotz) {
-            PyObject *x = slotz(v, w, z);
-            assert(_Py_CheckSlotResult(z, op_name, x != NULL));
-            if (x != Py_NotImplemented) {
-                return x;
-            }
-            Py_DECREF(x); /* can't do it */
-        }
     }
 
     if (z == Py_None) {
