@@ -3268,8 +3268,6 @@ class PdbTestReadline(unittest.TestCase):
         # Ensure that the readline module is loaded
         # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module('readline')
-        if readline.__doc__ and "libedit" in readline.__doc__:
-            raise unittest.SkipTest("libedit readline is not supported for pdb")
 
     def test_basic_completion(self):
         script = textwrap.dedent("""
