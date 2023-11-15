@@ -274,24 +274,20 @@ class CmdTestReadline(unittest.TestCase):
         script = textwrap.dedent("""
             import cmd
             class simplecmd(cmd.Cmd):
-                # Add an additional command to prevent complete 'help' command.
-                def do_EOF(self, args):
+                def do_tab_completion_test(self, args):
+                    print('tab completion success')
                     return True
 
-            # Concatenate strings so that the output doesn't appear in the source
-            print('hello' + '!')
             simplecmd().cmdloop()
         """)
 
-        # List everything starting with '\t\t', there should be multiple matches
-        # then add 'E' and complete 'OF' to 'EOF'
-        input = b"\t\tE\t\n"
+        # 't' and complete 'ab_completion_test' to 'tab_completion_test'
+        input = b"t\t\n"
 
         output = run_pty(script, input)
 
-        self.assertIn(b'EOF', output)
-        self.assertIn(b'help', output)
-        self.assertIn(b'hello!', output)
+        self.assertIn(b'tab_completion_test', output)
+        self.assertIn(b'tab completion success', output)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
