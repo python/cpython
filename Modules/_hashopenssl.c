@@ -229,7 +229,7 @@ typedef struct {
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
     // Prevents undefined behavior via multiple threads entering the C API.
     bool use_mutex;
-    PyMutex mutex;
+    PyMutex mutex;  /* OpenSSL context lock */
 } EVPobject;
 
 typedef struct {
@@ -237,7 +237,7 @@ typedef struct {
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
     // Prevents undefined behavior via multiple threads entering the C API.
     bool use_mutex;
-    PyMutex mutex;
+    PyMutex mutex;  /* HMAC context lock */
 } HMACobject;
 
 #include "clinic/_hashopenssl.c.h"
