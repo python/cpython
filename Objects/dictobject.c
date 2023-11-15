@@ -1842,6 +1842,20 @@ _PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
     return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
 }
 
+PyObject *
+_PyDict_GetItemStringWithError(PyObject *v, const char *key)
+{
+    PyObject *kv, *rv;
+    kv = PyUnicode_FromString(key);
+    if (kv == NULL) {
+        return NULL;
+    }
+    rv = PyDict_GetItemWithError(v, kv);
+    Py_DECREF(kv);
+    return rv;
+}
+
+
 /* Fast version of global value lookup (LOAD_GLOBAL).
  * Lookup in globals, then builtins.
  *
