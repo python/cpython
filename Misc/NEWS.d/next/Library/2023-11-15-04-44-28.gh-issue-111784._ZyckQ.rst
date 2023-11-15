@@ -1,0 +1,1 @@
+Fix segfault during deallocation of ``_elementtree.XMLParser`` by keeping pyexpat module alive for capsule lifetime. Patch by Kumar Aditya.
