@@ -1,13 +1,14 @@
 "Test debugger, coverage 19%"
 
-from collections import namedtuple
 from idlelib import debugger
+from collections import namedtuple
+from textwrap import dedent
+from tkinter import Tk
+
+from test.support import requires
 import unittest
 from unittest import mock
-from test.support import requires
 requires('gui')
-from tkinter import Tk
-from textwrap import dedent
 
 """A test python script for the debug tests."""
 TEST_CODE = dedent("""
@@ -18,33 +19,8 @@ TEST_CODE = dedent("""
     """)
 
 
-class NameSpaceTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.root = Tk()
-        cls.root.withdraw()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.root.destroy()
-        del cls.root
-
-    def test_init(self):
-        debugger.NamespaceViewer(self.root, 'Test')
-
-
-class MockFrameType:
-    """Reflection of the types.FrameType."""
-    f_back = None
-    f_builtins = None
-    f_code = None
-    f_globals = None
-    f_lasti = None
-    f_lineno = None
-    f_locals = None
-    f_restricted = 0
-    f_trace = None
+class MockFrame:
+    "Minimal mock"
 
     def __init__(self, code, lineno):
         self.f_code = code
@@ -78,9 +54,9 @@ class IdbTest(unittest.TestCase):
                            mode='exec')
 
         # Create 2 test frames for lines 1 and 2 of the test code.
-        test_frame1 = MockFrameType(code_obj, 1)
+        test_frame1 = MockFrame(code_obj, 1)
 
-        test_frame2 = MockFrameType(code_obj, 2)
+        test_frame2 = MockFrame(code_obj, 2)
         test_frame2.f_back = test_frame1
 
         self.idb.user_line(test_frame2)
@@ -98,9 +74,9 @@ class IdbTest(unittest.TestCase):
                            mode='exec')
 
         # Create 2 test frames for lines 1 and 2 of the test code.
-        test_frame1 = MockFrameType(code_obj, 1)
+        test_frame1 = MockFrame(code_obj, 1)
 
-        test_frame2 = MockFrameType(code_obj, 2)
+        test_frame2 = MockFrame(code_obj, 2)
         test_frame2.f_back = test_frame1
 
         # Example from sys.exc_info()
@@ -121,7 +97,7 @@ class IdbTest(unittest.TestCase):
                            mode='exec')
 
         # Create 1 test frame
-        test_frame = MockFrameType(code_obj, 1)
+        test_frame = MockFrame(code_obj, 1)
 
         self.assertTrue(self.idb.in_rpc_code(test_frame))
 
@@ -136,9 +112,9 @@ class IdbTest(unittest.TestCase):
                                mode='exec')
 
             # Create 2 test frames
-            test_frame = MockFrameType(code_obj, 1)
+            test_frame = MockFrame(code_obj, 1)
 
-            test_frame2 = MockFrameType(code_obj, 2)
+            test_frame2 = MockFrame(code_obj, 2)
             test_frame2.f_back = test_frame
 
             self.assertFalse(self.idb.in_rpc_code(test_frame2))
@@ -184,7 +160,7 @@ class DebuggerTest(unittest.TestCase):
         test_debugger.idb.run = mock.Mock()
         test_debugger.run(1, 'two')
         test_debugger.idb.run.assert_called_once()
-        test_debugger.idb.run.called_with(1, 'two')
+        test_debugger.idb.run.assert_called_once_with(1, 'two')
         self.assertEqual(test_debugger.interacting, 0)
 
     def test_close(self):
@@ -201,7 +177,7 @@ class DebuggerTest(unittest.TestCase):
     def test_sync_source_line(self):
         # Test that .sync_source_line() will set the flist.gotofileline with fixed frame.
         test_code = compile(TEST_CODE, 'test_sync.py', 'exec')
-        test_frame = MockFrameType(test_code, 1)
+        test_frame = MockFrame(test_code, 1)
 
         self.debugger.frame = test_frame
 
@@ -273,7 +249,7 @@ class DebuggerIdbTest(unittest.TestCase):
 
     def test_next(self):
         # Test the .next() method calls idb.set_next().
-        test_frame = MockFrameType(None, None)
+        test_frame = MockFrame(None, None)
 
         self.debugger.frame = test_frame
         self.debugger.next()
@@ -283,7 +259,7 @@ class DebuggerIdbTest(unittest.TestCase):
 
     def test_ret(self):
         # Test the .ret() method calls idb.set_return().
-        test_frame = MockFrameType(None, None)
+        test_frame = MockFrame(None, None)
 
         self.debugger.frame = test_frame
         self.debugger.ret()
@@ -302,7 +278,7 @@ class DebuggerIdbTest(unittest.TestCase):
         # Test the .show_stack() method calls with stackview and frame.
 
         # Set a frame on the GUI before showing stack
-        test_frame = MockFrameType(None, None)
+        test_frame = MockFrame(None, None)
         self.debugger.frame = test_frame
 
         # Reset the stackviewer to force it to be recreated.
@@ -374,8 +350,8 @@ class StackViewerTest(unittest.TestCase):
     def setUp(self):
         self.code = compile(TEST_CODE, 'test_stackviewer.py', 'exec')
         self.stack = [
-            (MockFrameType(self.code, 1), 1),
-            (MockFrameType(self.code, 2), 2)
+            (MockFrame(self.code, 1), 1),
+            (MockFrame(self.code, 2), 2)
         ]
 
         # Create a stackviewer and load the test stack.
@@ -409,6 +385,22 @@ class StackViewerTest(unittest.TestCase):
             self.sv.show_source(1)
             isfile.assert_called_once_with('test_stackviewer.py')
             self.sv.flist.open.assert_called_once_with('test_stackviewer.py')
+
+
+class NameSpaceTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Tk()
+        cls.root.withdraw()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.destroy()
+        del cls.root
+
+    def test_init(self):
+        debugger.NamespaceViewer(self.root, 'Test')
 
 
 if __name__ == '__main__':
