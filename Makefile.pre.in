@@ -1768,6 +1768,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pyframe.h \
+		$(srcdir)/Include/cpython/pyhash.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \

@@ -172,6 +172,7 @@
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
     <ClInclude Include="..\Include\cpython\pyfpe.h" />
     <ClInclude Include="..\Include\cpython\pyframe.h" />
+    <ClInclude Include="..\Include\cpython\pyhash.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
