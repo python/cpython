@@ -73,7 +73,7 @@ static MD5object *
 newMD5object(MD5State * st)
 {
     MD5object *md5 = (MD5object *)PyObject_GC_New(MD5object, st->md5_type);
-    if(!md5) {
+    if (!md5) {
         return NULL;
     }
     HASHLIB_INIT_MUTEX(md5);
