@@ -2368,7 +2368,7 @@ dummy_func(
             goto enter_tier_one;
         }
 
-       replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
@@ -2512,7 +2512,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_FOR_ITER, (iter -- iter, next)) {
+        replaced op(_FOR_ITER, (iter -- iter, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
@@ -2531,6 +2531,31 @@ dummy_func(
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
                 DISPATCH();
+            }
+            // Common case: no jump, leave it to the code generator
+        }
+
+        op(_FOR_ITER_TIER_TWO, (iter -- iter, next)) {
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        GOTO_ERROR(error);
+                    }
+                    _PyErr_Clear(tstate);
+                }
+                /* iterator ended normally */
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                /* HACK: Emulate DEOPT_IF to jump over END_FOR */
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
+                assert(frame->instr_ptr[-1].op.code == END_FOR ||
+                       frame->instr_ptr[-1].op.code == INSTRUMENTED_END_FOR);
+                Py_DECREF(current_executor);
+                OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+                goto enter_tier_one;
             }
             // Common case: no jump, leave it to the code generator
         }
