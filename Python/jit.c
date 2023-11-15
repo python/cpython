@@ -43,55 +43,34 @@ static size_t page_size;
 static unsigned char *
 alloc(size_t size)
 {
+    assert((size & (page_size - 1)) == 0);
     if (JIT_POOL_SIZE - page_size < pool_head + size) {
         PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
         return NULL;
     }
     unsigned char *memory = pool + pool_head;
+    assert(((uintptr_t)memory & (page_size - 1)) == 0);
     pool_head += size;
     return memory;
 }
 
 static int
-mark_writeable(unsigned char *memory, size_t nbytes)
-{
-    if (nbytes == 0) {
-        return 0;
-    }
-    unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
-    size_t page_nbytes = memory + nbytes - page;
-#ifdef MS_WINDOWS
-    DWORD old;
-    if (!VirtualProtect(page, page_nbytes, PAGE_READWRITE, &old)) {
-        int code = GetLastError();
-#else
-    if (mprotect(page, page_nbytes, PROT_READ | PROT_WRITE)) {
-        int code = errno;
-#endif
-        const char *w = "JIT unable to map writable memory (%d)";
-        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
-        return -1;
-    }
-    return 0;
-}
-
-static int
 mark_executable(unsigned char *memory, size_t nbytes)
 {
+    assert(((uintptr_t)memory & (page_size - 1)) == 0);
+    assert((nbytes & (page_size - 1)) == 0);
     if (nbytes == 0) {
         return 0;
     }
-    unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
-    size_t page_nbytes = memory + nbytes - page;
 #ifdef MS_WINDOWS
     DWORD old;
     if (!FlushInstructionCache(GetCurrentProcess(), memory, nbytes) ||
-        !VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old))
+        !VirtualProtect(memory, nbytes, PAGE_EXECUTE_READ, &old))
     {
         int code = GetLastError();
 #else
     __builtin___clear_cache((char *)memory, (char *)memory + nbytes);
-    if (mprotect(page, page_nbytes, PROT_EXEC | PROT_READ)) {
+    if (mprotect(memory, nbytes, PROT_EXEC | PROT_READ)) {
         int code = errno;
 #endif
         const char *w = "JIT unable to map executable memory (%d)";
@@ -198,25 +177,30 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
 }
 
 static void
-copy_and_patch(const Stencil *stencil, uint64_t patches[])
+copy_and_patch(unsigned char *base, size_t nbytes, const unsigned char *bytes,
+               size_t nholes, const Hole *holes, uint64_t *patches)
+{
+    memcpy(base, bytes, nbytes);
+    for (size_t i = 0; i < nholes; i++) {
+        const Hole *hole = &holes[i];
+        patch_one(base + hole->offset, hole, patches);
+    }
+}
+
+static void
+emit(const Stencil *stencil, uint64_t patches[])
 {
     if (stencil->nholes_data) {
         unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
-        memcpy(data, stencil->bytes_data, stencil->nbytes_data);
-        for (size_t i = 0; i < stencil->nholes_data; i++) {
-            const Hole *hole = &stencil->holes_data[i];
-            patch_one(data + hole->offset, hole, patches);
-        }
+        copy_and_patch(data, stencil->nbytes_data, stencil->bytes_data,
+                       stencil->nholes_data, stencil->holes_data, patches);
     }
     else {
         patches[_JIT_DATA] = (uintptr_t)stencil->bytes_data;
     }
     unsigned char *body = (unsigned char *)(uintptr_t)patches[_JIT_BODY];
-    memcpy(body, stencil->bytes, stencil->nbytes);
-    for (size_t i = 0; i < stencil->nholes; i++) {
-        const Hole *hole = &stencil->holes[i];
-        patch_one(body + hole->offset, hole, patches);
-    }
+    copy_and_patch(body, stencil->nbytes, stencil->bytes,
+                   stencil->nholes, stencil->holes, patches);
 }
 
 static int needs_initializing = 1;
@@ -260,14 +244,16 @@ initialize_jit(void)
     // Write our deopt stub:
     {
         const Stencil *stencil = &deoptimize_stencil;
-        deoptimize_stub = alloc(stencil->nbytes);
-        if (deoptimize_stub == NULL || mark_writeable(deoptimize_stub, stencil->nbytes)) {
+        size_t nbytes = (stencil->nbytes + page_size - 1) & ~(page_size - 1);
+        deoptimize_stub = alloc(nbytes);
+        if (deoptimize_stub == NULL) {
             return needs_initializing;
         }
         unsigned char *data;
+        size_t nbytes_data = (stencil->nbytes_data + page_size - 1) & ~(page_size - 1);
         if (stencil->nholes_data) {
-            data = alloc(stencil->nbytes_data);
-            if (data == NULL || mark_writeable(data, stencil->nbytes_data)) {
+            data = alloc(nbytes_data);
+            if (data == NULL) {
                 return needs_initializing;
             }
         }
@@ -278,27 +264,24 @@ initialize_jit(void)
         patches[_JIT_BODY] = (uintptr_t)deoptimize_stub;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
-        copy_and_patch(stencil, patches);
-        if (mark_executable(deoptimize_stub, stencil->nbytes)) {
+        emit(stencil, patches);
+        if (mark_executable(deoptimize_stub, nbytes)) {
             return needs_initializing;
-        }
-        if (stencil->nholes_data) {
-            if (mark_executable(data, stencil->nbytes_data)) {
-                return needs_initializing;
-            }
         }
     }
     // Write our error stub:
     {
         const Stencil *stencil = &error_stencil;
-        error_stub = alloc(stencil->nbytes);
-        if (error_stub == NULL || mark_writeable(error_stub, stencil->nbytes)) {
+        size_t nbytes = (stencil->nbytes + page_size - 1) & ~(page_size - 1);
+        error_stub = alloc(nbytes);
+        if (error_stub == NULL) {
             return needs_initializing;
         }
         unsigned char *data;
+        size_t nbytes_data = (stencil->nbytes_data + page_size - 1) & ~(page_size - 1);
         if (stencil->nholes_data) {
-            data = alloc(stencil->nbytes_data);
-            if (data == NULL || mark_writeable(data, stencil->nbytes_data)) {
+            data = alloc(nbytes_data);
+            if (data == NULL) {
                 return needs_initializing;
             }
         }
@@ -309,14 +292,9 @@ initialize_jit(void)
         patches[_JIT_BODY] = (uintptr_t)error_stub;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
-        copy_and_patch(stencil, patches);
-        if (mark_executable(error_stub, stencil->nbytes)) {
+        emit(stencil, patches);
+        if (mark_executable(error_stub, nbytes)) {
             return needs_initializing;
-        }
-        if (stencil->nholes_data) {
-            if (mark_executable(data, stencil->nbytes_data)) {
-                return needs_initializing;
-            }
         }
     }
     // Done:
@@ -341,12 +319,14 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         nbytes_data += stencil->nholes_data ? stencil->nbytes_data : 0;
         assert(stencil->nbytes);
     };
+    nbytes = (nbytes + page_size - 1) & ~(page_size - 1);
     unsigned char *memory = alloc(nbytes);
-    if (memory == NULL || mark_writeable(memory, nbytes)) {
+    if (memory == NULL) {
         return NULL;
     }
+    nbytes_data = (nbytes_data + page_size - 1) & ~(page_size - 1);
     unsigned char *data = alloc(nbytes_data);
-    if (data == NULL || mark_writeable(data, nbytes_data)) {
+    if (data == NULL) {
         return NULL;
     }
     unsigned char *head = memory;
@@ -358,7 +338,7 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     patches[_JIT_DATA] = (uintptr_t)(stencil->nholes_data ? head_data : stencil->bytes_data);
     patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
     patches[_JIT_ZERO] = 0;
-    copy_and_patch(stencil, patches);
+    emit(stencil, patches);
     head += stencil->nbytes;
     head_data += stencil->nholes_data ? stencil->nbytes_data : 0;
     // Then, all of the stencils:
@@ -377,18 +357,15 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         patches[_JIT_TARGET] = instruction->target;
         patches[_JIT_TOP] = (uintptr_t)memory + trampoline_stencil.nbytes;
         patches[_JIT_ZERO] = 0;
-        copy_and_patch(stencil, patches);
+        emit(stencil, patches);
         head += stencil->nbytes;
         head_data += stencil->nholes_data ? stencil->nbytes_data : 0;
     };
     if (mark_executable(memory, nbytes)) {
         return NULL;
     }
-    if (mark_executable(data, nbytes_data)) {
-        return NULL;
-    }
     // Wow, done already?
-    assert(memory + nbytes == head);
-    assert(data + nbytes_data == head_data);
+    assert(head <= memory + nbytes);
+    assert(head_data <= data + nbytes_data);
     return (_PyJITFunction)memory;
 }
