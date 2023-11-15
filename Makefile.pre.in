@@ -1348,7 +1348,7 @@ regen-limited-abi: all
 
 .PHONY: regen-unicodedata
 regen-unicodedata:
-	$(PYTHON_FOR_REGEN) Tools/unicode/makeunicodedata.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
 
 
 ############################################################################
