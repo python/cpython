@@ -1348,7 +1348,7 @@ regen-limited-abi: all
 
 .PHONY: regen-unicodedata
 regen-unicodedata:
-	$(PYTHON_FOR_REGEN) Tools/unicode/makeunicodedata.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
 
 
 ############################################################################
@@ -1359,10 +1359,10 @@ regen-unicodedata:
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects regen-unicodedata
+	regen-test-levenshtein regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi"
-	@echo "and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
+	@echo "make regen-configure and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1768,6 +1768,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pyframe.h \
+		$(srcdir)/Include/cpython/pyhash.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
