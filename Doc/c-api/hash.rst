@@ -3,7 +3,8 @@
 PyHash API
 ----------
 
-See also the :c:member:`PyTypeObject.tp_hash` member.
+See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`
+for more details about hashing of numeric types.
 
 .. c:type:: Py_hash_t
 
