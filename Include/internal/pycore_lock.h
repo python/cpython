@@ -174,7 +174,7 @@ typedef struct {
 } _PyOnceFlag;
 
 // Type signature for one-time initialization functions. The function should
-// return 1 on success and 0 on failure.
+// return 0 on success and -1 on failure.
 typedef int _Py_once_fn_t(void *arg);
 
 // (private) slow path for one time initialization
