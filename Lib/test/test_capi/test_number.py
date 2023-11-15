@@ -4,7 +4,9 @@ import warnings
 
 from test.support import import_helper
 from test.test_capi.test_getargs import (Float, BadFloat, BadFloat2, Index,
-                                         BadIndex, BadIndex2, Int, BadInt, BadInt2)
+                                         BadIndex, BadIndex2, Int, BadInt,
+                                         BadInt2)
+from _testbuffer import ndarray
 
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -20,6 +22,7 @@ class BadAdd:
 class BadAdd2(int):
     def __radd__(self, other):
         return NotImplemented
+    __iadd__ = __radd__
 
 
 class IndexLike:
@@ -30,13 +33,68 @@ class IndexLike:
         return self.value
 
 
+class IntSubclass(int):
+    pass
+
+
+class IntSubclass2(int):
+    def __new__(cls, value):
+        obj = super().__new__(cls)
+        obj.value = value
+        return obj
+
+    def __rpow__(self, other, mod=None):
+        return self.value
+    __ipow__ = __rpow__
+
+
+class WithMatrixMul(list):
+    def __matmul__(self, other):
+        return self*other
+
+    def __imatmul__(self, other):
+        x = self*other
+        self.clear()
+        self.extend(x)
+        return self
+
+
+class BadDescr:
+    def __get__(self, obj, objtype=None):
+        raise ValueError
+
+
+class WithTrunc:
+    def __init__(self, value):
+        self.value = value
+
+    def __trunc__(self):
+        return self.value
+
+
+class WithBadTrunc:
+    def __trunc__(self):
+        raise RuntimeError
+
+class WithBadTrunc2:
+    __trunc__ = BadDescr()
+
+
+class BadFloat3:
+    def __float__(self):
+        pass
+
+
 class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyNumber_Check()
         check = _testcapi.number_check
 
         self.assertTrue(check(1))
+        self.assertTrue(check(IndexLike(1)))
+        self.assertTrue(check(Int()))
         self.assertTrue(check(1.0))
+        self.assertTrue(check(Float()))
         self.assertTrue(check(1+2j))
         self.assertFalse(check([]))
         self.assertFalse(check(object()))
@@ -54,6 +112,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(TypeError, add, 1, object())
         self.assertRaises(TypeError, add, object(), 1)
+        self.assertRaises(TypeError, add, ndarray([1], (1,)), 2)
 
         # CRASHES add(NULL, 42)
         # CRASHES add(42, NULL)
@@ -77,9 +136,14 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(multiply(2, 3), 2 * 3)
         self.assertEqual(multiply([1], 2), [1, 1])
         self.assertEqual(multiply(2, [1]), [1, 1])
+        self.assertEqual(multiply([1], -1), [])
 
         self.assertRaises(TypeError, multiply, 1, object())
         self.assertRaises(TypeError, multiply, object(), 1)
+        self.assertRaises(TypeError, multiply, ndarray([1], (1,)), 2)
+        self.assertRaises(TypeError, multiply, 2, ndarray([1], (1,)))
+        self.assertRaises(TypeError, multiply, [1], 3.14)
+        self.assertRaises(OverflowError, multiply, [1], PY_SSIZE_T_MAX + 1)
 
         # CRASHES multiply(NULL, 42)
         # CRASHES multiply(42, NULL)
@@ -87,6 +151,11 @@ class CAPITest(unittest.TestCase):
     def test_matrixmultiply(self):
         # Test PyNumber_MatrixMultiply()
         matrixmultiply = _testcapi.number_matrixmultiply
+
+        a, b, r = WithMatrixMul([1]), 2, [1, 1]
+        self.assertEqual(matrixmultiply(a, b), r)
+        self.assertEqual(a, [1])
+        self.assertEqual(b, 2)
 
         # CRASHES matrixmultiply(NULL, NULL)
 
@@ -130,18 +199,6 @@ class CAPITest(unittest.TestCase):
         # Test PyNumber_Power()
         power = _testcapi.number_power
 
-        class IntSubclass(int):
-            pass
-
-        class IntSubclass2(int):
-            def __new__(cls, value):
-                obj = super().__new__(cls)
-                obj.value = value
-                return obj
-
-            def __rpow__(self, other, mod=None):
-                return self.value
-
         self.assertEqual(power(4, 3, NULL), pow(4, 3))
         self.assertEqual(power(0.5, 2, NULL), pow(0.5, 2))
         self.assertEqual(power(2, -1.0, NULL), pow(2, -1.0))
@@ -157,8 +214,8 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, power, 1, 2, "spam")
         self.assertRaises(TypeError, power, 1, 2, object())
 
-        # CRASHES power(NULL, 42)
-        # CRASHES power(42, NULL)
+        # CRASHES power(NULL, 42, 123)
+        # CRASHES power(42, NULL, 123)
 
     def test_negative(self):
         # Test PyNumber_Negative()
@@ -266,79 +323,174 @@ class CAPITest(unittest.TestCase):
         # Test PyNumber_InPlaceAdd()
         inplaceadd = _testcapi.number_inplaceadd
 
-        # CRASHES inplaceadd(NULL)
+        self.assertEqual(inplaceadd(1, 2), 1 + 2)
+        self.assertEqual(inplaceadd(1, 0.75), 1 + 0.75)
+        self.assertEqual(inplaceadd(0.75, 1), 0.75 + 1)
+        self.assertEqual(inplaceadd(1, BadAdd2(2)), 3)
+
+        a, b, r = [1, 2], [3, 4], [1, 2, 3, 4]
+        self.assertEqual(inplaceadd(a, b), r)
+        self.assertEqual(a, r)
+        self.assertEqual(b, [3, 4])
+
+        self.assertRaises(TypeError, inplaceadd, BadAdd2(2), object())
+        self.assertRaises(TypeError, inplaceadd, 1, object())
+        self.assertRaises(TypeError, inplaceadd, object(), 1)
+
+        # CRASHES inplaceadd(NULL, 42)
+        # CRASHES inplaceadd(42, NULL)
 
     def test_inplacesubtract(self):
         # Test PyNumber_InPlaceSubtract()
         inplacesubtract = _testcapi.number_inplacesubtract
 
-        # CRASHES inplacesubtract(NULL)
+        self.assertEqual(inplacesubtract(1, 2), 1 - 2)
+
+        self.assertRaises(TypeError, inplacesubtract, 1, object())
+        self.assertRaises(TypeError, inplacesubtract, object(), 1)
+
+        # CRASHES inplacesubtract(NULL, 42)
+        # CRASHES inplacesubtract(42, NULL)
 
     def test_inplacemultiply(self):
         # Test PyNumber_InPlaceMultiply()
         inplacemultiply = _testcapi.number_inplacemultiply
 
-        # CRASHES inplacemultiply(NULL)
+        self.assertEqual(inplacemultiply(2, 3), 2 * 3)
+
+        a, b, r = [1], 2, [1, 1]
+        self.assertEqual(inplacemultiply(a, b), r)
+        self.assertEqual(a, r)
+        self.assertEqual(b, 2)
+
+        a, b = 2, [1]
+        self.assertEqual(inplacemultiply(a, b), r)
+        self.assertEqual(a, 2)
+        self.assertEqual(b, [1])
+
+        self.assertRaises(TypeError, inplacemultiply, 1, object())
+        self.assertRaises(TypeError, inplacemultiply, object(), 1)
+        self.assertRaises(TypeError, inplacemultiply, ndarray([1], (1,)), 2)
+        self.assertRaises(TypeError, inplacemultiply, 2, ndarray([1], (1,)))
+
+        # CRASHES inplacemultiply(NULL, 42)
+        # CRASHES inplacemultiply(42, NULL)
 
     def test_inplacematrixmultiply(self):
         # Test PyNumber_InPlaceMatrixMultiply()
         inplacematrixmultiply = _testcapi.number_inplacematrixmultiply
 
-        # CRASHES inplacematrixmultiply(NULL)
+        a, b, r = WithMatrixMul([1]), 2, [1, 1]
+        self.assertEqual(inplacematrixmultiply(a, b), r)
+        self.assertEqual(a, r)
+        self.assertEqual(b, 2)
+
+        self.assertRaises(TypeError, inplacematrixmultiply, 2, a)
+
+        # CRASHES inplacematrixmultiply(NULL, 42)
+        # CRASHES inplacematrixmultiply(42, NULL)
 
     def test_inplacefloordivide(self):
         # Test PyNumber_InPlaceFloorDivide()
         inplacefloordivide = _testcapi.number_inplacefloordivide
 
-        # CRASHES inplacefloordivide(NULL)
+        self.assertEqual(inplacefloordivide(4, 3), 4 // 3)
+
+        # CRASHES inplacefloordivide(NULL, 42)
+        # CRASHES inplacefloordivide(42, NULL)
 
     def test_inplacetruedivide(self):
         # Test PyNumber_InPlaceTrueDivide()
         inplacetruedivide = _testcapi.number_inplacetruedivide
 
-        # CRASHES inplacetruedivide(NULL)
+        self.assertEqual(inplacetruedivide(3, 4), 3 / 4)
+
+        # CRASHES inplacetruedivide(NULL, 42)
+        # CRASHES inplacetruedivide(42, NULL)
 
     def test_inplaceremainder(self):
         # Test PyNumber_InPlaceRemainder()
         inplaceremainder = _testcapi.number_inplaceremainder
 
-        # CRASHES inplaceremainder(NULL)
+        self.assertEqual(inplaceremainder(4, 3), 4 % 3)
+
+        # CRASHES inplaceremainder(NULL, 42)
+        # CRASHES inplaceremainder(42, NULL)
 
     def test_inplacepower(self):
         # Test PyNumber_InPlacePower()
         inplacepower = _testcapi.number_inplacepower
 
-        # CRASHES inplacepower(NULL)
+        self.assertEqual(inplacepower(2, 3, NULL), pow(2, 3))
+        self.assertEqual(inplacepower(2, 3, 4), pow(2, 3, 4))
+        self.assertEqual(inplacepower(IntSubclass2(2), 2, NULL), 2)
+
+        self.assertRaises(TypeError, inplacepower,
+                          IntSubclass2(NotImplemented), object(), NULL)
+        self.assertRaises(TypeError, inplacepower, object(), 2, NULL)
+
+        # CRASHES inplacepower(NULL, 42, 123)
+        # CRASHES inplacepower(42, NULL, 123)
 
     def test_inplacelshift(self):
         # Test PyNumber_InPlaceLshift()
         inplacelshift = _testcapi.number_inplacelshift
 
-        # CRASHES inplacelshift(NULL)
+        self.assertEqual(inplacelshift(3, 5), 3 << 5)
+
+        # CRASHES inplacelshift(NULL, 42)
+        # CRASHES inplacelshift(42, NULL)
 
     def test_inplacershift(self):
         # Test PyNumber_InPlaceRshift()
         inplacershift = _testcapi.number_inplacershift
 
-        # CRASHES inplacershift(NULL)
+        self.assertEqual(inplacershift(5, 3), 5 >> 3)
+
+        # CRASHES inplacershift(NULL, 42)
+        # CRASHES inplacershift(42, NULL)
 
     def test_inplaceand(self):
         # Test PyNumber_InPlaceAnd()
         inplaceand = _testcapi.number_inplaceand
 
-        # CRASHES inplaceand(NULL)
+        self.assertEqual(inplaceand(0b10, 0b01), 0b10 & 0b01)
+
+        a, b, r = {1, 2}, {2, 3}, {1, 2} & {2, 3}
+        self.assertEqual(inplaceand(a, b), r)
+        self.assertEqual(a, r)
+        self.assertEqual(b, {2, 3})
+
+        # CRASHES inplaceand(NULL, 42)
+        # CRASHES inplaceand(42, NULL)
 
     def test_inplacexor(self):
         # Test PyNumber_InPlaceXor()
         inplacexor = _testcapi.number_inplacexor
 
-        # CRASHES inplacexor(NULL)
+        self.assertEqual(inplacexor(0b10, 0b01), 0b10 ^ 0b01)
+
+        a, b, r = {1, 2}, {2, 3}, {1, 2} ^ {2, 3}
+        self.assertEqual(inplacexor(a, b), r)
+        self.assertEqual(a, r)
+        self.assertEqual(b, {2, 3})
+
+        # CRASHES inplacexor(NULL, 42)
+        # CRASHES inplacexor(42, NULL)
 
     def test_inplaceor(self):
         # Test PyNumber_InPlaceOr()
         inplaceor = _testcapi.number_inplaceor
 
-        # CRASHES inplaceor(NULL)
+        self.assertEqual(inplaceor(0b10, 0b01), 0b10 | 0b01)
+
+        a, b, r = {1, 2}, {2, 3}, {1, 2} | {2, 3}
+        self.assertEqual(inplaceor(a, b), r)
+        self.assertEqual(a, r)
+        self.assertEqual(b, {2, 3})
+
+        # CRASHES inplaceor(NULL, 42)
+        # CRASHES inplaceor(42, NULL)
 
     def test_long(self):
         # Test PyNumber_Long()
@@ -359,10 +511,24 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(DeprecationWarning, long, BadInt2())
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(long(BadInt2()), 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, long, WithTrunc(42))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(long(WithTrunc(42)), 42)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(long(WithTrunc(IntSubclass(42))), 42)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(long(WithTrunc(IndexLike(42))), 42)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, long, WithTrunc(1.25))
 
         self.assertRaises(TypeError, long, 1j)
         self.assertRaises(TypeError, long, object())
         self.assertRaises(SystemError, long, NULL)
+        self.assertRaises(RuntimeError, long, WithBadTrunc())
+        self.assertRaises(ValueError, long, WithBadTrunc2())
 
     def test_float(self):
         # Test PyNumber_Float()
@@ -385,6 +551,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(OverflowError, float_, IndexLike(2**2000))
         self.assertRaises(TypeError, float_, 1j)
         self.assertRaises(TypeError, float_, object())
+        self.assertRaises(TypeError, float_, BadFloat3())
         self.assertRaises(SystemError, float_, NULL)
 
     def test_index(self):
