@@ -231,6 +231,9 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
+// Alias kept for backward compatibility
+#define _PyThreadState_UncheckedGet PyThreadState_GetUnchecked
+
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
