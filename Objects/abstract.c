@@ -1164,29 +1164,10 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
     return result;
 }
 
-PyObject *
-PyNumber_MatrixMultiply(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_matrix_multiply), "@");
-}
-
-PyObject *
-PyNumber_FloorDivide(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_floor_divide), "//");
-}
-
-PyObject *
-PyNumber_TrueDivide(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_true_divide), "/");
-}
-
-PyObject *
-PyNumber_Remainder(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_remainder), "%");
-}
+BINARY_FUNC(PyNumber_MatrixMultiply, nb_matrix_multiply, "@")
+BINARY_FUNC(PyNumber_FloorDivide, nb_floor_divide, "//")
+BINARY_FUNC(PyNumber_TrueDivide, nb_true_divide, "/")
+BINARY_FUNC(PyNumber_Remainder, nb_remainder, "%")
 
 PyObject *
 PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
