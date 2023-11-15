@@ -288,9 +288,8 @@ html_context = {
     "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
 
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
+# This 'Last updated on:' timestamp is inserted at the bottom of every page.
+html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime())
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
