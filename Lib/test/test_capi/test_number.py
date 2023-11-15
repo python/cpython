@@ -33,6 +33,11 @@ class IndexLike:
         return self.value
 
 
+class BadIndex3:
+    def __index__(self):
+        raise RuntimeError
+
+
 class IntSubclass(int):
     pass
 
@@ -46,6 +51,16 @@ class IntSubclass2(int):
     def __rpow__(self, other, mod=None):
         return self.value
     __ipow__ = __rpow__
+
+
+class BadInt3:
+    def __int__(self):
+        raise RuntimeError
+
+
+class BadFloat3:
+    def __float__(self):
+        raise RuntimeError
 
 
 class WithMatrixMul(list):
@@ -78,11 +93,6 @@ class WithBadTrunc:
 
 class WithBadTrunc2:
     __trunc__ = BadDescr()
-
-
-class BadFloat3:
-    def __float__(self):
-        pass
 
 
 class CAPITest(unittest.TestCase):
@@ -199,23 +209,23 @@ class CAPITest(unittest.TestCase):
         # Test PyNumber_Power()
         power = _testcapi.number_power
 
-        self.assertEqual(power(4, 3, NULL), pow(4, 3))
-        self.assertEqual(power(0.5, 2, NULL), pow(0.5, 2))
-        self.assertEqual(power(2, -1.0, NULL), pow(2, -1.0))
+        self.assertEqual(power(4, 3), pow(4, 3))
+        self.assertEqual(power(0.5, 2), pow(0.5, 2))
+        self.assertEqual(power(2, -1.0), pow(2, -1.0))
         self.assertEqual(power(4, 11, 5), pow(4, 11, 5))
-        self.assertEqual(power(4, IntSubclass(11), NULL), pow(4, 11))
-        self.assertEqual(power(4, IntSubclass2(11), NULL), 11)
+        self.assertEqual(power(4, IntSubclass(11)), pow(4, 11))
+        self.assertEqual(power(4, IntSubclass2(11)), 11)
         self.assertEqual(power(4, IntSubclass2(NotImplemented), NULL), 1)
 
-        self.assertRaises(TypeError, power, "spam", 42, NULL)
-        self.assertRaises(TypeError, power, object(), 42, NULL)
-        self.assertRaises(TypeError, power, 42, "spam", NULL)
-        self.assertRaises(TypeError, power, 42, object(), NULL)
+        self.assertRaises(TypeError, power, "spam", 42)
+        self.assertRaises(TypeError, power, object(), 42)
+        self.assertRaises(TypeError, power, 42, "spam")
+        self.assertRaises(TypeError, power, 42, object())
         self.assertRaises(TypeError, power, 1, 2, "spam")
         self.assertRaises(TypeError, power, 1, 2, object())
 
-        # CRASHES power(NULL, 42, 123)
-        # CRASHES power(42, NULL, 123)
+        # CRASHES power(NULL, 42)
+        # CRASHES power(42, NULL)
 
     def test_negative(self):
         # Test PyNumber_Negative()
@@ -421,16 +431,16 @@ class CAPITest(unittest.TestCase):
         # Test PyNumber_InPlacePower()
         inplacepower = _testcapi.number_inplacepower
 
-        self.assertEqual(inplacepower(2, 3, NULL), pow(2, 3))
+        self.assertEqual(inplacepower(2, 3), pow(2, 3))
         self.assertEqual(inplacepower(2, 3, 4), pow(2, 3, 4))
-        self.assertEqual(inplacepower(IntSubclass2(2), 2, NULL), 2)
+        self.assertEqual(inplacepower(IntSubclass2(2), 2), 2)
 
         self.assertRaises(TypeError, inplacepower,
-                          IntSubclass2(NotImplemented), object(), NULL)
-        self.assertRaises(TypeError, inplacepower, object(), 2, NULL)
+                          IntSubclass2(NotImplemented), object())
+        self.assertRaises(TypeError, inplacepower, object(), 2)
 
-        # CRASHES inplacepower(NULL, 42, 123)
-        # CRASHES inplacepower(42, NULL, 123)
+        # CRASHES inplacepower(NULL, 42)
+        # CRASHES inplacepower(42, NULL)
 
     def test_inplacelshift(self):
         # Test PyNumber_InPlaceLshift()
@@ -529,6 +539,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, long, NULL)
         self.assertRaises(RuntimeError, long, WithBadTrunc())
         self.assertRaises(ValueError, long, WithBadTrunc2())
+        self.assertRaises(RuntimeError, long, BadInt3())
 
     def test_float(self):
         # Test PyNumber_Float()
@@ -551,8 +562,8 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(OverflowError, float_, IndexLike(2**2000))
         self.assertRaises(TypeError, float_, 1j)
         self.assertRaises(TypeError, float_, object())
-        self.assertRaises(TypeError, float_, BadFloat3())
         self.assertRaises(SystemError, float_, NULL)
+        self.assertRaises(RuntimeError, float_, BadFloat3())
 
     def test_index(self):
         # Test PyNumber_Index()
@@ -568,6 +579,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, index, BadIndex())
         self.assertRaises(TypeError, index, object())
         self.assertRaises(SystemError, index, NULL)
+        self.assertRaises(RuntimeError, index, BadIndex3())
 
     def test_tobase(self):
         # Test PyNumber_ToBase()
