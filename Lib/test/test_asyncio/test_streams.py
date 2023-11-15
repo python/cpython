@@ -1105,9 +1105,11 @@ os.close(fd)
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+
+            # Make "loop is closed" occur first before "del wr" for this test.
             self.loop.stop()
             wr.close()
-            while not wr._loop.is_closed():
+            while not self.loop.is_closed():
                 await asyncio.sleep(0.0)
 
             with self.assertWarns(ResourceWarning) as cm:
@@ -1122,6 +1124,7 @@ os.close(fd)
         with test_utils.run_test_server() as httpd:
             try:
                 self.loop.run_until_complete(inner(httpd))
+            # This exception is caused by `self.loop.stop()` as expected.
             except RuntimeError:
                 pass
             finally:
