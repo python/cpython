@@ -325,7 +325,8 @@ uop_dealloc(_PyUOpExecutorObject *self) {
 }
 
 static const char *
-uop_name(int index) {
+uop_name(int index)
+{
     if (index <= MAX_REAL_OPCODE) {
         return _PyOpcode_OpName[index];
     }
@@ -832,6 +833,24 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     assert(dest == -1);
     executor->base.execute = _PyUopExecute;
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
+#ifdef Py_DEBUG
+    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
+    int lltrace = 0;
+    if (python_lltrace != NULL && *python_lltrace >= '0') {
+        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+    }
+    if (lltrace >= 2) {
+        printf("Optimized executor (length %d):\n", length);
+        for (int i = 0; i < length; i++) {
+            printf("%4d %s(%d, %d, %" PRIu64 ")\n",
+                   i,
+                   uop_name(executor->trace[i].opcode),
+                   executor->trace[i].oparg,
+                   executor->trace[i].target,
+                   executor->trace[i].operand);
+        }
+    }
+#endif
     return (_PyExecutorObject *)executor;
 }
 
