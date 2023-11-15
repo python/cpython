@@ -19,7 +19,13 @@ _random_Random_random_impl(RandomObject *self);
 static PyObject *
 _random_Random_random(RandomObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _random_Random_random_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_random_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_random_Random_seed__doc__,
@@ -51,7 +57,9 @@ _random_Random_seed(RandomObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     n = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _random_Random_seed_impl(self, n);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -72,7 +80,13 @@ _random_Random_getstate_impl(RandomObject *self);
 static PyObject *
 _random_Random_getstate(RandomObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _random_Random_getstate_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_getstate_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_random_Random_setstate__doc__,
@@ -83,6 +97,21 @@ PyDoc_STRVAR(_random_Random_setstate__doc__,
 
 #define _RANDOM_RANDOM_SETSTATE_METHODDEF    \
     {"setstate", (PyCFunction)_random_Random_setstate, METH_O, _random_Random_setstate__doc__},
+
+static PyObject *
+_random_Random_setstate_impl(RandomObject *self, PyObject *state);
+
+static PyObject *
+_random_Random_setstate(RandomObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_setstate_impl(self, state);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_random_Random_getrandbits__doc__,
 "getrandbits($self, k, /)\n"
@@ -106,9 +135,11 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _random_Random_getrandbits_impl(self, k);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c800a28c2d7b9d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c2f4af29f3e3241 input=a9049054013a1b77]*/
