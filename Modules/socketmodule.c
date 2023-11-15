@@ -8803,6 +8803,9 @@ socket_exec(PyObject *m)
 #ifdef NI_DGRAM
     ADD_INT_MACRO(m, NI_DGRAM);
 #endif
+#ifdef NI_IDN
+    ADD_INT_MACRO(m, NI_IDN);
+#endif
 
     /* shutdown() parameters */
 #ifdef SHUT_RD
