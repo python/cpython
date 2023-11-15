@@ -576,6 +576,7 @@ readline_set_completer_delims(PyObject *module, PyObject *string)
     if (break_chars) {
         free(completer_word_break_characters);
         completer_word_break_characters = break_chars;
+        rl_basic_word_break_characters = break_chars;
         rl_completer_word_break_characters = break_chars;
         Py_RETURN_NONE;
     }
@@ -1267,6 +1268,7 @@ setup_readline(readlinestate *mod_state)
     completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+    rl_basic_word_break_characters = completer_word_break_characters;
     rl_completer_word_break_characters = completer_word_break_characters;
 
     mod_state->begidx = PyLong_FromLong(0L);
