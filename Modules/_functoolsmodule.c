@@ -1300,7 +1300,7 @@ Report cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
-/*[clinic end generated code: output=cc796a0b06dbd717 input=f05e5b6ebfe38645]*/
+/*[clinic end generated code: output=cc796a0b06dbd717 input=00e1acb31aa21ecc]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     if (_self->maxsize == -1) {
@@ -1322,7 +1322,7 @@ Clear the cache and cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
-/*[clinic end generated code: output=58423b35efc3e381 input=6ca59dba09b12584]*/
+/*[clinic end generated code: output=58423b35efc3e381 input=dfa33acbecf8b4b2]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     lru_list_elem *list = lru_cache_unlink_list(_self);
