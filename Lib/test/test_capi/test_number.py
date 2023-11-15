@@ -1,4 +1,5 @@
 import unittest
+import sys
 import warnings
 
 from test.support import import_helper
@@ -129,8 +130,32 @@ class CAPITest(unittest.TestCase):
         # Test PyNumber_Power()
         power = _testcapi.number_power
 
-        self.assertEqual(power(4, 3, None), pow(4, 3))
+        class IntSubclass(int):
+            pass
+
+        class IntSubclass2(int):
+            def __new__(cls, value):
+                obj = super().__new__(cls)
+                obj.value = value
+                return obj
+
+            def __rpow__(self, other, mod=None):
+                return self.value
+
+        self.assertEqual(power(4, 3, NULL), pow(4, 3))
+        self.assertEqual(power(0.5, 2, NULL), pow(0.5, 2))
+        self.assertEqual(power(2, -1.0, NULL), pow(2, -1.0))
         self.assertEqual(power(4, 11, 5), pow(4, 11, 5))
+        self.assertEqual(power(4, IntSubclass(11), NULL), pow(4, 11))
+        self.assertEqual(power(4, IntSubclass2(11), NULL), 11)
+        self.assertEqual(power(4, IntSubclass2(NotImplemented), NULL), 1)
+
+        self.assertRaises(TypeError, power, "spam", 42, NULL)
+        self.assertRaises(TypeError, power, object(), 42, NULL)
+        self.assertRaises(TypeError, power, 42, "spam", NULL)
+        self.assertRaises(TypeError, power, 42, object(), NULL)
+        self.assertRaises(TypeError, power, 1, 2, "spam")
+        self.assertRaises(TypeError, power, 1, 2, object())
 
         # CRASHES power(NULL, 42)
         # CRASHES power(42, NULL)
@@ -189,6 +214,20 @@ class CAPITest(unittest.TestCase):
         rshift = _testcapi.number_rshift
 
         self.assertEqual(rshift(5, 3), 5 >> 3)
+
+        # RHS implements __rrshift__ but returns NotImplemented
+        with self.assertRaises(TypeError) as context:
+            print >> 42
+        self.assertIn('Did you mean "print(<message>, '
+                      'file=<output_stream>)"?', str(context.exception))
+
+        # Test stream redirection hint is specific to print
+        with self.assertRaises(TypeError) as context:
+            max >> sys.stderr
+        self.assertNotIn('Did you mean ', str(context.exception))
+
+        with self.assertRaises(TypeError) as context:
+            1 >> "spam"
 
         # CRASHES rshift(NULL, 1)
         # CRASHES rshift(1, NULL)
