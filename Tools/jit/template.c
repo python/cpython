@@ -23,6 +23,7 @@
 extern _PyUOpExecutorObject _JIT_CURRENT_EXECUTOR;
 extern void _JIT_OPARG;
 extern void _JIT_OPERAND;
+extern void _JIT_TARGET;
 
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
@@ -35,19 +36,16 @@ extern void _JIT_OPERAND;
 #define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) ((void)0)
-#undef JUMP_TO_OPARG
-#define JUMP_TO_OPARG()     \
-    do {                    \
-        _jump_taken = true; \
-    } while (0)
+#undef JUMP_TO_TOP
+#define JUMP_TO_TOP() ((void)0)
 
-#define TAIL_CALL(WHERE)                                              \
-    do {                                                              \
-        _PyInterpreterFrame *(WHERE)(_PyInterpreterFrame *frame,      \
-                                            PyObject **stack_pointer, \
-                                            PyThreadState *tstate);   \
-        __attribute__((musttail))                                     \
-        return (WHERE)(frame, stack_pointer, tstate);                 \
+#define TAIL_CALL(WHERE)                                         \
+    do {                                                         \
+        _PyInterpreterFrame *(WHERE)(_PyInterpreterFrame *frame, \
+                                     PyObject **stack_pointer,   \
+                                     PyThreadState *tstate);     \
+        __attribute__((musttail))                                \
+        return (WHERE)(frame, stack_pointer, tstate);            \
     } while (0)
 
 _PyInterpreterFrame *
@@ -59,22 +57,23 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
     uint32_t opcode = _JIT_OPCODE;
     int32_t oparg = (uintptr_t)&_JIT_OPARG;
     uint64_t operand = (uintptr_t)&_JIT_OPERAND;
+    uint32_t target = (uintptr_t)&_JIT_TARGET;
     // Pretend to modify the values to keep clang from being clever and
     // optimizing them based on valid extern addresses, which must be in
     // range(1, 2**31 - 2**24):
     asm("" : "+r" (current_executor));
     asm("" : "+r" (oparg));
     asm("" : "+r" (operand));
-    bool _jump_taken = false;
+    asm("" : "+r" (target));
+    // Now, the actual instruction definitions (only one will be used):
+    if (opcode == _JUMP_TO_TOP) {
+        CHECK_EVAL_BREAKER();
+        TAIL_CALL(_JIT_TOP);
+    }
     switch (opcode) {
-        // Now, the actual instruction definitions (only one will be used):
 #include "executor_cases.c.h"
         default:
             Py_UNREACHABLE();
-    }
-    if (_jump_taken) {
-        assert(opcode == _JUMP_TO_TOP || opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
-        TAIL_CALL(_JIT_JUMP);
     }
     TAIL_CALL(_JIT_CONTINUE);
     // Labels that the instruction implementations expect to exist:
@@ -93,5 +92,6 @@ error_tier_two:
     TAIL_CALL(_JIT_ERROR);
 deoptimize:
 exit_trace:
+    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + target;
     TAIL_CALL(_JIT_DEOPTIMIZE);
 }

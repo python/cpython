@@ -3989,7 +3989,7 @@ dummy_func(
         }
 
         op(_JUMP_TO_TOP, (--)) {
-            JUMP_TO_OPARG();
+            JUMP_TO_TOP();
             CHECK_EVAL_BREAKER();
         }
 

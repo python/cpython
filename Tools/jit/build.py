@@ -224,9 +224,10 @@ class HoleValue(enum.Enum):
     _JIT_DATA = enum.auto()
     _JIT_DEOPTIMIZE = enum.auto()
     _JIT_ERROR = enum.auto()
-    _JIT_JUMP = enum.auto()
     _JIT_OPARG = enum.auto()
     _JIT_OPERAND = enum.auto()
+    _JIT_TARGET = enum.auto()
+    _JIT_TOP = enum.auto()
     _JIT_ZERO = enum.auto()
 
 
@@ -303,7 +304,7 @@ _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 async def run(*args: str | os.PathLike[str], capture: bool = False) -> bytes | None:
     async with _SEMAPHORE:
-        print(shlex.join(map(str, args)))
+        # print(shlex.join(map(str, args)))
         process = await asyncio.create_subprocess_exec(
             *args, stdout=subprocess.PIPE if capture else None, cwd=ROOT
         )

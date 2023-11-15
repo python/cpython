@@ -398,7 +398,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #define GOTO_TIER_ONE() goto exit_trace;
 
-#define JUMP_TO_OPARG()                             \
+#define JUMP_TO_TOP()                               \
     do {                                            \
         next_uop = current_executor->trace + oparg; \
     } while (0)

@@ -120,7 +120,7 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
         case HoleKind_R_X86_64_PC32:
         case HoleKind_R_X86_64_PLT32:
         case HoleKind_R_X86_64_REX_GOTPCRELX:
-        case HoleKind_X86_64_RELOC_BRANCH: 
+        case HoleKind_X86_64_RELOC_BRANCH:
         case HoleKind_X86_64_RELOC_GOT:
         case HoleKind_X86_64_RELOC_GOT_LOAD: {
             patch -= (uintptr_t)location;
@@ -130,7 +130,7 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
         case HoleKind_ARM64_RELOC_UNSIGNED:
         case HoleKind_IMAGE_REL_AMD64_ADDR64:
         case HoleKind_R_AARCH64_ABS64:
-        case HoleKind_R_X86_64_64: 
+        case HoleKind_R_X86_64_64:
         case HoleKind_X86_64_RELOC_UNSIGNED:{
             *(uint64_t *)addr = patch;
             return;
@@ -382,9 +382,10 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         patches[_JIT_CURRENT_EXECUTOR] = (uintptr_t)executor;
         patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
         patches[_JIT_ERROR] = (uintptr_t)error_stub;
-        patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
         patches[_JIT_OPARG] = instruction->oparg;
         patches[_JIT_OPERAND] = instruction->operand;
+        patches[_JIT_TARGET] = instruction->target;
+        patches[_JIT_TOP] = (uintptr_t)memory + trampoline_stencil.nbytes;
         patches[_JIT_ZERO] = 0;
         copy_and_patch(stencil, patches);
         head += stencil->nbytes;
