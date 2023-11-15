@@ -6,6 +6,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 
 
 #include "clinic/_functoolsmodule.c.h"
@@ -1274,7 +1275,11 @@ lru_cache_dealloc(lru_cache_object *obj)
 static PyObject *
 lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    return self->wrapper(self, args, kwds);
+    PyObject* result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = self->wrapper(self, args, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
@@ -1287,6 +1292,7 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_info
 
 Report cache statistics
@@ -1308,6 +1314,7 @@ _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_clear
 
 Clear the cache and cache statistics
