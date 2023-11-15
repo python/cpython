@@ -446,7 +446,8 @@ translate_bytecode_to_trace(
 #define DPRINTF(level, ...)
 #endif
 
-#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND) \
+
+#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     DPRINTF(2, \
             "  ADD_TO_TRACE(%s, %d, %" PRIu64 ")\n", \
             uop_name(OPCODE), \
@@ -458,22 +459,11 @@ translate_bytecode_to_trace(
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
     trace[trace_length].operand = (OPERAND); \
+    trace[trace_length].target = (TARGET); \
     trace_length++;
 
 #define INSTR_IP(INSTR, CODE) \
     ((uint32_t)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
-
-#define ADD_TO_STUB(INDEX, OPCODE, OPARG, OPERAND) \
-    DPRINTF(2, "    ADD_TO_STUB(%d, %s, %d, %" PRIu64 ")\n", \
-            (INDEX), \
-            uop_name(OPCODE), \
-            (OPARG), \
-            (uint64_t)(OPERAND)); \
-    assert(reserved > 0); \
-    reserved--; \
-    trace[(INDEX)].opcode = (OPCODE); \
-    trace[(INDEX)].oparg = (OPARG); \
-    trace[(INDEX)].operand = (OPERAND);
 
 // Reserve space for n uops
 #define RESERVE_RAW(n, opname) \
@@ -483,7 +473,7 @@ translate_bytecode_to_trace(
         OPT_STAT_INC(trace_too_long); \
         goto done; \
     } \
-    reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
+    reserved = (n);  // Keep ADD_TO_TRACE honest
 
 // Reserve space for main+stub uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
 #define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 3, uop_name(opcode))
@@ -493,7 +483,7 @@ translate_bytecode_to_trace(
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
         OPT_STAT_INC(trace_stack_overflow); \
-        ADD_TO_TRACE(_SET_IP, 0, 0); \
+        ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
         goto done; \
     } \
     trace_stack[trace_stack_depth].code = code; \
@@ -513,22 +503,28 @@ translate_bytecode_to_trace(
             PyUnicode_AsUTF8(code->co_filename),
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
-
+    uint32_t target = 0;
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
+        target = INSTR_IP(instr, code);
         RESERVE_RAW(3, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
-        ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
-        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0);
+        ADD_TO_TRACE(_SET_IP, target, 0, target);
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
         uint32_t extras = 0;
 
-        while (opcode == EXTENDED_ARG) {
+
+        if (opcode == EXTENDED_ARG) {
             instr++;
             extras += 1;
             opcode = instr->op.code;
             oparg = (oparg << 8) | instr->op.arg;
+            if (opcode == EXTENDED_ARG) {
+                instr--;
+                goto done;
+            }
         }
 
         if (opcode == ENTER_EXECUTOR) {
@@ -554,7 +550,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, uopcode=%s\n",
                         uop_name(opcode), oparg,
                         counter, bitcount, jump_likely, uop_name(uopcode));
-                ADD_TO_TRACE(uopcode, max_length, 0);
+                ADD_TO_TRACE(uopcode, max_length, 0, target);
                 if (jump_likely) {
                     _Py_CODEUNIT *target_instr = next_instr + oparg;
                     DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
@@ -569,7 +565,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             {
                 if (instr + 2 - oparg == initial_instr && code == initial_code) {
                     RESERVE(1, 0);
-                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0);
+                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
                 }
                 else {
                     OPT_STAT_INC(inner_loop);
@@ -653,7 +649,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
                         }
-                        ADD_TO_TRACE(uop, oparg, operand);
+                        ADD_TO_TRACE(uop, oparg, operand, target);
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
                             DPRINTF(2,
@@ -682,7 +678,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
                                     OPT_STAT_INC(recursive_call);
-                                    ADD_TO_TRACE(_SET_IP, 0, 0);
+                                    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
                                 if (new_code->co_version != func_version) {
@@ -690,7 +686,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     // Perhaps it may happen again, so don't bother tracing.
                                     // TODO: Reason about this -- is it better to bail or not?
                                     DPRINTF(2, "Bailing because co_version != func_version\n");
-                                    ADD_TO_TRACE(_SET_IP, 0, 0);
+                                    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
                                 // Increment IP to the return address
@@ -707,7 +703,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     2 * INSTR_IP(instr, code));
                                 goto top;
                             }
-                            ADD_TO_TRACE(_SET_IP, 0, 0);
+                            ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                             goto done;
                         }
                     }
@@ -732,7 +728,7 @@ done:
     assert(code == initial_code);
     // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, _EXIT_TRACE
     if (trace_length > 4) {
-        ADD_TO_TRACE(_EXIT_TRACE, 0, 0);
+        ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
         DPRINTF(1,
                 "Created a trace for %s (%s:%d) at byte offset %d -- length %d+%d\n",
                 PyUnicode_AsUTF8(code->co_qualname),

@@ -1067,6 +1067,7 @@ deoptimize:
     UOP_STAT_INC(opcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE((PyCodeObject *)frame->f_executable);
     Py_DECREF(current_executor);
     // Fall through
 // Jump here from ENTER_EXECUTOR
@@ -1077,6 +1078,7 @@ enter_tier_one:
 // Jump here from _EXIT_TRACE
 exit_trace:
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE((PyCodeObject *)frame->f_executable);
     Py_DECREF(current_executor);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     goto enter_tier_one;

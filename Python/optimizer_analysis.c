@@ -17,21 +17,15 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
     // Note that we don't enter stubs, those SET_IPs are needed.
     int last_set_ip = -1;
-    bool need_ip = true;
     bool maybe_invalid = false;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         if (opcode == _SET_IP) {
-            if (!need_ip && last_set_ip >= 0) {
-                buffer[last_set_ip].opcode = NOP;
-            }
-            need_ip = false;
+            buffer[pc].opcode = NOP;
             last_set_ip = pc;
         }
         else if (opcode == _CHECK_VALIDITY) {
             if (maybe_invalid) {
-                /* Exiting the trace requires that IP is correct */
-                need_ip = true;
                 maybe_invalid = false;
             }
             else {
@@ -42,12 +36,16 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             break;
         }
         else {
-            // If opcode has ERROR or DEOPT, set need_ip to true
-            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG) || opcode == _PUSH_FRAME) {
-                need_ip = true;
-            }
-            if (_PyOpcode_opcode_metadata[opcode].flags & HAS_ESCAPES_FLAG) {
+            if (OPCODE_HAS_ESCAPES(opcode)) {
                 maybe_invalid = true;
+                if (last_set_ip >= 0) {
+                    buffer[last_set_ip].opcode = _SET_IP;
+                }
+            }
+            if (OPCODE_HAS_ERROR(opcode) || opcode == _PUSH_FRAME) {
+                if (last_set_ip >= 0) {
+                    buffer[last_set_ip].opcode = _SET_IP;
+                }
             }
         }
     }
