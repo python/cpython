@@ -1,0 +1,1 @@
+Make hashlib related modules thread-safe without the GIL
