@@ -24,17 +24,19 @@ See also the :c:member:`PyTypeObject.tp_hash` member.
 
    .. c::member:: Py_hash_t (*const hash)(const void *, Py_ssize_t)
 
+      Hash function.
+
    .. c:member:: const char *name
 
-      Hash function (UTF-8 encoded name).
+      Hash function name (UTF-8 encoded string).
 
    .. c:member:: const int hash_bits
 
-      Internal size of hash value.
+      Internal size of the hash value in bits.
 
    .. c:member:: const int seed_bits
 
-      Size of seed input.
+      Size of seed input in bits.
 
    .. versionadded:: 3.4
 
