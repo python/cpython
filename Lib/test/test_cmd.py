@@ -9,7 +9,10 @@ import sys
 import doctest
 import unittest
 import io
+import textwrap
 from test import support
+from test.support.import_helper import import_module
+from test.support.pty_helper import run_pty
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -258,6 +261,37 @@ class CmdPrintExceptionClass(cmd.Cmd):
 
     def default(self, line):
         print(sys.exc_info()[:2])
+
+
+@support.requires_subprocess()
+class CmdTestReadline(unittest.TestCase):
+    def setUpClass():
+        # Ensure that the readline module is loaded
+        # If this fails, the test is skipped because SkipTest will be raised
+        readline = import_module('readline')
+
+    def test_basic_completion(self):
+        script = textwrap.dedent("""
+            import cmd
+            class simplecmd(cmd.Cmd):
+                # Add an additional command to prevent complete 'help' command.
+                def do_EOF(self, args):
+                    return True
+
+            # Concatenate strings so that the output doesn't appear in the source
+            print('hello' + '!')
+            simplecmd().cmdloop()
+        """)
+
+        # List everything starting with '\t\t', there should be multiple matches
+        # then add 'E' and complete 'OF' to 'EOF'
+        input = b"\t\tE\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'EOF', output)
+        self.assertIn(b'help', output)
+        self.assertIn(b'hello!', output)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
