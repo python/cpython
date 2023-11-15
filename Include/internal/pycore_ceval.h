@@ -22,6 +22,8 @@ PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyO
 
 extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 
+extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
+
 // Helper to look up a builtin object
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
@@ -53,16 +55,6 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     _Py_pending_call_func func,
     void *arg,
     int flags);
-
-typedef int (*_Py_simple_func)(void *);
-extern int _Py_CallInInterpreter(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
-extern int _Py_CallInInterpreterAndRawFree(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
 
 extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK

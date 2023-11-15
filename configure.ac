@@ -4502,6 +4502,71 @@ then
 fi
 AC_MSG_RESULT([$with_doc_strings])
 
+# Check for stdatomic.h, required for mimalloc.
+AC_CACHE_CHECK([for stdatomic.h], [ac_cv_header_stdatomic_h], [
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <stdatomic.h>
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
+    int main() {
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
+      return 0;
+    }
+  ]])
+],[ac_cv_header_stdatomic_h=yes],[ac_cv_header_stdatomic_h=no])
+])
+
+AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
+    AC_DEFINE(HAVE_STD_ATOMIC, 1,
+              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
+])
+
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    int val;
+    int main() {
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      return 0;
+    }
+  ]])
+],[ac_cv_builtin_atomic=yes],[ac_cv_builtin_atomic=no])
+])
+
+AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
+])
+
+# --with-mimalloc
+AC_MSG_CHECKING([for --with-mimalloc])
+AC_ARG_WITH([mimalloc],
+  [AS_HELP_STRING([--with-mimalloc],
+                 [build with mimalloc memory allocator (default is yes if C11 stdatomic.h is available.)])],
+  [],
+  [with_mimalloc="$ac_cv_header_stdatomic_h"]
+)
+
+if test "$with_mimalloc" != no; then
+  if test "$ac_cv_header_stdatomic_h" != yes; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    AC_MSG_ERROR([mimalloc requires stdatomic.h, use --without-mimalloc to disable mimalloc.])
+  fi
+  with_mimalloc=yes
+  AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
+  AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
+fi
+
+AC_MSG_RESULT([$with_mimalloc])
+AC_SUBST([WITH_MIMALLOC])
+AC_SUBST([MIMALLOC_HEADERS])
+
 # Check for Python-specific malloc support
 AC_MSG_CHECKING([for --with-pymalloc])
 AC_ARG_WITH(
@@ -6225,9 +6290,11 @@ dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-  dnl If we are here, we found a locally-supplied version of libncursesw.
+  dnl System-supplied ncurses combines libncurses/libpanel and supports wide
+  dnl characters, so we can use it like ncursesw.
+  dnl If a locally-supplied version of libncursesw is found, we will use that.
   dnl There should also be a libpanelw.
   dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
   dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
@@ -6530,6 +6597,8 @@ SRCDIRS="\
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
+  Objects/mimalloc \
+  Objects/mimalloc/prim \
   Parser \
   Parser/tokenizer \
   Parser/lexer \
@@ -6626,49 +6695,6 @@ if test "$ac_cv_gcc_asm_for_x87" = yes; then
         ;;
     esac
 fi
-
-# Check for stdatomic.h
-AC_CACHE_CHECK([for stdatomic.h], [ac_cv_header_stdatomic_h], [
-AC_LINK_IFELSE(
-[
-  AC_LANG_SOURCE([[
-    #include <stdatomic.h>
-    atomic_int int_var;
-    atomic_uintptr_t uintptr_var;
-    int main(void) {
-      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
-      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
-      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
-      return 0;
-    }
-  ]])
-],[ac_cv_header_stdatomic_h=yes],[ac_cv_header_stdatomic_h=no])
-])
-
-AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
-    AC_DEFINE([HAVE_STD_ATOMIC], [1],
-              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
-])
-
-# Check for GCC >= 4.7 and clang __atomic builtin functions
-AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
-AC_LINK_IFELSE(
-[
-  AC_LANG_SOURCE([[
-    int val;
-    int main(void) {
-      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
-      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
-      return 0;
-    }
-  ]])
-],[ac_cv_builtin_atomic=yes],[ac_cv_builtin_atomic=no])
-])
-
-AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
-    AC_DEFINE([HAVE_BUILTIN_ATOMIC], [1],
-      [Has builtin __atomic_load_n() and __atomic_store_n() functions])
-])
 
 # ensurepip option
 AC_MSG_CHECKING([for ensurepip])
@@ -7401,3 +7427,10 @@ AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
 Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 ])])
+
+if test "$ac_cv_header_stdatomic_h" != "yes"; then
+  AC_MSG_NOTICE(m4_normalize([
+    Your compiler or platform does have a working C11 stdatomic.h. A future
+    version of Python may require stdatomic.h.
+  ]))
+fi
