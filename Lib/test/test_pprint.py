@@ -622,70 +622,36 @@ frozenset2({0,
         self.assertEqual(pprint.pformat(frozenset3(range(7)), width=20),
                          'frozenset3({0, 1, 2, 3, 4, 5, 6})')
 
-    @test.support.cpython_only
     def test_set_of_sets_reprs(self):
+        # This test creates a complex arrangement of frozensets and
+        # compares the pretty-printed repr against a string hard-coded in
+        # the test.  The hard-coded repr depends on the sort order of
+        # frozensets.
+        #
+        # However, as the docs point out: "Since sets only define
+        # partial ordering (subset relationships), the output of the
+        # list.sort() method is undefined for lists of sets."
+        #
+        # >>> frozenset({0}) < frozenset({1})
+        # False
+        # >>> frozenset({1}) < frozenset({0})
+        # False
+        #
+        # In this test we list all possible invariants of the result
+        # for unordered frozensets.
+        #
         # This test has a long history, see:
         # - https://github.com/python/cpython/commit/969fe57baa0eb80332990f9cda936a33e13fabef
-        # - https://bugs.python.org/issue13907
+        # - https://github.com/python/cpython/issues/58115
         # - https://github.com/python/cpython/issues/111147
 
         import textwrap
 
-        # Single-line:
-        self.assertEqual(
-            pprint.pformat(frozenset((frozenset(), frozenset((1,))))),
-            'frozenset({frozenset(), frozenset({1})})',
-        )
-        self.assertEqual(
-            pprint.pformat(frozenset((frozenset(), frozenset((1, 2))))),
-            'frozenset({frozenset(), frozenset({1, 2})})',
-        )
+        # Single-line, always ordered:
         self.assertEqual(
             pprint.pformat(frozenset((frozenset(), frozenset((1, 2, 3))))),
             'frozenset({frozenset(), frozenset({1, 2, 3})})',
         )
-
-        # Multiline:
-        expected_format = textwrap.dedent("""
-        frozenset({frozenset(),
-                   frozenset({0,
-                              1,
-                              2,
-                              3,
-                              4,
-                              5,
-                              6,
-                              7,
-                              8,
-                              9,
-                              10,
-                              11,
-                              12,
-                              13,
-                              14,
-                              15,
-                              16,
-                              17,
-                              18,
-                              19,
-                              20,
-                              21,
-                              22,
-                              23,
-                              24})})""")
-        self.assertEqual(
-            pprint.pformat(
-                frozenset((
-                    frozenset(),
-                    frozenset(range(25)),
-                )),
-                # len(str(frozenset(range(25)))) is longer than 80
-                width=80,
-            ),
-            expected_format[1:],  # strip first newline
-        )
-
-        # And also `frozenset`s with `dict`:
         self.assertEqual(
             pprint.pformat({
                 frozenset((1, 2)): frozenset((frozenset(), frozenset((1, 2, 3)))),
@@ -693,18 +659,103 @@ frozenset2({0,
             '{frozenset({1, 2}): frozenset({frozenset(), frozenset({1, 2, 3})})}',
         )
 
-        # and multiline:
-        expected_format = textwrap.dedent("""
-        {frozenset({frozenset(), frozenset({1, 2, 3})}): frozenset({frozenset(),
-                                                                    frozenset({1,
-                                                                               2,
-                                                                               3})})}""")
-        self.assertEqual(
-            pprint.pformat({
-                frozenset((frozenset(), frozenset((1, 2, 3)))):
-                    frozenset((frozenset(), frozenset((1, 2, 3)))),
-            }),
-            expected_format[1:],  # strip first newline
+        # Single-line, unordered:
+        self.assertIn(
+            pprint.pformat(
+                frozenset((
+                    frozenset(("xyz", "qwerty")),
+                    frozenset(("abcd", "spam"))),
+                ),
+            ),
+            [
+                "frozenset({frozenset({'qwerty', 'xyz'}), frozenset({'spam', 'abcd'})})",
+                "frozenset({frozenset({'xyz', 'qwerty'}), frozenset({'spam', 'abcd'})})",
+                "frozenset({frozenset({'qwerty', 'xyz'}), frozenset({'abcd', 'spam'})})",
+                "frozenset({frozenset({'xyz', 'qwerty'}), frozenset({'abcd', 'spam'})})",
+
+                "frozenset({frozenset({'spam', 'abcd'}), frozenset({'qwerty', 'xyz'})})",
+                "frozenset({frozenset({'spam', 'abcd'}), frozenset({'xyz', 'qwerty'})})",
+                "frozenset({frozenset({'abcd', 'spam'}), frozenset({'qwerty', 'xyz'})})",
+                "frozenset({frozenset({'abcd', 'spam'}), frozenset({'xyz', 'qwerty'})})",
+            ],
+        )
+
+        # Multiline, unordered:
+        def check(res, invariants):
+            self.assertIn(res, [textwrap.dedent(i).strip() for i in invariants])
+
+        check(
+            pprint.pformat(
+                frozenset((
+                    frozenset((
+                        "xyz very-very long string",
+                        "qwerty is also absurdly long",
+                    )),
+                    frozenset((
+                        "abcd is even longer that before",
+                        "spam is not so long",
+                    )),
+                )),
+            ),
+            [
+                """
+                frozenset({frozenset({'abcd is even longer that before',
+                                      'spam is not so long'}),
+                           frozenset({'qwerty is also absurdly long',
+                                      'xyz very-very long string'})})
+                """,
+
+                """
+                frozenset({frozenset({'abcd is even longer that before',
+                                      'spam is not so long'}),
+                           frozenset({'xyz very-very long string',
+                                      'qwerty is also absurdly long'})})
+                """,
+
+                """
+                frozenset({frozenset({'spam is not so long',
+                                      'abcd is even longer that before'}),
+                           frozenset({'qwerty is also absurdly long',
+                                      'xyz very-very long string'})})
+                """,
+
+                """
+                frozenset({frozenset({'spam is not so long',
+                                      'abcd is even longer that before'}),
+                           frozenset({'xyz very-very long string',
+                                      'qwerty is also absurdly long'})})
+                """,
+
+                # -
+
+                """
+                frozenset({frozenset({'qwerty is also absurdly long',
+                                      'xyz very-very long string'}),
+                           frozenset({'abcd is even longer that before',
+                                      'spam is not so long'})})
+                """,
+
+                """
+                frozenset({frozenset({'qwerty is also absurdly long',
+                                      'xyz very-very long string'}),
+                           frozenset({'spam is not so long',
+                                      'abcd is even longer that before'})})
+                """,
+
+                """
+                frozenset({frozenset({'xyz very-very long string',
+                                      'qwerty is also absurdly long'}),
+                           frozenset({'abcd is even longer that before',
+                                      'spam is not so long'})})
+                """,
+
+                """
+                frozenset({frozenset({'xyz very-very long string',
+                                      'qwerty is also absurdly long'}),
+                           frozenset({'spam is not so long',
+                                      'abcd is even longer that before'})})
+                """,
+            ],
         )
 
     def test_depth(self):
