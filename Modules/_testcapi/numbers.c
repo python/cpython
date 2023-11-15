@@ -45,7 +45,7 @@ BINARYFUNC(Divmod, divmod)
                                                                      \
         NULLABLE(o1);                                                \
         NULLABLE(o2);                                                \
-        return PyNumber_Power(o1, o2, o3);                           \
+        return PyNumber_##funcsuffix(o1, o2, o3);                    \
     };
 
 TERNARYFUNC(Power, power)
