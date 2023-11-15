@@ -1374,6 +1374,16 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add PyTime C API:
+
+  * :c:type:`PyTime_t` type.
+  * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
+  * :c:func:`PyTime_AsSecondsDouble`, :c:func:`PyTime_Monotonic`,
+    :c:func:`PyTime_PerfCounter` and :c:func:`PyTime_Time`
+    functions.
+
+  (Contributed by Victor Stinner in :gh:`110850`.)
+
 
 Porting to Python 3.13
 ----------------------

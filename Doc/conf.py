@@ -119,11 +119,14 @@ nitpick_ignore = [
     ('c:type', 'wchar_t'),
     ('c:type', '__int64'),
     ('c:type', 'unsigned __int64'),
+    ('c:type', 'double'),
     # Standard C structures
     ('c:struct', 'in6_addr'),
     ('c:struct', 'in_addr'),
     ('c:struct', 'stat'),
     ('c:struct', 'statvfs'),
+    ('c:struct', 'timeval'),
+    ('c:struct', 'timespec'),
     # Standard C macros
     ('c:macro', 'LLONG_MAX'),
     ('c:macro', 'LLONG_MIN'),
@@ -253,12 +256,12 @@ nitpick_ignore += [
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
-# gh-106948: Copy standard C types declared in the "c:type" domain to the
-# "c:identifier" domain, since "c:function" markup looks for types in the
-# "c:identifier" domain. Use list() to not iterate on items which are being
-# added
+# gh-106948: Copy standard C types declared in the "c:type" domain and C
+# structures declared in the "c:struct" domain to the "c:identifier" domain,
+# since "c:function" markup looks for types in the "c:identifier" domain. Use
+# list() to not iterate on items which are being added
 for role, name in list(nitpick_ignore):
-    if role == 'c:type':
+    if role in ('c:type', 'c:struct'):
         nitpick_ignore.append(('c:identifier', name))
 del role, name
 

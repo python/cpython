@@ -262,10 +262,10 @@ random_seed_urandom(RandomObject *self)
 static void
 random_seed_time_pid(RandomObject *self)
 {
-    _PyTime_t now;
+    PyTime_t now;
     uint32_t key[5];
 
-    now = _PyTime_GetSystemClock();
+    now = PyTime_Time();
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
@@ -277,7 +277,7 @@ random_seed_time_pid(RandomObject *self)
     key[2] = 0;
 #endif
 
-    now = _PyTime_GetMonotonicClock();
+    now = PyTime_Monotonic();
     key[3] = (uint32_t)(now & 0xffffffffU);
     key[4] = (uint32_t)(now >> 32);
 
