@@ -37,9 +37,9 @@ BINARYFUNC(Divmod, divmod)
     static PyObject *                                                \
     number_##methsuffix(PyObject *Py_UNUSED(module), PyObject *args) \
     {                                                                \
-        PyObject *o1, *o2, *o3;                                      \
+        PyObject *o1, *o2, *o3 = Py_None;                            \
                                                                      \
-        if (!PyArg_ParseTuple(args, "OOO", &o1, &o2, &o3)) {         \
+        if (!PyArg_ParseTuple(args, "OO|O", &o1, &o2, &o3)) {        \
             return NULL;                                             \
         }                                                            \
                                                                      \
