@@ -1771,32 +1771,54 @@ class TestIssueGH74956(unittest.TestCase):
     def test_simultaneous_asend(self):
         """
         Verify that simultaneous use of generator by different coroutines is not
-        permitted
+        permitted.  We use Tasks to achieve this, where one task is suspended
+        in a `asyncio.sleep()` call inside the generator (during an `asend()` call),
+        and the other task attempts
+        to do an `asend()`, (or `athrow()`, or `aclose()`) on the generator.
         """
 
-        async def run():
+        
+        async def run_collision(op, *args):
+            # Two tasks are created and scheduled.  The first will sleep inside the
+            # `asend()` and the other will then attempt a second operation and fail.
+
             async def consumer():
                 while True:
+                    # task fa will sleep here, and another task will try to iterate
+                    # the generator
                     await asyncio.sleep(0)
                     if (yield) is None:
                         break
 
+            # create and start the generator
+            agenerator = consumer()
+            await agenerator.asend(None)
+
+            # start the first asend() task
+            fa = asyncio.create_task(agenerator.asend("A"))
+
+            # start the second task, which should fail (asend, athrow, aclose)
+            method = getattr(agenerator, op)
+            fb = asyncio.create_task(method(*args))
+
+            # first asend should succeed
+            await fa
+
+            # second operation should fail
+            with self.assertRaises(RuntimeError) as err:
+                await fb
+            assert "already running" in str(err.exception)
+
+            # cleanup partially run generator
+            with self.assertRaises(StopAsyncIteration):
+                await agenerator.asend(None)  # close it
+
+        async def run():
             # try different combinations of asend, athrow, aclose
             # which are clashing with an asend which is already running
             # (and awaiting sleep(0))
             for op, args in [("asend", ["A"]), ("athrow", [EOFError]), ("aclose", [])]:
-                agenerator = consumer()
-                await agenerator.asend(None) # start it
-                # fa will hit sleep and then fb will run
-                fa = asyncio.create_task(agenerator.asend("A"))
-                coro = getattr(agenerator, op)(*args)
-                fb = asyncio.create_task(coro)
-                await fa
-                with self.assertRaises(RuntimeError) as err:
-                    await fb
-                assert "already running" in str(err.exception)
-                with self.assertRaises(StopAsyncIteration):
-                    await agenerator.asend(None)  # close it
+                await run_collision(op, *args)
 
         self.loop.run_until_complete(run())
 
