@@ -98,6 +98,8 @@ typedef struct {
     PyTypeObject *TreeBuilder_Type;
     PyTypeObject *XMLParser_Type;
 
+    /* Strong ref for capsule */
+    PyObject *expat_capsule;
     struct PyExpat_CAPI *expat_capi;
 } elementtreestate;
 
@@ -155,7 +157,7 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->ElementIter_Type);
     Py_CLEAR(st->TreeBuilder_Type);
     Py_CLEAR(st->XMLParser_Type);
-
+    Py_CLEAR(st->expat_capsule);
     st->expat_capi = NULL;
     return 0;
 }
@@ -169,6 +171,7 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->elementpath_obj);
     Py_VISIT(st->comment_factory);
     Py_VISIT(st->pi_factory);
+    Py_VISIT(st->expat_capsule);
 
     // Heap types
     Py_VISIT(st->Element_Type);
@@ -4343,7 +4346,11 @@ module_exec(PyObject *m)
         goto error;
 
     /* link against pyexpat */
-    st->expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
+    st->expat_capsule = _PyImport_GetModuleAttrString("pyexpat", "expat_CAPI");
+    if (st->expat_capsule == NULL) {
+        goto error;
+    }
+    st->expat_capi = PyCapsule_GetPointer(st->expat_capsule, PyExpat_CAPSULE_NAME);
     if (st->expat_capi) {
         /* check that it's usable */
         if (strcmp(st->expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
