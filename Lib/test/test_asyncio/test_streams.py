@@ -1073,6 +1073,65 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
+    def test_unclosed_resource_warnings(self):
+        async def inner(httpd):
+            rd, wr = await asyncio.open_connection(*httpd.address)
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            data = await rd.readline()
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            data = await rd.read()
+            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            with self.assertWarns(ResourceWarning) as cm:
+                del wr
+                gc.collect()
+                self.assertEqual(len(cm.warnings), 1)
+                self.assertTrue(str(cm.warnings[0].message).startswith("unclosed <StreamWriter"))
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with test_utils.run_test_server() as httpd:
+            self.loop.run_until_complete(inner(httpd))
+
+        self.assertEqual(messages, [])
+
+    def test_loop_is_closed_resource_warnings(self):
+        async def inner(httpd):
+            rd, wr = await asyncio.open_connection(*httpd.address)
+
+            wr.write(b'GET / HTTP/1.0\r\n\r\n')
+            data = await rd.readline()
+            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            data = await rd.read()
+            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+
+            # Make "loop is closed" occur first before "del wr" for this test.
+            self.loop.stop()
+            wr.close()
+            while not self.loop.is_closed():
+                await asyncio.sleep(0.0)
+
+            with self.assertWarns(ResourceWarning) as cm:
+                del wr
+                gc.collect()
+                self.assertEqual(len(cm.warnings), 1)
+                self.assertEqual("loop is closed", str(cm.warnings[0].message))
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with test_utils.run_test_server() as httpd:
+            try:
+                self.loop.run_until_complete(inner(httpd))
+            # This exception is caused by `self.loop.stop()` as expected.
+            except RuntimeError:
+                pass
+            finally:
+                gc.collect()
+
+        self.assertEqual(messages, [])
+
     def test_unhandled_exceptions(self) -> None:
         port = socket_helper.find_unused_port()
 
