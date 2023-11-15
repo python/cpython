@@ -108,21 +108,18 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
     uint32_t *addr = (uint32_t *)location;
     switch (hole->kind) {
         case HoleKind_IMAGE_REL_I386_DIR32:
-        case HoleKind_R_386_32: {
+        {
             *addr = (uint32_t)patch;
             return;
         }
         case HoleKind_IMAGE_REL_AMD64_REL32:
         case HoleKind_IMAGE_REL_I386_REL32:
-        case HoleKind_R_386_PC32:
-        case HoleKind_R_X86_64_GOTPC32:
-        case HoleKind_R_X86_64_GOTPCRELX:
         case HoleKind_R_X86_64_PC32:
         case HoleKind_R_X86_64_PLT32:
-        case HoleKind_R_X86_64_REX_GOTPCRELX:
         case HoleKind_X86_64_RELOC_BRANCH:
         case HoleKind_X86_64_RELOC_GOT:
-        case HoleKind_X86_64_RELOC_GOT_LOAD: {
+        case HoleKind_X86_64_RELOC_GOT_LOAD:
+        {
             patch -= (uintptr_t)location;
             *addr = (uint32_t)patch;
             return;
@@ -131,12 +128,13 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
         case HoleKind_IMAGE_REL_AMD64_ADDR64:
         case HoleKind_R_AARCH64_ABS64:
         case HoleKind_R_X86_64_64:
-        case HoleKind_X86_64_RELOC_UNSIGNED:{
+        case HoleKind_X86_64_RELOC_UNSIGNED:
+        {
             *(uint64_t *)addr = patch;
             return;
         }
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
-        case HoleKind_R_AARCH64_ADR_GOT_PAGE: {
+        {
             patch = ((patch >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
             assert((*addr & 0x9F000000) == 0x90000000);
             assert((patch & 0xFFF) == 0);
@@ -146,7 +144,8 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
             return;
         }
         case HoleKind_R_AARCH64_CALL26:
-        case HoleKind_R_AARCH64_JUMP26: {
+        case HoleKind_R_AARCH64_JUMP26:
+        {
             patch -= (uintptr_t)location;
             assert(((*addr & 0xFC000000) == 0x14000000) ||
                    ((*addr & 0xFC000000) == 0x94000000));
@@ -155,7 +154,7 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
             return;
         }
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
-        case HoleKind_R_AARCH64_LD64_GOT_LO12_NC: {
+        {
             patch &= (1 << 12) - 1;
             assert(((*addr & 0x3B000000) == 0x39000000) ||
                    ((*addr & 0x11C00000) == 0x11000000));
@@ -170,29 +169,28 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
             *addr = (*addr & 0xFFC003FF) | ((uint32_t)((patch >> shift) << 10) & 0x003FFC00);
             return;
         }
-        case HoleKind_R_AARCH64_MOVW_UABS_G0_NC: {
+        case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
+        {
             assert(((*addr >> 21) & 0x3) == 0);
             *addr = (*addr & 0xFFE0001F) | (((patch >>  0) & 0xFFFF) << 5);
             return;
         }
-        case HoleKind_R_AARCH64_MOVW_UABS_G1_NC: {
+        case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
+        {
             assert(((*addr >> 21) & 0x3) == 1);
             *addr = (*addr & 0xFFE0001F) | (((patch >> 16) & 0xFFFF) << 5);
             return;
         }
-        case HoleKind_R_AARCH64_MOVW_UABS_G2_NC: {
+        case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
+        {
             assert(((*addr >> 21) & 0x3) == 2);
             *addr = (*addr & 0xFFE0001F) | (((patch >> 32) & 0xFFFF) << 5);
             return;
         }
-        case HoleKind_R_AARCH64_MOVW_UABS_G3: {
+        case HoleKind_R_AARCH64_MOVW_UABS_G3:
+        {
             assert(((*addr >> 21) & 0x3) == 3);
             *addr = (*addr & 0xFFE0001F) | (((patch >> 48) & 0xFFFF) << 5);
-            return;
-        }
-        case HoleKind_R_X86_64_GOTOFF64: {
-            patch -= (uintptr_t)patches[_JIT_DATA];
-            *(uint64_t *)addr = patch;
             return;
         }
     }
@@ -333,16 +331,10 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     if (initialize_jit()) {
         return NULL;
     }
-    size_t *offsets = PyMem_Malloc(size * sizeof(size_t));
-    if (offsets == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     size_t nbytes_data = trampoline_stencil.nholes_data ? trampoline_stencil.nbytes_data : 0;
     for (int i = 0; i < size; i++) {
-        offsets[i] = nbytes;
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
         nbytes += stencil->nbytes;
@@ -351,12 +343,10 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     };
     unsigned char *memory = alloc(nbytes);
     if (memory == NULL || mark_writeable(memory, nbytes)) {
-        PyMem_Free(offsets);
         return NULL;
     }
     unsigned char *data = alloc(nbytes_data);
     if (data == NULL || mark_writeable(data, nbytes_data)) {
-        PyMem_Free(offsets);
         return NULL;
     }
     unsigned char *head = memory;
@@ -391,7 +381,6 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         head += stencil->nbytes;
         head_data += stencil->nholes_data ? stencil->nbytes_data : 0;
     };
-    PyMem_Free(offsets);
     if (mark_executable(memory, nbytes)) {
         return NULL;
     }

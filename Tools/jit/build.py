@@ -44,24 +44,16 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "IMAGE_REL_AMD64_REL32",
     "IMAGE_REL_I386_DIR32",
     "IMAGE_REL_I386_REL32",
-    "R_386_32",
-    "R_386_PC32",
     "R_AARCH64_ABS64",
-    "R_AARCH64_ADR_GOT_PAGE",
     "R_AARCH64_CALL26",
     "R_AARCH64_JUMP26",
-    "R_AARCH64_LD64_GOT_LO12_NC",
     "R_AARCH64_MOVW_UABS_G0_NC",
     "R_AARCH64_MOVW_UABS_G1_NC",
     "R_AARCH64_MOVW_UABS_G2_NC",
     "R_AARCH64_MOVW_UABS_G3",
     "R_X86_64_64",
-    "R_X86_64_GOTOFF64",
-    "R_X86_64_GOTPC32",
-    "R_X86_64_GOTPCRELX",
     "R_X86_64_PC32",
     "R_X86_64_PLT32",
-    "R_X86_64_REX_GOTPCRELX",
     "X86_64_RELOC_BRANCH",
     "X86_64_RELOC_GOT",
     "X86_64_RELOC_GOT_LOAD",
@@ -423,7 +415,7 @@ class Parser:
             else:
                 value, symbol = self._symbol_to_value(s)
                 addend = 0
-            # XXX: R_386_32 on 32-bit platforms?
+            # XXX: IMAGE_REL_I386_DIR32 on 32-bit platforms?
             holes_data.append(Hole(got + got_offset, "R_X86_64_64", value, symbol, addend))
             value_part = value.name if value is not HoleValue._JIT_ZERO else ""
             if value_part and not symbol and not addend:
@@ -460,46 +452,6 @@ class Parser:
     def _handle_relocation(self, base: int, relocation: COFFRelocation | ELFRelocation | MachORelocation, raw: bytes) -> Hole | None:
         match relocation:
             case {
-                "Type": {
-                    "Value": "R_AARCH64_ADR_GOT_PAGE"
-                    | "R_AARCH64_LD64_GOT_LO12_NC"
-                    | "R_X86_64_GOTPCRELX"
-                    | "R_X86_64_REX_GOTPCRELX" as kind
-                },
-                "Symbol": {"Value": s},
-                "Offset": offset,
-                "Addend": addend,
-            }:
-                assert isinstance(offset, int)  # XXX
-                assert isinstance(addend, int)  # XXX
-                offset += base
-                s = s.removeprefix(self.target.prefix)
-                value, symbol = HoleValue._JIT_DATA, None
-                addend += self._got_lookup(s)
-            case {
-                "Type": {"Value": "R_X86_64_GOTOFF64" as kind},
-                "Symbol": {"Value": s},
-                "Offset": offset,
-                "Addend": addend,
-            }:
-                assert isinstance(offset, int)  # XXX
-                assert isinstance(addend, int)  # XXX
-                offset += base
-                s = s.removeprefix(self.target.prefix)
-                value, symbol = self._symbol_to_value(s)  # XXX
-                addend -= self._got_lookup(None)
-            case {
-                "Type": {"Value": "R_X86_64_GOTPC32" as kind},
-                "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
-                "Offset": offset,
-                "Addend": addend,
-            }:
-                assert isinstance(offset, int)  # XXX
-                assert isinstance(addend, int)  # XXX
-                offset += base
-                value, symbol = HoleValue._JIT_DATA, None
-                addend += self._got_lookup(None)
-            case {
                 "Type": {"Value": kind},
                 "Symbol": {"Value": s},
                 "Offset": offset,
@@ -510,16 +462,6 @@ class Parser:
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
-            case {
-                "Type": {"Value": "R_386_32" | "R_386_PC32" as kind},
-                "Symbol": {"Value": s},
-                "Offset": offset,
-            }:
-                assert isinstance(offset, int)  # XXX
-                offset += base
-                s = s.removeprefix(self.target.prefix)
-                value, symbol = self._symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little")
             case {
                 "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
                 "Symbol": s,
@@ -555,7 +497,7 @@ class Parser:
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
             case {
                 "Type": {
-                    "Value": "ARM64_RELOC_GOT_LOAD_PAGEOFF12" | "ARM64_RELOC_GOT_LOAD_PAGE21" as kind
+                    "Value": "ARM64_RELOC_GOT_LOAD_PAGE21" | "ARM64_RELOC_GOT_LOAD_PAGEOFF12" as kind
                 },
                 "Symbol": {"Value": s},
                 "Offset": offset,
