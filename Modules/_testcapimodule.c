@@ -3995,6 +3995,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Hash(m) < 0) {
+        return NULL;
+    }
 
     PyState_AddModule(m, &_testcapimodule);
     return m;
