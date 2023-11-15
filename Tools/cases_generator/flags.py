@@ -51,7 +51,7 @@ ESCAPING_FUNCTIONS = (
 )
 
 
-def makes_escaping_api_call(instr: parsing.Node) -> bool:
+def makes_escaping_api_call(instr: parsing.InstDef) -> bool:
     if "CALL_INTRINSIC" in instr.name:
         return True;
     tkns = iter(instr.tokens)
@@ -98,7 +98,7 @@ class InstructionFlags:
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}
 
     @staticmethod
-    def fromInstruction(instr: parsing.Node) -> "InstructionFlags":
+    def fromInstruction(instr: parsing.InstDef) -> "InstructionFlags":
         has_free = (
             variable_used(instr, "PyCell_New")
             or variable_used(instr, "PyCell_GET")
