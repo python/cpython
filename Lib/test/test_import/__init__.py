@@ -876,28 +876,9 @@ class FilePermissionTests(unittest.TestCase):
         # Importing double_const checks that float constants
         # serialiazed by marshal as PYC files don't lose precision
         # (SF bug 422177).
-        filepath = os.path.join(
-            TEST_HOME_DIR,
-            'test_import',
-            'data',
-            'double_const.py',
-        )
-
-        with open(filepath, 'r', encoding='utf8') as f:
-            source = f.read()
-
-        with ready_to_import(source=source) as (name, path):
-            # Initial import should be fine:
-            __import__(name)
-
-            # Now, delete source file, only keep `.pyc` file and import again:
-            unlink(path)
-            unload(name)
-            importlib.invalidate_caches()
-
-            bytecode_only = path + 'c'
-            os.rename(importlib.util.cache_from_source(path), bytecode_only)
-            __import__(name)
+        from test.test_import.data import double_const
+        unload('test.test_import.data.double_const')
+        from test.test_import.data import double_const
 
 
 class PycRewritingTests(unittest.TestCase):
