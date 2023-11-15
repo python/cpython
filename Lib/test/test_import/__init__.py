@@ -25,7 +25,7 @@ import _imp
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
+    STDLIB_DIR, TEST_HOME_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -407,11 +407,6 @@ class ImportTests(unittest.TestCase):
         # this far, we know for sure that "random" exists.
         with self.assertRaises(ImportError):
             import RAnDoM
-
-    def test_double_const(self):
-        # Another brief digression to test the accuracy of manifest float
-        # constants.
-        from test.test_import.data import double_const  # don't blink -- that *was* the test
 
     def test_import(self):
         def test_with_extension(ext):
@@ -876,6 +871,33 @@ class FilePermissionTests(unittest.TestCase):
             os.rename(importlib.util.cache_from_source(path), bytecode_only)
             m = __import__(name)
             self.assertEqual(m.x, 'rewritten')
+
+    def test_double_const(self):
+        # Importing double_const checks that float constants
+        # serialiazed by marshal as PYC files don't lose precision
+        # (SF bug 422177).
+        filepath = os.path.join(
+            TEST_HOME_DIR,
+            'test_import',
+            'data',
+            'double_const.py',
+        )
+
+        with open(filepath, 'r', encoding='utf8') as f:
+            source = f.read()
+
+        with ready_to_import(source=source) as (name, path):
+            # Initial import should be fine:
+            __import__(name)
+
+            # Now, delete source file, only keep `.pyc` file and import again:
+            unlink(path)
+            unload(name)
+            importlib.invalidate_caches()
+
+            bytecode_only = path + 'c'
+            os.rename(importlib.util.cache_from_source(path), bytecode_only)
+            __import__(name)
 
 
 class PycRewritingTests(unittest.TestCase):
