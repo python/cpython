@@ -183,15 +183,15 @@ _PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg);
 
 // Calls `fn` once using `flag`. The `arg` is passed to the call to `fn`.
 //
-// Returns 1 on success and 0 on failure.
+// Returns 0 on success and -1 on failure.
 //
-// If `fn` returns 1 (success), then subsequent calls immediately return 1.
-// If `fn` returns 0 (failure), then subsequent calls will retry the call.
+// If `fn` returns 0 (success), then subsequent calls immediately return 0.
+// If `fn` returns -1 (failure), then subsequent calls will retry the call.
 static inline int
 _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
 {
     if (_Py_atomic_load_uint8(&flag->v) == _Py_ONCE_INITIALIZED) {
-        return 1;
+        return 0;
     }
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }

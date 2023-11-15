@@ -1890,7 +1890,7 @@ _parser_init(void *arg)
 
     int len, pos;
     if (scan_keywords(keywords, &len, &pos) < 0) {
-        return 0;
+        return -1;
     }
 
     const char *fname, *custommsg = NULL;
@@ -1899,7 +1899,7 @@ _parser_init(void *arg)
         assert(parser->fname == NULL);
         if (parse_format(parser->format, len, pos,
                          &fname, &custommsg, &min, &max) < 0) {
-            return 0;
+            return -1;
         }
     }
     else {
@@ -1912,7 +1912,7 @@ _parser_init(void *arg)
     if (kwtuple == NULL) {
         kwtuple = new_kwtuple(keywords, len, pos);
         if (kwtuple == NULL) {
-            return 0;
+            return -1;
         }
         owned = 1;
     }
@@ -1934,7 +1934,7 @@ _parser_init(void *arg)
         // compare-exchange updates parser->next on failure
     } while (_Py_atomic_compare_exchange_ptr(&_PyRuntime.getargs.static_parsers,
                                              &parser->next, parser));
-    return 1;
+    return 0;
 }
 
 static int
@@ -2013,7 +2013,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         return 0;
     }
 
-    if (!parser_init(parser)) {
+    if (parser_init(parser) < 0) {
         return 0;
     }
 
@@ -2246,7 +2246,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         args = buf;
     }
 
-    if (!parser_init(parser)) {
+    if (parser_init(parser) < 0) {
         return NULL;
     }
 
@@ -2423,7 +2423,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
         args = buf;
     }
 
-    if (!parser_init(parser)) {
+    if (parser_init(parser) < 0) {
         return NULL;
     }
 

@@ -299,9 +299,18 @@ PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns)
 static int
 unlock_once(_PyOnceFlag *o, int res)
 {
-    // On success (res=1), we set the state to _Py_ONCE_INITIALIZED.
-    // On failure (res=0), we reset the state to _Py_UNLOCKED.
-    uint8_t new_value = res ? _Py_ONCE_INITIALIZED : _Py_UNLOCKED;
+    // On success (res=0), we set the state to _Py_ONCE_INITIALIZED.
+    // On failure (res=-1), we reset the state to _Py_UNLOCKED.
+    uint8_t new_value;
+    switch (res) {
+        case -1: new_value = _Py_UNLOCKED; break;
+        case  0: new_value = _Py_ONCE_INITIALIZED; break;
+        default: {
+            Py_FatalError("invalid result from _PyOnceFlag_CallOnce");
+            Py_UNREACHABLE();
+            break;
+        }
+    }
 
     uint8_t old_value = _Py_atomic_exchange_uint8(&o->v, new_value);
     if ((old_value & _Py_HAS_PARKED) != 0) {
@@ -325,7 +334,7 @@ _PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
         }
 
         if (v == _Py_ONCE_INITIALIZED) {
-            return 1;
+            return 0;
         }
 
         // The once flag is initializing (locked).

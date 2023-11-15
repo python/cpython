@@ -348,10 +348,10 @@ init_maybe_fail(void *arg)
     (*counter)++;
     if (*counter < 5) {
         // failure
-        return 0;
+        return -1;
     }
     assert(*counter == 5);
-    return 1;
+    return 0;
 }
 
 static PyObject *
@@ -362,10 +362,10 @@ test_lock_once(PyObject *self, PyObject *obj)
     for (int i = 0; i < 10; i++) {
         int res = _PyOnceFlag_CallOnce(&once, init_maybe_fail, &counter);
         if (i < 4) {
-            assert(res == 0);
+            assert(res == -1);
         }
         else {
-            assert(res == 1);
+            assert(res == 0);
             assert(counter == 5);
         }
     }

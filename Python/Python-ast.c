@@ -18,7 +18,7 @@ get_ast_state(void)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct ast_state *state = &interp->ast;
     assert(!state->finalized);
-    if (!_PyOnceFlag_CallOnce(&state->once, (_Py_once_fn_t *)&init_types, state)) {
+    if (_PyOnceFlag_CallOnce(&state->once, (_Py_once_fn_t *)&init_types, state) < 0) {
         return NULL;
     }
     return state;
@@ -279,93 +279,93 @@ void _PyAST_Fini(PyInterpreterState *interp)
 
 static int init_identifiers(struct ast_state *state)
 {
-    if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
-    if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return 0;
-    if ((state->__match_args__ = PyUnicode_InternFromString("__match_args__")) == NULL) return 0;
-    if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
-    if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
-    if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return 0;
-    if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return 0;
-    if ((state->arg = PyUnicode_InternFromString("arg")) == NULL) return 0;
-    if ((state->args = PyUnicode_InternFromString("args")) == NULL) return 0;
-    if ((state->argtypes = PyUnicode_InternFromString("argtypes")) == NULL) return 0;
-    if ((state->asname = PyUnicode_InternFromString("asname")) == NULL) return 0;
-    if ((state->ast = PyUnicode_InternFromString("ast")) == NULL) return 0;
-    if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return 0;
-    if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return 0;
-    if ((state->body = PyUnicode_InternFromString("body")) == NULL) return 0;
-    if ((state->bound = PyUnicode_InternFromString("bound")) == NULL) return 0;
-    if ((state->cases = PyUnicode_InternFromString("cases")) == NULL) return 0;
-    if ((state->cause = PyUnicode_InternFromString("cause")) == NULL) return 0;
-    if ((state->cls = PyUnicode_InternFromString("cls")) == NULL) return 0;
-    if ((state->col_offset = PyUnicode_InternFromString("col_offset")) == NULL) return 0;
-    if ((state->comparators = PyUnicode_InternFromString("comparators")) == NULL) return 0;
-    if ((state->context_expr = PyUnicode_InternFromString("context_expr")) == NULL) return 0;
-    if ((state->conversion = PyUnicode_InternFromString("conversion")) == NULL) return 0;
-    if ((state->ctx = PyUnicode_InternFromString("ctx")) == NULL) return 0;
-    if ((state->decorator_list = PyUnicode_InternFromString("decorator_list")) == NULL) return 0;
-    if ((state->defaults = PyUnicode_InternFromString("defaults")) == NULL) return 0;
-    if ((state->elt = PyUnicode_InternFromString("elt")) == NULL) return 0;
-    if ((state->elts = PyUnicode_InternFromString("elts")) == NULL) return 0;
-    if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return 0;
-    if ((state->end_lineno = PyUnicode_InternFromString("end_lineno")) == NULL) return 0;
-    if ((state->exc = PyUnicode_InternFromString("exc")) == NULL) return 0;
-    if ((state->finalbody = PyUnicode_InternFromString("finalbody")) == NULL) return 0;
-    if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return 0;
-    if ((state->func = PyUnicode_InternFromString("func")) == NULL) return 0;
-    if ((state->generators = PyUnicode_InternFromString("generators")) == NULL) return 0;
-    if ((state->guard = PyUnicode_InternFromString("guard")) == NULL) return 0;
-    if ((state->handlers = PyUnicode_InternFromString("handlers")) == NULL) return 0;
-    if ((state->id = PyUnicode_InternFromString("id")) == NULL) return 0;
-    if ((state->ifs = PyUnicode_InternFromString("ifs")) == NULL) return 0;
-    if ((state->is_async = PyUnicode_InternFromString("is_async")) == NULL) return 0;
-    if ((state->items = PyUnicode_InternFromString("items")) == NULL) return 0;
-    if ((state->iter = PyUnicode_InternFromString("iter")) == NULL) return 0;
-    if ((state->key = PyUnicode_InternFromString("key")) == NULL) return 0;
-    if ((state->keys = PyUnicode_InternFromString("keys")) == NULL) return 0;
-    if ((state->keywords = PyUnicode_InternFromString("keywords")) == NULL) return 0;
-    if ((state->kind = PyUnicode_InternFromString("kind")) == NULL) return 0;
-    if ((state->kw_defaults = PyUnicode_InternFromString("kw_defaults")) == NULL) return 0;
-    if ((state->kwarg = PyUnicode_InternFromString("kwarg")) == NULL) return 0;
-    if ((state->kwd_attrs = PyUnicode_InternFromString("kwd_attrs")) == NULL) return 0;
-    if ((state->kwd_patterns = PyUnicode_InternFromString("kwd_patterns")) == NULL) return 0;
-    if ((state->kwonlyargs = PyUnicode_InternFromString("kwonlyargs")) == NULL) return 0;
-    if ((state->left = PyUnicode_InternFromString("left")) == NULL) return 0;
-    if ((state->level = PyUnicode_InternFromString("level")) == NULL) return 0;
-    if ((state->lineno = PyUnicode_InternFromString("lineno")) == NULL) return 0;
-    if ((state->lower = PyUnicode_InternFromString("lower")) == NULL) return 0;
-    if ((state->module = PyUnicode_InternFromString("module")) == NULL) return 0;
-    if ((state->msg = PyUnicode_InternFromString("msg")) == NULL) return 0;
-    if ((state->name = PyUnicode_InternFromString("name")) == NULL) return 0;
-    if ((state->names = PyUnicode_InternFromString("names")) == NULL) return 0;
-    if ((state->op = PyUnicode_InternFromString("op")) == NULL) return 0;
-    if ((state->operand = PyUnicode_InternFromString("operand")) == NULL) return 0;
-    if ((state->ops = PyUnicode_InternFromString("ops")) == NULL) return 0;
-    if ((state->optional_vars = PyUnicode_InternFromString("optional_vars")) == NULL) return 0;
-    if ((state->orelse = PyUnicode_InternFromString("orelse")) == NULL) return 0;
-    if ((state->pattern = PyUnicode_InternFromString("pattern")) == NULL) return 0;
-    if ((state->patterns = PyUnicode_InternFromString("patterns")) == NULL) return 0;
-    if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return 0;
-    if ((state->rest = PyUnicode_InternFromString("rest")) == NULL) return 0;
-    if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return 0;
-    if ((state->right = PyUnicode_InternFromString("right")) == NULL) return 0;
-    if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return 0;
-    if ((state->slice = PyUnicode_InternFromString("slice")) == NULL) return 0;
-    if ((state->step = PyUnicode_InternFromString("step")) == NULL) return 0;
-    if ((state->subject = PyUnicode_InternFromString("subject")) == NULL) return 0;
-    if ((state->tag = PyUnicode_InternFromString("tag")) == NULL) return 0;
-    if ((state->target = PyUnicode_InternFromString("target")) == NULL) return 0;
-    if ((state->targets = PyUnicode_InternFromString("targets")) == NULL) return 0;
-    if ((state->test = PyUnicode_InternFromString("test")) == NULL) return 0;
-    if ((state->type = PyUnicode_InternFromString("type")) == NULL) return 0;
-    if ((state->type_comment = PyUnicode_InternFromString("type_comment")) == NULL) return 0;
-    if ((state->type_ignores = PyUnicode_InternFromString("type_ignores")) == NULL) return 0;
-    if ((state->type_params = PyUnicode_InternFromString("type_params")) == NULL) return 0;
-    if ((state->upper = PyUnicode_InternFromString("upper")) == NULL) return 0;
-    if ((state->value = PyUnicode_InternFromString("value")) == NULL) return 0;
-    if ((state->values = PyUnicode_InternFromString("values")) == NULL) return 0;
-    if ((state->vararg = PyUnicode_InternFromString("vararg")) == NULL) return 0;
-    return 1;
+    if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return -1;
+    if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return -1;
+    if ((state->__match_args__ = PyUnicode_InternFromString("__match_args__")) == NULL) return -1;
+    if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return -1;
+    if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return -1;
+    if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return -1;
+    if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return -1;
+    if ((state->arg = PyUnicode_InternFromString("arg")) == NULL) return -1;
+    if ((state->args = PyUnicode_InternFromString("args")) == NULL) return -1;
+    if ((state->argtypes = PyUnicode_InternFromString("argtypes")) == NULL) return -1;
+    if ((state->asname = PyUnicode_InternFromString("asname")) == NULL) return -1;
+    if ((state->ast = PyUnicode_InternFromString("ast")) == NULL) return -1;
+    if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return -1;
+    if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return -1;
+    if ((state->body = PyUnicode_InternFromString("body")) == NULL) return -1;
+    if ((state->bound = PyUnicode_InternFromString("bound")) == NULL) return -1;
+    if ((state->cases = PyUnicode_InternFromString("cases")) == NULL) return -1;
+    if ((state->cause = PyUnicode_InternFromString("cause")) == NULL) return -1;
+    if ((state->cls = PyUnicode_InternFromString("cls")) == NULL) return -1;
+    if ((state->col_offset = PyUnicode_InternFromString("col_offset")) == NULL) return -1;
+    if ((state->comparators = PyUnicode_InternFromString("comparators")) == NULL) return -1;
+    if ((state->context_expr = PyUnicode_InternFromString("context_expr")) == NULL) return -1;
+    if ((state->conversion = PyUnicode_InternFromString("conversion")) == NULL) return -1;
+    if ((state->ctx = PyUnicode_InternFromString("ctx")) == NULL) return -1;
+    if ((state->decorator_list = PyUnicode_InternFromString("decorator_list")) == NULL) return -1;
+    if ((state->defaults = PyUnicode_InternFromString("defaults")) == NULL) return -1;
+    if ((state->elt = PyUnicode_InternFromString("elt")) == NULL) return -1;
+    if ((state->elts = PyUnicode_InternFromString("elts")) == NULL) return -1;
+    if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return -1;
+    if ((state->end_lineno = PyUnicode_InternFromString("end_lineno")) == NULL) return -1;
+    if ((state->exc = PyUnicode_InternFromString("exc")) == NULL) return -1;
+    if ((state->finalbody = PyUnicode_InternFromString("finalbody")) == NULL) return -1;
+    if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return -1;
+    if ((state->func = PyUnicode_InternFromString("func")) == NULL) return -1;
+    if ((state->generators = PyUnicode_InternFromString("generators")) == NULL) return -1;
+    if ((state->guard = PyUnicode_InternFromString("guard")) == NULL) return -1;
+    if ((state->handlers = PyUnicode_InternFromString("handlers")) == NULL) return -1;
+    if ((state->id = PyUnicode_InternFromString("id")) == NULL) return -1;
+    if ((state->ifs = PyUnicode_InternFromString("ifs")) == NULL) return -1;
+    if ((state->is_async = PyUnicode_InternFromString("is_async")) == NULL) return -1;
+    if ((state->items = PyUnicode_InternFromString("items")) == NULL) return -1;
+    if ((state->iter = PyUnicode_InternFromString("iter")) == NULL) return -1;
+    if ((state->key = PyUnicode_InternFromString("key")) == NULL) return -1;
+    if ((state->keys = PyUnicode_InternFromString("keys")) == NULL) return -1;
+    if ((state->keywords = PyUnicode_InternFromString("keywords")) == NULL) return -1;
+    if ((state->kind = PyUnicode_InternFromString("kind")) == NULL) return -1;
+    if ((state->kw_defaults = PyUnicode_InternFromString("kw_defaults")) == NULL) return -1;
+    if ((state->kwarg = PyUnicode_InternFromString("kwarg")) == NULL) return -1;
+    if ((state->kwd_attrs = PyUnicode_InternFromString("kwd_attrs")) == NULL) return -1;
+    if ((state->kwd_patterns = PyUnicode_InternFromString("kwd_patterns")) == NULL) return -1;
+    if ((state->kwonlyargs = PyUnicode_InternFromString("kwonlyargs")) == NULL) return -1;
+    if ((state->left = PyUnicode_InternFromString("left")) == NULL) return -1;
+    if ((state->level = PyUnicode_InternFromString("level")) == NULL) return -1;
+    if ((state->lineno = PyUnicode_InternFromString("lineno")) == NULL) return -1;
+    if ((state->lower = PyUnicode_InternFromString("lower")) == NULL) return -1;
+    if ((state->module = PyUnicode_InternFromString("module")) == NULL) return -1;
+    if ((state->msg = PyUnicode_InternFromString("msg")) == NULL) return -1;
+    if ((state->name = PyUnicode_InternFromString("name")) == NULL) return -1;
+    if ((state->names = PyUnicode_InternFromString("names")) == NULL) return -1;
+    if ((state->op = PyUnicode_InternFromString("op")) == NULL) return -1;
+    if ((state->operand = PyUnicode_InternFromString("operand")) == NULL) return -1;
+    if ((state->ops = PyUnicode_InternFromString("ops")) == NULL) return -1;
+    if ((state->optional_vars = PyUnicode_InternFromString("optional_vars")) == NULL) return -1;
+    if ((state->orelse = PyUnicode_InternFromString("orelse")) == NULL) return -1;
+    if ((state->pattern = PyUnicode_InternFromString("pattern")) == NULL) return -1;
+    if ((state->patterns = PyUnicode_InternFromString("patterns")) == NULL) return -1;
+    if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return -1;
+    if ((state->rest = PyUnicode_InternFromString("rest")) == NULL) return -1;
+    if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return -1;
+    if ((state->right = PyUnicode_InternFromString("right")) == NULL) return -1;
+    if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return -1;
+    if ((state->slice = PyUnicode_InternFromString("slice")) == NULL) return -1;
+    if ((state->step = PyUnicode_InternFromString("step")) == NULL) return -1;
+    if ((state->subject = PyUnicode_InternFromString("subject")) == NULL) return -1;
+    if ((state->tag = PyUnicode_InternFromString("tag")) == NULL) return -1;
+    if ((state->target = PyUnicode_InternFromString("target")) == NULL) return -1;
+    if ((state->targets = PyUnicode_InternFromString("targets")) == NULL) return -1;
+    if ((state->test = PyUnicode_InternFromString("test")) == NULL) return -1;
+    if ((state->type = PyUnicode_InternFromString("type")) == NULL) return -1;
+    if ((state->type_comment = PyUnicode_InternFromString("type_comment")) == NULL) return -1;
+    if ((state->type_ignores = PyUnicode_InternFromString("type_ignores")) == NULL) return -1;
+    if ((state->type_params = PyUnicode_InternFromString("type_params")) == NULL) return -1;
+    if ((state->upper = PyUnicode_InternFromString("upper")) == NULL) return -1;
+    if ((state->value = PyUnicode_InternFromString("value")) == NULL) return -1;
+    if ((state->values = PyUnicode_InternFromString("values")) == NULL) return -1;
+    if ((state->vararg = PyUnicode_InternFromString("vararg")) == NULL) return -1;
+    return 0;
 };
 
 GENERATE_ASDL_SEQ_CONSTRUCTOR(mod, mod_ty)
@@ -992,16 +992,16 @@ add_attributes(struct ast_state *state, PyObject *type, const char * const *attr
     int i, result;
     PyObject *s, *l = PyTuple_New(num_fields);
     if (!l)
-        return 0;
+        return -1;
     for (i = 0; i < num_fields; i++) {
         s = PyUnicode_InternFromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
-            return 0;
+            return -1;
         }
         PyTuple_SET_ITEM(l, i, s);
     }
-    result = PyObject_SetAttr(type, state->_attributes, l) >= 0;
+    result = PyObject_SetAttr(type, state->_attributes, l);
     Py_DECREF(l);
     return result;
 }
@@ -1076,7 +1076,7 @@ static int obj2ast_identifier(struct ast_state *state, PyObject* obj, PyObject**
 {
     if (!PyUnicode_CheckExact(obj) && obj != Py_None) {
         PyErr_SetString(PyExc_TypeError, "AST identifier must be of type str");
-        return 1;
+        return -1;
     }
     return obj2ast_object(state, obj, out, arena);
 }
@@ -1085,7 +1085,7 @@ static int obj2ast_string(struct ast_state *state, PyObject* obj, PyObject** out
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
         PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
-        return 1;
+        return -1;
     }
     return obj2ast_object(state, obj, out, arena);
 }
@@ -1095,12 +1095,12 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
     int i;
     if (!PyLong_Check(obj)) {
         PyErr_Format(PyExc_ValueError, "invalid integer value: %R", obj);
-        return 1;
+        return -1;
     }
 
     i = PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
-        return 1;
+        return -1;
     *out = i;
     return 0;
 }
@@ -1126,39 +1126,39 @@ static int
 init_types(struct ast_state *state)
 {
     if (init_identifiers(state) < 0) {
-        return 0;
+        return -1;
     }
     state->AST_type = PyType_FromSpec(&AST_type_spec);
     if (!state->AST_type) {
-        return 0;
+        return -1;
     }
     if (add_ast_fields(state) < 0) {
-        return 0;
+        return -1;
     }
     state->mod_type = make_type(state, "mod", state->AST_type, NULL, 0,
         "mod = Module(stmt* body, type_ignore* type_ignores)\n"
         "    | Interactive(stmt* body)\n"
         "    | Expression(expr body)\n"
         "    | FunctionType(expr* argtypes, expr returns)");
-    if (!state->mod_type) return 0;
-    if (!add_attributes(state, state->mod_type, NULL, 0)) return 0;
+    if (!state->mod_type) return -1;
+    if (add_attributes(state, state->mod_type, NULL, 0) < 0) return -1;
     state->Module_type = make_type(state, "Module", state->mod_type,
                                    Module_fields, 2,
         "Module(stmt* body, type_ignore* type_ignores)");
-    if (!state->Module_type) return 0;
+    if (!state->Module_type) return -1;
     state->Interactive_type = make_type(state, "Interactive", state->mod_type,
                                         Interactive_fields, 1,
         "Interactive(stmt* body)");
-    if (!state->Interactive_type) return 0;
+    if (!state->Interactive_type) return -1;
     state->Expression_type = make_type(state, "Expression", state->mod_type,
                                        Expression_fields, 1,
         "Expression(expr body)");
-    if (!state->Expression_type) return 0;
+    if (!state->Expression_type) return -1;
     state->FunctionType_type = make_type(state, "FunctionType",
                                          state->mod_type, FunctionType_fields,
                                          2,
         "FunctionType(expr* argtypes, expr returns)");
-    if (!state->FunctionType_type) return 0;
+    if (!state->FunctionType_type) return -1;
     state->stmt_type = make_type(state, "stmt", state->AST_type, NULL, 0,
         "stmt = FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)\n"
         "     | AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)\n"
@@ -1188,160 +1188,161 @@ init_types(struct ast_state *state)
         "     | Pass\n"
         "     | Break\n"
         "     | Continue");
-    if (!state->stmt_type) return 0;
-    if (!add_attributes(state, state->stmt_type, stmt_attributes, 4)) return 0;
+    if (!state->stmt_type) return -1;
+    if (add_attributes(state, state->stmt_type, stmt_attributes, 4) < 0) return
+        -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_col_offset, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->FunctionDef_type = make_type(state, "FunctionDef", state->stmt_type,
                                         FunctionDef_fields, 7,
         "FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)");
-    if (!state->FunctionDef_type) return 0;
+    if (!state->FunctionDef_type) return -1;
     if (PyObject_SetAttr(state->FunctionDef_type, state->returns, Py_None) ==
         -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->FunctionDef_type, state->type_comment, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->AsyncFunctionDef_type = make_type(state, "AsyncFunctionDef",
                                              state->stmt_type,
                                              AsyncFunctionDef_fields, 7,
         "AsyncFunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment, type_param* type_params)");
-    if (!state->AsyncFunctionDef_type) return 0;
+    if (!state->AsyncFunctionDef_type) return -1;
     if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->returns, Py_None)
         == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->AsyncFunctionDef_type, state->type_comment,
         Py_None) == -1)
-        return 0;
+        return -1;
     state->ClassDef_type = make_type(state, "ClassDef", state->stmt_type,
                                      ClassDef_fields, 6,
         "ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list, type_param* type_params)");
-    if (!state->ClassDef_type) return 0;
+    if (!state->ClassDef_type) return -1;
     state->Return_type = make_type(state, "Return", state->stmt_type,
                                    Return_fields, 1,
         "Return(expr? value)");
-    if (!state->Return_type) return 0;
+    if (!state->Return_type) return -1;
     if (PyObject_SetAttr(state->Return_type, state->value, Py_None) == -1)
-        return 0;
+        return -1;
     state->Delete_type = make_type(state, "Delete", state->stmt_type,
                                    Delete_fields, 1,
         "Delete(expr* targets)");
-    if (!state->Delete_type) return 0;
+    if (!state->Delete_type) return -1;
     state->Assign_type = make_type(state, "Assign", state->stmt_type,
                                    Assign_fields, 3,
         "Assign(expr* targets, expr value, string? type_comment)");
-    if (!state->Assign_type) return 0;
+    if (!state->Assign_type) return -1;
     if (PyObject_SetAttr(state->Assign_type, state->type_comment, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->TypeAlias_type = make_type(state, "TypeAlias", state->stmt_type,
                                       TypeAlias_fields, 3,
         "TypeAlias(expr name, type_param* type_params, expr value)");
-    if (!state->TypeAlias_type) return 0;
+    if (!state->TypeAlias_type) return -1;
     state->AugAssign_type = make_type(state, "AugAssign", state->stmt_type,
                                       AugAssign_fields, 3,
         "AugAssign(expr target, operator op, expr value)");
-    if (!state->AugAssign_type) return 0;
+    if (!state->AugAssign_type) return -1;
     state->AnnAssign_type = make_type(state, "AnnAssign", state->stmt_type,
                                       AnnAssign_fields, 4,
         "AnnAssign(expr target, expr annotation, expr? value, int simple)");
-    if (!state->AnnAssign_type) return 0;
+    if (!state->AnnAssign_type) return -1;
     if (PyObject_SetAttr(state->AnnAssign_type, state->value, Py_None) == -1)
-        return 0;
+        return -1;
     state->For_type = make_type(state, "For", state->stmt_type, For_fields, 5,
         "For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
-    if (!state->For_type) return 0;
+    if (!state->For_type) return -1;
     if (PyObject_SetAttr(state->For_type, state->type_comment, Py_None) == -1)
-        return 0;
+        return -1;
     state->AsyncFor_type = make_type(state, "AsyncFor", state->stmt_type,
                                      AsyncFor_fields, 5,
         "AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)");
-    if (!state->AsyncFor_type) return 0;
+    if (!state->AsyncFor_type) return -1;
     if (PyObject_SetAttr(state->AsyncFor_type, state->type_comment, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->While_type = make_type(state, "While", state->stmt_type,
                                   While_fields, 3,
         "While(expr test, stmt* body, stmt* orelse)");
-    if (!state->While_type) return 0;
+    if (!state->While_type) return -1;
     state->If_type = make_type(state, "If", state->stmt_type, If_fields, 3,
         "If(expr test, stmt* body, stmt* orelse)");
-    if (!state->If_type) return 0;
+    if (!state->If_type) return -1;
     state->With_type = make_type(state, "With", state->stmt_type, With_fields,
                                  3,
         "With(withitem* items, stmt* body, string? type_comment)");
-    if (!state->With_type) return 0;
+    if (!state->With_type) return -1;
     if (PyObject_SetAttr(state->With_type, state->type_comment, Py_None) == -1)
-        return 0;
+        return -1;
     state->AsyncWith_type = make_type(state, "AsyncWith", state->stmt_type,
                                       AsyncWith_fields, 3,
         "AsyncWith(withitem* items, stmt* body, string? type_comment)");
-    if (!state->AsyncWith_type) return 0;
+    if (!state->AsyncWith_type) return -1;
     if (PyObject_SetAttr(state->AsyncWith_type, state->type_comment, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->Match_type = make_type(state, "Match", state->stmt_type,
                                   Match_fields, 2,
         "Match(expr subject, match_case* cases)");
-    if (!state->Match_type) return 0;
+    if (!state->Match_type) return -1;
     state->Raise_type = make_type(state, "Raise", state->stmt_type,
                                   Raise_fields, 2,
         "Raise(expr? exc, expr? cause)");
-    if (!state->Raise_type) return 0;
+    if (!state->Raise_type) return -1;
     if (PyObject_SetAttr(state->Raise_type, state->exc, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->Raise_type, state->cause, Py_None) == -1)
-        return 0;
+        return -1;
     state->Try_type = make_type(state, "Try", state->stmt_type, Try_fields, 4,
         "Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)");
-    if (!state->Try_type) return 0;
+    if (!state->Try_type) return -1;
     state->TryStar_type = make_type(state, "TryStar", state->stmt_type,
                                     TryStar_fields, 4,
         "TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)");
-    if (!state->TryStar_type) return 0;
+    if (!state->TryStar_type) return -1;
     state->Assert_type = make_type(state, "Assert", state->stmt_type,
                                    Assert_fields, 2,
         "Assert(expr test, expr? msg)");
-    if (!state->Assert_type) return 0;
+    if (!state->Assert_type) return -1;
     if (PyObject_SetAttr(state->Assert_type, state->msg, Py_None) == -1)
-        return 0;
+        return -1;
     state->Import_type = make_type(state, "Import", state->stmt_type,
                                    Import_fields, 1,
         "Import(alias* names)");
-    if (!state->Import_type) return 0;
+    if (!state->Import_type) return -1;
     state->ImportFrom_type = make_type(state, "ImportFrom", state->stmt_type,
                                        ImportFrom_fields, 3,
         "ImportFrom(identifier? module, alias* names, int? level)");
-    if (!state->ImportFrom_type) return 0;
+    if (!state->ImportFrom_type) return -1;
     if (PyObject_SetAttr(state->ImportFrom_type, state->module, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->ImportFrom_type, state->level, Py_None) == -1)
-        return 0;
+        return -1;
     state->Global_type = make_type(state, "Global", state->stmt_type,
                                    Global_fields, 1,
         "Global(identifier* names)");
-    if (!state->Global_type) return 0;
+    if (!state->Global_type) return -1;
     state->Nonlocal_type = make_type(state, "Nonlocal", state->stmt_type,
                                      Nonlocal_fields, 1,
         "Nonlocal(identifier* names)");
-    if (!state->Nonlocal_type) return 0;
+    if (!state->Nonlocal_type) return -1;
     state->Expr_type = make_type(state, "Expr", state->stmt_type, Expr_fields,
                                  1,
         "Expr(expr value)");
-    if (!state->Expr_type) return 0;
+    if (!state->Expr_type) return -1;
     state->Pass_type = make_type(state, "Pass", state->stmt_type, NULL, 0,
         "Pass");
-    if (!state->Pass_type) return 0;
+    if (!state->Pass_type) return -1;
     state->Break_type = make_type(state, "Break", state->stmt_type, NULL, 0,
         "Break");
-    if (!state->Break_type) return 0;
+    if (!state->Break_type) return -1;
     state->Continue_type = make_type(state, "Continue", state->stmt_type, NULL,
                                      0,
         "Continue");
-    if (!state->Continue_type) return 0;
+    if (!state->Continue_type) return -1;
     state->expr_type = make_type(state, "expr", state->AST_type, NULL, 0,
         "expr = BoolOp(boolop op, expr* values)\n"
         "     | NamedExpr(expr target, expr value)\n"
@@ -1370,454 +1371,457 @@ init_types(struct ast_state *state)
         "     | List(expr* elts, expr_context ctx)\n"
         "     | Tuple(expr* elts, expr_context ctx)\n"
         "     | Slice(expr? lower, expr? upper, expr? step)");
-    if (!state->expr_type) return 0;
-    if (!add_attributes(state, state->expr_type, expr_attributes, 4)) return 0;
+    if (!state->expr_type) return -1;
+    if (add_attributes(state, state->expr_type, expr_attributes, 4) < 0) return
+        -1;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->expr_type, state->end_col_offset, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->BoolOp_type = make_type(state, "BoolOp", state->expr_type,
                                    BoolOp_fields, 2,
         "BoolOp(boolop op, expr* values)");
-    if (!state->BoolOp_type) return 0;
+    if (!state->BoolOp_type) return -1;
     state->NamedExpr_type = make_type(state, "NamedExpr", state->expr_type,
                                       NamedExpr_fields, 2,
         "NamedExpr(expr target, expr value)");
-    if (!state->NamedExpr_type) return 0;
+    if (!state->NamedExpr_type) return -1;
     state->BinOp_type = make_type(state, "BinOp", state->expr_type,
                                   BinOp_fields, 3,
         "BinOp(expr left, operator op, expr right)");
-    if (!state->BinOp_type) return 0;
+    if (!state->BinOp_type) return -1;
     state->UnaryOp_type = make_type(state, "UnaryOp", state->expr_type,
                                     UnaryOp_fields, 2,
         "UnaryOp(unaryop op, expr operand)");
-    if (!state->UnaryOp_type) return 0;
+    if (!state->UnaryOp_type) return -1;
     state->Lambda_type = make_type(state, "Lambda", state->expr_type,
                                    Lambda_fields, 2,
         "Lambda(arguments args, expr body)");
-    if (!state->Lambda_type) return 0;
+    if (!state->Lambda_type) return -1;
     state->IfExp_type = make_type(state, "IfExp", state->expr_type,
                                   IfExp_fields, 3,
         "IfExp(expr test, expr body, expr orelse)");
-    if (!state->IfExp_type) return 0;
+    if (!state->IfExp_type) return -1;
     state->Dict_type = make_type(state, "Dict", state->expr_type, Dict_fields,
                                  2,
         "Dict(expr* keys, expr* values)");
-    if (!state->Dict_type) return 0;
+    if (!state->Dict_type) return -1;
     state->Set_type = make_type(state, "Set", state->expr_type, Set_fields, 1,
         "Set(expr* elts)");
-    if (!state->Set_type) return 0;
+    if (!state->Set_type) return -1;
     state->ListComp_type = make_type(state, "ListComp", state->expr_type,
                                      ListComp_fields, 2,
         "ListComp(expr elt, comprehension* generators)");
-    if (!state->ListComp_type) return 0;
+    if (!state->ListComp_type) return -1;
     state->SetComp_type = make_type(state, "SetComp", state->expr_type,
                                     SetComp_fields, 2,
         "SetComp(expr elt, comprehension* generators)");
-    if (!state->SetComp_type) return 0;
+    if (!state->SetComp_type) return -1;
     state->DictComp_type = make_type(state, "DictComp", state->expr_type,
                                      DictComp_fields, 3,
         "DictComp(expr key, expr value, comprehension* generators)");
-    if (!state->DictComp_type) return 0;
+    if (!state->DictComp_type) return -1;
     state->GeneratorExp_type = make_type(state, "GeneratorExp",
                                          state->expr_type, GeneratorExp_fields,
                                          2,
         "GeneratorExp(expr elt, comprehension* generators)");
-    if (!state->GeneratorExp_type) return 0;
+    if (!state->GeneratorExp_type) return -1;
     state->Await_type = make_type(state, "Await", state->expr_type,
                                   Await_fields, 1,
         "Await(expr value)");
-    if (!state->Await_type) return 0;
+    if (!state->Await_type) return -1;
     state->Yield_type = make_type(state, "Yield", state->expr_type,
                                   Yield_fields, 1,
         "Yield(expr? value)");
-    if (!state->Yield_type) return 0;
+    if (!state->Yield_type) return -1;
     if (PyObject_SetAttr(state->Yield_type, state->value, Py_None) == -1)
-        return 0;
+        return -1;
     state->YieldFrom_type = make_type(state, "YieldFrom", state->expr_type,
                                       YieldFrom_fields, 1,
         "YieldFrom(expr value)");
-    if (!state->YieldFrom_type) return 0;
+    if (!state->YieldFrom_type) return -1;
     state->Compare_type = make_type(state, "Compare", state->expr_type,
                                     Compare_fields, 3,
         "Compare(expr left, cmpop* ops, expr* comparators)");
-    if (!state->Compare_type) return 0;
+    if (!state->Compare_type) return -1;
     state->Call_type = make_type(state, "Call", state->expr_type, Call_fields,
                                  3,
         "Call(expr func, expr* args, keyword* keywords)");
-    if (!state->Call_type) return 0;
+    if (!state->Call_type) return -1;
     state->FormattedValue_type = make_type(state, "FormattedValue",
                                            state->expr_type,
                                            FormattedValue_fields, 3,
         "FormattedValue(expr value, int conversion, expr? format_spec)");
-    if (!state->FormattedValue_type) return 0;
+    if (!state->FormattedValue_type) return -1;
     if (PyObject_SetAttr(state->FormattedValue_type, state->format_spec,
         Py_None) == -1)
-        return 0;
+        return -1;
     state->JoinedStr_type = make_type(state, "JoinedStr", state->expr_type,
                                       JoinedStr_fields, 1,
         "JoinedStr(expr* values)");
-    if (!state->JoinedStr_type) return 0;
+    if (!state->JoinedStr_type) return -1;
     state->Constant_type = make_type(state, "Constant", state->expr_type,
                                      Constant_fields, 2,
         "Constant(constant value, string? kind)");
-    if (!state->Constant_type) return 0;
+    if (!state->Constant_type) return -1;
     if (PyObject_SetAttr(state->Constant_type, state->kind, Py_None) == -1)
-        return 0;
+        return -1;
     state->Attribute_type = make_type(state, "Attribute", state->expr_type,
                                       Attribute_fields, 3,
         "Attribute(expr value, identifier attr, expr_context ctx)");
-    if (!state->Attribute_type) return 0;
+    if (!state->Attribute_type) return -1;
     state->Subscript_type = make_type(state, "Subscript", state->expr_type,
                                       Subscript_fields, 3,
         "Subscript(expr value, expr slice, expr_context ctx)");
-    if (!state->Subscript_type) return 0;
+    if (!state->Subscript_type) return -1;
     state->Starred_type = make_type(state, "Starred", state->expr_type,
                                     Starred_fields, 2,
         "Starred(expr value, expr_context ctx)");
-    if (!state->Starred_type) return 0;
+    if (!state->Starred_type) return -1;
     state->Name_type = make_type(state, "Name", state->expr_type, Name_fields,
                                  2,
         "Name(identifier id, expr_context ctx)");
-    if (!state->Name_type) return 0;
+    if (!state->Name_type) return -1;
     state->List_type = make_type(state, "List", state->expr_type, List_fields,
                                  2,
         "List(expr* elts, expr_context ctx)");
-    if (!state->List_type) return 0;
+    if (!state->List_type) return -1;
     state->Tuple_type = make_type(state, "Tuple", state->expr_type,
                                   Tuple_fields, 2,
         "Tuple(expr* elts, expr_context ctx)");
-    if (!state->Tuple_type) return 0;
+    if (!state->Tuple_type) return -1;
     state->Slice_type = make_type(state, "Slice", state->expr_type,
                                   Slice_fields, 3,
         "Slice(expr? lower, expr? upper, expr? step)");
-    if (!state->Slice_type) return 0;
+    if (!state->Slice_type) return -1;
     if (PyObject_SetAttr(state->Slice_type, state->lower, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->Slice_type, state->upper, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
-        return 0;
+        return -1;
     state->expr_context_type = make_type(state, "expr_context",
                                          state->AST_type, NULL, 0,
         "expr_context = Load | Store | Del");
-    if (!state->expr_context_type) return 0;
-    if (!add_attributes(state, state->expr_context_type, NULL, 0)) return 0;
+    if (!state->expr_context_type) return -1;
+    if (add_attributes(state, state->expr_context_type, NULL, 0) < 0) return -1;
     state->Load_type = make_type(state, "Load", state->expr_context_type, NULL,
                                  0,
         "Load");
-    if (!state->Load_type) return 0;
+    if (!state->Load_type) return -1;
     state->Load_singleton = PyType_GenericNew((PyTypeObject *)state->Load_type,
                                               NULL, NULL);
-    if (!state->Load_singleton) return 0;
+    if (!state->Load_singleton) return -1;
     state->Store_type = make_type(state, "Store", state->expr_context_type,
                                   NULL, 0,
         "Store");
-    if (!state->Store_type) return 0;
+    if (!state->Store_type) return -1;
     state->Store_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->Store_type, NULL, NULL);
-    if (!state->Store_singleton) return 0;
+    if (!state->Store_singleton) return -1;
     state->Del_type = make_type(state, "Del", state->expr_context_type, NULL, 0,
         "Del");
-    if (!state->Del_type) return 0;
+    if (!state->Del_type) return -1;
     state->Del_singleton = PyType_GenericNew((PyTypeObject *)state->Del_type,
                                              NULL, NULL);
-    if (!state->Del_singleton) return 0;
+    if (!state->Del_singleton) return -1;
     state->boolop_type = make_type(state, "boolop", state->AST_type, NULL, 0,
         "boolop = And | Or");
-    if (!state->boolop_type) return 0;
-    if (!add_attributes(state, state->boolop_type, NULL, 0)) return 0;
+    if (!state->boolop_type) return -1;
+    if (add_attributes(state, state->boolop_type, NULL, 0) < 0) return -1;
     state->And_type = make_type(state, "And", state->boolop_type, NULL, 0,
         "And");
-    if (!state->And_type) return 0;
+    if (!state->And_type) return -1;
     state->And_singleton = PyType_GenericNew((PyTypeObject *)state->And_type,
                                              NULL, NULL);
-    if (!state->And_singleton) return 0;
+    if (!state->And_singleton) return -1;
     state->Or_type = make_type(state, "Or", state->boolop_type, NULL, 0,
         "Or");
-    if (!state->Or_type) return 0;
+    if (!state->Or_type) return -1;
     state->Or_singleton = PyType_GenericNew((PyTypeObject *)state->Or_type,
                                             NULL, NULL);
-    if (!state->Or_singleton) return 0;
+    if (!state->Or_singleton) return -1;
     state->operator_type = make_type(state, "operator", state->AST_type, NULL,
                                      0,
         "operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift | RShift | BitOr | BitXor | BitAnd | FloorDiv");
-    if (!state->operator_type) return 0;
-    if (!add_attributes(state, state->operator_type, NULL, 0)) return 0;
+    if (!state->operator_type) return -1;
+    if (add_attributes(state, state->operator_type, NULL, 0) < 0) return -1;
     state->Add_type = make_type(state, "Add", state->operator_type, NULL, 0,
         "Add");
-    if (!state->Add_type) return 0;
+    if (!state->Add_type) return -1;
     state->Add_singleton = PyType_GenericNew((PyTypeObject *)state->Add_type,
                                              NULL, NULL);
-    if (!state->Add_singleton) return 0;
+    if (!state->Add_singleton) return -1;
     state->Sub_type = make_type(state, "Sub", state->operator_type, NULL, 0,
         "Sub");
-    if (!state->Sub_type) return 0;
+    if (!state->Sub_type) return -1;
     state->Sub_singleton = PyType_GenericNew((PyTypeObject *)state->Sub_type,
                                              NULL, NULL);
-    if (!state->Sub_singleton) return 0;
+    if (!state->Sub_singleton) return -1;
     state->Mult_type = make_type(state, "Mult", state->operator_type, NULL, 0,
         "Mult");
-    if (!state->Mult_type) return 0;
+    if (!state->Mult_type) return -1;
     state->Mult_singleton = PyType_GenericNew((PyTypeObject *)state->Mult_type,
                                               NULL, NULL);
-    if (!state->Mult_singleton) return 0;
+    if (!state->Mult_singleton) return -1;
     state->MatMult_type = make_type(state, "MatMult", state->operator_type,
                                     NULL, 0,
         "MatMult");
-    if (!state->MatMult_type) return 0;
+    if (!state->MatMult_type) return -1;
     state->MatMult_singleton = PyType_GenericNew((PyTypeObject
                                                  *)state->MatMult_type, NULL,
                                                  NULL);
-    if (!state->MatMult_singleton) return 0;
+    if (!state->MatMult_singleton) return -1;
     state->Div_type = make_type(state, "Div", state->operator_type, NULL, 0,
         "Div");
-    if (!state->Div_type) return 0;
+    if (!state->Div_type) return -1;
     state->Div_singleton = PyType_GenericNew((PyTypeObject *)state->Div_type,
                                              NULL, NULL);
-    if (!state->Div_singleton) return 0;
+    if (!state->Div_singleton) return -1;
     state->Mod_type = make_type(state, "Mod", state->operator_type, NULL, 0,
         "Mod");
-    if (!state->Mod_type) return 0;
+    if (!state->Mod_type) return -1;
     state->Mod_singleton = PyType_GenericNew((PyTypeObject *)state->Mod_type,
                                              NULL, NULL);
-    if (!state->Mod_singleton) return 0;
+    if (!state->Mod_singleton) return -1;
     state->Pow_type = make_type(state, "Pow", state->operator_type, NULL, 0,
         "Pow");
-    if (!state->Pow_type) return 0;
+    if (!state->Pow_type) return -1;
     state->Pow_singleton = PyType_GenericNew((PyTypeObject *)state->Pow_type,
                                              NULL, NULL);
-    if (!state->Pow_singleton) return 0;
+    if (!state->Pow_singleton) return -1;
     state->LShift_type = make_type(state, "LShift", state->operator_type, NULL,
                                    0,
         "LShift");
-    if (!state->LShift_type) return 0;
+    if (!state->LShift_type) return -1;
     state->LShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->LShift_type, NULL,
                                                 NULL);
-    if (!state->LShift_singleton) return 0;
+    if (!state->LShift_singleton) return -1;
     state->RShift_type = make_type(state, "RShift", state->operator_type, NULL,
                                    0,
         "RShift");
-    if (!state->RShift_type) return 0;
+    if (!state->RShift_type) return -1;
     state->RShift_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->RShift_type, NULL,
                                                 NULL);
-    if (!state->RShift_singleton) return 0;
+    if (!state->RShift_singleton) return -1;
     state->BitOr_type = make_type(state, "BitOr", state->operator_type, NULL, 0,
         "BitOr");
-    if (!state->BitOr_type) return 0;
+    if (!state->BitOr_type) return -1;
     state->BitOr_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->BitOr_type, NULL, NULL);
-    if (!state->BitOr_singleton) return 0;
+    if (!state->BitOr_singleton) return -1;
     state->BitXor_type = make_type(state, "BitXor", state->operator_type, NULL,
                                    0,
         "BitXor");
-    if (!state->BitXor_type) return 0;
+    if (!state->BitXor_type) return -1;
     state->BitXor_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitXor_type, NULL,
                                                 NULL);
-    if (!state->BitXor_singleton) return 0;
+    if (!state->BitXor_singleton) return -1;
     state->BitAnd_type = make_type(state, "BitAnd", state->operator_type, NULL,
                                    0,
         "BitAnd");
-    if (!state->BitAnd_type) return 0;
+    if (!state->BitAnd_type) return -1;
     state->BitAnd_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->BitAnd_type, NULL,
                                                 NULL);
-    if (!state->BitAnd_singleton) return 0;
+    if (!state->BitAnd_singleton) return -1;
     state->FloorDiv_type = make_type(state, "FloorDiv", state->operator_type,
                                      NULL, 0,
         "FloorDiv");
-    if (!state->FloorDiv_type) return 0;
+    if (!state->FloorDiv_type) return -1;
     state->FloorDiv_singleton = PyType_GenericNew((PyTypeObject
                                                   *)state->FloorDiv_type, NULL,
                                                   NULL);
-    if (!state->FloorDiv_singleton) return 0;
+    if (!state->FloorDiv_singleton) return -1;
     state->unaryop_type = make_type(state, "unaryop", state->AST_type, NULL, 0,
         "unaryop = Invert | Not | UAdd | USub");
-    if (!state->unaryop_type) return 0;
-    if (!add_attributes(state, state->unaryop_type, NULL, 0)) return 0;
+    if (!state->unaryop_type) return -1;
+    if (add_attributes(state, state->unaryop_type, NULL, 0) < 0) return -1;
     state->Invert_type = make_type(state, "Invert", state->unaryop_type, NULL,
                                    0,
         "Invert");
-    if (!state->Invert_type) return 0;
+    if (!state->Invert_type) return -1;
     state->Invert_singleton = PyType_GenericNew((PyTypeObject
                                                 *)state->Invert_type, NULL,
                                                 NULL);
-    if (!state->Invert_singleton) return 0;
+    if (!state->Invert_singleton) return -1;
     state->Not_type = make_type(state, "Not", state->unaryop_type, NULL, 0,
         "Not");
-    if (!state->Not_type) return 0;
+    if (!state->Not_type) return -1;
     state->Not_singleton = PyType_GenericNew((PyTypeObject *)state->Not_type,
                                              NULL, NULL);
-    if (!state->Not_singleton) return 0;
+    if (!state->Not_singleton) return -1;
     state->UAdd_type = make_type(state, "UAdd", state->unaryop_type, NULL, 0,
         "UAdd");
-    if (!state->UAdd_type) return 0;
+    if (!state->UAdd_type) return -1;
     state->UAdd_singleton = PyType_GenericNew((PyTypeObject *)state->UAdd_type,
                                               NULL, NULL);
-    if (!state->UAdd_singleton) return 0;
+    if (!state->UAdd_singleton) return -1;
     state->USub_type = make_type(state, "USub", state->unaryop_type, NULL, 0,
         "USub");
-    if (!state->USub_type) return 0;
+    if (!state->USub_type) return -1;
     state->USub_singleton = PyType_GenericNew((PyTypeObject *)state->USub_type,
                                               NULL, NULL);
-    if (!state->USub_singleton) return 0;
+    if (!state->USub_singleton) return -1;
     state->cmpop_type = make_type(state, "cmpop", state->AST_type, NULL, 0,
         "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn");
-    if (!state->cmpop_type) return 0;
-    if (!add_attributes(state, state->cmpop_type, NULL, 0)) return 0;
+    if (!state->cmpop_type) return -1;
+    if (add_attributes(state, state->cmpop_type, NULL, 0) < 0) return -1;
     state->Eq_type = make_type(state, "Eq", state->cmpop_type, NULL, 0,
         "Eq");
-    if (!state->Eq_type) return 0;
+    if (!state->Eq_type) return -1;
     state->Eq_singleton = PyType_GenericNew((PyTypeObject *)state->Eq_type,
                                             NULL, NULL);
-    if (!state->Eq_singleton) return 0;
+    if (!state->Eq_singleton) return -1;
     state->NotEq_type = make_type(state, "NotEq", state->cmpop_type, NULL, 0,
         "NotEq");
-    if (!state->NotEq_type) return 0;
+    if (!state->NotEq_type) return -1;
     state->NotEq_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotEq_type, NULL, NULL);
-    if (!state->NotEq_singleton) return 0;
+    if (!state->NotEq_singleton) return -1;
     state->Lt_type = make_type(state, "Lt", state->cmpop_type, NULL, 0,
         "Lt");
-    if (!state->Lt_type) return 0;
+    if (!state->Lt_type) return -1;
     state->Lt_singleton = PyType_GenericNew((PyTypeObject *)state->Lt_type,
                                             NULL, NULL);
-    if (!state->Lt_singleton) return 0;
+    if (!state->Lt_singleton) return -1;
     state->LtE_type = make_type(state, "LtE", state->cmpop_type, NULL, 0,
         "LtE");
-    if (!state->LtE_type) return 0;
+    if (!state->LtE_type) return -1;
     state->LtE_singleton = PyType_GenericNew((PyTypeObject *)state->LtE_type,
                                              NULL, NULL);
-    if (!state->LtE_singleton) return 0;
+    if (!state->LtE_singleton) return -1;
     state->Gt_type = make_type(state, "Gt", state->cmpop_type, NULL, 0,
         "Gt");
-    if (!state->Gt_type) return 0;
+    if (!state->Gt_type) return -1;
     state->Gt_singleton = PyType_GenericNew((PyTypeObject *)state->Gt_type,
                                             NULL, NULL);
-    if (!state->Gt_singleton) return 0;
+    if (!state->Gt_singleton) return -1;
     state->GtE_type = make_type(state, "GtE", state->cmpop_type, NULL, 0,
         "GtE");
-    if (!state->GtE_type) return 0;
+    if (!state->GtE_type) return -1;
     state->GtE_singleton = PyType_GenericNew((PyTypeObject *)state->GtE_type,
                                              NULL, NULL);
-    if (!state->GtE_singleton) return 0;
+    if (!state->GtE_singleton) return -1;
     state->Is_type = make_type(state, "Is", state->cmpop_type, NULL, 0,
         "Is");
-    if (!state->Is_type) return 0;
+    if (!state->Is_type) return -1;
     state->Is_singleton = PyType_GenericNew((PyTypeObject *)state->Is_type,
                                             NULL, NULL);
-    if (!state->Is_singleton) return 0;
+    if (!state->Is_singleton) return -1;
     state->IsNot_type = make_type(state, "IsNot", state->cmpop_type, NULL, 0,
         "IsNot");
-    if (!state->IsNot_type) return 0;
+    if (!state->IsNot_type) return -1;
     state->IsNot_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->IsNot_type, NULL, NULL);
-    if (!state->IsNot_singleton) return 0;
+    if (!state->IsNot_singleton) return -1;
     state->In_type = make_type(state, "In", state->cmpop_type, NULL, 0,
         "In");
-    if (!state->In_type) return 0;
+    if (!state->In_type) return -1;
     state->In_singleton = PyType_GenericNew((PyTypeObject *)state->In_type,
                                             NULL, NULL);
-    if (!state->In_singleton) return 0;
+    if (!state->In_singleton) return -1;
     state->NotIn_type = make_type(state, "NotIn", state->cmpop_type, NULL, 0,
         "NotIn");
-    if (!state->NotIn_type) return 0;
+    if (!state->NotIn_type) return -1;
     state->NotIn_singleton = PyType_GenericNew((PyTypeObject
                                                *)state->NotIn_type, NULL, NULL);
-    if (!state->NotIn_singleton) return 0;
+    if (!state->NotIn_singleton) return -1;
     state->comprehension_type = make_type(state, "comprehension",
                                           state->AST_type,
                                           comprehension_fields, 4,
         "comprehension(expr target, expr iter, expr* ifs, int is_async)");
-    if (!state->comprehension_type) return 0;
-    if (!add_attributes(state, state->comprehension_type, NULL, 0)) return 0;
+    if (!state->comprehension_type) return -1;
+    if (add_attributes(state, state->comprehension_type, NULL, 0) < 0) return
+        -1;
     state->excepthandler_type = make_type(state, "excepthandler",
                                           state->AST_type, NULL, 0,
         "excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)");
-    if (!state->excepthandler_type) return 0;
-    if (!add_attributes(state, state->excepthandler_type,
-        excepthandler_attributes, 4)) return 0;
+    if (!state->excepthandler_type) return -1;
+    if (add_attributes(state, state->excepthandler_type,
+        excepthandler_attributes, 4) < 0) return -1;
     if (PyObject_SetAttr(state->excepthandler_type, state->end_lineno, Py_None)
         == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->excepthandler_type, state->end_col_offset,
         Py_None) == -1)
-        return 0;
+        return -1;
     state->ExceptHandler_type = make_type(state, "ExceptHandler",
                                           state->excepthandler_type,
                                           ExceptHandler_fields, 3,
         "ExceptHandler(expr? type, identifier? name, stmt* body)");
-    if (!state->ExceptHandler_type) return 0;
+    if (!state->ExceptHandler_type) return -1;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->type, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->ExceptHandler_type, state->name, Py_None) == -1)
-        return 0;
+        return -1;
     state->arguments_type = make_type(state, "arguments", state->AST_type,
                                       arguments_fields, 7,
         "arguments(arg* posonlyargs, arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults, arg? kwarg, expr* defaults)");
-    if (!state->arguments_type) return 0;
-    if (!add_attributes(state, state->arguments_type, NULL, 0)) return 0;
+    if (!state->arguments_type) return -1;
+    if (add_attributes(state, state->arguments_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->arguments_type, state->vararg, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arguments_type, state->kwarg, Py_None) == -1)
-        return 0;
+        return -1;
     state->arg_type = make_type(state, "arg", state->AST_type, arg_fields, 3,
         "arg(identifier arg, expr? annotation, string? type_comment)");
-    if (!state->arg_type) return 0;
-    if (!add_attributes(state, state->arg_type, arg_attributes, 4)) return 0;
+    if (!state->arg_type) return -1;
+    if (add_attributes(state, state->arg_type, arg_attributes, 4) < 0) return
+        -1;
     if (PyObject_SetAttr(state->arg_type, state->annotation, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arg_type, state->type_comment, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arg_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->arg_type, state->end_col_offset, Py_None) == -1)
-        return 0;
+        return -1;
     state->keyword_type = make_type(state, "keyword", state->AST_type,
                                     keyword_fields, 2,
         "keyword(identifier? arg, expr value)");
-    if (!state->keyword_type) return 0;
-    if (!add_attributes(state, state->keyword_type, keyword_attributes, 4))
-        return 0;
+    if (!state->keyword_type) return -1;
+    if (add_attributes(state, state->keyword_type, keyword_attributes, 4) < 0)
+        return -1;
     if (PyObject_SetAttr(state->keyword_type, state->arg, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->keyword_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->keyword_type, state->end_col_offset, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->alias_type = make_type(state, "alias", state->AST_type,
                                   alias_fields, 2,
         "alias(identifier name, identifier? asname)");
-    if (!state->alias_type) return 0;
-    if (!add_attributes(state, state->alias_type, alias_attributes, 4)) return
-        0;
+    if (!state->alias_type) return -1;
+    if (add_attributes(state, state->alias_type, alias_attributes, 4) < 0)
+        return -1;
     if (PyObject_SetAttr(state->alias_type, state->asname, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->alias_type, state->end_lineno, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->alias_type, state->end_col_offset, Py_None) ==
         -1)
-        return 0;
+        return -1;
     state->withitem_type = make_type(state, "withitem", state->AST_type,
                                      withitem_fields, 2,
         "withitem(expr context_expr, expr? optional_vars)");
-    if (!state->withitem_type) return 0;
-    if (!add_attributes(state, state->withitem_type, NULL, 0)) return 0;
+    if (!state->withitem_type) return -1;
+    if (add_attributes(state, state->withitem_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->withitem_type, state->optional_vars, Py_None)
         == -1)
-        return 0;
+        return -1;
     state->match_case_type = make_type(state, "match_case", state->AST_type,
                                        match_case_fields, 3,
         "match_case(pattern pattern, expr? guard, stmt* body)");
-    if (!state->match_case_type) return 0;
-    if (!add_attributes(state, state->match_case_type, NULL, 0)) return 0;
+    if (!state->match_case_type) return -1;
+    if (add_attributes(state, state->match_case_type, NULL, 0) < 0) return -1;
     if (PyObject_SetAttr(state->match_case_type, state->guard, Py_None) == -1)
-        return 0;
+        return -1;
     state->pattern_type = make_type(state, "pattern", state->AST_type, NULL, 0,
         "pattern = MatchValue(expr value)\n"
         "        | MatchSingleton(constant value)\n"
@@ -1827,92 +1831,92 @@ init_types(struct ast_state *state)
         "        | MatchStar(identifier? name)\n"
         "        | MatchAs(pattern? pattern, identifier? name)\n"
         "        | MatchOr(pattern* patterns)");
-    if (!state->pattern_type) return 0;
-    if (!add_attributes(state, state->pattern_type, pattern_attributes, 4))
-        return 0;
+    if (!state->pattern_type) return -1;
+    if (add_attributes(state, state->pattern_type, pattern_attributes, 4) < 0)
+        return -1;
     state->MatchValue_type = make_type(state, "MatchValue",
                                        state->pattern_type, MatchValue_fields,
                                        1,
         "MatchValue(expr value)");
-    if (!state->MatchValue_type) return 0;
+    if (!state->MatchValue_type) return -1;
     state->MatchSingleton_type = make_type(state, "MatchSingleton",
                                            state->pattern_type,
                                            MatchSingleton_fields, 1,
         "MatchSingleton(constant value)");
-    if (!state->MatchSingleton_type) return 0;
+    if (!state->MatchSingleton_type) return -1;
     state->MatchSequence_type = make_type(state, "MatchSequence",
                                           state->pattern_type,
                                           MatchSequence_fields, 1,
         "MatchSequence(pattern* patterns)");
-    if (!state->MatchSequence_type) return 0;
+    if (!state->MatchSequence_type) return -1;
     state->MatchMapping_type = make_type(state, "MatchMapping",
                                          state->pattern_type,
                                          MatchMapping_fields, 3,
         "MatchMapping(expr* keys, pattern* patterns, identifier? rest)");
-    if (!state->MatchMapping_type) return 0;
+    if (!state->MatchMapping_type) return -1;
     if (PyObject_SetAttr(state->MatchMapping_type, state->rest, Py_None) == -1)
-        return 0;
+        return -1;
     state->MatchClass_type = make_type(state, "MatchClass",
                                        state->pattern_type, MatchClass_fields,
                                        4,
         "MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)");
-    if (!state->MatchClass_type) return 0;
+    if (!state->MatchClass_type) return -1;
     state->MatchStar_type = make_type(state, "MatchStar", state->pattern_type,
                                       MatchStar_fields, 1,
         "MatchStar(identifier? name)");
-    if (!state->MatchStar_type) return 0;
+    if (!state->MatchStar_type) return -1;
     if (PyObject_SetAttr(state->MatchStar_type, state->name, Py_None) == -1)
-        return 0;
+        return -1;
     state->MatchAs_type = make_type(state, "MatchAs", state->pattern_type,
                                     MatchAs_fields, 2,
         "MatchAs(pattern? pattern, identifier? name)");
-    if (!state->MatchAs_type) return 0;
+    if (!state->MatchAs_type) return -1;
     if (PyObject_SetAttr(state->MatchAs_type, state->pattern, Py_None) == -1)
-        return 0;
+        return -1;
     if (PyObject_SetAttr(state->MatchAs_type, state->name, Py_None) == -1)
-        return 0;
+        return -1;
     state->MatchOr_type = make_type(state, "MatchOr", state->pattern_type,
                                     MatchOr_fields, 1,
         "MatchOr(pattern* patterns)");
-    if (!state->MatchOr_type) return 0;
+    if (!state->MatchOr_type) return -1;
     state->type_ignore_type = make_type(state, "type_ignore", state->AST_type,
                                         NULL, 0,
         "type_ignore = TypeIgnore(int lineno, string tag)");
-    if (!state->type_ignore_type) return 0;
-    if (!add_attributes(state, state->type_ignore_type, NULL, 0)) return 0;
+    if (!state->type_ignore_type) return -1;
+    if (add_attributes(state, state->type_ignore_type, NULL, 0) < 0) return -1;
     state->TypeIgnore_type = make_type(state, "TypeIgnore",
                                        state->type_ignore_type,
                                        TypeIgnore_fields, 2,
         "TypeIgnore(int lineno, string tag)");
-    if (!state->TypeIgnore_type) return 0;
+    if (!state->TypeIgnore_type) return -1;
     state->type_param_type = make_type(state, "type_param", state->AST_type,
                                        NULL, 0,
         "type_param = TypeVar(identifier name, expr? bound)\n"
         "           | ParamSpec(identifier name)\n"
         "           | TypeVarTuple(identifier name)");
-    if (!state->type_param_type) return 0;
-    if (!add_attributes(state, state->type_param_type, type_param_attributes,
-        4)) return 0;
+    if (!state->type_param_type) return -1;
+    if (add_attributes(state, state->type_param_type, type_param_attributes, 4)
+        < 0) return -1;
     state->TypeVar_type = make_type(state, "TypeVar", state->type_param_type,
                                     TypeVar_fields, 2,
         "TypeVar(identifier name, expr? bound)");
-    if (!state->TypeVar_type) return 0;
+    if (!state->TypeVar_type) return -1;
     if (PyObject_SetAttr(state->TypeVar_type, state->bound, Py_None) == -1)
-        return 0;
+        return -1;
     state->ParamSpec_type = make_type(state, "ParamSpec",
                                       state->type_param_type, ParamSpec_fields,
                                       1,
         "ParamSpec(identifier name)");
-    if (!state->ParamSpec_type) return 0;
+    if (!state->ParamSpec_type) return -1;
     state->TypeVarTuple_type = make_type(state, "TypeVarTuple",
                                          state->type_param_type,
                                          TypeVarTuple_fields, 1,
         "TypeVarTuple(identifier name)");
-    if (!state->TypeVarTuple_type) return 0;
+    if (!state->TypeVarTuple_type) return -1;
 
     state->recursion_depth = 0;
     state->recursion_limit = 0;
-    return 1;
+    return 0;
 }
 
 static int obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out,
@@ -3777,7 +3781,7 @@ ast2obj_mod(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case Module_kind:
@@ -3854,7 +3858,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case FunctionDef_kind:
@@ -4459,7 +4463,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case BoolOp_kind:
@@ -5036,7 +5040,7 @@ ast2obj_comprehension(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->comprehension_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5081,7 +5085,7 @@ ast2obj_excepthandler(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case ExceptHandler_kind:
@@ -5146,7 +5150,7 @@ ast2obj_arguments(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->arguments_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5206,7 +5210,7 @@ ast2obj_arg(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->arg_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5266,7 +5270,7 @@ ast2obj_keyword(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->keyword_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5321,7 +5325,7 @@ ast2obj_alias(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->alias_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5376,7 +5380,7 @@ ast2obj_withitem(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->withitem_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5411,7 +5415,7 @@ ast2obj_match_case(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     tp = (PyTypeObject *)state->match_case_type;
     result = PyType_GenericNew(tp, NULL, NULL);
@@ -5451,7 +5455,7 @@ ast2obj_pattern(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case MatchValue_kind:
@@ -5612,7 +5616,7 @@ ast2obj_type_ignore(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case TypeIgnore_kind:
@@ -5651,7 +5655,7 @@ ast2obj_type_param(struct ast_state *state, void* _o)
     if (++state->recursion_depth > state->recursion_limit) {
         PyErr_SetString(PyExc_RecursionError,
             "maximum recursion depth exceeded during ast construction");
-        return 0;
+        return NULL;
     }
     switch (o->kind) {
     case TypeVar_kind:
@@ -5734,19 +5738,19 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->Module_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
         asdl_type_ignore_seq* type_ignores;
 
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -5779,12 +5783,12 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_ignores, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -5823,18 +5827,18 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->Interactive_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
 
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -5873,17 +5877,17 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->Expression_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty body;
 
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Expression");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -5902,19 +5906,19 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     tp = state->FunctionType_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* argtypes;
         expr_ty returns;
 
         if (PyObject_GetOptionalAttr(obj, state->argtypes, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -5947,11 +5951,11 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->returns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"returns\" missing from FunctionType");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -5971,7 +5975,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
     PyErr_Format(PyExc_TypeError, "expected some sort of mod, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -5992,11 +5996,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         return 0;
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from stmt");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -6009,11 +6013,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from stmt");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -6026,7 +6030,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -6043,7 +6047,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -6062,7 +6066,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->FunctionDef_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
@@ -6074,11 +6078,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_type_param_seq* type_params;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from FunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6091,11 +6095,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from FunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6108,12 +6112,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6146,12 +6150,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->decorator_list, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6184,7 +6188,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->returns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6201,7 +6205,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6218,12 +6222,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6265,7 +6269,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AsyncFunctionDef_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
@@ -6277,11 +6281,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_type_param_seq* type_params;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from AsyncFunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6294,11 +6298,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from AsyncFunctionDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6311,12 +6315,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6349,12 +6353,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->decorator_list, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6387,7 +6391,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->returns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6404,7 +6408,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6421,12 +6425,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6468,7 +6472,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->ClassDef_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
@@ -6479,11 +6483,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_type_param_seq* type_params;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from ClassDef");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6496,12 +6500,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->bases, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6534,12 +6538,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->keywords, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6572,12 +6576,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6610,12 +6614,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->decorator_list, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6648,12 +6652,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6694,13 +6698,13 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Return_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6724,18 +6728,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Delete_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* targets;
 
         if (PyObject_GetOptionalAttr(obj, state->targets, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6775,7 +6779,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Assign_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* targets;
@@ -6783,12 +6787,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         string type_comment;
 
         if (PyObject_GetOptionalAttr(obj, state->targets, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6821,11 +6825,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Assign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6838,7 +6842,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -6862,7 +6866,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->TypeAlias_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty name;
@@ -6870,11 +6874,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from TypeAlias");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6887,12 +6891,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_params, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -6925,11 +6929,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from TypeAlias");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6949,7 +6953,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AugAssign_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
@@ -6957,11 +6961,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AugAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6974,11 +6978,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from AugAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -6991,11 +6995,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from AugAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7015,7 +7019,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AnnAssign_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
@@ -7024,11 +7028,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         int simple;
 
         if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AnnAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7041,11 +7045,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->annotation, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"annotation\" missing from AnnAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7058,7 +7062,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7075,11 +7079,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->simple, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"simple\" missing from AnnAssign");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7099,7 +7103,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->For_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
@@ -7109,11 +7113,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         string type_comment;
 
         if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from For");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7126,11 +7130,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->iter, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from For");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7143,12 +7147,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7181,12 +7185,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7219,7 +7223,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7243,7 +7247,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AsyncFor_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
@@ -7253,11 +7257,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         string type_comment;
 
         if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from AsyncFor");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7270,11 +7274,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->iter, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from AsyncFor");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7287,12 +7291,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7325,12 +7329,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7363,7 +7367,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7388,7 +7392,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->While_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
@@ -7396,11 +7400,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* orelse;
 
         if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from While");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7413,12 +7417,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7451,12 +7455,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7496,7 +7500,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->If_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
@@ -7504,11 +7508,11 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* orelse;
 
         if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from If");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7521,12 +7525,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7559,12 +7563,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7604,7 +7608,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->With_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_withitem_seq* items;
@@ -7612,12 +7616,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         string type_comment;
 
         if (PyObject_GetOptionalAttr(obj, state->items, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7650,12 +7654,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7688,7 +7692,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7712,7 +7716,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->AsyncWith_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_withitem_seq* items;
@@ -7720,12 +7724,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         string type_comment;
 
         if (PyObject_GetOptionalAttr(obj, state->items, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7758,12 +7762,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7796,7 +7800,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7820,18 +7824,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Match_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty subject;
         asdl_match_case_seq* cases;
 
         if (PyObject_GetOptionalAttr(obj, state->subject, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"subject\" missing from Match");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -7844,12 +7848,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->cases, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7889,14 +7893,14 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Raise_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty exc;
         expr_ty cause;
 
         if (PyObject_GetOptionalAttr(obj, state->exc, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7913,7 +7917,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->cause, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -7937,7 +7941,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Try_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
@@ -7946,12 +7950,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* finalbody;
 
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -7984,12 +7988,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->handlers, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8022,12 +8026,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8060,12 +8064,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->finalbody, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8105,7 +8109,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->TryStar_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_stmt_seq* body;
@@ -8114,12 +8118,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_stmt_seq* finalbody;
 
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8152,12 +8156,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->handlers, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8190,12 +8194,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8228,12 +8232,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->finalbody, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8273,18 +8277,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Assert_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
         expr_ty msg;
 
         if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from Assert");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8297,7 +8301,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->msg, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -8321,18 +8325,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Import_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_alias_seq* names;
 
         if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8372,7 +8376,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->ImportFrom_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier module;
@@ -8380,7 +8384,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         int level;
 
         if (PyObject_GetOptionalAttr(obj, state->module, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -8397,12 +8401,12 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8435,7 +8439,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->level, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -8459,18 +8463,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Global_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_identifier_seq* names;
 
         if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8510,18 +8514,18 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Nonlocal_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_identifier_seq* names;
 
         if (PyObject_GetOptionalAttr(obj, state->names, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8561,17 +8565,17 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Expr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Expr");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8591,7 +8595,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Pass_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
 
@@ -8603,7 +8607,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Break_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
 
@@ -8615,7 +8619,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     tp = state->Continue_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
 
@@ -8628,7 +8632,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     PyErr_Format(PyExc_TypeError, "expected some sort of stmt, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -8649,11 +8653,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         return 0;
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from expr");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -8666,11 +8670,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from expr");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -8683,7 +8687,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -8700,7 +8704,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -8719,18 +8723,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->BoolOp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         boolop_ty op;
         asdl_expr_seq* values;
 
         if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BoolOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8743,12 +8747,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -8788,18 +8792,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->NamedExpr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty target;
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from NamedExpr");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8812,11 +8816,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NamedExpr");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8836,7 +8840,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->BinOp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty left;
@@ -8844,11 +8848,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         expr_ty right;
 
         if (PyObject_GetOptionalAttr(obj, state->left, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from BinOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8861,11 +8865,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from BinOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8878,11 +8882,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->right, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"right\" missing from BinOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8902,18 +8906,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->UnaryOp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         unaryop_ty op;
         expr_ty operand;
 
         if (PyObject_GetOptionalAttr(obj, state->op, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"op\" missing from UnaryOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8926,11 +8930,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->operand, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"operand\" missing from UnaryOp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8950,18 +8954,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Lambda_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         arguments_ty args;
         expr_ty body;
 
         if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from Lambda");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8974,11 +8978,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Lambda");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -8998,7 +9002,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->IfExp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty test;
@@ -9006,11 +9010,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         expr_ty orelse;
 
         if (PyObject_GetOptionalAttr(obj, state->test, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from IfExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9023,11 +9027,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from IfExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9040,11 +9044,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->orelse, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"orelse\" missing from IfExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9064,19 +9068,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Dict_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* keys;
         asdl_expr_seq* values;
 
         if (PyObject_GetOptionalAttr(obj, state->keys, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9109,12 +9113,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9154,18 +9158,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Set_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* elts;
 
         if (PyObject_GetOptionalAttr(obj, state->elts, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9205,18 +9209,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->ListComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty elt;
         asdl_comprehension_seq* generators;
 
         if (PyObject_GetOptionalAttr(obj, state->elt, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from ListComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9229,12 +9233,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9274,18 +9278,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->SetComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty elt;
         asdl_comprehension_seq* generators;
 
         if (PyObject_GetOptionalAttr(obj, state->elt, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from SetComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9298,12 +9302,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9343,7 +9347,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->DictComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty key;
@@ -9351,11 +9355,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         asdl_comprehension_seq* generators;
 
         if (PyObject_GetOptionalAttr(obj, state->key, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"key\" missing from DictComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9368,11 +9372,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from DictComp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9385,12 +9389,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9430,18 +9434,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->GeneratorExp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty elt;
         asdl_comprehension_seq* generators;
 
         if (PyObject_GetOptionalAttr(obj, state->elt, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"elt\" missing from GeneratorExp");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9454,12 +9458,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->generators, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9499,17 +9503,17 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Await_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Await");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9529,13 +9533,13 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Yield_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -9559,17 +9563,17 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->YieldFrom_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from YieldFrom");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9589,7 +9593,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Compare_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty left;
@@ -9597,11 +9601,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         asdl_expr_seq* comparators;
 
         if (PyObject_GetOptionalAttr(obj, state->left, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"left\" missing from Compare");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9614,12 +9618,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->ops, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9652,12 +9656,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->comparators, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9697,7 +9701,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Call_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty func;
@@ -9705,11 +9709,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         asdl_keyword_seq* keywords;
 
         if (PyObject_GetOptionalAttr(obj, state->func, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"func\" missing from Call");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9722,12 +9726,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9760,12 +9764,12 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->keywords, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9805,7 +9809,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->FormattedValue_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
@@ -9813,11 +9817,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         expr_ty format_spec;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from FormattedValue");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9830,11 +9834,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->conversion, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"conversion\" missing from FormattedValue");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9847,7 +9851,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->format_spec, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -9872,18 +9876,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->JoinedStr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* values;
 
         if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -9923,18 +9927,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Constant_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         constant value;
         string kind;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Constant");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9947,7 +9951,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->kind, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -9971,7 +9975,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Attribute_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
@@ -9979,11 +9983,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         expr_context_ty ctx;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Attribute");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -9996,11 +10000,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->attr, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"attr\" missing from Attribute");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10013,11 +10017,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Attribute");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10037,7 +10041,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Subscript_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
@@ -10045,11 +10049,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         expr_context_ty ctx;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Subscript");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10062,11 +10066,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->slice, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"slice\" missing from Subscript");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10079,11 +10083,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Subscript");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10103,18 +10107,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Starred_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
         expr_context_ty ctx;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Starred");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10127,11 +10131,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Starred");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10151,18 +10155,18 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Name_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier id;
         expr_context_ty ctx;
 
         if (PyObject_GetOptionalAttr(obj, state->id, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"id\" missing from Name");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10175,11 +10179,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Name");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10199,19 +10203,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->List_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* elts;
         expr_context_ty ctx;
 
         if (PyObject_GetOptionalAttr(obj, state->elts, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -10244,11 +10248,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from List");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10268,19 +10272,19 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Tuple_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* elts;
         expr_context_ty ctx;
 
         if (PyObject_GetOptionalAttr(obj, state->elts, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -10313,11 +10317,11 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->ctx, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"ctx\" missing from Tuple");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -10337,7 +10341,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     tp = state->Slice_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty lower;
@@ -10345,7 +10349,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         expr_ty step;
 
         if (PyObject_GetOptionalAttr(obj, state->lower, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10362,7 +10366,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->upper, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10379,7 +10383,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->step, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10404,7 +10408,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     PyErr_Format(PyExc_TypeError, "expected some sort of expr, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -10415,7 +10419,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
 
     isinstance = PyObject_IsInstance(obj, state->Load_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Load;
@@ -10423,7 +10427,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
     }
     isinstance = PyObject_IsInstance(obj, state->Store_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Store;
@@ -10431,7 +10435,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
     }
     isinstance = PyObject_IsInstance(obj, state->Del_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Del;
@@ -10439,7 +10443,7 @@ obj2ast_expr_context(struct ast_state *state, PyObject* obj, expr_context_ty*
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr_context, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10450,7 +10454,7 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
 
     isinstance = PyObject_IsInstance(obj, state->And_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = And;
@@ -10458,7 +10462,7 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Or_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Or;
@@ -10466,7 +10470,7 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, PyArena*
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of boolop, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10477,7 +10481,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
 
     isinstance = PyObject_IsInstance(obj, state->Add_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Add;
@@ -10485,7 +10489,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Sub_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Sub;
@@ -10493,7 +10497,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Mult_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Mult;
@@ -10501,7 +10505,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->MatMult_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = MatMult;
@@ -10509,7 +10513,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Div_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Div;
@@ -10517,7 +10521,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Mod_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Mod;
@@ -10525,7 +10529,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Pow_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Pow;
@@ -10533,7 +10537,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->LShift_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = LShift;
@@ -10541,7 +10545,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->RShift_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = RShift;
@@ -10549,7 +10553,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->BitOr_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = BitOr;
@@ -10557,7 +10561,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->BitXor_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = BitXor;
@@ -10565,7 +10569,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->BitAnd_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = BitAnd;
@@ -10573,7 +10577,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->FloorDiv_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = FloorDiv;
@@ -10581,7 +10585,7 @@ obj2ast_operator(struct ast_state *state, PyObject* obj, operator_ty* out,
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of operator, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10592,7 +10596,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
 
     isinstance = PyObject_IsInstance(obj, state->Invert_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Invert;
@@ -10600,7 +10604,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->Not_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Not;
@@ -10608,7 +10612,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->UAdd_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = UAdd;
@@ -10616,7 +10620,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
     isinstance = PyObject_IsInstance(obj, state->USub_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = USub;
@@ -10624,7 +10628,7 @@ obj2ast_unaryop(struct ast_state *state, PyObject* obj, unaryop_ty* out,
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of unaryop, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10635,7 +10639,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
 
     isinstance = PyObject_IsInstance(obj, state->Eq_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Eq;
@@ -10643,7 +10647,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->NotEq_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = NotEq;
@@ -10651,7 +10655,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Lt_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Lt;
@@ -10659,7 +10663,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->LtE_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = LtE;
@@ -10667,7 +10671,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Gt_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Gt;
@@ -10675,7 +10679,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->GtE_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = GtE;
@@ -10683,7 +10687,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->Is_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = Is;
@@ -10691,7 +10695,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->IsNot_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = IsNot;
@@ -10699,7 +10703,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->In_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = In;
@@ -10707,7 +10711,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
     isinstance = PyObject_IsInstance(obj, state->NotIn_type);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         *out = NotIn;
@@ -10715,7 +10719,7 @@ obj2ast_cmpop(struct ast_state *state, PyObject* obj, cmpop_ty* out, PyArena*
     }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of cmpop, but got %R", obj);
-    return 1;
+    return -1;
 }
 
 int
@@ -10729,11 +10733,11 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
     int is_async;
 
     if (PyObject_GetOptionalAttr(obj, state->target, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from comprehension");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10746,11 +10750,11 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->iter, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"iter\" missing from comprehension");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10763,12 +10767,12 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->ifs, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         tmp = PyList_New(0);
         if (tmp == NULL) {
-            return 1;
+            return -1;
         }
     }
     {
@@ -10801,11 +10805,11 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->is_async, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"is_async\" missing from comprehension");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10822,7 +10826,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -10843,11 +10847,11 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         return 0;
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from excepthandler");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10860,11 +10864,11 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from excepthandler");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -10877,7 +10881,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -10894,7 +10898,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -10913,7 +10917,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     tp = state->ExceptHandler_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty type;
@@ -10921,7 +10925,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
         asdl_stmt_seq* body;
 
         if (PyObject_GetOptionalAttr(obj, state->type, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10938,7 +10942,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -10955,12 +10959,12 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -11001,7 +11005,7 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
     PyErr_Format(PyExc_TypeError, "expected some sort of excepthandler, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11018,12 +11022,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
     asdl_expr_seq* defaults;
 
     if (PyObject_GetOptionalAttr(obj, state->posonlyargs, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         tmp = PyList_New(0);
         if (tmp == NULL) {
-            return 1;
+            return -1;
         }
     }
     {
@@ -11056,12 +11060,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->args, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         tmp = PyList_New(0);
         if (tmp == NULL) {
-            return 1;
+            return -1;
         }
     }
     {
@@ -11094,7 +11098,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->vararg, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11111,12 +11115,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->kwonlyargs, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         tmp = PyList_New(0);
         if (tmp == NULL) {
-            return 1;
+            return -1;
         }
     }
     {
@@ -11149,12 +11153,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->kw_defaults, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         tmp = PyList_New(0);
         if (tmp == NULL) {
-            return 1;
+            return -1;
         }
     }
     {
@@ -11187,7 +11191,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->kwarg, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11204,12 +11208,12 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->defaults, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         tmp = PyList_New(0);
         if (tmp == NULL) {
-            return 1;
+            return -1;
         }
     }
     {
@@ -11247,7 +11251,7 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11263,11 +11267,11 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     int end_col_offset;
 
     if (PyObject_GetOptionalAttr(obj, state->arg, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"arg\" missing from arg");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11280,7 +11284,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->annotation, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11297,7 +11301,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->type_comment, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11314,11 +11318,11 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from arg");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11331,11 +11335,11 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from arg");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11348,7 +11352,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11365,7 +11369,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11387,7 +11391,7 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11403,7 +11407,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     int end_col_offset;
 
     if (PyObject_GetOptionalAttr(obj, state->arg, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11420,11 +11424,11 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from keyword");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11437,11 +11441,11 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from keyword");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11454,11 +11458,11 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from keyword");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11471,7 +11475,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11488,7 +11492,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11510,7 +11514,7 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11526,11 +11530,11 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     int end_col_offset;
 
     if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from alias");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11543,7 +11547,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->asname, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11560,11 +11564,11 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from alias");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11577,11 +11581,11 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from alias");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11594,7 +11598,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11611,7 +11615,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11633,7 +11637,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11645,11 +11649,11 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
     expr_ty optional_vars;
 
     if (PyObject_GetOptionalAttr(obj, state->context_expr, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from withitem");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11662,7 +11666,7 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->optional_vars, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11683,7 +11687,7 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11696,11 +11700,11 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
     asdl_stmt_seq* body;
 
     if (PyObject_GetOptionalAttr(obj, state->pattern, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"pattern\" missing from match_case");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11713,7 +11717,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->guard, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL || tmp == Py_None) {
         Py_CLEAR(tmp);
@@ -11730,12 +11734,12 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->body, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         tmp = PyList_New(0);
         if (tmp == NULL) {
-            return 1;
+            return -1;
         }
     }
     {
@@ -11772,7 +11776,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
     return 0;
 failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -11793,11 +11797,11 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         return 0;
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11810,11 +11814,11 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11827,11 +11831,11 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"end_lineno\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11844,11 +11848,11 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"end_col_offset\" missing from pattern");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -11863,17 +11867,17 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchValue_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty value;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from MatchValue");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -11893,17 +11897,17 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchSingleton_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         constant value;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from MatchSingleton");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -11923,18 +11927,18 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchSequence_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_pattern_seq* patterns;
 
         if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -11974,7 +11978,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchMapping_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_expr_seq* keys;
@@ -11982,12 +11986,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         identifier rest;
 
         if (PyObject_GetOptionalAttr(obj, state->keys, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -12020,12 +12024,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -12058,7 +12062,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->rest, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12082,7 +12086,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchClass_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         expr_ty cls;
@@ -12091,11 +12095,11 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         asdl_pattern_seq* kwd_patterns;
 
         if (PyObject_GetOptionalAttr(obj, state->cls, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"cls\" missing from MatchClass");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12108,12 +12112,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -12146,12 +12150,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->kwd_attrs, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -12184,12 +12188,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->kwd_patterns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -12230,13 +12234,13 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchStar_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12260,14 +12264,14 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchAs_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         pattern_ty pattern;
         identifier name;
 
         if (PyObject_GetOptionalAttr(obj, state->pattern, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12284,7 +12288,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12308,18 +12312,18 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     tp = state->MatchOr_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         asdl_pattern_seq* patterns;
 
         if (PyObject_GetOptionalAttr(obj, state->patterns, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             tmp = PyList_New(0);
             if (tmp == NULL) {
-                return 1;
+                return -1;
             }
         }
         {
@@ -12360,7 +12364,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     PyErr_Format(PyExc_TypeError, "expected some sort of pattern, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -12379,18 +12383,18 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
     tp = state->TypeIgnore_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         int lineno;
         string tag;
 
         if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from TypeIgnore");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12403,11 +12407,11 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->tag, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"tag\" missing from TypeIgnore");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12427,7 +12431,7 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
     PyErr_Format(PyExc_TypeError, "expected some sort of type_ignore, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 int
@@ -12448,11 +12452,11 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         return 0;
     }
     if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from type_param");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -12465,11 +12469,11 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from type_param");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -12482,11 +12486,11 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"end_lineno\" missing from type_param");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -12499,11 +12503,11 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
         Py_CLEAR(tmp);
     }
     if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
-        return 1;
+        return -1;
     }
     if (tmp == NULL) {
         PyErr_SetString(PyExc_TypeError, "required field \"end_col_offset\" missing from type_param");
-        return 1;
+        return -1;
     }
     else {
         int res;
@@ -12518,18 +12522,18 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     tp = state->TypeVar_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
         expr_ty bound;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from TypeVar");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12542,7 +12546,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
             Py_CLEAR(tmp);
         }
         if (PyObject_GetOptionalAttr(obj, state->bound, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL || tmp == Py_None) {
             Py_CLEAR(tmp);
@@ -12566,17 +12570,17 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     tp = state->ParamSpec_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from ParamSpec");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12596,17 +12600,17 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     tp = state->TypeVarTuple_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
-        return 1;
+        return -1;
     }
     if (isinstance) {
         identifier name;
 
         if (PyObject_GetOptionalAttr(obj, state->name, &tmp) < 0) {
-            return 1;
+            return -1;
         }
         if (tmp == NULL) {
             PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from TypeVarTuple");
-            return 1;
+            return -1;
         }
         else {
             int res;
@@ -12627,7 +12631,7 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     PyErr_Format(PyExc_TypeError, "expected some sort of type_param, but got %R", obj);
     failed:
     Py_XDECREF(tmp);
-    return 1;
+    return -1;
 }
 
 
@@ -13070,7 +13074,7 @@ PyObject* PyAST_mod2obj(mod_ty t)
     int COMPILER_STACK_FRAME_SCALE = 2;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
-        return 0;
+        return NULL;
     }
     state->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
     int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
@@ -13084,7 +13088,7 @@ PyObject* PyAST_mod2obj(mod_ty t)
         PyErr_Format(PyExc_SystemError,
             "AST constructor recursion depth mismatch (before=%d, after=%d)",
             starting_recursion_depth, state->recursion_depth);
-        return 0;
+        return NULL;
     }
     return result;
 }
