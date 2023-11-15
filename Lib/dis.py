@@ -263,10 +263,10 @@ _Instruction = collections.namedtuple(
         'start_offset',
         'starts_line',
         'line_number',
-        'is_jump_target',
+        'label',
         'positions'
     ],
-    defaults=[None]
+    defaults=[None, None]
 )
 
 _Instruction.opname.__doc__ = "Human readable name for operation"
@@ -281,7 +281,7 @@ _Instruction.start_offset.__doc__ = (
 )
 _Instruction.starts_line.__doc__ = "True if this opcode starts a source line, otherwise False"
 _Instruction.line_number.__doc__ = "source line number associated with this opcode (if any), otherwise None"
-_Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
+_Instruction.label.__doc__ = "A label (int > 0) if this instruction is a jump target, otherwise None"
 _Instruction.positions.__doc__ = "dis.Positions object holding the span of source code covered by this instruction"
 
 _ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
@@ -325,7 +325,7 @@ class Instruction(_Instruction):
                         otherwise equal to Instruction.offset
          starts_line - True if this opcode starts a source line, otherwise False
          line_number - source line number associated with this opcode (if any), otherwise None
-         is_jump_target - True if other code jumps to here, otherwise False
+         label - A label (int > 0) if this instruction is a jump target, otherwise None
          positions - Optional dis.Positions object holding the span of source code
                      covered by this instruction
     """
@@ -399,14 +399,14 @@ class Instruction(_Instruction):
 
     @classmethod
     def _create(cls, op, arg, offset, start_offset, starts_line, line_number,
-               is_jump_target, positions,
+               label, positions,
                co_consts=None, varname_from_oparg=None, names=None):
         argval, argrepr = cls._get_argval_argrepr(
                                op, arg, offset,
                                co_consts, names, varname_from_oparg)
         return Instruction(_all_opname[op], op, arg, argval, argrepr,
                            offset, start_offset, starts_line, line_number,
-                           is_jump_target, positions)
+                           label, positions)
 
     @property
     def oparg(self):
@@ -446,6 +446,11 @@ class Instruction(_Instruction):
         Otherwise return None.
         """
         return _get_jump_target(self.opcode, self.arg, self.offset)
+
+    @property
+    def is_jump_target(self):
+        """True if other code jumps to here, otherwise False"""
+        return self.label is not None
 
     def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=4):
         """Format instruction details for inclusion in disassembly output.
@@ -605,10 +610,16 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     original_code = original_code or code
     co_positions = co_positions or iter(())
     get_name = None if names is None else names.__getitem__
-    labels = set(findlabels(original_code))
-    for start, end, target, _, _ in exception_entries:
-        for i in range(start, end):
-            labels.add(target)
+
+    def make_labels_map(original_code, exception_entries):
+        labels = set(findlabels(original_code))
+        for start, end, target, _, _ in exception_entries:
+            for i in range(start, end):
+                labels.add(target)
+        return {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
+
+    labels_map = make_labels_map(original_code, exception_entries)
+
     starts_line = False
     local_line_number = None
     line_number = None
@@ -621,13 +632,12 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 line_number = local_line_number + line_offset
             else:
                 line_number = None
-        is_jump_target = offset in labels
         positions = Positions(*next(co_positions, ()))
         deop = _deoptop(op)
         op = code[offset]
 
         yield Instruction._create(op, arg, offset, start_offset, starts_line, line_number,
-                                  is_jump_target, positions, co_consts=co_consts,
+                                  labels_map.get(offset, None), positions, co_consts=co_consts,
                                   varname_from_oparg=varname_from_oparg, names=names)
 
         caches = _get_cache_size(_all_opname[deop])
