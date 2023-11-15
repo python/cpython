@@ -411,7 +411,7 @@ class ImportTests(unittest.TestCase):
     def test_double_const(self):
         # Another brief digression to test the accuracy of manifest float
         # constants.
-        from test import double_const  # don't blink -- that *was* the test
+        from test.test_import.data import double_const  # don't blink -- that *was* the test
 
     def test_import(self):
         def test_with_extension(ext):
