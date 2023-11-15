@@ -36,13 +36,13 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             break;
         }
         else {
-            if (_PyOpcode_opcode_metadata[opcode].flags & HAS_ESCAPES_FLAG) {
+            if (OPCODE_HAS_ESCAPES(opcode)) {
                 maybe_invalid = true;
                 if (last_set_ip >= 0) {
                     buffer[last_set_ip].opcode = _SET_IP;
                 }
             }
-            if ((_PyOpcode_opcode_metadata[opcode].flags & HAS_ERROR_FLAG) || opcode == _PUSH_FRAME) {
+            if (OPCODE_HAS_ERROR(opcode) || opcode == _PUSH_FRAME) {
                 if (last_set_ip >= 0) {
                     buffer[last_set_ip].opcode = _SET_IP;
                 }
