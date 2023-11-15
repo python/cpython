@@ -7,7 +7,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_complexobject.h" // _Py_c_neg()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
@@ -374,7 +373,7 @@ cmath_atanh_impl(PyObject *module, Py_complex z)
 
     /* Reduce to case where z.real >= 0., using atanh(z) = -atanh(-z). */
     if (z.real < 0.) {
-        return _Py_c_neg(cmath_atanh_impl(module, _Py_c_neg(z)));
+        return Py_complex_neg(cmath_atanh_impl(module, Py_complex_neg(z)));
     }
 
     ay = fabs(z.imag);
@@ -927,7 +926,7 @@ cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
             return NULL;
         }
         y = c_log(y);
-        x = _Py_c_quot(x, y);
+        x = Py_complex_quot(x, y);
     }
     if (errno != 0)
         return math_error();
@@ -992,7 +991,7 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 
     errno = 0;
     phi = c_atan2(z); /* should not cause any exception */
-    r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
+    r = Py_complex_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();
     else
@@ -1176,10 +1175,10 @@ cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
        this is essentially the "weak" test from the Boost library
     */
 
-    diff = _Py_c_abs(_Py_c_diff(a, b));
+    diff = Py_complex_abs(Py_complex_diff(a, b));
 
-    return (((diff <= rel_tol * _Py_c_abs(b)) ||
-             (diff <= rel_tol * _Py_c_abs(a))) ||
+    return (((diff <= rel_tol * Py_complex_abs(b)) ||
+             (diff <= rel_tol * Py_complex_abs(a))) ||
             (diff <= abs_tol));
 }
 

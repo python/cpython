@@ -1181,6 +1181,20 @@ New Features
   :exc:`KeyError` if the key missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
+* Add public functions operating on ``Py_complex`` numbers:
+
+  * :c:func:`Py_complex_sum`: previously known as ``_Py_c_sum()``
+  * :c:func:`Py_complex_diff`: previously known as ``_Py_c_diff()``
+  * :c:func:`Py_complex_neg`: previously known as ``_Py_c_neg()``
+  * :c:func:`Py_complex_prod`: previously known as ``_Py_c_prod()``
+  * :c:func:`Py_complex_quot`: previously known as ``_Py_c_quot()``
+  * :c:func:`Py_complex_pow`: previously known as ``_Py_c_pow()``
+  * :c:func:`Py_complex_abs`: previously known as ``_Py_c_abs()``
+
+  The old names with the ``_Py_c`` prefix are kept for backward compatibility.
+
+  (Contributed by Victor Stinner in :gh:`111481`.)
+
 
 Porting to Python 3.13
 ----------------------

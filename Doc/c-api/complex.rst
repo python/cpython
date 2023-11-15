@@ -34,31 +34,31 @@ pointers.  This is consistent throughout the API.
       } Py_complex;
 
 
-.. c:function:: Py_complex _Py_c_sum(Py_complex left, Py_complex right)
+.. c:function:: Py_complex Py_complex_sum(Py_complex left, Py_complex right)
 
    Return the sum of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
 
-.. c:function:: Py_complex _Py_c_diff(Py_complex left, Py_complex right)
+.. c:function:: Py_complex Py_complex_diff(Py_complex left, Py_complex right)
 
    Return the difference between two complex numbers, using the C
    :c:type:`Py_complex` representation.
 
 
-.. c:function:: Py_complex _Py_c_neg(Py_complex num)
+.. c:function:: Py_complex Py_complex_neg(Py_complex num)
 
    Return the negation of the complex number *num*, using the C
    :c:type:`Py_complex` representation.
 
 
-.. c:function:: Py_complex _Py_c_prod(Py_complex left, Py_complex right)
+.. c:function:: Py_complex Py_complex_prod(Py_complex left, Py_complex right)
 
    Return the product of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
 
-.. c:function:: Py_complex _Py_c_quot(Py_complex dividend, Py_complex divisor)
+.. c:function:: Py_complex Py_complex_quot(Py_complex dividend, Py_complex divisor)
 
    Return the quotient of two complex numbers, using the C :c:type:`Py_complex`
    representation.
@@ -67,13 +67,35 @@ pointers.  This is consistent throughout the API.
    :c:data:`errno` to :c:macro:`!EDOM`.
 
 
-.. c:function:: Py_complex _Py_c_pow(Py_complex num, Py_complex exp)
+.. c:function:: Py_complex Py_complex_pow(Py_complex num, Py_complex exp)
 
    Return the exponentiation of *num* by *exp*, using the C :c:type:`Py_complex`
    representation.
 
    If *num* is null and *exp* is not a positive real number,
    this method returns zero and sets :c:data:`errno` to :c:macro:`!EDOM`.
+
+
+.. c:function:: double Py_complex_abs(Py_complex num)
+
+   Return the absolute value (or modulus or magnitude) of *num*, using the C
+   :c:type:`Py_complex` representation.
+
+   .. versionadded:: 3.5
+
+
+In Python 3.13, these functions have been made public. Previously, they were
+known as these private functions:
+
+* ``Py_complex_sum()``: ``_Py_c_sum()``
+* ``Py_complex_diff()``: ``_Py_c_diff()``
+* ``Py_complex_neg()``: ``_Py_c_neg()``
+* ``Py_complex_prod()``: ``_Py_c_prod()``
+* ``Py_complex_quot()``: ``_Py_c_quot()``
+* ``Py_complex_pow()``: ``_Py_c_pow()``
+* ``Py_complex_abs()``: ``_Py_c_abs()``
+
+Old names are kept for backward compatibility.
 
 
 Complex Numbers as Python Objects
