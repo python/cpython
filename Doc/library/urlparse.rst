@@ -125,6 +125,11 @@ The :mod:`urlparse` module defines the following functions:
    decomposed before parsing, or is not a Unicode string, no error will be
    raised.
 
+   .. warning::
+
+      :func:`urlparse` does not perform validation.  See :ref:`URL parsing
+      security <url-parsing-security>` for details.
+
    .. versionchanged:: 2.5
       Added attributes to return value.
 
@@ -248,6 +253,10 @@ The :mod:`urlparse` module defines the following functions:
    decomposed before parsing, or is not a Unicode string, no error will be
    raised.
 
+   Following some of the `WHATWG spec`_ that updates RFC 3986, leading C0
+   control and space characters are stripped from the URL. ``\n``,
+   ``\r`` and tab ``\t`` characters are removed from the URL at any position.
+
    .. versionadded:: 2.2
 
    .. versionchanged:: 2.5
@@ -256,6 +265,9 @@ The :mod:`urlparse` module defines the following functions:
    .. versionchanged:: 2.7.17
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
+
+   .. versionchanged:: 2.7.17.8
+      Leading WHATWG C0 control and space characters are stripped from the URL.
 
 
 .. function:: urlunsplit(parts)
@@ -377,4 +389,15 @@ The following classes provide the implementations of the parse results:
 .. class:: SplitResult(scheme, netloc, path, query, fragment)
 
    Concrete class for :func:`urlsplit` results.
+
+.. _url-parsing-security:
+
+URL parsing security
+--------------------
+
+The :func:`urlsplit` and :func:`urlparse` APIs do not perform **validation** of
+inputs.  They may not raise errors on inputs that other applications consider
+invalid.  They may also succeed on some inputs that might not be considered
+URLs elsewhere.  Their purpose is for practical functionality rather than
+purity.
 
