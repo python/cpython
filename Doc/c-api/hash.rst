@@ -17,6 +17,21 @@ See also the :c:member:`PyTypeObject.tp_hash` member.
 
    .. versionadded:: 3.2
 
+.. c:macro:: PyHASH_MODULUS
+
+   The Mersenne prime ``P = 2**n -1``, used for numeric hash scheme.
+
+.. c:macro:: PyHASH_BITS
+
+   The exponent ``n`` of ``P``.
+
+.. c:macro:: PyHASH_INF
+
+   The hash value returned for a positive infinity.
+
+.. c:macro:: PyHASH_IMAG
+
+   The multiplier used for the imaginary part of a complex number.
 
 .. c:type:: PyHash_FuncDef
 
