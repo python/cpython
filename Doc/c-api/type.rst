@@ -185,6 +185,13 @@ Type Objects
 
    .. versionadded:: 3.11
 
+.. c:function:: PyObject* PyType_GetFullyQualifiedName(PyTypeObject *type)
+
+   Return the type's fully qualified name. Equivalent to getting the
+   type's :attr:`__fullyqualname__ <class.__fullyqualname__>` attribute.
+
+   .. versionadded:: 3.13
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the

@@ -1,0 +1,2 @@
+Add :attr:`__fullyqualname__ <class.__fullyqualname__>` read-only attribute
+to types: the fully qualified type name. Patch by Victor Stinner.

@@ -5496,6 +5496,15 @@ types, where they are relevant.  Some of these are not reported by the
    .. versionadded:: 3.3
 
 
+.. attribute:: class.__fullyqualname__
+
+   The fully qualified name of the class instance:
+   ``f"{class.__module__}.{class.__qualname__}"``, or ``class.__qualname__`` if
+   ``class.__module__`` is not a string or is equal to ``"builtins"``.
+
+   .. versionadded:: 3.13
+
+
 .. attribute:: definition.__type_params__
 
    The :ref:`type parameters <type-params>` of generic classes, functions,

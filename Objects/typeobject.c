@@ -1123,6 +1123,58 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
 
+
+static PyObject*
+type_fullyqualname(PyTypeObject *type, int is_repr)
+{
+    // type is a static type and PyType_Ready() was not called on it yet?
+    if (type->tp_name == NULL) {
+        PyErr_SetString(PyExc_TypeError, "static type not initialized");
+        return NULL;
+    }
+
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        return PyUnicode_FromString(type->tp_name);
+    }
+
+    PyObject *qualname = type_qualname(type, NULL);
+    if (qualname == NULL) {
+        return NULL;
+    }
+
+    PyObject *module = type_module(type, NULL);
+    if (module == NULL) {
+        if (is_repr) {
+            // type_repr() ignores type_module() errors
+            PyErr_Clear();
+            return qualname;
+        }
+
+        Py_DECREF(qualname);
+        return NULL;
+    }
+
+    PyObject *result;
+    if (PyUnicode_Check(module)
+        && !_PyUnicode_Equal(module, &_Py_ID(builtins)))
+    {
+        result = PyUnicode_FromFormat("%U.%U", module, qualname);
+    }
+    else {
+        result = Py_NewRef(qualname);
+    }
+    Py_DECREF(module);
+    Py_DECREF(qualname);
+    return result;
+}
+
+static PyObject *
+type_get_fullyqualname(PyTypeObject *type, void *context)
+{
+    return type_fullyqualname(type, 0);
+}
+
+
 static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
 {
@@ -1583,6 +1635,7 @@ type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass)
 static PyGetSetDef type_getsets[] = {
     {"__name__", (getter)type_name, (setter)type_set_name, NULL},
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
+    {"__fullyqualname__", (getter)type_get_fullyqualname, NULL, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__mro__", (getter)type_get_mro, NULL, NULL},
     {"__module__", (getter)type_module, (setter)type_set_module, NULL},
@@ -1600,33 +1653,18 @@ static PyObject *
 type_repr(PyTypeObject *type)
 {
     if (type->tp_name == NULL) {
-        // type_repr() called before the type is fully initialized
-        // by PyType_Ready().
+        // If type_repr() is called before the type is fully initialized
+        // by PyType_Ready(), just format the type memory address.
         return PyUnicode_FromFormat("<class at %p>", type);
     }
 
-    PyObject *mod, *name, *rtn;
-
-    mod = type_module(type, NULL);
-    if (mod == NULL)
-        PyErr_Clear();
-    else if (!PyUnicode_Check(mod)) {
-        Py_SETREF(mod, NULL);
-    }
-    name = type_qualname(type, NULL);
+    PyObject *name = type_fullyqualname(type, 1);
     if (name == NULL) {
-        Py_XDECREF(mod);
         return NULL;
     }
-
-    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins)))
-        rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
-    else
-        rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
-
-    Py_XDECREF(mod);
+    PyObject *result = PyUnicode_FromFormat("<class '%U'>", name);
     Py_DECREF(name);
-    return rtn;
+    return result;
 }
 
 static PyObject *
@@ -4539,6 +4577,13 @@ PyType_GetQualName(PyTypeObject *type)
 {
     return type_qualname(type, NULL);
 }
+
+PyObject *
+PyType_GetFullyQualifiedName(PyTypeObject *type)
+{
+    return type_get_fullyqualname(type, NULL);
+}
+
 
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
