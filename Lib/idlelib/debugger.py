@@ -1,3 +1,20 @@
+"""Debug user code with a GUI interface to a subclass of bdb.Bdb.
+
+The Idb idb and Debugger gui instances each need a reference to each
+other or to an rpc proxy for each other.
+
+If IDLE is started with '-n', so that user code and idb both run in the
+IDLE process, Debugger is called without an idb.  Debugger.__init__
+calls Idb with its incomplete self.  Idb.__init__ stores gui and gui
+then stores idb.
+
+If IDLE is started normally, so that user code executes in a separate
+process, debugger_r.start_remote_debugger is called, executing in the
+IDLE process.  It calls 'start the debugger' in the remote process,
+which calls Idb with a gui proxy.  Then Debugger is called in the IDLE
+for more.
+"""
+
 import bdb
 import os
 
@@ -10,24 +27,22 @@ from idlelib.window import ListedToplevel
 
 
 class Idb(bdb.Bdb):
-    """Idle debugger, based on the bdb debugger."""
+    "Supply user_line and user_exception functions for Bdb."
 
     def __init__(self, gui):
-        self.gui = gui  # An instance of Debugger or proxy of remote.
+        self.gui = gui  # An instance of Debugger or proxy thereof.
         self.botframe = None
         super().__init__()
 
     def user_line(self, frame):
-        """
-        Handle a user stopping or breaking at a line.
+        """Handle a user stopping or breaking at a line.
 
-        Implements Bdb.user_line() to convert frame to string
-        and send message to GUI.
+        Convert frame to a string and send it to gui.
         """
         if self.in_rpc_code(frame):
             self.set_step()
             return
-        message = self.__frame2message(frame)
+        message = self.frame2message(frame)
         try:
             self.gui.interaction(message, frame)
         except TclError:  # When closing debugger window with [x] in 3.x
@@ -38,13 +53,13 @@ class Idb(bdb.Bdb):
         if self.in_rpc_code(frame):
             self.set_step()
             return
-        message = self.__frame2message(frame)
+        message = self.frame2message(frame)
         self.gui.interaction(message, frame, exc_info)
 
     def in_rpc_code(self, frame):
-        """Determine if debugger is within RPC code."""
+        "Determine if debugger is within RPC code."
         if frame.f_code.co_filename.count('rpc.py'):
-            return True
+            return True  # Skip this frame.
         else:
             prev_frame = frame.f_back
             if prev_frame is None:
@@ -56,7 +71,7 @@ class Idb(bdb.Bdb):
                 return False
             return self.in_rpc_code(prev_frame)
 
-    def __frame2message(self, frame):
+    def frame2message(self, frame):
         """Convert a frame to a message string."""
         code = frame.f_code
         filename = code.co_filename
@@ -406,6 +421,7 @@ class Debugger:
 
 
 class StackViewer(ScrolledList):
+    "Code stack viewer for debugger GUI."
 
     def __init__(self, master, flist, gui):
         if macosx.isAquaTk():
@@ -489,6 +505,7 @@ class StackViewer(ScrolledList):
 
 
 class NamespaceViewer:
+    "Global/local namespace viewer for debugger GUI."
 
     def __init__(self, master, title, dict=None):
         width = 0
