@@ -19,9 +19,6 @@ extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                              int (*predicate)(PyObject *value));
 
 // "KnownHash" variants
-// Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
-                                                 Py_hash_t hash);
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
                                           PyObject *item, Py_hash_t hash);
@@ -43,8 +40,6 @@ extern int _PyDict_Next(
 extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
 extern void _PyDict_MaybeUntrack(PyObject *mp);
-
-extern PyObject* _PyDict_NewPresized(Py_ssize_t minused);
 
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
