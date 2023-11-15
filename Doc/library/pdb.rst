@@ -580,7 +580,7 @@ can be overridden by the local file.
 
    Create an alias called *name* that executes *command*.  The *command* must
    *not* be enclosed in quotes.  Replaceable parameters can be indicated by
-   ``%1``, ``%2``, and so on, while ``%*`` is replaced by all the parameters.
+   ``%1``, ``%2``, ... and ``%9``, while ``%*`` is replaced by all the parameters.
    If *command* is omitted, the current alias for *name* is shown. If no
    arguments are given, all aliases are listed.
 

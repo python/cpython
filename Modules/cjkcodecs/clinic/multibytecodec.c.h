@@ -154,10 +154,6 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
     if (PyObject_GetBuffer(args[0], &input, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&input, 'C')) {
-        _PyArg_BadArgument("decode", "argument 'input'", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -372,10 +368,6 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &input, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&input, 'C')) {
-        _PyArg_BadArgument("decode", "argument 'input'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -690,4 +682,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=38f8d42721eea1e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=219a363662d2fbff input=a9049054013a1b77]*/
