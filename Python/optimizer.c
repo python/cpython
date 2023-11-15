@@ -385,12 +385,24 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_methods = executor_methods,
 };
 
-/* TO DO -- Generate this table */
+/* TO DO -- Generate these tables */
 static const uint16_t
 _PyUop_Replacements[OPCODE_METADATA_SIZE] = {
     [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
+};
+
+static const uint16_t
+BRANCH_TO_GUARD[4][2] = {
+    [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_TRUE_POP,
+    [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_FALSE_POP,
+    [POP_JUMP_IF_TRUE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_FALSE_POP,
+    [POP_JUMP_IF_TRUE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_TRUE_POP,
+    [POP_JUMP_IF_NONE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_NOT_NONE_POP,
+    [POP_JUMP_IF_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NONE_POP,
+    [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_NONE_POP,
+    [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NOT_NONE_POP,
 };
 
 #define TRACE_STACK_SIZE 5
@@ -528,45 +540,23 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         }
 
         switch (opcode) {
-
             case POP_JUMP_IF_NONE:
-            {
-                RESERVE(2, 2);
-                ADD_TO_TRACE(_IS_NONE, 0, 0);
-                opcode = POP_JUMP_IF_TRUE;
-                goto pop_jump_if_bool;
-            }
-
             case POP_JUMP_IF_NOT_NONE:
-            {
-                RESERVE(2, 2);
-                ADD_TO_TRACE(_IS_NONE, 0, 0);
-                opcode = POP_JUMP_IF_FALSE;
-                goto pop_jump_if_bool;
-            }
-
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             {
-pop_jump_if_bool:
-                RESERVE(1, 2);
-                max_length -= 2;  // Really the start of the stubs
+                RESERVE(1, 0);
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
-                bool jump_likely = bitcount > 8;
-                bool jump_sense = opcode == POP_JUMP_IF_TRUE;
-                uint32_t uopcode = jump_sense ^ jump_likely ?
-                    _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
+                int jump_likely = bitcount > 8;
+                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                _Py_CODEUNIT *target_instr = next_instr + oparg;
-                _Py_CODEUNIT *stub_target = jump_likely ? next_instr : target_instr;
-                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, sense=%d, uopcode=%s\n",
+                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, uopcode=%s\n",
                         uop_name(opcode), oparg,
-                        counter, bitcount, jump_likely, jump_sense, uop_name(uopcode));
+                        counter, bitcount, jump_likely, uop_name(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0);
-                ADD_TO_STUB(max_length, _SET_IP, INSTR_IP(stub_target, code), 0);
-                ADD_TO_STUB(max_length + 1, _EXIT_TRACE, 0, 0);
                 if (jump_likely) {
+                    _Py_CODEUNIT *target_instr = next_instr + oparg;
                     DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
                             instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
                     instr = target_instr;
@@ -797,16 +787,13 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
         }
         /* All other micro-ops fall through, so i+1 is reachable */
         SET_BIT(used, i+1);
-        switch(opcode) {
-            case NOP:
-                /* Don't count NOPs as used */
-                count--;
-                UNSET_BIT(used, i);
-                break;
-            case _POP_JUMP_IF_FALSE:
-            case _POP_JUMP_IF_TRUE:
-                /* Mark target as reachable */
-                SET_BIT(used, buffer[i].oparg);
+        if (OPCODE_HAS_JUMP(opcode)) {
+            /* Mark target as reachable */
+            SET_BIT(used, buffer[i].oparg);
+        }
+        if (opcode == NOP) {
+            count--;
+            UNSET_BIT(used, i);
         }
     }
     return count;
