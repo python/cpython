@@ -53,7 +53,7 @@ typedef struct {
 module _blake2
 class _blake2.blake2s "BLAKE2sObject *" "&PyBlake2_BLAKE2sType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d47b0527b39c673f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b79d7ffe07286ce]*/
 
 
 static BLAKE2sObject *
@@ -97,7 +97,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
                     int inner_size, int last_node, int usedforsecurity)
-/*[clinic end generated code: output=32bfd8f043c6896f input=b947312abff46977]*/
+/*[clinic end generated code: output=556181f73905c686 input=4dda87723f23abb0]*/
 {
     BLAKE2sObject *self = NULL;
     Py_buffer buf;
@@ -251,7 +251,7 @@ Return a copy of the hash object.
 
 static PyObject *
 _blake2_blake2s_copy_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=ff6acee5f93656ae input=e383c2d199fd8a2e]*/
+/*[clinic end generated code: output=5b90131c4eae275e input=0b9d44942f0fe4b2]*/
 {
     BLAKE2sObject *cpy;
 
@@ -276,7 +276,7 @@ Update this hash object's state with the provided bytes-like object.
 
 static PyObject *
 _blake2_blake2s_update(BLAKE2sObject *self, PyObject *data)
-/*[clinic end generated code: output=010dfcbe22654359 input=ffc4aa6a6a225d31]*/
+/*[clinic end generated code: output=757dc087fec37815 input=97500db2f9de4aaa]*/
 {
     Py_buffer buf;
 
@@ -308,7 +308,7 @@ Return the digest value as a bytes object.
 
 static PyObject *
 _blake2_blake2s_digest_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=a5864660f4bfc61a input=7d21659e9c5fff02]*/
+/*[clinic end generated code: output=40c566ca4bc6bc51 input=f41e0b8d6d937454]*/
 {
     uint8_t digest[BLAKE2S_OUTBYTES];
     blake2s_state state_cpy;
@@ -329,7 +329,7 @@ Return the digest value as a string of hexadecimal digits.
 
 static PyObject *
 _blake2_blake2s_hexdigest_impl(BLAKE2sObject *self)
-/*[clinic end generated code: output=b5598a87d8794a60 input=76930f6946351f56]*/
+/*[clinic end generated code: output=15153eb5e59c52eb input=c77a1321567e8952]*/
 {
     uint8_t digest[BLAKE2S_OUTBYTES];
     blake2s_state state_cpy;
