@@ -1,0 +1,1 @@
+make ``functools.lru_cache`` threadsafe in ``--disable-gil`` build.
