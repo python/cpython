@@ -117,7 +117,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_code.h"          // stats
-#include "pycore_dict.h"          // PyDictKeysObject
+#include "pycore_dict.h"          // export _PyDict_SizeOf()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
@@ -1841,6 +1841,20 @@ _PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
     assert (hash != -1);  /* interned strings have their hash value initialised */
     return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
 }
+
+PyObject *
+_PyDict_GetItemStringWithError(PyObject *v, const char *key)
+{
+    PyObject *kv, *rv;
+    kv = PyUnicode_FromString(key);
+    if (kv == NULL) {
+        return NULL;
+    }
+    rv = PyDict_GetItemWithError(v, kv);
+    Py_DECREF(kv);
+    return rv;
+}
+
 
 /* Fast version of global value lookup (LOAD_GLOBAL).
  * Lookup in globals, then builtins.
