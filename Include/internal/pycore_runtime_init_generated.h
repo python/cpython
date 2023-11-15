@@ -1188,6 +1188,7 @@ extern "C" {
     INIT_ID(src_dir_fd), \
     INIT_ID(stacklevel), \
     INIT_ID(start), \
+    INIT_ID(state), \
     INIT_ID(statement), \
     INIT_ID(status), \
     INIT_ID(stderr), \
