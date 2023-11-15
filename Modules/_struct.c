@@ -2250,12 +2250,6 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
         return 1;
     }
 
-    if (state->cache == NULL) {
-        state->cache = PyDict_New();
-        if (state->cache == NULL)
-            return 0;
-    }
-
     s_object = PyDict_GetItemWithError(state->cache, fmt);
     if (s_object != NULL) {
         *ptr = (PyStructObject *)Py_NewRef(s_object);
@@ -2288,7 +2282,7 @@ static PyObject *
 _clearcache_impl(PyObject *module)
 /*[clinic end generated code: output=ce4fb8a7bf7cb523 input=463eaae04bab3211]*/
 {
-    Py_CLEAR(get_struct_state(module)->cache);
+    PyDict_Clear(get_struct_state(module)->cache);
     Py_RETURN_NONE;
 }
 
@@ -2511,6 +2505,11 @@ static int
 _structmodule_exec(PyObject *m)
 {
     _structmodulestate *state = get_struct_state(m);
+
+    state->cache = PyDict_New();
+    if (state->cache == NULL) {
+        return -1;
+    }
 
     state->PyStructType = PyType_FromModuleAndSpec(
         m, &PyStructType_spec, NULL);

@@ -1,0 +1,1 @@
+Support alias and convenience vars for :mod:`pdb` completion
