@@ -3404,7 +3404,7 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
         >>> class P(Protocol):
         ...     def a(self) -> str: ...
         ...     b: int
-        >>> get_protocol_members(P) == frozenset({'a', 'b', 'c'})
+        >>> get_protocol_members(P) == frozenset({'a', 'b'})
         True
 
     Raise a TypeError for arguments that are not Protocols.
