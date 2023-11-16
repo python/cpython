@@ -1,0 +1,1 @@
+Make `http.cookiejar.CookieJar` pickable. Patch by Xuehai Pan.
