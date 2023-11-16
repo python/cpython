@@ -182,9 +182,15 @@ Dictionary Objects
    *default_value*, if the key was not present, or the existing value, if *key*
    was already present in the dictionary.
    Returns ``1`` if the key was present and *default_value* was not inserted,
-   ``0`` if the key was not present and *default_value* was inserted, or
-   ``-1`` on failure.
+   or ``0`` if the key was not present and *default_value* was inserted.
+   On failure, returns ``-1``, sets an exception, and sets ``*result``
+   to ``NULL``.
 
+   For clarity: if you have a strong reference to *default_value* before
+   calling this function, then after it returns, you hold a strong reference
+   to both *default_value* and *\*result* (if it's not ``NULL``).
+   These may refer to the same object: in that case you hold two separate
+   references to it.
    .. versionadded:: 3.13
 
 
