@@ -29,15 +29,13 @@ class MockFrame:
 
 class IdbTest(unittest.TestCase):
 
-    def setUp(self):
-        self.gui = mock.Mock()
-        self.gui.interaction = mock.Mock()
-        self.idb = debugger.Idb(self.gui)
+    @classmethod
+    def setUpClass(cls):
+        cls.gui = mock.Mock()
+        cls.idb = debugger.Idb(cls.gui)
 
-    def tearDown(self):
-        del self.gui.interaction
-        del self.gui
-        del self.idb
+    def setUp(self):
+        self.gui.interaction = mock.Mock()
 
     def test_init_runs_bdb_init(self):
         # Test that Idb calls the base Bdb __init__.
@@ -49,21 +47,14 @@ class IdbTest(unittest.TestCase):
         # Test that .user_line() creates a string message for a frame.
 
         # Create a test code object to simulate a debug session.
-        code_obj = compile(TEST_CODE,
-                           'idlelib/debugger.py',
-                           mode='exec')
-
-        # Create 2 test frames for lines 1 and 2 of the test code.
+        code_obj = compile(TEST_CODE, 'idlelib/debugger.py', mode='exec')
         test_frame1 = MockFrame(code_obj, 1)
-
         test_frame2 = MockFrame(code_obj, 2)
         test_frame2.f_back = test_frame1
 
         self.idb.user_line(test_frame2)
-
         self.assertFalse(self.idb.in_rpc_code(test_frame2))
-        self.gui.interaction.assert_called_once()
-        self.gui.interaction.assert_called_with('debugger.py:2: <module>()', test_frame2)
+        self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2)
 
     def test_user_exception(self):
         # Test that .user_exception() creates a string message for a frame.
@@ -85,10 +76,9 @@ class IdbTest(unittest.TestCase):
         self.idb.user_exception(test_frame2, test_exc_info)
 
         self.assertFalse(self.idb.in_rpc_code(test_frame2))
-        self.gui.interaction.assert_called_once()
-        self.gui.interaction.assert_called_with('debugger.py:2: <module>()', test_frame2, test_exc_info)
+        self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2, test_exc_info)
 
-    def test_in_rpc_code_rpc_py(self):
+    def test_in_rpc_code(self):
         # Test that .in_rpc_code detects position of rpc.py.
 
         # Create a test code object to simulate a debug session.
@@ -101,7 +91,7 @@ class IdbTest(unittest.TestCase):
 
         self.assertTrue(self.idb.in_rpc_code(test_frame))
 
-    def test_in_rpc_code_debugger_star_dot_py(self):
+    def test_not_in_rpc_code(self):
         # Test that .in_rpc_code detects position of idlelib/debugger*.py.
 
         # Create a test code object to simulate a debug session.
@@ -215,12 +205,10 @@ class DebuggerIdbTest(unittest.TestCase):
         del self.debugger
 
     def test_run_debugger(self):
-        # Test Debugger.run() with an Idb instance.
         test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
-        test_debugger.run(1, 'two')
-        self.idb.run.assert_called_once()
+        self.debugger.run(1, 'two')
         self.idb.run.assert_called_once_with(1, 'two')
-        self.assertEqual(test_debugger.interacting, 0)
+        self.assertEqual(self.debugger.interacting, 0)
 
     def test_cont(self):
         # Test the .cont() method calls idb.set_continue().
