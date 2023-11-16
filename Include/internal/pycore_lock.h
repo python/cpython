@@ -46,6 +46,7 @@ typedef struct _PyMutex PyMutex;
 #define _Py_UNLOCKED    0
 #define _Py_LOCKED      1
 #define _Py_HAS_PARKED  2
+#define _Py_ONCE_INITIALIZED 4
 
 // (private) slow path for locking the mutex
 PyAPI_FUNC(void) _PyMutex_LockSlow(PyMutex *m);
@@ -164,6 +165,35 @@ _PyRawMutex_Unlock(_PyRawMutex *m)
         return;
     }
     _PyRawMutex_UnlockSlow(m);
+}
+
+// A data structure that can be used to run initialization code once in a
+// thread-safe manner. The C++11 equivalent is std::call_once.
+typedef struct {
+    uint8_t v;
+} _PyOnceFlag;
+
+// Type signature for one-time initialization functions. The function should
+// return 0 on success and -1 on failure.
+typedef int _Py_once_fn_t(void *arg);
+
+// (private) slow path for one time initialization
+PyAPI_FUNC(int)
+_PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg);
+
+// Calls `fn` once using `flag`. The `arg` is passed to the call to `fn`.
+//
+// Returns 0 on success and -1 on failure.
+//
+// If `fn` returns 0 (success), then subsequent calls immediately return 0.
+// If `fn` returns -1 (failure), then subsequent calls will retry the call.
+static inline int
+_PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
+{
+    if (_Py_atomic_load_uint8(&flag->v) == _Py_ONCE_INITIALIZED) {
+        return 0;
+    }
+    return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
 #ifdef __cplusplus
