@@ -311,6 +311,15 @@ def _get_jump_target(op, arg, offset):
         target = None
     return target
 
+def _label_string(label, width=None, suffix=''):
+    if label is not None:
+        lbl = f'{label}'
+        padding = width - len(lbl) if width is not None else 0
+        assert padding >= 0
+        return f"L{lbl}{suffix}{'':<{padding}}"
+    else:
+        return ' ' * (width + 1 + len(suffix))
+
 class Instruction(_Instruction):
     """Details for a bytecode operation.
 
@@ -331,7 +340,8 @@ class Instruction(_Instruction):
     """
 
     @staticmethod
-    def _get_argval_argrepr(op, arg, offset, co_consts, names, varname_from_oparg):
+    def _get_argval_argrepr(op, arg, offset, co_consts, names, varname_from_oparg,
+                            labels_map, label_width):
         get_name = None if names is None else names.__getitem__
         argval = None
         argrepr = ''
@@ -361,13 +371,13 @@ class Instruction(_Instruction):
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:
                 argval = arg*2
-                argrepr = "to " + repr(argval)
+                argrepr = f"to {_label_string(labels_map[argval])}"
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
                 argval = offset + 2 + signed_arg*2
                 caches = _get_cache_size(_all_opname[deop])
                 argval += 2 * caches
-                argrepr = "to " + repr(argval)
+                argrepr = f"to {_label_string(labels_map[argval])}"
             elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
@@ -399,14 +409,21 @@ class Instruction(_Instruction):
 
     @classmethod
     def _create(cls, op, arg, offset, start_offset, starts_line, line_number,
-               label, positions,
-               co_consts=None, varname_from_oparg=None, names=None):
+               positions,
+               co_consts=None, varname_from_oparg=None, names=None,
+               labels_map=None):
+
+        label_width = len(str(len(labels_map)))
         argval, argrepr = cls._get_argval_argrepr(
                                op, arg, offset,
-                               co_consts, names, varname_from_oparg)
-        return Instruction(_all_opname[op], op, arg, argval, argrepr,
-                           offset, start_offset, starts_line, line_number,
-                           label, positions)
+                               co_consts, names, varname_from_oparg, labels_map,
+                               label_width)
+        label = labels_map.get(offset, None)
+        instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
+                            offset, start_offset, starts_line, line_number,
+                            label, positions)
+        instr.label_width = label_width
+        return instr
 
     @property
     def oparg(self):
@@ -474,12 +491,7 @@ class Instruction(_Instruction):
         else:
             fields.append('   ')
         # Column: Jump target marker
-        if self.is_jump_target:
-            fields.append('>>')
-        else:
-            fields.append('  ')
-        # Column: Instruction offset from start of code sequence
-        fields.append(repr(self.offset).rjust(offset_width))
+        fields.append(_label_string(self.label, width=self.label_width, suffix=':  '))
         # Column: Opcode name
         fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
@@ -637,8 +649,9 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         op = code[offset]
 
         yield Instruction._create(op, arg, offset, start_offset, starts_line, line_number,
-                                  labels_map.get(offset, None), positions, co_consts=co_consts,
-                                  varname_from_oparg=varname_from_oparg, names=names)
+                                  positions, co_consts=co_consts,
+                                  varname_from_oparg=varname_from_oparg, names=names,
+                                  labels_map=labels_map)
 
         caches = _get_cache_size(_all_opname[deop])
         if not caches:
