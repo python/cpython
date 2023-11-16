@@ -201,7 +201,7 @@ def _getargspec(object):
     try:
         signature = inspect.signature(object)
         if signature:
-            return str(signature)
+            return signature.__str__(pretty=True)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:

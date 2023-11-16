@@ -3315,7 +3315,7 @@ class Signature:
     def __repr__(self):
         return '<{} {}>'.format(self.__class__.__name__, self)
 
-    def __str__(self):
+    def __str__(self, *, pretty=False):
         result = []
         render_pos_only_separator = False
         render_kw_only_separator = True
@@ -3352,7 +3352,11 @@ class Signature:
             # flag was not reset to 'False'
             result.append('/')
 
-        rendered = '({})'.format(', '.join(result))
+        params = ', '.join(result)
+        if pretty and len(params) > 78:  # 80 - '(' - ')'
+            rendered = '(\n    {}\n)'.format(',\n    '.join(result))
+        else:
+            rendered = '({})'.format(params)
 
         if self.return_annotation is not _empty:
             anno = formatannotation(self.return_annotation)

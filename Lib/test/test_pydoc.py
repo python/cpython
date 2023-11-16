@@ -870,6 +870,65 @@ class B(A)
         for expected_line in expected_lines:
             self.assertIn(expected_line, as_text)
 
+    def test_long_signatures(self):
+        from typing import Callable, Literal, Annotated
+
+        class A:
+            def __init__(self,
+                         arg1: Callable[[int, int, int], str],
+                         arg2: Literal['some value', 'other value'],
+                         arg3: Annotated[int, 'some docs about this type'],
+                         ) -> None:
+                ...
+
+        doc = pydoc.render_doc(A)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: class A in module %s
+
+class A(builtins.object)
+ |  A(
+ |      arg1: Callable[[int, int, int], str],
+ |      arg2: Literal['some value', 'other value'],
+ |      arg3: Annotated[int, 'some docs about this type']
+ |  ) -> None
+ |
+ |  Methods defined here:
+ |
+ |  __init__(
+ |      self,
+ |      arg1: Callable[[int, int, int], str],
+ |      arg2: Literal['some value', 'other value'],
+ |      arg3: Annotated[int, 'some docs about this type']
+ |  ) -> None
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |
+ |  __dict__
+ |      dictionary for instance variables (if defined)
+ |
+ |  __weakref__
+ |      list of weak references to the object (if defined)
+''' % __name__)
+
+        def func(
+            arg1: Callable[[Annotated[int, 'Some doc']], str],
+            arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8],
+        ) -> Annotated[int, 'Some other']:
+            ...
+
+        doc = pydoc.render_doc(func)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function func in module %s
+
+func(
+    arg1: Callable[[Annotated[int, 'Some doc']], str],
+    arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8]
+) -> Annotated[int, 'Some other']
+''' % __name__)
+
     def test__future__imports(self):
         # __future__ features are excluded from module help,
         # except when it's the __future__ module itself
