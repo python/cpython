@@ -1234,11 +1234,9 @@ class CommonBufferedTests:
         # Issue #25455
         raw = self.MockRawIO()
         b = self.tp(raw)
-        with support.swap_attr(raw, 'name', b):
-            try:
+        with support.swap_attr(raw, 'name', b), support.infinite_recursion(25):
+            with self.assertRaises(RuntimeError):
                 repr(b)  # Should not crash
-            except RuntimeError:
-                pass
 
     def test_flush_error_on_close(self):
         # Test that buffered file is closed despite failed flush
