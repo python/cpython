@@ -1,0 +1,2 @@
+On Windows, ``PC\pyconfig.h`` is now generated from ``PC\pyconfig.h.in``
+during the build process.
