@@ -665,73 +665,29 @@ frozenset2({0,
         self.assertEqual(pprint.pformat(data), repr(data))
 
         # Single-line, unordered:
-        self.assertIn(
-            pprint.pformat(
-                frozenset((
-                    frozenset(("xyz", "qwerty")),
-                    frozenset(("abcd", "spam"))),
-                ),
-            ),
-            [
-                "frozenset({frozenset({'qwerty', 'xyz'}), frozenset({'spam', 'abcd'})})",
-                "frozenset({frozenset({'xyz', 'qwerty'}), frozenset({'spam', 'abcd'})})",
-                "frozenset({frozenset({'qwerty', 'xyz'}), frozenset({'abcd', 'spam'})})",
-                "frozenset({frozenset({'xyz', 'qwerty'}), frozenset({'abcd', 'spam'})})",
-
-                "frozenset({frozenset({'spam', 'abcd'}), frozenset({'qwerty', 'xyz'})})",
-                "frozenset({frozenset({'spam', 'abcd'}), frozenset({'xyz', 'qwerty'})})",
-                "frozenset({frozenset({'abcd', 'spam'}), frozenset({'qwerty', 'xyz'})})",
-                "frozenset({frozenset({'abcd', 'spam'}), frozenset({'xyz', 'qwerty'})})",
-
-            ],
-        )
+        fs1 = frozenset(("xyz", "qwerty"))
+        fs2 = frozenset(("abcd", "spam"))
+        fs = frozenset((fs1, fs2)))
+        self.assertEqual(pprint.pformat(fs, repr(fs))
 
         # Multiline, unordered:
         def check(res, invariants):
             self.assertIn(res, [textwrap.dedent(i).strip() for i in invariants])
 
         # Inner-most frozensets are singleline, result is multiline, unordered:
+        fs1 = frozenset(('regular string', 'other string'))
+        fs2 = frozenset(('third string', 'one more string'))
         check(
-            pprint.pformat(
-                frozenset((
-                    frozenset(('regular string', 'other string')),
-                    frozenset(('third string', 'one more string')),
-                ))
-            ),
+            pprint.pformat(frozenset((fs1, fs2))),
             [
                 """
-                frozenset({frozenset({'regular string', 'other string'}),
-                           frozenset({'third string', 'one more string'})})
-                """,
+                frozenset({%r,
+                           %r})
+                """ % (fs1, fs2),
                 """
-                frozenset({frozenset({'regular string', 'other string'}),
-                           frozenset({'one more string', 'third string'})})
-                """,
-                """
-                frozenset({frozenset({'other string', 'regular string'}),
-                           frozenset({'third string', 'one more string'})})
-                """,
-                """
-                frozenset({frozenset({'other string', 'regular string'}),
-                           frozenset({'one more string', 'third string'})})
-                """,
-                # -
-                """
-                frozenset({frozenset({'third string', 'one more string'}),
-                           frozenset({'regular string', 'other string'})})
-                """,
-                                """
-                frozenset({frozenset({'third string', 'one more string'}),
-                           frozenset({'other string', 'regular string'})})
-                """,
-                """
-                frozenset({frozenset({'one more string', 'third string'}),
-                           frozenset({'regular string', 'other string'})})
-                """,
-                """
-                frozenset({frozenset({'one more string', 'third string'}),
-                           frozenset({'other string', 'regular string'})})
-                """,
+                frozenset({%r,
+                           %r})
+                """ % (fs2, fs1),
             ],
         )
 
