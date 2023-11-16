@@ -88,7 +88,7 @@ having all the lower 32 bits set, which will avoid the reference count to go
 beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 */
-#define _Py_IMMORTAL_REFCNT (Py_ssize_t)UINT_MAX
+#define _Py_IMMORTAL_REFCNT _Py_CAST(Py_ssize_t, UINT_MAX)
 
 #else
 /*
@@ -103,7 +103,7 @@ immortality, but the execution would still be correct.
 Reference count increases and decreases will first go through an immortality
 check by comparing the reference count field to the immortality reference count.
 */
-#define _Py_IMMORTAL_REFCNT (Py_ssize_t)(UINT_MAX >> 2)
+#define _Py_IMMORTAL_REFCNT _Py_CAST(Py_ssize_t, UINT_MAX >> 2)
 #endif
 
 // Py_GIL_DISABLED builds indicate immortal objects using `ob_ref_local`, which is
