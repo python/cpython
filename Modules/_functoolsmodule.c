@@ -1,12 +1,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"          // _PyDict_Pop_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 
 
 #include "clinic/_functoolsmodule.c.h"
@@ -1275,7 +1275,7 @@ lru_cache_dealloc(lru_cache_object *obj)
 static PyObject *
 lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    PyObject* result;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(self);
     result = self->wrapper(self, args, kwds);
     Py_END_CRITICAL_SECTION();
