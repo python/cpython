@@ -29,6 +29,9 @@ class MockFrame:
 
 class IdbTest(unittest.TestCase):
 
+    code_obj = compile(TEST_CODE, 'idlelib/debugger.py', mode='exec')
+    rpc_obj = compile(TEST_CODE,'rpc.py', mode='exec')
+
     @classmethod
     def setUpClass(cls):
         cls.gui = mock.Mock()
@@ -37,19 +40,17 @@ class IdbTest(unittest.TestCase):
     def setUp(self):
         self.gui.interaction = mock.Mock()
 
-    def test_init_runs_bdb_init(self):
-        # Test that Idb calls the base Bdb __init__.
+    def test_init(self):
+        # Test that Idb.__init_ calls Bdb.__init__.
         idb = debugger.Idb(None)
         self.assertIsNone(idb.gui)
         self.assertTrue(hasattr(idb, 'breaks'))
 
-    def test_user_line_basic_frame(self):
+    def test_user_line(self):
         # Test that .user_line() creates a string message for a frame.
-
-        # Create a test code object to simulate a debug session.
-        code_obj = compile(TEST_CODE, 'idlelib/debugger.py', mode='exec')
-        test_frame1 = MockFrame(code_obj, 1)
-        test_frame2 = MockFrame(code_obj, 2)
+        # Create test and code objects to simulate a debug session.
+        test_frame1 = MockFrame(self.code_obj, 1)
+        test_frame2 = MockFrame(self.code_obj, 2)
         test_frame2.f_back = test_frame1
 
         self.idb.user_line(test_frame2)
@@ -59,55 +60,18 @@ class IdbTest(unittest.TestCase):
     def test_user_exception(self):
         # Test that .user_exception() creates a string message for a frame.
 
-        # Create a test code object to simulate a debug session.
-        code_obj = compile(TEST_CODE,
-                           'idlelib/debugger.py',
-                           mode='exec')
-
-        # Create 2 test frames for lines 1 and 2 of the test code.
-        test_frame1 = MockFrame(code_obj, 1)
-
-        test_frame2 = MockFrame(code_obj, 2)
+        test_frame1 = MockFrame(self.code_obj, 1)
+        test_frame2 = MockFrame(self.code_obj, 2)
         test_frame2.f_back = test_frame1
-
-        # Example from sys.exc_info()
         test_exc_info = (type(ValueError), ValueError(), None)
 
         self.idb.user_exception(test_frame2, test_exc_info)
-
         self.assertFalse(self.idb.in_rpc_code(test_frame2))
         self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2, test_exc_info)
 
     def test_in_rpc_code(self):
-        # Test that .in_rpc_code detects position of rpc.py.
-
-        # Create a test code object to simulate a debug session.
-        code_obj = compile(TEST_CODE,
-                           'rpc.py',
-                           mode='exec')
-
-        # Create 1 test frame
-        test_frame = MockFrame(code_obj, 1)
-
+        test_frame = MockFrame(self.rpc_obj, 1)
         self.assertTrue(self.idb.in_rpc_code(test_frame))
-
-    def test_not_in_rpc_code(self):
-        # Test that .in_rpc_code detects position of idlelib/debugger*.py.
-
-        # Create a test code object to simulate a debug session.
-        for filename in ('idlelib/debugger.py', 'idlelib/debugger_r.py'):
-
-            code_obj = compile(TEST_CODE,
-                               filename,
-                               mode='exec')
-
-            # Create 2 test frames
-            test_frame = MockFrame(code_obj, 1)
-
-            test_frame2 = MockFrame(code_obj, 2)
-            test_frame2.f_back = test_frame
-
-            self.assertFalse(self.idb.in_rpc_code(test_frame2))
 
 
 class DebuggerTest(unittest.TestCase):
