@@ -1,7 +1,6 @@
 #include "parts.h"
 #include "util.h"
 #define Py_BUILD_CORE
-#include "pycore_complexobject.h" // _Py_c_*()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
