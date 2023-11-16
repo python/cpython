@@ -31,7 +31,6 @@ class Idb(bdb.Bdb):
 
     def __init__(self, gui):
         self.gui = gui  # An instance of Debugger or proxy thereof.
-        self.botframe = None
         super().__init__()
 
     def user_line(self, frame):
