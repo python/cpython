@@ -1,1 +1,1 @@
-Make `http.cookiejar.CookieJar` pickable. Patch by Xuehai Pan.
+Make :class:`http.cookiejar.CookieJar` pickable. Patch by Xuehai Pan.
