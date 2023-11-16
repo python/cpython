@@ -155,6 +155,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, multiply, 2, ndarray([1], (1,)))
         self.assertRaises(TypeError, multiply, [1], 3.14)
         self.assertRaises(OverflowError, multiply, [1], PY_SSIZE_T_MAX + 1)
+        self.assertRaises(MemoryError, multiply, [1, 2], PY_SSIZE_T_MAX//2 + 1)
 
         # CRASHES multiply(NULL, 42)
         # CRASHES multiply(42, NULL)
@@ -233,6 +234,7 @@ class CAPITest(unittest.TestCase):
         negative = _testcapi.number_negative
 
         self.assertEqual(negative(42), -42)
+        self.assertEqual(negative(1.25), -1.25)
 
         self.assertRaises(TypeError, negative, BadAdd())
         self.assertRaises(TypeError, negative, object())
@@ -243,6 +245,7 @@ class CAPITest(unittest.TestCase):
         positive = _testcapi.number_positive
 
         self.assertEqual(positive(-1), +(-1))
+        self.assertEqual(positive(1.25), 1.25)
 
         self.assertRaises(TypeError, positive, BadAdd())
         self.assertRaises(TypeError, positive, object())
@@ -253,6 +256,8 @@ class CAPITest(unittest.TestCase):
         absolute = _testcapi.number_absolute
 
         self.assertEqual(absolute(-1), abs(-1))
+        self.assertEqual(absolute(-1.25), 1.25)
+        self.assertEqual(absolute(1j), 1.0)
 
         self.assertRaises(TypeError, absolute, BadAdd())
         self.assertRaises(TypeError, absolute, object())
@@ -264,6 +269,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(invert(123), ~123)
 
+        self.assertRaises(TypeError, invert, 1.25)
         self.assertRaises(TypeError, invert, BadAdd())
         self.assertRaises(TypeError, invert, object())
         self.assertRaises(SystemError, invert, NULL)
@@ -548,6 +554,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(float_(1.25), 1.25)
         self.assertEqual(float_(123), 123.)
+        self.assertEqual(float_("1.25"), 1.25)
 
         self.assertEqual(float_(Float()), 4.25)
         self.assertEqual(float_(IndexLike(99)), 99.0)
@@ -577,6 +584,8 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(DeprecationWarning, index, BadIndex2())
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(index(BadIndex2()), 1)
+        self.assertRaises(TypeError, index, 1.25)
+        self.assertRaises(TypeError, index, "42")
         self.assertRaises(TypeError, index, BadIndex())
         self.assertRaises(TypeError, index, object())
         self.assertRaises(SystemError, index, NULL)
@@ -592,7 +601,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tobase(13, 16), hex(13))
 
         self.assertRaises(SystemError, tobase, NULL, 2)
-        self.assertRaises(SystemError, tobase, 2, 42)
+        self.assertRaises(SystemError, tobase, 2, 3)
+        self.assertRaises(TypeError, tobase, 1.25, 2)
+        self.assertRaises(TypeError, tobase, "42", 2)
 
     def test_asssizet(self):
         # Test PyNumber_AsSsize_t()
