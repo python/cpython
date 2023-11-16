@@ -1769,6 +1769,14 @@ class CookieJar:
         for cookie in self: r.append(str(cookie))
         return "<%s[%s]>" % (self.__class__.__name__, ", ".join(r))
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['_cookies_lock']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
 
 # derives from OSError for backwards-compatibility with Python 2.4.0
 class LoadError(OSError): pass
