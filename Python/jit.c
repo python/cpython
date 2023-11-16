@@ -40,37 +40,48 @@ static unsigned char pool[JIT_POOL_SIZE];
 static size_t pool_head;
 static size_t page_size;
 
-static unsigned char *
-alloc(size_t size)
+static int needs_initializing = 1;
+unsigned char *deoptimize_stub;
+unsigned char *error_stub;
+
+static bool
+is_page_aligned(void *p)
 {
-    assert((size & (page_size - 1)) == 0);
+    return (((uintptr_t)p & (page_size - 1)) == 0);
+}
+
+static unsigned char *
+alloc(size_t pages)
+{
+    size_t size = pages * page_size;
     if (JIT_POOL_SIZE - page_size < pool_head + size) {
         PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
         return NULL;
     }
     unsigned char *memory = pool + pool_head;
-    assert(((uintptr_t)memory & (page_size - 1)) == 0);
     pool_head += size;
+    assert(is_page_aligned(pool + pool_head));
+    assert(is_page_aligned(memory));
     return memory;
 }
 
 static int
-mark_executable(unsigned char *memory, size_t nbytes)
+mark_executable(unsigned char *memory, size_t pages)
 {
-    assert(((uintptr_t)memory & (page_size - 1)) == 0);
-    assert((nbytes & (page_size - 1)) == 0);
-    if (nbytes == 0) {
+    assert(is_page_aligned(memory));
+    size_t size = pages * page_size;
+    if (size == 0) {
         return 0;
     }
 #ifdef MS_WINDOWS
     DWORD old;
-    if (!FlushInstructionCache(GetCurrentProcess(), memory, nbytes) ||
-        !VirtualProtect(memory, nbytes, PAGE_EXECUTE_READ, &old))
+    if (!FlushInstructionCache(GetCurrentProcess(), memory, size) ||
+        !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old))
     {
         int code = GetLastError();
 #else
-    __builtin___clear_cache((char *)memory, (char *)memory + nbytes);
-    if (mprotect(memory, nbytes, PROT_EXEC | PROT_READ)) {
+    __builtin___clear_cache((char *)memory, (char *)memory + size);
+    if (mprotect(memory, size, PROT_EXEC | PROT_READ)) {
         int code = errno;
 #endif
         const char *w = "JIT unable to map executable memory (%d)";
@@ -80,17 +91,22 @@ mark_executable(unsigned char *memory, size_t nbytes)
     return 0;
 }
 
-static void
-patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
+static size_t
+bytes_to_pages(size_t nbytes)
 {
-    uint64_t patch = patches[hole->value] + hole->addend;
+    return (nbytes + page_size - 1) / page_size;
+}
+
+static void
+patch(unsigned char *base, const Hole *hole, uint64_t *patches)
+{
+    unsigned char *location = base + hole->offset;
+    uint64_t value = patches[hole->value] + hole->addend;
     uint32_t *addr = (uint32_t *)location;
     switch (hole->kind) {
         case HoleKind_IMAGE_REL_I386_DIR32:
-        {
-            *addr = (uint32_t)patch;
+            *addr = (uint32_t)value;
             return;
-        }
         case HoleKind_IMAGE_REL_AMD64_REL32:
         case HoleKind_IMAGE_REL_I386_REL32:
         case HoleKind_R_X86_64_PC32:
@@ -98,43 +114,34 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
         case HoleKind_X86_64_RELOC_BRANCH:
         case HoleKind_X86_64_RELOC_GOT:
         case HoleKind_X86_64_RELOC_GOT_LOAD:
-        {
-            patch -= (uintptr_t)location;
-            *addr = (uint32_t)patch;
+            value -= (uintptr_t)location;
+            *addr = (uint32_t)value;
             return;
-        }
         case HoleKind_ARM64_RELOC_UNSIGNED:
         case HoleKind_IMAGE_REL_AMD64_ADDR64:
         case HoleKind_R_AARCH64_ABS64:
         case HoleKind_R_X86_64_64:
         case HoleKind_X86_64_RELOC_UNSIGNED:
-        {
-            *(uint64_t *)addr = patch;
+            *(uint64_t *)addr = value;
             return;
-        }
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
-        {
-            patch = ((patch >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
+            value = ((value >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
             assert((*addr & 0x9F000000) == 0x90000000);
-            assert((patch & 0xFFF) == 0);
-            uint32_t lo = (patch << 17) & 0x60000000;
-            uint32_t hi = (patch >> 9) & 0x00FFFFE0;
+            assert((value & 0xFFF) == 0);
+            uint32_t lo = (value << 17) & 0x60000000;
+            uint32_t hi = (value >> 9) & 0x00FFFFE0;
             *addr = (*addr & 0x9F00001F) | hi | lo;
             return;
-        }
         case HoleKind_R_AARCH64_CALL26:
         case HoleKind_R_AARCH64_JUMP26:
-        {
-            patch -= (uintptr_t)location;
+            value -= (uintptr_t)location;
             assert(((*addr & 0xFC000000) == 0x14000000) ||
                    ((*addr & 0xFC000000) == 0x94000000));
-            assert((patch & 0x3) == 0);
-            *addr = (*addr & 0xFC000000) | ((uint32_t)(patch >> 2) & 0x03FFFFFF);
+            assert((value & 0x3) == 0);
+            *addr = (*addr & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
             return;
-        }
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
-        {
-            patch &= (1 << 12) - 1;
+            value &= (1 << 12) - 1;
             assert(((*addr & 0x3B000000) == 0x39000000) ||
                    ((*addr & 0x11C00000) == 0x11000000));
             int shift = 0;
@@ -144,68 +151,46 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
                     shift = 4;
                 }
             }
-            assert(((patch & ((1 << shift) - 1)) == 0));
-            *addr = (*addr & 0xFFC003FF) | ((uint32_t)((patch >> shift) << 10) & 0x003FFC00);
+            assert(((value & ((1 << shift) - 1)) == 0));
+            *addr = (*addr & 0xFFC003FF) | ((uint32_t)((value >> shift) << 10) & 0x003FFC00);
             return;
-        }
         case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
-        {
             assert(((*addr >> 21) & 0x3) == 0);
-            *addr = (*addr & 0xFFE0001F) | (((patch >>  0) & 0xFFFF) << 5);
+            *addr = (*addr & 0xFFE0001F) | (((value >>  0) & 0xFFFF) << 5);
             return;
-        }
         case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
-        {
             assert(((*addr >> 21) & 0x3) == 1);
-            *addr = (*addr & 0xFFE0001F) | (((patch >> 16) & 0xFFFF) << 5);
+            *addr = (*addr & 0xFFE0001F) | (((value >> 16) & 0xFFFF) << 5);
             return;
-        }
         case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
-        {
             assert(((*addr >> 21) & 0x3) == 2);
-            *addr = (*addr & 0xFFE0001F) | (((patch >> 32) & 0xFFFF) << 5);
+            *addr = (*addr & 0xFFE0001F) | (((value >> 32) & 0xFFFF) << 5);
             return;
-        }
         case HoleKind_R_AARCH64_MOVW_UABS_G3:
-        {
             assert(((*addr >> 21) & 0x3) == 3);
-            *addr = (*addr & 0xFFE0001F) | (((patch >> 48) & 0xFFFF) << 5);
+            *addr = (*addr & 0xFFE0001F) | (((value >> 48) & 0xFFFF) << 5);
             return;
-        }
     }
     Py_UNREACHABLE();
 }
 
 static void
-copy_and_patch(unsigned char *base, size_t nbytes, const unsigned char *bytes,
-               size_t nholes, const Hole *holes, uint64_t *patches)
+copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
 {
-    memcpy(base, bytes, nbytes);
-    for (size_t i = 0; i < nholes; i++) {
-        const Hole *hole = &holes[i];
-        patch_one(base + hole->offset, hole, patches);
+    memcpy(base, stencil->bytes, stencil->nbytes);
+    for (size_t i = 0; i < stencil->nholes; i++) {
+        patch(base, &stencil->holes[i], patches);
     }
 }
 
 static void
-emit(const Stencil *stencil, uint64_t patches[])
+emit(const StencilGroup *stencil_group, uint64_t patches[])
 {
-    if (stencil->nholes_data) {
-        unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
-        copy_and_patch(data, stencil->nbytes_data, stencil->bytes_data,
-                       stencil->nholes_data, stencil->holes_data, patches);
-    }
-    else {
-        patches[_JIT_DATA] = (uintptr_t)stencil->bytes_data;
-    }
+    unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
+    copy_and_patch(data, &stencil_group->data, patches);
     unsigned char *body = (unsigned char *)(uintptr_t)patches[_JIT_BODY];
-    copy_and_patch(body, stencil->nbytes, stencil->bytes,
-                   stencil->nholes, stencil->holes, patches);
+    copy_and_patch(body, &stencil_group->body, patches);
 }
-
-static int needs_initializing = 1;
-unsigned char *deoptimize_stub;
-unsigned char *error_stub;
 
 static int
 initialize_jit(void)
@@ -227,7 +212,7 @@ initialize_jit(void)
     assert((page_size & (page_size - 1)) == 0);
     // Adjust the pool_head to the next page boundary:
     pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
-    assert(((uintptr_t)(pool + pool_head) & (page_size - 1)) == 0);
+    assert(is_page_aligned(pool + pool_head));
     // macOS requires mapping memory before mprotecting it, so map memory fixed
     // at our pool's valid address range:
 #ifdef __APPLE__
@@ -243,57 +228,45 @@ initialize_jit(void)
 #endif
     // Write our deopt stub:
     {
-        const Stencil *stencil = &deoptimize_stencil;
-        size_t nbytes = (stencil->nbytes + page_size - 1) & ~(page_size - 1);
-        deoptimize_stub = alloc(nbytes);
+        const StencilGroup *stencil_group = &deoptimize_stencil_group;
+        size_t pages_body = bytes_to_pages(stencil_group->body.nbytes);
+        deoptimize_stub = alloc(pages_body);
         if (deoptimize_stub == NULL) {
             return needs_initializing;
         }
-        unsigned char *data;
-        size_t nbytes_data = (stencil->nbytes_data + page_size - 1) & ~(page_size - 1);
-        if (stencil->nholes_data) {
-            data = alloc(nbytes_data);
-            if (data == NULL) {
-                return needs_initializing;
-            }
-        }
-        else {
-            data = (unsigned char *)stencil->bytes_data;
+        size_t pages_data = bytes_to_pages(stencil_group->data.nbytes);
+        unsigned char *data = alloc(pages_data);
+        if (data == NULL) {
+            return needs_initializing;
         }
         uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BODY] = (uintptr_t)deoptimize_stub;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
-        emit(stencil, patches);
-        if (mark_executable(deoptimize_stub, nbytes)) {
+        emit(stencil_group, patches);
+        if (mark_executable(deoptimize_stub, pages_body)) {
             return needs_initializing;
         }
     }
     // Write our error stub:
     {
-        const Stencil *stencil = &error_stencil;
-        size_t nbytes = (stencil->nbytes + page_size - 1) & ~(page_size - 1);
-        error_stub = alloc(nbytes);
+        const StencilGroup *stencil_group = &error_stencil_group;
+        size_t pages_body = bytes_to_pages(stencil_group->body.nbytes);
+        error_stub = alloc(pages_body);
         if (error_stub == NULL) {
             return needs_initializing;
         }
-        unsigned char *data;
-        size_t nbytes_data = (stencil->nbytes_data + page_size - 1) & ~(page_size - 1);
-        if (stencil->nholes_data) {
-            data = alloc(nbytes_data);
-            if (data == NULL) {
-                return needs_initializing;
-            }
-        }
-        else {
-            data = (unsigned char *)stencil->bytes_data;
+        size_t pages_data = bytes_to_pages(stencil_group->data.nbytes);
+        unsigned char *data = alloc(pages_data);
+        if (data == NULL) {
+            return needs_initializing;
         }
         uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BODY] = (uintptr_t)error_stub;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
-        emit(stencil, patches);
-        if (mark_executable(error_stub, nbytes)) {
+        emit(stencil_group, patches);
+        if (mark_executable(error_stub, pages_body)) {
             return needs_initializing;
         }
     }
@@ -310,62 +283,62 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         return NULL;
     }
     // First, loop over everything once to find the total compiled size:
-    size_t nbytes = trampoline_stencil.nbytes;
-    size_t nbytes_data = trampoline_stencil.nholes_data ? trampoline_stencil.nbytes_data : 0;
+    size_t nbytes_body = trampoline_stencil_group.body.nbytes;
+    size_t nbytes_data = trampoline_stencil_group.data.nbytes;
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
-        const Stencil *stencil = &stencils[instruction->opcode];
-        nbytes += stencil->nbytes;
-        nbytes_data += stencil->nholes_data ? stencil->nbytes_data : 0;
-        assert(stencil->nbytes);
+        const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
+        nbytes_body += stencil_group->body.nbytes;
+        nbytes_data += stencil_group->data.nbytes;
+        assert(stencil_group->body.nbytes);
     };
-    nbytes = (nbytes + page_size - 1) & ~(page_size - 1);
-    unsigned char *memory = alloc(nbytes);
-    if (memory == NULL) {
+    size_t pages_body = bytes_to_pages(nbytes_body);
+    unsigned char *body = alloc(pages_body);
+    if (body == NULL) {
         return NULL;
     }
-    nbytes_data = (nbytes_data + page_size - 1) & ~(page_size - 1);
-    unsigned char *data = alloc(nbytes_data);
+    size_t pages_data = bytes_to_pages(nbytes_data);
+    unsigned char *data = alloc(pages_data);
     if (data == NULL) {
         return NULL;
     }
-    unsigned char *head = memory;
+    unsigned char *head_body = body;
     unsigned char *head_data = data;
     // First, the trampoline:
-    const Stencil *stencil = &trampoline_stencil;
+    const StencilGroup *stencil_group = &trampoline_stencil_group;
     uint64_t patches[] = GET_PATCHES();
-    patches[_JIT_BODY] = (uintptr_t)head;
-    patches[_JIT_DATA] = (uintptr_t)(stencil->nholes_data ? head_data : stencil->bytes_data);
-    patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+    patches[_JIT_BODY] = (uintptr_t)head_body;
+    patches[_JIT_DATA] = (uintptr_t)head_data;
+    patches[_JIT_CONTINUE] = (uintptr_t)head_body + stencil_group->body.nbytes;
     patches[_JIT_ZERO] = 0;
-    emit(stencil, patches);
-    head += stencil->nbytes;
-    head_data += stencil->nholes_data ? stencil->nbytes_data : 0;
+    emit(stencil_group, patches);
+    head_body += stencil_group->body.nbytes;
+    head_data += stencil_group->data.nbytes;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
-        const Stencil *stencil = &stencils[instruction->opcode];
+        const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_BODY] = (uintptr_t)head;
-        patches[_JIT_DATA] = (uintptr_t)(stencil->nholes_data ? head_data : stencil->bytes_data);
-        patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+        patches[_JIT_BODY] = (uintptr_t)head_body;
+        patches[_JIT_DATA] = (uintptr_t)head_data;
+        patches[_JIT_CONTINUE] = (uintptr_t)head_body + stencil_group->body.nbytes;
         patches[_JIT_CURRENT_EXECUTOR] = (uintptr_t)executor;
         patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
         patches[_JIT_ERROR] = (uintptr_t)error_stub;
         patches[_JIT_OPARG] = instruction->oparg;
         patches[_JIT_OPERAND] = instruction->operand;
         patches[_JIT_TARGET] = instruction->target;
-        patches[_JIT_TOP] = (uintptr_t)memory + trampoline_stencil.nbytes;
+        patches[_JIT_TOP] = (uintptr_t)body + trampoline_stencil_group.body.nbytes;
         patches[_JIT_ZERO] = 0;
-        emit(stencil, patches);
-        head += stencil->nbytes;
-        head_data += stencil->nholes_data ? stencil->nbytes_data : 0;
+        emit(stencil_group, patches);
+        head_body += stencil_group->body.nbytes;
+        head_data += stencil_group->data.nbytes;
     };
-    if (mark_executable(memory, nbytes)) {
+    if (mark_executable(body, pages_body)) {
         return NULL;
     }
     // Wow, done already?
-    assert(head <= memory + nbytes);
-    assert(head_data <= data + nbytes_data);
-    return (_PyJITFunction)memory;
+    assert(head_body == body + nbytes_body);
+    assert(head_data == data + nbytes_data);
+    return (_PyJITFunction)body;
 }

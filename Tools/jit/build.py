@@ -233,7 +233,7 @@ class Hole:
 
 
 @dataclasses.dataclass(frozen=True)
-class Stencil:
+class StencilGroup:
     body: bytearray
     holes: list[Hole]
     disassembly: list[str]
@@ -333,7 +333,7 @@ class Parser:
         self.objdump = objdump
         self.target = target
 
-    async def parse(self) -> Stencil:
+    async def parse(self) -> StencilGroup:
         if self.objdump is not None:
             output = await run(
                 self.objdump, self.path, "--disassemble", "--reloc", capture=True
@@ -431,7 +431,7 @@ class Parser:
         holes_data = [Hole(hole.offset, hole.kind, hole.value, hole.symbol, hole.addend) for hole in holes_data]
         holes_data.sort(key=lambda hole: hole.offset)
         assert offset_data == len(self.data), (offset_data, len(self.data), self.data, disassembly_data)
-        return Stencil(self.body, holes, disassembly, self.data, holes_data, disassembly_data)
+        return StencilGroup(self.body, holes, disassembly, self.data, holes_data, disassembly_data)
 
     def _got_lookup(self, symbol: str | None) -> int:
         while len(self.data) % 8:
@@ -781,7 +781,7 @@ class Compiler:
         target: Target,
         host: str,
     ) -> None:
-        self._stencils_built: dict[str, Stencil] = {}
+        self._stencils_built: dict[str, StencilGroup] = {}
         self._verbose = verbose
         self._clang = require_llvm_tool("clang")
         self._readobj = require_llvm_tool("llvm-readobj")
@@ -843,7 +843,7 @@ def format_addend(symbol: str | None, addend: int) -> str:
     return f"{f'{symbol_part}+' if symbol_part else ''}{hex(addend)}"
 
 
-def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
+def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]:
     yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
     yield f""
     yield f"typedef enum {{"
@@ -868,11 +868,12 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"    const unsigned char * const bytes;"
     yield f"    const size_t nholes;"
     yield f"    const Hole * const holes;"
-    yield f"    const size_t nbytes_data;"
-    yield f"    const unsigned char * const bytes_data;"
-    yield f"    const size_t nholes_data;"
-    yield f"    const Hole * const holes_data;"
     yield f"}} Stencil;"
+    yield f""
+    yield f"typedef struct {{"
+    yield f"    const Stencil body;"
+    yield f"    const Stencil data;"
+    yield f"}} StencilGroup;"
     yield f""
     opnames = []
     for opname, stencil in sorted(stencils.items()):
@@ -882,9 +883,9 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         for line in stencil.disassembly:
             yield f"// {line}"
         body = ", ".join(f"0x{byte:02x}" for byte in stencil.body)
-        yield f"static const unsigned char {opname}_stencil_bytes[{len(stencil.body)}] = {{{body}}};"
+        yield f"static const unsigned char {opname}_body_bytes[{len(stencil.body)}] = {{{body}}};"
         if stencil.holes:
-            yield f"static const Hole {opname}_stencil_holes[{len(stencil.holes) + 1}] = {{"
+            yield f"static const Hole {opname}_body_holes[{len(stencil.holes) + 1}] = {{"
             for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
                 parts = [
                     hex(hole.offset),
@@ -895,16 +896,16 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
                 yield f"    {{{', '.join(parts)}}},"
             yield f"}};"
         else:
-            yield f"static const Hole {opname}_stencil_holes[1];"
+            yield f"static const Hole {opname}_body_holes[1];"
         for line in stencil.disassembly_data:
             yield f"// {line}"
         body = ", ".join(f"0x{byte:02x}" for byte in stencil.data)
         if stencil.data:
-            yield f"static const unsigned char {opname}_stencil_bytes_data[{len(stencil.data) + 1}] = {{{body}}};"
+            yield f"static const unsigned char {opname}_data_bytes[{len(stencil.data) + 1}] = {{{body}}};"
         else:
-            yield f"static const unsigned char {opname}_stencil_bytes_data[1];"
+            yield f"static const unsigned char {opname}_data_bytes[1];"
         if stencil.holes_data:
-            yield f"static const Hole {opname}_stencil_holes_data[{len(stencil.holes_data) + 1}] = {{"
+            yield f"static const Hole {opname}_data_holes[{len(stencil.holes_data) + 1}] = {{"
             for hole in sorted(stencil.holes_data, key=lambda hole: hole.offset):
                 parts = [
                     hex(hole.offset),
@@ -915,28 +916,27 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
                 yield f"    {{{', '.join(parts)}}},"
             yield f"}};"
         else:
-            yield f"static const Hole {opname}_stencil_holes_data[1];"
+            yield f"static const Hole {opname}_data_holes[1];"
         yield f""
-    yield f"#define INIT_STENCIL(OP) {{                                        \\"
-    yield f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),                \\"
-    yield f"    .bytes = OP##_stencil_bytes,                                  \\"
-    yield f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes) - 1,            \\"
-    yield f"    .holes = OP##_stencil_holes,                                  \\"
-    yield f"    .nbytes_data = (Py_ARRAY_LENGTH(OP##_stencil_holes_data) - 1) \\"
-    yield f"                 ? (Py_ARRAY_LENGTH(OP##_stencil_bytes_data) - 1) \\"
-    yield f"                 : 0,                                             \\"
-    yield f"    .bytes_data = OP##_stencil_bytes_data,                        \\"
-    yield f"    .nholes_data = Py_ARRAY_LENGTH(OP##_stencil_holes_data) - 1,  \\"
-    yield f"    .holes_data = OP##_stencil_holes_data,                        \\"
+    yield f"#define INIT_STENCIL(STENCIL) {{                     \\"
+    yield f"    .nbytes = Py_ARRAY_LENGTH(STENCIL##_bytes),     \\"
+    yield f"    .bytes = STENCIL##_bytes,                       \\"
+    yield f"    .nholes = Py_ARRAY_LENGTH(STENCIL##_holes) - 1, \\"
+    yield f"    .holes = STENCIL##_holes,                       \\"
+    yield f"}}"
+    yield f""
+    yield f"#define INIT_STENCIL_GROUP(OP) {{     \\"
+    yield f"    .body = INIT_STENCIL(OP##_body), \\"
+    yield f"    .data = INIT_STENCIL(OP##_data), \\"
     yield f"}}"
     yield f""
     assert opnames[-len(STUBS):] == STUBS
     for stub in opnames[-len(STUBS):]:
-        yield f"static const Stencil {stub}_stencil = INIT_STENCIL({stub});"
+        yield f"static const StencilGroup {stub}_stencil_group = INIT_STENCIL_GROUP({stub});"
     yield f""
-    yield f"static const Stencil stencils[512] = {{"
+    yield f"static const StencilGroup stencil_groups[512] = {{"
     for opname in opnames[:-len(STUBS)]:
-        yield f"    [{opname}] = INIT_STENCIL({opname}),"
+        yield f"    [{opname}] = INIT_STENCIL_GROUP({opname}),"
     yield f"}};"
     yield f""
     yield f"#define GET_PATCHES() {{ \\"
