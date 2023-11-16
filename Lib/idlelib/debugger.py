@@ -68,7 +68,7 @@ def _in_rpc_code(frame):
             # catch both idlelib/debugger.py and idlelib/debugger_r.py
             # on both Posix and Windows
             return False
-        return in_rpc_code(prev_frame)
+        return _in_rpc_code(prev_frame)
 
 def _frame2message(frame):
     """Return a message string for frame."""

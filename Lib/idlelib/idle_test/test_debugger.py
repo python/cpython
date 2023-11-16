@@ -54,7 +54,6 @@ class IdbTest(unittest.TestCase):
         test_frame2.f_back = test_frame1
 
         self.idb.user_line(test_frame2)
-        self.assertFalse(debugger._in_rpc_code(test_frame2))
         self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2)
 
     def test_user_exception(self):
@@ -66,12 +65,31 @@ class IdbTest(unittest.TestCase):
         test_exc_info = (type(ValueError), ValueError(), None)
 
         self.idb.user_exception(test_frame2, test_exc_info)
-        self.assertFalse(debugger._in_rpc_code(test_frame2))
         self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2, test_exc_info)
 
-    def test_in_rpc_code(self):
-        test_frame = MockFrame(self.rpc_obj, 1)
-        self.assertTrue(debugger._in_rpc_code(test_frame))
+
+class FunctionTest(unittest.TestCase):
+    # Test module functions.
+
+    def test_functions(self):
+        rpc_obj = compile(TEST_CODE,'rpc.py', mode='exec')
+        rpc_frame = MockFrame(rpc_obj, 2)
+        rpc_frame.f_back = rpc_frame
+        self.assertTrue(debugger._in_rpc_code(rpc_frame))
+        self.assertEqual(debugger._frame2message(rpc_frame),
+                         'rpc.py:2: <module>()')
+
+        code_obj = compile(TEST_CODE, 'idlelib/debugger.py', mode='exec')
+        code_frame = MockFrame(code_obj, 1)
+        code_frame.f_back = None
+        self.assertFalse(debugger._in_rpc_code(code_frame))
+        self.assertEqual(debugger._frame2message(code_frame),
+                         'debugger.py:1: <module>()')
+
+        code_frame.f_back = code_frame
+        self.assertFalse(debugger._in_rpc_code(code_frame))
+        code_frame.f_back = rpc_frame
+        self.assertTrue(debugger._in_rpc_code(code_frame))
 
 
 class DebuggerTest(unittest.TestCase):
