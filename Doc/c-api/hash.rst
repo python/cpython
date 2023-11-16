@@ -22,17 +22,25 @@ for more details about hashing of numeric types.
 
    The Mersenne prime ``P = 2**n -1``, used for numeric hash scheme.
 
+   .. versionadded:: 3.13
+
 .. c:macro:: PyHASH_BITS
 
    The exponent ``n`` of ``P``.
+
+   .. versionadded:: 3.13
 
 .. c:macro:: PyHASH_INF
 
    The hash value returned for a positive infinity.
 
+   .. versionadded:: 3.13
+
 .. c:macro:: PyHASH_IMAG
 
    The multiplier used for the imaginary part of a complex number.
+
+   .. versionadded:: 3.13
 
 .. c:type:: PyHash_FuncDef
 
