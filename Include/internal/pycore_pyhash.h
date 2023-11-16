@@ -5,12 +5,6 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* Helpers for hash functions */
-extern Py_hash_t _Py_HashDouble(PyObject *, double);
-
-// Export for '_decimal' shared extension
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
-
 // Similar to _Py_HashPointer(), but don't replace -1 with -2
 extern Py_hash_t _Py_HashPointerRaw(const void*);
 
