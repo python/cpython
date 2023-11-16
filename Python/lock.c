@@ -295,3 +295,61 @@ PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns)
         return _Py_atomic_load_uint8(&evt->v) == _Py_LOCKED;
     }
 }
+
+static int
+unlock_once(_PyOnceFlag *o, int res)
+{
+    // On success (res=0), we set the state to _Py_ONCE_INITIALIZED.
+    // On failure (res=-1), we reset the state to _Py_UNLOCKED.
+    uint8_t new_value;
+    switch (res) {
+        case -1: new_value = _Py_UNLOCKED; break;
+        case  0: new_value = _Py_ONCE_INITIALIZED; break;
+        default: {
+            Py_FatalError("invalid result from _PyOnceFlag_CallOnce");
+            Py_UNREACHABLE();
+            break;
+        }
+    }
+
+    uint8_t old_value = _Py_atomic_exchange_uint8(&o->v, new_value);
+    if ((old_value & _Py_HAS_PARKED) != 0) {
+        // wake up anyone waiting on the once flag
+        _PyParkingLot_UnparkAll(&o->v);
+    }
+    return res;
+}
+
+int
+_PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
+{
+    uint8_t v = _Py_atomic_load_uint8(&flag->v);
+    for (;;) {
+        if (v == _Py_UNLOCKED) {
+            if (!_Py_atomic_compare_exchange_uint8(&flag->v, &v, _Py_LOCKED)) {
+                continue;
+            }
+            int res = fn(arg);
+            return unlock_once(flag, res);
+        }
+
+        if (v == _Py_ONCE_INITIALIZED) {
+            return 0;
+        }
+
+        // The once flag is initializing (locked).
+        assert((v & _Py_LOCKED));
+        if (!(v & _Py_HAS_PARKED)) {
+            // We are the first waiter. Set the _Py_HAS_PARKED flag.
+            uint8_t new_value = v | _Py_HAS_PARKED;
+            if (!_Py_atomic_compare_exchange_uint8(&flag->v, &v, new_value)) {
+                continue;
+            }
+            v = new_value;
+        }
+
+        // Wait for initialization to finish.
+        _PyParkingLot_Park(&flag->v, &v, sizeof(v), -1, NULL, 1);
+        v = _Py_atomic_load_uint8(&flag->v);
+    }
+}
