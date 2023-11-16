@@ -174,7 +174,7 @@ typedef struct pyruntimestate {
     unsigned long _finalizing_id;
 
     struct pyinterpreters {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The linked list of interpreters, newest first. */
         PyInterpreterState *head;
         /* The runtime's initial interpreter, which has a special role
@@ -236,7 +236,7 @@ typedef struct pyruntimestate {
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     struct {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         _Py_AuditHookEntry *head;
     } audit_hooks;
 

@@ -108,6 +108,16 @@ typedef enum _PyLockFlags {
 extern PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout_ns, _PyLockFlags flags);
 
+// Lock a mutex with aditional options. See _PyLockFlags for details.
+static inline void
+PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
+{
+    uint8_t expected = _Py_UNLOCKED;
+    if (!_Py_atomic_compare_exchange_uint8(&m->v, &expected, _Py_LOCKED)) {
+        _PyMutex_LockTimed(m, -1, flags);
+    }
+}
+
 // Unlock a mutex, returns 0 if the mutex is not locked (used for improved
 // error messages).
 extern int _PyMutex_TryUnlock(PyMutex *m);
