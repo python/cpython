@@ -284,8 +284,11 @@ _Instruction.line_number.__doc__ = "source line number associated with this opco
 _Instruction.label.__doc__ = "A label (int > 0) if this instruction is a jump target, otherwise None"
 _Instruction.positions.__doc__ = "dis.Positions object holding the span of source code covered by this instruction"
 
-_ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
+_ExceptionTableEntryBase = collections.namedtuple("_ExceptionTableEntryBase",
     "start end target depth lasti")
+
+class _ExceptionTableEntry(_ExceptionTableEntryBase):
+    pass
 
 _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
@@ -311,12 +314,13 @@ def _get_jump_target(op, arg, offset):
         target = None
     return target
 
-def _label_string(label, width=None, suffix=''):
-    if label is not None:
+def _label_string(label_info, width=None, suffix=''):
+    if label_info is not None:
+        label, prefix = label_info
         lbl = f'{label}'
         padding = width - len(lbl) if width is not None else 0
         assert padding >= 0
-        return f"L{lbl}{suffix}{'':<{padding}}"
+        return f"{prefix}{lbl}{suffix}{'':<{padding}}"
     else:
         return ' ' * (width + 1 + len(suffix))
 
@@ -334,7 +338,7 @@ class Instruction(_Instruction):
                         otherwise equal to Instruction.offset
          starts_line - True if this opcode starts a source line, otherwise False
          line_number - source line number associated with this opcode (if any), otherwise None
-         label - A label (int > 0) if this instruction is a jump target, otherwise None
+         label - A label if this instruction is a jump target, otherwise None
          positions - Optional dis.Positions object holding the span of source code
                      covered by this instruction
     """
@@ -421,7 +425,8 @@ class Instruction(_Instruction):
         label = labels_map.get(offset, None)
         instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
                             offset, start_offset, starts_line, line_number,
-                            label, positions)
+                            label[0] if label else None, positions)
+        instr.label_info = label
         instr.label_width = label_width
         return instr
 
@@ -491,7 +496,9 @@ class Instruction(_Instruction):
         else:
             fields.append('   ')
         # Column: Jump target marker
-        fields.append(_label_string(self.label, width=self.label_width, suffix=':  '))
+        fields.append(_label_string(self.label_info,
+                                    width=self.label_width,
+                                    suffix=':  '))
         # Column: Opcode name
         fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
@@ -624,11 +631,17 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     get_name = None if names is None else names.__getitem__
 
     def make_labels_map(original_code, exception_entries):
-        labels = set(findlabels(original_code))
+        jump_targets = set(findlabels(original_code))
+        labels = set(jump_targets)
         for start, end, target, _, _ in exception_entries:
             for i in range(start, end):
                 labels.add(target)
-        return {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
+        labels = sorted(labels)
+        labels_map = {offset: (i+1, 'J' if offset in jump_targets else 'H')
+                      for (i, offset) in enumerate(sorted(labels))}
+        for e in exception_entries:
+            e.target_label = labels_map[e.target][0]
+        return labels_map
 
     labels_map = make_labels_map(original_code, exception_entries)
 
@@ -752,7 +765,8 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
         for entry in exception_entries:
             lasti = " lasti" if entry.lasti else ""
             end = entry.end-2
-            print(f"  {entry.start} to {end} -> {entry.target} [{entry.depth}]{lasti}", file=file)
+            target_lbl = entry.target_label
+            print(f"  {entry.start} to {end} -> H{target_lbl} [{entry.depth}]{lasti}", file=file)
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
