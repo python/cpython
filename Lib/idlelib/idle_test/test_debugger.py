@@ -88,7 +88,7 @@ class FunctionTest(unittest.TestCase):
         self.assertTrue(debugger._in_rpc_code(code_frame))
 
 
-class DebuggerTest(unittest.TestCase):
+class DebuggerGuiTest(unittest.TestCase):
     """Tests for the idlelib.debugger.Debugger class."""
 
     @classmethod
@@ -106,6 +106,8 @@ class DebuggerTest(unittest.TestCase):
         self.pyshell.root = self.root
         self.debugger = debugger.Debugger(self.pyshell, None)
         self.debugger.root = self.root
+        # real root needed for real make_gui
+        # run, interacting, abort_loop
 
     def tearDown(self):
         del self.pyshell.root
@@ -119,6 +121,12 @@ class DebuggerTest(unittest.TestCase):
 
         self.assertEqual(test_debugger.pyshell, self.pyshell)
         self.assertIsNone(test_debugger.frame)
+
+    def test_run_debugger(self):
+        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
+        self.debugger.run(1, 'two')
+        self.idb.run.assert_called_once_with(1, 'two')
+        self.assertEqual(self.debugger.interacting, 0)
 
     def test_close(self):
         # Test closing the window in an idle state.
@@ -155,25 +163,21 @@ class DebuggerTest(unittest.TestCase):
         self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
 
 
-class DebuggerIdbTest(unittest.TestCase):
+class DebuggerTest(unittest.TestCase):
     """Tests for the idlelib.debugger.Debugger class with an Idb."""
 
     @classmethod
     def setUpClass(cls):
-        cls.root = Tk()
-        cls.root.withdraw()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.root.destroy()
-        del cls.root
-
-    def setUp(self):
         self.pyshell = mock.Mock()
         self.pyshell.root = self.root
         self.idb = mock.Mock()
         self.debugger = debugger.Debugger(self.pyshell, self.idb)
         self.debugger.root = self.root
+
+    @classmethod
+    def tearDownClass(cls): pass
+
+    def setUp(self): pass
 
     def tearDown(self):
         del self.pyshell.root
