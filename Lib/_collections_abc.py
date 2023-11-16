@@ -528,7 +528,7 @@ def _type_repr(obj):
     (Keep this roughly in sync with the typing version.)
     """
     if isinstance(obj, type):
-        return obj.__fullyqualname__
+        return obj.__fully_qualified_name__
     if obj is Ellipsis:
         return '...'
     if isinstance(obj, FunctionType):

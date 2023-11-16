@@ -71,7 +71,7 @@ class ABCMeta(type):
 
     def _dump_registry(cls, file=None):
         """Debug helper to print the ABC registry."""
-        print(f"Class: {cls.__fullyqualname__}", file=file)
+        print(f"Class: {cls.__fully_qualified_name__}", file=file)
         print(f"Inv. counter: {get_cache_token()}", file=file)
         for name in cls.__dict__:
             if name.startswith("_abc_"):

@@ -457,7 +457,7 @@ class Semaphore:
 
     def __repr__(self):
         cls = self.__class__
-        return (f"<{cls.__fullyqualname__} at {id(self):#x}:"
+        return (f"<{cls.__fully_qualified_name__} at {id(self):#x}:"
                 f" value={self._value}>")
 
     def acquire(self, blocking=True, timeout=None):
@@ -547,7 +547,7 @@ class BoundedSemaphore(Semaphore):
 
     def __repr__(self):
         cls = self.__class__
-        return (f"<{cls.__fullyqualname__} at {id(self):#x}:"
+        return (f"<{cls.__fully_qualified_name__} at {id(self):#x}:"
                 f" value={self._value}/{self._initial_value}>")
 
     def release(self, n=1):
@@ -587,7 +587,7 @@ class Event:
     def __repr__(self):
         cls = self.__class__
         status = 'set' if self._flag else 'unset'
-        return f"<{cls.__fullyqualname__} at {id(self):#x}: {status}>"
+        return f"<{cls.__fully_qualified_name__} at {id(self):#x}: {status}>"
 
     def _at_fork_reinit(self):
         # Private method called by Thread._after_fork()
@@ -690,8 +690,8 @@ class Barrier:
     def __repr__(self):
         cls = self.__class__
         if self.broken:
-            return f"<{cls.__fullyqualname__} at {id(self):#x}: broken>"
-        return (f"<{cls.__fullyqualname__} at {id(self):#x}:"
+            return f"<{cls.__fully_qualified_name__} at {id(self):#x}: broken>"
+        return (f"<{cls.__fully_qualified_name__} at {id(self):#x}:"
                 f" waiters={self.n_waiting}/{self.parties}>")
 
     def wait(self, timeout=None):

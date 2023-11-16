@@ -2430,7 +2430,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(A.__name__, 'A')
         self.assertEqual(A.__qualname__, 'A')
         self.assertEqual(A.__module__, __name__)
-        self.assertEqual(A.__fullyqualname__, f'{__name__}.A')
+        self.assertEqual(A.__fully_qualified_name__, f'{__name__}.A')
         self.assertEqual(A.__bases__, (object,))
         self.assertIs(A.__base__, object)
         x = A()
@@ -2444,7 +2444,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(C.__name__, 'C')
         self.assertEqual(C.__qualname__, 'C')
         self.assertEqual(C.__module__, __name__)
-        self.assertEqual(C.__fullyqualname__, f'{__name__}.C')
+        self.assertEqual(C.__fully_qualified_name__, f'{__name__}.C')
         self.assertEqual(C.__bases__, (B, int))
         self.assertIs(C.__base__, int)
         self.assertIn('spam', C.__dict__)
@@ -2470,7 +2470,7 @@ class TestType(unittest.TestCase):
                 self.assertEqual(A.__name__, name)
                 self.assertEqual(A.__qualname__, f"Test.{name}")
                 self.assertEqual(A.__module__, __name__)
-                self.assertEqual(A.__fullyqualname__, f'{__name__}.Test.{name}')
+                self.assertEqual(A.__fully_qualified_name__, f'{__name__}.Test.{name}')
         with self.assertRaises(ValueError):
             type('A\x00B', (), {})
         with self.assertRaises(UnicodeEncodeError):
@@ -2485,7 +2485,7 @@ class TestType(unittest.TestCase):
                 self.assertEqual(C.__name__, name)
                 self.assertEqual(C.__qualname__, 'C')
                 self.assertEqual(C.__module__, __name__)
-                self.assertEqual(C.__fullyqualname__, f'{__name__}.C')
+                self.assertEqual(C.__fully_qualified_name__, f'{__name__}.C')
 
         A = type('C', (), {})
         with self.assertRaises(ValueError):
@@ -2501,16 +2501,16 @@ class TestType(unittest.TestCase):
         # if __module__ is not a string, ignore it silently
         class D:
             pass
-        self.assertEqual(D.__fullyqualname__, f'{__name__}.{D.__qualname__}')
+        self.assertEqual(D.__fully_qualified_name__, f'{__name__}.{D.__qualname__}')
         D.__module__ = 123
-        self.assertEqual(D.__fullyqualname__, D.__qualname__)
+        self.assertEqual(D.__fully_qualified_name__, D.__qualname__)
 
     def test_type_qualname(self):
         A = type('A', (), {'__qualname__': 'B.C'})
         self.assertEqual(A.__name__, 'A')
         self.assertEqual(A.__qualname__, 'B.C')
         self.assertEqual(A.__module__, __name__)
-        self.assertEqual(A.__fullyqualname__, f'{__name__}.B.C')
+        self.assertEqual(A.__fully_qualified_name__, f'{__name__}.B.C')
         with self.assertRaises(TypeError):
             type('A', (), {'__qualname__': b'B'})
         self.assertEqual(A.__qualname__, 'B.C')
@@ -2518,7 +2518,7 @@ class TestType(unittest.TestCase):
         A.__qualname__ = 'D.E'
         self.assertEqual(A.__name__, 'A')
         self.assertEqual(A.__qualname__, 'D.E')
-        self.assertEqual(A.__fullyqualname__, f'{__name__}.D.E')
+        self.assertEqual(A.__fully_qualified_name__, f'{__name__}.D.E')
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')

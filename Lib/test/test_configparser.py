@@ -587,7 +587,7 @@ boolean {0[0]} NO
         except exc as e:
             return e
         else:
-            self.fail(f"expected exception type {exc.__fullyqualname__}")
+            self.fail(f"expected exception type {exc.__fully_qualified_name__}")
 
     def test_boolean(self):
         cf = self.fromstring(

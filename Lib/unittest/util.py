@@ -52,7 +52,7 @@ def safe_repr(obj, short=False):
     return result[:_MAX_LENGTH] + ' [truncated]...'
 
 def strclass(cls):
-    return cls.__fullyqualname__
+    return cls.__fully_qualified_name__
 
 def sorted_list_difference(expected, actual):
     """Finds elements in only one or the other of two, sorted input lists.

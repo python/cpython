@@ -1726,7 +1726,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         # Is it a class?
         if value.__class__ is type:
-            self.message(f'Class {value.__fullyqualname__}')
+            self.message(f'Class {value.__fully_qualified_name__}')
             return
         # None of the above...
         self.message(type(value))

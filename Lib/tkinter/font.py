@@ -101,7 +101,7 @@ class Font:
         return self.name
 
     def __repr__(self):
-        return (f"<{self.__class__.__fullyqualname__}"
+        return (f"<{self.__class__.__fully_qualified_name__}"
                 f" object {self.name!r}>")
 
     def __eq__(self, other):

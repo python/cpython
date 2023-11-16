@@ -74,7 +74,7 @@ class IsolatedAsyncioTestCase(TestCase):
             enter = cls.__aenter__
             exit = cls.__aexit__
         except AttributeError:
-            raise TypeError(f"'{cls.__fullyqualname__}' object does "
+            raise TypeError(f"'{cls.__fully_qualified_name__}' object does "
                             f"not support the asynchronous context manager protocol"
                            ) from None
         result = await enter(cm)

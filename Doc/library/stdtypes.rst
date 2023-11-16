@@ -5496,7 +5496,7 @@ types, where they are relevant.  Some of these are not reported by the
    .. versionadded:: 3.3
 
 
-.. attribute:: class.__fullyqualname__
+.. attribute:: class.__fully_qualified_name__
 
    The fully qualified name of the class instance:
    ``f"{class.__module__}.{class.__qualname__}"``, or ``class.__qualname__`` if

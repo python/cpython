@@ -1503,7 +1503,7 @@ def formatannotation(annotation, base_module=None):
     if isinstance(annotation, type):
         if annotation.__module__ == base_module:
             return annotation.__qualname__
-        return annotation.__fullyqualname__
+        return annotation.__fully_qualified_name__
     return repr(annotation)
 
 def formatannotationrelativeto(object):

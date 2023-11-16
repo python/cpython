@@ -188,7 +188,7 @@ Type Objects
 .. c:function:: PyObject* PyType_GetFullyQualifiedName(PyTypeObject *type)
 
    Return the type's fully qualified name. Equivalent to getting the
-   type's :attr:`__fullyqualname__ <class.__fullyqualname__>` attribute.
+   type's :attr:`__fully_qualified_name__ <class.__fully_qualified_name__>` attribute.
 
    .. versionadded:: 3.13
 

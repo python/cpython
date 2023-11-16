@@ -1635,7 +1635,7 @@ type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass)
 static PyGetSetDef type_getsets[] = {
     {"__name__", (getter)type_name, (setter)type_set_name, NULL},
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
-    {"__fullyqualname__", (getter)type_get_fullyqualname, NULL, NULL},
+    {"__fully_qualified_name__", (getter)type_get_fullyqualname, NULL, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__mro__", (getter)type_get_mro, NULL, NULL},
     {"__module__", (getter)type_module, (setter)type_set_module, NULL},

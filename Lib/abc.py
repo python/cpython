@@ -124,7 +124,7 @@ else:
 
         def _dump_registry(cls, file=None):
             """Debug helper to print the ABC registry."""
-            print(f"Class: {cls.__fullyqualname__}", file=file)
+            print(f"Class: {cls.__fully_qualified_name__}", file=file)
             print(f"Inv. counter: {get_cache_token()}", file=file)
             (_abc_registry, _abc_cache, _abc_negative_cache,
              _abc_negative_cache_version) = _get_dump(cls)

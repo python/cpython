@@ -670,7 +670,7 @@ test_get_type_fullyqualname(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     int res = PyObject_SetAttrString(HeapTypeNameType,
-                                     "__fullyqualname__", new_name);
+                                     "__fully_qualified_name__", new_name);
     Py_DECREF(new_name);
     assert(res < 0);
     assert(PyErr_ExceptionMatches(PyExc_AttributeError));

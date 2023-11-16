@@ -125,7 +125,7 @@ Other Language Changes
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
-* Add :attr:`__fullyqualname__ <class.__fullyqualname__>` read-only attribute
+* Add :attr:`__fully_qualified_name__ <class.__fully_qualified_name__>` read-only attribute
   to types: the fully qualified type name.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
@@ -1188,7 +1188,7 @@ New Features
 
 * Add :c:func:`PyType_GetFullyQualifiedName` function: get the type's fully
   qualified name. It is equivalent to getting the type's
-  :attr:`__fullyqualname__ <class.__fullyqualname__>` attribute.
+  :attr:`__fully_qualified_name__ <class.__fully_qualified_name__>` attribute.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
 

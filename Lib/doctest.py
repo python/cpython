@@ -1401,7 +1401,7 @@ class DocTestRunner:
                     # They start with `SyntaxError:` (or any other class name)
                     exception_line_prefixes = (
                         f"{exception[0].__qualname__}:",
-                        f"{exception[0].__fullyqualname__}:",
+                        f"{exception[0].__fully_qualified_name__}:",
                     )
                     exc_msg_index = next(
                         index
