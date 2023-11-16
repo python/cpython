@@ -111,7 +111,7 @@ class Debugger:
         self.idb = idb  # If passed, a proxy of remote instance.
         self.frame = None
         self.make_gui()
-        self.interacting = 0
+        self.interacting = False
         self.nesting_level = 0
 
     def run(self, *args):
@@ -150,10 +150,10 @@ class Debugger:
             self.root.after(100, lambda: self.run(*args))
             return
         try:
-            self.interacting = 1
+            self.interacting = True
             return self.idb.run(*args)
         finally:
-            self.interacting = 0
+            self.interacting = False
 
     def close(self, event=None):
         """Close the debugger and window."""
