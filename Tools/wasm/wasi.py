@@ -76,8 +76,8 @@ def compile_host_python(context):
     if context.debug:
         configure.append("--with-pydebug")
 
-    if not context.build_python:
-        print("Skipping build (--skip-build-python)...")
+    if context.platform not in {"all", "build"}:
+        print("Skipping build (--platform=host)...")
     else:
         if context.clean and build_dir.exists():
             print(f"Deleting {build_dir} (--clean)...")
@@ -220,9 +220,10 @@ def main():
     build.add_argument("--with-pydebug", action="store_true", default=False,
                        dest="debug",
                        help="Debug build (i.e., pydebug)")
-    build.add_argument("--skip-build-python", action="store_false",
-                       dest="build_python", default=True,
-                       help="Skip building the build/host Python")
+    build.add_argument("--platform", choices=["all", "build", "host"],
+                       default="all",
+                       help="specify which platform(s) to build for "
+                            "(default is 'all')")
     build.add_argument("--wasi-sdk", type=pathlib.Path, dest="wasi_sdk_path",
                        default=find_wasi_sdk(),
                        help="Path to wasi-sdk; defaults to "
@@ -258,8 +259,9 @@ def main():
     prep_checkout()
     print()
     build_python, version = compile_host_python(context)
-    print()
-    compile_wasi_python(context, build_python, version)
+    if context.platform in {"all", "host"}:
+        print()
+        compile_wasi_python(context, build_python, version)
 
 
 if  __name__ == "__main__":
