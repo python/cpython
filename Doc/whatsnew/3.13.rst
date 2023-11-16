@@ -183,6 +183,13 @@ doctest
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
 
+glob
+----
+
+* Add :func:`glob.translate` function that converts a path specification with
+  shell-style wildcards to a regular expression.
+  (Contributed by Barney Gale in :gh:`72904`.)
+
 io
 --
 
@@ -1164,6 +1171,16 @@ New Features
   :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
+* Add :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions: similar to
+  Python ``list.extend()`` and ``list.clear()`` methods.
+  (Contributed by Victor Stinner in :gh:`111138`.)
+
+* Add :c:func:`PyDict_Pop` and :c:func:`PyDict_PopString` functions: remove a
+  key from a dictionary and optionally return the removed value. This is
+  similar to :meth:`dict.pop`, but without the default value and not raising
+  :exc:`KeyError` if the key missing.
+  (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
+
 
 Porting to Python 3.13
 ----------------------
@@ -1174,30 +1191,12 @@ Porting to Python 3.13
   also the ``HAVE_IEEEFP_H`` macro.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
-* ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
-  needed, it should now be included explicitly. For example, it provides the
-  functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
-  ``getpid()``, ``getcwd()``, ``sysconf()``, ``getpagesize()``, ``alarm()`` and
-  ``pause()``.
-  As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
-  longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
-  macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
-  ``<pthread.h>`` header files can be included.
-  (Contributed by Victor Stinner in :gh:`108765`.)
-
 * ``Python.h`` no longer includes these standard header files: ``<time.h>``,
   ``<sys/select.h>`` and ``<sys/time.h>``. If needed, they should now be
   included explicitly. For example, ``<time.h>`` provides the ``clock()`` and
   ``gmtime()`` functions, ``<sys/select.h>`` provides the ``select()``
   function, and ``<sys/time.h>`` provides the ``futimes()``, ``gettimeofday()``
   and ``setitimer()`` functions.
-  (Contributed by Victor Stinner in :gh:`108765`.)
-
-* ``Python.h`` no longer includes the ``<ctype.h>`` standard header file. If
-  needed, it should now be included explicitly. For example, it provides
-  ``isalpha()`` and ``tolower()`` functions which are locale dependent. Python
-  provides locale independent functions, like :c:func:`!Py_ISALPHA` and
-  :c:func:`!Py_TOLOWER`.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
 * If the :c:macro:`Py_LIMITED_API` macro is defined, :c:macro:`!Py_BUILD_CORE`,

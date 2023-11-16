@@ -5,7 +5,7 @@ import lexer as lx
 import parsing
 from typing import AbstractSet
 
-WHITELIST = (
+NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
     "_PyDictOrValues_IsValues",
     "_PyObject_DictOrValuesPointer",
@@ -31,9 +31,29 @@ WHITELIST = (
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_CompactValue",
     "_Py_NewRef",
+    "_Py_IsImmortal",
+    "_Py_STR",
+    "_PyLong_Add",
+    "_PyLong_Multiply",
+    "_PyLong_Subtract",
+    "Py_NewRef",
+    "_PyList_ITEMS",
+    "_PyTuple_ITEMS",
+    "_PyList_AppendTakeRef",
+    "_Py_atomic_load_uintptr_relaxed",
+    "_PyFrame_GetCode",
+    "_PyThreadState_HasStackSpace",
 )
 
-def makes_escaping_api_call(instr: parsing.Node) -> bool:
+ESCAPING_FUNCTIONS = (
+    "import_name",
+    "import_from",
+)
+
+
+def makes_escaping_api_call(instr: parsing.InstDef) -> bool:
+    if "CALL_INTRINSIC" in instr.name:
+        return True;
     tkns = iter(instr.tokens)
     for tkn in tkns:
         if tkn.kind != lx.IDENTIFIER:
@@ -44,13 +64,17 @@ def makes_escaping_api_call(instr: parsing.Node) -> bool:
             return False
         if next_tkn.kind != lx.LPAREN:
             continue
+        if tkn.text in ESCAPING_FUNCTIONS:
+            return True
         if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
             continue
         if tkn.text.endswith("Check"):
             continue
+        if tkn.text.startswith("Py_Is"):
+            continue
         if tkn.text.endswith("CheckExact"):
             continue
-        if tkn.text in WHITELIST:
+        if tkn.text in NON_ESCAPING_FUNCTIONS:
             continue
         return True
     return False
@@ -74,7 +98,7 @@ class InstructionFlags:
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}
 
     @staticmethod
-    def fromInstruction(instr: parsing.Node) -> "InstructionFlags":
+    def fromInstruction(instr: parsing.InstDef) -> "InstructionFlags":
         has_free = (
             variable_used(instr, "PyCell_New")
             or variable_used(instr, "PyCell_GET")
@@ -101,8 +125,7 @@ class InstructionFlags:
                 or variable_used(instr, "resume_with_error")
             ),
             HAS_ESCAPES_FLAG=(
-                variable_used(instr, "tstate")
-                or makes_escaping_api_call(instr)
+                makes_escaping_api_call(instr)
             ),
         )
 
