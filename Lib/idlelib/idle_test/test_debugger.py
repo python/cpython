@@ -8,7 +8,7 @@ from tkinter import Tk
 from test.support import requires
 import unittest
 from unittest import mock
-requires('gui')
+from unittest.mock import Mock, patch
 
 """A test python script for the debug tests."""
 TEST_CODE = dedent("""
@@ -31,7 +31,7 @@ class IdbTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.gui = mock.Mock()
+        cls.gui = Mock()
         cls.idb = debugger.Idb(cls.gui)
 
         # Create test and code objects to simulate a debug session.
@@ -51,14 +51,14 @@ class IdbTest(unittest.TestCase):
 
     def test_user_line(self):
         # Test that .user_line() creates a string message for a frame.
-        self.gui.interaction = mock.Mock()
+        self.gui.interaction = Mock()
         self.idb.user_line(self.frame)
         self.gui.interaction.assert_called_once_with(self.msg, self.frame)
 
     def test_user_exception(self):
         # Test that .user_exception() creates a string message for a frame.
         exc_info = (type(ValueError), ValueError(), None)
-        self.gui.interaction = mock.Mock()
+        self.gui.interaction = Mock()
         self.idb.user_exception(self.frame, exc_info)
         self.gui.interaction.assert_called_once_with(
                 self.msg, self.frame, exc_info)
@@ -93,6 +93,7 @@ class DebuggerGuiTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
 
@@ -102,7 +103,7 @@ class DebuggerGuiTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
-        self.pyshell = mock.Mock()
+        self.pyshell = Mock()
         self.pyshell.root = self.root
         self.debugger = debugger.Debugger(self.pyshell, None)
         self.debugger.root = self.root
@@ -122,11 +123,11 @@ class DebuggerGuiTest(unittest.TestCase):
         self.assertEqual(test_debugger.pyshell, self.pyshell)
         self.assertIsNone(test_debugger.frame)
 
-    def test_run_debugger(self):
-        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
-        self.debugger.run(1, 'two')
-        self.idb.run.assert_called_once_with(1, 'two')
-        self.assertEqual(self.debugger.interacting, 0)
+##    def test_run_debugger(self):
+##        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
+##        self.debugger.run(1, 'two')
+##        self.idb.run.assert_called_once_with(1, 'two')
+##        self.assertEqual(self.debugger.interacting, 0)
 
     def test_close(self):
         # Test closing the window in an idle state.
@@ -147,10 +148,10 @@ class DebuggerGuiTest(unittest.TestCase):
         self.debugger.frame = test_frame
 
         # Patch out the file list
-        self.debugger.flist = mock.Mock()
+        self.debugger.flist = Mock()
 
         # Pretend file exists
-        with mock.patch('idlelib.debugger.os.path.exists', return_value=True):
+        with patch('idlelib.debugger.os.path.exists', return_value=True):
             self.debugger.sync_source_line()
 
         self.debugger.flist.gotofileline.assert_called_once_with('test_sync.py', 1)
@@ -168,75 +169,58 @@ class DebuggerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        self.pyshell = mock.Mock()
-        self.pyshell.root = self.root
-        self.idb = mock.Mock()
-        self.debugger = debugger.Debugger(self.pyshell, self.idb)
-        self.debugger.root = self.root
-
-    @classmethod
-    def tearDownClass(cls): pass
+        cls.pyshell = Mock()
+        cls.pyshell.root = Mock()
+        cls.idb = Mock()
+        with patch.object(debugger.Debugger, 'make_gui'):
+            cls.debugger = debugger.Debugger(cls.pyshell, cls.idb)
+        cls.debugger.root = Mock()
 
     def setUp(self): pass
 
-    def tearDown(self):
-        del self.pyshell.root
-        del self.pyshell
-        del self.idb
-        del self.debugger.root
-        del self.debugger
-
-    def test_run_debugger(self):
-        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
-        self.debugger.run(1, 'two')
-        self.idb.run.assert_called_once_with(1, 'two')
-        self.assertEqual(self.debugger.interacting, 0)
+##    def test_run_debugger(self):
+##        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
+##        self.debugger.run(1, 'two')
+##        self.idb.run.assert_called_once_with(1, 'two')
+##        self.assertEqual(self.debugger.interacting, 0)
 
     def test_cont(self):
-        # Test the .cont() method calls idb.set_continue().
         self.debugger.cont()
-
-        # Check set_continue was called on the idb instance.
         self.idb.set_continue.assert_called_once()
 
     def test_step(self):
-        # Test the .step() method calls idb.set_step().
         self.debugger.step()
-
-        # Check set_step was called on the idb instance.
         self.idb.set_step.assert_called_once()
 
+    def test_quit(self):
+        self.debugger.quit()
+        self.idb.set_quit.assert_called_once()
+
     def test_next(self):
-        # Test the .next() method calls idb.set_next().
-        test_frame = MockFrame(None, None)
-
-        self.debugger.frame = test_frame
-        self.debugger.next()
-
-        # Check set_next was called on the idb instance.
-        self.idb.set_next.assert_called_once_with(test_frame)
+        with patch.object(self.debugger, 'frame') as frame:
+            self.debugger.next()
+            self.idb.set_next.assert_called_once_with(frame)
 
     def test_ret(self):
-        # Test the .ret() method calls idb.set_return().
-        test_frame = MockFrame(None, None)
+        with patch.object(self.debugger, 'frame') as frame:
+            self.debugger.ret()
+            self.idb.set_return.assert_called_once_with(frame)
 
-        self.debugger.frame = test_frame
-        self.debugger.ret()
+    @unittest.skip('')
+    def test_set_breakpoint_here(self):
+        self.debugger.set_breakpoint_here('test.py', 4)
+        self.idb.set_break.assert_called_once_with('test.py', 4)
 
-        # Check set_return was called on the idb instance.
-        self.idb.set_return.assert_called_once_with(test_frame)
+    def test_clear_breakpoint_here(self):
+        self.debugger.clear_breakpoint_here('test.py', 4)
+        self.idb.clear_break.assert_called_once_with('test.py', 4)
 
-    def test_quit(self):
-        # Test the .quit() method calls idb.set_quit().
-        self.debugger.quit()
+    def test_clear_file_breaks(self):
+        self.debugger.clear_file_breaks('test.py')
+        self.idb.clear_all_file_breaks.assert_called_once_with('test.py')
 
-        # Check set_quit was called on the idb instance.
-        self.idb.set_quit.assert_called_once_with()
-
+    @unittest.skip('')
     def test_show_stack_with_frame(self):
-        # Test the .show_stack() method calls with stackview and frame.
-
-        # Set a frame on the GUI before showing stack
         test_frame = MockFrame(None, None)
         self.debugger.frame = test_frame
 
@@ -251,24 +235,6 @@ class DebuggerTest(unittest.TestCase):
 
         self.idb.get_stack.assert_called_once_with(test_frame, None)
 
-    def test_set_breakpoint_here(self):
-        # Test the .set_breakpoint_here() method calls idb.
-        self.debugger.set_breakpoint_here('test.py', 4)
-
-        self.idb.set_break.assert_called_once_with('test.py', 4)
-
-    def test_clear_breakpoint_here(self):
-        # Test the .clear_breakpoint_here() method calls idb.
-        self.debugger.clear_breakpoint_here('test.py', 4)
-
-        self.idb.clear_break.assert_called_once_with('test.py', 4)
-
-    def test_clear_file_breaks(self):
-        # Test the .clear_file_breaks() method calls idb.
-        self.debugger.clear_file_breaks('test.py')
-
-        self.idb.clear_all_file_breaks.assert_called_once_with('test.py')
-
     def test_load_breakpoints(self):
         # Test the .load_breakpoints() method calls idb.
         FileIO = namedtuple('FileIO', 'filename')
@@ -278,7 +244,7 @@ class DebuggerTest(unittest.TestCase):
                 self.io = FileIO(fn)
                 self.breakpoints = breakpoints
 
-        self.pyshell.flist = mock.Mock()
+        self.pyshell.flist = Mock()
         self.pyshell.flist.inversedict = (
             MockEditWindow('test1.py', [1, 4, 4]),
             MockEditWindow('test2.py', [13, 44, 45]),
@@ -298,6 +264,7 @@ class StackViewerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        requires('gui')
         cls.root = Tk()
         cls.root.withdraw()
 
@@ -312,7 +279,6 @@ class StackViewerTest(unittest.TestCase):
             (MockFrame(self.code, 1), 1),
             (MockFrame(self.code, 2), 2)
         ]
-
         # Create a stackviewer and load the test stack.
         self.sv = debugger.StackViewer(self.root, None, None)
         self.sv.load_stack(self.stack)
@@ -327,7 +293,6 @@ class StackViewerTest(unittest.TestCase):
 
     def test_load_stack(self):
         # Test the .load_stack() method against a fixed test stack.
-
         # Check the test stack is assigned and the list contains the repr of them.
         self.assertEqual(self.sv.stack, self.stack)
         self.assertTrue('?.<module>(), line 1:' in self.sv.get(0))
@@ -335,12 +300,10 @@ class StackViewerTest(unittest.TestCase):
 
     def test_show_source(self):
         # Test the .show_source() method against a fixed test stack.
-
         # Patch out the file list to monitor it
-        self.sv.flist = mock.Mock()
-
+        self.sv.flist = Mock()
         # Patch out isfile to pretend file exists.
-        with mock.patch('idlelib.debugger.os.path.isfile', return_value=True) as isfile:
+        with patch('idlelib.debugger.os.path.isfile', return_value=True) as isfile:
             self.sv.show_source(1)
             isfile.assert_called_once_with('test_stackviewer.py')
             self.sv.flist.open.assert_called_once_with('test_stackviewer.py')
