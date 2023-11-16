@@ -1012,7 +1012,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
   Calling scheme used for ternary operations:
 
   Order operations are tried until either a valid result or error:
-    v.op(v,w,z), w.op(v,w,z)
+    v.op(v,w,z), w.op(v,w,z), z.op(v,w,z)
  */
 
 static PyObject *
@@ -1069,6 +1069,22 @@ ternary_op(PyObject *v,
             return x;
         }
         Py_DECREF(x); /* can't do it */
+    }
+
+    PyNumberMethods *mz = Py_TYPE(z)->tp_as_number;
+    if (mz != NULL) {
+        ternaryfunc slotz = NB_TERNOP(mz, op_slot);
+        if (slotz == slotv || slotz == slotw) {
+            slotz = NULL;
+        }
+        if (slotz) {
+            PyObject *x = slotz(v, w, z);
+            assert(_Py_CheckSlotResult(z, op_name, x != NULL));
+            if (x != Py_NotImplemented) {
+                return x;
+            }
+            Py_DECREF(x); /* can't do it */
+        }
     }
 
     if (z == Py_None) {
@@ -1164,10 +1180,29 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
     return result;
 }
 
-BINARY_FUNC(PyNumber_MatrixMultiply, nb_matrix_multiply, "@")
-BINARY_FUNC(PyNumber_FloorDivide, nb_floor_divide, "//")
-BINARY_FUNC(PyNumber_TrueDivide, nb_true_divide, "/")
-BINARY_FUNC(PyNumber_Remainder, nb_remainder, "%")
+PyObject *
+PyNumber_MatrixMultiply(PyObject *v, PyObject *w)
+{
+    return binary_op(v, w, NB_SLOT(nb_matrix_multiply), "@");
+}
+
+PyObject *
+PyNumber_FloorDivide(PyObject *v, PyObject *w)
+{
+    return binary_op(v, w, NB_SLOT(nb_floor_divide), "//");
+}
+
+PyObject *
+PyNumber_TrueDivide(PyObject *v, PyObject *w)
+{
+    return binary_op(v, w, NB_SLOT(nb_true_divide), "/");
+}
+
+PyObject *
+PyNumber_Remainder(PyObject *v, PyObject *w)
+{
+    return binary_op(v, w, NB_SLOT(nb_remainder), "%");
+}
 
 PyObject *
 PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
@@ -1344,27 +1379,73 @@ _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
 
 /* Unary operators and functions */
 
-#define UNARY_FUNC(func, op, meth_name)                                  \
-    PyObject *                                                           \
-    func(PyObject *o) {                                                  \
-        if (o == NULL) {                                                 \
-            return null_error();                                         \
-        }                                                                \
-                                                                         \
-        PyNumberMethods *m = Py_TYPE(o)->tp_as_number;                   \
-        if (m && m->op) {                                                \
-            PyObject *res = (*m->op)(o);                                 \
-            assert(_Py_CheckSlotResult(o, #meth_name, res != NULL));     \
-            return res;                                                  \
-        }                                                                \
-                                                                         \
-        return type_error("bad operand type for unary -: '%.200s'", o);  \
+PyObject *
+PyNumber_Negative(PyObject *o)
+{
+    if (o == NULL) {
+        return null_error();
     }
 
-UNARY_FUNC(PyNumber_Negative, nb_negative, __neg__)
-UNARY_FUNC(PyNumber_Positive, nb_positive, __pow__)
-UNARY_FUNC(PyNumber_Invert, nb_invert, __invert__)
-UNARY_FUNC(PyNumber_Absolute, nb_absolute, __abs__)
+    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
+    if (m && m->nb_negative) {
+        PyObject *res = (*m->nb_negative)(o);
+        assert(_Py_CheckSlotResult(o, "__neg__", res != NULL));
+        return res;
+    }
+
+    return type_error("bad operand type for unary -: '%.200s'", o);
+}
+
+PyObject *
+PyNumber_Positive(PyObject *o)
+{
+    if (o == NULL) {
+        return null_error();
+    }
+
+    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
+    if (m && m->nb_positive) {
+        PyObject *res = (*m->nb_positive)(o);
+        assert(_Py_CheckSlotResult(o, "__pos__", res != NULL));
+        return res;
+    }
+
+    return type_error("bad operand type for unary +: '%.200s'", o);
+}
+
+PyObject *
+PyNumber_Invert(PyObject *o)
+{
+    if (o == NULL) {
+        return null_error();
+    }
+
+    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
+    if (m && m->nb_invert) {
+        PyObject *res = (*m->nb_invert)(o);
+        assert(_Py_CheckSlotResult(o, "__invert__", res != NULL));
+        return res;
+    }
+
+    return type_error("bad operand type for unary ~: '%.200s'", o);
+}
+
+PyObject *
+PyNumber_Absolute(PyObject *o)
+{
+    if (o == NULL) {
+        return null_error();
+    }
+
+    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
+    if (m && m->nb_absolute) {
+        PyObject *res = m->nb_absolute(o);
+        assert(_Py_CheckSlotResult(o, "__abs__", res != NULL));
+        return res;
+    }
+
+    return type_error("bad operand type for abs(): '%.200s'", o);
+}
 
 
 int
@@ -1456,7 +1537,11 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
     if (!runerr) {
         goto finish;
     }
-    assert(PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError));
+
+    /* Error handling code -- only manage OverflowError differently */
+    if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
+        goto finish;
+    }
     _PyErr_Clear(tstate);
 
     /* If no error-handling desired then the default clipping
@@ -1650,6 +1735,11 @@ PyNumber_Float(PyObject *o)
             return NULL;
         }
         return PyFloat_FromDouble(val);
+    }
+
+    /* A float subclass with nb_float == NULL */
+    if (PyFloat_Check(o)) {
+        return PyFloat_FromDouble(PyFloat_AS_DOUBLE(o));
     }
     return PyFloat_FromString(o);
 }
