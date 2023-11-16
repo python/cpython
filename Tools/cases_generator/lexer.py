@@ -79,7 +79,7 @@ for op in operators:
 opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.items()}
 
 # Macros
-macro = r"# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)"
+macro = r"#.*\n"
 CMACRO = "CMACRO"
 
 id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
@@ -112,7 +112,7 @@ STRING = "STRING"
 char = r"\'.\'"  # TODO: escape sequence
 CHARACTER = "CHARACTER"
 
-comment_re = r"//.*|/\*([^*]|\*[^/])*\*/"
+comment_re = r"(//.*\n)|/\*([^*]|\*[^/])*\*/"
 COMMENT = "COMMENT"
 
 newline = r"\n"

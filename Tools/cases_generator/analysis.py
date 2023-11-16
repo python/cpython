@@ -17,8 +17,8 @@ from instructions import (
 import parsing
 from parsing import StackEffect
 
-BEGIN_MARKER = "// BEGIN BYTECODES //"
-END_MARKER = "// END BYTECODES //"
+BEGIN_MARKER = "// BEGIN BYTECODES //\n"
+END_MARKER = "// END BYTECODES //\n"
 
 RESERVED_WORDS = {
     "co_consts": "Use FRAME_CO_CONSTS.",
