@@ -65,7 +65,7 @@ class IdbTest(unittest.TestCase):
 
 
 class FunctionTest(unittest.TestCase):
-    # Test module functions.
+    # Test module functions together.
 
     def test_functions(self):
         rpc_obj = compile(TEST_CODE,'rpc.py', mode='exec')
