@@ -459,12 +459,12 @@ class StackViewer(ScrolledList):
             self.select(index)
 
     def popup_event(self, event):
-        "override base method"
+        "Override base method."
         if self.stack:
             return ScrolledList.popup_event(self, event)
 
     def fill_menu(self):
-        "override base method"
+        "Override base method."
         menu = self.menu
         menu.add_command(label="Go to source line",
                          command=self.goto_source_line)
@@ -472,12 +472,12 @@ class StackViewer(ScrolledList):
                          command=self.show_stack_frame)
 
     def on_select(self, index):
-        "override base method"
+        "Override base method."
         if 0 <= index < len(self.stack):
             self.gui.show_frame(self.stack[index])
 
     def on_double(self, index):
-        "override base method"
+        "Override base method."
         self.show_source(index)
 
     def goto_source_line(self):
