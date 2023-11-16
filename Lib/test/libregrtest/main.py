@@ -5,6 +5,7 @@ import shlex
 import sys
 import sysconfig
 import time
+import trace
 
 from test import support
 from test.support import os_helper, MS_WINDOWS
@@ -13,7 +14,7 @@ from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
-from .result import State
+from .result import State, TestResult
 from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
@@ -284,7 +285,9 @@ class Regrtest:
         self.results.display_result(runtests.tests,
                                     self.quiet, self.print_slowest)
 
-    def run_test(self, test_name: TestName, runtests: RunTests, tracer):
+    def run_test(
+        self, test_name: TestName, runtests: RunTests, tracer: trace.Trace | None
+    ) -> TestResult:
         if tracer is not None:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
@@ -292,6 +295,7 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
+            result.covered_lines = list(tracer.counts)
         else:
             result = run_single_test(test_name, runtests)
 
@@ -299,9 +303,8 @@ class Regrtest:
 
         return result
 
-    def run_tests_sequentially(self, runtests):
+    def run_tests_sequentially(self, runtests) -> None:
         if self.coverage:
-            import trace
             tracer = trace.Trace(trace=False, count=True)
         else:
             tracer = None
@@ -349,8 +352,6 @@ class Regrtest:
         if previous_test:
             print(previous_test)
 
-        return tracer
-
     def get_state(self):
         state = self.results.get_state(self.fail_env_changed)
         if self.first_state:
@@ -361,7 +362,7 @@ class Regrtest:
         from .run_workers import RunWorkers
         RunWorkers(num_workers, runtests, self.logger, self.results).run()
 
-    def finalize_tests(self, tracer):
+    def finalize_tests(self, coverage: trace.CoverageResults | None) -> None:
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -369,10 +370,10 @@ class Regrtest:
             else:
                 os.unlink(self.next_single_filename)
 
-        if tracer is not None:
-            results = tracer.results()
-            results.write_results(show_missing=True, summary=True,
-                                  coverdir=self.coverage_dir)
+        if coverage is not None:
+            coverage.write_results(show_missing=True, summary=True,
+                                   coverdir=self.coverage_dir,
+                                   ignore_missing_files=True)
 
         if self.want_run_leaks:
             os.system("leaks %d" % os.getpid())
@@ -412,6 +413,7 @@ class Regrtest:
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
             use_junit=(self.junit_filename is not None),
+            coverage=self.coverage,
             memory_limit=self.memory_limit,
             gc_threshold=self.gc_threshold,
             use_resources=self.use_resources,
@@ -458,10 +460,10 @@ class Regrtest:
         try:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
-                tracer = None
             else:
-                tracer = self.run_tests_sequentially(runtests)
+                self.run_tests_sequentially(runtests)
 
+            coverage = self.results.get_coverage_results()
             self.display_result(runtests)
 
             if self.want_rerun and self.results.need_rerun():
@@ -471,7 +473,7 @@ class Regrtest:
                 self.logger.stop_load_tracker()
 
         self.display_summary()
-        self.finalize_tests(tracer)
+        self.finalize_tests(coverage)
 
         return self.results.get_exitcode(self.fail_env_changed,
                                          self.fail_rerun)

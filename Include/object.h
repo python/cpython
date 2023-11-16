@@ -112,6 +112,9 @@ check by comparing the reference count field to the immortality reference count.
 #define _Py_IMMORTAL_REFCNT_LOCAL UINT32_MAX
 #endif
 
+// Kept for backward compatibility. It was needed by Py_TRACE_REFS build.
+#define _PyObject_EXTRA_INIT
+
 // Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
 // C-API expectation that the refcnt will be set to 1.
 #if defined(Py_NOGIL)
@@ -119,7 +122,7 @@ check by comparing the reference count field to the immortality reference count.
     {                               \
         0,                          \
         0,                          \
-        0,                          \
+        { 0 },                      \
         0,                          \
         _Py_IMMORTAL_REFCNT_LOCAL,  \
         0,                          \
@@ -204,10 +207,14 @@ struct _object {
 // Create a shared field from a refcnt and desired flags
 #define _Py_REF_SHARED(refcnt, flags) (((refcnt) << _Py_REF_SHARED_SHIFT) + (flags))
 
+// NOTE: In non-free-threaded builds, `struct _PyMutex` is defined in
+// pycore_lock.h. See pycore_lock.h for more details.
+struct _PyMutex { uint8_t v; };
+
 struct _object {
     uintptr_t ob_tid;           // thread id (or zero)
     uint16_t _padding;
-    uint8_t ob_mutex;           // per-object lock
+    struct _PyMutex ob_mutex;   // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
@@ -327,7 +334,15 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 #endif
 
 
+// Py_SET_REFCNT() implementation for stable ABI
+PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
+
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
+    // Stable ABI implements Py_SET_REFCNT() as a function call
+    // on limited C API version 3.13 and newer.
+    _Py_SetRefcnt(ob, refcnt);
+#else
     // This immortal check is for code that is unaware of immortal objects.
     // The runtime tracks these objects and we should avoid as much
     // as possible having extensions inadvertently change the refcnt
@@ -335,7 +350,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     if (_Py_IsImmortal(ob)) {
         return;
     }
-#if !defined(Py_NOGIL)
+#ifndef Py_NOGIL
     ob->ob_refcnt = refcnt;
 #else
     if (_Py_IsOwnedByCurrentThread(ob)) {
@@ -352,7 +367,8 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         ob->ob_ref_local = 0;
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
-#endif
+#endif  // Py_NOGIL
+#endif  // Py_LIMITED_API+0 < 0x030d0000
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))

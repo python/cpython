@@ -118,17 +118,19 @@ class TestGeneratedCases(unittest.TestCase):
 
         with open(self.temp_output_filename) as temp_output:
             lines = temp_output.readlines()
-            while lines and lines[0].startswith("// "):
+            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
                 lines.pop(0)
+            while lines and lines[-1].startswith(("#", "\n")):
+                lines.pop(-1)
         actual = "".join(lines)
-        # if actual.rstrip() != expected.rstrip():
+        # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
         #     print("Expected:")
         #     print(expected)
         #     print("End")
 
-        self.assertEqual(actual.rstrip(), expected.rstrip())
+        self.assertEqual(actual.strip(), expected.strip())
 
     def test_inst_no_args(self):
         input = """
@@ -702,6 +704,49 @@ class TestGeneratedCases(unittest.TestCase):
             ham();
             DISPATCH();
         }
+        """
+        self.run_cases_test(input, output)
+
+    def test_annotated_inst(self):
+        input = """
+        guard inst(OP, (--)) {
+            ham();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            ham();
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_annotated_op(self):
+        input = """
+        guard op(OP, (--)) {
+            spam();
+        }
+        macro(M) = OP;
+        """
+        output = """
+        TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
+            spam();
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+        input = """
+        guard register specializing op(OP, (--)) {
+            spam();
+        }
+        macro(M) = OP;
         """
         self.run_cases_test(input, output)
 

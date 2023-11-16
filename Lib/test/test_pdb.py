@@ -15,6 +15,8 @@ from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
 from test.support import os_helper
+from test.support.import_helper import import_module
+from test.support.pty_helper import run_pty
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
@@ -671,6 +673,14 @@ def test_pdb_alias_command():
     ...     'pi o',
     ...     's',
     ...     'ps',
+    ...     'alias myp p %2',
+    ...     'alias myp',
+    ...     'alias myp p %1',
+    ...     'myp',
+    ...     'myp 1',
+    ...     'myp 1 2',
+    ...     'alias repeat_second_arg p "%* %2"',
+    ...     'repeat_second_arg 1 2 3',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -692,6 +702,20 @@ def test_pdb_alias_command():
     (Pdb) ps
     self.attr1 = 10
     self.attr2 = str
+    (Pdb) alias myp p %2
+    *** Replaceable parameters must be consecutive
+    (Pdb) alias myp
+    *** Unknown alias 'myp'
+    (Pdb) alias myp p %1
+    (Pdb) myp
+    *** Not enough arguments for alias 'myp'
+    (Pdb) myp 1
+    1
+    (Pdb) myp 1 2
+    *** Too many arguments for alias 'myp'
+    (Pdb) alias repeat_second_arg p "%* %2"
+    (Pdb) repeat_second_arg 1 2 3
+    '1 2 3 2'
     (Pdb) continue
     """
 
@@ -2327,6 +2351,31 @@ def test_pdb_issue_gh_108976():
     (Pdb) continue
     """
 
+
+def test_pdb_issue_gh_80731():
+    """See GH-80731
+
+    pdb should correctly print exception info if in an except block.
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'import sys',
+    ...     'sys.exc_info()',
+    ...     'continue'
+    ... ]):
+    ...     try:
+    ...         raise ValueError('Correct')
+    ...     except ValueError:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         pass
+    > <doctest test.test_pdb.test_pdb_issue_gh_80731[0]>(10)<module>()
+    -> pass
+    (Pdb) import sys
+    (Pdb) sys.exc_info()
+    (<class 'ValueError'>, ValueError('Correct'), <traceback object at ...>)
+    (Pdb) continue
+    """
+
+
 def test_pdb_ambiguous_statements():
     """See GH-104301
 
@@ -2347,6 +2396,30 @@ def test_pdb_ambiguous_statements():
     The value of n is 42
     > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
     -> with PdbTestInput([
+    (Pdb) continue
+    """
+
+def test_pdb_f_trace_lines():
+    """GH-80675
+
+    pdb should work even if f_trace_lines is set to False on some frames.
+
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import sys
+    ...     frame = sys._getframe()
+    ...     frame.f_trace_lines = False
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     if frame.f_trace_lines != False:
+    ...         print("f_trace_lines is not reset after continue!")
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_f_trace_lines[1]>(6)test_function()
+    -> if frame.f_trace_lines != False:
     (Pdb) continue
     """
 
@@ -3187,6 +3260,55 @@ class ChecklineTests(unittest.TestCase):
             db = pdb.Pdb()
             for lineno in range(num_lines):
                 self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
+
+
+@support.requires_subprocess()
+class PdbTestReadline(unittest.TestCase):
+    def setUpClass():
+        # Ensure that the readline module is loaded
+        # If this fails, the test is skipped because SkipTest will be raised
+        readline = import_module('readline')
+        if readline.__doc__ and "libedit" in readline.__doc__:
+            raise unittest.SkipTest("libedit readline is not supported for pdb")
+
+    def test_basic_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+            # Concatenate strings so that the output doesn't appear in the source
+            print('hello' + '!')
+        """)
+
+        # List everything starting with 'co', there should be multiple matches
+        # then add ntin and complete 'contin' to 'continue'
+        input = b"co\t\tntin\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'commands', output)
+        self.assertIn(b'condition', output)
+        self.assertIn(b'continue', output)
+        self.assertIn(b'hello!', output)
+
+    def test_expression_completion(self):
+        script = textwrap.dedent("""
+            value = "speci"
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # Complete: value + 'al'
+        input = b"val\t + 'al'\n"
+        # Complete: p value + 'es'
+        input += b"p val\t + 'es'\n"
+        # Complete: $_frame
+        input += b"$_fra\t\n"
+        # Continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'special', output)
+        self.assertIn(b'species', output)
+        self.assertIn(b'$_frame', output)
 
 
 def load_tests(loader, tests, pattern):

@@ -50,6 +50,11 @@
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
 
+/* Annotations */
+#define guard
+#define override
+#define specializing
+
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
@@ -63,6 +68,7 @@ static size_t jump;
 static uint16_t invert, counter, index, hint;
 #define unused 0  // Used in a macro def, can't be static
 static uint32_t type_version;
+static _PyUOpExecutorObject *current_executor;
 
 static PyObject *
 dummy_func(
@@ -148,7 +154,7 @@ dummy_func(
                 next_instr = this_instr;
             }
             else {
-                if (oparg < RESUME_AFTER_YIELD_FROM) {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
                 this_instr->op.code = RESUME_CHECK;
@@ -171,12 +177,12 @@ dummy_func(
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 next_instr = this_instr;
             }
             else {
-                if (oparg < 2) {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -268,7 +274,7 @@ dummy_func(
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -284,7 +290,7 @@ dummy_func(
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -311,9 +317,10 @@ dummy_func(
             TO_BOOL_STR,
         };
 
-        inst(TO_BOOL, (unused/1, unused/2, value -- res)) {
+        specializing op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ToBool(value, next_instr);
                 DISPATCH_SAME_OPARG();
@@ -321,11 +328,16 @@ dummy_func(
             STAT_INC(TO_BOOL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_TO_BOOL, (unused/2, value -- res)) {
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
             res = err ? Py_True : Py_False;
         }
+
+        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + _TO_BOOL;
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
             DEOPT_IF(!PyBool_Check(value));
@@ -530,9 +542,10 @@ dummy_func(
             BINARY_SUBSCR_TUPLE_INT,
         };
 
-        inst(BINARY_SUBSCR, (unused/1, container, sub -- res)) {
+        specializing op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_BinarySubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
@@ -540,10 +553,15 @@ dummy_func(
             STAT_INC(BINARY_SUBSCR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_BINARY_SUBSCR, (container, sub -- res)) {
             res = PyObject_GetItem(container, sub);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
+
+        macro(BINARY_SUBSCR) = _SPECIALIZE_BINARY_SUBSCR + _BINARY_SUBSCR;
 
         inst(BINARY_SLICE, (container, start, stop -- res)) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
@@ -625,16 +643,12 @@ dummy_func(
         inst(BINARY_SUBSCR_DICT, (unused/1, dict, sub -- res)) {
             DEOPT_IF(!PyDict_CheckExact(dict));
             STAT_INC(BINARY_SUBSCR, hit);
-            res = PyDict_GetItemWithError(dict, sub);
-            if (res == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_SetKeyError(sub);
-                }
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+            int rc = PyDict_GetItemRef(dict, sub, &res);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
             }
-            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             DECREF_INPUTS();
+            ERROR_IF(rc <= 0, error); // not found or error
         }
 
         inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub -- unused)) {
@@ -657,8 +671,7 @@ dummy_func(
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            assert(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -677,9 +690,10 @@ dummy_func(
             STORE_SUBSCR_LIST_INT,
         };
 
-        inst(STORE_SUBSCR, (unused/1, v, container, sub -- )) {
+        specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
@@ -687,11 +701,16 @@ dummy_func(
             STAT_INC(STORE_SUBSCR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_STORE_SUBSCR, (v, container, sub -- )) {
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
+
+        macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
 
         inst(STORE_SUBSCR_LIST_INT, (unused/1, value, list, sub -- )) {
             DEOPT_IF(!PyLong_CheckExact(sub));
@@ -809,7 +828,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -833,7 +852,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             Py_INCREF(retval);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -889,7 +908,7 @@ dummy_func(
             if (PyAsyncGen_CheckExact(aiter)) {
                 awaitable = type->tp_as_async->am_anext(aiter);
                 if (awaitable == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
             } else {
                 if (type->tp_as_async != NULL){
@@ -899,7 +918,7 @@ dummy_func(
                 if (getter != NULL) {
                     next_iter = (*getter)(aiter);
                     if (next_iter == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
                 else {
@@ -907,7 +926,7 @@ dummy_func(
                                   "'async for' requires an iterator with "
                                   "__anext__ method, got %.100s",
                                   type->tp_name);
-                    goto error;
+                    GOTO_ERROR(error);
                 }
 
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
@@ -919,7 +938,7 @@ dummy_func(
                         Py_TYPE(next_iter)->tp_name);
 
                     Py_DECREF(next_iter);
-                    goto error;
+                    GOTO_ERROR(error);
                 } else {
                     Py_DECREF(next_iter);
                 }
@@ -956,9 +975,10 @@ dummy_func(
             SEND_GEN,
         };
 
-        inst(SEND, (unused/1, receiver, v -- receiver, retval)) {
+        specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_Send(receiver, next_instr);
                 DISPATCH_SAME_OPARG();
@@ -966,6 +986,9 @@ dummy_func(
             STAT_INC(SEND, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_SEND, (receiver, v -- receiver, retval)) {
             assert(frame != &entry_frame);
             if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver) == &PyGen_Type || Py_TYPE(receiver) == &PyCoro_Type) &&
@@ -978,8 +1001,8 @@ dummy_func(
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - this_instr);
-                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+                assert(next_instr - this_instr + oparg <= UINT16_MAX);
+                frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -998,11 +1021,13 @@ dummy_func(
                     JUMPBY(oparg);
                 }
                 else {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
             }
             Py_DECREF(v);
         }
+
+        macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
         inst(SEND_GEN, (unused/1, receiver, v -- receiver, unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
@@ -1016,22 +1041,23 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - this_instr);
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
+            assert(next_instr - this_instr + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
             DISPATCH_INLINED(gen_frame);
         }
 
         inst(INSTRUMENTED_YIELD_VALUE, (retval -- unused)) {
             assert(frame != &entry_frame);
-            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
             frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            gen->gi_frame_state = FRAME_SUSPENDED;
+            assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
+            assert(oparg == 0 || oparg == 1);
+            gen->gi_frame_state = FRAME_SUSPENDED + oparg;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -1049,11 +1075,12 @@ dummy_func(
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            gen->gi_frame_state = FRAME_SUSPENDED;
+            assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
+            assert(oparg == 0 || oparg == 1);
+            gen->gi_frame_state = FRAME_SUSPENDED + oparg;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
@@ -1085,7 +1112,7 @@ dummy_func(
                 else {
                     assert(PyLong_Check(lasti));
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                    goto error;
+                    GOTO_ERROR(error);
                 }
             }
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1164,7 +1191,7 @@ dummy_func(
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when deleting %R", name);
-                goto error;
+                GOTO_ERROR(error);
             }
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
@@ -1172,7 +1199,7 @@ dummy_func(
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                           NAME_ERROR_MSG,
                                           name);
-                goto error;
+                GOTO_ERROR(error);
             }
         }
 
@@ -1182,9 +1209,9 @@ dummy_func(
             UNPACK_SEQUENCE_LIST,
         };
 
-        inst(UNPACK_SEQUENCE, (unused/1, seq -- unused[oparg])) {
+        specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -1192,11 +1219,18 @@ dummy_func(
             STAT_INC(UNPACK_SEQUENCE, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+            (void)seq;
+            (void)counter;
+        }
+
+        op(_UNPACK_SEQUENCE, (seq -- unused[oparg])) {
             PyObject **top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackIterable(tstate, seq, oparg, -1, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
         }
+
+        macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE;
 
         inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- values[oparg])) {
             DEOPT_IF(!PyTuple_CheckExact(seq));
@@ -1244,9 +1278,10 @@ dummy_func(
             STORE_ATTR_WITH_HINT,
         };
 
-        inst(STORE_ATTR, (unused/1, unused/3, v, owner --)) {
+        specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 next_instr = this_instr;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
@@ -1255,11 +1290,16 @@ dummy_func(
             STAT_INC(STORE_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_STORE_ATTR, (unused/3, v, owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
+
+        macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + _STORE_ATTR;
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1285,7 +1325,7 @@ dummy_func(
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                               NAME_ERROR_MSG, name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
         }
 
@@ -1302,25 +1342,21 @@ dummy_func(
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
+                    GOTO_ERROR(error);
                 }
-                else if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -1336,25 +1372,21 @@ dummy_func(
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
+                    GOTO_ERROR(error);
                 }
-                else if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -1365,9 +1397,10 @@ dummy_func(
             LOAD_GLOBAL_BUILTIN,
         };
 
-        inst(LOAD_GLOBAL, (unused/1, unused/1, unused/1, unused/1 -- res, null if (oparg & 1))) {
+        specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = this_instr;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
@@ -1376,6 +1409,9 @@ dummy_func(
             STAT_INC(LOAD_GLOBAL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_LOAD_GLOBAL, (unused/1, unused/1, unused/1 -- res, null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
@@ -1396,7 +1432,6 @@ dummy_func(
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
-
                 /* namespace 1: globals */
                 ERROR_IF(PyMapping_GetOptionalItem(GLOBALS(), name, &res) < 0, error);
                 if (res == NULL) {
@@ -1412,6 +1447,8 @@ dummy_func(
             }
             null = NULL;
         }
+
+        macro(LOAD_GLOBAL) = _SPECIALIZE_LOAD_GLOBAL + _LOAD_GLOBAL;
 
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1471,7 +1508,7 @@ dummy_func(
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             SETLOCAL(oparg, cell);
         }
@@ -1483,7 +1520,7 @@ dummy_func(
             // Fortunately we don't need its superpower.
             if (oldobj == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                goto error;
+                GOTO_ERROR(error);
             }
             PyCell_SET(cell, NULL);
             Py_DECREF(oldobj);
@@ -1495,19 +1532,18 @@ dummy_func(
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
-                Py_DECREF(class_dict);
-                goto error;
+                GOTO_ERROR(error);
             }
-            Py_DECREF(class_dict);
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_INCREF(value);
             }
+            Py_DECREF(class_dict);
         }
 
         inst(LOAD_DEREF, ( -- value)) {
@@ -1583,7 +1619,7 @@ dummy_func(
         inst(BUILD_SET, (values[oparg] -- set)) {
             set = PySet_New(NULL);
             if (set == NULL)
-                goto error;
+                GOTO_ERROR(error);
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
@@ -1615,34 +1651,17 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             /* check if __annotations__ in locals()... */
-            if (PyDict_CheckExact(LOCALS())) {
-                ann_dict = _PyDict_GetItemWithError(LOCALS(),
-                                                    &_Py_ID(__annotations__));
-                if (ann_dict == NULL) {
-                    ERROR_IF(_PyErr_Occurred(tstate), error);
-                    /* ...if not, create a new one */
-                    ann_dict = PyDict_New();
-                    ERROR_IF(ann_dict == NULL, error);
-                    err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                         ann_dict);
-                    Py_DECREF(ann_dict);
-                    ERROR_IF(err, error);
-                }
+            ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
+            if (ann_dict == NULL) {
+                ann_dict = PyDict_New();
+                ERROR_IF(ann_dict == NULL, error);
+                err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                       ann_dict);
+                Py_DECREF(ann_dict);
+                ERROR_IF(err, error);
             }
             else {
-                /* do the same if locals() is not a dict */
-                ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
-                if (ann_dict == NULL) {
-                    ann_dict = PyDict_New();
-                    ERROR_IF(ann_dict == NULL, error);
-                    err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                           ann_dict);
-                    Py_DECREF(ann_dict);
-                    ERROR_IF(err, error);
-                }
-                else {
-                    Py_DECREF(ann_dict);
-                }
+                Py_DECREF(ann_dict);
             }
         }
 
@@ -1651,7 +1670,7 @@ dummy_func(
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "bad BUILD_CONST_KEY_MAP keys argument");
-                goto error;  // Pop the keys and values.
+                GOTO_ERROR(error);  // Pop the keys and values.
             }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
@@ -1701,12 +1720,11 @@ dummy_func(
             LOAD_SUPER_ATTR_METHOD,
         };
 
-        inst(LOAD_SUPER_ATTR, (unused/1, global_super, class, self -- attr, null if (oparg & 1))) {
+        specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super, class, unused -- global_super, class, unused)) {
             TIER_ONE_ONLY
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             #if ENABLE_SPECIALIZATION
             int load_method = oparg & 1;
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_LoadSuperAttr(global_super, class, next_instr, load_method);
                 DISPATCH_SAME_OPARG();
@@ -1714,7 +1732,10 @@ dummy_func(
             STAT_INC(LOAD_SUPER_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
 
+        op(_LOAD_SUPER_ATTR, (global_super, class, self -- attr, null if (oparg & 1))) {
+            TIER_ONE_ONLY
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 int err = _Py_call_instrumentation_2args(
@@ -1722,7 +1743,6 @@ dummy_func(
                         frame, this_instr, global_super, arg);
                 ERROR_IF(err, error);
             }
-
             // we make no attempt to optimize here; specializations should
             // handle any case whose performance we care about
             PyObject *stack[] = {class, self};
@@ -1745,11 +1765,14 @@ dummy_func(
             }
             DECREF_INPUTS();
             ERROR_IF(super == NULL, error);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             attr = PyObject_GetAttr(super, name);
             Py_DECREF(super);
             ERROR_IF(attr == NULL, error);
             null = NULL;
         }
+
+        macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR;
 
         pseudo(LOAD_SUPER_METHOD) = {
             LOAD_SUPER_ATTR,
@@ -1813,9 +1836,10 @@ dummy_func(
             LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
         };
 
-        inst(LOAD_ATTR, (unused/9, owner -- attr, self_or_null if (oparg & 1))) {
+        specializing op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = this_instr;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
@@ -1824,6 +1848,9 @@ dummy_func(
             STAT_INC(LOAD_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_LOAD_ATTR, (unused/8, owner -- attr, self_or_null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -1831,7 +1858,6 @@ dummy_func(
                 if (_PyObject_GetMethod(owner, name, &attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
-
                        meth | self | arg1 | ... | argN
                      */
                     assert(attr != NULL);  // No errors on this branch
@@ -1842,7 +1868,6 @@ dummy_func(
                        something was returned by a descriptor protocol).  Set
                        the second element of the stack to NULL, to signal
                        CALL that it's not a method call.
-
                        NULL | meth | arg1 | ... | argN
                     */
                     DECREF_INPUTS();
@@ -1857,6 +1882,8 @@ dummy_func(
                 ERROR_IF(attr == NULL, error);
             }
         }
+
+        macro(LOAD_ATTR) = _SPECIALIZE_LOAD_ATTR + _LOAD_ATTR;
 
         pseudo(LOAD_METHOD) = {
             LOAD_ATTR,
@@ -2013,8 +2040,7 @@ dummy_func(
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
-            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2040,8 +2066,7 @@ dummy_func(
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
-            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2133,9 +2158,10 @@ dummy_func(
             COMPARE_OP_STR,
         };
 
-        inst(COMPARE_OP, (unused/1, left, right -- res)) {
+        specializing op(_SPECIALIZE_COMPARE_OP, (counter/1, left, right -- left, right)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -2143,6 +2169,9 @@ dummy_func(
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_COMPARE_OP, (left, right -- res)) {
             assert((oparg >> 5) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg >> 5);
             DECREF_INPUTS();
@@ -2154,6 +2183,8 @@ dummy_func(
                 res = res_bool ? Py_True : Py_False;
             }
         }
+
+        macro(COMPARE_OP) = _SPECIALIZE_COMPARE_OP + _COMPARE_OP;
 
         inst(COMPARE_OP_FLOAT, (unused/1, left, right -- res)) {
             DEOPT_IF(!PyFloat_CheckExact(left));
@@ -2275,10 +2306,12 @@ dummy_func(
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
-            if (this_instr[1].cache > tstate->interp->optimizer_backedge_threshold &&
-                // Double-check that the opcode isn't instrumented or something:
-                this_instr->op.code == JUMP_BACKWARD)
-            {
+            /* We are using unsigned values, but we really want signed values, so
+             * do the 2s complement comparison manually */
+            uint16_t ucounter = this_instr[1].cache + (1 << 15);
+            uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
+            // Double-check that the opcode isn't instrumented or something:
+            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
@@ -2286,8 +2319,19 @@ dummy_func(
                     // Rewind and enter the executor:
                     assert(this_instr->op.code == ENTER_EXECUTOR);
                     next_instr = this_instr;
+                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
-                this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                else {
+                    int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    if (backoff < MINIMUM_TIER2_BACKOFF) {
+                        backoff = MINIMUM_TIER2_BACKOFF;
+                    }
+                    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
+                        backoff++;
+                    }
+                    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
+                    this_instr[1].cache = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
+                }
             }
             #endif  /* ENABLE_SPECIALIZATION */
         }
@@ -2312,16 +2356,19 @@ dummy_func(
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
+            if (executor->execute == _PyUopExecute) {
+                current_executor = (_PyUOpExecutorObject *)executor;
+                GOTO_TIER_TWO();
+            }
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = tstate->current_frame;
                 goto resume_with_error;
             }
-            next_instr = frame->instr_ptr;
-            goto resume_frame;
+            goto enter_tier_one;
         }
 
-        inst(POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
+       replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
@@ -2330,7 +2377,7 @@ dummy_func(
             JUMPBY(oparg * flag);
         }
 
-        inst(POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
@@ -2349,9 +2396,13 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_NONE) = _IS_NONE + POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_TRUE) = _POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_FALSE) = _POP_JUMP_IF_FALSE;
+
+        macro(POP_JUMP_IF_NONE) = _IS_NONE + _POP_JUMP_IF_TRUE;
+
+        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + _POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
@@ -2418,7 +2469,7 @@ dummy_func(
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 iter = iterable;
             }
@@ -2429,7 +2480,7 @@ dummy_func(
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
                 if (iter == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 DECREF_INPUTS();
             }
@@ -2448,9 +2499,10 @@ dummy_func(
             FOR_ITER_GEN,
         };
 
-        inst(FOR_ITER, (unused/1, iter -- iter, next)) {
+        specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ForIter(iter, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -2458,12 +2510,15 @@ dummy_func(
             STAT_INC(FOR_ITER, deferred);
             DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        op(_FOR_ITER, (iter -- iter, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -2480,6 +2535,8 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
+        macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
+
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
@@ -2491,7 +2548,7 @@ dummy_func(
             else {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -2511,7 +2568,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type);
         }
 
-        op(_ITER_JUMP_LIST, (iter -- iter)) {
+        replaced op(_ITER_JUMP_LIST, (iter -- iter)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2530,21 +2587,12 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_LIST, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_LIST, (iter -- iter)) {
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyList_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
+            DEOPT_IF(seq == NULL);
+            DEOPT_IF(it->it_index >= PyList_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_LIST, (iter -- iter, next)) {
@@ -2566,7 +2614,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(iter) != &PyTupleIter_Type);
         }
 
-        op(_ITER_JUMP_TUPLE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2585,21 +2633,12 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_TUPLE, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_TUPLE, (iter -- iter)) {
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            if (seq == NULL) {
-                exhausted = Py_True;
-            }
-            else if (it->it_index >= PyTuple_GET_SIZE(seq)) {
-                Py_DECREF(seq);
-                it->it_seq = NULL;
-                exhausted = Py_True;
-            }
-            else {
-                exhausted = Py_False;
-            }
+            DEOPT_IF(seq == NULL);
+            DEOPT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
@@ -2622,7 +2661,7 @@ dummy_func(
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type);
         }
 
-        op(_ITER_JUMP_RANGE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
@@ -2636,10 +2675,10 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_IS_ITER_EXHAUSTED_RANGE, (iter -- iter, exhausted)) {
+        op(_GUARD_NOT_EXHAUSTED_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            exhausted = r->len <= 0 ? Py_True : Py_False;
+            DEOPT_IF(r->len <= 0);
         }
 
         op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
@@ -2672,8 +2711,8 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - this_instr);
-            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(next_instr - this_instr + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -2686,7 +2725,7 @@ dummy_func(
                                   "asynchronous context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
@@ -2698,10 +2737,10 @@ dummy_func(
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                goto error;
+                GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgs(enter);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2710,7 +2749,6 @@ dummy_func(
         }
 
         inst(BEFORE_WITH, (mgr -- exit, res)) {
-            TIER_ONE_ONLY
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
              */
@@ -2722,7 +2760,7 @@ dummy_func(
                                   "context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
@@ -2734,10 +2772,10 @@ dummy_func(
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                goto error;
+                GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgs(enter);
+            res = _PyObject_CallNoArgsTstate(tstate, enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2937,24 +2975,28 @@ dummy_func(
             CALL_ALLOC_AND_ENTER_INIT,
         };
 
+        specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
+            TIER_ONE_ONLY
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_Call(callable, next_instr, oparg + (self_or_null != NULL));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(CALL, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
         // When calling Python, inline the call using DISPATCH_INLINED().
-        inst(CALL, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL, (unused/2, callable, self_or_null, args[oparg] -- res)) {
             // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
-            #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
-                next_instr = this_instr;
-                _Py_Specialize_Call(callable, next_instr, total_args);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(CALL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
-            #endif  /* ENABLE_SPECIALIZATION */
-            if (self_or_null == NULL && Py_TYPE(callable) == &PyMethod_Type) {
+            else if (Py_TYPE(callable) == &PyMethod_Type) {
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
@@ -2980,10 +3022,9 @@ dummy_func(
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
-                assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - this_instr);
-                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -3016,6 +3057,8 @@ dummy_func(
             ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL) = _SPECIALIZE_CALL + _CALL;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             DEOPT_IF(null != NULL);
@@ -3136,8 +3179,7 @@ dummy_func(
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
-            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
 
@@ -3197,7 +3239,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);
             if (self == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
@@ -3213,8 +3255,7 @@ dummy_func(
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
-            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             /* Link frames */
@@ -3235,7 +3276,7 @@ dummy_func(
                 PyErr_Format(PyExc_TypeError,
                     "__init__() should return None, not '%.200s'",
                     Py_TYPE(should_be_none)->tp_name);
-                goto error;
+                GOTO_ERROR(error);
             }
         }
 
@@ -3274,7 +3315,7 @@ dummy_func(
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
+                GOTO_ERROR(error);
             }
             PyObject *arg = args[0];
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
@@ -3359,7 +3400,7 @@ dummy_func(
             PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3384,7 +3425,7 @@ dummy_func(
             PyObject *inst = args[0];
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3434,7 +3475,7 @@ dummy_func(
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
@@ -3494,7 +3535,7 @@ dummy_func(
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
@@ -3581,7 +3622,7 @@ dummy_func(
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 assert(next_instr - this_instr == 1);
                 frame->return_offset = 1;
@@ -3629,11 +3670,11 @@ dummy_func(
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
                 if (tuple == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_SETREF(callargs, tuple);
             }
@@ -3647,7 +3688,7 @@ dummy_func(
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
-                if (err) goto error;
+                if (err) GOTO_ERROR(error);
                 result = PyObject_Call(func, callargs, kwargs);
                 if (result == NULL) {
                     _Py_call_instrumentation_exc2(
@@ -3678,7 +3719,7 @@ dummy_func(
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     assert(next_instr - this_instr == 1);
                     frame->return_offset = 1;
@@ -3699,7 +3740,7 @@ dummy_func(
 
             Py_DECREF(codeobj);
             if (func_obj == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
 
             _PyFunction_SetVersion(
@@ -3739,7 +3780,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             if (gen == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3799,9 +3840,10 @@ dummy_func(
             top = Py_NewRef(bottom);
         }
 
-        inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
+        specializing op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
-            if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
@@ -3811,11 +3853,16 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
             assert(NB_ADD <= oparg);
             assert(oparg <= NB_INPLACE_XOR);
+        }
+
+        op(_BINARY_OP, (lhs, rhs -- res)) {
             assert(_PyEval_BinaryOps[oparg]);
             res = _PyEval_BinaryOps[oparg](lhs, rhs);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
+
+        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _BINARY_OP;
 
         inst(SWAP, (bottom, unused[oparg-2], top --
                     top, unused[oparg-2], bottom)) {
@@ -3920,26 +3967,34 @@ dummy_func(
 
         ///////// Tier-2 only opcodes /////////
 
-        op(_POP_JUMP_IF_FALSE, (flag -- )) {
-            if (Py_IsFalse(flag)) {
-                pc = oparg;
-            }
+        op (_GUARD_IS_TRUE_POP, (flag -- )) {
+            DEOPT_IF(Py_IsFalse(flag));
+            assert(Py_IsTrue(flag));
         }
 
-        op(_POP_JUMP_IF_TRUE, (flag -- )) {
-            if (Py_IsTrue(flag)) {
-                pc = oparg;
-            }
+        op (_GUARD_IS_FALSE_POP, (flag -- )) {
+            DEOPT_IF(Py_IsTrue(flag));
+            assert(Py_IsFalse(flag));
+        }
+
+        op (_GUARD_IS_NONE_POP, (val -- )) {
+            DEOPT_IF(!Py_IsNone(val));
+        }
+
+        op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
+            DEOPT_IF(Py_IsNone(val));
+            Py_DECREF(val);
         }
 
         op(_JUMP_TO_TOP, (--)) {
-            pc = 0;
+            next_uop = current_executor->trace;
             CHECK_EVAL_BREAKER();
         }
 
         op(_SET_IP, (--)) {
             TIER_TWO_ONLY
-            frame->instr_ptr = ip_offset + oparg;
+            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
+            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
@@ -3953,15 +4008,17 @@ dummy_func(
 
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_DECREF(self);
-            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            return frame;
+            GOTO_TIER_ONE();
         }
 
         op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {
             // Inserts TOS at position specified by oparg;
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
+        }
+
+        op(_CHECK_VALIDITY, (--)) {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->base.vm_data.valid);
         }
 
 

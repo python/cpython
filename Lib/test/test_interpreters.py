@@ -778,7 +778,11 @@ class TestIsShareable(TestBase):
                 'spam',
                 10,
                 -10,
+                True,
+                False,
                 100.0,
+                (),
+                (1, ('spam', 'eggs'), True),
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -797,8 +801,6 @@ class TestIsShareable(TestBase):
 
         not_shareables = [
                 # singletons
-                True,
-                False,
                 NotImplemented,
                 ...,
                 # builtin types and objects

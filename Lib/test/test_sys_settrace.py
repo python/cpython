@@ -9,7 +9,15 @@ from functools import wraps
 import asyncio
 from test.support import import_helper
 import contextlib
+import os
+import tempfile
+import textwrap
+import subprocess
 import warnings
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 support.requires_working_socket(module=True)
 
@@ -1802,6 +1810,39 @@ class TraceOpcodesTestCase(TraceTestCase):
     def make_tracer():
         return Tracer(trace_opcode_events=True)
 
+    def test_trace_opcodes_after_settrace(self):
+        """Make sure setting f_trace_opcodes after starting trace works even
+        if it's the first time f_trace_opcodes is being set. GH-103615"""
+
+        code = textwrap.dedent("""
+            import sys
+
+            def opcode_trace_func(frame, event, arg):
+                if event == "opcode":
+                    print("opcode trace triggered")
+                return opcode_trace_func
+
+            sys.settrace(opcode_trace_func)
+            sys._getframe().f_trace = opcode_trace_func
+            sys._getframe().f_trace_opcodes = True
+            a = 1
+        """)
+
+        # We can't use context manager because Windows can't execute a file while
+        # it's being written
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.py')
+        tmp.write(code.encode('utf-8'))
+        tmp.close()
+        try:
+            p = subprocess.Popen([sys.executable, tmp.name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p.wait()
+            out = p.stdout.read()
+        finally:
+            os.remove(tmp.name)
+            p.stdout.close()
+            p.stderr.close()
+        self.assertIn(b"opcode trace triggered", out)
+
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def setUp(self):
@@ -2996,16 +3037,21 @@ class TestExtendedArgs(unittest.TestCase):
         self.assertEqual(counts, {'call': 1, 'line': 301, 'return': 1})
 
     def test_trace_lots_of_globals(self):
+        count = 1000
+        if _testinternalcapi is not None:
+            remaining = _testinternalcapi.get_c_recursion_remaining()
+            count = min(count, remaining)
+
         code = """if 1:
             def f():
                 return (
                     {}
                 )
-        """.format("\n+\n".join(f"var{i}\n" for i in range(1000)))
-        ns = {f"var{i}": i for i in range(1000)}
+        """.format("\n+\n".join(f"var{i}\n" for i in range(count)))
+        ns = {f"var{i}": i for i in range(count)}
         exec(code, ns)
         counts = self.count_traces(ns["f"])
-        self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
+        self.assertEqual(counts, {'call': 1, 'line': count * 2, 'return': 1})
 
 
 class TestEdgeCases(unittest.TestCase):

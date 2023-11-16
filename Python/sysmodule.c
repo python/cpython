@@ -110,6 +110,9 @@ PySys_GetObject(const char *name)
     PyObject *value = _PySys_GetObject(tstate->interp, name);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
+    if (_PyErr_Occurred(tstate)) {
+        PyErr_FormatUnraisable("Exception ignored in PySys_GetObject()");
+    }
     _PyErr_SetRaisedException(tstate, exc);
     return value;
 }
@@ -122,11 +125,9 @@ sys_set_object(PyInterpreterState *interp, PyObject *key, PyObject *v)
     }
     PyObject *sd = interp->sysdict;
     if (v == NULL) {
-        v = _PyDict_Pop(sd, key, Py_None);
-        if (v == NULL) {
+        if (PyDict_Pop(sd, key, NULL) < 0) {
             return -1;
         }
-        Py_DECREF(v);
         return 0;
     }
     else {
