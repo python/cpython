@@ -29,16 +29,19 @@ class MockFrame:
 
 class IdbTest(unittest.TestCase):
 
-    code_obj = compile(TEST_CODE, 'idlelib/debugger.py', mode='exec')
-    rpc_obj = compile(TEST_CODE,'rpc.py', mode='exec')
-
     @classmethod
     def setUpClass(cls):
         cls.gui = mock.Mock()
         cls.idb = debugger.Idb(cls.gui)
 
-    def setUp(self):
-        self.gui.interaction = mock.Mock()
+        # Create test and code objects to simulate a debug session.
+        code_obj = compile(TEST_CODE, 'idlelib/file.py', mode='exec')
+        frame1 = MockFrame(code_obj, 1)
+        frame1.f_back = None
+        frame2 = MockFrame(code_obj, 2)
+        frame2.f_back = frame1
+        cls.frame = frame2
+        cls.msg = 'file.py:2: <module>()'
 
     def test_init(self):
         # Test that Idb.__init_ calls Bdb.__init__.
@@ -48,24 +51,17 @@ class IdbTest(unittest.TestCase):
 
     def test_user_line(self):
         # Test that .user_line() creates a string message for a frame.
-        # Create test and code objects to simulate a debug session.
-        test_frame1 = MockFrame(self.code_obj, 1)
-        test_frame2 = MockFrame(self.code_obj, 2)
-        test_frame2.f_back = test_frame1
-
-        self.idb.user_line(test_frame2)
-        self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2)
+        self.gui.interaction = mock.Mock()
+        self.idb.user_line(self.frame)
+        self.gui.interaction.assert_called_once_with(self.msg, self.frame)
 
     def test_user_exception(self):
         # Test that .user_exception() creates a string message for a frame.
-
-        test_frame1 = MockFrame(self.code_obj, 1)
-        test_frame2 = MockFrame(self.code_obj, 2)
-        test_frame2.f_back = test_frame1
-        test_exc_info = (type(ValueError), ValueError(), None)
-
-        self.idb.user_exception(test_frame2, test_exc_info)
-        self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2, test_exc_info)
+        exc_info = (type(ValueError), ValueError(), None)
+        self.gui.interaction = mock.Mock()
+        self.idb.user_exception(self.frame, exc_info)
+        self.gui.interaction.assert_called_once_with(
+                self.msg, self.frame, exc_info)
 
 
 class FunctionTest(unittest.TestCase):
