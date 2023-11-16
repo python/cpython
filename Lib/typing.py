@@ -1850,6 +1850,11 @@ class _ProtocolMeta(ABCMeta):
         if super().__instancecheck__(instance):
             return True
 
+        # quick true negative check for protocols with many attributes.
+        if not hasattr(instance, '__getattr__'):
+            if not (cls.__protocol_attrs__ <= set(dir(instance))):
+                return False
+
         getattr_static = _lazy_load_getattr_static()
         for attr in cls.__protocol_attrs__:
             try:
