@@ -236,9 +236,7 @@ def _type_repr(obj):
     # `_collections_abc._type_repr`, which does the same thing
     # and must be consistent with this one.
     if isinstance(obj, type):
-        if obj.__module__ == 'builtins':
-            return obj.__qualname__
-        return f'{obj.__module__}.{obj.__qualname__}'
+        return obj.__fullyqualname__
     if obj is ...:
         return '...'
     if isinstance(obj, types.FunctionType):
@@ -1402,10 +1400,7 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
             name = origin.__name__
         super().__init__(origin, inst=inst, name=name)
         self._nparams = nparams
-        if origin.__module__ == 'builtins':
-            self.__doc__ = f'A generic version of {origin.__qualname__}.'
-        else:
-            self.__doc__ = f'A generic version of {origin.__module__}.{origin.__qualname__}.'
+        self.__doc__ = f'A generic version of {origin.__fullyqualname__}.'
 
     @_tp_cache
     def __getitem__(self, params):

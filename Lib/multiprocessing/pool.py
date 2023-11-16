@@ -272,7 +272,7 @@ class Pool(object):
 
     def __repr__(self):
         cls = self.__class__
-        return (f'<{cls.__module__}.{cls.__qualname__} '
+        return (f'<{cls.__fullyqualname__} '
                 f'state={self._state} '
                 f'pool_size={len(self._pool)}>')
 

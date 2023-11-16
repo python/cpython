@@ -209,10 +209,10 @@ class TracebackCases(unittest.TestCase):
         err = traceback.format_exception_only(X, X())
         self.assertEqual(len(err), 1)
         str_value = '<exception str() failed>'
-        if X.__module__ in ('__main__', 'builtins'):
+        if X.__module__ == '__main__':
             str_name = X.__qualname__
         else:
-            str_name = '.'.join([X.__module__, X.__qualname__])
+            str_name = X.__fullyqualname__
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
     def test_format_exception_group_without_show_group(self):
@@ -1875,7 +1875,7 @@ class BaseExceptionReportingTests:
 
         err = self.get_report(A.B.X())
         str_value = 'I am X'
-        str_name = '.'.join([A.B.X.__module__, A.B.X.__qualname__])
+        str_name = A.B.X.__fullyqualname__
         exp = "%s: %s\n" % (str_name, str_value)
         self.assertEqual(exp, MODULE_PREFIX + err)
 
@@ -1889,10 +1889,10 @@ class BaseExceptionReportingTests:
             with self.subTest(modulename=modulename):
                 err = self.get_report(X())
                 str_value = 'I am X'
-                if modulename in ['builtins', '__main__']:
+                if modulename ==  '__main__':
                     str_name = X.__qualname__
                 else:
-                    str_name = '.'.join([X.__module__, X.__qualname__])
+                    str_name = X.__fullyqualname__
                 exp = "%s: %s\n" % (str_name, str_value)
                 self.assertEqual(exp, err)
 
@@ -1928,7 +1928,7 @@ class BaseExceptionReportingTests:
                 1/0
         err = self.get_report(X())
         str_value = '<exception str() failed>'
-        str_name = '.'.join([X.__module__, X.__qualname__])
+        str_name = X.__fullyqualname__
         self.assertEqual(MODULE_PREFIX + err, f"{str_name}: {str_value}\n")
 
 

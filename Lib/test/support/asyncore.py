@@ -256,7 +256,7 @@ class dispatcher:
             self.socket = None
 
     def __repr__(self):
-        status = [self.__class__.__module__+"."+self.__class__.__qualname__]
+        status = [self.__class__.__fullyqualname__]
         if self.accepting and self.addr:
             status.append('listening')
         elif self.connected:

@@ -107,8 +107,8 @@ class CodecInfo(tuple):
         return self
 
     def __repr__(self):
-        return "<%s.%s object for encoding %s at %#x>" % \
-                (self.__class__.__module__, self.__class__.__qualname__,
+        return "<%s object for encoding %s at %#x>" % \
+                (self.__class__.__fullyqualname__,
                  self.name, id(self))
 
     def __getnewargs__(self):

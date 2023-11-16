@@ -1501,9 +1501,9 @@ def formatannotation(annotation, base_module=None):
     if isinstance(annotation, types.GenericAlias):
         return str(annotation)
     if isinstance(annotation, type):
-        if annotation.__module__ in ('builtins', base_module):
+        if annotation.__module__ == base_module:
             return annotation.__qualname__
-        return annotation.__module__+'.'+annotation.__qualname__
+        return annotation.__fullyqualname__
     return repr(annotation)
 
 def formatannotationrelativeto(object):

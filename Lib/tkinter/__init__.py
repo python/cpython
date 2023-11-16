@@ -1802,8 +1802,7 @@ class Misc:
         return self._w
 
     def __repr__(self):
-        return '<%s.%s object %s>' % (
-            self.__class__.__module__, self.__class__.__qualname__, self._w)
+        return f'<{self.__class__.__fullyqualname__} object {self._w}>'
 
     # Pack methods that apply to the master
     _noarg_ = ['_noarg_']

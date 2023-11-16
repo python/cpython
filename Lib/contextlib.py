@@ -525,7 +525,7 @@ class _BaseExitStack:
             _enter = cls.__enter__
             _exit = cls.__exit__
         except AttributeError:
-            raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+            raise TypeError(f"'{cls.__fullyqualname__}' object does "
                             f"not support the context manager protocol") from None
         result = _enter(cm)
         self._push_cm_exit(cm, _exit)
@@ -662,7 +662,7 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
             _enter = cls.__aenter__
             _exit = cls.__aexit__
         except AttributeError:
-            raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+            raise TypeError(f"'{cls.__fullyqualname__}' object does "
                             f"not support the asynchronous context manager protocol"
                            ) from None
         result = await _enter(cm)

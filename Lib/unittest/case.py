@@ -111,7 +111,7 @@ def _enter_context(cm, addcleanup):
         enter = cls.__enter__
         exit = cls.__exit__
     except AttributeError:
-        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+        raise TypeError(f"'{cls.__fullyqualname__}' object does "
                         f"not support the context manager protocol") from None
     result = enter(cm)
     addcleanup(exit, cm, None, None, None)
