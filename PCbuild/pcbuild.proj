@@ -3,6 +3,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <Import Project="python.props" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CC9B93A2-439D-4058-9D29-6DCF43774405}</ProjectGuid>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
@@ -14,6 +15,7 @@
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
     <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
+    <PyConfigArgs Condition="'$(DisableGil)' == 'true'">Py_NOGIL=1,$(PyConfigArgs)</PyConfigArgs>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -93,6 +95,11 @@
     <!-- venv[w]launcher.exe -->
     <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="Build">
+    <!-- Stick a _PLACEHOLDER=1 after $(PyConfigArgs) to handle both trailing commas and empty $(PyConfigArgs) -->
+    <Exec Command="powershell.exe $(PySourcePath)PCbuild\generate_pyconfig.ps1 -File $(PySourcePath)PC\pyconfig.h -define $(PyConfigArgs)_PLACEHOLDER=1" />
+  </Target>
 
   <Target Name="Build">
     <MSBuild Projects="@(FreezeProjects)"

@@ -92,6 +92,7 @@ Programs/_testembed
 PC/python_nt*.h
 PC/pythonnt_rc*.h
 Modules/python.exp
+PC/pyconfig.h
 PC/*/*.exp
 PC/*/*.lib
 PC/*/*.bsc

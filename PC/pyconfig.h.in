@@ -1,7 +1,7 @@
 #ifndef Py_CONFIG_H
 #define Py_CONFIG_H
 
-/* pyconfig.h.  NOT Generated automatically by configure.
+/* pyconfig.h.in.
 
 This is a manually maintained version used for the Watcom,
 Borland and Microsoft Visual C++ compilers.  It is a
@@ -709,6 +709,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define to 1 if you have the `erfc' function. */
 #define HAVE_ERFC 1
+
+/* Define if you want to disable the GIL */
+#undef Py_NOGIL
 
 // netdb.h functions (provided by winsock.h)
 #define HAVE_GETHOSTNAME 1
