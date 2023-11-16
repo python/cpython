@@ -1344,7 +1344,7 @@ _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
 
 /* Unary operators and functions */
 
-#define UNARY_FUNC(func, op, meth_name)                                  \
+#define UNARY_FUNC(func, op, meth_name, descr)                           \
     PyObject *                                                           \
     func(PyObject *o) {                                                  \
         if (o == NULL) {                                                 \
@@ -1358,13 +1358,13 @@ _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
             return res;                                                  \
         }                                                                \
                                                                          \
-        return type_error("bad operand type for unary -: '%.200s'", o);  \
+        return type_error("bad operand type for "descr": '%.200s'", o);  \
     }
 
-UNARY_FUNC(PyNumber_Negative, nb_negative, __neg__)
-UNARY_FUNC(PyNumber_Positive, nb_positive, __pow__)
-UNARY_FUNC(PyNumber_Invert, nb_invert, __invert__)
-UNARY_FUNC(PyNumber_Absolute, nb_absolute, __abs__)
+UNARY_FUNC(PyNumber_Negative, nb_negative, __neg__, "unary -")
+UNARY_FUNC(PyNumber_Positive, nb_positive, __pow__, "unary +")
+UNARY_FUNC(PyNumber_Invert, nb_invert, __invert__, "unary ~")
+UNARY_FUNC(PyNumber_Absolute, nb_absolute, __abs__, "abs()")
 
 
 int
