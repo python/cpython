@@ -648,16 +648,21 @@ frozenset2({0,
         import textwrap
 
         # Single-line, always ordered:
+        data = frozenset((frozenset(), frozenset((1, 2, 3))))
         self.assertEqual(
-            pprint.pformat(frozenset((frozenset(), frozenset((1, 2, 3))))),
+            pprint.pformat(data),
             'frozenset({frozenset(), frozenset({1, 2, 3})})',
         )
+        self.assertEqual(pprint.pformat(data), repr(data))
+
+        data = {
+            frozenset((1, 2)): frozenset((frozenset(), frozenset((1, 2, 3)))),
+        }
         self.assertEqual(
-            pprint.pformat({
-                frozenset((1, 2)): frozenset((frozenset(), frozenset((1, 2, 3)))),
-            }),
+            pprint.pformat(data),
             '{frozenset({1, 2}): frozenset({frozenset(), frozenset({1, 2, 3})})}',
         )
+        self.assertEqual(pprint.pformat(data), repr(data))
 
         # Single-line, unordered:
         self.assertIn(
@@ -677,6 +682,7 @@ frozenset2({0,
                 "frozenset({frozenset({'spam', 'abcd'}), frozenset({'xyz', 'qwerty'})})",
                 "frozenset({frozenset({'abcd', 'spam'}), frozenset({'qwerty', 'xyz'})})",
                 "frozenset({frozenset({'abcd', 'spam'}), frozenset({'xyz', 'qwerty'})})",
+
             ],
         )
 
@@ -684,6 +690,52 @@ frozenset2({0,
         def check(res, invariants):
             self.assertIn(res, [textwrap.dedent(i).strip() for i in invariants])
 
+        # Inner-most frozensets are singleline, result is multiline, unordered:
+        check(
+            pprint.pformat(
+                frozenset((
+                    frozenset(('regular string', 'other string')),
+                    frozenset(('third string', 'one more string')),
+                ))
+            ),
+            [
+                """
+                frozenset({frozenset({'regular string', 'other string'}),
+                           frozenset({'third string', 'one more string'})})
+                """,
+                """
+                frozenset({frozenset({'regular string', 'other string'}),
+                           frozenset({'one more string', 'third string'})})
+                """,
+                """
+                frozenset({frozenset({'other string', 'regular string'}),
+                           frozenset({'third string', 'one more string'})})
+                """,
+                """
+                frozenset({frozenset({'other string', 'regular string'}),
+                           frozenset({'one more string', 'third string'})})
+                """,
+                # -
+                """
+                frozenset({frozenset({'third string', 'one more string'}),
+                           frozenset({'regular string', 'other string'})})
+                """,
+                                """
+                frozenset({frozenset({'third string', 'one more string'}),
+                           frozenset({'other string', 'regular string'})})
+                """,
+                """
+                frozenset({frozenset({'one more string', 'third string'}),
+                           frozenset({'regular string', 'other string'})})
+                """,
+                """
+                frozenset({frozenset({'one more string', 'third string'}),
+                           frozenset({'other string', 'regular string'})})
+                """,
+            ],
+        )
+
+        # Everything is multiline, unordered:
         check(
             pprint.pformat(
                 frozenset((
@@ -713,22 +765,6 @@ frozenset2({0,
                 """,
 
                 """
-                frozenset({frozenset({'spam is not so long',
-                                      'abcd is even longer that before'}),
-                           frozenset({'qwerty is also absurdly long',
-                                      'xyz very-very long string'})})
-                """,
-
-                """
-                frozenset({frozenset({'spam is not so long',
-                                      'abcd is even longer that before'}),
-                           frozenset({'xyz very-very long string',
-                                      'qwerty is also absurdly long'})})
-                """,
-
-                # -
-
-                """
                 frozenset({frozenset({'qwerty is also absurdly long',
                                       'xyz very-very long string'}),
                            frozenset({'abcd is even longer that before',
@@ -738,20 +774,6 @@ frozenset2({0,
                 """
                 frozenset({frozenset({'qwerty is also absurdly long',
                                       'xyz very-very long string'}),
-                           frozenset({'spam is not so long',
-                                      'abcd is even longer that before'})})
-                """,
-
-                """
-                frozenset({frozenset({'xyz very-very long string',
-                                      'qwerty is also absurdly long'}),
-                           frozenset({'abcd is even longer that before',
-                                      'spam is not so long'})})
-                """,
-
-                """
-                frozenset({frozenset({'xyz very-very long string',
-                                      'qwerty is also absurdly long'}),
                            frozenset({'spam is not so long',
                                       'abcd is even longer that before'})})
                 """,
