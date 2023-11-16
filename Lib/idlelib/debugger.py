@@ -83,8 +83,7 @@ def _frame2message(frame):
 
 
 class Debugger:
-    """
-    The debugger interface.
+    """The debugger interface.
 
     This class handles the drawing of the debugger window and
     the interactions with the underlying debugger session.
@@ -98,8 +97,7 @@ class Debugger:
     globalsviewer = None
 
     def __init__(self, pyshell, idb=None):
-        """
-        Instantiate and draw a debugger window.
+        """Instantiate and draw a debugger window.
 
         :param pyshell: An instance of the PyShell Window
         :type  pyshell: :class:`idlelib.pyshell.PyShell`
