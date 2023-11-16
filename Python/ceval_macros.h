@@ -397,3 +397,5 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 #define GOTO_TIER_TWO() goto enter_tier_two;
 
 #define GOTO_TIER_ONE() goto exit_trace;
+
+#define CURRENT_TARGET() (next_uop[-1].target)

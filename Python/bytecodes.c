@@ -2550,13 +2550,10 @@ dummy_func(
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* HACK: Emulate DEOPT_IF to jump over END_FOR */
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
                 assert(frame->instr_ptr[-1].op.code == END_FOR ||
                        frame->instr_ptr[-1].op.code == INSTRUMENTED_END_FOR);
-                Py_DECREF(current_executor);
-                OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-                goto enter_tier_one;
+                goto exit_trace;
             }
             // Common case: no jump, leave it to the code generator
         }
@@ -4034,6 +4031,7 @@ dummy_func(
 
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
+            frame->instr_ptr = CURRENT_TARGET() + _PyCode_CODE(_PyFrame_GetCode(frame));
             GOTO_TIER_ONE();
         }
 
