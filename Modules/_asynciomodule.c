@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
@@ -3513,15 +3514,11 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
         Py_INCREF(loop);
     }
 
-    ret = PyDict_GetItemWithError(state->current_tasks, loop);
+    int rc = PyDict_GetItemRef(state->current_tasks, loop, &ret);
     Py_DECREF(loop);
-    if (ret == NULL && PyErr_Occurred()) {
-        return NULL;
-    }
-    else if (ret == NULL) {
+    if (rc == 0) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(ret);
     return ret;
 }
 

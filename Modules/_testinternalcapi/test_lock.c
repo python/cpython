@@ -75,10 +75,18 @@ test_lock_two_threads(PyObject *self, PyObject *obj)
     assert(test_data.m.v == 1);
 
     PyThread_start_new_thread(lock_thread, &test_data);
-    while (!_Py_atomic_load_int(&test_data.started)) {
-        pysleep(10);
-    }
-    pysleep(10);  // allow some time for the other thread to try to lock
+
+    // wait up to two seconds for the lock_thread to attempt to lock "m"
+    int iters = 0;
+    uint8_t v;
+    do {
+        pysleep(10);  // allow some time for the other thread to try to lock
+        v = _Py_atomic_load_uint8_relaxed(&test_data.m.v);
+        assert(v == 1 || v == 3);
+        iters++;
+    } while (v != 3 && iters < 200);
+
+    // both the "locked" and the "has parked" bits should be set
     assert(test_data.m.v == 3);
 
     PyMutex_Unlock(&test_data.m);

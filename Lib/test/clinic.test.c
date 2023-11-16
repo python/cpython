@@ -5467,3 +5467,78 @@ exit:
 static PyObject *
 docstr_fallback_to_converter_default_impl(PyObject *module, str a)
 /*[clinic end generated code: output=ae24a9c6f60ee8a6 input=0cbe6a4d24bc2274]*/
+
+
+/*[clinic input]
+@critical_section
+test_critical_section
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section__doc__,
+"test_critical_section($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_CRITICAL_SECTION_METHODDEF    \
+    {"test_critical_section", (PyCFunction)test_critical_section, METH_NOARGS, test_critical_section__doc__},
+
+static PyObject *
+test_critical_section_impl(PyObject *module);
+
+static PyObject *
+test_critical_section(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = test_critical_section_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_impl(PyObject *module)
+/*[clinic end generated code: output=9d5a87bb28aa3f0c input=8c58956d6ff00f80]*/
+
+
+/*[clinic input]
+@critical_section
+test_critical_section_meth_o
+    a: object(subclass_of="&PyUnicode_Type")
+    /
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_meth_o__doc__,
+"test_critical_section_meth_o($module, a, /)\n"
+"--\n"
+"\n");
+
+#define TEST_CRITICAL_SECTION_METH_O_METHODDEF    \
+    {"test_critical_section_meth_o", (PyCFunction)test_critical_section_meth_o, METH_O, test_critical_section_meth_o__doc__},
+
+static PyObject *
+test_critical_section_meth_o_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_meth_o(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_meth_o", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = test_critical_section_meth_o_impl(module, a);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_meth_o_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=7a9d7420802d1202 input=376533f51eceb6c3]*/
