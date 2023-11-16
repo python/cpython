@@ -1777,7 +1777,6 @@ class TestIssueGH74956(unittest.TestCase):
         to do an `asend()`, (or `athrow()`, or `aclose()`) on the generator.
         """
 
-        
         async def run_collision(op, *args):
             # Two tasks are created and scheduled.  The first will sleep inside the
             # `asend()` and the other will then attempt a second operation and fail.
