@@ -125,6 +125,25 @@ _PY_C_FUNC2(prod)
 _PY_C_FUNC2(quot)
 _PY_C_FUNC2(pow)
 
+static PyObject*
+_py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
+{
+    Py_complex complex;
+    double res;
+
+    NULLABLE(obj);
+    complex = PyComplex_AsCComplex(obj);
+
+    if (complex.real == -1. && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    errno = 0;
+    res = _Py_c_abs(complex);
+    return PyTuple_Pack(2, PyFloat_FromDouble(res),
+                        PyLong_FromLong(errno));
+}
+
 
 static PyMethodDef test_methods[] = {
     {"complex_check", complex_check, METH_O},
@@ -140,6 +159,7 @@ static PyMethodDef test_methods[] = {
     {"_py_c_prod", _py_c_prod, METH_VARARGS},
     {"_py_c_quot", _py_c_quot, METH_VARARGS},
     {"_py_c_pow", _py_c_pow, METH_VARARGS},
+    {"_py_c_abs", _py_c_abs, METH_O},
     {NULL},
 };
 
