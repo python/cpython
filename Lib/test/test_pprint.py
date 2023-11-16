@@ -648,27 +648,24 @@ frozenset2({0,
         import textwrap
 
         # Single-line, always ordered:
-        data = frozenset((frozenset(), frozenset((1, 2, 3))))
-        self.assertEqual(
-            pprint.pformat(data),
-            'frozenset({frozenset(), frozenset({1, 2, 3})})',
-        )
+        fs0 = frozenset()
+        fs1 = frozenset(('abc', 'xyz'))
+        data = frozenset((fs0, fs1))
+        self.assertEqual(pprint.pformat(data),
+                         'frozenset({%r, %r})' % (fs0, fs1))
         self.assertEqual(pprint.pformat(data), repr(data))
 
-        data = {
-            frozenset((1, 2)): frozenset((frozenset(), frozenset((1, 2, 3)))),
-        }
-        self.assertEqual(
-            pprint.pformat(data),
-            '{frozenset({1, 2}): frozenset({frozenset(), frozenset({1, 2, 3})})}',
-        )
+        fs2 = frozenset(('one', 'two'))
+        data = {fs2: frozenset((fs0, fs1))}
+        self.assertEqual(pprint.pformat(data),
+                         "{%r: frozenset({%r, %r})}" % (fs2, fs0, fs1))
         self.assertEqual(pprint.pformat(data), repr(data))
 
         # Single-line, unordered:
         fs1 = frozenset(("xyz", "qwerty"))
         fs2 = frozenset(("abcd", "spam"))
-        fs = frozenset((fs1, fs2)))
-        self.assertEqual(pprint.pformat(fs, repr(fs))
+        fs = frozenset((fs1, fs2))
+        self.assertEqual(pprint.pformat(fs), repr(fs))
 
         # Multiline, unordered:
         def check(res, invariants):
