@@ -5,6 +5,7 @@ __all__ = (
 import collections
 import socket
 import sys
+import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
