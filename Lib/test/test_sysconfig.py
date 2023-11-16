@@ -472,9 +472,10 @@ class TestSysConfig(unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            # <srcdir>/PC/pyconfig.h always exists even if unused on POSIX.
-            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
-            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
+            if os.name == 'nt':
+                # <srcdir>/PC/pyconfig.h only exists on Windows.
+                pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
+                self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
             pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
         elif os.name == 'posix':
