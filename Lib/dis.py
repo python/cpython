@@ -415,7 +415,7 @@ class Instruction(_Instruction):
     def _create(cls, op, arg, offset, start_offset, starts_line, line_number,
                positions,
                co_consts=None, varname_from_oparg=None, names=None,
-               labels_map=None):
+               labels_map=None, exceptions_map=None):
 
         label_width = len(str(len(labels_map)))
         argval, argrepr = cls._get_argval_argrepr(
@@ -428,6 +428,7 @@ class Instruction(_Instruction):
                             label[0] if label else None, positions)
         instr.label_info = label
         instr.label_width = label_width
+        instr.exc_handler = exceptions_map.get(offset, None)
         return instr
 
     @property
@@ -482,6 +483,8 @@ class Instruction(_Instruction):
         *offset_width* sets the width of the instruction offset field
         """
         fields = []
+        # Column: Exception handlers
+        fields.append(' ' * (self.label_width + 3))
         # Column: Source code line number
         if lineno_width:
             if self.starts_line:
@@ -634,8 +637,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         jump_targets = set(findlabels(original_code))
         labels = set(jump_targets)
         for start, end, target, _, _ in exception_entries:
-            for i in range(start, end):
-                labels.add(target)
+            labels.add(target)
         labels = sorted(labels)
         labels_map = {offset: (i+1, 'J' if offset in jump_targets else 'H')
                       for (i, offset) in enumerate(sorted(labels))}
@@ -644,6 +646,11 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         return labels_map
 
     labels_map = make_labels_map(original_code, exception_entries)
+
+    exceptions_map = {}
+    for start, end, target, _, _ in exception_entries:
+        exceptions_map[start] = labels_map[target][0]
+        exceptions_map[end] = -1
 
     starts_line = False
     local_line_number = None
@@ -664,7 +671,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         yield Instruction._create(op, arg, offset, start_offset, starts_line, line_number,
                                   positions, co_consts=co_consts,
                                   varname_from_oparg=varname_from_oparg, names=names,
-                                  labels_map=labels_map)
+                                  labels_map=labels_map, exceptions_map=exceptions_map)
 
         caches = _get_cache_size(_all_opname[deop])
         if not caches:
@@ -740,6 +747,8 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
         offset_width = len(str(maxoffset))
     else:
         offset_width = 4
+
+    first_char = ' '
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          co_consts, linestarts,
                                          line_offset=line_offset,
@@ -747,18 +756,30 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                                          co_positions=co_positions,
                                          show_caches=show_caches,
                                          original_code=original_code):
-        new_source_line = (show_lineno and
-                           instr.starts_line and
-                           instr.offset > 0)
+        new_source_line = ((show_lineno and
+                            instr.starts_line and
+                            instr.offset > 0) or
+                           (instr.exc_handler is not None))
+
         if new_source_line:
-            print(file=file)
+            if instr.exc_handler == -1:
+                print('-', file=file)
+                first_char = ' '
+                print(first_char, file=file)
+            elif instr.exc_handler is not None:
+                print(first_char, file=file)
+                lbl = f'H{instr.exc_handler}'
+                print(f'{lbl:<{instr.label_width}}   ', file=file)
+                first_char = '|'
+            else:
+                print(first_char, file=file)
         if show_caches:
             is_current_instr = instr.offset == lasti
         else:
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
-        print(instr._disassemble(lineno_width, is_current_instr, offset_width),
+        print(first_char + instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:
         print("ExceptionTable:", file=file)
