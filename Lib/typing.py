@@ -2729,17 +2729,23 @@ class NamedTupleMeta(type):
         for key, val in ns.items():
             if key in _prohibited:
                 raise AttributeError("Cannot overwrite NamedTuple attribute " + key)
-            elif key not in _special and key not in nm_tpl._fields:
-                setattr(nm_tpl, key, val)
-                if hasattr(type(val), "__set_name__"):
+            elif key not in _special:
+                if key not in nm_tpl._fields:
+                    setattr(nm_tpl, key, val)
+                try:
+                    set_name = type(val).__set_name__
+                except AttributeError:
+                    pass
+                else:
                     try:
-                        type(val).__set_name__(val, nm_tpl, key)
+                        set_name(val, nm_tpl, key)
                     except BaseException as e:
                         e.add_note(
                             f"Error calling __set_name__ on {type(val).__name__!r} "
                             f"instance {key!r} in {typename!r}"
                         )
                         raise
+
         if Generic in bases:
             nm_tpl.__init_subclass__()
         return nm_tpl

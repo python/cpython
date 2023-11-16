@@ -7519,7 +7519,7 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CallNamedTuple.__orig_bases__, (NamedTuple,))
 
-    def test_setname_called_on_non_members(self):
+    def test_setname_called_on_values_in_class_dictionary(self):
         class Vanilla:
             def __set_name__(self, owner, name):
                 self.name = name
@@ -7532,6 +7532,15 @@ class NamedTupleTests(BaseTestCase):
         self.assertNotIn('attr', Foo._fields)
         self.assertIsInstance(foo.attr, Vanilla)
         self.assertEqual(foo.attr.name, "attr")
+
+        class Bar(NamedTuple):
+            attr: Vanilla = Vanilla()
+
+        bar = Bar()
+        self.assertEqual(len(bar), 1)
+        self.assertIn('attr', Bar._fields)
+        self.assertIsInstance(bar.attr, Vanilla)
+        self.assertEqual(bar.attr.name, "attr")
 
     def test_setname_raises_the_same_as_on_other_classes(self):
         class CustomException(BaseException): pass
