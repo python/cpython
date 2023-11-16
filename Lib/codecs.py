@@ -111,6 +111,9 @@ class CodecInfo(tuple):
                 (self.__class__.__module__, self.__class__.__qualname__,
                  self.name, id(self))
 
+    def __getnewargs__(self):
+        return tuple(self)
+
 class Codec:
 
     """ Defines the interface for stateless encoders/decoders.

@@ -1798,7 +1798,7 @@ Standard Library
   * :func:`importlib.resources.path`
 
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
-  removed in Python 3.13. Use :func:`locale.setlocale`,
+  removed in Python 3.15. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
   (Contributed by Victor Stinner in :gh:`90817`.)
