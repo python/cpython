@@ -41,7 +41,7 @@ class Idb(bdb.Bdb):
         if self.in_rpc_code(frame):
             self.set_step()
             return
-        message = self.frame2message(frame)
+        message = _frame2message(frame)
         try:
             self.gui.interaction(message, frame)
         except TclError:  # When closing debugger window with [x] in 3.x
@@ -52,7 +52,7 @@ class Idb(bdb.Bdb):
         if self.in_rpc_code(frame):
             self.set_step()
             return
-        message = self.frame2message(frame)
+        message = _frame2message(frame)
         self.gui.interaction(message, frame, exc_info)
 
     def in_rpc_code(self, frame):
@@ -70,16 +70,16 @@ class Idb(bdb.Bdb):
                 return False
             return self.in_rpc_code(prev_frame)
 
-    def frame2message(self, frame):
-        """Convert a frame to a message string."""
-        code = frame.f_code
-        filename = code.co_filename
-        lineno = frame.f_lineno
-        basename = os.path.basename(filename)
-        message = f"{basename}:{lineno}"
-        if code.co_name != "?":
-            message = f"{message}: {code.co_name}()"
-        return message
+def _frame2message(frame):
+    """Return a message string for frame."""
+    code = frame.f_code
+    filename = code.co_filename
+    lineno = frame.f_lineno
+    basename = os.path.basename(filename)
+    message = f"{basename}:{lineno}"
+    if code.co_name != "?":
+        message = f"{message}: {code.co_name}()"
+    return message
 
 
 class Debugger:
