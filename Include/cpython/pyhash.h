@@ -15,9 +15,14 @@
 #  define _PyHASH_BITS 31
 #endif
 
+#define PyHASH_BITS _PyHASH_BITS
+
 #define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
+#define PyHASH_MODULUS _PyHASH_MODULUS
 #define _PyHASH_INF 314159
+#define PyHASH_INF _PyHASH_INF
 #define _PyHASH_IMAG _PyHASH_MULTIPLIER
+#define PyHASH_IMAG _PyHASH_IMAG
 
 /* Helpers for hash functions */
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(PyObject *, double);
