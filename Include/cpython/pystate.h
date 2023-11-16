@@ -214,7 +214,11 @@ struct _ts {
 
 };
 
-#ifdef __wasi__
+#ifdef Py_DEBUG
+   // A debug build is likely built with low optimization level which implies
+   // higher stack memory usage than a release build: use a lower limit.
+#  define Py_C_RECURSION_LIMIT 500
+#elif defined(__wasi__)
    // WASI has limited call stack. Python's recursion limit depends on code
    // layout, optimization, and WASI runtime. Wasmtime can handle about 700
    // recursions, sometimes less. 500 is a more conservative limit.

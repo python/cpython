@@ -110,6 +110,14 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyObject*
+get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return PyLong_FromLong(tstate->c_recursion_remaining);
+}
+
+
+static PyObject*
 test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
 {
     uint16_t u16 = _Py_bswap16(UINT16_C(0x3412));
@@ -1611,6 +1619,7 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
+    {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
