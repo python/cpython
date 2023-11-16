@@ -9464,7 +9464,7 @@ class TypeIterationTests(BaseTestCase):
             self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
 
 
-def load_tests(loader, tests, ignore):
+def load_tests(loader, tests, pattern):
     import doctest
     tests.addTests(doctest.DocTestSuite(typing))
     return tests
