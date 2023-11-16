@@ -54,7 +54,7 @@ class IdbTest(unittest.TestCase):
         test_frame2.f_back = test_frame1
 
         self.idb.user_line(test_frame2)
-        self.assertFalse(self.idb.in_rpc_code(test_frame2))
+        self.assertFalse(debugger._in_rpc_code(test_frame2))
         self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2)
 
     def test_user_exception(self):
@@ -66,12 +66,12 @@ class IdbTest(unittest.TestCase):
         test_exc_info = (type(ValueError), ValueError(), None)
 
         self.idb.user_exception(test_frame2, test_exc_info)
-        self.assertFalse(self.idb.in_rpc_code(test_frame2))
+        self.assertFalse(debugger._in_rpc_code(test_frame2))
         self.gui.interaction.assert_called_once_with('debugger.py:2: <module>()', test_frame2, test_exc_info)
 
     def test_in_rpc_code(self):
         test_frame = MockFrame(self.rpc_obj, 1)
-        self.assertTrue(self.idb.in_rpc_code(test_frame))
+        self.assertTrue(debugger._in_rpc_code(test_frame))
 
 
 class DebuggerTest(unittest.TestCase):

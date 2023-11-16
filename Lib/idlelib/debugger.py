@@ -38,7 +38,7 @@ class Idb(bdb.Bdb):
 
         Convert frame to a string and send it to gui.
         """
-        if self.in_rpc_code(frame):
+        if _in_rpc_code(frame):
             self.set_step()
             return
         message = _frame2message(frame)
@@ -49,26 +49,26 @@ class Idb(bdb.Bdb):
 
     def user_exception(self, frame, exc_info):
         """Handle an the occurrence of an exception."""
-        if self.in_rpc_code(frame):
+        if _in_rpc_code(frame):
             self.set_step()
             return
         message = _frame2message(frame)
         self.gui.interaction(message, frame, exc_info)
 
-    def in_rpc_code(self, frame):
-        "Determine if debugger is within RPC code."
-        if frame.f_code.co_filename.count('rpc.py'):
-            return True  # Skip this frame.
-        else:
-            prev_frame = frame.f_back
-            if prev_frame is None:
-                return False
-            prev_name = prev_frame.f_code.co_filename
-            if 'idlelib' in prev_name and 'debugger' in prev_name:
-                # catch both idlelib/debugger.py and idlelib/debugger_r.py
-                # on both Posix and Windows
-                return False
-            return self.in_rpc_code(prev_frame)
+def _in_rpc_code(frame):
+    "Determine if debugger is within RPC code."
+    if frame.f_code.co_filename.count('rpc.py'):
+        return True  # Skip this frame.
+    else:
+        prev_frame = frame.f_back
+        if prev_frame is None:
+            return False
+        prev_name = prev_frame.f_code.co_filename
+        if 'idlelib' in prev_name and 'debugger' in prev_name:
+            # catch both idlelib/debugger.py and idlelib/debugger_r.py
+            # on both Posix and Windows
+            return False
+        return in_rpc_code(prev_frame)
 
 def _frame2message(frame):
     """Return a message string for frame."""
