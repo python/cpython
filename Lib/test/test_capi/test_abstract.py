@@ -1,10 +1,10 @@
 import unittest
 import sys
 from collections import OrderedDict
-from test import support
 from test.support import import_helper
-import _testcapi
 
+_testcapi = import_helper.import_module('_testcapi')
+from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
 
@@ -446,6 +446,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitem(lst, 1), 'b')
         self.assertEqual(getitem(lst, -1), 'c')
         self.assertRaises(IndexError, getitem, lst, 3)
+        self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MAX)
+        self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MIN)
 
         self.assertRaises(TypeError, getitem, 42, 1)
         self.assertRaises(TypeError, getitem, {}, 1)
@@ -470,6 +472,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(repeat(('a', 'b'), 2), ('a', 'b', 'a', 'b'))
         self.assertEqual(repeat(['a', 'b'], 0), [])
         self.assertEqual(repeat(['a', 'b'], -1), [])
+        self.assertEqual(repeat(['a', 'b'], PY_SSIZE_T_MIN), [])
+        self.assertEqual(repeat([], PY_SSIZE_T_MAX), [])
+        self.assertRaises(MemoryError, repeat, ['a', 'b'], PY_SSIZE_T_MAX)
 
         self.assertRaises(TypeError, repeat, set(), 2)
         self.assertRaises(TypeError, repeat, 42, 2)
@@ -503,6 +508,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(inplacerepeat(('a', 'b'), 2), ('a', 'b', 'a', 'b'))
         self.assertEqual(inplacerepeat(['a', 'b'], 0), [])
         self.assertEqual(inplacerepeat(['a', 'b'], -1), [])
+        self.assertEqual(inplacerepeat(['a', 'b'], PY_SSIZE_T_MIN), [])
+        self.assertEqual(inplacerepeat([], PY_SSIZE_T_MAX), [])
+        self.assertRaises(MemoryError, inplacerepeat, ['a', 'b'], PY_SSIZE_T_MAX)
 
         self.assertRaises(TypeError, inplacerepeat, set(), 2)
         self.assertRaises(TypeError, inplacerepeat, 42, 2)
@@ -519,6 +527,8 @@ class CAPITest(unittest.TestCase):
         setitem(lst, 0, NULL)
         self.assertEqual(lst, ['x', 'y'])
         self.assertRaises(IndexError, setitem, lst, 3, 'x')
+        self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MAX, 'x')
+        self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MIN, 'x')
 
         self.assertRaises(TypeError, setitem, 42, 1, 'x')
         self.assertRaises(TypeError, setitem, {}, 1, 'x')
@@ -532,6 +542,8 @@ class CAPITest(unittest.TestCase):
         delitem(lst, -1)
         self.assertEqual(lst, ['a'])
         self.assertRaises(IndexError, delitem, lst, 3)
+        self.assertRaises(IndexError, delitem, lst, PY_SSIZE_T_MAX)
+        self.assertRaises(IndexError, delitem, lst, PY_SSIZE_T_MIN)
 
         self.assertRaises(TypeError, delitem, 42, 1)
         self.assertRaises(TypeError, delitem, {}, 1)
@@ -541,13 +553,19 @@ class CAPITest(unittest.TestCase):
         setslice = _testcapi.sequence_setslice
 
         # Correct case:
-        data = [1, 2, 3, 4, 5]
-        data_copy = data.copy()
+        for start in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+            for stop in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+                data = [1, 2, 3, 4, 5]
+                data_copy = [1, 2, 3, 4, 5]
+                setslice(data, start, stop, [8, 9])
+                data_copy[start:stop] = [8, 9]
+                self.assertEqual(data, data_copy)
 
-        setslice(data, 1, 3, [8, 9])
-        data_copy[1:3] = [8, 9]
-        self.assertEqual(data, data_copy)
-        self.assertEqual(data, [1, 8, 9, 4, 5])
+                data = [1, 2, 3, 4, 5]
+                data_copy = [1, 2, 3, 4, 5]
+                setslice(data, start, stop, NULL)
+                del data_copy[start:stop]
+                self.assertEqual(data, data_copy)
 
         # Custom class:
         class Custom:
@@ -573,21 +591,17 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, setslice, object(), 1, 3, 'xy')
         self.assertRaises(SystemError, setslice, NULL, 1, 3, 'xy')
 
-        data_copy = data.copy()
-        setslice(data_copy, 1, 3, NULL)
-        self.assertEqual(data_copy, [1, 4, 5])
-
     def test_sequence_delslice(self):
         delslice = _testcapi.sequence_delslice
 
         # Correct case:
-        data = [1, 2, 3, 4, 5]
-        data_copy = data.copy()
-
-        delslice(data, 1, 3)
-        del data_copy[1:3]
-        self.assertEqual(data, data_copy)
-        self.assertEqual(data, [1, 4, 5])
+        for start in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+            for stop in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+                data = [1, 2, 3, 4, 5]
+                data_copy = [1, 2, 3, 4, 5]
+                delslice(data, start, stop)
+                del data_copy[start:stop]
+                self.assertEqual(data, data_copy)
 
         # Custom class:
         class Custom:

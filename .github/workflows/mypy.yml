@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - "Tools/clinic/**"
+      - "Tools/requirements-dev.txt"
       - ".github/workflows/mypy.yml"
   workflow_dispatch:
 

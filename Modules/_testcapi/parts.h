@@ -27,6 +27,8 @@
 int _PyTestCapi_Init_Vectorcall(PyObject *module);
 int _PyTestCapi_Init_Heaptype(PyObject *module);
 int _PyTestCapi_Init_Abstract(PyObject *module);
+int _PyTestCapi_Init_ByteArray(PyObject *module);
+int _PyTestCapi_Init_Bytes(PyObject *module);
 int _PyTestCapi_Init_Unicode(PyObject *module);
 int _PyTestCapi_Init_GetArgs(PyObject *module);
 int _PyTestCapi_Init_PyTime(PyObject *module);
@@ -36,16 +38,22 @@ int _PyTestCapi_Init_Mem(PyObject *module);
 int _PyTestCapi_Init_Watchers(PyObject *module);
 int _PyTestCapi_Init_Long(PyObject *module);
 int _PyTestCapi_Init_Float(PyObject *module);
+int _PyTestCapi_Init_Complex(PyObject *module);
+int _PyTestCapi_Init_Numbers(PyObject *module);
 int _PyTestCapi_Init_Dict(PyObject *module);
 int _PyTestCapi_Init_Set(PyObject *module);
+int _PyTestCapi_Init_List(PyObject *module);
+int _PyTestCapi_Init_Tuple(PyObject *module);
 int _PyTestCapi_Init_Structmember(PyObject *module);
 int _PyTestCapi_Init_Exceptions(PyObject *module);
 int _PyTestCapi_Init_Code(PyObject *module);
 int _PyTestCapi_Init_Buffer(PyObject *module);
 int _PyTestCapi_Init_PyOS(PyObject *module);
+int _PyTestCapi_Init_File(PyObject *module);
+int _PyTestCapi_Init_Codec(PyObject *module);
 int _PyTestCapi_Init_Immortal(PyObject *module);
-int _PyTestCapi_Init_GC(PyObject *mod);
-int _PyTestCapi_Init_Sys(PyObject *);
+int _PyTestCapi_Init_GC(PyObject *module);
+int _PyTestCapi_Init_Sys(PyObject *module);
 
 #ifdef LIMITED_API_AVAILABLE
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);

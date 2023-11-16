@@ -244,7 +244,19 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
+                def callback(task):
+                    exc = task.exception()
+                    if exc is not None:
+                        self._loop.call_exception_handler({
+                            'message': 'Unhandled exception in client_connected_cb',
+                            'exception': exc,
+                            'transport': transport,
+                        })
+                        transport.close()
+
                 self._task = self._loop.create_task(res)
+                self._task.add_done_callback(callback)
+
             self._strong_reader = None
 
     def connection_lost(self, exc):

@@ -26079,7 +26079,7 @@ fi
 fi
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
 
   as_fn_append CURSES_CFLAGS " -D_XOPEN_SOURCE_EXTENDED=1"
   printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h

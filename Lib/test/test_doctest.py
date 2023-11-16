@@ -3279,6 +3279,24 @@ def test_syntax_error_with_note(cls, multiline=False):
     raise exc
 
 
+def test_syntax_error_subclass_from_stdlib():
+    """
+    `ParseError` is a subclass of `SyntaxError`, but it is not a builtin:
+
+    >>> test_syntax_error_subclass_from_stdlib()
+    Traceback (most recent call last):
+      ...
+    xml.etree.ElementTree.ParseError: error
+    error
+    Note
+    Line
+    """
+    from xml.etree.ElementTree import ParseError
+    exc = ParseError("error\nerror")
+    exc.add_note('Note\nLine')
+    raise exc
+
+
 def test_syntax_error_with_incorrect_expected_note():
     """
     >>> def f(x):

@@ -111,7 +111,10 @@ static int
 tb_get_lineno(PyTracebackObject* tb) {
     PyFrameObject* frame = tb->tb_frame;
     assert(frame != NULL);
-    return PyCode_Addr2Line(PyFrame_GetCode(frame), tb->tb_lasti);
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    int lineno = PyCode_Addr2Line(code, tb->tb_lasti);
+    Py_DECREF(code);
+    return lineno;
 }
 
 static PyObject *

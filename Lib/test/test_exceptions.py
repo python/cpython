@@ -1824,6 +1824,13 @@ class NameErrorTests(unittest.TestCase):
         self.assertIn("nonsense", err.getvalue())
         self.assertIn("ZeroDivisionError", err.getvalue())
 
+    def test_gh_111654(self):
+        def f():
+            class TestClass:
+                TestClass
+
+        self.assertRaises(NameError, f)
+
     # Note: name suggestion tests live in `test_traceback`.
 
 
