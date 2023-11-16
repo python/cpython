@@ -236,8 +236,8 @@ _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 static int
 time_clockid_converter(PyObject *obj, clockid_t *p)
 {
-#if defined(_AIX) && (SIZEOF_LONG == 8)
-    long clk_id = PyLong_AsLong(obj);
+#ifdef _AIX
+    long long clk_id = PyLong_AsLongLong(obj);
 #else
     int clk_id = PyLong_AsInt(obj);
 #endif
