@@ -2799,11 +2799,9 @@ class TextIOWrapperTest(unittest.TestCase):
         # Issue #25455
         raw = self.BytesIO()
         t = self.TextIOWrapper(raw, encoding="utf-8")
-        with support.swap_attr(raw, 'name', t):
-            try:
+        with support.swap_attr(raw, 'name', t), support.infinite_recursion(25):
+            with self.assertRaises(RuntimeError):
                 repr(t)  # Should not crash
-            except RuntimeError:
-                pass
 
     def test_line_buffering(self):
         r = self.BytesIO()
