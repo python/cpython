@@ -971,28 +971,64 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
 static PyObject *
 stringio_closed(stringio *self, void *context)
 {
-    CHECK_INITIALIZED(self);
-    return PyBool_FromLong(self->closed);
+    PyObject *result = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (self->ok <= 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "I/O operation on uninitialized object");
+        goto cleanup;
+    };
+    result = PyBool_FromLong(self->closed);
+
+cleanup:
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
 stringio_line_buffering(stringio *self, void *context)
 {
-    CHECK_INITIALIZED(self);
-    CHECK_CLOSED(self);
-    Py_RETURN_FALSE;
+    PyObject *result = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (self->ok <= 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "I/O operation on uninitialized object");
+        goto cleanup;
+    };
+    if (self->closed) {
+        PyErr_SetString(PyExc_ValueError, "I/O operation on closed file");
+        goto cleanup;
+    };
+    result = Py_NewRef(Py_False);
+
+cleanup:
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
 stringio_newlines(stringio *self, void *context)
 {
-    CHECK_INITIALIZED(self);
-    CHECK_CLOSED(self);
-    if (self->decoder == NULL)
-        Py_RETURN_NONE;
     PyObject *result = NULL;
+
     Py_BEGIN_CRITICAL_SECTION(self);
+    if (self->ok <= 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "I/O operation on uninitialized object");
+        goto cleanup;
+    };
+    if (self->closed) {
+        PyErr_SetString(PyExc_ValueError, "I/O operation on closed file");
+        goto cleanup;
+    };
+    if (self->decoder == NULL) {
+        goto cleanup;
+    }
     result = PyObject_GetAttr(self->decoder, &_Py_ID(newlines));
+
+cleanup:
     Py_END_CRITICAL_SECTION();
     return result;
 }
