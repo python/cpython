@@ -1125,7 +1125,7 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 
 
 static PyObject*
-type_fullyqualname(PyTypeObject *type, int is_repr)
+type_fullyqualname_impl(PyTypeObject *type, int is_repr)
 {
     // type is a static type and PyType_Ready() was not called on it yet?
     if (type->tp_name == NULL) {
@@ -1169,9 +1169,9 @@ type_fullyqualname(PyTypeObject *type, int is_repr)
 }
 
 static PyObject *
-type_get_fullyqualname(PyTypeObject *type, void *context)
+type_fullyqualname(PyTypeObject *type, void *context)
 {
-    return type_fullyqualname(type, 0);
+    return PyType_GetFullyQualifiedName(type);
 }
 
 
@@ -1635,7 +1635,7 @@ type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass)
 static PyGetSetDef type_getsets[] = {
     {"__name__", (getter)type_name, (setter)type_set_name, NULL},
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
-    {"__fully_qualified_name__", (getter)type_get_fullyqualname, NULL, NULL},
+    {"__fully_qualified_name__", (getter)type_fullyqualname, NULL, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__mro__", (getter)type_get_mro, NULL, NULL},
     {"__module__", (getter)type_module, (setter)type_set_module, NULL},
@@ -1658,7 +1658,7 @@ type_repr(PyTypeObject *type)
         return PyUnicode_FromFormat("<class at %p>", type);
     }
 
-    PyObject *name = type_fullyqualname(type, 1);
+    PyObject *name = type_fullyqualname_impl(type, 1);
     if (name == NULL) {
         return NULL;
     }
@@ -4581,7 +4581,7 @@ PyType_GetQualName(PyTypeObject *type)
 PyObject *
 PyType_GetFullyQualifiedName(PyTypeObject *type)
 {
-    return type_get_fullyqualname(type, NULL);
+    return type_fullyqualname_impl(type, 0);
 }
 
 
