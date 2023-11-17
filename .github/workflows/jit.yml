@@ -48,12 +48,12 @@ jobs:
             architecture: aarch64
             runner: ubuntu-latest
             compiler: gcc
-            exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
+            # exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-latest
             compiler: clang
-            exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
+            # exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   architecture: ppc64le
           #   runner: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
             architecture: x86_64
             runner: ubuntu-latest
             compiler: clang
-            exclude: test_tools
+            # exclude: test_tools
     env:
       CC: ${{ matrix.compiler }}
     steps:
@@ -74,19 +74,12 @@ jobs:
       - name: Emulated Linux
         if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
         run: |
-          echo "::group::Install LLVM"
           sudo apt purge --auto-remove llvm python3-lldb-14 llvm-14
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          echo "::endgroup::"
-          echo "::group::Configure Python (Build)"
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --prefix="$(pwd)/../build"
-          echo "::endgroup::"
-          echo "::group::Build Python (Build)"
           make install --jobs 2
           make clean --jobs 2
-          echo "::endgroup::"
-          echo "::group::Configure Python (Host)"
           export HOST=${{ matrix.architecture }}-linux-gnu
           sudo apt install --yes gcc-$HOST qemu-user
           ${{ !matrix.debug && matrix.compiler == 'clang' && './configure --enable-optimizations' || '' }}
@@ -95,56 +88,29 @@ jobs:
           export CPP="$CC --preprocess"
           export HOSTRUNNER=qemu-${{ matrix.architecture }}
           export QEMU_LD_PREFIX="/usr/$HOST"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host=$HOST --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes 
-          echo "::endgroup::"
-          echo "::group::Build Python (Host)"
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host=$HOST --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 2
-          echo "::endgroup::"
-          echo "::group::Test Python"
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
-          echo "::endgroup::"
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
-          echo "::group::Install LLVM"
           sudo apt purge --auto-remove llvm python3-lldb-14 llvm-14
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          echo "::endgroup::"
-          echo "::group::Configure Python"
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          echo "::endgroup::"
-          echo "::group::Build Python"
           make all --jobs 2
-          echo "::endgroup::"
-          echo "::group::Test Python"
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
-          echo "::endgroup::"
       - name: macOS
         if: runner.os == 'macOS'
         run: |
-          echo "::group::Install LLVM"
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          echo "::endgroup::"
-          echo "::group::Configure Python"
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          echo "::endgroup::"
-          echo "::group::Build Python"
           make all --jobs 3
-          echo "::endgroup::"
-          echo "::group::Test Python"
           ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
-          echo "::endgroup::"
       - name: Windows
         if: runner.os == 'Windows'
         run: |
-          echo "::group::Install LLVM"
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
-          echo "::endgroup::"
-          echo "::group::Build Python"
           ./PCbuild/build.bat ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
-          echo "::endgroup::"
-          echo "::group::Test Python"
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
-          echo "::endgroup::"
