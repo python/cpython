@@ -647,6 +647,8 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
 
 extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 
+extern const char *_PyUopName(int index);
+
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
 
@@ -1002,11 +1004,12 @@ enter_tier_two:
         oparg = next_uop->oparg;
         operand = next_uop->operand;
         DPRINTF(3,
-                "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
+                "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
                 (int)(next_uop - current_executor->trace),
-                opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
+                _PyUopName(opcode),
                 oparg,
                 operand,
+                next_uop->target,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         next_uop++;
         OPT_STAT_INC(uops_executed);
@@ -1051,7 +1054,9 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    DPRINTF(2, "Error: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+            opcode, _PyUopName(opcode), oparg, operand, next_uop[-1].target,
+            (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1062,7 +1067,9 @@ error_tier_two:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-    DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 " @ %d]\n", opcode, operand, (int)(next_uop-current_executor->trace-1));
+    DPRINTF(2, "DEOPT: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+            opcode, _PyUopName(opcode), oparg, operand, next_uop[-1].target,
+            (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(opcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
