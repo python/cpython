@@ -756,7 +756,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         if instr.label is not None:
-            print(f"L{instr.label}:")
+            print(f"L{instr.label}:", file=file)
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:
