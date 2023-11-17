@@ -621,6 +621,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 }
                                 if (_PyUop_Replacements[uop]) {
                                     uop = _PyUop_Replacements[uop];
+                                    if (uop == _FOR_ITER_TIER_TWO) {
+                                        target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
+                                        _Py_CODEUNIT word = _PyCode_CODE(code)[target-1];
+                                        assert(word.op.code == END_FOR ||
+                                               word.op.code == INSTRUMENTED_END_FOR);
+                                    }
                                 }
                                 break;
                             case OPARG_CACHE_1:

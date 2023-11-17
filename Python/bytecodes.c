@@ -2549,11 +2549,8 @@ dummy_func(
                 /* iterator ended normally */
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* HACK: Emulate DEOPT_IF to jump over END_FOR */
-                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
-                assert(frame->instr_ptr[-1].op.code == END_FOR ||
-                       frame->instr_ptr[-1].op.code == INSTRUMENTED_END_FOR);
-                goto exit_trace;
+                /* The translator sets the deopt target just past END_FOR */
+                DEOPT_IF(true);
             }
             // Common case: no jump, leave it to the code generator
         }
