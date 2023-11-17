@@ -1485,7 +1485,7 @@ otherwise immutable (e.g. ``None``, ``(1, 5)``) can't normally be shared
 because of the refcount.  One simple but less-efficient approach around
 this is to use a global lock around all use of some state (or object).
 Alternately, effectively immutable objects (like integers or strings)
-can be made safe in spite of their refcounts by making them "immortal".
+can be made safe in spite of their refcounts by making them :term:`immortal`.
 In fact, this has been done for the builtin singletons, small integers,
 and a number of other builtin objects.
 
