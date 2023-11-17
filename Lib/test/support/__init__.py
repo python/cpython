@@ -2115,8 +2115,13 @@ def infinite_recursion(max_depth=None):
     stack size might not handle the default recursion limit (1000). See
     bpo-11105 for details."""
     if max_depth is None:
-        # Unoptimized number based on what works under a WASI debug build.
-        max_depth = 100 if python_is_optimized() else 50
+        if not python_is_optimized() or Py_DEBUG:
+            # Python built without compiler optimizations or in debug mode
+            # usually consumes more stack memory per function call.
+            # Unoptimized number based on what works under a WASI debug build.
+            max_depth = 50
+        else:
+            max_depth = 100
     elif max_depth < 3:
         raise ValueError("max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
