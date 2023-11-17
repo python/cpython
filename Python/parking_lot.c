@@ -118,7 +118,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     if (timeout >= 0) {
         struct timespec ts;
 
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
         _PyTime_AsTimespec(deadline, &ts);
 
         err = sem_timedwait(&sema->platform_sem, &ts);
@@ -150,7 +150,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
         if (timeout >= 0) {
             struct timespec ts;
 
-            _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
+            _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
             _PyTime_AsTimespec(deadline, &ts);
 
             err = pthread_cond_timedwait(&sema->cond, &sema->mutex, &ts);
