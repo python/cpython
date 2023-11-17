@@ -28,7 +28,8 @@ Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
-Python/ceval*.[ch]            @markshannon @gvanrossum
+Python/ceval*.c               @markshannon @gvanrossum
+Python/ceval*.h               @markshannon @gvanrossum
 Python/compile.c              @markshannon @iritkatriel
 Python/assemble.c             @markshannon @iritkatriel
 Python/flowgraph.c            @markshannon @iritkatriel
