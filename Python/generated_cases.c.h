@@ -1731,6 +1731,7 @@
             seq = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
