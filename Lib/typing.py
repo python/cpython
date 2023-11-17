@@ -213,11 +213,11 @@ def _should_unflatten_callable_args(typ, args):
     For example::
 
         >>> import collections.abc
-
         >>> P = ParamSpec('P')
-
-        >>> assert collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
-        >>> assert collections.abc.Callable[P, str].__args__ == (P, str)
+        >>> collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
+        True
+        >>> collections.abc.Callable[P, str].__args__ == (P, str)
+        True
 
     As a result, if we need to reconstruct the Callable from its __args__,
     we need to unflatten it.
@@ -261,9 +261,8 @@ def _collect_parameters(args):
 
         >>> P = ParamSpec('P')
         >>> T = TypeVar('T')
-
-        >>> assert _collect_parameters((T, Callable[P, T])) == (T, P)
-
+        >>> _collect_parameters((T, Callable[P, T]))
+        (~T, ~P)
     """
     parameters = []
     for t in args:
@@ -2253,7 +2252,6 @@ def get_origin(tp):
     Examples::
 
         >>> P = ParamSpec('P')
-
         >>> assert get_origin(Literal[42]) is Literal
         >>> assert get_origin(int) is None
         >>> assert get_origin(ClassVar[int]) is ClassVar
@@ -2262,7 +2260,6 @@ def get_origin(tp):
         >>> assert get_origin(Union[T, int]) is Union
         >>> assert get_origin(List[Tuple[T, T]][int]) is list
         >>> assert get_origin(P.args) is P
-
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
@@ -2284,13 +2281,11 @@ def get_args(tp):
     Examples::
 
         >>> T = TypeVar('T')
-
         >>> assert get_args(Dict[str, int]) == (str, int)
         >>> assert get_args(int) == ()
         >>> assert get_args(Union[int, Union[T, int], str][int]) == (int, str)
         >>> assert get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
         >>> assert get_args(Callable[[], T][int]) == ([], int)
-
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
@@ -2310,16 +2305,14 @@ def is_typeddict(tp):
     For example::
 
         >>> from typing import TypedDict
-
         >>> class Film(TypedDict):
         ...     title: str
         ...     year: int
-
+        ...
         >>> is_typeddict(Film)
         True
         >>> is_typeddict(dict)
         False
-
     """
     return isinstance(tp, _TypedDictMeta)
 
@@ -2921,10 +2914,9 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
         ...     x: int
         ...     y: int
         ...     label: str
-
+        ...
         >>> a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
         >>> b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
-
         >>> assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
     The type info can be accessed via the Point2D.__annotations__ dict, and
