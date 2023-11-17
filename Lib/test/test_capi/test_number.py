@@ -2,7 +2,7 @@ import unittest
 import sys
 import warnings
 
-from test.support import import_helper
+from test.support import cpython_only, import_helper
 from _testbuffer import ndarray
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -87,6 +87,7 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(check(0.5))
         self.assertTrue(check(FloatLike.with_val(4.25)))
         self.assertTrue(check(1+2j))
+
         self.assertFalse(check([]))
         self.assertFalse(check("1 + 1j"))
         self.assertFalse(check(object()))
@@ -101,7 +102,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(add(0.75, 1), 0.75 + 1)
         self.assertEqual(add(42, HasRAddIntSubclass.with_val(NotImplemented)), 42)
         self.assertEqual(add([1, 2], [3, 4]), [1, 2, 3, 4])
-
 
         self.assertRaises(TypeError, add, 1, object())
         self.assertRaises(TypeError, add, object(), 1)
@@ -148,8 +148,7 @@ class CAPITest(unittest.TestCase):
 
         a, b, r = WithMatrixMul([1]), 2, [1, 1]
         self.assertEqual(matrixmultiply(a, b), r)
-        self.assertEqual(a, [1])
-        self.assertEqual(b, 2)
+        self.assertEqual((a, b), ([1], 2))
 
         # CRASHES matrixmultiply(NULL, NULL)
 
@@ -271,22 +270,23 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(rshift(5, 3), 5 >> 3)
 
-        # RHS implements __rrshift__ but returns NotImplemented
-        with self.assertRaises(TypeError) as context:
-            print >> 42
-        self.assertIn('Did you mean "print(<message>, '
-                      'file=<output_stream>)"?', str(context.exception))
-
-        # Test stream redirection hint is specific to print
-        with self.assertRaises(TypeError) as context:
-            max >> sys.stderr
-        self.assertNotIn('Did you mean ', str(context.exception))
-
-        with self.assertRaises(TypeError) as context:
-            1 >> "spam"
-
         # CRASHES rshift(NULL, 1)
         # CRASHES rshift(1, NULL)
+
+    @cpython_only
+    def test_rshift_print(self):
+        # This tests correct syntax hint for py2 redirection (>>).
+        rshift = _testcapi.number_rshift
+
+        with self.assertRaises(TypeError) as context:
+            rshift(print, 42)
+        self.assertIn('Did you mean "print(<message>, '
+                      'file=<output_stream>)"?', str(context.exception))
+        with self.assertRaises(TypeError) as context:
+            rshift(max, sys.stderr)
+        self.assertNotIn('Did you mean ', str(context.exception))
+        with self.assertRaises(TypeError) as context:
+            rshift(1, "spam")
 
     def test_and(self):
         # Test PyNumber_And()
@@ -328,8 +328,7 @@ class CAPITest(unittest.TestCase):
 
         a, b, r = [1, 2], [3, 4], [1, 2, 3, 4]
         self.assertEqual(inplaceadd(a, b), r)
-        self.assertEqual(a, r)
-        self.assertEqual(b, [3, 4])
+        self.assertEqual((a, b), (r, [3, 4]))
 
         self.assertRaises(TypeError, inplaceadd, HasIAdd.with_val(NotImplemented), object())
         self.assertRaises(TypeError, inplaceadd, 1, object())
@@ -358,13 +357,11 @@ class CAPITest(unittest.TestCase):
 
         a, b, r = [1], 2, [1, 1]
         self.assertEqual(inplacemultiply(a, b), r)
-        self.assertEqual(a, r)
-        self.assertEqual(b, 2)
+        self.assertEqual((a, b), (r, 2))
 
         a, b = 2, [1]
         self.assertEqual(inplacemultiply(a, b), r)
-        self.assertEqual(a, 2)
-        self.assertEqual(b, [1])
+        self.assertEqual((a, b), (2, [1]))
 
         self.assertRaises(TypeError, inplacemultiply, 1, object())
         self.assertRaises(TypeError, inplacemultiply, object(), 1)
@@ -380,8 +377,7 @@ class CAPITest(unittest.TestCase):
 
         a, b, r = WithMatrixMul([1]), 2, [1, 1]
         self.assertEqual(inplacematrixmultiply(a, b), r)
-        self.assertEqual(a, r)
-        self.assertEqual(b, 2)
+        self.assertEqual((a, b), (r, 2))
 
         self.assertRaises(TypeError, inplacematrixmultiply, 2, a)
 
@@ -456,8 +452,7 @@ class CAPITest(unittest.TestCase):
 
         a, b, r = {1, 2}, {2, 3}, {1, 2} & {2, 3}
         self.assertEqual(inplaceand(a, b), r)
-        self.assertEqual(a, r)
-        self.assertEqual(b, {2, 3})
+        self.assertEqual((a, b), (r, {2, 3}))
 
         # CRASHES inplaceand(NULL, 42)
         # CRASHES inplaceand(42, NULL)
@@ -470,8 +465,7 @@ class CAPITest(unittest.TestCase):
 
         a, b, r = {1, 2}, {2, 3}, {1, 2} ^ {2, 3}
         self.assertEqual(inplacexor(a, b), r)
-        self.assertEqual(a, r)
-        self.assertEqual(b, {2, 3})
+        self.assertEqual((a, b), (r, {2, 3}))
 
         # CRASHES inplacexor(NULL, 42)
         # CRASHES inplacexor(42, NULL)
@@ -484,8 +478,7 @@ class CAPITest(unittest.TestCase):
 
         a, b, r = {1, 2}, {2, 3}, {1, 2} | {2, 3}
         self.assertEqual(inplaceor(a, b), r)
-        self.assertEqual(a, r)
-        self.assertEqual(b, {2, 3})
+        self.assertEqual((a, b), (r, {2, 3}))
 
         # CRASHES inplaceor(NULL, 42)
         # CRASHES inplaceor(42, NULL)
@@ -509,6 +502,8 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(DeprecationWarning, long, IntLike.with_val(True))
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(long(IntLike.with_val(True)), 1)
+        self.assertRaises(RuntimeError, long, IntLike.with_exc(RuntimeError))
+
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
             self.assertRaises(DeprecationWarning, long, HasTrunc.with_val(42))
@@ -518,16 +513,14 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(long(HasTrunc.with_val(subclassof(int)(42))), 42)
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(long(HasTrunc.with_val(IndexLike.with_val(42))), 42)
-
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, long, HasTrunc.with_val(1.25))
+        self.assertRaises(RuntimeError, long, HasTrunc.with_exc(RuntimeError))
+        self.assertRaises(ValueError, long, HasBadTrunc())
 
         self.assertRaises(TypeError, long, 1j)
         self.assertRaises(TypeError, long, object())
         self.assertRaises(SystemError, long, NULL)
-        self.assertRaises(RuntimeError, long, HasTrunc.with_exc(RuntimeError))
-        self.assertRaises(ValueError, long, HasBadTrunc())
-        self.assertRaises(RuntimeError, long, IntLike.with_exc(RuntimeError))
 
     def test_float(self):
         # Test PyNumber_Float()
@@ -547,12 +540,14 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(DeprecationWarning, float_, FloatLike.with_val(subclassof(float)(4.25)))
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(float_(FloatLike.with_val(subclassof(float)(4.25))), 4.25)
+        self.assertRaises(RuntimeError, float_, FloatLike.with_exc(RuntimeError))
+
         self.assertRaises(TypeError, float_, IndexLike.with_val(1.25))
         self.assertRaises(OverflowError, float_, IndexLike.with_val(2**2000))
+
         self.assertRaises(TypeError, float_, 1j)
         self.assertRaises(TypeError, float_, object())
         self.assertRaises(SystemError, float_, NULL)
-        self.assertRaises(RuntimeError, float_, FloatLike.with_exc(RuntimeError))
 
     def test_index(self):
         # Test PyNumber_Index()
@@ -565,12 +560,13 @@ class CAPITest(unittest.TestCase):
             self.assertRaises(DeprecationWarning, index, IndexLike.with_val(True))
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(index(IndexLike.with_val(True)), 1)
+        self.assertRaises(TypeError, index, IndexLike.with_val(1.0))
+        self.assertRaises(RuntimeError, index, IndexLike.with_exc(RuntimeError))
+
         self.assertRaises(TypeError, index, 1.25)
         self.assertRaises(TypeError, index, "42")
-        self.assertRaises(TypeError, index, IndexLike.with_val(1.0))
         self.assertRaises(TypeError, index, object())
         self.assertRaises(SystemError, index, NULL)
-        self.assertRaises(RuntimeError, index, IndexLike.with_exc(RuntimeError))
 
     def test_tobase(self):
         # Test PyNumber_ToBase()
