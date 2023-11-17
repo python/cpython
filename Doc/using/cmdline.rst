@@ -464,8 +464,8 @@ Miscellaneous options
    whether the actual warning category of the message is a subclass of the
    specified warning category.
 
-   The *module* field matches the (fully qualified) module name; this match is
-   case-sensitive.
+   The *module* field matches the :term:`fully qualified module name <fully
+   qualified name>`; this match is case-sensitive.
 
    The *lineno* field matches the line number, where zero matches all line
    numbers and is thus equivalent to an omitted line number.

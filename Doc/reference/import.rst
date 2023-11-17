@@ -157,8 +157,8 @@ See also :pep:`420` for the namespace package specification.
 Searching
 =========
 
-To begin the search, Python needs the :term:`fully qualified <qualified name>`
-name of the module (or package, but for the purposes of this discussion, the
+To begin the search, Python needs the :term:`fully qualified name`
+of the module (or package, but for the purposes of this discussion, the
 difference is immaterial) being imported.  This name may come from various
 arguments to the :keyword:`import` statement, or from the parameters to the
 :func:`importlib.import_module` or :func:`__import__` functions.
@@ -547,7 +547,7 @@ listed below.
 
 .. attribute:: __name__
 
-   The ``__name__`` attribute must be set to the fully qualified name of
+   The ``__name__`` attribute must be set to the :term:`fully qualified name` of
    the module.  This name is used to uniquely identify the module in
    the import system.
 
@@ -885,7 +885,7 @@ contribute portions to namespace packages, path entry finders must implement
 the :meth:`~importlib.abc.PathEntryFinder.find_spec` method.
 
 :meth:`~importlib.abc.PathEntryFinder.find_spec` takes two arguments: the
-fully qualified name of the module being imported, and the (optional) target
+:term:`fully qualified name` of the module being imported, and the (optional) target
 module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
 
@@ -905,7 +905,7 @@ a list containing the portion.
    implemented on the path entry finder, the legacy methods are ignored.
 
    :meth:`!find_loader` takes one argument, the
-   fully qualified name of the module being imported.  ``find_loader()``
+   :term:`fully qualified name` of the module being imported.  ``find_loader()``
    returns a 2-tuple where the first item is the loader and the second item
    is a namespace :term:`portion`.
 

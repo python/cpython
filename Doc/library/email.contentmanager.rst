@@ -56,8 +56,8 @@
       found:
 
       * the type itself (``typ``)
-      * the type's fully qualified name (``typ.__module__ + '.' +
-        typ.__qualname__``).
+      * the type's :term:`fully qualified name`
+        (:attr:`typ.__fully_qualified_name__ <class.__fully_qualified_name__>`).
       * the type's qualname (``typ.__qualname__``)
       * the type's name (``typ.__name__``).
 

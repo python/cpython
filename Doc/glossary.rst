@@ -435,6 +435,25 @@ Glossary
       division.  Note that ``(-11) // 4`` is ``-3`` because that is ``-2.75``
       rounded *downward*. See :pep:`238`.
 
+   fully qualified name
+      The fully qualified name is the entire dotted path to a class or a
+      module.
+
+      The :attr:`class.__fully_qualified_name__` attribute includes the module
+      name, except for built-in classes. Example::
+
+         >>> import collections
+         >>> collections.OrderedDict.__fully_qualified_name__
+         'collections.OrderedDict'
+
+      When used to refer to modules, the *fully qualified name* means the
+      entire dotted path to the module, including any parent packages,
+      e.g. ``email.mime.text``::
+
+         >>> import email.mime.text
+         >>> email.mime.text.__name__
+         'email.mime.text'
+
    function
       A series of statements which returns some value to a caller. It can also
       be passed zero or more :term:`arguments <argument>` which may be used in

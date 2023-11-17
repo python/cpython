@@ -286,7 +286,7 @@ otherwise, the context is used to determine what to instantiate.
 
   The configuring dict is searched for the following keys:
 
-  * ``class`` (mandatory).  This is the fully qualified name of the
+  * ``class`` (mandatory).  This is the :term:`fully qualified name` of the
     handler class.
 
   * ``level`` (optional).  The level of the handler.

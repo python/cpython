@@ -182,7 +182,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
-|           | co_qualname       | fully qualified name with |
+|           | co_qualname       | qualified name with       |
 |           |                   | which this code object    |
 |           |                   | was defined               |
 +-----------+-------------------+---------------------------+

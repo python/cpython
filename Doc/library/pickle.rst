@@ -525,7 +525,7 @@ the function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
 
-Similarly, classes are pickled by fully qualified name, so the same restrictions in
+Similarly, classes are pickled by :term:`fully qualified name`, so the same restrictions in
 the unpickling environment apply.  Note that none of the class's code or data is
 pickled, so in the following example the class attribute ``attr`` is not
 restored in the unpickling environment::

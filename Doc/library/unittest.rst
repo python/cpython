@@ -234,8 +234,8 @@ Command-line options
    test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
    substring matching is used.
 
-   Patterns are matched against the fully qualified test method name as
-   imported by the test loader.
+   Patterns are matched against the :term:`fully qualified test method name
+   <fully qualified name>`_ as imported by the test loader.
 
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
    ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.

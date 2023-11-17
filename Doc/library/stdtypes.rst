@@ -5498,7 +5498,7 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. attribute:: class.__fully_qualified_name__
 
-   The fully qualified name of the class instance:
+   The :term:`fully qualified name` of the class instance:
    ``f"{class.__module__}.{class.__qualname__}"``, or ``class.__qualname__`` if
    ``class.__module__`` is not a string or is equal to ``"builtins"``.
 

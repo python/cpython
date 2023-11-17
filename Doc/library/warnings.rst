@@ -163,7 +163,8 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   category must be a subclass in order to match.
 
 * *module* is a string containing a regular expression that the start of the
-  fully qualified module name must match, case-sensitively.  In :option:`-W` and
+  :term:`fully qualified module name <fully qualified name>` must match,
+  case-sensitively.  In :option:`-W` and
   :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
   fully qualified module name must be equal to (case-sensitively), ignoring any
   whitespace at the start or end of *module*.

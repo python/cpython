@@ -356,7 +356,7 @@ ABC hierarchy::
         reloaded):
 
         - :attr:`__name__`
-            The module's fully qualified name.
+            The module's :term:`fully qualified name`.
             It is ``'__main__'`` for an executed module.
 
         - :attr:`__file__`
@@ -377,8 +377,8 @@ ABC hierarchy::
             as an indicator that the module is a package.
 
         - :attr:`__package__`
-            The fully qualified name of the package the module is in (or the
-            empty string for a top-level module).
+            The :term:`fully qualified name` of the package the module is in
+            (or the empty string for a top-level module).
             If the module is a package then this is the same as :attr:`__name__`.
 
         - :attr:`__loader__`
@@ -1181,7 +1181,7 @@ find and load modules.
 
    (:attr:`__name__`)
 
-   The module's fully qualified name.
+   The module's :term:`fully qualified name`.
    The :term:`finder` should always set this attribute to a non-empty string.
 
    .. attribute:: loader
@@ -1230,8 +1230,8 @@ find and load modules.
 
    (:attr:`__package__`)
 
-   (Read-only) The fully qualified name of the package the module is in (or the
-   empty string for a top-level module).
+   (Read-only) The :term:`fully qualified name` of the package the module is in
+   (or the empty string for a top-level module).
    If the module is a package then this is the same as :attr:`name`.
 
    .. attribute:: has_location
