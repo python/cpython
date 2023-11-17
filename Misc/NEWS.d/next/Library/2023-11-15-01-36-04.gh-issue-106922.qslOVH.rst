@@ -1,1 +1,1 @@
-Display multiple lines with `traceback` when errors span multiple lines.
+Display multiple lines with ``traceback`` when errors span multiple lines.
