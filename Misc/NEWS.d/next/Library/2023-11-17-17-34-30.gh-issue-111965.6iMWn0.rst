@@ -1,1 +1,0 @@
-Using critical section to make ``io.TextIOWrapper`` thread safe without GIL.
