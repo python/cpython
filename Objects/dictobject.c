@@ -2870,7 +2870,7 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
             }
         }
         else {
-            if (PyDict_SetDefault(d, key, value) == NULL) {
+            if (PyDict_SetDefaultRef(d, key, value, NULL) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 goto Fail;
