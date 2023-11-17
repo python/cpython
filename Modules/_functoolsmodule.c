@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"          // _PyDict_Pop_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -1274,7 +1275,11 @@ lru_cache_dealloc(lru_cache_object *obj)
 static PyObject *
 lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    return self->wrapper(self, args, kwds);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = self->wrapper(self, args, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
@@ -1287,6 +1292,7 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_info
 
 Report cache statistics
@@ -1294,7 +1300,7 @@ Report cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
-/*[clinic end generated code: output=cc796a0b06dbd717 input=f05e5b6ebfe38645]*/
+/*[clinic end generated code: output=cc796a0b06dbd717 input=00e1acb31aa21ecc]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     if (_self->maxsize == -1) {
@@ -1308,6 +1314,7 @@ _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_clear
 
 Clear the cache and cache statistics
@@ -1315,7 +1322,7 @@ Clear the cache and cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
-/*[clinic end generated code: output=58423b35efc3e381 input=6ca59dba09b12584]*/
+/*[clinic end generated code: output=58423b35efc3e381 input=dfa33acbecf8b4b2]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     lru_list_elem *list = lru_cache_unlink_list(_self);
