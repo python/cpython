@@ -441,7 +441,10 @@ L8:
              POP_EXCEPT
              RERAISE                  1
 ExceptionTable:
-4 rows
+  L1 to L2 -> L3 [0]
+  L3 to L4 -> L8 [1] lasti
+  L4 to L5 -> L6 [1] lasti
+  L6 to L8 -> L8 [1] lasti
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
@@ -525,7 +528,8 @@ L6:
              POP_EXCEPT
              RERAISE                  1
 ExceptionTable:
-2 rows
+  L1 to L2 -> L3 [1] lasti
+  L3 to L5 -> L6 [3] lasti
 """ % (_with.__code__.co_firstlineno,
        _with.__code__.co_firstlineno + 1,
        _with.__code__.co_firstlineno + 2,
@@ -637,7 +641,18 @@ L25:
              CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
              RERAISE                  1
 ExceptionTable:
-12 rows
+  L1 to L3 -> L25 [0] lasti
+  L3 to L4 -> L12 [3]
+  L4 to L6 -> L25 [0] lasti
+  L6 to L7 -> L16 [1] lasti
+  L7 to L9 -> L25 [0] lasti
+  L9 to L10 -> L14 [2]
+  L10 to L13 -> L25 [0] lasti
+  L14 to L15 -> L25 [0] lasti
+  L16 to L18 -> L24 [3] lasti
+  L18 to L19 -> L20 [6]
+  L19 to L23 -> L24 [3] lasti
+  L23 to L25 -> L25 [0] lasti
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
@@ -691,7 +706,8 @@ L4:
              POP_EXCEPT
              RERAISE                  1
 ExceptionTable:
-2 rows
+  L1 to L2 -> L3 [0]
+  L3 to L4 -> L4 [1] lasti
 """ % (_tryfinally.__code__.co_firstlineno,
        _tryfinally.__code__.co_firstlineno + 1,
        _tryfinally.__code__.co_firstlineno + 2,
@@ -726,7 +742,7 @@ L2:
              POP_EXCEPT
              RERAISE                  1
 ExceptionTable:
-1 row
+  L1 to L2 -> L2 [1] lasti
 """ % (_tryfinallyconst.__code__.co_firstlineno,
        _tryfinallyconst.__code__.co_firstlineno + 1,
        _tryfinallyconst.__code__.co_firstlineno + 2,
@@ -825,7 +841,7 @@ L4:
     None     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
              RERAISE                  1
 ExceptionTable:
-1 row
+  L1 to L4 -> L4 [0] lasti
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,
@@ -915,22 +931,7 @@ class DisTestBase(unittest.TestCase):
             count += 1
         return count
 
-    def collapse_exception_table(self, text):
-        lines = text.splitlines(True)
-        res = []
-        lines = iter(lines)
-        for line in lines:
-            res.append(line)
-            if line.startswith("Exception"):
-                break
-        num_rows = self.assert_exception_table_increasing(lines)
-        if num_rows:
-            res.append(f"{num_rows} row{'s' if num_rows > 1 else ''}\n")
-        return "".join(res)
-
-    def do_disassembly_compare(self, got, expected, with_exception_table=False):
-        if not with_exception_table:
-            got = self.collapse_exception_table(got)
+    def do_disassembly_compare(self, got, expected):
         if got != expected:
             got = self.strip_addresses(got)
         self.assertEqual(got, expected)
@@ -953,10 +954,10 @@ class DisTests(DisTestBase):
     def get_disassemble_as_string(self, func, lasti=-1):
         return self.get_disassembly(func, lasti, False)
 
-    def do_disassembly_test(self, func, expected, with_exception_table=False):
+    def do_disassembly_test(self, func, expected):
         self.maxDiff = None
         got = self.get_disassembly(func, depth=0)
-        self.do_disassembly_compare(got, expected, with_exception_table=with_exception_table)
+        self.do_disassembly_compare(got, expected)
         # Add checks for dis.disco
         if hasattr(func, '__code__'):
             got_disco = io.StringIO()
@@ -1130,7 +1131,7 @@ class DisTests(DisTestBase):
             sys.last_exc = e
 
         tb_dis = self.get_disassemble_as_string(tb.tb_frame.f_code, tb.tb_lasti)
-        self.do_disassembly_test(None, tb_dis, True)
+        self.do_disassembly_test(None, tb_dis)
 
     def test_dis_object(self):
         self.assertRaises(TypeError, dis.dis, object())
@@ -1139,7 +1140,6 @@ class DisTests(DisTestBase):
         def check(expected, **kwargs):
             dis = self.get_disassembly(_h, **kwargs)
             dis = self.strip_addresses(dis)
-            dis = self.collapse_exception_table(dis)
             self.assertEqual(dis, expected)
 
         check(dis_nested_0, depth=0)
@@ -1166,7 +1166,7 @@ class DisTests(DisTestBase):
     def test_super_instructions(self):
         self.code_quicken(lambda: load_test(0, 0))
         got = self.get_disassembly(load_test, adaptive=True)
-        self.do_disassembly_compare(got, dis_load_test_quickened_code, True)
+        self.do_disassembly_compare(got, dis_load_test_quickened_code)
 
     @cpython_only
     @requires_specialization
@@ -1220,7 +1220,7 @@ class DisTests(DisTestBase):
         co = compile("'a'.__class__", "", "eval")
         self.code_quicken(lambda: exec(co, {}, {}))
         got = self.get_disassembly(co, adaptive=True)
-        self.do_disassembly_compare(got, load_attr_quicken, True)
+        self.do_disassembly_compare(got, load_attr_quicken)
 
     @cpython_only
     @requires_specialization
@@ -1255,7 +1255,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_extended_arg_quick(self):
         got = self.get_disassembly(extended_arg_quick)
-        self.do_disassembly_compare(got, dis_extended_arg_quick_code, True)
+        self.do_disassembly_compare(got, dis_extended_arg_quick_code)
 
     def get_cached_values(self, quickened, adaptive):
         def f():
@@ -2132,8 +2132,7 @@ class BytecodeTests(InstructionTestCase, DisTestBase):
         self.maxDiff = None
         tb = get_tb()
         b = dis.Bytecode.from_traceback(tb)
-        got = self.collapse_exception_table(b.dis())
-        self.assertEqual(got, dis_traceback)
+        self.assertEqual(b.dis(), dis_traceback)
 
     @requires_debug_ranges()
     def test_bytecode_co_positions(self):
