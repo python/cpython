@@ -579,6 +579,16 @@ Glossary
       :ref:`idle` is a basic editor and interpreter environment
       which ships with the standard distribution of Python.
 
+   immortal
+      If an object is immortal, its reference count is never modified, and
+      therefore it is never deallocated.
+
+      Built-in strings and singletons are immortal objects. For example,
+      :const:`True` and :const:`None` singletons are immmortal.
+
+      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
+      <https://peps.python.org/pep-0683/>`_ for more information.
+
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
       tuples.  Such an object cannot be altered.  A new object has to
@@ -1056,7 +1066,7 @@ Glossary
    reference count
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Some objects are
-      "immortal" and have reference counts that are never modified, and
+      :term:`immortal` and have reference counts that are never modified, and
       therefore the objects are never deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
       :term:`CPython` implementation.  Programmers can call the
