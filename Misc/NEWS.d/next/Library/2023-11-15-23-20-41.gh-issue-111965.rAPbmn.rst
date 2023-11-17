@@ -1,1 +1,0 @@
-Using critical sections to make ``io.StringIO`` thread safe.
