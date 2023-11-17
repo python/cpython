@@ -115,7 +115,7 @@ class Instruction:
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
         dprint: typing.Callable[..., None] = lambda *args, **kwargs: None
-        if self.name == "_FOR_ITER_TIER_TWO":
+        if "FRAME" in self.name:
             dprint = print
 
         if self.name == "_EXIT_TRACE":
