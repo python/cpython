@@ -8,6 +8,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        debug:
+          - true
+          - false
+        llvm:
+          - 16
         target:
           - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
@@ -16,11 +21,6 @@ jobs:
           - x86_64-unknown-linux-gnu/clang
           - aarch64-unknown-linux-gnu/gcc
           - aarch64-unknown-linux-gnu/clang
-        debug:
-          - true
-          - false
-        llvm:
-          - 16
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
@@ -87,12 +87,12 @@ jobs:
       - name: Emulated Linux
         if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
         run: |
-          sudo apt install --yes gcc-$HOST qemu-user
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --prefix="$(pwd)/../build"
           make install --jobs 2
           make clean --jobs 2
+          sudo apt install --yes "gcc-$HOST" qemu-user
           export HOST=${{ matrix.architecture }}-linux-gnu
           ${{ !matrix.debug && matrix.compiler == 'clang' && './configure --enable-optimizations' || '' }}
           ${{ !matrix.debug && matrix.compiler == 'clang' && 'make profile-run-stamp --jobs 2' || '' }}
@@ -100,6 +100,6 @@ jobs:
           export CPP="$CC --preprocess"
           export HOSTRUNNER=qemu-${{ matrix.architecture }}
           export QEMU_LD_PREFIX="/usr/$HOST"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host=$HOST --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 2
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
