@@ -658,7 +658,7 @@ class Generator(Analyzer):
                 if not part.instr.is_viable_uop() and "replaced" not in part.instr.annotations:
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
-                    # It is sometimes emitted for macros that have a
+                    # Suppress it using 'replaced op(...)' for macros having
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
                     if len(parts) > 1 or part.instr.name != name:
