@@ -182,6 +182,11 @@ Functions and classes provided:
    without needing to explicitly close ``page``.  Even if an error occurs,
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
+   .. note::
+
+      As of Python 3, :func:`urllib.request.urlopen` return values can be
+      used as context managers directly; there is no need to use ``closing``
+      with them. The example above is just for illustration purposes.
 
 .. function:: aclosing(thing)
 
