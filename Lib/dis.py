@@ -314,16 +314,6 @@ def _get_jump_target(op, arg, offset):
         target = None
     return target
 
-def _label_string(label_info, width=None, suffix=''):
-    if label_info is not None:
-        label, prefix = label_info
-        lbl = f'{label}'
-        padding = width - len(lbl) if width is not None else 0
-        assert padding >= 0
-        return f"{prefix}{lbl}{suffix}{'':<{padding}}"
-    else:
-        return ' ' * (width + 1 + len(suffix))
-
 class Instruction(_Instruction):
     """Details for a bytecode operation.
 
@@ -375,13 +365,13 @@ class Instruction(_Instruction):
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:
                 argval = arg*2
-                argrepr = f"to {_label_string(labels_map[argval])}"
+                argrepr = f"to L{labels_map[argval]}"
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
                 argval = offset + 2 + signed_arg*2
                 caches = _get_cache_size(_all_opname[deop])
                 argval += 2 * caches
-                argrepr = f"to {_label_string(labels_map[argval])}"
+                argrepr = f"to L{labels_map[argval]}"
             elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
@@ -425,8 +415,7 @@ class Instruction(_Instruction):
         label = labels_map.get(offset, None)
         instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
                             offset, start_offset, starts_line, line_number,
-                            label[0] if label else None, positions)
-        instr.label_info = label
+                            label, positions)
         instr.label_width = label_width
         instr.exc_handler = exceptions_map.get(offset, None)
         return instr
@@ -483,8 +472,8 @@ class Instruction(_Instruction):
         *offset_width* sets the width of the instruction offset field
         """
         fields = []
-        # Column: Exception handlers
-        fields.append(' ' * (self.label_width + 3))
+        # Column: Labels (on separate lines)
+        fields.append("   ")
         # Column: Source code line number
         if lineno_width:
             if self.starts_line:
@@ -498,10 +487,6 @@ class Instruction(_Instruction):
             fields.append('-->')
         else:
             fields.append('   ')
-        # Column: Jump target marker
-        fields.append(_label_string(self.label_info,
-                                    width=self.label_width,
-                                    suffix=':  '))
         # Column: Opcode name
         fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
@@ -637,19 +622,22 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         jump_targets = set(findlabels(original_code))
         labels = set(jump_targets)
         for start, end, target, _, _ in exception_entries:
+            labels.add(start)
+            labels.add(end)
             labels.add(target)
         labels = sorted(labels)
-        labels_map = {offset: (i+1, 'J' if offset in jump_targets else 'H')
-                      for (i, offset) in enumerate(sorted(labels))}
+        labels_map = {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
         for e in exception_entries:
-            e.target_label = labels_map[e.target][0]
+            e.start_label = labels_map[e.start]
+            e.end_label = labels_map[e.end]
+            e.target_label = labels_map[e.target]
         return labels_map
 
     labels_map = make_labels_map(original_code, exception_entries)
 
     exceptions_map = {}
     for start, end, target, _, _ in exception_entries:
-        exceptions_map[start] = labels_map[target][0]
+        exceptions_map[start] = labels_map[target]
         exceptions_map[end] = -1
 
     starts_line = False
@@ -748,7 +736,6 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     else:
         offset_width = 4
 
-    first_char = ' '
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          co_consts, linestarts,
                                          line_offset=line_offset,
@@ -756,38 +743,30 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                                          co_positions=co_positions,
                                          show_caches=show_caches,
                                          original_code=original_code):
-        new_source_line = ((show_lineno and
-                            instr.starts_line and
-                            instr.offset > 0) or
-                           (instr.exc_handler is not None))
+        new_source_line = (show_lineno and
+                           instr.starts_line and
+                           instr.offset > 0)
 
         if new_source_line:
-            if instr.exc_handler == -1:
-                print('-', file=file)
-                first_char = ' '
-                print(first_char, file=file)
-            elif instr.exc_handler is not None:
-                print(first_char, file=file)
-                lbl = f'H{instr.exc_handler}'
-                print(f'{lbl:<{instr.label_width}}   ', file=file)
-                first_char = '|'
-            else:
-                print(first_char, file=file)
+            print(file=file)
         if show_caches:
             is_current_instr = instr.offset == lasti
         else:
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
-        print(first_char + instr._disassemble(lineno_width, is_current_instr, offset_width),
+        if instr.label is not None:
+            print(f"L{instr.label}:")
+        print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:
         print("ExceptionTable:", file=file)
         for entry in exception_entries:
             lasti = " lasti" if entry.lasti else ""
-            end = entry.end-2
-            target_lbl = entry.target_label
-            print(f"  {entry.start} to {end} -> H{target_lbl} [{entry.depth}]{lasti}", file=file)
+            start = entry.start_label
+            end = entry.end_label
+            target = entry.target_label
+            print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
