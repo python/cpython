@@ -1,6 +1,7 @@
 """Tests for http/cookiejar.py."""
 
 import os
+import pickle
 import stat
 import sys
 import re
@@ -330,20 +331,35 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
     return cookie_hdr
 
 
-class FileCookieJarTests(unittest.TestCase):
+class PickleTest:
+    def check_pickle(self, cookiejar):
+        lock_type = type(cookiejar._cookies_lock)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                d = pickle.dumps(cookiejar, proto)
+                other = pickle.loads(d)
+                self.assertIs(type(other), type(cookiejar))
+                self.assertEqual(repr(other), repr(cookiejar))
+                self.assertEqual(type(other._cookies_lock), lock_type)
+
+
+class FileCookieJarTests(unittest.TestCase, PickleTest):
     def test_constructor_with_str(self):
         filename = os_helper.TESTFN
         c = LWPCookieJar(filename)
         self.assertEqual(c.filename, filename)
+        self.check_pickle(c)
 
     def test_constructor_with_path_like(self):
         filename = pathlib.Path(os_helper.TESTFN)
         c = LWPCookieJar(filename)
         self.assertEqual(c.filename, os.fspath(filename))
+        self.check_pickle(c)
 
     def test_constructor_with_none(self):
         c = LWPCookieJar(None)
         self.assertIsNone(c.filename)
+        self.check_pickle(c)
 
     def test_constructor_with_other_types(self):
         class A:

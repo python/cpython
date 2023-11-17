@@ -1776,6 +1776,7 @@ class CookieJar:
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+        self._cookies_lock = _threading.RLock()
 
 
 # derives from OSError for backwards-compatibility with Python 2.4.0
