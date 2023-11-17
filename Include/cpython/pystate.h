@@ -214,7 +214,11 @@ struct _ts {
 
 };
 
-#ifdef __wasi__
+#ifdef Py_DEBUG
+   // A debug build is likely built with low optimization level which implies
+   // higher stack memory usage than a release build: use a lower limit.
+#  define Py_C_RECURSION_LIMIT 500
+#elif defined(__wasi__)
    // WASI has limited call stack. Python's recursion limit depends on code
    // layout, optimization, and WASI runtime. Wasmtime can handle about 700
    // recursions, sometimes less. 500 is a more conservative limit.
@@ -231,6 +235,9 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
+// Alias kept for backward compatibility
+#define _PyThreadState_UncheckedGet PyThreadState_GetUnchecked
+
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
@@ -246,6 +253,11 @@ PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
    The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
+
+/* The implementation of sys._current_frames()  Returns a dict mapping
+   thread id to that thread's current frame.
+*/
+PyAPI_FUNC(PyObject*) _PyThread_CurrentFrames(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */

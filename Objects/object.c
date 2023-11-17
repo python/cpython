@@ -297,15 +297,17 @@ _Py_DecRef(PyObject *o)
 }
 
 #ifdef Py_NOGIL
+# ifdef Py_REF_DEBUG
 static inline int
 is_shared_refcnt_dead(Py_ssize_t shared)
 {
-#if SIZEOF_SIZE_T == 8
+#  if SIZEOF_SIZE_T == 8
     return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
-#else
+#  else
     return shared == (Py_ssize_t)0xDDDDDDDD;
-#endif
+#  endif
 }
+# endif
 
 void
 _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
@@ -412,7 +414,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     return refcnt;
 }
-#endif
+#endif  /* Py_NOGIL */
 
 
 /**************************************/
@@ -1488,19 +1490,14 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        PyObject *attr = PyDict_GetItemWithError(dict, name);
-        if (attr != NULL) {
-            *method = Py_NewRef(attr);
+        if (PyDict_GetItemRef(dict, name, method) != 0) {
+            // found or error
             Py_DECREF(dict);
             Py_XDECREF(descr);
             return 0;
         }
+        // not found
         Py_DECREF(dict);
-
-        if (PyErr_Occurred()) {
-            Py_XDECREF(descr);
-            return 0;
-        }
     }
 
     if (meth_found) {
@@ -1605,21 +1602,17 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        res = PyDict_GetItemWithError(dict, name);
+        int rc = PyDict_GetItemRef(dict, name, &res);
+        Py_DECREF(dict);
         if (res != NULL) {
-            Py_INCREF(res);
-            Py_DECREF(dict);
             goto done;
         }
-        else {
-            Py_DECREF(dict);
-            if (PyErr_Occurred()) {
-                if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    PyErr_Clear();
-                }
-                else {
-                    goto done;
-                }
+        else if (rc < 0) {
+            if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                goto done;
             }
         }
     }

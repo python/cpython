@@ -1,0 +1,4 @@
+Add :c:func:`PyDict_Pop` and :c:func:`PyDict_PopString` functions: remove a key
+from a dictionary and optionally return the removed value. This is similar to
+:meth:`dict.pop`, but without the default value and not raising :exc:`KeyError`
+if the key missing. Patch by Stefan Behnel and Victor Stinner.

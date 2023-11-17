@@ -1,15 +1,12 @@
-dnl ***************************************************
-dnl * Please run autoreconf -if to test your changes! *
-dnl ***************************************************
+dnl ************************************************************
+dnl * Please run autoreconf -ivf -Werror to test your changes! *
+dnl ************************************************************
 dnl
 dnl Python's configure script requires autoconf 2.71, autoconf-archive,
-dnl pkgconf's m4 macros.
+dnl aclocal 1.16, and pkg-config.
 dnl
-dnl It is recommended to use a cpython_autoconf container to regenerate the
-dnl configure script:
-dnl
-dnl podman run --rm --pull=always -v $(pwd):/src:Z quay.io/tiran/cpython_autoconf:271
-dnl docker run --rm --pull=always -v $(pwd):/src quay.io/tiran/cpython_autoconf:271
+dnl It is recommended to use the Tools/build/regen-configure.sh shell script
+dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
@@ -6290,9 +6287,11 @@ dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-  dnl If we are here, we found a locally-supplied version of libncursesw.
+  dnl System-supplied ncurses combines libncurses/libpanel and supports wide
+  dnl characters, so we can use it like ncursesw.
+  dnl If a locally-supplied version of libncursesw is found, we will use that.
   dnl There should also be a libpanelw.
   dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
   dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
