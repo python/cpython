@@ -582,7 +582,7 @@ test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
     if (HeapTypeNameType == NULL) {
-        Py_RETURN_NONE;
+        return NULL;
     }
     tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
     assert(PyUnicode_EqualToUTF8(tp_name, "HeapTypeNameType"));
@@ -620,7 +620,7 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
     if (HeapTypeNameType == NULL) {
-        Py_RETURN_NONE;
+        return NULL;
     }
     tp_qualname = PyType_GetQualName((PyTypeObject *)HeapTypeNameType);
     assert(PyUnicode_EqualToUTF8(tp_qualname, "HeapTypeNameType"));
@@ -658,7 +658,7 @@ test_get_type_fullyqualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
     if (HeapTypeNameType == NULL) {
-        Py_RETURN_NONE;
+        return NULL;
     }
     name = PyType_GetFullyQualifiedName((PyTypeObject *)HeapTypeNameType);
     assert(PyUnicode_EqualToUTF8(name, "_testcapi.HeapTypeNameType"));
