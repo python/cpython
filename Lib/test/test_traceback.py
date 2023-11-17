@@ -38,6 +38,25 @@ test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
 LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
 
+class ModuleTestBase:
+
+    def make_module(self, mod_name, code):
+        tmpdir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmpdir)
+
+        sys.path.append(str(tmpdir))
+        self.addCleanup(sys.path.pop)
+
+        if not mod_name:
+            mod_name = ''.join(random.choices(string.ascii_letters, k=16))
+        self.addCleanup(lambda: sys.modules.pop(mod_name, None))
+
+        module = tmpdir / (mod_name + ".py")
+        module.write_text(code)
+
+        return mod_name
+
+
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
@@ -2713,6 +2732,7 @@ class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
 
+
 class TestTracebackException(unittest.TestCase):
 
     def test_smoke(self):
@@ -3220,10 +3240,397 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         self.assertEqual(exc, ALWAYS_EQ)
 
 
+class MyRuntimeError(RuntimeError):
+    pass
+
+
+class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
+
+    ATTRS = ('__name__', '__module__', '__qualname__')
+
+    NOT_SET = object()
+
+    def check(self, exc, exc_type=NOT_SET, /, **expected):
+        if exc_type is self.NOT_SET:
+            exc_type = type(exc)
+        tb = exc.__traceback__
+        tbexc = traceback.TracebackException(exc_type, exc, tb)
+        tbexc_type = tbexc.exc_type
+        attrs = {name: getattr(tbexc_type, name, None)
+                 for name in self.ATTRS}
+
+        self.assertEqual(attrs, expected)
+        return tbexc
+
+    def check_proxy(self, exc, proxy, /, **expected):
+        with self.assertRaises(TypeError):
+            return self.check(exc, proxy, **expected)
+
+    def check_str(self, exc, qualname, /, **expected):
+        with self.assertRaises(TypeError):
+            return self.check(exc, qualname, **expected)
+
+    def test_builtin_exception(self):
+        expected = dict(
+            __name__='RuntimeError',
+            __module__='builtins',
+            __qualname__='RuntimeError',
+        )
+        try:
+            raise RuntimeError('spam')
+        except Exception as e:
+            exc = e
+
+        with self.subTest('exception'):
+            self.check(exc, **expected)
+
+        with self.subTest('matching proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('mismatching proxy'):
+            proxy = type(sys.implementation)(
+                __name__='MyRuntimeError',
+                __module__='mymod',
+                __qualname__='mymod.MyRuntimeError',
+            )
+            self.check_proxy(exc, proxy, **vars(proxy))
+
+        with self.subTest('str'):
+            exc_type = expected['__qualname__']
+            self.check_str(exc, exc_type, **expected)
+
+        with self.subTest('missing'):
+            self.check(exc, None, **{n: None for n in self.ATTRS})
+
+    class MyOuterError(RuntimeError):
+        pass
+
+    def test_custom_exception(self):
+        expected = dict(
+            __name__='MyRuntimeError',
+            __module__=self.__module__,
+            __qualname__='MyRuntimeError',
+        )
+        try:
+            raise MyRuntimeError('spam')
+        except Exception as e:
+            exc = e
+
+        with self.subTest('exception'):
+            self.check(exc, **expected)
+
+        with self.subTest('matching proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('mismatching proxy'):
+            proxy = type(sys.implementation)(
+                __name__='AnotherError',
+                __module__='mymod',
+                __qualname__='mymod.AnotherError',
+            )
+            self.check_proxy(exc, proxy, **vars(proxy))
+
+        with self.subTest('str'):
+            exc_type = expected['__qualname__']
+            self.check_str(exc, exc_type, **expected)
+
+        with self.subTest('missing'):
+            self.check(exc, None, **{n: None for n in self.ATTRS})
+
+        # A custom exception type in a class definition:
+        context = f'TestTracebackExceptionExcType'
+        expected_outer = dict(
+            __name__='MyOuterError',
+            __module__=self.__module__,
+            __qualname__=f'{context}.MyOuterError',
+        )
+        try:
+            raise self.MyOuterError('spam')
+        except Exception as e:
+            exc_outer = e
+        with self.subTest('outer exception'):
+            self.check(exc_outer, **expected_outer)
+
+        # A custom exception type in a function definition:
+        context += '.test_custom_exception'
+        expected_inner = dict(
+            __name__='MyInnerError',
+            __module__=self.__module__,
+            __qualname__=f'{context}.<locals>.MyInnerError',
+        )
+        class MyInnerError(RuntimeError):
+            pass
+        try:
+            raise MyInnerError('spam')
+        except Exception as e:
+            exc_inner = e
+        with self.subTest('inner exception'):
+            self.check(exc_inner, **expected_inner)
+
+    def test_SyntaxError(self):
+        expected = dict(
+            __name__='SyntaxError',
+            __module__='builtins',
+            __qualname__='SyntaxError',
+        )
+        modname = self.make_module('mymodule', """if True:
+            spam(...  # missing close paren
+            """)
+        try:
+            import mymodule
+        except Exception as e:
+            exc = e
+
+        with self.subTest('exception'):
+            tbexc = self.check(exc, **expected)
+            # Verify the special-casing in __init__().
+            self.assertEqual(tbexc.msg, exc.msg)
+
+        with self.subTest('matching proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('mismatching proxy'):
+            proxy = type(sys.implementation)(
+                __name__='AnotherError',
+                __module__='mymod',
+                __qualname__='mymod.AnotherError',
+            )
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('str'):
+            exc_type = expected['__qualname__']
+            self.check_str(exc, exc_type, **expected)
+
+        with self.subTest('missing'):
+            self.check(exc, None, **{n: None for n in self.ATTRS})
+
+        # A custom subclass:
+        class MySyntaxError(SyntaxError):
+            pass
+        expected_sub = dict(
+            __name__='MySyntaxError',
+            __module__=self.__module__,
+            __qualname__=MySyntaxError.__qualname__,
+        )
+        try:
+            raise MySyntaxError()
+        except Exception as e:
+            for name in dir(exc):
+                if not name.startswith('_') and not getattr(e, name, None):
+                    setattr(e, name, getattr(exc, name))
+            exc_sub = e
+
+        with self.subTest('exception subclass'):
+            tbexc = self.check(exc_sub, **expected_sub)
+            # Verify the special-casing in __init__().
+            self.assertEqual(tbexc.msg, exc_sub.msg)
+
+        with self.subTest('subclass matching proxy'):
+            proxy = type(sys.implementation)(**expected_sub)
+            self.check_proxy(exc, proxy, **expected_sub)
+
+        with self.subTest('dishonest proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+    def test_ImportError(self):
+        expected = dict(
+            __name__='ImportError',
+            __module__='builtins',
+            __qualname__='ImportError',
+        )
+        try:
+            from sys import mdules  # should be modules
+        except Exception as e:
+            exc = e
+
+        with self.subTest('exception'):
+            tbexc = self.check(exc, **expected)
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
+
+        with self.subTest('matching proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('mismatching proxy'):
+            proxy = type(sys.implementation)(
+                __name__='AnotherError',
+                __module__='mymod',
+                __qualname__='mymod.AnotherError',
+            )
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('str'):
+            exc_type = expected['__qualname__']
+            self.check_str(exc, exc_type, **expected)
+
+        with self.subTest('missing'):
+            self.check(exc, None, **{n: None for n in self.ATTRS})
+
+        # A custom subclass:
+        class MyImportError(ImportError):
+            pass
+        expected_sub = dict(
+            __name__='MyImportError',
+            __module__=self.__module__,
+            __qualname__=MyImportError.__qualname__,
+        )
+        try:
+            raise MyImportError()
+        except Exception as e:
+            for name in dir(exc):
+                if not name.startswith('_') and not getattr(e, name, None):
+                    setattr(e, name, getattr(exc, name))
+            exc_sub = e
+
+        with self.subTest('exception subclass'):
+            tbexc = self.check(exc_sub, **expected_sub)
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
+
+        with self.subTest('subclass matching proxy'):
+            proxy = type(sys.implementation)(**expected_sub)
+            self.check_proxy(exc, proxy, **expected_sub)
+
+        with self.subTest('dishonest proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+    def test_AttributeError(self):
+        expected = dict(
+            __name__='AttributeError',
+            __module__='builtins',
+            __qualname__='AttributeError',
+        )
+        obj = type(sys.implementation)()
+        obj._this_var_does_not_exist = ...
+        try:
+            spam = obj.this_var_does_not_exist
+        except Exception as e:
+            exc = e
+
+        with self.subTest('exception'):
+            tbexc = self.check(exc, **expected)
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
+
+        with self.subTest('matching proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('mismatching proxy'):
+            proxy = type(sys.implementation)(
+                __name__='AnotherError',
+                __module__='mymod',
+                __qualname__='mymod.AnotherError',
+            )
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('str'):
+            exc_type = expected['__qualname__']
+            self.check_str(exc, exc_type, **expected)
+
+        with self.subTest('missing'):
+            self.check(exc, None, **{n: None for n in self.ATTRS})
+
+        # A custom subclass:
+        class MyAttributeError(AttributeError):
+            pass
+        expected_sub = dict(
+            __name__='MyAttributeError',
+            __module__=self.__module__,
+            __qualname__=MyAttributeError.__qualname__,
+        )
+        try:
+            raise MyAttributeError()
+        except Exception as e:
+            for name in dir(exc):
+                if not name.startswith('_') and not getattr(e, name, None):
+                    setattr(e, name, getattr(exc, name))
+            exc_sub = e
+
+        with self.subTest('subclass matching proxy'):
+            proxy = type(sys.implementation)(**expected_sub)
+            self.check_proxy(exc, proxy, **expected_sub)
+
+        with self.subTest('dishonest proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+    def test_NameError(self):
+        expected = dict(
+            __name__='NameError',
+            __module__='builtins',
+            __qualname__='NameError',
+        )
+        _this_var_does_not_exist = ...
+        try:
+            spam = this_var_does_not_exist
+        except Exception as e:
+            exc = e
+
+        with self.subTest('exception'):
+            tbexc = self.check(exc, **expected)
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
+
+        with self.subTest('matching proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('mismatching proxy'):
+            proxy = type(sys.implementation)(
+                __name__='AnotherError',
+                __module__='mymod',
+                __qualname__='mymod.AnotherError',
+            )
+            self.check_proxy(exc, proxy, **expected)
+
+        with self.subTest('str'):
+            exc_type = expected['__qualname__']
+            self.check_str(exc, exc_type, **expected)
+
+        with self.subTest('missing'):
+            self.check(exc, None, **{n: None for n in self.ATTRS})
+
+        # A custom subclass:
+        class MyNameError(NameError):
+            pass
+        expected_sub = dict(
+            __name__='MyNameError',
+            __module__=self.__module__,
+            __qualname__=MyNameError.__qualname__,
+        )
+        try:
+            raise MyNameError()
+        except Exception as e:
+            for name in dir(exc):
+                if not name.startswith('_') and not getattr(e, name, None):
+                    setattr(e, name, getattr(exc, name))
+            exc_sub = e
+
+        with self.subTest('exception subclass'):
+            tbexc = self.check(exc_sub, **expected_sub)
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
+
+        with self.subTest('subclass matching proxy'):
+            proxy = type(sys.implementation)(**expected_sub)
+            self.check_proxy(exc, proxy, **expected_sub)
+
+        with self.subTest('dishonest proxy'):
+            proxy = type(sys.implementation)(**expected)
+            self.check_proxy(exc, proxy, **expected)
+
+
 global_for_suggestions = None
 
 
-class SuggestionFormattingTestBase:
+class SuggestionFormattingTestBase(ModuleTestBase):
     def get_suggestion(self, obj, attr_name=None):
         if attr_name is not None:
             def callable():
@@ -3391,21 +3798,8 @@ class SuggestionFormattingTestBase:
         self.assertIn("Did you mean", actual)
         self.assertIn("bluch", actual)
 
-    def make_module(self, code):
-        tmpdir = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, tmpdir)
-
-        sys.path.append(str(tmpdir))
-        self.addCleanup(sys.path.pop)
-
-        mod_name = ''.join(random.choices(string.ascii_letters, k=16))
-        module = tmpdir / (mod_name + ".py")
-        module.write_text(code)
-
-        return mod_name
-
     def get_import_from_suggestion(self, mod_dict, name):
-        modname = self.make_module(mod_dict)
+        modname = self.make_module(None, mod_dict)
 
         def callable():
             try:
