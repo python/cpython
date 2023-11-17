@@ -1,8 +1,8 @@
 #include "Python.h"
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"              // _PyDict_DelItemIf()
 #include "pycore_object.h"            // _PyObject_GET_WEAKREFS_LISTPTR
 #include "pycore_weakref.h"           // _PyWeakref_IS_DEAD()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 
 #define GET_WEAKREFS_LISTPTR(o) \
         ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
