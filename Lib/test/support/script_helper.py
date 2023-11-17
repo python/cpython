@@ -8,7 +8,6 @@ import os
 import os.path
 import subprocess
 import py_compile
-import zipfile
 
 from importlib.util import source_from_cache
 from test import support
@@ -226,6 +225,7 @@ def make_script(script_dir, script_basename, source, omit_suffix=False):
 
 
 def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
+    import zipfile
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
     with zipfile.ZipFile(zip_name, 'w') as zip_file:
@@ -252,6 +252,7 @@ def make_pkg(pkg_dir, init_source=''):
 
 def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
                  source, depth=1, compiled=False):
+    import zipfile
     unlink = []
     init_name = make_script(zip_dir, '__init__', '')
     unlink.append(init_name)
