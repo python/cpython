@@ -7555,7 +7555,7 @@ class NamedTupleTests(BaseTestCase):
         normal_exception = cm.exception
 
         with self.assertRaisesRegex(CustomException, "Cannot do that!") as cm:
-            class NamedTupleClass:
+            class NamedTupleClass(NamedTuple):
                 attr = Annoying()
         namedtuple_exception = cm.exception
 
