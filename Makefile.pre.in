@@ -1348,7 +1348,7 @@ regen-limited-abi: all
 
 .PHONY: regen-unicodedata
 regen-unicodedata:
-	$(PYTHON_FOR_REGEN) Tools/unicode/makeunicodedata.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
 
 
 ############################################################################
@@ -1359,10 +1359,10 @@ regen-unicodedata:
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects regen-unicodedata
+	regen-test-levenshtein regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi"
-	@echo "and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
+	@echo "make regen-configure and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1609,6 +1609,7 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
 
 Python/flowgraph.o: \
@@ -1768,6 +1769,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pyframe.h \
+		$(srcdir)/Include/cpython/pyhash.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
@@ -2641,15 +2643,9 @@ recheck:
 autoconf:
 	(cd $(srcdir); autoreconf -ivf -Werror)
 
-# See https://github.com/tiran/cpython_autoconf container
 .PHONY: regen-configure
 regen-configure:
-	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
-	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
-	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
-	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:271"; \
-	echo $$CMD; \
-	$$CMD || exit $?
+	$(srcdir)/Tools/build/regen-configure.sh
 
 # Create a tags file for vi
 tags::
