@@ -2505,6 +2505,28 @@ class TestType(unittest.TestCase):
         D.__module__ = 123
         self.assertEqual(D.__fully_qualified_name__, D.__qualname__)
 
+        # built-in type
+        self.assertEqual(str.__name__, 'str')
+        self.assertEqual(str.__qualname__, 'str')
+        self.assertEqual(str.__module__, 'builtins')
+        self.assertEqual(str.__fully_qualified_name__, 'str')
+
+        def func():
+            return 3
+        CodeType = type(func.__code__)
+        self.assertEqual(CodeType.__name__, 'code')
+        self.assertEqual(CodeType.__qualname__, 'code')
+        self.assertEqual(CodeType.__module__, 'builtins')
+        self.assertEqual(CodeType.__fully_qualified_name__, 'code')
+
+        # fully qualified name which contains the module name
+        SimpleNamespace = types.SimpleNamespace
+        self.assertEqual(SimpleNamespace.__name__, 'SimpleNamespace')
+        self.assertEqual(SimpleNamespace.__qualname__, 'SimpleNamespace')
+        self.assertEqual(SimpleNamespace.__module__, 'types')
+        self.assertEqual(SimpleNamespace.__fully_qualified_name__,
+                         'types.SimpleNamespace')
+
     def test_type_qualname(self):
         A = type('A', (), {'__qualname__': 'B.C'})
         self.assertEqual(A.__name__, 'A')
