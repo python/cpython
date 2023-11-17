@@ -7577,7 +7577,7 @@ class NamedTupleTests(BaseTestCase):
             normal_exception.__notes__[0].replace("NormalClass", "NamedTupleClass")
         )
 
-    def test_exception_raised_if_accessing_set_name_causes_strange_error(self):
+    def test_no_exception_raised_if_accessing_set_name_causes_strange_error(self):
         class Meta(type):
             def __getattribute__(self, attr):
                 if attr == "__set_name__":
