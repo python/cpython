@@ -3166,21 +3166,41 @@ textiowrapper_iternext(textio *self)
 }
 
 static PyObject *
-textiowrapper_name_get(textio *self, void *context)
+textiowrapper_name_get_impl(textio *self, void *context)
 {
     CHECK_ATTACHED(self);
     return PyObject_GetAttr(self->buffer, &_Py_ID(name));
 }
 
 static PyObject *
-textiowrapper_closed_get(textio *self, void *context)
+textiowrapper_name_get(textio *self, void *context)
+{
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = textiowrapper_name_get_impl(self, context);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyObject *
+textiowrapper_closed_get_impl(textio *self, void *context)
 {
     CHECK_ATTACHED(self);
     return PyObject_GetAttr(self->buffer, &_Py_ID(closed));
 }
 
 static PyObject *
-textiowrapper_newlines_get(textio *self, void *context)
+textiowrapper_closed_get(textio *self, void *context)
+{
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = textiowrapper_closed_get_impl(self, context);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyObject *
+textiowrapper_newlines_get_impl(textio *self, void *context)
 {
     PyObject *res;
     CHECK_ATTACHED(self);
@@ -3193,21 +3213,51 @@ textiowrapper_newlines_get(textio *self, void *context)
 }
 
 static PyObject *
-textiowrapper_errors_get(textio *self, void *context)
+textiowrapper_newlines_get(textio *self, void *context)
+{
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = textiowrapper_newlines_get_impl(self, context);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyObject *
+textiowrapper_errors_get_impl(textio *self, void *context)
 {
     CHECK_INITIALIZED(self);
     return Py_NewRef(self->errors);
 }
 
 static PyObject *
-textiowrapper_chunk_size_get(textio *self, void *context)
+textiowrapper_errors_get(textio *self, void *context)
+{
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = textiowrapper_errors_get_impl(self, context);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyObject *
+textiowrapper_chunk_size_get_impl(textio *self, void *context)
 {
     CHECK_ATTACHED(self);
     return PyLong_FromSsize_t(self->chunk_size);
 }
 
+static PyObject *
+textiowrapper_chunk_size_get(textio *self, void *context)
+{
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = textiowrapper_chunk_size_get_impl(self, context);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
-textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
+textiowrapper_chunk_size_set_impl(textio *self, PyObject *arg, void *context)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
@@ -3225,6 +3275,16 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
     }
     self->chunk_size = n;
     return 0;
+}
+
+static int
+textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
+{
+    int result = 0;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = textiowrapper_chunk_size_set_impl(self, arg, context);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
