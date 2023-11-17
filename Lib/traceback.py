@@ -696,9 +696,24 @@ class _ExceptionPrintContext:
                 yield textwrap.indent(text, indent_str, lambda line: True)
 
 
+def _resolve_exc_type(exc_type):
+    ATTRS = ('__name__', '__module__', '__qualname__')
+    if exc_type is None:
+        return None
+    elif isinstance(exc_type, type):
+        assert all(getattr(exc_type, name, None) for name in ATTRS)
+        return exc_type
+    elif all(getattr(exc_type, name, None) for name in ATTRS):
+        return exc_type
+    else:
+        raise ValueError(f'unsupported exc_type {exc_type!r}')
+
+
 def _match_class(exc_type, *expected):
     assert expected
-    if not exc_type:
+    if exc_type is None:
+        return False
+    if not isinstance(exc_type, type):
         return False
     if not issubclass(exc_type, expected):
         return False
@@ -756,6 +771,8 @@ class TracebackException:
             _seen = set()
         _seen.add(id(exc_value))
 
+        self.exc_type = exc_type = _resolve_exc_type(exc_type)
+
         self.max_group_width = max_group_width
         self.max_group_depth = max_group_depth
 
@@ -763,7 +780,6 @@ class TracebackException:
             _walk_tb_with_full_positions(exc_traceback),
             limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
-        self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _safe_string(exc_value, 'exception')

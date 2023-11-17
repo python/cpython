@@ -3250,25 +3250,37 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
 
     NOT_SET = object()
 
-    def check(self, exc, exc_type=NOT_SET, /, **expected):
+    def _new(self, exc, exc_type=NOT_SET):
         if exc_type is self.NOT_SET:
             exc_type = type(exc)
         tb = exc.__traceback__
-        tbexc = traceback.TracebackException(exc_type, exc, tb)
+        return traceback.TracebackException(exc_type, exc, tb)
+
+    def _check(self, tbexc, expected):
         tbexc_type = tbexc.exc_type
         attrs = {name: getattr(tbexc_type, name, None)
                  for name in self.ATTRS}
-
         self.assertEqual(attrs, expected)
+
+    def check(self, exc, /, **expected):
+        tbexc = self._new(exc, self.NOT_SET)
+        self._check(tbexc, expected)
         return tbexc
 
     def check_proxy(self, exc, proxy, /, **expected):
-        with self.assertRaises(TypeError):
-            return self.check(exc, proxy, **expected)
+        tbexc = self._new(exc, proxy)
+        self._check(tbexc, expected)
+        return tbexc
 
     def check_str(self, exc, qualname, /, **expected):
-        with self.assertRaises(TypeError):
-            return self.check(exc, qualname, **expected)
+        with self.assertRaises(ValueError):
+            self._new(exc, qualname)
+
+    def check_none(self, exc):
+        expected = {n: None for n in self.ATTRS}
+        tbexc = self._new(exc, None)
+        self._check(tbexc, expected)
+        return tbexc
 
     def test_builtin_exception(self):
         expected = dict(
@@ -3301,7 +3313,7 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
-            self.check(exc, None, **{n: None for n in self.ATTRS})
+            self.check_none(exc)
 
     class MyOuterError(RuntimeError):
         pass
@@ -3337,7 +3349,7 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
-            self.check(exc, None, **{n: None for n in self.ATTRS})
+            self.check_none(exc)
 
         # A custom exception type in a class definition:
         context = f'TestTracebackExceptionExcType'
@@ -3390,7 +3402,9 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
 
         with self.subTest('matching proxy'):
             proxy = type(sys.implementation)(**expected)
-            self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertFalse(hasattr(tbexc, 'msg'))
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3398,14 +3412,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
                 __module__='mymod',
                 __qualname__='mymod.AnotherError',
             )
-            self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **vars(proxy))
+            # This cannot match:
+            self.assertFalse(hasattr(tbexc, 'msg'))
 
         with self.subTest('str'):
             exc_type = expected['__qualname__']
             self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
-            self.check(exc, None, **{n: None for n in self.ATTRS})
+            self.check_none(exc)
 
         # A custom subclass:
         class MySyntaxError(SyntaxError):
@@ -3431,10 +3447,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('subclass matching proxy'):
             proxy = type(sys.implementation)(**expected_sub)
             self.check_proxy(exc, proxy, **expected_sub)
+            tbexc = self.check_proxy(exc, proxy, **expected_sub)
+            # This cannot match:
+            self.assertFalse(hasattr(tbexc, 'msg'))
 
         with self.subTest('dishonest proxy'):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertFalse(hasattr(tbexc, 'msg'))
 
     def test_ImportError(self):
         expected = dict(
@@ -3455,6 +3477,9 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('matching proxy'):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3462,14 +3487,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
                 __module__='mymod',
                 __qualname__='mymod.AnotherError',
             )
-            self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **vars(proxy))
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('str'):
             exc_type = expected['__qualname__']
             self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
-            self.check(exc, None, **{n: None for n in self.ATTRS})
+            self.check_none(exc)
 
         # A custom subclass:
         class MyImportError(ImportError):
@@ -3495,10 +3522,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('subclass matching proxy'):
             proxy = type(sys.implementation)(**expected_sub)
             self.check_proxy(exc, proxy, **expected_sub)
+            tbexc = self.check_proxy(exc, proxy, **expected_sub)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('dishonest proxy'):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
     def test_AttributeError(self):
         expected = dict(
@@ -3521,6 +3554,9 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('matching proxy'):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3528,14 +3564,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
                 __module__='mymod',
                 __qualname__='mymod.AnotherError',
             )
-            self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **vars(proxy))
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('str'):
             exc_type = expected['__qualname__']
             self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
-            self.check(exc, None, **{n: None for n in self.ATTRS})
+            self.check_none(exc)
 
         # A custom subclass:
         class MyAttributeError(AttributeError):
@@ -3556,10 +3594,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('subclass matching proxy'):
             proxy = type(sys.implementation)(**expected_sub)
             self.check_proxy(exc, proxy, **expected_sub)
+            tbexc = self.check_proxy(exc, proxy, **expected_sub)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('dishonest proxy'):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
     def test_NameError(self):
         expected = dict(
@@ -3581,6 +3625,9 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('matching proxy'):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3588,14 +3635,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
                 __module__='mymod',
                 __qualname__='mymod.AnotherError',
             )
-            self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **vars(proxy))
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('str'):
             exc_type = expected['__qualname__']
             self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
-            self.check(exc, None, **{n: None for n in self.ATTRS})
+            self.check_none(exc)
 
         # A custom subclass:
         class MyNameError(NameError):
@@ -3621,10 +3670,16 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('subclass matching proxy'):
             proxy = type(sys.implementation)(**expected_sub)
             self.check_proxy(exc, proxy, **expected_sub)
+            tbexc = self.check_proxy(exc, proxy, **expected_sub)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
         with self.subTest('dishonest proxy'):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
+            tbexc = self.check_proxy(exc, proxy, **expected)
+            # This cannot match:
+            self.assertNotIn('Did you mean', str(tbexc))
 
 
 global_for_suggestions = None
