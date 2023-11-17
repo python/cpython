@@ -468,6 +468,9 @@
     <ClInclude Include="..\Include\cpython\pyframe.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyhash.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>

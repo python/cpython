@@ -713,6 +713,42 @@ class DummyPurePathTest(unittest.TestCase):
 class PurePathTest(DummyPurePathTest):
     cls = pathlib.PurePath
 
+    def test_constructor_nested(self):
+        P = self.cls
+        P(FakePath("a/b/c"))
+        self.assertEqual(P(P('a')), P('a'))
+        self.assertEqual(P(P('a'), 'b'), P('a/b'))
+        self.assertEqual(P(P('a'), P('b')), P('a/b'))
+        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
+        self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def test_join_nested(self):
+        P = self.cls
+        p = P('a/b').joinpath(P('c'))
+        self.assertEqual(p, P('a/b/c'))
+
+    def test_div_nested(self):
+        P = self.cls
+        p = P('a/b') / P('c')
+        self.assertEqual(p, P('a/b/c'))
+
+    def test_pickling_common(self):
+        P = self.cls
+        p = P('/a/b')
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            dumped = pickle.dumps(p, proto)
+            pp = pickle.loads(dumped)
+            self.assertIs(pp.__class__, p.__class__)
+            self.assertEqual(pp, p)
+            self.assertEqual(hash(pp), hash(p))
+            self.assertEqual(str(pp), str(p))
+
+    def test_fspath_common(self):
+        P = self.cls
+        p = P('a/b')
+        self._check_str(p.__fspath__(), ('a/b',))
+        self._check_str(os.fspath(p), ('a/b',))
+
     def test_bytes(self):
         P = self.cls
         message = (r"argument should be a str or an os\.PathLike object "
@@ -739,49 +775,6 @@ class PurePathTest(DummyPurePathTest):
             P('a').with_stem(b'b')
         with self.assertRaises(TypeError):
             P('a').with_suffix(b'b')
-
-    def test_constructor_nested(self):
-        P = self.cls
-        P(FakePath("a/b/c"))
-        self.assertEqual(P(P('a')), P('a'))
-        self.assertEqual(P(P('a'), 'b'), P('a/b'))
-        self.assertEqual(P(P('a'), P('b')), P('a/b'))
-        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
-        self.assertEqual(P(P('./a:b')), P('./a:b'))
-
-    def test_join_nested(self):
-        P = self.cls
-        p = P('a/b').joinpath(P('c'))
-        self.assertEqual(p, P('a/b/c'))
-
-    def test_div_nested(self):
-        P = self.cls
-        p = P('a/b') / P('c')
-        self.assertEqual(p, P('a/b/c'))
-
-    def test_repr_roundtrips(self):
-        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            with self.subTest(pathstr=pathstr):
-                p = self.cls(pathstr)
-                r = repr(p)
-                # The repr() roundtrips.
-                q = eval(r, pathlib.__dict__)
-                self.assertIs(q.__class__, p.__class__)
-                self.assertEqual(q, p)
-                self.assertEqual(repr(q), r)
-
-    def test_as_uri_common(self):
-        P = self.cls
-        with self.assertRaises(ValueError):
-            P('a').as_uri()
-        with self.assertRaises(ValueError):
-            P().as_uri()
-
-    def test_fspath_common(self):
-        P = self.cls
-        p = P('a/b')
-        self._check_str(p.__fspath__(), ('a/b',))
-        self._check_str(os.fspath(p), ('a/b',))
 
     def test_as_bytes_common(self):
         sep = os.fsencode(self.sep)
@@ -816,16 +809,23 @@ class PurePathTest(DummyPurePathTest):
         with self.assertRaises(TypeError):
             P() < {}
 
-    def test_pickling_common(self):
+    def test_as_uri_common(self):
         P = self.cls
-        p = P('/a/b')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertIs(pp.__class__, p.__class__)
-            self.assertEqual(pp, p)
-            self.assertEqual(hash(pp), hash(p))
-            self.assertEqual(str(pp), str(p))
+        with self.assertRaises(ValueError):
+            P('a').as_uri()
+        with self.assertRaises(ValueError):
+            P().as_uri()
+
+    def test_repr_roundtrips(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                r = repr(p)
+                # The repr() roundtrips.
+                q = eval(r, pathlib.__dict__)
+                self.assertIs(q.__class__, p.__class__)
+                self.assertEqual(q, p)
+                self.assertEqual(repr(q), r)
 
 
 class PurePosixPathTest(PurePathTest):

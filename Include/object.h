@@ -112,6 +112,9 @@ check by comparing the reference count field to the immortality reference count.
 #define _Py_IMMORTAL_REFCNT_LOCAL UINT32_MAX
 #endif
 
+// Kept for backward compatibility. It was needed by Py_TRACE_REFS build.
+#define _PyObject_EXTRA_INIT
+
 // Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
 // C-API expectation that the refcnt will be set to 1.
 #if defined(Py_NOGIL)

@@ -1,0 +1,4 @@
+When Python is built in debug mode, set the C recursion limit to 500 instead
+of 1500. A debug build is likely built with low optimization level which
+implies higher stack memory usage than a release build. Patch by Victor
+Stinner.

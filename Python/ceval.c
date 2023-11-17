@@ -992,9 +992,7 @@ enter_tier_two:
 
     OPT_STAT_INC(traces_executed);
     _PyUOpInstruction *next_uop = current_executor->trace;
-#ifdef Py_DEBUG
-    uint64_t operand;  // Used by several DPRINTF() calls
-#endif
+    uint64_t operand;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif
@@ -1002,9 +1000,7 @@ enter_tier_two:
     for (;;) {
         opcode = next_uop->opcode;
         oparg = next_uop->oparg;
-#ifdef Py_DEBUG
         operand = next_uop->operand;
-#endif
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
                 (int)(next_uop - current_executor->trace),
@@ -1071,6 +1067,7 @@ deoptimize:
     UOP_STAT_INC(opcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE((PyCodeObject *)frame->f_executable);
     Py_DECREF(current_executor);
     // Fall through
 // Jump here from ENTER_EXECUTOR
@@ -1081,6 +1078,7 @@ enter_tier_one:
 // Jump here from _EXIT_TRACE
 exit_trace:
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE((PyCodeObject *)frame->f_executable);
     Py_DECREF(current_executor);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     goto enter_tier_one;
@@ -1596,13 +1594,13 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (func->func_kwdefaults != NULL) {
-                PyObject *def = PyDict_GetItemWithError(func->func_kwdefaults, varname);
-                if (def) {
-                    localsplus[i] = Py_NewRef(def);
-                    continue;
-                }
-                else if (_PyErr_Occurred(tstate)) {
+                PyObject *def;
+                if (PyDict_GetItemRef(func->func_kwdefaults, varname, &def) < 0) {
                     goto fail_post_args;
+                }
+                if (def) {
+                    localsplus[i] = def;
+                    continue;
                 }
             }
             missing++;
@@ -2405,13 +2403,9 @@ PyEval_GetBuiltins(void)
 PyObject *
 _PyEval_GetBuiltin(PyObject *name)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *attr = PyDict_GetItemWithError(PyEval_GetBuiltins(), name);
-    if (attr) {
-        Py_INCREF(attr);
-    }
-    else if (!_PyErr_Occurred(tstate)) {
-        _PyErr_SetObject(tstate, PyExc_AttributeError, name);
+    PyObject *attr;
+    if (PyDict_GetItemRef(PyEval_GetBuiltins(), name, &attr) == 0) {
+        PyErr_SetObject(PyExc_AttributeError, name);
     }
     return attr;
 }
@@ -2562,12 +2556,12 @@ static PyObject *
 import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
-    PyObject *import_func = _PyDict_GetItemWithError(frame->f_builtins,
-                                                     &_Py_ID(__import__));
+    PyObject *import_func;
+    if (PyDict_GetItemRef(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+        return NULL;
+    }
     if (import_func == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
-        }
+        _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         return NULL;
     }
 
@@ -2578,6 +2572,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
 
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
+        Py_DECREF(import_func);
         int ilevel = PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
@@ -2591,7 +2586,6 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     }
 
     PyObject* args[5] = {name, frame->f_globals, locals, fromlist, level};
-    Py_INCREF(import_func);
     PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
     Py_DECREF(import_func);
     return res;

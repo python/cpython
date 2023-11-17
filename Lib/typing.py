@@ -3345,7 +3345,7 @@ def override[F: _Func](method: F, /) -> F:
     Usage::
 
         class Base:
-            def method(self) -> None: ...
+            def method(self) -> None:
                 pass
 
         class Child(Base):
@@ -3404,8 +3404,8 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
         >>> class P(Protocol):
         ...     def a(self) -> str: ...
         ...     b: int
-        >>> get_protocol_members(P)
-        frozenset({'a', 'b'})
+        >>> get_protocol_members(P) == frozenset({'a', 'b'})
+        True
 
     Raise a TypeError for arguments that are not Protocols.
     """
