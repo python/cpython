@@ -2734,6 +2734,11 @@ class NamedTupleMeta(type):
                     setattr(nm_tpl, key, val)
                 try:
                     set_name = type(val).__set_name__
+                # Emulate as much as possible the behaviour of type_new_set_names
+                # in Objects/typeobject.c: if any exception is raised
+                # while attempting to access a __set_name__ attribute,
+                # swallow the exception and move on.
+                # (We could possibly catch BaseException here, but that feels wrong.)
                 except Exception:
                     pass
                 else:
