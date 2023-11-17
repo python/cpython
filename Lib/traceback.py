@@ -696,6 +696,15 @@ class _ExceptionPrintContext:
                 yield textwrap.indent(text, indent_str, lambda line: True)
 
 
+def _match_class(exc_type, *expected):
+    assert expected
+    if not exc_type:
+        return False
+    if not issubclass(exc_type, expected):
+        return False
+    return True
+
+
 class TracebackException:
     """An exception ready for rendering.
 
@@ -760,7 +769,7 @@ class TracebackException:
         self._str = _safe_string(exc_value, 'exception')
         self.__notes__ = getattr(exc_value, '__notes__', None)
 
-        if exc_type and issubclass(exc_type, SyntaxError):
+        if _match_class(exc_type, SyntaxError):
             # Handle SyntaxError's specially
             self.filename = exc_value.filename
             lno = exc_value.lineno
@@ -771,19 +780,19 @@ class TracebackException:
             self.offset = exc_value.offset
             self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
-        elif exc_type and issubclass(exc_type, ImportError) and \
+        elif _match_class(exc_type, ImportError) and \
                 getattr(exc_value, "name_from", None) is not None:
             wrong_name = getattr(exc_value, "name_from", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
-        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+        elif _match_class(exc_type, NameError, AttributeError) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
-            if issubclass(exc_type, NameError):
+            if _match_class(exc_type, NameError):
                 wrong_name = getattr(exc_value, "name", None)
                 if wrong_name is not None and wrong_name in sys.stdlib_module_names:
                     if suggestion:
@@ -912,7 +921,7 @@ class TracebackException:
                 smod = "<unknown>"
             stype = smod + '.' + stype
 
-        if not issubclass(self.exc_type, SyntaxError):
+        if not _match_class(self.exc_type, SyntaxError):
             if _depth > 0:
                 # Nested exceptions needs correct handling of multiline messages.
                 formatted = _format_final_exc_line(
