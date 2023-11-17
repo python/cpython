@@ -816,6 +816,40 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
         # originally raised.
         self.assertIs(err.exception, raised)
 
+    async def test_cancelled_wakeup(self):
+        condition = asyncio.Condition()
+        state = 0
+        async def consumer():
+            nonlocal state
+            async with condition:
+                while True:
+                    await condition.wait_for(lambda: state > 0)
+                    if state > 10:
+                        return
+                    state -= 1
+
+        # create two consumers
+        c = [asyncio.create_task(consumer()) for _ in range(2)]
+        # wait for them to settle
+        await asyncio.sleep(0)
+        async with condition:
+            # produce one item and wake up one
+            state += 1
+            condition.notify(1)
+
+            # but also cancel it at this point.  This cancellation could come from the outside
+            c[0].cancel()
+
+            # now wait for the item to be consumed
+            # if it doesn't means that our "notify" didn"t take hold.
+            # because it raced with a cancel()
+            try:
+                async with asyncio.timeout(0.01):
+                    await condition.wait_for(lambda: state == 0)
+            except TimeoutError:
+                pass
+            self.assertEqual(state, 0)
+
 class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
     def test_initial_value_zero(self):

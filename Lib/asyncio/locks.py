@@ -257,43 +257,57 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         until it is awakened by a notify() or notify_all() call for
         the same condition variable in another coroutine.  Once
         awakened, it re-acquires the lock and returns True.
+
+        This method may return without having been explicitly awoken by
+        a notify() or notify_all(), which is why the caller should always
+        re-check the state and be prepared to wait() again.
         """
         if not self.locked():
             raise RuntimeError('cannot wait on un-acquired lock')
 
+        fut = self._get_loop().create_future()
         self.release()
         try:
-            fut = self._get_loop().create_future()
-            self._waiters.append(fut)
             try:
-                await fut
-                return True
-            finally:
-                self._waiters.remove(fut)
-
-        finally:
-            # Must re-acquire lock even if wait is cancelled.
-            # We only catch CancelledError here, since we don't want any
-            # other (fatal) errors with the future to cause us to spin.
-            err = None
-            while True:
+                self._waiters.append(fut)
                 try:
-                    await self.acquire()
-                    break
-                except exceptions.CancelledError as e:
-                    err = e
-
-            if err:
-                try:
-                    raise err  # Re-raise most recent exception instance.
+                    await fut
+                    return True
                 finally:
-                    err = None  # Break reference cycles.
+                    self._waiters.remove(fut)
+
+            finally:
+                # Must re-acquire lock even if wait is cancelled.
+                # We only catch CancelledError here, since we don't want any
+                # other (fatal) errors with the future to cause us to spin.
+                err = None
+                while True:
+                    try:
+                        await self.acquire()
+                        break
+                    except exceptions.CancelledError as e:
+                        err = e
+
+                if err:
+                    try:
+                        raise err  # Re-raise most recent exception instance.
+                    finally:
+                        err = None  # Break reference cycles.
+        except BaseException:
+            # Any error raised out of here _may_ have occurred after this Task
+            # believed to have been successfully notified.
+            # Make sure to notify another Task instead.  This may result
+            # in a "spurious wakeup", which is allowed as part of the
+            # Condition Variable protocol.
+            self._notify(1)
+            raise
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
 
         The predicate should be a callable which result will be
-        interpreted as a boolean value.  The final predicate value is
+        interpreted as a boolean value.  The method will repeatedly
+        wait() until it evaluates to true.  The final predicate value is
         the return value.
         """
         result = predicate()
@@ -307,7 +321,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         If the calling coroutine has not acquired the lock when this method
         is called, a RuntimeError is raised.
 
-        This method wakes up at most n of the coroutines waiting for the
+        This method wakes up n of the coroutines waiting for the
         condition variable; it is a no-op if no coroutines are waiting.
 
         Note: an awakened coroutine does not actually return from its
@@ -316,7 +330,9 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         """
         if not self.locked():
             raise RuntimeError('cannot notify on un-acquired lock')
+        self._notify(n)
 
+    def _notify(self, n):
         idx = 0
         for fut in self._waiters:
             if idx >= n:
