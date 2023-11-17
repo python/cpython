@@ -678,19 +678,19 @@ def Union(self, parameters):
       type(None).
     - Unions of unions are flattened, e.g.::
 
-        >>> assert Union[Union[int, str], float] == Union[int, str, float]
+        assert Union[Union[int, str], float] == Union[int, str, float]
 
     - Unions of a single argument vanish, e.g.::
 
-        >>> assert Union[int] == int  # The constructor actually returns int
+        assert Union[int] == int  # The constructor actually returns int
 
     - Redundant arguments are skipped, e.g.::
 
-        >>> assert Union[int, str, int] == Union[int, str]
+        assert Union[int, str, int] == Union[int, str]
 
     - When comparing unions, the argument order is ignored, e.g.::
 
-        >>> assert Union[int, str] == Union[str, int]
+        assert Union[int, str] == Union[str, int]
 
     - You cannot subclass or instantiate a union.
     - You can use Optional[X] as a shorthand for Union[X, None].
