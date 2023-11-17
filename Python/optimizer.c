@@ -324,8 +324,9 @@ uop_dealloc(_PyUOpExecutorObject *self) {
     PyObject_Free(self);
 }
 
-static const char *
-uop_name(int index) {
+const char *
+_PyUopName(int index)
+{
     if (index <= MAX_REAL_OPCODE) {
         return _PyOpcode_OpName[index];
     }
@@ -346,7 +347,7 @@ uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
         PyErr_SetNone(PyExc_IndexError);
         return NULL;
     }
-    const char *name = uop_name(self->trace[index].opcode);
+    const char *name = _PyUopName(self->trace[index].opcode);
     if (name == NULL) {
         name = "<nil>";
     }
@@ -450,7 +451,7 @@ translate_bytecode_to_trace(
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     DPRINTF(2, \
             "  ADD_TO_TRACE(%s, %d, %" PRIu64 ")\n", \
-            uop_name(OPCODE), \
+            _PyUopName(OPCODE), \
             (OPARG), \
             (uint64_t)(OPERAND)); \
     assert(trace_length < max_length); \
@@ -476,7 +477,7 @@ translate_bytecode_to_trace(
     reserved = (n);  // Keep ADD_TO_TRACE honest
 
 // Reserve space for main+stub uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
-#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 3, uop_name(opcode))
+#define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 3, _PyUopName(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
 #define TRACE_STACK_PUSH() \
@@ -548,8 +549,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, uopcode=%s\n",
-                        uop_name(opcode), oparg,
-                        counter, bitcount, jump_likely, uop_name(uopcode));
+                        _PyUopName(opcode), oparg,
+                        counter, bitcount, jump_likely, _PyUopName(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0, target);
                 if (jump_likely) {
                     _Py_CODEUNIT *target_instr = next_instr + oparg;
@@ -709,7 +710,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     }
                     break;
                 }
-                DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
+                DPRINTF(2, "Unsupported opcode %s\n", _PyUopName(opcode));
                 OPT_UNSUPPORTED_OPCODE(opcode);
                 goto done;  // Break out of loop
             }  // End default
@@ -832,6 +833,24 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     assert(dest == -1);
     executor->base.execute = _PyUopExecute;
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
+#ifdef Py_DEBUG
+    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
+    int lltrace = 0;
+    if (python_lltrace != NULL && *python_lltrace >= '0') {
+        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+    }
+    if (lltrace >= 2) {
+        printf("Optimized executor (length %d):\n", length);
+        for (int i = 0; i < length; i++) {
+            printf("%4d %s(%d, %d, %" PRIu64 ")\n",
+                   i,
+                   _PyUopName(executor->trace[i].opcode),
+                   executor->trace[i].oparg,
+                   executor->trace[i].target,
+                   executor->trace[i].operand);
+        }
+    }
+#endif
     return (_PyExecutorObject *)executor;
 }
 

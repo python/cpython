@@ -1210,6 +1210,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
