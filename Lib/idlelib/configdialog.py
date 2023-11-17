@@ -2053,7 +2053,7 @@ class ExtPage(Frame):
                       validatecommand=(self.is_int, '%P'), width=10
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
-            else:  # opt['type'] == 'str'
+            else:  # type == 'str'
                 # Limit size to fit non-expanding space with larger font.
                 Entry(entry_area, textvariable=var, width=15
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
@@ -2088,7 +2088,8 @@ class ExtPage(Frame):
         """
         has_changes = False
         for ext_name in self.extensions:
-            for opt in self.extensions[ext_name]:
+            options = self.extensions[ext_name]
+            for opt in options:
                 if self.set_extension_value(ext_name, opt):
                     has_changes = True
         if has_changes:

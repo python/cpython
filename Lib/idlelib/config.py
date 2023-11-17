@@ -193,7 +193,7 @@ class IdleConf:
                     except OSError:
                         pass
                 userDir = '~'
-        if userDir == '~': # still no path to home!
+        if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
             userDir = os.getcwd()
         userDir = os.path.join(userDir, cfgDir)
@@ -209,7 +209,7 @@ class IdleConf:
                     except OSError:
                         pass
                 raise SystemExit
-        # TODO continue without userDir instead of exit
+        # TODO continue without userDIr instead of exit
         return userDir
 
     def GetOption(self, configType, section, option, default=None, type=None,
@@ -267,7 +267,7 @@ class IdleConf:
         if configSet == 'user':
             cfgParser = self.userCfg[configType]
         elif configSet == 'default':
-            cfgParser = self.defaultCfg[configType]
+            cfgParser=self.defaultCfg[configType]
         else:
             raise InvalidConfigSet('Invalid configSet specified')
         return cfgParser.sections()
@@ -403,7 +403,7 @@ class IdleConf:
 
     @staticmethod
     def default_keys():
-        if sys.platform.startswith('win'):
+        if sys.platform[:3] == 'win':
             return 'IDLE Classic Windows'
         elif sys.platform == 'darwin':
             return 'IDLE Classic OSX'
@@ -441,7 +441,7 @@ class IdleConf:
                             option = "enable_editor"
                         else:
                             option = "enable_shell"
-                        if self.GetOption('extensions', extn, option,
+                        if self.GetOption('extensions', extn,option,
                                           default=True, type='bool',
                                           warn_on_default=False):
                             activeExtns.append(extn)
@@ -738,7 +738,7 @@ class IdleConf:
             cfgParser = self.defaultCfg['main']
         else:
             raise InvalidConfigSet('Invalid configSet specified')
-        options = cfgParser.GetOptionList('HelpFiles')
+        options=cfgParser.GetOptionList('HelpFiles')
         for option in options:
             value=cfgParser.Get('HelpFiles', option, default=';')
             if value.find(';') == -1: #malformed config entry with no ';'
@@ -749,7 +749,7 @@ class IdleConf:
                 menuItem=value[0].strip()
                 helpPath=value[1].strip()
             if menuItem and helpPath: #neither are empty strings
-                helpSources.append( (menuItem, helpPath, option) )
+                helpSources.append( (menuItem,helpPath,option) )
         helpSources.sort(key=lambda x: x[2])
         return helpSources
 
