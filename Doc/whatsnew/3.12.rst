@@ -1289,8 +1289,9 @@ Deprecated
 
 * :mod:`typing`:
 
-  * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-    and :class:`collections.abc.Sized`. (:gh:`94309`.)
+  * :class:`typing.Hashable` and :class:`typing.Sized`, aliases for
+    :class:`collections.abc.Hashable` and :class:`collections.abc.Sized` respectively, are
+    deprecated. (:gh:`94309`.)
 
   * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
     :exc:`DeprecationWarning` to be emitted when it is used.
