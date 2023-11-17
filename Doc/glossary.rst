@@ -581,7 +581,7 @@ Glossary
 
    immortal
       If an object is immortal, its reference count is never modified, and
-      therefore the objects is never deallocated.
+      therefore it is never deallocated.
 
       Built-in strings and singletons are immortal objects. For example,
       :const:`True` and :const:`None` singletons are immmortal.
