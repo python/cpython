@@ -3270,7 +3270,6 @@
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            frame->instr_ptr = CURRENT_TARGET() + _PyCode_CODE(_PyFrame_GetCode(frame));
             GOTO_TIER_ONE();
             break;
         }

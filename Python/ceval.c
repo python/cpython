@@ -1078,6 +1078,7 @@ enter_tier_one:
 // Jump here from _EXIT_TRACE
 exit_trace:
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     Py_DECREF(current_executor);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     goto enter_tier_one;
