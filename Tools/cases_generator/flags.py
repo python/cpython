@@ -175,7 +175,7 @@ def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
     tokens: list[lx.Token] = []
     skipping = False
     for i, token in enumerate(node.tokens):
-        if token.kind == "MACRO":
+        if token.kind == "CMACRO":
             text = "".join(token.text.split())
             # TODO: Handle nested #if
             if text == "#if":
