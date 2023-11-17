@@ -1,2 +1,0 @@
-The experimental ``--disable-gil`` configure flag now includes "t" (for "threaded") in
-extension ABI tags.

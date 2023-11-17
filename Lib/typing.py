@@ -1669,7 +1669,8 @@ _TYPING_INTERNALS = frozenset({
 _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
-    '__subclasshook__', '__weakref__', '__class_getitem__'
+    '__subclasshook__', '__weakref__', '__class_getitem__',
+    '__match_args__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -3344,7 +3345,7 @@ def override[F: _Func](method: F, /) -> F:
     Usage::
 
         class Base:
-            def method(self) -> None: ...
+            def method(self) -> None:
                 pass
 
         class Child(Base):
@@ -3403,8 +3404,8 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
         >>> class P(Protocol):
         ...     def a(self) -> str: ...
         ...     b: int
-        >>> get_protocol_members(P)
-        frozenset({'a', 'b'})
+        >>> get_protocol_members(P) == frozenset({'a', 'b'})
+        True
 
     Raise a TypeError for arguments that are not Protocols.
     """

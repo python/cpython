@@ -76,6 +76,13 @@ except ImportError:
     pass
 
 
+# gh-89363: Skip fork() test if Python is built with Address Sanitizer (ASAN)
+# to work around a libasan race condition, dead lock in pthread_create().
+skip_if_asan_fork = unittest.skipIf(
+    support.HAVE_ASAN_FORK_BUG,
+    "libasan has a pthread_create() dead lock related to thread+fork")
+
+
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -724,6 +731,7 @@ class HandlerTest(BaseTest):
     # register_at_fork mechanism is also present and used.
     @support.requires_fork()
     @threading_helper.requires_working_threading()
+    @skip_if_asan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -2990,6 +2998,39 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    class CustomFormatter(logging.Formatter):
+        custom_property = "."
+
+        def format(self, record):
+            return super().format(record)
+
+    config17 = {
+        'version': 1,
+        'formatters': {
+            "custom": {
+                "()": CustomFormatter,
+                "style": "{",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "format": "{message}", # <-- to force an exception when configuring
+                ".": {
+                    "custom_property": "value"
+                }
+            }
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'custom',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3471,7 +3512,10 @@ class ConfigDictTest(BaseTest):
             {'msg': 'Hello'}))
         self.assertEqual(result, 'Hello ++ defaultvalue')
 
-
+    def test_config17_ok(self):
+        self.apply_config(self.config17)
+        h = logging._handlers['hand1']
+        self.assertEqual(h.formatter.custom_property, 'value')
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")

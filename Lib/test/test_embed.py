@@ -1,8 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import requires_specialization
+from test.support import import_helper, os_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
@@ -21,7 +19,6 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
@@ -348,7 +345,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
-    @requires_specialization
+    @support.requires_specialization
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -448,6 +445,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_hash_seed': 0,
         'hash_seed': 0,
         'int_max_str_digits': sys.int_info.default_max_str_digits,
+        'cpu_count': -1,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,
@@ -517,6 +515,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     }
     if Py_STATS:
         CONFIG_COMPAT['_pystats'] = 0
+    if support.Py_DEBUG:
+        CONFIG_COMPAT['run_presite'] = None
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
@@ -896,6 +896,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
             'int_max_str_digits': 31337,
+            'cpu_count': 4321,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
@@ -1716,6 +1717,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
 
+    def test_audit_tuple(self):
+        self.run_embedded_interpreter("test_audit_tuple")
+
     def test_audit_subinterpreter(self):
         self.run_embedded_interpreter("test_audit_subinterpreter")
 
@@ -1815,6 +1819,22 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(frozen_modules=flag, stmt=stmt):
                 self.assertEqual(refs, 0, out)
                 self.assertEqual(blocks, 0, out)
+
+    @unittest.skipUnless(support.Py_DEBUG,
+                         '-X presite requires a Python debug build')
+    def test_presite(self):
+        cmd = [sys.executable, "-I", "-X", "presite=test.reperf", "-c", "print('cmd')"]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0)
+        out = proc.stdout.strip()
+        self.assertIn("10 times sub", out)
+        self.assertIn("CPU seconds", out)
+        self.assertIn("cmd", out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):

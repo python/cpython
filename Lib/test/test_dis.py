@@ -532,7 +532,7 @@ dis_asyncwith = """\
             GET_AWAITABLE            1
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 24)
-            YIELD_VALUE              2
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 14)
          >> END_SEND
@@ -548,7 +548,7 @@ dis_asyncwith = """\
             GET_AWAITABLE            2
             LOAD_CONST               0 (None)
          >> SEND                     3 (to 60)
-            YIELD_VALUE              2
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 50)
          >> END_SEND
@@ -571,7 +571,7 @@ None        JUMP_BACKWARD           11 (to 60)
             GET_AWAITABLE            2
             LOAD_CONST               0 (None)
          >> SEND                     4 (to 102)
-            YIELD_VALUE              3
+            YIELD_VALUE              1
             RESUME                   3
             JUMP_BACKWARD_NO_INTERRUPT 5 (to 90)
          >> CLEANUP_THROW
@@ -762,8 +762,8 @@ None        COPY_FREE_VARS           1
             LOAD_DEREF               2 (x)
             LOAD_FAST                1 (z)
             BINARY_OP                0 (+)
-            YIELD_VALUE              1
-            RESUME                   1
+            YIELD_VALUE              0
+            RESUME                   5
             POP_TOP
             JUMP_BACKWARD           12 (to 10)
          >> END_FOR
@@ -2000,6 +2000,23 @@ class InstructionTests(InstructionTestCase):
                                   argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, is_jump_target=False,
                                   positions=None)
         self.assertEqual(10 + 2 + 1*2 + 100*2, instruction.jump_target)
+
+    def test_argval_argrepr(self):
+        f = dis.Instruction._get_argval_argrepr
+
+        offset = 42
+        co_consts = (0, 1, 2, 3)
+        names = {1: 'a', 2: 'b'}
+        varname_from_oparg = lambda i : names[i]
+        args = (offset, co_consts, names, varname_from_oparg)
+        self.assertEqual(f(opcode.opmap["POP_TOP"], None, *args), (None, ''))
+        self.assertEqual(f(opcode.opmap["LOAD_CONST"], 1, *args), (1, '1'))
+        self.assertEqual(f(opcode.opmap["LOAD_GLOBAL"], 2, *args), ('a', 'a'))
+        self.assertEqual(f(opcode.opmap["JUMP_BACKWARD"], 11, *args), (24, 'to 24'))
+        self.assertEqual(f(opcode.opmap["COMPARE_OP"], 3, *args), ('<', '<'))
+        self.assertEqual(f(opcode.opmap["SET_FUNCTION_ATTRIBUTE"], 2, *args), (2, 'kwdefaults'))
+        self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
+        self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
 
     def test_start_offset(self):
         # When no extended args are present,

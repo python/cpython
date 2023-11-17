@@ -894,7 +894,6 @@ extern "C" {
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
-    INIT_ID(duration), \
     INIT_ID(e), \
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
@@ -940,7 +939,6 @@ extern "C" {
     INIT_ID(flush), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
-    INIT_ID(frequency), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
@@ -991,6 +989,7 @@ extern "C" {
     INIT_ID(instructions), \
     INIT_ID(intern), \
     INIT_ID(intersection), \
+    INIT_ID(interval), \
     INIT_ID(is_running), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
@@ -1183,7 +1182,6 @@ extern "C" {
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \
-    INIT_ID(sound), \
     INIT_ID(source), \
     INIT_ID(source_traceback), \
     INIT_ID(src), \

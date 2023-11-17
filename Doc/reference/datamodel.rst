@@ -1214,9 +1214,14 @@ Frame objects support one method:
    objects (for example when catching an exception and storing its
    traceback for later use).
 
-   :exc:`RuntimeError` is raised if the frame is currently executing.
+   :exc:`RuntimeError` is raised if the frame is currently executing
+   or suspended.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.13
+      Attempting to clear a suspended frame raises :exc:`RuntimeError`
+      (as has always been the case for executing frames).
 
 
 .. _traceback-objects:
@@ -2939,7 +2944,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
    (i.e., prevent it from being propagated), it should return a true value.
    Otherwise, the exception will be processed normally upon exit from this method.
 
-   Note that :meth:`__exit__` methods should not reraise the passed-in exception;
+   Note that :meth:`~object.__exit__` methods should not reraise the passed-in exception;
    this is the caller's responsibility.
 
 
@@ -3257,12 +3262,12 @@ Asynchronous context managers can be used in an :keyword:`async with` statement.
 
 .. method:: object.__aenter__(self)
 
-   Semantically similar to :meth:`__enter__`, the only
+   Semantically similar to :meth:`~object.__enter__`, the only
    difference being that it must return an *awaitable*.
 
 .. method:: object.__aexit__(self, exc_type, exc_value, traceback)
 
-   Semantically similar to :meth:`__exit__`, the only
+   Semantically similar to :meth:`~object.__exit__`, the only
    difference being that it must return an *awaitable*.
 
 An example of an asynchronous context manager class::

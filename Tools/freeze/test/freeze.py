@@ -27,8 +27,10 @@ class UnsupportedError(Exception):
     """The operation isn't supported."""
 
 
-def _run_quiet(cmd, cwd=None):
-    #print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
+def _run_quiet(cmd, *, cwd=None):
+    if cwd:
+        print('+', 'cd', cwd, flush=True)
+    print('+', shlex.join(cmd), flush=True)
     try:
         return subprocess.run(
             cmd,
@@ -48,8 +50,8 @@ def _run_quiet(cmd, cwd=None):
         raise
 
 
-def _run_stdout(cmd, cwd=None):
-    proc = _run_quiet(cmd, cwd)
+def _run_stdout(cmd):
+    proc = _run_quiet(cmd)
     return proc.stdout.strip()
 
 
@@ -91,13 +93,18 @@ def copy_source_tree(newroot, oldroot):
 
     shutil.copytree(oldroot, newroot, ignore=support.copy_python_src_ignore)
     if os.path.exists(os.path.join(newroot, 'Makefile')):
-        _run_quiet([MAKE, 'clean'], newroot)
+        # Out-of-tree builds require a clean srcdir. "make clean" keeps
+        # the "python" program, so use "make distclean" instead.
+        _run_quiet([MAKE, 'distclean'], cwd=newroot)
 
 
 ##################################
 # freezing
 
 def prepare(script=None, outdir=None):
+    print()
+    print("cwd:", os.getcwd())
+
     if not outdir:
         outdir = OUTDIR
     os.makedirs(outdir, exist_ok=True)
@@ -125,7 +132,7 @@ def prepare(script=None, outdir=None):
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')
     ensure_opt(cmd, 'prefix', prefix)
-    _run_quiet(cmd, builddir)
+    _run_quiet(cmd, cwd=builddir)
 
     if not MAKE:
         raise UnsupportedError('make')
@@ -135,20 +142,18 @@ def prepare(script=None, outdir=None):
         # this test is most often run as part of the whole suite with a lot
         # of other tests running in parallel, from 1-2 vCPU systems up to
         # people's NNN core beasts. Don't attempt to use it all.
-        parallel = f'-j{cores*2//3}'
+        jobs = cores * 2 // 3
+        parallel = f'-j{jobs}'
     else:
         parallel = '-j2'
 
     # Build python.
     print(f'building python {parallel=} in {builddir}...')
-    if os.path.exists(os.path.join(srcdir, 'Makefile')):
-        # Out-of-tree builds require a clean srcdir.
-        _run_quiet([MAKE, '-C', srcdir, 'clean'])
-    _run_quiet([MAKE, '-C', builddir, parallel])
+    _run_quiet([MAKE, parallel], cwd=builddir)
 
     # Install the build.
     print(f'installing python into {prefix}...')
-    _run_quiet([MAKE, '-C', builddir, 'install'])
+    _run_quiet([MAKE, 'install'], cwd=builddir)
     python = os.path.join(prefix, 'bin', 'python3')
 
     return outdir, scriptfile, python
@@ -161,8 +166,8 @@ def freeze(python, scriptfile, outdir):
     print(f'freezing {scriptfile}...')
     os.makedirs(outdir, exist_ok=True)
     # Use -E to ignore PYTHONSAFEPATH
-    _run_quiet([python, '-E', FREEZE, '-o', outdir, scriptfile], outdir)
-    _run_quiet([MAKE, '-C', os.path.dirname(scriptfile)])
+    _run_quiet([python, '-E', FREEZE, '-o', outdir, scriptfile], cwd=outdir)
+    _run_quiet([MAKE], cwd=os.path.dirname(scriptfile))
 
     name = os.path.basename(scriptfile).rpartition('.')[0]
     executable = os.path.join(outdir, name)

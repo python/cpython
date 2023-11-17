@@ -514,6 +514,54 @@ x = (
         self.assertEqual(type(format_spec), ast.JoinedStr)
         self.assertEqual(len(format_spec.values), 0)
 
+    def test_ast_fstring_format_spec(self):
+        expr = "f'{1:{name}}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 1)
+
+        format_spec_value = format_spec.values[0]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name')
+
+        expr = "f'{1:{name1}{name2}}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 2)
+
+        format_spec_value = format_spec.values[0]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name1')
+
+        format_spec_value = format_spec.values[1]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name2')
+
+
     def test_docstring(self):
         def f():
             f'''Not a docstring'''

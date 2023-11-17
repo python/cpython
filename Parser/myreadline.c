@@ -1,5 +1,5 @@
 
-/* Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
+/* Readline interface for the tokenizer and [raw_]input() in bltinmodule.c.
    By default, or when stdin is not a tty device, we have a super
    simple my_readline function using fgets.
    Optionally, we can use the GNU readline library.
@@ -364,7 +364,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
 
-/* Interface used by tokenizer.c and bltinmodule.c */
+/* Interface used by file_tokenizer.c and bltinmodule.c */
 
 char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)

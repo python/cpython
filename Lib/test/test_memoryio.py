@@ -463,6 +463,20 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.close()
         self.assertRaises(ValueError, memio.getbuffer)
 
+    def test_getbuffer_empty(self):
+        memio = self.ioclass()
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"")
+        # Trying to change the size of the BytesIO while a buffer is exported
+        # raises a BufferError.
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf2 = memio.getbuffer()
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf.release()
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf2.release()
+        memio.write(b'x')
+
     def test_read1(self):
         buf = self.buftype("1234567890")
         self.assertEqual(self.ioclass(buf).read1(), buf)
