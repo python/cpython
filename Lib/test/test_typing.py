@@ -5621,7 +5621,7 @@ class ForwardRefTests(BaseTestCase):
         def cmp(o1, o2):
             return o1 == o2
 
-        with infinite_recursion(25):  # magic number, small but reasonable
+        with infinite_recursion():
             r1 = namespace1()
             r2 = namespace2()
             self.assertIsNot(r1, r2)
