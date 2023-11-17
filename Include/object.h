@@ -758,6 +758,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     uint32_t new_local = local + 1;
     if (new_local == 0) {
+        // local is equal to _Py_IMMORTAL_REFCNT: do nothing
         return;
     }
     if (_Py_IsOwnedByCurrentThread(op)) {
@@ -771,6 +772,8 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
     PY_UINT32_T new_refcnt = cur_refcnt + 1;
     if (new_refcnt == 0) {
+        // cur_refcnt is equal to _Py_IMMORTAL_REFCNT: the object is immortal,
+        // do nothing
         return;
     }
     op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
