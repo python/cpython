@@ -3,9 +3,6 @@ import sys
 import warnings
 
 from test.support import import_helper
-from test.test_capi.test_getargs import (Float, BadFloat, BadFloat2, Index,
-                                         BadIndex, BadIndex2, Int, BadInt,
-                                         BadInt2)
 from _testbuffer import ndarray
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -14,53 +11,58 @@ from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 NULL = None
 
 
-class BadAdd:
-    def __add__(self, other):
-        raise RuntimeError
-
-
-class BadAdd2(int):
-    def __radd__(self, other):
-        return NotImplemented
-    __iadd__ = __radd__
-
-
-class IndexLike:
-    def __init__(self, value):
-        self.value = value
-
-    def __index__(self):
-        return self.value
-
-
-class BadIndex3:
-    def __index__(self):
-        raise RuntimeError
-
-
-class IntSubclass(int):
-    pass
-
-
-class IntSubclass2(int):
-    def __new__(cls, value):
+class WithDunder:
+    @classmethod
+    def with_val(cls, val):
         obj = super().__new__(cls)
-        obj.value = value
+        def meth(*args):
+            return val
+        setattr(cls, cls.methname, meth)
         return obj
 
-    def __rpow__(self, other, mod=None):
-        return self.value
-    __ipow__ = __rpow__
+    @classmethod
+    def with_exc(cls, exc):
+        obj = super().__new__(cls)
+        def meth(*args):
+            raise exc
+        setattr(cls, cls.methname, meth)
+        return obj
+
+class IndexLike(WithDunder):
+    methname = '__index__'
+
+class IntLike(WithDunder):
+    methname = '__int__'
+
+class FloatLike(WithDunder):
+    methname = '__float__'
+
+class HasTrunc(WithDunder):
+    methname = '__trunc__'
+
+class BadDescr:
+    def __get__(self, obj, objtype=None):
+        raise ValueError
+
+class HasBadTrunc:
+    __trunc__ = BadDescr()
 
 
-class BadInt3:
-    def __int__(self):
-        raise RuntimeError
+def subclassof(base):
+    return type(base.__name__ + 'Subclass', (base,), {})
 
 
-class BadFloat3:
-    def __float__(self):
-        raise RuntimeError
+class HasRAddIntSubclass(WithDunder, int):
+    methname = '__radd__'
+
+class HasIAdd(WithDunder):
+    methname = '__iadd__'
+
+class HasRPowIntSubclass(WithDunder, int):
+    methname = '__rpow__'
+
+class HasIPow(WithDunder):
+    methname = '__ipow__'
 
 
 class WithMatrixMul(list):
@@ -74,37 +76,16 @@ class WithMatrixMul(list):
         return self
 
 
-class BadDescr:
-    def __get__(self, obj, objtype=None):
-        raise ValueError
-
-
-class WithTrunc:
-    def __init__(self, value):
-        self.value = value
-
-    def __trunc__(self):
-        return self.value
-
-
-class WithBadTrunc:
-    def __trunc__(self):
-        raise RuntimeError
-
-class WithBadTrunc2:
-    __trunc__ = BadDescr()
-
-
 class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyNumber_Check()
         check = _testcapi.number_check
 
         self.assertTrue(check(1))
-        self.assertTrue(check(IndexLike(1)))
-        self.assertTrue(check(Int()))
+        self.assertTrue(check(IndexLike.with_val(1)))
+        self.assertTrue(check(IntLike.with_val(99)))
         self.assertTrue(check(0.5))
-        self.assertTrue(check(Float()))
+        self.assertTrue(check(FloatLike.with_val(4.25)))
         self.assertTrue(check(1+2j))
         self.assertFalse(check([]))
         self.assertFalse(check("1 + 1j"))
@@ -118,8 +99,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(add(1, 2), 1 + 2)
         self.assertEqual(add(1, 0.75), 1 + 0.75)
         self.assertEqual(add(0.75, 1), 0.75 + 1)
-        self.assertEqual(add(1, BadAdd2(2)), 3)
+        self.assertEqual(add(42, HasRAddIntSubclass.with_val(NotImplemented)), 42)
         self.assertEqual(add([1, 2], [3, 4]), [1, 2, 3, 4])
+
 
         self.assertRaises(TypeError, add, 1, object())
         self.assertRaises(TypeError, add, object(), 1)
@@ -215,9 +197,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(power(0.5, 2), pow(0.5, 2))
         self.assertEqual(power(2, -1.0), pow(2, -1.0))
         self.assertEqual(power(4, 11, 5), pow(4, 11, 5))
-        self.assertEqual(power(4, IntSubclass(11)), pow(4, 11))
-        self.assertEqual(power(4, IntSubclass2(11)), 11)
-        self.assertEqual(power(4, IntSubclass2(NotImplemented), NULL), 1)
+        self.assertEqual(power(4, subclassof(int)(11)), pow(4, 11))
+        self.assertEqual(power(4, HasRPowIntSubclass.with_val(42)), 42)
+        self.assertEqual(power(4, HasRPowIntSubclass.with_val(NotImplemented)), 1)
 
         self.assertRaises(TypeError, power, "spam", 42)
         self.assertRaises(TypeError, power, object(), 42)
@@ -236,7 +218,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(negative(42), -42)
         self.assertEqual(negative(1.25), -1.25)
 
-        self.assertRaises(TypeError, negative, BadAdd())
+        self.assertRaises(TypeError, negative, "123")
         self.assertRaises(TypeError, negative, object())
         self.assertRaises(SystemError, negative, NULL)
 
@@ -247,7 +229,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(positive(-1), +(-1))
         self.assertEqual(positive(1.25), 1.25)
 
-        self.assertRaises(TypeError, positive, BadAdd())
+        self.assertRaises(TypeError, positive, "123")
         self.assertRaises(TypeError, positive, object())
         self.assertRaises(SystemError, positive, NULL)
 
@@ -259,7 +241,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(absolute(-1.25), 1.25)
         self.assertEqual(absolute(1j), 1.0)
 
-        self.assertRaises(TypeError, absolute, BadAdd())
+        self.assertRaises(TypeError, absolute, "123")
         self.assertRaises(TypeError, absolute, object())
         self.assertRaises(SystemError, absolute, NULL)
 
@@ -270,7 +252,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(invert(123), ~123)
 
         self.assertRaises(TypeError, invert, 1.25)
-        self.assertRaises(TypeError, invert, BadAdd())
+        self.assertRaises(TypeError, invert, "123")
         self.assertRaises(TypeError, invert, object())
         self.assertRaises(SystemError, invert, NULL)
 
@@ -343,14 +325,13 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(inplaceadd(1, 2), 1 + 2)
         self.assertEqual(inplaceadd(1, 0.75), 1 + 0.75)
         self.assertEqual(inplaceadd(0.75, 1), 0.75 + 1)
-        self.assertEqual(inplaceadd(1, BadAdd2(2)), 3)
 
         a, b, r = [1, 2], [3, 4], [1, 2, 3, 4]
         self.assertEqual(inplaceadd(a, b), r)
         self.assertEqual(a, r)
         self.assertEqual(b, [3, 4])
 
-        self.assertRaises(TypeError, inplaceadd, BadAdd2(2), object())
+        self.assertRaises(TypeError, inplaceadd, HasIAdd.with_val(NotImplemented), object())
         self.assertRaises(TypeError, inplaceadd, 1, object())
         self.assertRaises(TypeError, inplaceadd, object(), 1)
 
@@ -440,10 +421,10 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(inplacepower(2, 3), pow(2, 3))
         self.assertEqual(inplacepower(2, 3, 4), pow(2, 3, 4))
-        self.assertEqual(inplacepower(IntSubclass2(2), 2), 2)
+        self.assertEqual(inplacepower(HasIPow.with_val(42), 2), 42)
 
         self.assertRaises(TypeError, inplacepower,
-                          IntSubclass2(NotImplemented), object())
+                          HasIPow.with_val(NotImplemented), object())
         self.assertRaises(TypeError, inplacepower, object(), 2)
 
         # CRASHES inplacepower(NULL, 42)
@@ -519,34 +500,34 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(long(b"42"), 42)
         self.assertEqual(long(bytearray(b"42")), 42)
         self.assertEqual(long(memoryview(b"42")), 42)
-        self.assertEqual(long(IndexLike(99)), 99)
-        self.assertEqual(long(Int()), 99)
+        self.assertEqual(long(IndexLike.with_val(99)), 99)
+        self.assertEqual(long(IntLike.with_val(99)), 99)
 
-        self.assertRaises(TypeError, long, BadInt())
+        self.assertRaises(TypeError, long, IntLike.with_val(1.0))
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, long, BadInt2())
+            self.assertRaises(DeprecationWarning, long, IntLike.with_val(True))
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(BadInt2()), 1)
+            self.assertEqual(long(IntLike.with_val(True)), 1)
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, long, WithTrunc(42))
+            self.assertRaises(DeprecationWarning, long, HasTrunc.with_val(42))
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(WithTrunc(42)), 42)
+            self.assertEqual(long(HasTrunc.with_val(42)), 42)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(WithTrunc(IntSubclass(42))), 42)
+            self.assertEqual(long(HasTrunc.with_val(subclassof(int)(42))), 42)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(long(WithTrunc(IndexLike(42))), 42)
+            self.assertEqual(long(HasTrunc.with_val(IndexLike.with_val(42))), 42)
 
         with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, long, WithTrunc(1.25))
+            self.assertRaises(TypeError, long, HasTrunc.with_val(1.25))
 
         self.assertRaises(TypeError, long, 1j)
         self.assertRaises(TypeError, long, object())
         self.assertRaises(SystemError, long, NULL)
-        self.assertRaises(RuntimeError, long, WithBadTrunc())
-        self.assertRaises(ValueError, long, WithBadTrunc2())
-        self.assertRaises(RuntimeError, long, BadInt3())
+        self.assertRaises(RuntimeError, long, HasTrunc.with_exc(RuntimeError))
+        self.assertRaises(ValueError, long, HasBadTrunc())
+        self.assertRaises(RuntimeError, long, IntLike.with_exc(RuntimeError))
 
     def test_float(self):
         # Test PyNumber_Float()
@@ -556,22 +537,22 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(float_(123), 123.)
         self.assertEqual(float_("1.25"), 1.25)
 
-        self.assertEqual(float_(Float()), 4.25)
-        self.assertEqual(float_(IndexLike(99)), 99.0)
-        self.assertEqual(float_(IndexLike(-1)), -1.0)
+        self.assertEqual(float_(FloatLike.with_val(4.25)), 4.25)
+        self.assertEqual(float_(IndexLike.with_val(99)), 99.0)
+        self.assertEqual(float_(IndexLike.with_val(-1)), -1.0)
 
-        self.assertRaises(TypeError, float_, BadFloat())
+        self.assertRaises(TypeError, float_, FloatLike.with_val(687))
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, float_, BadFloat2())
+            self.assertRaises(DeprecationWarning, float_, FloatLike.with_val(subclassof(float)(4.25)))
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float_(BadFloat2()), 4.25)
-        self.assertRaises(TypeError, float_, IndexLike(1.25))
-        self.assertRaises(OverflowError, float_, IndexLike(2**2000))
+            self.assertEqual(float_(FloatLike.with_val(subclassof(float)(4.25))), 4.25)
+        self.assertRaises(TypeError, float_, IndexLike.with_val(1.25))
+        self.assertRaises(OverflowError, float_, IndexLike.with_val(2**2000))
         self.assertRaises(TypeError, float_, 1j)
         self.assertRaises(TypeError, float_, object())
         self.assertRaises(SystemError, float_, NULL)
-        self.assertRaises(RuntimeError, float_, BadFloat3())
+        self.assertRaises(RuntimeError, float_, FloatLike.with_exc(RuntimeError))
 
     def test_index(self):
         # Test PyNumber_Index()
@@ -581,15 +562,15 @@ class CAPITest(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, index, BadIndex2())
+            self.assertRaises(DeprecationWarning, index, IndexLike.with_val(True))
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(index(BadIndex2()), 1)
+            self.assertEqual(index(IndexLike.with_val(True)), 1)
         self.assertRaises(TypeError, index, 1.25)
         self.assertRaises(TypeError, index, "42")
-        self.assertRaises(TypeError, index, BadIndex())
+        self.assertRaises(TypeError, index, IndexLike.with_val(1.0))
         self.assertRaises(TypeError, index, object())
         self.assertRaises(SystemError, index, NULL)
-        self.assertRaises(RuntimeError, index, BadIndex3())
+        self.assertRaises(RuntimeError, index, IndexLike.with_exc(RuntimeError))
 
     def test_tobase(self):
         # Test PyNumber_ToBase()
