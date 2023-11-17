@@ -2734,7 +2734,7 @@ class NamedTupleMeta(type):
                     setattr(nm_tpl, key, val)
                 try:
                     set_name = type(val).__set_name__
-                except AttributeError:
+                except Exception:
                     pass
                 else:
                     try:
