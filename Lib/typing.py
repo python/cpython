@@ -2917,7 +2917,8 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
         ...
         >>> a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
         >>> b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
-        >>> assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+        >>> Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+        True
 
     The type info can be accessed via the Point2D.__annotations__ dict, and
     the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
