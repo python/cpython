@@ -1,8 +1,8 @@
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_DelItemIf()
-#include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR
-#include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
-
+#include "pycore_dict.h"              // _PyDict_DelItemIf()
+#include "pycore_object.h"            // _PyObject_GET_WEAKREFS_LISTPTR
+#include "pycore_weakref.h"           // _PyWeakref_IS_DEAD()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 
 #define GET_WEAKREFS_LISTPTR(o) \
         ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
@@ -32,9 +32,11 @@ _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
 
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object)))
         return 0;
-
+    Py_BEGIN_CRITICAL_SECTION(object);
     list = GET_WEAKREFS_LISTPTR(object);
-    return _PyWeakref_GetWeakrefCount(*list);
+    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
+    Py_END_CRITICAL_SECTION();
+    return count;
 }
 
 
@@ -94,6 +96,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
         return PyList_New(0);
     }
 
+    Py_BEGIN_CRITICAL_SECTION(object);
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
     Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
 
@@ -107,6 +110,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
         PyList_SET_ITEM(result, i, Py_NewRef(current));
         current = current->wr_next;
     }
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
