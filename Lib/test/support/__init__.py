@@ -2372,7 +2372,8 @@ def _get_c_recursion_limit():
         import _testcapi
         return _testcapi.Py_C_RECURSION_LIMIT
     except (ImportError, AttributeError):
-        return 1500 if not is_wasi else 500 # From Include/cpython/pystate.h
+        # From Include/cpython/pystate.h .
+        return 1500 if not is_wasi and not Py_DEBUG else 500
 
 # The default C recursion limit.
 Py_C_RECURSION_LIMIT = _get_c_recursion_limit()
