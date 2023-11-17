@@ -1981,7 +1981,7 @@ class ExtPage(Frame):
             opt_list = enables + opt_list
 
             for opt_name in opt_list:
-                if opt_name in user_list:
+                if opt_name in user:
                     def_str = self.ext_userCfg.Get(
                             ext_name, opt_name, raw=True)
                 else:
@@ -1998,7 +1998,7 @@ class ExtPage(Frame):
                         def_obj = def_str
                         opt_type = None
                 try:
-                    if opt_name in user_list:
+                    if opt_name in user:
                         value = self.ext_userCfg.Get(
                                 ext_name, opt_name, type=opt_type, raw=True,
                                 default=def_obj)
