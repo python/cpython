@@ -1577,16 +1577,6 @@ class PosixPathAsPureTest(PurePosixPathTest):
 class WindowsPathAsPureTest(PureWindowsPathTest):
     cls = pathlib.WindowsPath
 
-    def test_owner(self):
-        P = self.cls
-        with self.assertRaises(pathlib.UnsupportedOperation):
-            P('c:/').owner()
-
-    def test_group(self):
-        P = self.cls
-        with self.assertRaises(pathlib.UnsupportedOperation):
-            P('c:/').group()
-
 
 #
 # Tests for the virtual classes.
@@ -3737,6 +3727,16 @@ class WindowsPathTest(PathTest):
         P = self.cls
         self.assertEqual(P.from_uri('file:' + pathname2url(r'c:\path\to\file')), P('c:/path/to/file'))
         self.assertEqual(P.from_uri('file:' + pathname2url(r'\\server\path\to\file')), P('//server/path/to/file'))
+
+    def test_owner(self):
+        P = self.cls
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            P('c:/').owner()
+
+    def test_group(self):
+        P = self.cls
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            P('c:/').group()
 
 
 class PathSubclassTest(PathTest):
