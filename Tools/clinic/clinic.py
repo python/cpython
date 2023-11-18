@@ -5165,7 +5165,7 @@ class DSLParser:
         self.parameter_continuation = ''
         self.preserve_output = False
         self.critical_section = False
-        self.target_critical_section = None
+        self.target_critical_section: str | None = None
 
     def directive_version(self, required: str) -> None:
         global version
@@ -5294,7 +5294,7 @@ class DSLParser:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
-    def at_critical_section(self, target : str | None = None) -> None:
+    def at_critical_section(self, target: str | None = None) -> None:
         if target is not None:
             self.target_critical_section = target
         else:
