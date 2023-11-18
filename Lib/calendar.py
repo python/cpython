@@ -193,7 +193,7 @@ class Calendar(object):
     """
 
     def __init__(self, firstweekday=0):
-        self.firstweekday = firstweekday # 0 = Monday, 6 = Sunday
+        self.firstweekday = firstweekday
 
     def getfirstweekday(self):
         return self._firstweekday % 7
@@ -735,6 +735,11 @@ def main(args=None):
         help="output type (text or html)"
     )
     parser.add_argument(
+        "-f", "--firstweekday",
+        type=int, default=0,
+        help="weekday to start each week (default 0)"
+    )
+    parser.add_argument(
         "year",
         nargs='?', type=int,
         help="year number (1-9999)"
@@ -753,6 +758,9 @@ def main(args=None):
 
     locale = options.locale, options.encoding
 
+    if not MONDAY <= options.firstweekday <= SUNDAY:
+        raise IllegalWeekdayError(options.firstweekday)
+
     if options.type == "html":
         if options.month:
             parser.error("incorrect number of arguments")
@@ -761,6 +769,7 @@ def main(args=None):
             cal = LocaleHTMLCalendar(locale=locale)
         else:
             cal = HTMLCalendar()
+        cal.setfirstweekday(options.firstweekday)
         encoding = options.encoding
         if encoding is None:
             encoding = sys.getdefaultencoding()
@@ -775,6 +784,7 @@ def main(args=None):
             cal = LocaleTextCalendar(locale=locale)
         else:
             cal = TextCalendar()
+        cal.setfirstweekday(options.firstweekday)
         optdict = dict(w=options.width, l=options.lines)
         if options.month is None:
             optdict["c"] = options.spacing
