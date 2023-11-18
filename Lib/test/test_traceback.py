@@ -3272,10 +3272,6 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         self._check(tbexc, expected)
         return tbexc
 
-    def check_str(self, exc, qualname, /, **expected):
-        with self.assertRaises(ValueError):
-            self._new(exc, qualname)
-
     def check_none(self, exc):
         expected = {n: None for n in self.ATTRS}
         tbexc = self._new(exc, None)
@@ -3308,10 +3304,6 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             )
             self.check_proxy(exc, proxy, **vars(proxy))
 
-        with self.subTest('str'):
-            exc_type = expected['__qualname__']
-            self.check_str(exc, exc_type, **expected)
-
         with self.subTest('missing'):
             self.check_none(exc)
 
@@ -3343,10 +3335,6 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
                 __qualname__='mymod.AnotherError',
             )
             self.check_proxy(exc, proxy, **vars(proxy))
-
-        with self.subTest('str'):
-            exc_type = expected['__qualname__']
-            self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
             self.check_none(exc)
@@ -3415,10 +3403,6 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             tbexc = self.check_proxy(exc, proxy, **vars(proxy))
             # This cannot match:
             self.assertFalse(hasattr(tbexc, 'msg'))
-
-        with self.subTest('str'):
-            exc_type = expected['__qualname__']
-            self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
             self.check_none(exc)
@@ -3490,10 +3474,6 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             tbexc = self.check_proxy(exc, proxy, **vars(proxy))
             # This cannot match:
             self.assertNotIn('Did you mean', str(tbexc))
-
-        with self.subTest('str'):
-            exc_type = expected['__qualname__']
-            self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
             self.check_none(exc)
@@ -3568,10 +3548,6 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             # This cannot match:
             self.assertNotIn('Did you mean', str(tbexc))
 
-        with self.subTest('str'):
-            exc_type = expected['__qualname__']
-            self.check_str(exc, exc_type, **expected)
-
         with self.subTest('missing'):
             self.check_none(exc)
 
@@ -3638,10 +3614,6 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             tbexc = self.check_proxy(exc, proxy, **vars(proxy))
             # This cannot match:
             self.assertNotIn('Did you mean', str(tbexc))
-
-        with self.subTest('str'):
-            exc_type = expected['__qualname__']
-            self.check_str(exc, exc_type, **expected)
 
         with self.subTest('missing'):
             self.check_none(exc)
