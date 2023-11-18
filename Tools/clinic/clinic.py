@@ -1111,7 +1111,8 @@ class CLanguage(Language):
             if include:
                 clinic.add_include(include.filename, include.reason,
                                    condition=include.condition)
-
+        if f.critical_section:
+            clinic.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         simple_return = (f.return_converter.type == 'PyObject *'
                          and not f.critical_section)
@@ -5306,8 +5307,6 @@ class DSLParser:
             fail("Up to 2 critical section variables are supported")
         self.target_critical_section.extend(args)
         self.critical_section = True
-        if self.critical_section:
-            clinic.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
