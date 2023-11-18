@@ -4,8 +4,8 @@ from test import support
 from io import StringIO
 from pstats import SortKey
 from enum import StrEnum, _test_simple_enum
-import os
 
+import os
 import pstats
 import tempfile
 import cProfile
