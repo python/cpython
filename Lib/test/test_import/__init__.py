@@ -25,7 +25,7 @@ import _imp
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, TEST_HOME_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
+    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
