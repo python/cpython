@@ -8,7 +8,11 @@
 #endif
 
 #ifdef __wasi__
-#  define MAXSTACK 4000
+#  ifdef Py_DEBUG
+#    define MAXSTACK 1000
+#  else
+#    define MAXSTACK 4000
+#  endif
 #else
 #  define MAXSTACK 6000
 #endif
