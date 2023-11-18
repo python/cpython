@@ -32,7 +32,9 @@ dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
     }
     value = args[1];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(type);
     return_value = dict_fromkeys_impl(type, iterable, value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -191,6 +193,12 @@ dict___reversed___impl(PyDictObject *self);
 static PyObject *
 dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return dict___reversed___impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dict___reversed___impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
-/*[clinic end generated code: output=17c3c4cf9a9b95a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60390b467722d482 input=a9049054013a1b77]*/

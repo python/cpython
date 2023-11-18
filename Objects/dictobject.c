@@ -117,6 +117,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_code.h"          // stats
+#include "pycore_critical_section.h"
 #include "pycore_dict.h"          // export _PyDict_SizeOf()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
@@ -2584,7 +2585,11 @@ error:
 static Py_ssize_t
 dict_length(PyDictObject *mp)
 {
+#ifdef Py_NOGIL
+    return _Py_atomic_load_ssize_relaxed(&mp->ma_used);
+#else
     return mp->ma_used;
+#endif
 }
 
 static PyObject *
@@ -2746,6 +2751,7 @@ dict_items(PyDictObject *mp)
 }
 
 /*[clinic input]
+@critical_section
 @classmethod
 dict.fromkeys
     iterable: object
@@ -2757,7 +2763,7 @@ Create a new dictionary with keys from iterable and values set to value.
 
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=8fb98e4b10384999 input=382ba4855d0f74c3]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=8eef23b63d38c243]*/
 {
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
@@ -2790,7 +2796,9 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
+        Py_BEGIN_CRITICAL_SECTION2(self, arg);
         result = dict_update_arg(self, arg);
+        Py_END_CRITICAL_SECTION2();
     }
 
     if (result == 0 && kwds != NULL) {
@@ -3107,7 +3115,11 @@ _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 static PyObject *
 dict_copy(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
-    return PyDict_Copy((PyObject*)mp);
+    PyObject *copy;
+    Py_BEGIN_CRITICAL_SECTION(mp);
+    copy = PyDict_Copy((PyObject*)mp);
+    Py_END_CRITICAL_SECTION();
+    return copy;
 }
 
 PyObject *
@@ -3316,7 +3328,9 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
         res = Py_NotImplemented;
     }
     else if (op == Py_EQ || op == Py_NE) {
+        Py_BEGIN_CRITICAL_SECTION2(v, w);
         cmp = dict_equal((PyDictObject *)v, (PyDictObject *)w);
+        Py_END_CRITICAL_SECTION2();
         if (cmp < 0)
             return NULL;
         res = (cmp == (op == Py_EQ)) ? Py_True : Py_False;
@@ -3511,7 +3525,9 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 static PyObject *
 dict_clear(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
+    Py_BEGIN_CRITICAL_SECTION(mp);
     PyDict_Clear((PyObject *)mp);
+    Py_END_CRITICAL_SECTION();
     Py_RETURN_NONE;
 }
 
@@ -3702,7 +3718,11 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 static PyObject *
 dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
-    return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
+    PyObject *size;
+    Py_BEGIN_CRITICAL_SECTION(mp);
+    size = PyLong_FromSsize_t(_PyDict_SizeOf(mp));
+    Py_END_CRITICAL_SECTION();
+    return size;
 }
 
 static PyObject *
@@ -3711,24 +3731,31 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyDict_Check(self) || !PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = PyDict_Copy(self);
+
+    PyObject *new = NULL;
+    Py_BEGIN_CRITICAL_SECTION2(self, other);
+    new = PyDict_Copy(self);
     if (new == NULL) {
-        return NULL;
+        goto end;
     }
     if (dict_update_arg(new, other)) {
-        Py_DECREF(new);
-        return NULL;
+        Py_CLEAR(new);
+        goto end;
     }
+
+end:
+    Py_END_CRITICAL_SECTION2();
     return new;
 }
 
 static PyObject *
 dict_ior(PyObject *self, PyObject *other)
 {
-    if (dict_update_arg(self, other)) {
-        return NULL;
-    }
-    return Py_NewRef(self);
+    int r;
+    Py_BEGIN_CRITICAL_SECTION2(self, other);
+    r = dict_update_arg(self, other);
+    Py_END_CRITICAL_SECTION2();
+    return r ? NULL : Py_NewRef(self);
 }
 
 PyDoc_STRVAR(getitem__doc__,
@@ -4610,6 +4637,7 @@ PyTypeObject PyDictRevIterKey_Type = {
 
 
 /*[clinic input]
+@critical_section
 dict.__reversed__
 
 Return a reverse iterator over the dict keys.
@@ -4617,7 +4645,7 @@ Return a reverse iterator over the dict keys.
 
 static PyObject *
 dict___reversed___impl(PyDictObject *self)
-/*[clinic end generated code: output=e674483336d1ed51 input=23210ef3477d8c4d]*/
+/*[clinic end generated code: output=e674483336d1ed51 input=6123e7c956063d86]*/
 {
     assert (PyDict_Check(self));
     return dictiter_new(self, &PyDictRevIterKey_Type);
@@ -5246,7 +5274,11 @@ PyTypeObject PyDictKeys_Type = {
 static PyObject *
 dictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
-    return _PyDictView_New(dict, &PyDictKeys_Type);
+    PyObject *view;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    view = _PyDictView_New(dict, &PyDictKeys_Type);
+    Py_END_CRITICAL_SECTION();
+    return view;
 }
 
 static PyObject *
@@ -5348,7 +5380,11 @@ PyTypeObject PyDictItems_Type = {
 static PyObject *
 dictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
-    return _PyDictView_New(dict, &PyDictItems_Type);
+    PyObject *view;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    view = _PyDictView_New(dict, &PyDictItems_Type);
+    Py_END_CRITICAL_SECTION();
+    return view;
 }
 
 static PyObject *
@@ -5429,7 +5465,11 @@ PyTypeObject PyDictValues_Type = {
 static PyObject *
 dictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 {
-    return _PyDictView_New(dict, &PyDictValues_Type);
+    PyObject *view;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    view = _PyDictView_New(dict, &PyDictValues_Type);
+    Py_END_CRITICAL_SECTION();
+    return view;
 }
 
 static PyObject *
