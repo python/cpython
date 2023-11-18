@@ -94,7 +94,7 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument(
     "-v",
-    "--verbose",
+    "--viable",
     help="Print list of non-viable uops and exit",
     action="store_true",
 )
@@ -871,7 +871,7 @@ def main() -> None:
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    if args.verbose:
+    if args.viable:
         # Load execution counts from bmraw.json, if it exists
         a.report_non_viable_uops("bmraw.json")
         return
