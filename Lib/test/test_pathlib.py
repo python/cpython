@@ -3449,7 +3449,7 @@ class PathTest(PurePathTest, DummyPathTest):
 
 
 @only_posix
-class PosixPathTest(PurePosixPathTest, PathTest):
+class PosixPathTest(PathTest, PurePosixPathTest):
     cls = pathlib.PosixPath
 
     def test_absolute(self):
@@ -3625,7 +3625,7 @@ class PosixPathTest(PurePosixPathTest, PathTest):
 
 
 @only_nt
-class WindowsPathTest(PureWindowsPathTest, PathTest):
+class WindowsPathTest(PathTest, PureWindowsPathTest):
     cls = pathlib.WindowsPath
 
     def test_absolute(self):
