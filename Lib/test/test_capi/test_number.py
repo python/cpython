@@ -10,6 +10,9 @@ from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
 
+class BadDescr:
+    def __get__(self, obj, objtype=None):
+        raise RuntimeError
 
 class WithDunder:
     @classmethod
@@ -28,6 +31,13 @@ class WithDunder:
         setattr(cls, cls.methname, meth)
         return obj
 
+    @classmethod
+    def with_badattr(cls):
+        obj = super().__new__(cls)
+        setattr(cls, cls.methname, BadDescr())
+        return obj
+
+
 class IndexLike(WithDunder):
     methname = '__index__'
 
@@ -40,9 +50,6 @@ class FloatLike(WithDunder):
 class HasTrunc(WithDunder):
     methname = '__trunc__'
 
-class BadDescr:
-    def __get__(self, obj, objtype=None):
-        raise ValueError
 
 class HasBadTrunc:
     __trunc__ = BadDescr()
@@ -210,50 +217,38 @@ class CAPITest(unittest.TestCase):
         # CRASHES power(NULL, 42)
         # CRASHES power(42, NULL)
 
-    def test_negative(self):
-        # Test PyNumber_Negative()
-        negative = _testcapi.number_negative
+    def test_unary_ops(self):
+        # Common tests for unary functions (PyNumber_Negative(),
+        # PyNumber_Positive(), PyNumber_Absolute() and PyNumber_Invert()
+        methmap = {'__neg__': _testcapi.number_negative,
+                   '__pos__': _testcapi.number_positive,
+                   '__abs__': _testcapi.number_absolute,
+                   '__invert__': _testcapi.number_invert}
 
-        self.assertEqual(negative(42), -42)
-        self.assertEqual(negative(1.25), -1.25)
+        for name, func in methmap.items():
+            # Generic object: no tp_as_number structure
+            self.assertRaises(TypeError, func, object())
 
-        self.assertRaises(TypeError, negative, "123")
-        self.assertRaises(TypeError, negative, object())
-        self.assertRaises(SystemError, negative, NULL)
+            # Has tp_as_number, but not unary
+            class HasAdd(WithDunder):
+                methname = '__add__'
+            self.assertRaises(TypeError, func, HasAdd.with_val("don't care"))
 
-    def test_positive(self):
-        # Test PyNumber_Positive()
-        positive = _testcapi.number_positive
+            class HasMeth(WithDunder):
+                methname = name
 
-        self.assertEqual(positive(-1), +(-1))
-        self.assertEqual(positive(1.25), 1.25)
+            # Has dunder method, but it's a bad descriptor
+            self.assertRaises(RuntimeError, func, HasMeth.with_badattr())
 
-        self.assertRaises(TypeError, positive, "123")
-        self.assertRaises(TypeError, positive, object())
-        self.assertRaises(SystemError, positive, NULL)
+            # Dunder method trigger an error
+            self.assertRaises(ValueError, func, HasMeth.with_exc(ValueError))
 
-    def test_absolute(self):
-        # Test PyNumber_Absolute()
-        absolute = _testcapi.number_absolute
+            # Finally, it returns something
+            self.assertEqual(func(HasMeth.with_val(42)), 42)
+            self.assertEqual(func(HasMeth.with_val(NotImplemented)), NotImplemented)
 
-        self.assertEqual(absolute(-1), abs(-1))
-        self.assertEqual(absolute(-1.25), 1.25)
-        self.assertEqual(absolute(1j), 1.0)
-
-        self.assertRaises(TypeError, absolute, "123")
-        self.assertRaises(TypeError, absolute, object())
-        self.assertRaises(SystemError, absolute, NULL)
-
-    def test_invert(self):
-        # Test PyNumber_Invert()
-        invert = _testcapi.number_invert
-
-        self.assertEqual(invert(123), ~123)
-
-        self.assertRaises(TypeError, invert, 1.25)
-        self.assertRaises(TypeError, invert, "123")
-        self.assertRaises(TypeError, invert, object())
-        self.assertRaises(SystemError, invert, NULL)
+            # And accept NULL
+            self.assertRaises(SystemError, func, NULL)
 
     def test_lshift(self):
         # Test PyNumber_Lshift()
@@ -516,7 +511,7 @@ class CAPITest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, long, HasTrunc.with_val(1.25))
         self.assertRaises(RuntimeError, long, HasTrunc.with_exc(RuntimeError))
-        self.assertRaises(ValueError, long, HasBadTrunc())
+        self.assertRaises(RuntimeError, long, HasBadTrunc())
 
         self.assertRaises(TypeError, long, 1j)
         self.assertRaises(TypeError, long, object())
