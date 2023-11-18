@@ -47,7 +47,7 @@ static void seterror(Py_ssize_t, const char *, int *, const char *, const char *
 static const char *convertitem(PyObject *, const char **, va_list *, int, int *,
                                char *, size_t, freelist_t *);
 static const char *converttuple(PyObject *, const char **, va_list *, int,
-                                int *, char *, size_t, int, freelist_t *);
+                                int *, char *, size_t, freelist_t *);
 static const char *convertsimple(PyObject *, const char **, va_list *, int,
                                  char *, size_t, freelist_t *);
 static Py_ssize_t convertbuffer(PyObject *, const void **p, const char **);
@@ -454,7 +454,7 @@ seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
 
 static const char *
 converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
-             int *levels, char *msgbuf, size_t bufsize, int toplevel,
+             int *levels, char *msgbuf, size_t bufsize,
              freelist_t *freelist)
 {
     int level = 0;
@@ -484,7 +484,6 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     if (!PySequence_Check(arg) || PyBytes_Check(arg)) {
         levels[0] = 0;
         PyOS_snprintf(msgbuf, bufsize,
-                      toplevel ? "expected %d arguments, not %.50s" :
                       "must be %d-item sequence, not %.50s",
                   n,
                   arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
@@ -494,18 +493,9 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     len = PySequence_Size(arg);
     if (len != n) {
         levels[0] = 0;
-        if (toplevel) {
-            PyOS_snprintf(msgbuf, bufsize,
-                          "expected %d argument%s, not %zd",
-                          n,
-                          n == 1 ? "" : "s",
-                          len);
-        }
-        else {
-            PyOS_snprintf(msgbuf, bufsize,
-                          "must be sequence of length %d, not %zd",
-                          n, len);
-        }
+        PyOS_snprintf(msgbuf, bufsize,
+                      "must be sequence of length %d, not %zd",
+                      n, len);
         return msgbuf;
     }
 
@@ -548,7 +538,7 @@ convertitem(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     if (*format == '(' /* ')' */) {
         format++;
         msg = converttuple(arg, &format, p_va, flags, levels, msgbuf,
-                           bufsize, 0, freelist);
+                           bufsize, freelist);
         if (msg == NULL)
             format++;
     }
