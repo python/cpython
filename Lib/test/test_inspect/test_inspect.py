@@ -1815,7 +1815,7 @@ class TestGetcallargsFunctions(unittest.TestCase):
         return self.assertWarnsRegex(
             DeprecationWarning,
             re.escape("'getcallargs' is deprecated since 3.5 "
-                        "and slated for removal in Python 3.15"),
+                      "and slated for removal in Python 3.15"),
         )
 
     def assertEqualCallArgs(self, func, call_params_string, locs=None):
