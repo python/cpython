@@ -1,0 +1,1 @@
+Introducing the `total_values` attribute in the Counter class, this enhancement optimizes the calculation of the sum of counts. The `total()` method now directly retrieves the precomputed total, providing a more efficient way to track the overall count in a Counter instance.
