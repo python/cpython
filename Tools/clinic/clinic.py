@@ -1992,6 +1992,7 @@ class CLanguage(Language):
             template = linear_format(template,
                 exit_label="exit:" if need_exit_label else ''
                 )
+
             s = template.format_map(template_dict)
 
             # mild hack:
