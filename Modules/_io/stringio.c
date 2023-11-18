@@ -863,7 +863,7 @@ _io_StringIO___getstate___impl(stringio *self)
 _io.StringIO.__setstate__
 
     state: object
-
+    /
 [clinic start generated code]*/
 
 static PyObject *
