@@ -1866,7 +1866,10 @@ class CLanguage(Language):
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         if f.critical_section:
-            data.lock.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
+            if f.target_critical_section is None:
+                data.lock.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
+            else:
+                data.lock.append('Py_BEGIN_CRITICAL_SECTION({target_critical_section});')
             data.unlock.append('Py_END_CRITICAL_SECTION();')
 
         last_group = 0
@@ -1922,6 +1925,8 @@ class CLanguage(Language):
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
+        if f.target_critical_section is not None:
+            template_dict['target_critical_section'] = f.target_critical_section
         for converter in converters:
             converter.set_template_dict(template_dict)
 
@@ -1984,7 +1989,6 @@ class CLanguage(Language):
             template = linear_format(template,
                 exit_label="exit:" if need_exit_label else ''
                 )
-
             s = template.format_map(template_dict)
 
             # mild hack:
@@ -2970,6 +2974,7 @@ class Function:
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
     critical_section: bool = False
+    target_critical_section: str | None = None
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -5160,6 +5165,7 @@ class DSLParser:
         self.parameter_continuation = ''
         self.preserve_output = False
         self.critical_section = False
+        self.target_critical_section = None
 
     def directive_version(self, required: str) -> None:
         global version
@@ -5288,7 +5294,11 @@ class DSLParser:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
-    def at_critical_section(self) -> None:
+    def at_critical_section(self, target : str | None = None) -> None:
+        if target is not None:
+            self.target_critical_section = target
+        else:
+            self.target_critical_section = None
         self.critical_section = True
 
     def at_staticmethod(self) -> None:
@@ -5514,7 +5524,7 @@ class DSLParser:
 
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist,
-                                 critical_section=self.critical_section)
+                                 critical_section=self.critical_section, target_critical_section=self.target_critical_section)
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically
