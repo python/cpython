@@ -2506,15 +2506,18 @@ dict_repr(PyDictObject *mp)
     PyObject *key = NULL, *value = NULL;
     _PyUnicodeWriter writer;
     int first;
+    PyObject *repr = NULL;
 
     i = Py_ReprEnter((PyObject *)mp);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("{...}") : NULL;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(mp);
+
     if (mp->ma_used == 0) {
-        Py_ReprLeave((PyObject *)mp);
-        return PyUnicode_FromString("{}");
+        repr = PyUnicode_FromString("{}");
+        goto end;
     }
 
     _PyUnicodeWriter_Init(&writer);
@@ -2523,7 +2526,7 @@ dict_repr(PyDictObject *mp)
     writer.min_length = 1 + 4 + (2 + 4) * (mp->ma_used - 1) + 1;
 
     if (_PyUnicodeWriter_WriteChar(&writer, '{') < 0)
-        goto error;
+        goto end;
 
     /* Do repr() on each key+value pair, and insert ": " between them.
        Note that repr may mutate the dict. */
@@ -2539,28 +2542,28 @@ dict_repr(PyDictObject *mp)
 
         if (!first) {
             if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
-                goto error;
+                goto end;
         }
         first = 0;
 
         s = PyObject_Repr(key);
         if (s == NULL)
-            goto error;
+            goto end;
         res = _PyUnicodeWriter_WriteStr(&writer, s);
         Py_DECREF(s);
         if (res < 0)
-            goto error;
+            goto end;
 
         if (_PyUnicodeWriter_WriteASCIIString(&writer, ": ", 2) < 0)
-            goto error;
+            goto end;
 
         s = PyObject_Repr(value);
         if (s == NULL)
-            goto error;
+            goto end;
         res = _PyUnicodeWriter_WriteStr(&writer, s);
         Py_DECREF(s);
         if (res < 0)
-            goto error;
+            goto end;
 
         Py_CLEAR(key);
         Py_CLEAR(value);
@@ -2568,18 +2571,19 @@ dict_repr(PyDictObject *mp)
 
     writer.overallocate = 0;
     if (_PyUnicodeWriter_WriteChar(&writer, '}') < 0)
-        goto error;
+        goto end;
 
+    repr = _PyUnicodeWriter_Finish(&writer);
+
+end:
     Py_ReprLeave((PyObject *)mp);
-
-    return _PyUnicodeWriter_Finish(&writer);
-
-error:
-    Py_ReprLeave((PyObject *)mp);
-    _PyUnicodeWriter_Dealloc(&writer);
-    Py_XDECREF(key);
-    Py_XDECREF(value);
-    return NULL;
+    if (repr == NULL) {
+        _PyUnicodeWriter_Dealloc(&writer);
+        Py_XDECREF(key);
+        Py_XDECREF(value);
+    }
+    Py_END_CRITICAL_SECTION();
+    return repr;
 }
 
 static Py_ssize_t
