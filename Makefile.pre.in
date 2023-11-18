@@ -1609,6 +1609,7 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
 
 Python/flowgraph.o: \
