@@ -1,3 +1,4 @@
+import operator
 import unittest
 import sys
 import warnings
@@ -218,37 +219,36 @@ class CAPITest(unittest.TestCase):
         # CRASHES power(42, NULL)
 
     def test_unary_ops(self):
-        # Common tests for unary functions (PyNumber_Negative(),
-        # PyNumber_Positive(), PyNumber_Absolute() and PyNumber_Invert()
-        methmap = {'__neg__': _testcapi.number_negative,
-                   '__pos__': _testcapi.number_positive,
-                   '__abs__': _testcapi.number_absolute,
-                   '__invert__': _testcapi.number_invert}
+        methmap = {'__neg__': _testcapi.number_negative,   # PyNumber_Negative()
+                   '__pos__': _testcapi.number_positive,   # PyNumber_Positive()
+                   '__abs__': _testcapi.number_absolute,   # PyNumber_Absolute()
+                   '__invert__': _testcapi.number_invert}  # PyNumber_Invert()
 
-        for name, func in methmap.items():
-            # Generic object: no tp_as_number structure
-            self.assertRaises(TypeError, func, object())
+        for name in methmap:
+            for func in (methmap[name], getattr(operator, name)):
+                # Generic object, has no tp_as_number structure
+                self.assertRaises(TypeError, func, object())
 
-            # Has tp_as_number, but not unary
-            class HasAdd(WithDunder):
-                methname = '__add__'
-            self.assertRaises(TypeError, func, HasAdd.with_val("don't care"))
+                # Has tp_as_number, but not the given unary op
+                class HasAdd(WithDunder):
+                    methname = '__add__'
+                self.assertRaises(TypeError, func, HasAdd.with_val("don't care about"))
 
-            class HasMeth(WithDunder):
-                methname = name
+                class HasMeth(WithDunder):
+                    methname = name
 
-            # Has dunder method, but it's a bad descriptor
-            self.assertRaises(RuntimeError, func, HasMeth.with_badattr())
+                # Has dunder method, but it's a bad descriptor
+                self.assertRaises(RuntimeError, func, HasMeth.with_badattr())
 
-            # Dunder method trigger an error
-            self.assertRaises(ValueError, func, HasMeth.with_exc(ValueError))
+                # Dunder method triggers an error
+                self.assertRaises(ValueError, func, HasMeth.with_exc(ValueError))
 
-            # Finally, it returns something
-            self.assertEqual(func(HasMeth.with_val(42)), 42)
-            self.assertEqual(func(HasMeth.with_val(NotImplemented)), NotImplemented)
+                # Finally, it returns something
+                self.assertEqual(func(HasMeth.with_val(42)), 42)
+                self.assertEqual(func(HasMeth.with_val(NotImplemented)), NotImplemented)
 
-            # And accept NULL
-            self.assertRaises(SystemError, func, NULL)
+            # C-API function accepts NULL
+            self.assertRaises(SystemError, methmap[name], NULL)
 
     def test_lshift(self):
         # Test PyNumber_Lshift()
