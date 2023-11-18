@@ -307,13 +307,19 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         /* So MSVC users need not specify the .lib
                         file in their Makefile (other compilers are
                         generally taken care of by distutils.) */
-#                       if defined(_DEBUG)
-#                               pragma comment(lib,"python313_d.lib")
-#                       elif defined(Py_LIMITED_API)
-#                               pragma comment(lib,"python3.lib")
+#                       if defined(Py_LIMITED_API)
+#                               define PINNED_VER "3"
 #                       else
-#                               pragma comment(lib,"python313.lib")
+#                               define PINNED_VER "313"
+#                       endif /* Py_LIMITED_API */
+#                       if defined(_DEBUG)
+#                               define DEBUG_SUFFIX "_d"
+#                       else
+#                               define DEBUG_SUFFIX ""
 #                       endif /* _DEBUG */
+#                       pragma comment(lib, "python" PINNED_VER DEBUG_SUFFIX ".lib")
+#                       undef PINNED_VER
+#                       undef DEBUG_SUFFIX
 #               endif /* _MSC_VER */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */

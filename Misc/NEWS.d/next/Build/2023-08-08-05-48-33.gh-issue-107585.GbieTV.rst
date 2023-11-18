@@ -1,0 +1,2 @@
+Fix the libpython ``.lib`` name when targetting the stable ABI in debug
+builds on MSVC.
