@@ -1929,7 +1929,7 @@ class CLanguage(Language):
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
-        template_dict['target_critical_section'] = ','.join(f.target_critical_section)
+        template_dict['target_critical_section'] = ', '.join(f.target_critical_section)
         for converter in converters:
             converter.set_template_dict(template_dict)
 
