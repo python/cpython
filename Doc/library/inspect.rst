@@ -1086,24 +1086,11 @@ Classes and functions
    ``**`` arguments, if any) to their values from *args* and *kwds*. In case of
    invoking *func* incorrectly, i.e. whenever ``func(*args, **kwds)`` would raise
    an exception because of incompatible signature, an exception of the same type
-   and the same or similar message is raised. For example::
-
-    >>> from inspect import getcallargs
-    >>> def f(a, b=1, *pos, **named):
-    ...     pass
-    ...
-    >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
-    True
-    >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
-    True
-    >>> getcallargs(f)
-    Traceback (most recent call last):
-    ...
-    TypeError: f() missing 1 required positional argument: 'a'
+   and the same or similar message is raised.
 
    .. versionadded:: 3.2
 
-   .. deprecated:: 3.5
+   .. deprecated-removed:: 3.5, 3.15
       Use :meth:`Signature.bind` and :meth:`Signature.bind_partial` instead.
 
 
