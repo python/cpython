@@ -223,7 +223,7 @@ class HoleValue(enum.Enum):
     _JIT_ZERO = enum.auto()
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class Hole:
     offset: int
     kind: HoleKind
@@ -232,14 +232,17 @@ class Hole:
     addend: int
 
 
-@dataclasses.dataclass(frozen=True)
-class StencilGroup:
-    body: bytearray
+@dataclasses.dataclass
+class Stencil:
+    body: bytearray  # XXX: bytes
     holes: list[Hole]
     disassembly: list[str]
-    data: bytearray
-    holes_data: list[Hole]
-    disassembly_data: list[str]
+
+
+@dataclasses.dataclass
+class StencilGroup:
+    body: Stencil
+    data: Stencil
 
 
 S = typing.TypeVar("S", bound=typing.Literal["Section", "Relocation", "Symbol"])
@@ -431,7 +434,9 @@ class Parser:
         holes_data = [Hole(hole.offset, hole.kind, hole.value, hole.symbol, hole.addend) for hole in holes_data]
         holes_data.sort(key=lambda hole: hole.offset)
         assert offset_data == len(self.data), (offset_data, len(self.data), self.data, disassembly_data)
-        return StencilGroup(self.body, holes, disassembly, self.data, holes_data, disassembly_data)
+        body = Stencil(self.body, holes, disassembly)
+        data = Stencil(self.data, holes_data, disassembly_data)
+        return StencilGroup(body, data)
 
     def _got_lookup(self, symbol: str | None) -> int:
         while len(self.data) % 8:
@@ -685,7 +690,7 @@ class MachO(Parser):
                 self.data_relocations.append((before, relocation))
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class Target:
     pattern: str
     model: str
@@ -880,13 +885,13 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
         opnames.append(opname)
         yield f"// {opname}"
         assert stencil.body
-        for line in stencil.disassembly:
+        for line in stencil.body.disassembly:
             yield f"// {line}"
-        body = ", ".join(f"0x{byte:02x}" for byte in stencil.body)
-        yield f"static const unsigned char {opname}_body_bytes[{len(stencil.body)}] = {{{body}}};"
-        if stencil.holes:
-            yield f"static const Hole {opname}_body_holes[{len(stencil.holes) + 1}] = {{"
-            for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
+        body = ", ".join(f"0x{byte:02x}" for byte in stencil.body.body)
+        yield f"static const unsigned char {opname}_body_bytes[{len(stencil.body.body)}] = {{{body}}};"
+        if stencil.body.holes:
+            yield f"static const Hole {opname}_body_holes[{len(stencil.body.holes) + 1}] = {{"
+            for hole in sorted(stencil.body.holes, key=lambda hole: hole.offset):
                 parts = [
                     hex(hole.offset),
                     f"HoleKind_{hole.kind}",
@@ -897,16 +902,16 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
             yield f"}};"
         else:
             yield f"static const Hole {opname}_body_holes[1];"
-        for line in stencil.disassembly_data:
+        for line in stencil.data.disassembly:
             yield f"// {line}"
-        body = ", ".join(f"0x{byte:02x}" for byte in stencil.data)
-        if stencil.data:
-            yield f"static const unsigned char {opname}_data_bytes[{len(stencil.data) + 1}] = {{{body}}};"
+        body = ", ".join(f"0x{byte:02x}" for byte in stencil.data.body)
+        if stencil.data.body:
+            yield f"static const unsigned char {opname}_data_bytes[{len(stencil.data.body) + 1}] = {{{body}}};"
         else:
             yield f"static const unsigned char {opname}_data_bytes[1];"
-        if stencil.holes_data:
-            yield f"static const Hole {opname}_data_holes[{len(stencil.holes_data) + 1}] = {{"
-            for hole in sorted(stencil.holes_data, key=lambda hole: hole.offset):
+        if stencil.data.holes:
+            yield f"static const Hole {opname}_data_holes[{len(stencil.data.holes) + 1}] = {{"
+            for hole in sorted(stencil.data.holes, key=lambda hole: hole.offset):
                 parts = [
                     hex(hole.offset),
                     f"HoleKind_{hole.kind}",
