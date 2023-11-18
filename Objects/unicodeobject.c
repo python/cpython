@@ -5869,6 +5869,23 @@ PyUnicode_AsUTF16String(PyObject *unicode)
     return _PyUnicode_EncodeUTF16(unicode, NULL, 0);
 }
 
+_PyUnicode_Name_CAPI *
+_PyUnicode_GetNameCAPI(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+
+    ucnhash_capi = _Py_atomic_load_ptr(&interp->unicode.ucnhash_capi);
+    if (ucnhash_capi == NULL) {
+        ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+                PyUnicodeData_CAPSULE_NAME, 1);
+
+        // It's fine if we overwite the value here. It's always the same value.
+        _Py_atomic_store_ptr(&interp->unicode.ucnhash_capi, ucnhash_capi);
+    }
+    return ucnhash_capi;
+}
+
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
 PyObject *
