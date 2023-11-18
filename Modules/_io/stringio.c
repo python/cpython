@@ -868,7 +868,7 @@ _io.StringIO.__setstate__
 
 static PyObject *
 _io_StringIO___setstate___impl(stringio *self, PyObject *state)
-/*[clinic end generated code: output=cb3962bc6d5c5609 input=57ab906877b6a460]*/
+/*[clinic end generated code: output=cb3962bc6d5c5609 input=8a27784b11b82e47]*/
 {
     PyObject *initarg;
     PyObject *position_obj;

@@ -452,58 +452,25 @@ _io_StringIO___getstate__(stringio *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_io_StringIO___setstate____doc__,
-"__setstate__($self, /, state)\n"
+"__setstate__($self, state, /)\n"
 "--\n"
 "\n");
 
 #define _IO_STRINGIO___SETSTATE___METHODDEF    \
-    {"__setstate__", _PyCFunction_CAST(_io_StringIO___setstate__), METH_FASTCALL|METH_KEYWORDS, _io_StringIO___setstate____doc__},
+    {"__setstate__", (PyCFunction)_io_StringIO___setstate__, METH_O, _io_StringIO___setstate____doc__},
 
 static PyObject *
 _io_StringIO___setstate___impl(stringio *self, PyObject *state);
 
 static PyObject *
-_io_StringIO___setstate__(stringio *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_StringIO___setstate__(stringio *self, PyObject *state)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(state), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"state", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__setstate__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *state;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    state = args[0];
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_StringIO___setstate___impl(self, state);
     Py_END_CRITICAL_SECTION();
 
-exit:
     return return_value;
 }
-/*[clinic end generated code: output=dedaeb21e1ed20c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=beb2b198d9c58802 input=a9049054013a1b77]*/
