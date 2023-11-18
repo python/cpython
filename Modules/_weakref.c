@@ -15,7 +15,7 @@ module _weakref
 #include "clinic/_weakref.c.h"
 
 /*[clinic input]
-
+@critical_section object
 _weakref.getweakrefcount -> Py_ssize_t
 
   object: object
@@ -26,17 +26,13 @@ Return the number of weak references to 'object'.
 
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=301806d59558ff3e input=cedb69711b6a2507]*/
+/*[clinic end generated code: output=301806d59558ff3e input=6535a580f1d0ebdc]*/
 {
-    PyWeakReference **list;
-
-    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object)))
+    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         return 0;
-    Py_ssize_t count;
-    Py_BEGIN_CRITICAL_SECTION(object);
-    list = GET_WEAKREFS_LISTPTR(object);
-    count = _PyWeakref_GetWeakrefCount(*list);
-    Py_END_CRITICAL_SECTION();
+    }
+    PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
+    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
     return count;
 }
 
@@ -86,6 +82,7 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
 
 
 /*[clinic input]
+@critical_section object
 _weakref.getweakrefs
     object: object
     /
@@ -94,21 +91,19 @@ Return a list of all weak reference objects pointing to 'object'.
 [clinic start generated code]*/
 
 static PyObject *
-_weakref_getweakrefs(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=25c7731d8e011824 input=00c6d0e5d3206693]*/
+_weakref_getweakrefs_impl(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=5ec268989fb8f035 input=3dea95b8f5b31bbb]*/
 {
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         return PyList_New(0);
     }
 
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(object);
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
     Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
 
-    result = PyList_New(count);
+    PyObject *result = PyList_New(count);
     if (result == NULL) {
-        goto exit;
+        return NULL;
     }
 
     PyWeakReference *current = *list;
@@ -116,8 +111,6 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
         PyList_SET_ITEM(result, i, Py_NewRef(current));
         current = current->wr_next;
     }
-exit:
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 
