@@ -871,7 +871,8 @@ class B(A)
             self.assertIn(expected_line, as_text)
 
     def test_long_signatures(self):
-        from typing import Callable, Literal, Annotated
+        from collections.abc import Callable
+        from typing import Literal, Annotated
 
         class A:
             def __init__(self,
@@ -888,7 +889,7 @@ class B(A)
 
 class A(builtins.object)
  |  A(
- |      arg1: Callable[[int, int, int], str],
+ |      arg1: collections.abc.Callable[[int, int, int], str],
  |      arg2: Literal['some value', 'other value'],
  |      arg3: Annotated[int, 'some docs about this type']
  |  ) -> None
@@ -897,7 +898,7 @@ class A(builtins.object)
  |
  |  __init__(
  |      self,
- |      arg1: Callable[[int, int, int], str],
+ |      arg1: collections.abc.Callable[[int, int, int], str],
  |      arg2: Literal['some value', 'other value'],
  |      arg3: Annotated[int, 'some docs about this type']
  |  ) -> None
@@ -924,9 +925,38 @@ class A(builtins.object)
         self.assertEqual(doc, '''Python Library Documentation: function func in module %s
 
 func(
-    arg1: Callable[[Annotated[int, 'Some doc']], str],
+    arg1: collections.abc.Callable[[typing.Annotated[int, 'Some doc']], str],
     arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8]
 ) -> Annotated[int, 'Some other']
+''' % __name__)
+
+        def function_with_really_long_name_so_annotations_can_be_rather_small(
+            arg1: int,
+            arg2: str,
+        ):
+            ...
+
+        doc = pydoc.render_doc(function_with_really_long_name_so_annotations_can_be_rather_small)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function function_with_really_long_name_so_annotations_can_be_rather_small in module %s
+
+function_with_really_long_name_so_annotations_can_be_rather_small(
+    arg1: int,
+    arg2: str
+)
+''' % __name__)
+
+        does_not_have_name = lambda \
+            very_long_parameter_name_that_should_not_fit_into_a_single_line, \
+            second_very_long_parameter_name: ...
+
+        doc = pydoc.render_doc(does_not_have_name)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function <lambda> in module %s
+
+<lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
 ''' % __name__)
 
     def test__future__imports(self):
