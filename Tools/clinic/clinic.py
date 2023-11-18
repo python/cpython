@@ -1866,15 +1866,18 @@ class CLanguage(Language):
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         if f.critical_section:
-            if len(f.target_critical_section) == 0:
-                data.lock.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
-                data.unlock.append('Py_END_CRITICAL_SECTION();')
-            elif len(f.target_critical_section) == 1:
-                data.lock.append('Py_BEGIN_CRITICAL_SECTION({target_critical_section});')
-                data.unlock.append('Py_END_CRITICAL_SECTION();')
-            else:
-                data.lock.append('Py_BEGIN_CRITICAL_SECTION2({target_critical_section});')
-                data.unlock.append('Py_END_CRITICAL_SECTION2();')
+            match len(f.target_critical_section):
+                case 0:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION({self_name});'
+                    unlock = 'Py_END_CRITICAL_SECTION();'
+                case 1:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION({target_critical_section});'
+                    unlock = 'Py_END_CRITICAL_SECTION();'
+                case _:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION2({target_critical_section});'
+                    unlock = 'Py_END_CRITICAL_SECTION2();'
+            data.lock.append(lock)
+            data.unlock.append(unlock)
 
         last_group = 0
         first_optional = len(selfless)
@@ -5301,8 +5304,7 @@ class DSLParser:
     def at_critical_section(self, *args: str) -> None:
         if len(args) > 2:
             fail("Up to 2 critical section variables are supported")
-        for t in args:
-            self.target_critical_section.append(t)
+        self.target_critical_section.extend(args)
         self.critical_section = True
 
     def at_staticmethod(self) -> None:
@@ -5528,7 +5530,8 @@ class DSLParser:
 
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist,
-                                 critical_section=self.critical_section, target_critical_section=self.target_critical_section)
+                                 critical_section=self.critical_section,
+                                 target_critical_section=self.target_critical_section)
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically
