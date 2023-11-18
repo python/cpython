@@ -9,8 +9,6 @@ import os
 import pstats
 import tempfile
 import cProfile
-from os import remove, path
-from functools import cmp_to_key
 
 class AddCallersTestCase(unittest.TestCase):
     """Tests for pstats.add_callers helper."""
