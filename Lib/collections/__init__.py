@@ -606,6 +606,7 @@ class Counter(dict):
         '''
         super().__init__()
         self.update(iterable, **kwds)
+        self.total_values = 0
 
     def __missing__(self, key):
         'The count of elements not in the Counter is zero.'
@@ -614,7 +615,7 @@ class Counter(dict):
 
     def total(self):
         'Sum of the counts'
-        return sum(self.values())
+        return self.total_values
 
     def most_common(self, n=None):
         '''List the n most common elements and their counts from the most
@@ -692,11 +693,14 @@ class Counter(dict):
                     self_get = self.get
                     for elem, count in iterable.items():
                         self[elem] = count + self_get(elem, 0)
+                        self.total_values += count
                 else:
                     # fast path when counter is empty
                     super().update(iterable)
+                    self.total_values += sum(iterable.values())
             else:
                 _count_elements(self, iterable)
+                self.total_values += sum(iterable)
         if kwds:
             self.update(kwds)
 
@@ -721,9 +725,11 @@ class Counter(dict):
             if isinstance(iterable, _collections_abc.Mapping):
                 for elem, count in iterable.items():
                     self[elem] = self_get(elem, 0) - count
+                    self.total_values -= count
             else:
                 for elem in iterable:
                     self[elem] = self_get(elem, 0) - 1
+                    self.total_values -= 1
         if kwds:
             self.subtract(kwds)
 
@@ -737,6 +743,7 @@ class Counter(dict):
     def __delitem__(self, elem):
         'Like dict.__delitem__() but does not raise KeyError for missing values.'
         if elem in self:
+            self.total_values -= self[elem]
             super().__delitem__(elem)
 
     def __repr__(self):
@@ -837,6 +844,7 @@ class Counter(dict):
         for elem, count in other.items():
             if elem not in self and count > 0:
                 result[elem] = count
+        result.total_values = self.total_values + other.total_values 
         return result
 
     def __sub__(self, other):
@@ -853,9 +861,11 @@ class Counter(dict):
             newcount = count - other[elem]
             if newcount > 0:
                 result[elem] = newcount
+                self.total_values -= other[elem] 
         for elem, count in other.items():
             if elem not in self and count < 0:
                 result[elem] = 0 - count
+                self.total_values += count
         return result
 
     def __or__(self, other):
@@ -892,15 +902,19 @@ class Counter(dict):
             other_count = other[elem]
             newcount = count if count < other_count else other_count
             if newcount > 0:
-                result[elem] = newcount
+                result[elem] = newcount             
+        result.total_values = min(self.total_values, other.total_values)
         return result
 
     def __pos__(self):
         'Adds an empty counter, effectively stripping negative and zero counts'
         result = Counter()
+        total_values = 0
         for elem, count in self.items():
             if count > 0:
                 result[elem] = count
+                total_values += count
+        result.total_values = total_values 
         return result
 
     def __neg__(self):
@@ -909,15 +923,19 @@ class Counter(dict):
 
         '''
         result = Counter()
+        total_values = 0
         for elem, count in self.items():
             if count < 0:
                 result[elem] = 0 - count
+                total_values -= count
+        result.total_values = total_values
         return result
 
     def _keep_positive(self):
         '''Internal method to strip elements with a negative or zero count'''
         nonpositive = [elem for elem, count in self.items() if not count > 0]
         for elem in nonpositive:
+            self.total_values -= self[elem] 
             del self[elem]
         return self
 
@@ -932,6 +950,7 @@ class Counter(dict):
         '''
         for elem, count in other.items():
             self[elem] += count
+            self.total_values += count 
         return self._keep_positive()
 
     def __isub__(self, other):
@@ -945,6 +964,7 @@ class Counter(dict):
         '''
         for elem, count in other.items():
             self[elem] -= count
+            self.total_values -= count 
         return self._keep_positive()
 
     def __ior__(self, other):
@@ -960,6 +980,7 @@ class Counter(dict):
             count = self[elem]
             if other_count > count:
                 self[elem] = other_count
+                self.total_values += other_count - count
         return self._keep_positive()
 
     def __iand__(self, other):
@@ -975,6 +996,7 @@ class Counter(dict):
             other_count = other[elem]
             if other_count < count:
                 self[elem] = other_count
+                self.total_values -= count - other_count
         return self._keep_positive()
 
 
