@@ -1866,11 +1866,15 @@ class CLanguage(Language):
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         if f.critical_section:
-            if f.target_critical_section is None:
+            if len(f.target_critical_section) == 0:
                 data.lock.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
-            else:
+                data.unlock.append('Py_END_CRITICAL_SECTION();')
+            elif len(f.target_critical_section) == 1:
                 data.lock.append('Py_BEGIN_CRITICAL_SECTION({target_critical_section});')
-            data.unlock.append('Py_END_CRITICAL_SECTION();')
+                data.unlock.append('Py_END_CRITICAL_SECTION();')
+            else:
+                data.lock.append('Py_BEGIN_CRITICAL_SECTION2({target_critical_section});')
+                data.unlock.append('Py_END_CRITICAL_SECTION2();')
 
         last_group = 0
         first_optional = len(selfless)
@@ -1926,7 +1930,7 @@ class CLanguage(Language):
 
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
         if f.target_critical_section is not None:
-            template_dict['target_critical_section'] = f.target_critical_section
+            template_dict['target_critical_section'] = ','.join(f.target_critical_section)
         for converter in converters:
             converter.set_template_dict(template_dict)
 
@@ -2974,7 +2978,7 @@ class Function:
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
     critical_section: bool = False
-    target_critical_section: str | None = None
+    target_critical_section: list[str] = dc.field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -5165,7 +5169,7 @@ class DSLParser:
         self.parameter_continuation = ''
         self.preserve_output = False
         self.critical_section = False
-        self.target_critical_section: str | None = None
+        self.target_critical_section: list[str] = []
 
     def directive_version(self, required: str) -> None:
         global version
@@ -5294,11 +5298,11 @@ class DSLParser:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
-    def at_critical_section(self, target: str | None = None) -> None:
-        if target is not None:
-            self.target_critical_section = target
-        else:
-            self.target_critical_section = None
+    def at_critical_section(self, *args: str) -> None:
+        if len(args) > 2:
+            fail("Up to 2 critical section variables are supported")
+        for t in args:
+            self.target_critical_section.append(t)
         self.critical_section = True
 
     def at_staticmethod(self) -> None:
