@@ -13,9 +13,9 @@
 #include "pycore_fileutils.h"         // _Py_GetLocaleEncoding()
 #include "pycore_interp.h"            // PyInterpreterState.fs_codec
 #include "pycore_long.h"              // _PyLong_GetZero()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_object.h"            // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"          // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"           // _PyInterpreterState_GET()
 
 #include "_iomodule.h"
 
