@@ -3403,8 +3403,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
         with self.subTest('matching proxy'):
             proxy = type(sys.implementation)(**expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertFalse(hasattr(tbexc, 'msg'))
+            # Verify the special-casing in __init__().
+            self.assertEqual(tbexc.msg, exc.msg)
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3455,8 +3455,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertFalse(hasattr(tbexc, 'msg'))
+            # Verify the special-casing in __init__().
+            self.assertEqual(tbexc.msg, exc_sub.msg)
 
     def test_ImportError(self):
         expected = dict(
@@ -3478,8 +3478,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertNotIn('Did you mean', str(tbexc))
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3530,8 +3530,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertNotIn('Did you mean', str(tbexc))
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
 
     def test_AttributeError(self):
         expected = dict(
@@ -3555,8 +3555,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertNotIn('Did you mean', str(tbexc))
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3602,8 +3602,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertNotIn('Did you mean', str(tbexc))
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
 
     def test_NameError(self):
         expected = dict(
@@ -3626,8 +3626,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertNotIn('Did you mean', str(tbexc))
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
 
         with self.subTest('mismatching proxy'):
             proxy = type(sys.implementation)(
@@ -3678,8 +3678,8 @@ class TestTracebackExceptionExcType(unittest.TestCase, ModuleTestBase):
             proxy = type(sys.implementation)(**expected)
             self.check_proxy(exc, proxy, **expected)
             tbexc = self.check_proxy(exc, proxy, **expected)
-            # This cannot match:
-            self.assertNotIn('Did you mean', str(tbexc))
+            # Verify the special-casing in __init__().
+            self.assertIn('Did you mean', str(tbexc))
 
 
 global_for_suggestions = None

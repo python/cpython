@@ -713,10 +713,19 @@ def _match_class(exc_type, *expected):
     assert expected
     if exc_type is None:
         return False
-    if not isinstance(exc_type, type):
+    assert all(et.__module__ == 'builtins' for et in expected)
+    if isinstance(exc_type, type):
+        if not issubclass(exc_type, expected):
+            return False
+    elif exc_type.__module__ != 'builtins':
         return False
-    if not issubclass(exc_type, expected):
-        return False
+    else:
+        assert exc_type.__qualname__ == exc_type.__name__
+        for _expected in expected:
+            if exc_type.__name__ == _expected.__name__:
+                break
+        else:
+            return False
     return True
 
 
