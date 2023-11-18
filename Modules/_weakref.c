@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_dict.h"              // _PyDict_DelItemIf()
 #include "pycore_object.h"            // _PyObject_GET_WEAKREFS_LISTPTR()
 #include "pycore_weakref.h"           // _PyWeakref_IS_DEAD()
@@ -44,11 +43,7 @@ is_dead_weakref(PyObject *value)
         PyErr_SetString(PyExc_TypeError, "not a weakref");
         return -1;
     }
-    int is_dead;
-    Py_BEGIN_CRITICAL_SECTION(value);
-    is_dead = _PyWeakref_IS_DEAD(value);
-    Py_END_CRITICAL_SECTION();
-    return is_dead;
+    return _PyWeakref_IS_DEAD(value);
 }
 
 /*[clinic input]
