@@ -2833,7 +2833,7 @@ class DummyPathWithSymlinksTest(DummyPathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(PurePathTest, DummyPathTest):
+class PathTest(DummyPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()

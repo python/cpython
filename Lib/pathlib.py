@@ -1356,7 +1356,7 @@ class _PathBase(_PurePathBase):
         self._unsupported("as_uri")
 
 
-class Path(PurePath, _PathBase):
+class Path(_PathBase, PurePath):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -1366,6 +1366,7 @@ class Path(PurePath, _PathBase):
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
     __slots__ = ()
+    as_uri = PurePath.as_uri
 
     def __init__(self, *args, **kwargs):
         if kwargs:
