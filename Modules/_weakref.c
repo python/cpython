@@ -108,7 +108,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
 
     result = PyList_New(count);
     if (result == NULL) {
-        return NULL;
+        goto exit;
     }
 
     PyWeakReference *current = *list;
@@ -116,6 +116,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
         PyList_SET_ITEM(result, i, Py_NewRef(current));
         current = current->wr_next;
     }
+exit:
     Py_END_CRITICAL_SECTION();
     return result;
 }
