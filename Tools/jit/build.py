@@ -888,7 +888,7 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
         for line in stencil.body.disassembly:
             yield f"// {line}"
         body = ", ".join(f"0x{byte:02x}" for byte in stencil.body.body)
-        yield f"static const unsigned char {opname}_body_bytes[{len(stencil.body.body)}] = {{{body}}};"
+        yield f"static const unsigned char {opname}_body_bytes[{len(stencil.body.body) + 1}] = {{{body}}};"
         if stencil.body.holes:
             yield f"static const Hole {opname}_body_holes[{len(stencil.body.holes) + 1}] = {{"
             for hole in sorted(stencil.body.holes, key=lambda hole: hole.offset):
@@ -924,7 +924,7 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
             yield f"static const Hole {opname}_data_holes[1];"
         yield f""
     yield f"#define INIT_STENCIL(STENCIL) {{                     \\"
-    yield f"    .nbytes = Py_ARRAY_LENGTH(STENCIL##_bytes),     \\"
+    yield f"    .nbytes = Py_ARRAY_LENGTH(STENCIL##_bytes) - 1, \\"
     yield f"    .bytes = STENCIL##_bytes,                       \\"
     yield f"    .nholes = Py_ARRAY_LENGTH(STENCIL##_holes) - 1, \\"
     yield f"    .holes = STENCIL##_holes,                       \\"
