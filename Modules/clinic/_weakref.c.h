@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
@@ -129,4 +130,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fa37c70bd37b2ec0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d5d30707212a9870 input=a9049054013a1b77]*/
