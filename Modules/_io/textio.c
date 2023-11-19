@@ -9,7 +9,6 @@
 #include "Python.h"
 #include "pycore_call.h"              // _PyObject_CallMethod()
 #include "pycore_codecs.h"            // _PyCodecInfo_GetIncrementalDecoder()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_fileutils.h"         // _Py_GetLocaleEncoding()
 #include "pycore_interp.h"            // PyInterpreterState.fs_codec
 #include "pycore_long.h"              // _PyLong_GetZero()
