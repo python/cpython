@@ -82,8 +82,8 @@ the following::
 
 The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
-next line: ``Ordered by: cumulative time``, indicates that the text string in the
-far right column was used to sort the output. The column headings include:
+next line: ``Ordered by: cumulative time`` indicates the output is sorted
+by the ``cumtime`` values. The column headings include:
 
 ncalls
    for the number of calls.
