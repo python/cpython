@@ -1000,12 +1000,11 @@ enter_tier_two:
 
     for (;;) {
         opcode = next_uop->opcode;
-        oparg = next_uop->oparg;
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
                 (int)(next_uop - current_executor->trace),
                 _PyUopName(opcode),
-                oparg,
+                next_uop->oparg,
                 next_uop->operand,
                 next_uop->target,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
@@ -1052,7 +1051,7 @@ pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
     DPRINTF(2, "Error: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
-            opcode, _PyUopName(opcode), oparg, next_uop[-1].operand, next_uop[-1].target,
+            opcode, _PyUopName(opcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
             (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
@@ -1065,7 +1064,7 @@ deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
-            opcode, _PyUopName(opcode), oparg, next_uop[-1].operand, next_uop[-1].target,
+            opcode, _PyUopName(opcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
             (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(opcode, miss);

@@ -25,6 +25,7 @@
         }
 
         case LOAD_FAST_CHECK: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             value = GETLOCAL(oparg);
             if (value == NULL) goto unbound_local_error_tier_two;
@@ -35,6 +36,7 @@
         }
 
         case LOAD_FAST: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             value = GETLOCAL(oparg);
             assert(value != NULL);
@@ -45,6 +47,7 @@
         }
 
         case LOAD_FAST_AND_CLEAR: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
@@ -55,6 +58,7 @@
         }
 
         case LOAD_CONST: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             value = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(value);
@@ -64,6 +68,7 @@
         }
 
         case STORE_FAST: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
@@ -525,6 +530,7 @@
         }
 
         case LIST_APPEND: {
+            oparg = next_uop[-1].oparg;
             PyObject *v;
             PyObject *list;
             v = stack_pointer[-1];
@@ -535,6 +541,7 @@
         }
 
         case SET_ADD: {
+            oparg = next_uop[-1].oparg;
             PyObject *v;
             PyObject *set;
             v = stack_pointer[-1];
@@ -621,6 +628,7 @@
         }
 
         case CALL_INTRINSIC_1: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -633,6 +641,7 @@
         }
 
         case CALL_INTRINSIC_2: {
+            oparg = next_uop[-1].oparg;
             PyObject *value1;
             PyObject *value2;
             PyObject *res;
@@ -764,6 +773,7 @@
         }
 
         case GET_AWAITABLE: {
+            oparg = next_uop[-1].oparg;
             PyObject *iterable;
             PyObject *iter;
             iterable = stack_pointer[-1];
@@ -825,6 +835,7 @@
         }
 
         case STORE_NAME: {
+            oparg = next_uop[-1].oparg;
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -847,6 +858,7 @@
         }
 
         case DELETE_NAME: {
+            oparg = next_uop[-1].oparg;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -867,6 +879,7 @@
         }
 
         case _UNPACK_SEQUENCE: {
+            oparg = next_uop[-1].oparg;
             PyObject *seq;
             seq = stack_pointer[-1];
             PyObject **top = stack_pointer + oparg - 1;
@@ -879,6 +892,7 @@
         }
 
         case UNPACK_SEQUENCE_TWO_TUPLE: {
+            oparg = next_uop[-1].oparg;
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -896,6 +910,7 @@
         }
 
         case UNPACK_SEQUENCE_TUPLE: {
+            oparg = next_uop[-1].oparg;
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -914,6 +929,7 @@
         }
 
         case UNPACK_SEQUENCE_LIST: {
+            oparg = next_uop[-1].oparg;
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -932,6 +948,7 @@
         }
 
         case UNPACK_EX: {
+            oparg = next_uop[-1].oparg;
             PyObject *seq;
             seq = stack_pointer[-1];
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
@@ -944,6 +961,7 @@
         }
 
         case _STORE_ATTR: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *v;
             owner = stack_pointer[-1];
@@ -958,6 +976,7 @@
         }
 
         case DELETE_ATTR: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             owner = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -969,6 +988,7 @@
         }
 
         case STORE_GLOBAL: {
+            oparg = next_uop[-1].oparg;
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -980,6 +1000,7 @@
         }
 
         case DELETE_GLOBAL: {
+            oparg = next_uop[-1].oparg;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
@@ -1009,6 +1030,7 @@
         }
 
         case LOAD_FROM_DICT_OR_GLOBALS: {
+            oparg = next_uop[-1].oparg;
             PyObject *mod_or_class_dict;
             PyObject *v;
             mod_or_class_dict = stack_pointer[-1];
@@ -1038,6 +1060,7 @@
         }
 
         case LOAD_NAME: {
+            oparg = next_uop[-1].oparg;
             PyObject *v;
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
@@ -1071,6 +1094,7 @@
         }
 
         case _LOAD_GLOBAL: {
+            oparg = next_uop[-1].oparg;
             PyObject *res;
             PyObject *null = NULL;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -1133,6 +1157,7 @@
         }
 
         case _LOAD_GLOBAL_MODULE: {
+            oparg = next_uop[-1].oparg;
             PyObject *res;
             PyObject *null = NULL;
             uint16_t index = (uint16_t)next_uop[-1].operand;
@@ -1151,6 +1176,7 @@
         }
 
         case _LOAD_GLOBAL_BUILTINS: {
+            oparg = next_uop[-1].oparg;
             PyObject *res;
             PyObject *null = NULL;
             uint16_t index = (uint16_t)next_uop[-1].operand;
@@ -1169,6 +1195,7 @@
         }
 
         case DELETE_FAST: {
+            oparg = next_uop[-1].oparg;
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error_tier_two;
             SETLOCAL(oparg, NULL);
@@ -1176,6 +1203,7 @@
         }
 
         case MAKE_CELL: {
+            oparg = next_uop[-1].oparg;
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
@@ -1188,6 +1216,7 @@
         }
 
         case DELETE_DEREF: {
+            oparg = next_uop[-1].oparg;
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             // Can't use ERROR_IF here.
@@ -1202,6 +1231,7 @@
         }
 
         case LOAD_FROM_DICT_OR_DEREF: {
+            oparg = next_uop[-1].oparg;
             PyObject *class_dict;
             PyObject *value;
             class_dict = stack_pointer[-1];
@@ -1227,6 +1257,7 @@
         }
 
         case LOAD_DEREF: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             PyObject *cell = GETLOCAL(oparg);
             value = PyCell_GET(cell);
@@ -1241,6 +1272,7 @@
         }
 
         case STORE_DEREF: {
+            oparg = next_uop[-1].oparg;
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *cell = GETLOCAL(oparg);
@@ -1252,6 +1284,7 @@
         }
 
         case COPY_FREE_VARS: {
+            oparg = next_uop[-1].oparg;
             /* Copy closure variables to free variables */
             PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyFunction_Check(frame->f_funcobj));
@@ -1266,6 +1299,7 @@
         }
 
         case BUILD_STRING: {
+            oparg = next_uop[-1].oparg;
             PyObject **pieces;
             PyObject *str;
             pieces = stack_pointer - oparg;
@@ -1281,6 +1315,7 @@
         }
 
         case BUILD_TUPLE: {
+            oparg = next_uop[-1].oparg;
             PyObject **values;
             PyObject *tup;
             values = stack_pointer - oparg;
@@ -1293,6 +1328,7 @@
         }
 
         case BUILD_LIST: {
+            oparg = next_uop[-1].oparg;
             PyObject **values;
             PyObject *list;
             values = stack_pointer - oparg;
@@ -1305,6 +1341,7 @@
         }
 
         case LIST_EXTEND: {
+            oparg = next_uop[-1].oparg;
             PyObject *iterable;
             PyObject *list;
             iterable = stack_pointer[-1];
@@ -1329,6 +1366,7 @@
         }
 
         case SET_UPDATE: {
+            oparg = next_uop[-1].oparg;
             PyObject *iterable;
             PyObject *set;
             iterable = stack_pointer[-1];
@@ -1341,6 +1379,7 @@
         }
 
         case BUILD_SET: {
+            oparg = next_uop[-1].oparg;
             PyObject **values;
             PyObject *set;
             values = stack_pointer - oparg;
@@ -1365,6 +1404,7 @@
         }
 
         case BUILD_MAP: {
+            oparg = next_uop[-1].oparg;
             PyObject **values;
             PyObject *map;
             values = stack_pointer - oparg*2;
@@ -1407,6 +1447,7 @@
         }
 
         case BUILD_CONST_KEY_MAP: {
+            oparg = next_uop[-1].oparg;
             PyObject *keys;
             PyObject **values;
             PyObject *map;
@@ -1432,6 +1473,7 @@
         }
 
         case DICT_UPDATE: {
+            oparg = next_uop[-1].oparg;
             PyObject *update;
             PyObject *dict;
             update = stack_pointer[-1];
@@ -1451,6 +1493,7 @@
         }
 
         case DICT_MERGE: {
+            oparg = next_uop[-1].oparg;
             PyObject *update;
             PyObject *dict;
             PyObject *callable;
@@ -1468,6 +1511,7 @@
         }
 
         case MAP_ADD: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             PyObject *key;
             PyObject *dict;
@@ -1483,6 +1527,7 @@
         }
 
         case LOAD_SUPER_ATTR_ATTR: {
+            oparg = next_uop[-1].oparg;
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1506,6 +1551,7 @@
         }
 
         case LOAD_SUPER_ATTR_METHOD: {
+            oparg = next_uop[-1].oparg;
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1542,6 +1588,7 @@
         }
 
         case _LOAD_ATTR: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
@@ -1603,6 +1650,7 @@
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -1633,6 +1681,7 @@
         }
 
         case _LOAD_ATTR_MODULE: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -1667,6 +1716,7 @@
         }
 
         case _LOAD_ATTR_WITH_HINT: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -1698,6 +1748,7 @@
         }
 
         case _LOAD_ATTR_SLOT: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -1727,6 +1778,7 @@
         }
 
         case _LOAD_ATTR_CLASS: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -1791,6 +1843,7 @@
         }
 
         case _COMPARE_OP: {
+            oparg = next_uop[-1].oparg;
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1813,6 +1866,7 @@
         }
 
         case COMPARE_OP_FLOAT: {
+            oparg = next_uop[-1].oparg;
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1835,6 +1889,7 @@
         }
 
         case COMPARE_OP_INT: {
+            oparg = next_uop[-1].oparg;
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1861,6 +1916,7 @@
         }
 
         case COMPARE_OP_STR: {
+            oparg = next_uop[-1].oparg;
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1884,6 +1940,7 @@
         }
 
         case IS_OP: {
+            oparg = next_uop[-1].oparg;
             PyObject *right;
             PyObject *left;
             PyObject *b;
@@ -1899,6 +1956,7 @@
         }
 
         case CONTAINS_OP: {
+            oparg = next_uop[-1].oparg;
             PyObject *right;
             PyObject *left;
             PyObject *b;
@@ -1995,6 +2053,7 @@
         }
 
         case MATCH_CLASS: {
+            oparg = next_uop[-1].oparg;
             PyObject *names;
             PyObject *type;
             PyObject *subject;
@@ -2386,6 +2445,7 @@
         }
 
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
@@ -2405,6 +2465,7 @@
         }
 
         case _LOAD_ATTR_METHOD_NO_DICT: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
@@ -2424,6 +2485,7 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
@@ -2438,6 +2500,7 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
@@ -2464,6 +2527,7 @@
         }
 
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
+            oparg = next_uop[-1].oparg;
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
@@ -2482,6 +2546,7 @@
         }
 
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
+            oparg = next_uop[-1].oparg;
             PyObject *null;
             PyObject *callable;
             null = stack_pointer[-1 - oparg];
@@ -2492,6 +2557,7 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            oparg = next_uop[-1].oparg;
             PyObject *callable;
             PyObject *func;
             PyObject *self;
@@ -2513,6 +2579,7 @@
         }
 
         case _CHECK_FUNCTION_EXACT_ARGS: {
+            oparg = next_uop[-1].oparg;
             PyObject *self_or_null;
             PyObject *callable;
             self_or_null = stack_pointer[-1 - oparg];
@@ -2527,6 +2594,7 @@
         }
 
         case _CHECK_STACK_SPACE: {
+            oparg = next_uop[-1].oparg;
             PyObject *callable;
             callable = stack_pointer[-2 - oparg];
             PyFunctionObject *func = (PyFunctionObject *)callable;
@@ -2537,6 +2605,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2585,6 +2654,7 @@
         }
 
         case CALL_TYPE_1: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2607,6 +2677,7 @@
         }
 
         case CALL_STR_1: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2631,6 +2702,7 @@
         }
 
         case CALL_TUPLE_1: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2669,6 +2741,7 @@
         }
 
         case CALL_BUILTIN_CLASS: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2700,6 +2773,7 @@
         }
 
         case CALL_BUILTIN_O: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2739,6 +2813,7 @@
         }
 
         case CALL_BUILTIN_FAST: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2782,6 +2857,7 @@
         }
 
         case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2819,6 +2895,7 @@
         }
 
         case CALL_LEN: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2854,6 +2931,7 @@
         }
 
         case CALL_ISINSTANCE: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2891,6 +2969,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_O: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2933,6 +3012,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2973,6 +3053,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_NOARGS: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3014,6 +3095,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_FAST: {
+            oparg = next_uop[-1].oparg;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3073,6 +3155,7 @@
         }
 
         case SET_FUNCTION_ATTRIBUTE: {
+            oparg = next_uop[-1].oparg;
             PyObject *func;
             PyObject *attr;
             func = stack_pointer[-1];
@@ -3107,6 +3190,7 @@
         }
 
         case BUILD_SLICE: {
+            oparg = next_uop[-1].oparg;
             PyObject *step = NULL;
             PyObject *stop;
             PyObject *start;
@@ -3126,6 +3210,7 @@
         }
 
         case CONVERT_VALUE: {
+            oparg = next_uop[-1].oparg;
             PyObject *value;
             PyObject *result;
             value = stack_pointer[-1];
@@ -3173,6 +3258,7 @@
         }
 
         case COPY: {
+            oparg = next_uop[-1].oparg;
             PyObject *bottom;
             PyObject *top;
             bottom = stack_pointer[-1 - (oparg-1)];
@@ -3184,6 +3270,7 @@
         }
 
         case _BINARY_OP: {
+            oparg = next_uop[-1].oparg;
             PyObject *rhs;
             PyObject *lhs;
             PyObject *res;
@@ -3200,6 +3287,7 @@
         }
 
         case SWAP: {
+            oparg = next_uop[-1].oparg;
             PyObject *top;
             PyObject *bottom;
             top = stack_pointer[-1];
@@ -3252,6 +3340,7 @@
         }
 
         case _SET_IP: {
+            oparg = next_uop[-1].oparg;
             TIER_TWO_ONLY
             // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
             frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
@@ -3259,6 +3348,7 @@
         }
 
         case _SAVE_RETURN_OFFSET: {
+            oparg = next_uop[-1].oparg;
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             #endif
@@ -3275,6 +3365,7 @@
         }
 
         case _INSERT: {
+            oparg = next_uop[-1].oparg;
             PyObject *top;
             top = stack_pointer[-1];
             // Inserts TOS at position specified by oparg;
