@@ -30,12 +30,6 @@ The :mod:`shlex` module defines the following functions:
    in POSIX mode by default, but uses non-POSIX mode if the *posix* argument is
    false.
 
-   .. note::
-
-      Since the :func:`split` function instantiates a :class:`~shlex.shlex`
-      instance, passing ``None`` for *s* will read the string to split from
-      standard input.
-
    .. versionchanged:: 3.12
       Passing ``None`` for *s* argument now raises an exception, rather than
       reading :data:`sys.stdin`.

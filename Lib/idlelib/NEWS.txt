@@ -1,8 +1,32 @@
-What's New in IDLE 3.11.0
-(since 3.10.0)
-Released on 2022-10-03
+What's New in IDLE 3.12.0
+(since 3.11.0)
+Released on 2023-10-02
 =========================
 
+
+gh-104719: Remove IDLE's modification of tokenize.tabsize and test
+other uses of tokenize data and methods.
+
+gh-104499: Fix completions for Tk Aqua 8.7 (currently blank).
+
+gh-104486: Make About print both tcl and tk versions if different,
+as is expected someday.
+
+gh-88496 Fix IDLE test hang on macOS.
+
+gh-103314 Support sys.last_exc after exceptions in Shell.
+Patch by Irit Katriel.
+
+
+What's New in IDLE 3.11.0
+(since 3.10.0)
+Released on 2022-10-24
+=========================
+
+gh-97527: Fix a bug in the previous bugfix that caused IDLE to not
+start when run with 3.10.8, 3.12.0a1, and at least Microsoft Python
+3.10.2288.0 installed without the Lib/test package.  3.11.0 was never
+affected.
 
 gh-65802: Document handling of extensions in Save As dialogs.
 

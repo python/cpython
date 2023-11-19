@@ -779,8 +779,8 @@ by a search through the class's :term:`method resolution order`.
 
 If a descriptor is found, it is invoked with ``desc.__get__(None, A)``.
 
-The full C implementation can be found in :c:func:`type_getattro()` and
-:c:func:`_PyType_Lookup()` in :source:`Objects/typeobject.c`.
+The full C implementation can be found in :c:func:`!type_getattro` and
+:c:func:`!_PyType_Lookup` in :source:`Objects/typeobject.c`.
 
 
 Invocation from super
@@ -794,7 +794,7 @@ for the base class ``B`` immediately following ``A`` and then returns
 ``B.__dict__['m'].__get__(obj, A)``.  If not a descriptor, ``m`` is returned
 unchanged.
 
-The full C implementation can be found in :c:func:`super_getattro()` in
+The full C implementation can be found in :c:func:`!super_getattro` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
 `Guido's Tutorial
 <https://www.python.org/download/releases/2.2.3/descrintro/#cooperation>`_.
@@ -836,8 +836,8 @@ and if they define :meth:`__set_name__`, that method is called with two
 arguments.  The *owner* is the class where the descriptor is used, and the
 *name* is the class variable the descriptor was assigned to.
 
-The implementation details are in :c:func:`type_new()` and
-:c:func:`set_names()` in :source:`Objects/typeobject.c`.
+The implementation details are in :c:func:`!type_new` and
+:c:func:`!set_names` in :source:`Objects/typeobject.c`.
 
 Since the update logic is in :meth:`type.__new__`, notifications only take
 place at the time of class creation.  If descriptors are added to the class
@@ -847,7 +847,7 @@ afterwards, :meth:`__set_name__` will need to be called manually.
 ORM example
 -----------
 
-The following code is simplified skeleton showing how data descriptors could
+The following code is a simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
 <https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
@@ -942,6 +942,10 @@ it can be updated:
     >>> Movie('Star Wars').director = 'J.J. Abrams'
     >>> Movie('Star Wars').director
     'J.J. Abrams'
+
+.. testcleanup::
+
+   conn.close()
 
 
 Pure Python Equivalents
@@ -1141,6 +1145,16 @@ roughly equivalent to:
             obj = self.__self__
             return func(obj, *args, **kwargs)
 
+        def __getattribute__(self, name):
+            "Emulate method_getset() in Objects/classobject.c"
+            if name == '__doc__':
+                return self.__func__.__doc__
+            return object.__getattribute__(self, name)
+
+        def __getattr__(self, name):
+            "Emulate method_getattro() in Objects/classobject.c"
+            return getattr(self.__func__, name)
+
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
 means that functions are non-data descriptors that return bound methods
@@ -1273,11 +1287,14 @@ Using the non-data descriptor protocol, a pure Python version of
 
 .. testcode::
 
+    import functools
+
     class StaticMethod:
         "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
 
         def __init__(self, f):
             self.f = f
+            functools.update_wrapper(self, f)
 
         def __get__(self, obj, objtype=None):
             return self.f
@@ -1285,13 +1302,19 @@ Using the non-data descriptor protocol, a pure Python version of
         def __call__(self, *args, **kwds):
             return self.f(*args, **kwds)
 
+The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
+that refers to the underlying function.  Also it carries forward
+the attributes necessary to make the wrapper look like the wrapped
+function: ``__name__``, ``__qualname__``, ``__doc__``, and ``__annotations__``.
+
 .. testcode::
     :hide:
 
     class E_sim:
         @StaticMethod
-        def f(x):
-            return x * 10
+        def f(x: int) -> str:
+            "Simple function example"
+            return "!" * x
 
     wrapped_ord = StaticMethod(ord)
 
@@ -1299,11 +1322,51 @@ Using the non-data descriptor protocol, a pure Python version of
     :hide:
 
     >>> E_sim.f(3)
-    30
+    '!!!'
     >>> E_sim().f(3)
-    30
+    '!!!'
+
+    >>> sm = vars(E_sim)['f']
+    >>> type(sm).__name__
+    'StaticMethod'
+    >>> f = E_sim.f
+    >>> type(f).__name__
+    'function'
+    >>> sm.__name__
+    'f'
+    >>> f.__name__
+    'f'
+    >>> sm.__qualname__
+    'E_sim.f'
+    >>> f.__qualname__
+    'E_sim.f'
+    >>> sm.__doc__
+    'Simple function example'
+    >>> f.__doc__
+    'Simple function example'
+    >>> sm.__annotations__
+    {'x': <class 'int'>, 'return': <class 'str'>}
+    >>> f.__annotations__
+    {'x': <class 'int'>, 'return': <class 'str'>}
+    >>> sm.__module__ == f.__module__
+    True
+    >>> sm(3)
+    '!!!'
+    >>> f(3)
+    '!!!'
+
     >>> wrapped_ord('A')
     65
+    >>> wrapped_ord.__module__ == ord.__module__
+    True
+    >>> wrapped_ord.__wrapped__ == ord
+    True
+    >>> wrapped_ord.__name__ == ord.__name__
+    True
+    >>> wrapped_ord.__qualname__ == ord.__qualname__
+    True
+    >>> wrapped_ord.__doc__ == ord.__doc__
+    True
 
 
 Class methods
@@ -1359,19 +1422,18 @@ Using the non-data descriptor protocol, a pure Python version of
 
 .. testcode::
 
+    import functools
+
     class ClassMethod:
         "Emulate PyClassMethod_Type() in Objects/funcobject.c"
 
         def __init__(self, f):
             self.f = f
+            functools.update_wrapper(self, f)
 
         def __get__(self, obj, cls=None):
             if cls is None:
                 cls = type(obj)
-            if hasattr(type(self.f), '__get__'):
-                # This code path was added in Python 3.9
-                # and was deprecated in Python 3.11.
-                return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
 .. testcode::
@@ -1380,48 +1442,51 @@ Using the non-data descriptor protocol, a pure Python version of
     # Verify the emulation works
     class T:
         @ClassMethod
-        def cm(cls, x, y):
-            return (cls, x, y)
-
-        @ClassMethod
-        @property
-        def __doc__(cls):
-            return f'A doc for {cls.__name__!r}'
+        def cm(cls, x: int, y: str) -> tuple[str, int, str]:
+            "Class method that returns a tuple"
+            return (cls.__name__, x, y)
 
 
 .. doctest::
     :hide:
 
     >>> T.cm(11, 22)
-    (<class 'T'>, 11, 22)
+    ('T', 11, 22)
 
     # Also call it from an instance
     >>> t = T()
     >>> t.cm(11, 22)
-    (<class 'T'>, 11, 22)
+    ('T', 11, 22)
 
-    # Check the alternate path for chained descriptors
-    >>> T.__doc__
-    "A doc for 'T'"
+    # Verify that T uses our emulation
+    >>> type(vars(T)['cm']).__name__
+    'ClassMethod'
+
+    # Verify that update_wrapper() correctly copied attributes
+    >>> T.cm.__name__
+    'cm'
+    >>> T.cm.__qualname__
+    'T.cm'
+    >>> T.cm.__doc__
+    'Class method that returns a tuple'
+    >>> T.cm.__annotations__
+    {'x': <class 'int'>, 'y': <class 'str'>, 'return': tuple[str, int, str]}
+
+    # Verify that __wrapped__ was added and works correctly
+    >>> f = vars(T)['cm'].__wrapped__
+    >>> type(f).__name__
+    'function'
+    >>> f.__name__
+    'cm'
+    >>> f(T, 11, 22)
+    ('T', 11, 22)
 
 
-The code path for ``hasattr(type(self.f), '__get__')`` was added in
-Python 3.9 and makes it possible for :func:`classmethod` to support
-chained decorators.  For example, a classmethod and property could be
-chained together.  In Python 3.11, this functionality was deprecated.
-
-.. testcode::
-
-    class G:
-        @classmethod
-        @property
-        def __doc__(cls):
-            return f'A doc for {cls.__name__!r}'
-
-.. doctest::
-
-    >>> G.__doc__
-    "A doc for 'G'"
+The :func:`functools.update_wrapper` call in ``ClassMethod`` adds a
+``__wrapped__`` attribute that refers to the underlying function.  Also
+it carries forward the attributes necessary to make the wrapper look
+like the wrapped function: ``__name__``, ``__qualname__``, ``__doc__``,
+and ``__annotations__``.
 
 
 Member objects and __slots__
@@ -1535,6 +1600,8 @@ by member descriptors:
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
+            if obj is None:
+                return self
             value = obj._slotvalues[self.offset]
             if value is null:
                 raise AttributeError(self.name)
@@ -1563,13 +1630,13 @@ variables:
     class Type(type):
         'Simulate how the type metaclass adds member objects for slots'
 
-        def __new__(mcls, clsname, bases, mapping):
+        def __new__(mcls, clsname, bases, mapping, **kwargs):
             'Emulate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
-            return type.__new__(mcls, clsname, bases, mapping)
+            return type.__new__(mcls, clsname, bases, mapping, **kwargs)
 
 The :meth:`object.__new__` method takes care of creating instances that have
 slots instead of an instance dictionary.  Here is a rough simulation in pure
@@ -1580,7 +1647,7 @@ Python:
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
 
-        def __new__(cls, *args):
+        def __new__(cls, *args, **kwargs):
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
@@ -1593,7 +1660,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__setattr__(name, value)
 
@@ -1602,7 +1669,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__delattr__(name)
 

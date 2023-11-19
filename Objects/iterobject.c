@@ -1,7 +1,9 @@
 /* Iterator objects */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_HasLen()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 typedef struct {
@@ -23,8 +25,7 @@ PySeqIter_New(PyObject *seq)
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = seq;
+    it->it_seq = Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -103,11 +104,16 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL)
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
+        return Py_BuildValue("N(())", iter);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -183,10 +189,8 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
     it = PyObject_GC_New(calliterobject, &PyCallIter_Type);
     if (it == NULL)
         return NULL;
-    Py_INCREF(callable);
-    it->it_callable = callable;
-    Py_INCREF(sentinel);
-    it->it_sentinel = sentinel;
+    it->it_callable = Py_NewRef(callable);
+    it->it_sentinel = Py_NewRef(sentinel);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -217,7 +221,7 @@ calliter_iternext(calliterobject *it)
     }
 
     result = _PyObject_CallNoArgs(it->it_callable);
-    if (result != NULL) {
+    if (result != NULL && it->it_sentinel != NULL){
         int ok;
 
         ok = PyObject_RichCompareBool(it->it_sentinel, result, Py_EQ);
@@ -225,7 +229,6 @@ calliter_iternext(calliterobject *it)
             return result; /* Common case, fast path */
         }
 
-        Py_DECREF(result);
         if (ok > 0) {
             Py_CLEAR(it->it_callable);
             Py_CLEAR(it->it_sentinel);
@@ -236,17 +239,23 @@ calliter_iternext(calliterobject *it)
         Py_CLEAR(it->it_callable);
         Py_CLEAR(it->it_sentinel);
     }
+    Py_XDECREF(result);
     return NULL;
 }
 
 static PyObject *
 calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_callable, it->it_sentinel);
+        return Py_BuildValue("N(OO)", iter, it->it_callable, it->it_sentinel);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
+        return Py_BuildValue("N(())", iter);
 }
 
 static PyMethodDef calliter_methods[] = {
@@ -496,10 +505,8 @@ PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
     if (anext == NULL) {
         return NULL;
     }
-    Py_INCREF(awaitable);
-    anext->wrapped = awaitable;
-    Py_INCREF(default_value);
-    anext->default_value = default_value;
+    anext->wrapped = Py_NewRef(awaitable);
+    anext->default_value = Py_NewRef(default_value);
     _PyObject_GC_TRACK(anext);
     return (PyObject *)anext;
 }

@@ -1,1 +1,0 @@
-Added test a harness for direct unit tests of the compiler's optimization stage. The ``_testinternalcapi.optimize_cfg()`` function runs the optimiser on a sequence of instructions. The ``CfgOptimizationTestCase`` class in ``test.support`` has utilities for invoking the optimizer and checking the output.

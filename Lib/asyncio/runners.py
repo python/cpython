@@ -157,7 +157,7 @@ class Runner:
         raise KeyboardInterrupt()
 
 
-def run(main, *, debug=None):
+def run(main, *, debug=None, loop_factory=None):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -190,7 +190,7 @@ def run(main, *, debug=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug) as runner:
+    with Runner(debug=debug, loop_factory=loop_factory) as runner:
         return runner.run(main)
 
 

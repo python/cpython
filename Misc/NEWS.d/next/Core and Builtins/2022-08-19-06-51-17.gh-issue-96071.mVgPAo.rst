@@ -1,1 +1,0 @@
-Fix a deadlock in :c:func:`PyGILState_Ensure` when allocating new thread state. Patch by Kumar Aditya.

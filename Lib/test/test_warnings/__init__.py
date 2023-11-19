@@ -12,6 +12,7 @@ from test.support import os_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
+from test.test_warnings.data import package_helper
 from test.test_warnings.data import stacklevel as warning_tests
 
 import warnings as original_warnings
@@ -386,9 +387,13 @@ class FilterTests(BaseTest):
             with self.module.catch_warnings(
                 module=self.module, action="error", category=FutureWarning
             ):
-                self.module.warn("Other types of warnings are not errors")
-                self.assertRaises(FutureWarning,
-                                  self.module.warn, FutureWarning("msg"))
+                with support.captured_stderr() as stderr:
+                    error_msg = "Other types of warnings are not errors"
+                    self.module.warn(error_msg)
+                    self.assertRaises(FutureWarning,
+                                      self.module.warn, FutureWarning("msg"))
+                    stderr = stderr.getvalue()
+                    self.assertIn(error_msg, stderr)
 
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
@@ -471,6 +476,42 @@ class WarnTests(BaseTest):
                 import test.test_warnings.data.import_warning
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].filename, __file__)
+
+    def test_skip_file_prefixes(self):
+        with warnings_state(self.module):
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.simplefilter('always')
+
+                # Warning never attributed to the data/ package.
+                package_helper.inner_api(
+                        "inner_api", stacklevel=2,
+                        warnings_module=warning_tests.warnings)
+                self.assertEqual(w[-1].filename, __file__)
+                warning_tests.package("package api", stacklevel=2)
+                self.assertEqual(w[-1].filename, __file__)
+                self.assertEqual(w[-2].filename, w[-1].filename)
+                # Low stacklevels are overridden to 2 behavior.
+                warning_tests.package("package api 1", stacklevel=1)
+                self.assertEqual(w[-1].filename, __file__)
+                warning_tests.package("package api 0", stacklevel=0)
+                self.assertEqual(w[-1].filename, __file__)
+                warning_tests.package("package api -99", stacklevel=-99)
+                self.assertEqual(w[-1].filename, __file__)
+
+                # The stacklevel still goes up out of the package.
+                warning_tests.package("prefix02", stacklevel=3)
+                self.assertIn("unittest", w[-1].filename)
+
+    def test_skip_file_prefixes_type_errors(self):
+        with warnings_state(self.module):
+            warn = warning_tests.warnings.warn
+            with self.assertRaises(TypeError):
+                warn("msg", skip_file_prefixes=[])
+            with self.assertRaises(TypeError):
+                warn("msg", skip_file_prefixes=(b"bytes",))
+            with self.assertRaises(TypeError):
+                warn("msg", skip_file_prefixes="a sequence of strs")
 
     def test_exec_filename(self):
         filename = "<warnings-test>"
@@ -895,7 +936,7 @@ class WarningsDisplayTests(BaseTest):
         message = "msg"
         category = Warning
         file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
-        line_num = 3
+        line_num = 5
         file_line = linecache.getline(file_name, line_num).strip()
         format = "%s:%s: %s: %s\n  %s\n"
         expect = format % (file_name, line_num, category.__name__, message,
@@ -1192,6 +1233,10 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stderr.splitlines(),
             [b"Traceback (most recent call last):",
              b"  File \"<string>\", line 1, in <module>",
+             b'    import sys, warnings; sys.stdout.write(str(sys.warnoptions)); warnings.w'
+             b"arn('Message', DeprecationWarning)",
+             b'                                                                  ^^^^^^^^^^'
+             b'^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
              b"DeprecationWarning: Message"])
 
     def test_default_filter_configuration(self):

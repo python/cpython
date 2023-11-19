@@ -30,13 +30,6 @@ static void pymem_destructor(PyObject *ptr)
 /*
   PyCField_Type
 */
-static PyObject *
-PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    CFieldObject *obj;
-    obj = (CFieldObject *)type->tp_alloc(type, 0);
-    return (PyObject *)obj;
-}
 
 /*
  * Expects the size, index and offset for the current field in *psize and
@@ -68,7 +61,9 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
+    ctypes_state *st = GLOBAL_STATE();
+    PyTypeObject *tp = st->PyCField_Type;
+    self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL)
         return NULL;
     dict = PyType_stgdict(desc);
@@ -144,8 +139,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     self->getfunc = getfunc;
     self->index = index;
 
-    Py_INCREF(proto);
-    self->proto = proto;
+    self->proto = Py_NewRef(proto);
 
     switch (fieldtype) {
     case NEW_BITFIELD:
@@ -231,8 +225,7 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
 {
     CDataObject *src;
     if (inst == NULL) {
-        Py_INCREF(self);
-        return (PyObject *)self;
+        return Py_NewRef(self);
     }
     if (!CDataObject_Check(inst)) {
         PyErr_SetString(PyExc_TypeError,
@@ -257,14 +250,15 @@ PyCField_get_size(PyObject *self, void *data)
 }
 
 static PyGetSetDef PyCField_getset[] = {
-    { "offset", PyCField_get_offset, NULL, "offset in bytes of this field" },
-    { "size", PyCField_get_size, NULL, "size in bytes of this field" },
+    { "offset", PyCField_get_offset, NULL, PyDoc_STR("offset in bytes of this field") },
+    { "size", PyCField_get_size, NULL, PyDoc_STR("size in bytes of this field") },
     { NULL, NULL, NULL, NULL },
 };
 
 static int
 PyCField_traverse(CFieldObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->proto);
     return 0;
 }
@@ -279,9 +273,11 @@ PyCField_clear(CFieldObject *self)
 static void
 PyCField_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    PyCField_clear((CFieldObject *)self);
+    (void)PyCField_clear((CFieldObject *)self);
     Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -305,46 +301,24 @@ PyCField_repr(CFieldObject *self)
     return result;
 }
 
-PyTypeObject PyCField_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.CField",                                   /* tp_name */
-    sizeof(CFieldObject),                       /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    PyCField_dealloc,                                   /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)PyCField_repr,                            /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("Structure/Union member"),        /* tp_doc */
-    (traverseproc)PyCField_traverse,                    /* tp_traverse */
-    (inquiry)PyCField_clear,                            /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    PyCField_getset,                                    /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    (descrgetfunc)PyCField_get,                 /* tp_descr_get */
-    (descrsetfunc)PyCField_set,                 /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    PyCField_new,                               /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot cfield_slots[] = {
+    {Py_tp_dealloc, PyCField_dealloc},
+    {Py_tp_repr, PyCField_repr},
+    {Py_tp_doc, (void *)PyDoc_STR("Structure/Union member")},
+    {Py_tp_traverse, PyCField_traverse},
+    {Py_tp_clear, PyCField_clear},
+    {Py_tp_getset, PyCField_getset},
+    {Py_tp_descr_get, PyCField_get},
+    {Py_tp_descr_set, PyCField_set},
+    {0, NULL},
+};
+
+PyType_Spec cfield_spec = {
+    .name = "_ctypes.CField",
+    .basicsize = sizeof(CFieldObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+    .slots = cfield_slots,
 };
 
 
@@ -1097,8 +1071,7 @@ O_get(void *ptr, Py_ssize_t size)
                             "PyObject is NULL");
         return NULL;
     }
-    Py_INCREF(ob);
-    return ob;
+    return Py_NewRef(ob);
 }
 
 static PyObject *
@@ -1106,8 +1079,7 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     /* Hm, does the memory block need it's own refcount or not? */
     *(PyObject **)ptr = value;
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 }
 
 
@@ -1233,8 +1205,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 }
 
 
@@ -1292,13 +1263,11 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     if (value == Py_None) {
         *(char **)ptr = NULL;
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     }
     if (PyBytes_Check(value)) {
         *(const char **)ptr = PyBytes_AsString(value);
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     } else if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
         *(char **)ptr = (char *)PyLong_AsUnsignedLongLongMask(value);
@@ -1334,8 +1303,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     if (value == Py_None) {
         *(wchar_t **)ptr = NULL;
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     }
     if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG

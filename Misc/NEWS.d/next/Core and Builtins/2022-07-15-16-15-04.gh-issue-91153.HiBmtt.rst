@@ -1,2 +1,0 @@
-Fix an issue where a :class:`bytearray` item assignment could crash if it's
-resized by the new value's :meth:`__index__` method.

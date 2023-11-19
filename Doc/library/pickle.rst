@@ -125,7 +125,7 @@ Data stream format
 
 The data format used by :mod:`pickle` is Python-specific.  This has the
 advantage that there are no restrictions imposed by external standards such as
-JSON or XDR (which can't represent pointer sharing); however it means that
+JSON (which can't represent pointer sharing); however it means that
 non-Python programs may not be able to reconstruct pickled Python objects.
 
 By default, the :mod:`pickle` data format uses a relatively compact binary
@@ -494,7 +494,8 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``;
+* built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
+  ``NotImplemented``);
 
 * integers, floating-point numbers, complex numbers;
 

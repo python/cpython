@@ -1,2 +1,0 @@
-Fix an issue that could prevent :opcode:`LOAD_ATTR` from specializing
-properly when accessing properties.

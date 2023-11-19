@@ -1,7 +1,3 @@
-
-_NOT_SET = object()
-
-
 def peek_and_iter(items):
     if not items:
         return None, None

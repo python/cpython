@@ -2,9 +2,15 @@ import sys
 import time
 
 import unittest
+from unittest import mock
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+
+try:
+    import _pylong
+except ImportError:
+    _pylong = None
 
 L = [
         ('0', 0),
@@ -149,6 +155,8 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(' 0O123   ', 0), 83)
         self.assertEqual(int(' 0X123  ', 0), 291)
         self.assertEqual(int(' 0B100 ', 0), 4)
+        with self.assertRaises(ValueError):
+            int('010', 0)
 
         # without base still base 10
         self.assertEqual(int('0123'), 123)
@@ -214,6 +222,24 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('2qhxjlj', 34), 4294967297)
         self.assertEqual(int('2br45qc', 35), 4294967297)
         self.assertEqual(int('1z141z5', 36), 4294967297)
+
+    def test_invalid_signs(self):
+        with self.assertRaises(ValueError):
+            int('+')
+        with self.assertRaises(ValueError):
+            int('-')
+        with self.assertRaises(ValueError):
+            int('- 1')
+        with self.assertRaises(ValueError):
+            int('+ 1')
+        with self.assertRaises(ValueError):
+            int(' + 1 ')
+
+    def test_unicode(self):
+        self.assertEqual(int("१२३४५६७८९०1234567890"), 12345678901234567890)
+        self.assertEqual(int('١٢٣٤٥٦٧٨٩٠'), 1234567890)
+        self.assertEqual(int("१२३४५६७८९०1234567890", 0), 12345678901234567890)
+        self.assertEqual(int('١٢٣٤٥٦٧٨٩٠', 0), 1234567890)
 
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
@@ -793,6 +819,86 @@ class IntStrDigitLimitsTests(unittest.TestCase):
 
 class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):
     int_class = IntSubclass
+
+
+class PyLongModuleTests(unittest.TestCase):
+    # Tests of the functions in _pylong.py.  Those get used when the
+    # number of digits in the input values are large enough.
+
+    def setUp(self):
+        super().setUp()
+        self._previous_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(0)
+
+    def tearDown(self):
+        sys.set_int_max_str_digits(self._previous_limit)
+        super().tearDown()
+
+    def test_pylong_int_to_decimal(self):
+        n = (1 << 100_000) - 1
+        suffix = '9883109375'
+        s = str(n)
+        assert s[-10:] == suffix
+        s = str(-n)
+        assert s[-10:] == suffix
+        s = '%d' % n
+        assert s[-10:] == suffix
+        s = b'%d' % n
+        assert s[-10:] == suffix.encode('ascii')
+
+    def test_pylong_int_divmod(self):
+        n = (1 << 100_000)
+        a, b = divmod(n*3 + 1, n)
+        assert a == 3 and b == 1
+
+    def test_pylong_str_to_int(self):
+        v1 = 1 << 100_000
+        s = str(v1)
+        v2 = int(s)
+        assert v1 == v2
+        v3 = int(' -' + s)
+        assert -v1 == v3
+        v4 = int(' +' + s + ' ')
+        assert v1 == v4
+        with self.assertRaises(ValueError) as err:
+            int(s + 'z')
+        with self.assertRaises(ValueError) as err:
+            int(s + '_')
+        with self.assertRaises(ValueError) as err:
+            int('_' + s)
+
+    @support.cpython_only  # tests implementation details of CPython.
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    @mock.patch.object(_pylong, "int_to_decimal_string")
+    def test_pylong_misbehavior_error_path_to_str(
+            self, mock_int_to_str):
+        with support.adjust_int_max_str_digits(20_000):
+            big_value = int('7'*19_999)
+            mock_int_to_str.return_value = None  # not a str
+            with self.assertRaises(TypeError) as ctx:
+                str(big_value)
+            self.assertIn('_pylong.int_to_decimal_string did not',
+                          str(ctx.exception))
+            mock_int_to_str.side_effect = RuntimeError("testABC")
+            with self.assertRaises(RuntimeError):
+                str(big_value)
+
+    @support.cpython_only  # tests implementation details of CPython.
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    @mock.patch.object(_pylong, "int_from_string")
+    def test_pylong_misbehavior_error_path_from_str(
+            self, mock_int_from_str):
+        big_value = '7'*19_999
+        with support.adjust_int_max_str_digits(20_000):
+            mock_int_from_str.return_value = b'not an int'
+            with self.assertRaises(TypeError) as ctx:
+                int(big_value)
+            self.assertIn('_pylong.int_from_string did not',
+                          str(ctx.exception))
+
+            mock_int_from_str.side_effect = RuntimeError("test123")
+            with self.assertRaises(RuntimeError):
+                int(big_value)
 
 
 if __name__ == "__main__":

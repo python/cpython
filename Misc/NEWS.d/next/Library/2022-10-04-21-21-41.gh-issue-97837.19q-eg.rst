@@ -1,7 +1,0 @@
-Change deprecate warning message in :mod:`unittest` from
-
-``It is deprecated to return a value!=None``
-
-to
-
-``It is deprecated to return a value that is not None from a test case``

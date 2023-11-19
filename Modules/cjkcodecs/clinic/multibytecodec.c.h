@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "encode($self, /, input, errors=None)\n"
@@ -154,10 +154,6 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
     if (PyObject_GetBuffer(args[0], &input, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&input, 'C')) {
-        _PyArg_BadArgument("decode", "argument 'input'", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -246,8 +242,8 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    final = _PyLong_AsInt(args[1]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[1]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -374,15 +370,11 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     if (PyObject_GetBuffer(args[0], &input, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&input, 'C')) {
-        _PyArg_BadArgument("decode", "argument 'input'", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    final = _PyLong_AsInt(args[1]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[1]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -690,4 +682,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=b034ec7126c11bde input=a9049054013a1b77]*/
+/*[clinic end generated code: output=219a363662d2fbff input=a9049054013a1b77]*/
