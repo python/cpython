@@ -37,7 +37,6 @@ __pycache__
 tags
 TAGS
 .vs/
-.vscode/
 gmon.out
 .coverage
 .mypy_cache/
@@ -46,6 +45,10 @@ gmon.out
 .DS_Store
 
 *.exe
+
+# Visual Studio Code
+.vscode/*
+!.vscode/tasks.json
 
 # Ignore core dumps... but not Tools/msi/core/ or the like.
 core

@@ -1,0 +1,87 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build Python",
+        "type": "shell",
+        "command": "./configure --with-pydebug && make -j",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Run all tests",
+        "type": "shell",
+        "command": "./python -m test -W -o -j4 -x test_asyncio -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures -x test_socket -x test_subprocess -x test_signal -x test_sysconfig",
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Run specific test file",
+        "type": "shell",
+        "command": "./python -m test -W -o -v ${input:test_file}",
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Run specific unit test",
+        "type": "shell",
+        "command": "./python -m unittest -v ${input:unit_test}",
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Run patch check",
+        "type": "shell",
+        "command": "make patchcheck",
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        },
+        "problemMatcher": []
+      }
+    ],
+    "inputs": [
+        {
+          "id": "test_file",
+          "type": "promptString",
+          "description": "Which test file should run (without the extension)?"
+        },
+        {
+            "id": "unit_test",
+            "type": "promptString",
+            "description": "Which unit test should run?"
+          },
+      ]
+  }
