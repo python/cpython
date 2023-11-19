@@ -1123,7 +1123,7 @@ os.close(fd)
 
         with test_utils.run_test_server() as httpd:
             with self.assertRaises(RuntimeError):
-            # This exception is caused by `self.loop.stop()` as expected.
+                # This exception is caused by `self.loop.stop()` as expected.
                 self.loop.run_until_complete(inner(httpd))
             gc.collect()
 
