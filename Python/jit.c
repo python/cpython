@@ -74,27 +74,57 @@ mark_executable(unsigned char *memory, size_t pages)
         return 0;
     }
 #ifdef MS_WINDOWS
-    DWORD old;
-    if (!FlushInstructionCache(GetCurrentProcess(), memory, size) ||
-        !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old))
-    {
-        int code = GetLastError();
-#else
-    __builtin___clear_cache((char *)memory, (char *)memory + size);
-    if (mprotect(memory, size, PROT_EXEC | PROT_READ)) {
-        int code = errno;
-#endif
-        const char *w = "JIT unable to map executable memory (%d)";
-        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
+    if (!FlushInstructionCache(GetCurrentProcess(), memory, size)) {
+        const char *w = "JIT unable to flush instruction cache (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, GetLastError());
         return -1;
     }
+    DWORD old;
+    if (!VirtualProtect(memory, size, PAGE_EXECUTE, &old)) {
+        const char *w = "JIT unable to protect executable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, GetLastError());
+        return -1;
+    }
+#else
+    __builtin___clear_cache((char *)memory, (char *)memory + size);
+    if (mprotect(memory, size, PROT_EXEC)) {
+        const char *w = "JIT unable to protect executable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+static int
+mark_readable(unsigned char *memory, size_t pages)
+{
+    assert(is_page_aligned(memory));
+    size_t size = pages * page_size;
+    if (size == 0) {
+        return 0;
+    }
+#ifdef MS_WINDOWS
+    DWORD old;
+    if (!VirtualProtect(memory, size, PAGE_READONLY, &old)) {
+        const char *w = "JIT unable to protect readable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, GetLastError());
+        return -1;
+    }
+#else
+    if (mprotect(memory, size, PROT_READ)) {
+        const char *w = "JIT unable to protect readable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
+        return -1;
+    }
+#endif
     return 0;
 }
 
 static size_t
-bytes_to_pages(size_t nbytes)
+size_to_pages(size_t size)
 {
-    return (nbytes + page_size - 1) / page_size;
+    return (size + page_size - 1) / page_size;
 }
 
 static void
@@ -177,8 +207,8 @@ patch(unsigned char *base, const Hole *hole, uint64_t *patches)
 static void
 copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
 {
-    memcpy(base, stencil->bytes, stencil->nbytes);
-    for (size_t i = 0; i < stencil->nholes; i++) {
+    memcpy(base, stencil->body, stencil->body_size);
+    for (size_t i = 0; i < stencil->holes_size; i++) {
         patch(base, &stencil->holes[i], patches);
     }
 }
@@ -188,8 +218,8 @@ emit(const StencilGroup *stencil_group, uint64_t patches[])
 {
     unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
     copy_and_patch(data, &stencil_group->data, patches);
-    unsigned char *body = (unsigned char *)(uintptr_t)patches[_JIT_BODY];
-    copy_and_patch(body, &stencil_group->body, patches);
+    unsigned char *text = (unsigned char *)(uintptr_t)patches[_JIT_BODY];
+    copy_and_patch(text, &stencil_group->text, patches);
 }
 
 static int
@@ -229,46 +259,48 @@ initialize_jit(void)
     // Write our deopt stub:
     {
         const StencilGroup *stencil_group = &deoptimize_stencil_group;
-        size_t pages_body = bytes_to_pages(stencil_group->body.nbytes);
-        deoptimize_stub = alloc(pages_body);
-        if (deoptimize_stub == NULL) {
+        size_t text_pages = size_to_pages(stencil_group->text.body_size);
+        unsigned char *text = alloc(text_pages);
+        if (text == NULL) {
             return needs_initializing;
         }
-        size_t pages_data = bytes_to_pages(stencil_group->data.nbytes);
-        unsigned char *data = alloc(pages_data);
+        size_t data_pages = size_to_pages(stencil_group->data.body_size);
+        unsigned char *data = alloc(data_pages);
         if (data == NULL) {
             return needs_initializing;
         }
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_BODY] = (uintptr_t)deoptimize_stub;
+        patches[_JIT_BODY] = (uintptr_t)text;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
         emit(stencil_group, patches);
-        if (mark_executable(deoptimize_stub, pages_body)) {
+        if (mark_executable(text, text_pages) || mark_readable(data, data_pages)) {
             return needs_initializing;
         }
+        deoptimize_stub = text;
     }
     // Write our error stub:
     {
         const StencilGroup *stencil_group = &error_stencil_group;
-        size_t pages_body = bytes_to_pages(stencil_group->body.nbytes);
-        error_stub = alloc(pages_body);
-        if (error_stub == NULL) {
+        size_t text_pages = size_to_pages(stencil_group->text.body_size);
+        unsigned char *text = alloc(text_pages);
+        if (text == NULL) {
             return needs_initializing;
         }
-        size_t pages_data = bytes_to_pages(stencil_group->data.nbytes);
-        unsigned char *data = alloc(pages_data);
+        size_t data_pages = size_to_pages(stencil_group->data.body_size);
+        unsigned char *data = alloc(data_pages);
         if (data == NULL) {
             return needs_initializing;
         }
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_BODY] = (uintptr_t)error_stub;
+        patches[_JIT_BODY] = (uintptr_t)text;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
         emit(stencil_group, patches);
-        if (mark_executable(error_stub, pages_body)) {
+        if (mark_executable(text, text_pages) || mark_readable(data, data_pages)) {
             return needs_initializing;
         }
+        error_stub = text;
     }
     // Done:
     needs_initializing = 0;
@@ -283,62 +315,62 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         return NULL;
     }
     // First, loop over everything once to find the total compiled size:
-    size_t nbytes_body = trampoline_stencil_group.body.nbytes;
-    size_t nbytes_data = trampoline_stencil_group.data.nbytes;
+    size_t text_size = trampoline_stencil_group.text.body_size;
+    size_t data_size = trampoline_stencil_group.data.body_size;
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
-        nbytes_body += stencil_group->body.nbytes;
-        nbytes_data += stencil_group->data.nbytes;
-        assert(stencil_group->body.nbytes);
+        text_size += stencil_group->text.body_size;
+        data_size += stencil_group->data.body_size;
+        assert(stencil_group->text.body_size);
     };
-    size_t pages_body = bytes_to_pages(nbytes_body);
-    unsigned char *body = alloc(pages_body);
-    if (body == NULL) {
+    size_t text_pages = size_to_pages(text_size);
+    unsigned char *text = alloc(text_pages);
+    if (text == NULL) {
         return NULL;
     }
-    size_t pages_data = bytes_to_pages(nbytes_data);
-    unsigned char *data = alloc(pages_data);
+    size_t data_pages = size_to_pages(data_size);
+    unsigned char *data = alloc(data_pages);
     if (data == NULL) {
         return NULL;
     }
-    unsigned char *head_body = body;
+    unsigned char *head_text = text;
     unsigned char *head_data = data;
     // First, the trampoline:
     const StencilGroup *stencil_group = &trampoline_stencil_group;
     uint64_t patches[] = GET_PATCHES();
-    patches[_JIT_BODY] = (uintptr_t)head_body;
+    patches[_JIT_BODY] = (uintptr_t)head_text;
     patches[_JIT_DATA] = (uintptr_t)head_data;
-    patches[_JIT_CONTINUE] = (uintptr_t)head_body + stencil_group->body.nbytes;
+    patches[_JIT_CONTINUE] = (uintptr_t)head_text + stencil_group->text.body_size;
     patches[_JIT_ZERO] = 0;
     emit(stencil_group, patches);
-    head_body += stencil_group->body.nbytes;
-    head_data += stencil_group->data.nbytes;
+    head_text += stencil_group->text.body_size;
+    head_data += stencil_group->data.body_size;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_BODY] = (uintptr_t)head_body;
+        patches[_JIT_BODY] = (uintptr_t)head_text;
         patches[_JIT_DATA] = (uintptr_t)head_data;
-        patches[_JIT_CONTINUE] = (uintptr_t)head_body + stencil_group->body.nbytes;
+        patches[_JIT_CONTINUE] = (uintptr_t)head_text + stencil_group->text.body_size;
         patches[_JIT_CURRENT_EXECUTOR] = (uintptr_t)executor;
         patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
         patches[_JIT_ERROR] = (uintptr_t)error_stub;
         patches[_JIT_OPARG] = instruction->oparg;
         patches[_JIT_OPERAND] = instruction->operand;
         patches[_JIT_TARGET] = instruction->target;
-        patches[_JIT_TOP] = (uintptr_t)body + trampoline_stencil_group.body.nbytes;
+        patches[_JIT_TOP] = (uintptr_t)text + trampoline_stencil_group.text.body_size;
         patches[_JIT_ZERO] = 0;
         emit(stencil_group, patches);
-        head_body += stencil_group->body.nbytes;
-        head_data += stencil_group->data.nbytes;
+        head_text += stencil_group->text.body_size;
+        head_data += stencil_group->data.body_size;
     };
-    if (mark_executable(body, pages_body)) {
+    if (mark_executable(text, text_pages) || mark_readable(data, data_pages)) {
         return NULL;
     }
     // Wow, done already?
-    assert(head_body == body + nbytes_body);
-    assert(head_data == data + nbytes_data);
-    return (_PyJITFunction)body;
+    assert(head_text == text + text_size);
+    assert(head_data == data + data_size);
+    return (_PyJITFunction)text;
 }

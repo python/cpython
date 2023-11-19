@@ -234,14 +234,14 @@ class Hole:
 
 @dataclasses.dataclass
 class Stencil:
-    body: bytearray  # XXX: bytes
+    body: bytearray
     holes: list[Hole]
     disassembly: list[str]
 
 
 @dataclasses.dataclass
 class StencilGroup:
-    body: Stencil
+    text: Stencil
     data: Stencil
 
 
@@ -266,8 +266,7 @@ def get_llvm_tool_version(name: str) -> int | None:
 def find_llvm_tool(tool: str) -> str | None:
     # Unversioned executables:
     path = tool
-    version = get_llvm_tool_version(path)
-    if version == LLVM_VERSION:
+    if get_llvm_tool_version(path) == LLVM_VERSION:
         return path
     # Versioned executables:
     path = f"{tool}-{LLVM_VERSION}"
@@ -278,12 +277,11 @@ def find_llvm_tool(tool: str) -> str | None:
         args = ["brew", "--prefix", f"llvm@{LLVM_VERSION}"]
         process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
     except (FileNotFoundError, subprocess.CalledProcessError):
-        pass
-    else:
-        prefix = process.stdout.decode().removesuffix("\n")
-        path = f"{prefix}/bin/{tool}"
-        if get_llvm_tool_version(path) == LLVM_VERSION:
-            return path
+        return None
+    prefix = process.stdout.decode().removesuffix("\n")
+    path = f"{prefix}/bin/{tool}"
+    if get_llvm_tool_version(path) == LLVM_VERSION:
+        return path
     return None
 
 
@@ -301,7 +299,7 @@ async def run(*args: str | os.PathLike[str], capture: bool = False) -> bytes | N
     async with _SEMAPHORE:
         # print(shlex.join(map(str, args)))
         process = await asyncio.create_subprocess_exec(
-            *args, stdout=subprocess.PIPE if capture else None, cwd=ROOT
+            *args, cwd=ROOT, stdout=subprocess.PIPE if capture else None
         )
         stdout, stderr = await process.communicate()
     assert stderr is None, stderr
@@ -309,8 +307,10 @@ async def run(*args: str | os.PathLike[str], capture: bool = False) -> bytes | N
         raise RuntimeError(f"{args[0]} exited with {process.returncode}")
     return stdout
 
+S = typing.TypeVar("S", COFFSection, ELFSection, MachOSection)
+R = typing.TypeVar("R", COFFRelocation, ELFRelocation, MachORelocation)
 
-class Parser:
+class Parser(typing.Generic[S, R]):
     _ARGS = [
         "--elf-output-style=JSON",
         "--expand-relocs",
@@ -323,15 +323,15 @@ class Parser:
 
     def __init__(self, path: pathlib.Path, readobj: str, objdump: str | None, target: "Target") -> None:
         self.path = path
-        self.body = bytearray()
+        self.text = bytearray()
         self.data = bytearray()
-        self.body_symbols: dict[str, int] = {}
+        self.text_symbols: dict[str, int] = {}
         self.data_symbols: dict[str, int] = {}
-        self.body_offsets: dict[int, int] = {}
+        self.text_offsets: dict[int, int] = {}
         self.data_offsets: dict[int, int] = {}
         self.got: dict[str, int] = {}
-        self.body_relocations: list[tuple[int, COFFRelocation | ELFRelocation | MachORelocation]] = []
-        self.data_relocations: list[tuple[int, COFFRelocation | ELFRelocation | MachORelocation]] = []
+        self.text_relocations: list[tuple[int, R]] = []
+        self.data_relocations: list[tuple[int, R]] = []
         self.readobj = readobj
         self.objdump = objdump
         self.target = target
@@ -354,19 +354,19 @@ class Parser:
         output = output.replace(b"Extern\n", b"\n") # XXX: MachO
         start = output.index(b"[", 1)  # XXX: Mach-O, COFF
         end = output.rindex(b"]", start, -1) + 1  # XXX: Mach-O, COFF
-        self._data: list[dict[typing.Literal["Section"], COFFSection | ELFSection | MachOSection]] = json.loads(output[start:end])
+        self._data: list[dict[typing.Literal["Section"], S]] = json.loads(output[start:end])
         for section in unwrap(self._data, "Section"):
             self._handle_section(section)
-        if "_JIT_ENTRY" in self.body_symbols:
-            entry = self.body_symbols["_JIT_ENTRY"]
+        if "_JIT_ENTRY" in self.text_symbols:
+            entry = self.text_symbols["_JIT_ENTRY"]
         else:
-            entry = self.body_symbols["_JIT_TRAMPOLINE"]
+            entry = self.text_symbols["_JIT_TRAMPOLINE"]
         assert entry == 0, entry
         holes = []
         holes_data = []
         padding = 0
-        while len(self.body) % self.target.alignment:
-            self.body.append(0)
+        while len(self.text) % self.target.alignment:
+            self.text.append(0)
             padding += 1
         offset_data = 0
         disassembly_data = []
@@ -381,15 +381,15 @@ class Parser:
             disassembly_data.append(f"{offset_data:x}: {' '.join(padding_data * ['00'])}")
             offset_data += padding_data
         got = len(self.data)
-        for base, relocation in self.body_relocations:
-            newhole = self._handle_relocation(base, relocation, self.body)
+        for base, relocation in self.text_relocations:
+            newhole = self._handle_relocation(base, relocation, self.text)
             if newhole is None:
                 continue
             if newhole.symbol in self.data_symbols:
                 addend = newhole.addend + self.data_symbols[newhole.symbol]
                 newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_DATA, None, addend)
-            elif newhole.symbol in self.body_symbols:
-                addend = newhole.addend + self.body_symbols[newhole.symbol]
+            elif newhole.symbol in self.text_symbols:
+                addend = newhole.addend + self.text_symbols[newhole.symbol]
                 newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_BODY, None, addend)
             holes.append(newhole)
         for base, relocation in self.data_relocations:
@@ -399,18 +399,18 @@ class Parser:
             if newhole.symbol in self.data_symbols:
                 addend = newhole.addend + self.data_symbols[newhole.symbol]
                 newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_DATA, None, addend)
-            elif newhole.symbol in self.body_symbols:
-                addend = newhole.addend + self.body_symbols[newhole.symbol]
+            elif newhole.symbol in self.text_symbols:
+                addend = newhole.addend + self.text_symbols[newhole.symbol]
                 newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_BODY, None, addend)
             holes_data.append(newhole)
-        offset = len(self.body) - padding
+        offset = len(self.text) - padding
         if padding:
             disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
             offset += padding
-        assert offset == len(self.body), (offset, len(self.body))
+        assert offset == len(self.text), (offset, len(self.text))
         for s, got_offset in self.got.items():
-            if s in self.body_symbols:
-                addend = self.body_symbols[s]
+            if s in self.text_symbols:
+                addend = self.text_symbols[s]
                 value, symbol = HoleValue._JIT_BODY, None
             elif s in self.data_symbols:
                 addend = self.data_symbols[s]
@@ -434,9 +434,9 @@ class Parser:
         holes_data = [Hole(hole.offset, hole.kind, hole.value, hole.symbol, hole.addend) for hole in holes_data]
         holes_data.sort(key=lambda hole: hole.offset)
         assert offset_data == len(self.data), (offset_data, len(self.data), self.data, disassembly_data)
-        body = Stencil(self.body, holes, disassembly)
+        text = Stencil(self.text, holes, disassembly)
         data = Stencil(self.data, holes_data, disassembly_data)
-        return StencilGroup(body, data)
+        return StencilGroup(text, data)
 
     def _got_lookup(self, symbol: str | None) -> int:
         while len(self.data) % 8:
@@ -531,7 +531,7 @@ class Parser:
                 offset += base
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
-                addend = int.from_bytes(self.body[offset: offset + 4], sys.byteorder) - 4
+                addend = int.from_bytes(self.text[offset: offset + 4], sys.byteorder) - 4
             case {
                  "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
                  "Symbol": {"Value": s},
@@ -564,10 +564,10 @@ class ELF(Parser):
         if type in {"SHT_REL", "SHT_RELA"}:
             assert "SHF_INFO_LINK" in flags, flags
             assert not section["Symbols"]
-            if section["Info"] in self.body_offsets:
-                base = self.body_offsets[section["Info"]]
+            if section["Info"] in self.text_offsets:
+                base = self.text_offsets[section["Info"]]
                 for relocation in unwrap(section["Relocations"], "Relocation"):
-                    self.body_relocations.append((base, relocation))
+                    self.text_relocations.append((base, relocation))
             else:
                 base = self.data_offsets[section["Info"]]
                 for relocation in unwrap(section["Relocations"], "Relocation"):
@@ -576,15 +576,15 @@ class ELF(Parser):
             if "SHF_ALLOC" not in flags:
                 return
             elif flags & {"SHF_EXECINSTR"}:
-                self.body_offsets[section["Index"]] = len(self.body)
+                self.text_offsets[section["Index"]] = len(self.text)
                 for symbol in unwrap(section["Symbols"], "Symbol"):
-                    offset = len(self.body) + symbol["Value"]
+                    offset = len(self.text) + symbol["Value"]
                     name = symbol["Name"]["Value"]
                     name = name.removeprefix(self.target.prefix)
-                    assert name not in self.body_symbols
-                    self.body_symbols[name] = offset
+                    assert name not in self.text_symbols
+                    self.text_symbols[name] = offset
                 section_data = section["SectionData"]
-                self.body.extend(section_data["Bytes"])
+                self.text.extend(section_data["Bytes"])
             else:
                 self.data_offsets[section["Index"]] = len(self.data)
                 for symbol in unwrap(section["Symbols"], "Symbol"):
@@ -608,38 +608,21 @@ class ELF(Parser):
 class COFF(Parser):
 
     def _handle_section(self, section: COFFSection) -> None:
-        # COFF
-        # type = section["Type"]["Value"]
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" not in section:
             return
         section_data = section["SectionData"]
-        if flags & {
-            "IMAGE_SCN_LINK_COMDAT",
-            "IMAGE_SCN_MEM_EXECUTE",
-            "IMAGE_SCN_MEM_READ",
-            "IMAGE_SCN_MEM_WRITE",
-        } == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
-            base = self.data_offsets[section["Number"]] = len(self.data)
-            self.data.extend(section_data["Bytes"])
-            for symbol in unwrap(section["Symbols"], "Symbol"):
-                offset = base + symbol["Value"]
-                name = symbol["Name"]
-                name = name.removeprefix(self.target.prefix)
-                self.data_symbols[name] = offset
-            for relocation in unwrap(section["Relocations"], "Relocation"):
-                self.data_relocations.append((base, relocation))
-        elif flags & {"IMAGE_SCN_MEM_EXECUTE"}:
+        if flags & {"IMAGE_SCN_MEM_EXECUTE"}:
             assert not self.data, self.data
-            base = self.body_offsets[section["Number"]] = len(self.body)
-            self.body.extend(section_data["Bytes"])
+            base = self.text_offsets[section["Number"]] = len(self.text)
+            self.text.extend(section_data["Bytes"])
             for symbol in unwrap(section["Symbols"], "Symbol"):
                 offset = base + symbol["Value"]
                 name = symbol["Name"]
                 name = name.removeprefix(self.target.prefix)
-                self.body_symbols[name] = offset
+                self.text_symbols[name] = offset
             for relocation in unwrap(section["Relocations"], "Relocation"):
-                self.body_relocations.append((base, relocation))
+                self.text_relocations.append((base, relocation))
         elif flags & {"IMAGE_SCN_MEM_READ"}:
             base = self.data_offsets[section["Number"]] = len(self.data)
             self.data.extend(section_data["Bytes"])
@@ -656,7 +639,7 @@ class COFF(Parser):
 class MachO(Parser):
 
     def _handle_section(self, section: MachOSection) -> None:
-        assert section["Address"] >= len(self.body)
+        assert section["Address"] >= len(self.text)
         section_data = section["SectionData"]
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
@@ -665,24 +648,24 @@ class MachO(Parser):
             return
         if flags & {"SomeInstructions"}:
             assert not self.data, self.data
-            self.body.extend([0] * (section["Address"] - len(self.body)))
-            before = self.body_offsets[section["Index"]] = section["Address"]
-            self.body.extend(section_data["Bytes"])
-            self.body_symbols[name] = before
+            self.text.extend([0] * (section["Address"] - len(self.text)))
+            before = self.text_offsets[section["Index"]] = section["Address"]
+            self.text.extend(section_data["Bytes"])
+            self.text_symbols[name] = before
             for symbol in unwrap(section["Symbols"], "Symbol"):
                 offset = symbol["Value"]
                 name = symbol["Name"]["Value"]
                 name = name.removeprefix(self.target.prefix)
-                self.body_symbols[name] = offset
+                self.text_symbols[name] = offset
             for relocation in unwrap(section["Relocations"], "Relocation"):
-                self.body_relocations.append((before, relocation))
+                self.text_relocations.append((before, relocation))
         else:
-            self.data.extend([0] * (section["Address"] - len(self.data) - len(self.body)))
-            before = self.data_offsets[section["Index"]] = section["Address"] - len(self.body)
+            self.data.extend([0] * (section["Address"] - len(self.data) - len(self.text)))
+            before = self.data_offsets[section["Index"]] = section["Address"] - len(self.text)
             self.data.extend(section_data["Bytes"])
-            self.data_symbols[name] = len(self.body)
+            self.data_symbols[name] = len(self.text)
             for symbol in unwrap(section["Symbols"], "Symbol"):
-                offset = symbol["Value"] - len(self.body)
+                offset = symbol["Value"] - len(self.text)
                 name = symbol["Name"]["Value"]
                 name = name.removeprefix(self.target.prefix)
                 self.data_symbols[name] = offset
@@ -869,14 +852,14 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
     yield f"}} Hole;"
     yield f""
     yield f"typedef struct {{"
-    yield f"    const size_t nbytes;"
-    yield f"    const unsigned char * const bytes;"
-    yield f"    const size_t nholes;"
+    yield f"    const size_t body_size;"
+    yield f"    const unsigned char * const body;"
+    yield f"    const size_t holes_size;"
     yield f"    const Hole * const holes;"
     yield f"}} Stencil;"
     yield f""
     yield f"typedef struct {{"
-    yield f"    const Stencil body;"
+    yield f"    const Stencil text;"
     yield f"    const Stencil data;"
     yield f"}} StencilGroup;"
     yield f""
@@ -884,14 +867,14 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
     for opname, stencil in sorted(stencils.items()):
         opnames.append(opname)
         yield f"// {opname}"
-        assert stencil.body
-        for line in stencil.body.disassembly:
+        assert stencil.text
+        for line in stencil.text.disassembly:
             yield f"// {line}"
-        body = ", ".join(f"0x{byte:02x}" for byte in stencil.body.body)
-        yield f"static const unsigned char {opname}_body_bytes[{len(stencil.body.body) + 1}] = {{{body}}};"
-        if stencil.body.holes:
-            yield f"static const Hole {opname}_body_holes[{len(stencil.body.holes) + 1}] = {{"
-            for hole in sorted(stencil.body.holes, key=lambda hole: hole.offset):
+        body = ", ".join(f"0x{byte:02x}" for byte in stencil.text.body)
+        yield f"static const unsigned char {opname}_text_body[{len(stencil.text.body) + 1}] = {{{body}}};"
+        if stencil.text.holes:
+            yield f"static const Hole {opname}_text_holes[{len(stencil.text.holes) + 1}] = {{"
+            for hole in sorted(stencil.text.holes, key=lambda hole: hole.offset):
                 parts = [
                     hex(hole.offset),
                     f"HoleKind_{hole.kind}",
@@ -901,14 +884,14 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
                 yield f"    {{{', '.join(parts)}}},"
             yield f"}};"
         else:
-            yield f"static const Hole {opname}_body_holes[1];"
+            yield f"static const Hole {opname}_text_holes[1];"
         for line in stencil.data.disassembly:
             yield f"// {line}"
         body = ", ".join(f"0x{byte:02x}" for byte in stencil.data.body)
         if stencil.data.body:
-            yield f"static const unsigned char {opname}_data_bytes[{len(stencil.data.body) + 1}] = {{{body}}};"
+            yield f"static const unsigned char {opname}_data_body[{len(stencil.data.body) + 1}] = {{{body}}};"
         else:
-            yield f"static const unsigned char {opname}_data_bytes[1];"
+            yield f"static const unsigned char {opname}_data_body[1];"
         if stencil.data.holes:
             yield f"static const Hole {opname}_data_holes[{len(stencil.data.holes) + 1}] = {{"
             for hole in sorted(stencil.data.holes, key=lambda hole: hole.offset):
@@ -923,15 +906,15 @@ def dump(stencils: dict[str, StencilGroup]) -> typing.Generator[str, None, None]
         else:
             yield f"static const Hole {opname}_data_holes[1];"
         yield f""
-    yield f"#define INIT_STENCIL(STENCIL) {{                     \\"
-    yield f"    .nbytes = Py_ARRAY_LENGTH(STENCIL##_bytes) - 1, \\"
-    yield f"    .bytes = STENCIL##_bytes,                       \\"
-    yield f"    .nholes = Py_ARRAY_LENGTH(STENCIL##_holes) - 1, \\"
-    yield f"    .holes = STENCIL##_holes,                       \\"
+    yield f"#define INIT_STENCIL(STENCIL) {{                         \\"
+    yield f"    .body_size = Py_ARRAY_LENGTH(STENCIL##_body) - 1,   \\"
+    yield f"    .body = STENCIL##_body,                             \\"
+    yield f"    .holes_size = Py_ARRAY_LENGTH(STENCIL##_holes) - 1, \\"
+    yield f"    .holes = STENCIL##_holes,                           \\"
     yield f"}}"
     yield f""
     yield f"#define INIT_STENCIL_GROUP(OP) {{     \\"
-    yield f"    .body = INIT_STENCIL(OP##_body), \\"
+    yield f"    .text = INIT_STENCIL(OP##_text), \\"
     yield f"    .data = INIT_STENCIL(OP##_data), \\"
     yield f"}}"
     yield f""
