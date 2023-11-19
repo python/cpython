@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_io_StringIO_getvalue__doc__,
@@ -473,4 +474,4 @@ _io_StringIO___setstate__(stringio *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=beb2b198d9c58802 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c8d67f4408a1e6e input=a9049054013a1b77]*/

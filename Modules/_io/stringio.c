@@ -1,7 +1,6 @@
 #include "Python.h"
-#include <stddef.h>                   // offsetof()
+#include <stddef.h>               // offsetof()
 #include "pycore_object.h"
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
