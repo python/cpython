@@ -1,2 +1,0 @@
-Undocumented ``PyCode_Addr2Location`` function now properly returns when
-``addrq`` argument is less than zero.

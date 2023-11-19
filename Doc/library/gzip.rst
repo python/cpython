@@ -70,7 +70,7 @@ The module defines the following items:
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
-   methods of a :term:`file object`, with the exception of the :meth:`truncate`
+   methods of a :term:`file object`, with the exception of the :meth:`~io.IOBase.truncate`
    method.  At least one of *fileobj* and *filename* must be given a non-trivial
    value.
 
@@ -113,7 +113,7 @@ The module defines the following items:
 
    :class:`GzipFile` supports the :class:`io.BufferedIOBase` interface,
    including iteration and the :keyword:`with` statement.  Only the
-   :meth:`truncate` method isn't implemented.
+   :meth:`~io.IOBase.truncate` method isn't implemented.
 
    :class:`GzipFile` also provides the following method and attribute:
 
@@ -142,6 +142,12 @@ The module defines the following items:
       of the timestamp.  The format is the same as the return value of
       :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
       the object returned by :func:`os.stat`.
+
+   .. attribute:: name
+
+      The path to the gzip file on disk, as a :class:`str` or :class:`bytes`.
+      Equivalent to the output of :func:`os.fspath` on the original input path,
+      with no other normalization, resolution or expansion.
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added, along with the
@@ -244,6 +250,8 @@ Example of how to GZIP compress a binary string::
 
 .. program:: gzip
 
+.. _gzip-cli:
+
 Command Line Interface
 ----------------------
 
@@ -260,23 +268,23 @@ Once executed the :mod:`gzip` module keeps the input file(s).
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
-.. cmdoption:: file
+.. option:: file
 
-   If *file* is not specified, read from :attr:`sys.stdin`.
+   If *file* is not specified, read from :data:`sys.stdin`.
 
-.. cmdoption:: --fast
+.. option:: --fast
 
    Indicates the fastest compression method (less compression).
 
-.. cmdoption:: --best
+.. option:: --best
 
    Indicates the slowest compression method (best compression).
 
-.. cmdoption:: -d, --decompress
+.. option:: -d, --decompress
 
    Decompress the given file.
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message.
 

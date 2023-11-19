@@ -1,6 +1,7 @@
 /* Cell object implementation */
 
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 
 PyObject *
@@ -11,8 +12,7 @@ PyCell_New(PyObject *obj)
     op = (PyCellObject *)PyObject_GC_New(PyCellObject, &PyCell_Type);
     if (op == NULL)
         return NULL;
-    op->ob_ref = obj;
-    Py_XINCREF(obj);
+    op->ob_ref = Py_XNewRef(obj);
 
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
@@ -68,8 +68,7 @@ PyCell_Set(PyObject *op, PyObject *value)
         return -1;
     }
     PyObject *old_value = PyCell_GET(op);
-    Py_XINCREF(value);
-    PyCell_SET(op, value);
+    PyCell_SET(op, Py_XNewRef(value));
     Py_XDECREF(old_value);
     return 0;
 }
@@ -135,15 +134,13 @@ cell_get_contents(PyCellObject *op, void *closure)
         PyErr_SetString(PyExc_ValueError, "Cell is empty");
         return NULL;
     }
-    Py_INCREF(op->ob_ref);
-    return op->ob_ref;
+    return Py_NewRef(op->ob_ref);
 }
 
 static int
 cell_set_contents(PyCellObject *op, PyObject *obj, void *Py_UNUSED(ignored))
 {
-    Py_XINCREF(obj);
-    Py_XSETREF(op->ob_ref, obj);
+    Py_XSETREF(op->ob_ref, Py_XNewRef(obj));
     return 0;
 }
 

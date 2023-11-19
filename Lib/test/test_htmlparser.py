@@ -4,6 +4,8 @@ import html.parser
 import pprint
 import unittest
 
+from unittest.mock import patch
+
 
 class EventCollector(html.parser.HTMLParser):
 
@@ -786,6 +788,18 @@ class AttributesTestCase(TestCaseBase):
         self._run_check('<form action=bogus|&#()value>', [
                             ('starttag', 'form',
                                 [('action', 'bogus|&#()value')])])
+
+
+class TestInheritance(unittest.TestCase):
+
+    @patch("_markupbase.ParserBase.__init__")
+    @patch("_markupbase.ParserBase.reset")
+    def test_base_class_methods_called(self, super_reset_method, super_init_method):
+        with patch('_markupbase.ParserBase') as parser_base:
+            EventCollector()
+            super_init_method.assert_called_once()
+            super_reset_method.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

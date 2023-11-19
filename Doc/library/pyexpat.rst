@@ -33,7 +33,7 @@ can be set to handler functions.  When an XML document is then fed to the
 parser, the handler functions are called for the character data and markup in
 the XML document.
 
-.. index:: module: pyexpat
+.. index:: pair: module; pyexpat
 
 This module uses the :mod:`pyexpat` module to provide access to the Expat
 parser.  Direct use of the :mod:`pyexpat` module is deprecated.

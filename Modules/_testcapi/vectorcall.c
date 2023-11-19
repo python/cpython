@@ -1,6 +1,16 @@
-#include "parts.h"
-#include <stddef.h>  // offsetof
+// clinic/vectorcall.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
 
+#include "parts.h"
+#include "clinic/vectorcall.c.h"
+
+
+#include <stddef.h>                 // offsetof
+
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 /* Test PEP 590 - Vectorcall */
 
@@ -22,34 +32,21 @@ fastcall_args(PyObject *args, PyObject ***stack, Py_ssize_t *nargs)
     return 0;
 }
 
+/*[clinic input]
+_testcapi.pyobject_fastcalldict
+    func: object
+    func_args: object
+    kwargs: object
+    /
+[clinic start generated code]*/
 
 static PyObject *
-test_pyobject_fastcall(PyObject *self, PyObject *args)
+_testcapi_pyobject_fastcalldict_impl(PyObject *module, PyObject *func,
+                                     PyObject *func_args, PyObject *kwargs)
+/*[clinic end generated code: output=35902ece94de4418 input=b9c0196ca7d5f9e4]*/
 {
-    PyObject *func, *func_args;
     PyObject **stack;
     Py_ssize_t nargs;
-
-    if (!PyArg_ParseTuple(args, "OO", &func, &func_args)) {
-        return NULL;
-    }
-
-    if (fastcall_args(func_args, &stack, &nargs) < 0) {
-        return NULL;
-    }
-    return _PyObject_FastCall(func, stack, nargs);
-}
-
-static PyObject *
-test_pyobject_fastcalldict(PyObject *self, PyObject *args)
-{
-    PyObject *func, *func_args, *kwargs;
-    PyObject **stack;
-    Py_ssize_t nargs;
-
-    if (!PyArg_ParseTuple(args, "OOO", &func, &func_args, &kwargs)) {
-        return NULL;
-    }
 
     if (fastcall_args(func_args, &stack, &nargs) < 0) {
         return NULL;
@@ -66,16 +63,21 @@ test_pyobject_fastcalldict(PyObject *self, PyObject *args)
     return PyObject_VectorcallDict(func, stack, nargs, kwargs);
 }
 
+/*[clinic input]
+_testcapi.pyobject_vectorcall
+    func: object
+    func_args: object
+    kwnames: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-test_pyobject_vectorcall(PyObject *self, PyObject *args)
+_testcapi_pyobject_vectorcall_impl(PyObject *module, PyObject *func,
+                                   PyObject *func_args, PyObject *kwnames)
+/*[clinic end generated code: output=ff77245bc6afe0d8 input=a0668dfef625764c]*/
 {
-    PyObject *func, *func_args, *kwnames = NULL;
     PyObject **stack;
     Py_ssize_t nargs, nkw;
-
-    if (!PyArg_ParseTuple(args, "OOO", &func, &func_args, &kwnames)) {
-        return NULL;
-    }
 
     if (fastcall_args(func_args, &stack, &nargs) < 0) {
         return NULL;
@@ -100,16 +102,36 @@ test_pyobject_vectorcall(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-test_pyvectorcall_call(PyObject *self, PyObject *args)
+override_vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf,
+                    PyObject *kwnames)
 {
-    PyObject *func;
-    PyObject *argstuple;
-    PyObject *kwargs = NULL;
+    return PyUnicode_FromString("overridden");
+}
 
-    if (!PyArg_ParseTuple(args, "OO|O", &func, &argstuple, &kwargs)) {
+static PyObject *
+function_setvectorcall(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "'func' must be a function");
         return NULL;
     }
+    PyFunction_SetVectorcall((PyFunctionObject *)func, (vectorcallfunc)override_vectorcall);
+    Py_RETURN_NONE;
+}
 
+/*[clinic input]
+_testcapi.pyvectorcall_call
+    func: object
+    argstuple: object
+    kwargs: object = NULL
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_pyvectorcall_call_impl(PyObject *module, PyObject *func,
+                                 PyObject *argstuple, PyObject *kwargs)
+/*[clinic end generated code: output=809046fe78511306 input=4376ee7cabd698ce]*/
+{
     if (!PyTuple_Check(argstuple)) {
         PyErr_SetString(PyExc_TypeError, "args must be a tuple");
         return NULL;
@@ -122,11 +144,127 @@ test_pyvectorcall_call(PyObject *self, PyObject *args)
     return PyVectorcall_Call(func, argstuple, kwargs);
 }
 
+PyObject *
+VectorCallClass_tpcall(PyObject *self, PyObject *args, PyObject *kwargs) {
+    return PyUnicode_FromString("tp_call");
+}
+
+PyObject *
+VectorCallClass_vectorcall(PyObject *callable,
+                            PyObject *const *args,
+                            size_t nargsf,
+                            PyObject *kwnames) {
+    return PyUnicode_FromString("vectorcall");
+}
+
+/*[clinic input]
+class _testcapi.VectorCallClass "PyObject *" "&PyType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=95c63c1a47f9a995]*/
+
+/*[clinic input]
+_testcapi.VectorCallClass.set_vectorcall
+
+    type: object(subclass_of="&PyType_Type", type="PyTypeObject *")
+    /
+
+Set self's vectorcall function for `type` to one that returns "vectorcall"
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_VectorCallClass_set_vectorcall_impl(PyObject *self,
+                                              PyTypeObject *type)
+/*[clinic end generated code: output=b37f0466f15da903 input=840de66182c7d71a]*/
+{
+    if (!PyObject_TypeCheck(self, type)) {
+        return PyErr_Format(
+            PyExc_TypeError,
+            "expected %s instance",
+            PyType_GetName(type));
+    }
+    if (!type->tp_vectorcall_offset) {
+        return PyErr_Format(
+            PyExc_TypeError,
+            "type %s has no vectorcall offset",
+            PyType_GetName(type));
+    }
+    *(vectorcallfunc*)((char*)self + type->tp_vectorcall_offset) = (
+        VectorCallClass_vectorcall);
+    Py_RETURN_NONE;
+}
+
+PyMethodDef VectorCallClass_methods[] = {
+    _TESTCAPI_VECTORCALLCLASS_SET_VECTORCALL_METHODDEF
+    {NULL, NULL}
+};
+
+PyMemberDef VectorCallClass_members[] = {
+    {"__vectorcalloffset__", Py_T_PYSSIZET, 0/* set later */, Py_READONLY},
+    {NULL}
+};
+
+PyType_Slot VectorCallClass_slots[] = {
+    {Py_tp_call, VectorCallClass_tpcall},
+    {Py_tp_members, VectorCallClass_members},
+    {Py_tp_methods, VectorCallClass_methods},
+    {0},
+};
+
+/*[clinic input]
+_testcapi.make_vectorcall_class
+
+    base: object(subclass_of="&PyType_Type", type="PyTypeObject *") = NULL
+    /
+
+Create a class whose instances return "tpcall" when called.
+
+When the "set_vectorcall" method is called on an instance, a vectorcall
+function that returns "vectorcall" will be installed.
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_make_vectorcall_class_impl(PyObject *module, PyTypeObject *base)
+/*[clinic end generated code: output=16dcfc3062ddf968 input=f72e01ccf52de2b4]*/
+{
+    if (!base) {
+        base = (PyTypeObject *)&PyBaseObject_Type;
+    }
+    VectorCallClass_members[0].offset = base->tp_basicsize;
+    PyType_Spec spec = {
+        .name = "_testcapi.VectorcallClass",
+        .basicsize = (int)(base->tp_basicsize + sizeof(vectorcallfunc)),
+        .flags = Py_TPFLAGS_DEFAULT
+            | Py_TPFLAGS_HAVE_VECTORCALL
+            | Py_TPFLAGS_BASETYPE,
+        .slots = VectorCallClass_slots,
+    };
+
+    return PyType_FromSpecWithBases(&spec, (PyObject *)base);
+}
+
+/*[clinic input]
+_testcapi.has_vectorcall_flag -> bool
+
+    type: object(subclass_of="&PyType_Type", type="PyTypeObject *")
+    /
+
+Return true iff Py_TPFLAGS_HAVE_VECTORCALL is set on the class.
+[clinic start generated code]*/
+
+static int
+_testcapi_has_vectorcall_flag_impl(PyObject *module, PyTypeObject *type)
+/*[clinic end generated code: output=3ae8d1374388c671 input=8eee492ac548749e]*/
+{
+    return PyType_HasFeature(type, Py_TPFLAGS_HAVE_VECTORCALL);
+}
+
 static PyMethodDef TestMethods[] = {
-    {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
-    {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
-    {"pyobject_vectorcall", test_pyobject_vectorcall, METH_VARARGS},
-    {"pyvectorcall_call", test_pyvectorcall_call, METH_VARARGS},
+    _TESTCAPI_PYOBJECT_FASTCALLDICT_METHODDEF
+    _TESTCAPI_PYOBJECT_VECTORCALL_METHODDEF
+    {"function_setvectorcall", function_setvectorcall, METH_O},
+    _TESTCAPI_PYVECTORCALL_CALL_METHODDEF
+    _TESTCAPI_MAKE_VECTORCALL_CLASS_METHODDEF
+    _TESTCAPI_HAS_VECTORCALL_FLAG_METHODDEF
     {NULL},
 };
 
@@ -158,8 +296,7 @@ static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
     if (obj == Py_None || obj == NULL) {
-        Py_INCREF(func);
-        return func;
+        return Py_NewRef(func);
     }
     return PyMethod_New(func, obj);
 }
@@ -167,15 +304,13 @@ func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 static PyObject *
 nop_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
-    Py_INCREF(func);
-    return func;
+    return Py_NewRef(func);
 }
 
 static PyObject *
 call_return_args(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    Py_INCREF(args);
-    return args;
+    return Py_NewRef(args);
 }
 
 static PyTypeObject MethodDescriptorBase_Type = {

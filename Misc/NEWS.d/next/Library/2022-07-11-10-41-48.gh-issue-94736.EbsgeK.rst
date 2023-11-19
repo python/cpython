@@ -1,1 +1,0 @@
-Fix crash when deallocating an instance of a subclass of ``_multiprocessing.SemLock``. Patch by Kumar Aditya.

@@ -18,7 +18,6 @@ import contextlib
 import io
 import os
 import sys
-import warnings
 
 __all__ = ["getpass","getuser","GetPassWarning"]
 
@@ -118,6 +117,7 @@ def win_getpass(prompt='Password: ', stream=None):
 
 
 def fallback_getpass(prompt='Password: ', stream=None):
+    import warnings
     warnings.warn("Can not control echo on the terminal.", GetPassWarning,
                   stacklevel=2)
     if not stream:

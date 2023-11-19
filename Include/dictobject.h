@@ -57,6 +57,17 @@ PyAPI_FUNC(int) PyDict_MergeFromSeq2(PyObject *d,
 PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, const char *key);
 PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, const char *key, PyObject *item);
 PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, const char *key);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+// Return the object from dictionary *op* which has a key *key*.
+// - If the key is present, set *result to a new strong reference to the value
+//   and return 1.
+// - If the key is missing, set *result to NULL and return 0 .
+// - On error, raise an exception and return -1.
+PyAPI_FUNC(int) PyDict_GetItemRef(PyObject *mp, PyObject *key, PyObject **result);
+PyAPI_FUNC(int) PyDict_GetItemStringRef(PyObject *mp, const char *key, PyObject **result);
+#endif
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 PyAPI_FUNC(PyObject *) PyObject_GenericGetDict(PyObject *, void *);
 #endif

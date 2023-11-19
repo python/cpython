@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(termios_tcgetattr__doc__,
 "tcgetattr($module, fd, /)\n"
 "--\n"
@@ -69,7 +72,7 @@ termios_tcsetattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    when = _PyLong_AsInt(args[1]);
+    when = PyLong_AsInt(args[1]);
     if (when == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -108,7 +111,7 @@ termios_tcsendbreak(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    duration = _PyLong_AsInt(args[1]);
+    duration = PyLong_AsInt(args[1]);
     if (duration == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -174,7 +177,7 @@ termios_tcflush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    queue = _PyLong_AsInt(args[1]);
+    queue = PyLong_AsInt(args[1]);
     if (queue == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -213,7 +216,7 @@ termios_tcflow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    action = _PyLong_AsInt(args[1]);
+    action = PyLong_AsInt(args[1]);
     if (action == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -286,4 +289,4 @@ termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef9ab888876fac17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f31382658135c774 input=a9049054013a1b77]*/
