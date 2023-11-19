@@ -80,7 +80,7 @@ the following::
         1    0.000    0.000    0.000    0.000 _compiler.py:598(_code)
         1    0.000    0.000    0.000    0.000 _parser.py:435(_parse_sub)
 
-The first line indicates that 214 calls were monitored. Of those calls, 207
+The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
 next line: ``Ordered by: cumulative time`` indicates rows sorting order
 for the table below. The column headings include:
