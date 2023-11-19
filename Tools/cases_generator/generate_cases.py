@@ -94,7 +94,7 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument(
     "-v",
-    "--verbose",
+    "--viable",
     help="Print list of non-viable uops and exit",
     action="store_true",
 )
@@ -658,7 +658,7 @@ class Generator(Analyzer):
                 if not part.instr.is_viable_uop() and "replaced" not in part.instr.annotations:
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
-                    # It is sometimes emitted for macros that have a
+                    # Suppress it using 'replaced op(...)' for macros having
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
                     if len(parts) > 1 or part.instr.name != name:
@@ -871,7 +871,7 @@ def main() -> None:
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    if args.verbose:
+    if args.viable:
         # Load execution counts from bmraw.json, if it exists
         a.report_non_viable_uops("bmraw.json")
         return

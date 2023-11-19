@@ -5621,7 +5621,7 @@ class ForwardRefTests(BaseTestCase):
         def cmp(o1, o2):
             return o1 == o2
 
-        with infinite_recursion(25):  # magic number, small but reasonable
+        with infinite_recursion():
             r1 = namespace1()
             r2 = namespace2()
             self.assertIsNot(r1, r2)
@@ -9462,6 +9462,12 @@ class TypeIterationTests(BaseTestCase):
     def test_is_not_instance_of_iterable(self):
         for type_to_test in self._UNITERABLE_TYPES:
             self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
+
+
+def load_tests(loader, tests, pattern):
+    import doctest
+    tests.addTests(doctest.DocTestSuite(typing))
+    return tests
 
 
 if __name__ == '__main__':
