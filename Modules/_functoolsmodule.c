@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"          // _PyDict_Pop_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
