@@ -45,6 +45,10 @@ typedef struct {
     _PyIO_State *module_state;
 } stringio;
 
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
+#include "clinic/stringio.c.h"
+#undef clinic_state
+
 static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs);
 
 #define CHECK_INITIALIZED(self) \
@@ -1022,10 +1026,6 @@ stringio_newlines(stringio *self, void *context)
     Py_END_CRITICAL_SECTION();
     return result;
 }
-
-#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
-#include "clinic/stringio.c.h"
-#undef clinic_state
 
 static struct PyMethodDef stringio_methods[] = {
     _IO_STRINGIO_CLOSE_METHODDEF
