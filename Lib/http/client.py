@@ -172,6 +172,13 @@ def _encode(data, name='data'):
             "if you want to send it encoded in UTF-8." %
             (name.title(), data[err.start:err.end], name)) from None
 
+def _strip_ipv6_iface(enc_name: bytes) -> bytes:
+    """Remove interface scope from IPv6 address."""
+    enc_name, percent, _ = enc_name.partition(b"%")
+    if percent:
+        assert enc_name.startswith(b'['), enc_name
+        enc_name += b']'
+    return enc_name
 
 class HTTPMessage(email.message.Message):
     # XXX The only usage of this method is in
@@ -1194,7 +1201,7 @@ class HTTPConnection:
                         netloc_enc = netloc.encode("ascii")
                     except UnicodeEncodeError:
                         netloc_enc = netloc.encode("idna")
-                    self.putheader('Host', netloc_enc)
+                    self.putheader('Host', _strip_ipv6_iface(netloc_enc))
                 else:
                     if self._tunnel_host:
                         host = self._tunnel_host
@@ -1211,8 +1218,9 @@ class HTTPConnection:
                     # As per RFC 273, IPv6 address should be wrapped with []
                     # when used as Host header
 
-                    if host.find(':') >= 0:
+                    if ":" in host:
                         host_enc = b'[' + host_enc + b']'
+                        host_enc = _strip_ipv6_iface(host_enc)
 
                     if port == self.default_port:
                         self.putheader('Host', host_enc)
