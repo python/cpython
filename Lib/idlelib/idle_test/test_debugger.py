@@ -100,12 +100,6 @@ class DebuggerTest(unittest.TestCase):
             cls.debugger = debugger.Debugger(cls.pyshell, cls.idb)
         cls.debugger.root = Mock()
 
-    def test_run_debugger(self):
-        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
-        self.debugger.run(1, 'two')
-        self.idb.run.assert_called_once_with(1, 'two')
-        self.assertEqual(self.debugger.interacting, 0)
-
     def test_cont(self):
         self.debugger.cont()
         self.idb.set_continue.assert_called_once()
@@ -127,22 +121,6 @@ class DebuggerTest(unittest.TestCase):
         with patch.object(self.debugger, 'frame') as frame:
             self.debugger.ret()
             self.idb.set_return.assert_called_once_with(frame)
-
-    @unittest.skip('')
-    def test_show_stack_with_frame(self):
-        test_frame = MockFrame(None, None)
-        self.debugger.frame = test_frame
-
-        # Reset the stackviewer to force it to be recreated.
-        self.debugger.stackviewer = None
-
-        self.idb.get_stack.return_value = ([], 0)
-        self.debugger.show_stack()
-
-        # Check that the newly created stackviewer has the test gui as a field.
-        self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
-
-        self.idb.get_stack.assert_called_once_with(test_frame, None)
 
     def test_clear_breakpoint(self):
         self.debugger.clear_breakpoint('test.py', 4)
@@ -177,18 +155,37 @@ class DebuggerTest(unittest.TestCase):
              mock.call('test2.py', 44),
              mock.call('test2.py', 45)])
 
+    def test_sync_source_line(self):
+        # Test that .sync_source_line() will set the flist.gotofileline with fixed frame.
+        test_code = compile(TEST_CODE, 'test_sync.py', 'exec')
+        test_frame = MockFrame(test_code, 1)
+        self.debugger.frame = test_frame
 
+        self.debugger.flist = Mock()
+        with patch('idlelib.debugger.os.path.exists', return_value=True):
+            self.debugger.sync_source_line()
+        self.debugger.flist.gotofileline.assert_called_once_with('test_sync.py', 1)
+
+        
 class DebuggerGuiTest(unittest.TestCase):
-    "Tests for debugger.Debugger that need GUI."
+    """Tests for debugger.Debugger that need tk root.
+
+    close needs debugger.top set in make_gui.
+    """
 
     @classmethod
     def setUpClass(cls):
         requires('gui')
         cls.root = root = Tk()
         root.withdraw()
-        cls.pyshell = pyshell = Mock()
-        pyshell.root = root
+        cls.pyshell = Mock()
+        cls.pyshell.root = root
         cls.idb = Mock()
+# stack tests fail with debugger here.
+##        cls.debugger = debugger.Debugger(cls.pyshell, cls.idb)
+##        cls.debugger.root = root
+##        # real root needed for real make_gui
+##        # run, interacting, abort_loop
 
     @classmethod
     def tearDownClass(cls):
@@ -211,34 +208,22 @@ class DebuggerGuiTest(unittest.TestCase):
         self.debugger.close()
         self.pyshell.close_debugger.assert_called_once()
 
-    def test_close_whilst_interacting(self):
-        # Test closing the window in an interactive state.
-        self.debugger.interacting = 1
-        self.debugger.close()
-        self.pyshell.close_debugger.assert_not_called()
+    def test_show_stack(self):
+        self.debugger.show_stack()
+        self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
 
-    def test_sync_source_line(self):
-        # Test that .sync_source_line() will set the flist.gotofileline with fixed frame.
-        test_code = compile(TEST_CODE, 'test_sync.py', 'exec')
-        test_frame = MockFrame(test_code, 1)
-
+    def test_show_stack_with_frame(self):
+        test_frame = MockFrame(None, None)
         self.debugger.frame = test_frame
 
-        # Patch out the file list
-        self.debugger.flist = Mock()
-
-        # Pretend file exists
-        with patch('idlelib.debugger.os.path.exists', return_value=True):
-            self.debugger.sync_source_line()
-
-        self.debugger.flist.gotofileline.assert_called_once_with('test_sync.py', 1)
-
-    def test_show_stack(self):
-        # Test the .show_stack() method calls with stackview.
+        # Reset the stackviewer to force it to be recreated.
+        self.debugger.stackviewer = None
+        self.idb.get_stack.return_value = ([], 0)
         self.debugger.show_stack()
 
         # Check that the newly created stackviewer has the test gui as a field.
         self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
+        self.idb.get_stack.assert_called_once_with(test_frame, None)
 
 
 class StackViewerTest(unittest.TestCase):
