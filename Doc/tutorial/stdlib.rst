@@ -24,7 +24,7 @@ Be sure to use the ``import os`` style instead of ``from os import *``.  This
 will keep :func:`os.open` from shadowing the built-in :func:`open` function which
 operates much differently.
 
-.. index:: builtin: help
+.. index:: pair: built-in function; help
 
 The built-in :func:`dir` and :func:`help` functions are useful as interactive
 aids for working with large modules like :mod:`os`::
@@ -153,7 +153,7 @@ The :mod:`random` module provides tools for making random selections::
    'apple'
    >>> random.sample(range(100), 10)   # sampling without replacement
    [30, 83, 16, 4, 8, 81, 41, 50, 18, 33]
-   >>> random.random()    # random float
+   >>> random.random()    # random float from the interval [0.0, 1.0)
    0.17970987693706186
    >>> random.randrange(6)    # random integer chosen from range(6)
    4

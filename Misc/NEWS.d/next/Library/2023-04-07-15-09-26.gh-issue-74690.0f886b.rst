@@ -1,3 +1,0 @@
-The members of a runtime-checkable protocol are now considered "frozen" at
-runtime as soon as the class has been created. See
-:ref:`"What's new in Python 3.12" <whatsnew-typing-py312>` for more details.

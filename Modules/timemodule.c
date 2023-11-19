@@ -6,22 +6,21 @@
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_runtime.h"       // _Py_ID()
 
-#include <ctype.h>
-
+#include <time.h>                 // clock()
 #ifdef HAVE_SYS_TIMES_H
-#  include <sys/times.h>
+#  include <sys/times.h>          // times()
 #endif
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
 #if defined(HAVE_SYS_RESOURCE_H)
-#  include <sys/resource.h>
+#  include <sys/resource.h>       // getrusage(RUSAGE_SELF)
 #endif
 #ifdef QUICKWIN
 # include <io.h>
 #endif
 #if defined(HAVE_PTHREAD_H)
-#  include <pthread.h>
+#  include <pthread.h>            // pthread_getcpuclockid()
 #endif
 #if defined(_AIX)
 #   include <sys/thread.h>
@@ -62,6 +61,12 @@
 
 
 #define SEC_TO_NS (1000 * 1000 * 1000)
+
+
+/*[clinic input]
+module time
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a668a08771581f36]*/
 
 
 #if defined(HAVE_TIMES) || defined(HAVE_CLOCK)
@@ -228,23 +233,52 @@ _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #pragma clang diagnostic ignored "-Wunguarded-availability"
 #endif
 
-static PyObject *
-time_clock_gettime(PyObject *self, PyObject *args)
+static int
+time_clockid_converter(PyObject *obj, clockid_t *p)
 {
-    int ret;
-    struct timespec tp;
-
-#if defined(_AIX) && (SIZEOF_LONG == 8)
-    long clk_id;
-    if (!PyArg_ParseTuple(args, "l:clock_gettime", &clk_id)) {
+#ifdef _AIX
+    long long clk_id = PyLong_AsLongLong(obj);
 #else
-    int clk_id;
-    if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
+    int clk_id = PyLong_AsInt(obj);
 #endif
-        return NULL;
+    if (clk_id == -1 && PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "clk_id should be integer, not %s",
+                     _PyType_Name(Py_TYPE(obj)));
+        return 0;
     }
 
-    ret = clock_gettime((clockid_t)clk_id, &tp);
+    // Make sure that we picked the right type (check sizes type)
+    Py_BUILD_ASSERT(sizeof(clk_id) == sizeof(*p));
+    *p = (clockid_t)clk_id;
+    return 1;
+}
+
+/*[python input]
+
+class clockid_t_converter(CConverter):
+    type = "clockid_t"
+    converter = 'time_clockid_converter'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=53867111501f46c8]*/
+
+
+/*[clinic input]
+time.clock_gettime
+
+    clk_id: clockid_t
+    /
+
+Return the time of the specified clock clk_id as a float.
+[clinic start generated code]*/
+
+static PyObject *
+time_clock_gettime_impl(PyObject *module, clockid_t clk_id)
+/*[clinic end generated code: output=832b9ebc03328020 input=7e89fcc42ca15e5d]*/
+{
+    struct timespec tp;
+    int ret = clock_gettime(clk_id, &tp);
     if (ret != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -252,38 +286,32 @@ time_clock_gettime(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
 }
 
-PyDoc_STRVAR(clock_gettime_doc,
-"clock_gettime(clk_id) -> float\n\
-\n\
-Return the time of the specified clock clk_id.");
+/*[clinic input]
+time.clock_gettime_ns
+
+    clk_id: clockid_t
+    /
+
+Return the time of the specified clock clk_id as nanoseconds (int).
+[clinic start generated code]*/
 
 static PyObject *
-time_clock_gettime_ns(PyObject *self, PyObject *args)
+time_clock_gettime_ns_impl(PyObject *module, clockid_t clk_id)
+/*[clinic end generated code: output=4a045c3a36e60044 input=aabc248db8c8e3e5]*/
 {
-    int ret;
-    int clk_id;
     struct timespec ts;
-    _PyTime_t t;
-
-    if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
-        return NULL;
-    }
-
-    ret = clock_gettime((clockid_t)clk_id, &ts);
+    int ret = clock_gettime(clk_id, &ts);
     if (ret != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+
+    _PyTime_t t;
     if (_PyTime_FromTimespec(&t, &ts) < 0) {
         return NULL;
     }
     return _PyTime_AsNanosecondsObject(t);
 }
-
-PyDoc_STRVAR(clock_gettime_ns_doc,
-"clock_gettime_ns(clk_id) -> int\n\
-\n\
-Return the time of the specified clock clk_id as nanoseconds.");
 #endif   /* HAVE_CLOCK_GETTIME */
 
 #ifdef HAVE_CLOCK_SETTIME
@@ -414,6 +442,10 @@ Return the clk_id of a thread's CPU time clock.");
 static PyObject *
 time_sleep(PyObject *self, PyObject *timeout_obj)
 {
+    if (PySys_Audit("time.sleep", "O", timeout_obj) < 0) {
+        return NULL;
+    }
+
     _PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
@@ -1737,6 +1769,12 @@ get_gmtoff(time_t t, struct tm *p)
 static int
 init_timezone(PyObject *m)
 {
+#define ADD_INT(NAME, VALUE) do {                       \
+    if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) {  \
+        return -1;                                      \
+    }                                                   \
+} while (0)
+
     assert(!PyErr_Occurred());
 
     /* This code moved from PyInit_time wholesale to allow calling it from
@@ -1760,13 +1798,13 @@ init_timezone(PyObject *m)
 #if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     tzset();
 #endif
-    PyModule_AddIntConstant(m, "timezone", _Py_timezone);
+    ADD_INT("timezone", _Py_timezone);
 #ifdef HAVE_ALTZONE
-    PyModule_AddIntConstant(m, "altzone", altzone);
+    ADD_INT("altzone", altzone);
 #else
-    PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
+    ADD_INT("altzone", _Py_timezone-3600);
 #endif
-    PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+    ADD_INT("daylight", _Py_daylight);
 #ifdef MS_WINDOWS
     TIME_ZONE_INFORMATION tzinfo = {0};
     GetTimeZoneInformation(&tzinfo);
@@ -1790,11 +1828,9 @@ init_timezone(PyObject *m)
         return -1;
     }
 #endif // MS_WINDOWS
-    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
-    if (tzname_obj == NULL) {
+    if (PyModule_Add(m, "tzname", Py_BuildValue("(NN)", otz0, otz1)) < 0) {
         return -1;
     }
-    PyModule_AddObject(m, "tzname", tzname_obj);
 #else // !HAVE_DECL_TZNAME
     static const time_t YEAR = (365 * 24 + 6) * 3600;
     time_t t;
@@ -1827,21 +1863,21 @@ init_timezone(PyObject *m)
     PyObject *tzname_obj;
     if (janzone < julyzone) {
         /* DST is reversed in the southern hemisphere */
-        PyModule_AddIntConstant(m, "timezone", julyzone);
-        PyModule_AddIntConstant(m, "altzone", janzone);
-        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        ADD_INT("timezone", julyzone);
+        ADD_INT("altzone", janzone);
+        ADD_INT("daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", julyname, janname);
     } else {
-        PyModule_AddIntConstant(m, "timezone", janzone);
-        PyModule_AddIntConstant(m, "altzone", julyzone);
-        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        ADD_INT("timezone", janzone);
+        ADD_INT("altzone", julyzone);
+        ADD_INT("daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", janname, julyname);
     }
-    if (tzname_obj == NULL) {
+    if (PyModule_Add(m, "tzname", tzname_obj) < 0) {
         return -1;
     }
-    PyModule_AddObject(m, "tzname", tzname_obj);
 #endif // !HAVE_DECL_TZNAME
+#undef ADD_INT
 
     if (PyErr_Occurred()) {
         return -1;
@@ -1850,12 +1886,16 @@ init_timezone(PyObject *m)
 }
 
 
+// Include Argument Clinic code after defining converters such as
+// time_clockid_converter().
+#include "clinic/timemodule.c.h"
+
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
     {"time_ns",         time_time_ns, METH_NOARGS, time_ns_doc},
 #ifdef HAVE_CLOCK_GETTIME
-    {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
-    {"clock_gettime_ns",time_clock_gettime_ns, METH_VARARGS, clock_gettime_ns_doc},
+    TIME_CLOCK_GETTIME_METHODDEF
+    TIME_CLOCK_GETTIME_NS_METHODDEF
 #endif
 #ifdef HAVE_CLOCK_SETTIME
     {"clock_settime",   time_clock_settime, METH_VARARGS, clock_settime_doc},
@@ -2107,6 +2147,7 @@ time_module_free(void *module)
 
 static struct PyModuleDef_Slot time_slots[] = {
     {Py_mod_exec, time_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

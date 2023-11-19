@@ -95,25 +95,6 @@ class FakeSpec:
         self.parent = parent
 
 
-class Using__package__PEP302(Using__package__):
-    mock_modules = util.mock_modules
-
-    def test_using___package__(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_using___package__()
-
-    def test_spec_fallback(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_spec_fallback()
-
-
-(Frozen_UsingPackagePEP302,
- Source_UsingPackagePEP302
- ) = util.test_both(Using__package__PEP302, __import__=util.__import__)
-
-
 class Using__package__PEP451(Using__package__):
     mock_modules = util.mock_spec
 
@@ -162,23 +143,6 @@ class Setting__package__:
                 module = getattr(pkg, 'mod')
                 self.assertEqual(module.__package__, 'pkg')
 
-class Setting__package__PEP302(Setting__package__, unittest.TestCase):
-    mock_modules = util.mock_modules
-
-    def test_top_level(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_top_level()
-
-    def test_package(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_package()
-
-    def test_submodule(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            super().test_submodule()
 
 class Setting__package__PEP451(Setting__package__, unittest.TestCase):
     mock_modules = util.mock_spec

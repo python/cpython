@@ -13,7 +13,7 @@
 This module provides basic mechanisms for measuring and controlling system
 resources utilized by a program.
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: Unix, not Emscripten, not WASI.
 
 Symbolic constants are used to specify particular system resources and to
 request usage information about either the current process or its children.
@@ -244,7 +244,7 @@ platform.
    used by all of this user id's processes.
    This limit is enforced only if bit 1 of the vm.overcommit sysctl is set.
    Please see
-   `tuning(7) <https://www.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
+   `tuning(7) <https://man.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
    for a complete description of this sysctl.
 
    .. availability:: FreeBSD.

@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(EVP_copy__doc__,
 "copy($self, /)\n"
@@ -1289,15 +1290,7 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (PyObject_GetBuffer(args[1], &password, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&password, 'C')) {
-        _PyArg_BadArgument("pbkdf2_hmac", "argument 'password'", "contiguous buffer", args[1]);
-        goto exit;
-    }
     if (PyObject_GetBuffer(args[2], &salt, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&salt, 'C')) {
-        _PyArg_BadArgument("pbkdf2_hmac", "argument 'salt'", "contiguous buffer", args[2]);
         goto exit;
     }
     iterations = PyLong_AsLong(args[3]);
@@ -1387,19 +1380,11 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (PyObject_GetBuffer(args[0], &password, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&password, 'C')) {
-        _PyArg_BadArgument("scrypt", "argument 'password'", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
     if (args[1]) {
         if (PyObject_GetBuffer(args[1], &salt, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&salt, 'C')) {
-            _PyArg_BadArgument("scrypt", "argument 'salt'", "contiguous buffer", args[1]);
             goto exit;
         }
         if (!--noptargs) {
@@ -1521,15 +1506,7 @@ _hashlib_hmac_singleshot(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (PyObject_GetBuffer(args[0], &key, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&key, 'C')) {
-        _PyArg_BadArgument("hmac_digest", "argument 'key'", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (PyObject_GetBuffer(args[1], &msg, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&msg, 'C')) {
-        _PyArg_BadArgument("hmac_digest", "argument 'msg'", "contiguous buffer", args[1]);
         goto exit;
     }
     digest = args[2];
@@ -1601,10 +1578,6 @@ _hashlib_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &key, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&key, 'C')) {
-        _PyArg_BadArgument("hmac_new", "argument 'key'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -1851,4 +1824,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b339e255db698147 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7eddeb3d6ccdeec input=a9049054013a1b77]*/

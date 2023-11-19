@@ -72,7 +72,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://www.jenkins.io/>`_,
    `GitHub Actions <https://github.com/features/actions>`_, or
    `AppVeyor <https://www.appveyor.com/>`_.
 
@@ -206,13 +206,13 @@ Command-line options
 
 .. program:: unittest
 
-.. cmdoption:: -b, --buffer
+.. option:: -b, --buffer
 
    The standard output and standard error streams are buffered during the test
    run. Output during a passing test is discarded. Output is echoed normally
    on test fail or error and is added to the failure messages.
 
-.. cmdoption:: -c, --catch
+.. option:: -c, --catch
 
    :kbd:`Control-C` during the test run waits for the current test to end and then
    reports all the results so far. A second :kbd:`Control-C` raises the normal
@@ -220,11 +220,11 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
-.. cmdoption:: -f, --failfast
+.. option:: -f, --failfast
 
    Stop the test run on the first error or failure.
 
-.. cmdoption:: -k
+.. option:: -k
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
@@ -240,11 +240,11 @@ Command-line options
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
    ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
 
-.. cmdoption:: --locals
+.. option:: --locals
 
    Show local variables in tracebacks.
 
-.. cmdoption:: --durations N
+.. option:: --durations N
 
    Show the N slowest test cases (N=0 for all).
 
@@ -292,19 +292,19 @@ The ``discover`` sub-command has the following options:
 
 .. program:: unittest discover
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output
 
-.. cmdoption:: -s, --start-directory directory
+.. option:: -s, --start-directory directory
 
    Directory to start discovery (``.`` default)
 
-.. cmdoption:: -p, --pattern pattern
+.. option:: -p, --pattern pattern
 
    Pattern to match test files (``test*.py`` default)
 
-.. cmdoption:: -t, --top-level-directory directory
+.. option:: -t, --top-level-directory directory
 
    Top level directory of project (defaults to start directory)
 
@@ -1134,7 +1134,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1175,7 +1175,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       Unlike :meth:`assertLogs`, nothing will be returned by the context
       manager.
@@ -1570,6 +1570,14 @@ Test cases
    coroutines as test functions.
 
    .. versionadded:: 3.8
+
+   .. attribute:: loop_factory
+
+      The *loop_factory* passed to :class:`asyncio.Runner`. Override
+      in subclasses with :class:`asyncio.EventLoop` to avoid using the
+      asyncio policy system.
+
+      .. versionadded:: 3.13
 
    .. coroutinemethod:: asyncSetUp()
 
@@ -2017,7 +2025,7 @@ Loading and running tests
 
    .. attribute:: collectedDurations
 
-      A list containing 2-tuples of :class:`TestCase` instances and floats
+      A list containing 2-tuples of test case names and floats
       representing the elapsed time of each test which was run.
 
       .. versionadded:: 3.12
@@ -2191,10 +2199,6 @@ Loading and running tests
    .. versionadded:: 3.12
       Added *durations* keyword argument.
 
-   .. versionchanged:: 3.12
-      Subclasses should accept ``**kwargs`` to ensure compatibility as the
-      interface changes.
-
 .. data:: defaultTestLoader
 
    Instance of the :class:`TestLoader` class intended to be shared.  If no
@@ -2285,7 +2289,8 @@ Loading and running tests
 
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
-   an exit code indicating success or failure of the tests run.
+   an exit code indicating success (0) or failure (1) of the tests run.
+   An exit code of 5 indicates that no tests were run.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.

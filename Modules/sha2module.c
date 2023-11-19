@@ -25,7 +25,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_strhex.h"        // _Py_strhex()
-#include "structmember.h"         // PyMemberDef
+
 #include "hashlib.h"
 
 /*[clinic input]
@@ -45,19 +45,25 @@ class SHA512Type "SHA512object *" "&PyType_Type"
 
 /* Our SHA2 implementations defer to the HACL* verified library. */
 
-#include "_hacl/Hacl_Streaming_SHA2.h"
+#include "_hacl/Hacl_Hash_SHA2.h"
 
 // TODO: Get rid of int digestsize in favor of Hacl state info?
 
 typedef struct {
     PyObject_HEAD
     int digestsize;
+    // Prevents undefined behavior via multiple threads entering the C API.
+    bool use_mutex;
+    PyMutex mutex;
     Hacl_Streaming_SHA2_state_sha2_256 *state;
 } SHA256object;
 
 typedef struct {
     PyObject_HEAD
     int digestsize;
+    // Prevents undefined behavior via multiple threads entering the C API.
+    bool use_mutex;
+    PyMutex mutex;
     Hacl_Streaming_SHA2_state_sha2_512 *state;
 } SHA512object;
 
@@ -100,6 +106,8 @@ newSHA224object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    HASHLIB_INIT_MUTEX(sha);
+
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -112,6 +120,8 @@ newSHA256object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    HASHLIB_INIT_MUTEX(sha);
+
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -124,6 +134,8 @@ newSHA384object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    HASHLIB_INIT_MUTEX(sha);
+
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -136,6 +148,8 @@ newSHA512object(sha2_state *state)
     if (!sha) {
         return NULL;
     }
+    HASHLIB_INIT_MUTEX(sha);
+
     PyObject_GC_Track(sha);
     return sha;
 }
@@ -229,7 +243,9 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
         }
     }
 
+    ENTER_HASHLIB(self);
     SHA256copy(self, newobj);
+    LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
 
@@ -259,7 +275,9 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
         }
     }
 
+    ENTER_HASHLIB(self);
     SHA512copy(self, newobj);
+    LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
 
@@ -275,9 +293,11 @@ SHA256Type_digest_impl(SHA256object *self)
 {
     uint8_t digest[SHA256_DIGESTSIZE];
     assert(self->digestsize <= SHA256_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Streaming_SHA2_finish_256(self->state, digest);
+    LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -293,9 +313,11 @@ SHA512Type_digest_impl(SHA512object *self)
 {
     uint8_t digest[SHA512_DIGESTSIZE];
     assert(self->digestsize <= SHA512_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     // HACL* performs copies under the hood so that self->state remains valid
     // after this call.
     Hacl_Streaming_SHA2_finish_512(self->state, digest);
+    LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
@@ -311,7 +333,9 @@ SHA256Type_hexdigest_impl(SHA256object *self)
 {
     uint8_t digest[SHA256_DIGESTSIZE];
     assert(self->digestsize <= SHA256_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     Hacl_Streaming_SHA2_finish_256(self->state, digest);
+    LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -327,7 +351,9 @@ SHA512Type_hexdigest_impl(SHA512object *self)
 {
     uint8_t digest[SHA512_DIGESTSIZE];
     assert(self->digestsize <= SHA512_DIGESTSIZE);
+    ENTER_HASHLIB(self);
     Hacl_Streaming_SHA2_finish_512(self->state, digest);
+    LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, self->digestsize);
 }
 
@@ -348,7 +374,18 @@ SHA256Type_update(SHA256object *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    update_256(self->state, buf.buf, buf.len);
+    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
+    }
+    if (self->use_mutex) {
+        Py_BEGIN_ALLOW_THREADS
+        PyMutex_Lock(&self->mutex);
+        update_256(self->state, buf.buf, buf.len);
+        PyMutex_Unlock(&self->mutex);
+        Py_END_ALLOW_THREADS
+    } else {
+        update_256(self->state, buf.buf, buf.len);
+    }
 
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -371,7 +408,18 @@ SHA512Type_update(SHA512object *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    update_512(self->state, buf.buf, buf.len);
+    if (!self->use_mutex && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->use_mutex = true;
+    }
+    if (self->use_mutex) {
+        Py_BEGIN_ALLOW_THREADS
+        PyMutex_Lock(&self->mutex);
+        update_512(self->state, buf.buf, buf.len);
+        PyMutex_Unlock(&self->mutex);
+        Py_END_ALLOW_THREADS
+    } else {
+        update_512(self->state, buf.buf, buf.len);
+    }
 
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -560,7 +608,15 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_256(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
+            Py_BEGIN_ALLOW_THREADS
+            update_256(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_256(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -606,7 +662,15 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_256(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
+            Py_BEGIN_ALLOW_THREADS
+            update_256(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_256(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -651,7 +715,15 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_512(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
+            Py_BEGIN_ALLOW_THREADS
+            update_512(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_512(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -696,7 +768,15 @@ _sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        update_512(new->state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
+            Py_BEGIN_ALLOW_THREADS
+            update_512(new->state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            update_512(new->state, buf.buf, buf.len);
+        }
         PyBuffer_Release(&buf);
     }
 
@@ -785,6 +865,7 @@ static int sha2_exec(PyObject *module)
 
 static PyModuleDef_Slot _sha2_slots[] = {
     {Py_mod_exec, sha2_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

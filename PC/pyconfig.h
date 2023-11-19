@@ -308,11 +308,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         file in their Makefile (other compilers are
                         generally taken care of by distutils.) */
 #                       if defined(_DEBUG)
-#                               pragma comment(lib,"python312_d.lib")
+#                               pragma comment(lib,"python313_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
-#                               pragma comment(lib,"python312.lib")
+#                               pragma comment(lib,"python313.lib")
 #                       endif /* _DEBUG */
 #               endif /* _MSC_VER */
 #       endif /* Py_BUILD_CORE */
@@ -330,6 +330,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_HKEY 8
 #       define SIZEOF_SIZE_T 8
 #       define ALIGNOF_SIZE_T 8
+#       define ALIGNOF_MAX_ALIGN_T 8
 /* configure.ac defines HAVE_LARGEFILE_SUPPORT iff
    sizeof(off_t) > sizeof(long), and sizeof(long long) >= sizeof(off_t).
    On Win64 the second condition is not true, but if fpos_t replaces off_t
@@ -351,6 +352,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       else
 #       define SIZEOF_TIME_T 4
 #       endif
+#       define ALIGNOF_MAX_ALIGN_T 8
 #endif
 
 #ifdef _DEBUG
@@ -508,6 +510,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
+
+/* Define if you want to compile in mimalloc memory allocator. */
+#define WITH_MIMALLOC 1
 
 /* Define if you want to compile in object freelists optimization */
 #define WITH_FREELISTS 1
@@ -672,9 +677,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have the mpc library (-lmpc).  */
 /* #undef HAVE_LIBMPC */
-
-/* Define if you have the nsl library (-lnsl).  */
-#define HAVE_LIBNSL 1
 
 /* Define if you have the seq library (-lseq).  */
 /* #undef HAVE_LIBSEQ */

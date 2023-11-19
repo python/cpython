@@ -59,7 +59,7 @@ The module defines the following user-callable items:
    platforms, it is a file-like object whose :attr:`!file` attribute is the
    underlying true file object.
 
-   The :py:data:`os.O_TMPFILE` flag is used if it is available and works
+   The :py:const:`os.O_TMPFILE` flag is used if it is available and works
    (Linux-specific, requires Linux kernel 3.11 or later).
 
    On platforms that are neither Posix nor Cygwin, TemporaryFile is an alias
@@ -69,7 +69,7 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.5
 
-      The :py:data:`os.O_TMPFILE` flag is now used if available.
+      The :py:const:`os.O_TMPFILE` flag is now used if available.
 
    .. versionchanged:: 3.8
       Added *errors* parameter.
@@ -115,14 +115,14 @@ The module defines the following user-callable items:
    * On Windows, make sure that at least one of the following conditions are
      fulfilled:
 
-         * *delete* is false
-         * additional open shares delete access (e.g. by calling :func:`os.open`
-           with the flag ``O_TEMPORARY``)
-         * *delete* is true but *delete_on_close* is false. Note, that in this
-           case the additional opens that do not share delete access (e.g.
-           created via builtin :func:`open`) must be closed before exiting the
-           context manager, else the :func:`os.unlink` call on context manager
-           exit will fail with a :exc:`PermissionError`.
+     * *delete* is false
+     * additional open shares delete access (e.g. by calling :func:`os.open`
+       with the flag ``O_TEMPORARY``)
+     * *delete* is true but *delete_on_close* is false. Note, that in this
+       case the additional opens that do not share delete access (e.g.
+       created via builtin :func:`open`) must be closed before exiting the
+       context manager, else the :func:`os.unlink` call on context manager
+       exit will fail with a :exc:`PermissionError`.
 
    On Windows, if *delete_on_close* is false, and the file is created in a
    directory for which the user lacks delete access, then the :func:`os.unlink`
@@ -147,7 +147,7 @@ The module defines the following user-callable items:
 
    This class operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
-   until the file's :func:`fileno` method is called, at which point the
+   until the file's :func:`~io.IOBase.fileno` method is called, at which point the
    contents are written to disk and operation proceeds as with
    :func:`TemporaryFile`.
 
@@ -292,6 +292,9 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.6
       The *dir* parameter now accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.12
+      :func:`mkdtemp` now always returns an absolute path, even if *dir* is relative.
+
 
 .. function:: gettempdir()
 
@@ -401,13 +404,13 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
 
     # create a temporary file using a context manager
     # close the file, use the name to open the file again
-    >>> with tempfile.TemporaryFile(delete_on_close=False) as fp:
-    ...    fp.write(b'Hello world!')
-    ...    fp.close()
-    # the file is closed, but not removed
-    # open the file again by using its name
-    ...    with open(fp.name) as f
-    ...        f.read()
+    >>> with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+    ...     fp.write(b'Hello world!')
+    ...     fp.close()
+    ... # the file is closed, but not removed
+    ... # open the file again by using its name
+    ...     with open(fp.name, mode='rb') as f:
+    ...         f.read()
     b'Hello world!'
     >>>
     # file is now removed

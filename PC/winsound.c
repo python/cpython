@@ -35,6 +35,11 @@
    winsound.PlaySound(None, 0)
 */
 
+#ifndef Py_NOGIL
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
+#endif
+
 #include <Python.h>
 #include <windows.h>
 #include <mmsystem.h>
@@ -95,9 +100,13 @@ winsound_PlaySound_impl(PyObject *module, PyObject *sound, int flags)
         }
         wsound = (wchar_t *)view.buf;
     } else if (PyBytes_Check(sound)) {
-        PyErr_Format(PyExc_TypeError,
-                     "'sound' must be str, os.PathLike, or None, not '%s'",
-                     Py_TYPE(sound)->tp_name);
+        PyObject *type_name = PyType_GetQualName(Py_TYPE(sound));
+        if (type_name != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "'sound' must be str, os.PathLike, or None, not %S",
+                         type_name);
+            Py_DECREF(type_name);
+        }
         return NULL;
     } else {
         PyObject *obj = PyOS_FSPath(sound);
@@ -235,6 +244,7 @@ exec_module(PyObject *module)
 
 static PyModuleDef_Slot sound_slots[] = {
     {Py_mod_exec, exec_module},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
