@@ -954,10 +954,6 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             return NULL;
         _PyUnicode_Name_CAPI *ucnhash_capi = _PyUnicode_GetNameCAPI();
         if (ucnhash_capi == NULL) {
-            PyErr_SetString(
-                    PyExc_UnicodeError,
-                    "\\N escapes not supported (can't load unicodedata module)"
-            );
             return NULL;
         }
         for (i = start, ressize = 0; i < end; ++i) {

@@ -6049,19 +6049,9 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 
             /* \N{name} */
         case 'N':
-            ucnhash_capi = interp->unicode.ucnhash_capi;
+            ucnhash_capi = _PyUnicode_GetNameCAPI();
             if (ucnhash_capi == NULL) {
-                /* load the unicode data module */
-                ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
-                                                PyUnicodeData_CAPSULE_NAME, 1);
-                if (ucnhash_capi == NULL) {
-                    PyErr_SetString(
-                        PyExc_UnicodeError,
-                        "\\N escapes not supported (can't load unicodedata module)"
-                        );
-                    goto onError;
-                }
-                interp->unicode.ucnhash_capi = ucnhash_capi;
+                goto onError;
             }
 
             message = "malformed \\N character escape";
