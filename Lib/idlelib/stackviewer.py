@@ -1,3 +1,5 @@
+# Rename to stackbrowser or possibly consolidate with browser.
+
 import linecache
 import os
 
