@@ -166,7 +166,7 @@ class DebuggerTest(unittest.TestCase):
             self.debugger.sync_source_line()
         self.debugger.flist.gotofileline.assert_called_once_with('test_sync.py', 1)
 
-        
+
 class DebuggerGuiTest(unittest.TestCase):
     """Tests for debugger.Debugger that need tk root.
 
