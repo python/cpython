@@ -166,7 +166,9 @@ class Instruction:
                     f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
-                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
+                # TODO: Use something else when generating JIT code
+                operand = "next_uop[-1].operand"
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()}){operand};")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
