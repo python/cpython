@@ -40,9 +40,9 @@ class StatsTestCase(unittest.TestCase):
 
     def test_dump_and_load_works_correctly(self):
         temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
-        self.stats.dump_stats(filename=temp_storage_new.name)
-        tmp_stats = pstats.Stats(temp_storage_new.name)
         try:
+            self.stats.dump_stats(filename=temp_storage_new.name)
+            tmp_stats = pstats.Stats(temp_storage_new.name)
             self.assertEqual(self.stats.stats, tmp_stats.stats)
         finally:
             temp_storage_new.close()
@@ -51,10 +51,10 @@ class StatsTestCase(unittest.TestCase):
     def test_load_equivalent_to_init(self):
         stats = pstats.Stats()
         self.temp_storage = tempfile.NamedTemporaryFile(delete=False)
-        cProfile.run('import os', filename=self.temp_storage.name)
-        stats.load_stats(self.temp_storage.name)
-        created = pstats.Stats(self.temp_storage.name)
         try:
+            cProfile.run('import os', filename=self.temp_storage.name)
+            stats.load_stats(self.temp_storage.name)
+            created = pstats.Stats(self.temp_storage.name)
             self.assertEqual(stats.stats, created.stats)
         finally:
             self.temp_storage.close()
