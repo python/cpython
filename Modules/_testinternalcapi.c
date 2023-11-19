@@ -902,9 +902,9 @@ write_perf_map_entry(PyObject *self, PyObject *args)
     PyObject *code_addr_v;
     const void *code_addr;
     unsigned int code_size;
-    const char *entry_name;
+    PyCodeObject *entry_name;
 
-    if (!PyArg_ParseTuple(args, "OIs", &code_addr_v, &code_size, &entry_name))
+    if (!PyArg_ParseTuple(args, "OIO", &code_addr_v, &code_size, &entry_name))
         return NULL;
     code_addr = PyLong_AsVoidPtr(code_addr_v);
     if (code_addr == NULL) {
