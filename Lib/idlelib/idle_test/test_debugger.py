@@ -1,4 +1,7 @@
-"Test debugger, coverage 19%"
+"""Test debugger, coverage 66%
+
+Try to make tests pass with draft bdbx, which may replace bdb in 3.13+.
+"""
 
 from idlelib import debugger
 from collections import namedtuple
@@ -45,7 +48,7 @@ class IdbTest(unittest.TestCase):
 
     def test_init(self):
         self.assertIs(self.idb.gui, self.gui)
-
+        # Won't test super call since two Bdbs are very different.
 
     def test_user_line(self):
         # Test that .user_line() creates a string message for a frame.
