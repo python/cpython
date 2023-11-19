@@ -88,14 +88,107 @@ class FunctionTest(unittest.TestCase):
         self.assertTrue(debugger._in_rpc_code(code_frame))
 
 
+class DebuggerTest(unittest.TestCase):
+    "Tests for Debugger that do not need a real root."
+
+    @classmethod
+    def setUpClass(cls):
+        cls.pyshell = Mock()
+        cls.pyshell.root = Mock()
+        cls.idb = Mock()
+        with patch.object(debugger.Debugger, 'make_gui'):
+            cls.debugger = debugger.Debugger(cls.pyshell, cls.idb)
+        cls.debugger.root = Mock()
+
+    def test_run_debugger(self):
+        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
+        self.debugger.run(1, 'two')
+        self.idb.run.assert_called_once_with(1, 'two')
+        self.assertEqual(self.debugger.interacting, 0)
+
+    def test_cont(self):
+        self.debugger.cont()
+        self.idb.set_continue.assert_called_once()
+
+    def test_step(self):
+        self.debugger.step()
+        self.idb.set_step.assert_called_once()
+
+    def test_quit(self):
+        self.debugger.quit()
+        self.idb.set_quit.assert_called_once()
+
+    def test_next(self):
+        with patch.object(self.debugger, 'frame') as frame:
+            self.debugger.next()
+            self.idb.set_next.assert_called_once_with(frame)
+
+    def test_ret(self):
+        with patch.object(self.debugger, 'frame') as frame:
+            self.debugger.ret()
+            self.idb.set_return.assert_called_once_with(frame)
+
+    @unittest.skip('')
+    def test_show_stack_with_frame(self):
+        test_frame = MockFrame(None, None)
+        self.debugger.frame = test_frame
+
+        # Reset the stackviewer to force it to be recreated.
+        self.debugger.stackviewer = None
+
+        self.idb.get_stack.return_value = ([], 0)
+        self.debugger.show_stack()
+
+        # Check that the newly created stackviewer has the test gui as a field.
+        self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
+
+        self.idb.get_stack.assert_called_once_with(test_frame, None)
+
+    def test_clear_breakpoint(self):
+        self.debugger.clear_breakpoint('test.py', 4)
+        self.idb.clear_break.assert_called_once_with('test.py', 4)
+
+    def test_clear_file_breaks(self):
+        self.debugger.clear_file_breaks('test.py')
+        self.idb.clear_all_file_breaks.assert_called_once_with('test.py')
+
+    def test_set_load_breakpoints(self):
+        # Test the .load_breakpoints() method calls idb.
+        FileIO = namedtuple('FileIO', 'filename')
+
+        class MockEditWindow(object):
+            def __init__(self, fn, breakpoints):
+                self.io = FileIO(fn)
+                self.breakpoints = breakpoints
+
+        self.pyshell.flist = Mock()
+        self.pyshell.flist.inversedict = (
+            MockEditWindow('test1.py', [4, 4]),
+            MockEditWindow('test2.py', [13, 44, 45]),
+        )
+        self.debugger.set_breakpoint('test0.py', 1)
+        self.idb.set_break.assert_called_once_with('test0.py', 1)
+        self.debugger.load_breakpoints()  # Call set_breakpoint 5 times.
+        self.idb.set_break.assert_has_calls(
+            [mock.call('test0.py', 1),
+             mock.call('test1.py', 4),
+             mock.call('test1.py', 4),
+             mock.call('test2.py', 13),
+             mock.call('test2.py', 44),
+             mock.call('test2.py', 45)])
+
+
 class DebuggerGuiTest(unittest.TestCase):
-    """Tests for the idlelib.debugger.Debugger class."""
+    "Tests for debugger.Debugger that need GUI."
 
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        cls.root = Tk()
-        cls.root.withdraw()
+        cls.root = root = Tk()
+        root.withdraw()
+        cls.pyshell = pyshell = Mock()
+        pyshell.root = root
+        cls.idb = Mock()
 
     @classmethod
     def tearDownClass(cls):
@@ -103,31 +196,15 @@ class DebuggerGuiTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
-        self.pyshell = Mock()
-        self.pyshell.root = self.root
-        self.debugger = debugger.Debugger(self.pyshell, None)
+        self.debugger = debugger.Debugger(self.pyshell, self.idb)
         self.debugger.root = self.root
         # real root needed for real make_gui
         # run, interacting, abort_loop
 
-    def tearDown(self):
-        del self.pyshell.root
-        del self.pyshell
-        del self.debugger.root
-        del self.debugger
-
-    def test_setup_debugger(self):
-        # Test that Debugger can be instantiated with a mock PyShell.
-        test_debugger = debugger.Debugger(self.pyshell)
-
-        self.assertEqual(test_debugger.pyshell, self.pyshell)
-        self.assertIsNone(test_debugger.frame)
-
-##    def test_run_debugger(self):
-##        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
-##        self.debugger.run(1, 'two')
-##        self.idb.run.assert_called_once_with(1, 'two')
-##        self.assertEqual(self.debugger.interacting, 0)
+    def test_run_debugger(self):
+        self.debugger.run(1, 'two')
+        self.idb.run.assert_called_once_with(1, 'two')
+        self.assertEqual(self.debugger.interacting, 0)
 
     def test_close(self):
         # Test closing the window in an idle state.
@@ -162,102 +239,6 @@ class DebuggerGuiTest(unittest.TestCase):
 
         # Check that the newly created stackviewer has the test gui as a field.
         self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
-
-
-class DebuggerTest(unittest.TestCase):
-    """Tests for the idlelib.debugger.Debugger class with an Idb."""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.pyshell = Mock()
-        cls.pyshell.root = Mock()
-        cls.idb = Mock()
-        with patch.object(debugger.Debugger, 'make_gui'):
-            cls.debugger = debugger.Debugger(cls.pyshell, cls.idb)
-        cls.debugger.root = Mock()
-
-    def setUp(self): pass
-
-##    def test_run_debugger(self):
-##        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
-##        self.debugger.run(1, 'two')
-##        self.idb.run.assert_called_once_with(1, 'two')
-##        self.assertEqual(self.debugger.interacting, 0)
-
-    def test_cont(self):
-        self.debugger.cont()
-        self.idb.set_continue.assert_called_once()
-
-    def test_step(self):
-        self.debugger.step()
-        self.idb.set_step.assert_called_once()
-
-    def test_quit(self):
-        self.debugger.quit()
-        self.idb.set_quit.assert_called_once()
-
-    def test_next(self):
-        with patch.object(self.debugger, 'frame') as frame:
-            self.debugger.next()
-            self.idb.set_next.assert_called_once_with(frame)
-
-    def test_ret(self):
-        with patch.object(self.debugger, 'frame') as frame:
-            self.debugger.ret()
-            self.idb.set_return.assert_called_once_with(frame)
-
-    @unittest.skip('')
-    def test_set_breakpoint_here(self):
-        self.debugger.set_breakpoint_here('test.py', 4)
-        self.idb.set_break.assert_called_once_with('test.py', 4)
-
-    def test_clear_breakpoint_here(self):
-        self.debugger.clear_breakpoint_here('test.py', 4)
-        self.idb.clear_break.assert_called_once_with('test.py', 4)
-
-    def test_clear_file_breaks(self):
-        self.debugger.clear_file_breaks('test.py')
-        self.idb.clear_all_file_breaks.assert_called_once_with('test.py')
-
-    @unittest.skip('')
-    def test_show_stack_with_frame(self):
-        test_frame = MockFrame(None, None)
-        self.debugger.frame = test_frame
-
-        # Reset the stackviewer to force it to be recreated.
-        self.debugger.stackviewer = None
-
-        self.idb.get_stack.return_value = ([], 0)
-        self.debugger.show_stack()
-
-        # Check that the newly created stackviewer has the test gui as a field.
-        self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
-
-        self.idb.get_stack.assert_called_once_with(test_frame, None)
-
-    def test_load_breakpoints(self):
-        # Test the .load_breakpoints() method calls idb.
-        FileIO = namedtuple('FileIO', 'filename')
-
-        class MockEditWindow(object):
-            def __init__(self, fn, breakpoints):
-                self.io = FileIO(fn)
-                self.breakpoints = breakpoints
-
-        self.pyshell.flist = Mock()
-        self.pyshell.flist.inversedict = (
-            MockEditWindow('test1.py', [1, 4, 4]),
-            MockEditWindow('test2.py', [13, 44, 45]),
-        )
-        self.debugger.load_breakpoints()
-
-        self.idb.set_break.assert_has_calls(
-            [mock.call('test1.py', 1),
-             mock.call('test1.py', 4),
-             mock.call('test1.py', 4),
-             mock.call('test2.py', 13),
-             mock.call('test2.py', 44),
-             mock.call('test2.py', 45)])
 
 
 class StackViewerTest(unittest.TestCase):

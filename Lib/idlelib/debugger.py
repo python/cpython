@@ -397,10 +397,14 @@ class Debugger:
         if gv:
             gv.load_dict(gdict, force, self.pyshell.interp.rpcclt)
 
-    def set_breakpoint_here(self, filename, lineno):
+    def set_breakpoint(self, filename, lineno):
+        """Set a filename-lineno breakpoint in the debugger.
+
+        Called from self.load_breakpoints and EW.setbreakpoint
+        """
         self.idb.set_break(filename, lineno)
 
-    def clear_breakpoint_here(self, filename, lineno):
+    def clear_breakpoint(self, filename, lineno):
         self.idb.clear_break(filename, lineno)
 
     def clear_file_breaks(self, filename):
@@ -412,7 +416,7 @@ class Debugger:
             filename = editwin.io.filename
             try:
                 for lineno in editwin.breakpoints:
-                    self.set_breakpoint_here(filename, lineno)
+                    self.set_breakpoint(filename, lineno)
             except AttributeError:
                 continue
 
