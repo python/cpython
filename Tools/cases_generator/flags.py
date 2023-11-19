@@ -53,7 +53,7 @@ ESCAPING_FUNCTIONS = (
 
 def makes_escaping_api_call(instr: parsing.InstDef) -> bool:
     if "CALL_INTRINSIC" in instr.name:
-        return True;
+        return True
     tkns = iter(instr.tokens)
     for tkn in tkns:
         if tkn.kind != lx.IDENTIFIER:
@@ -78,6 +78,7 @@ def makes_escaping_api_call(instr: parsing.InstDef) -> bool:
             continue
         return True
     return False
+
 
 @dataclasses.dataclass
 class InstructionFlags:
@@ -124,9 +125,7 @@ class InstructionFlags:
                 or variable_used(instr, "exception_unwind")
                 or variable_used(instr, "resume_with_error")
             ),
-            HAS_ESCAPES_FLAG=(
-                makes_escaping_api_call(instr)
-            ),
+            HAS_ESCAPES_FLAG=makes_escaping_api_call(instr),
         )
 
     @staticmethod
@@ -176,7 +175,7 @@ def variable_used_unspecialized(node: parsing.Node, name: str) -> bool:
     tokens: list[lx.Token] = []
     skipping = False
     for i, token in enumerate(node.tokens):
-        if token.kind == "MACRO":
+        if token.kind == "CMACRO":
             text = "".join(token.text.split())
             # TODO: Handle nested #if
             if text == "#if":

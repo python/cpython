@@ -831,7 +831,7 @@ always available.
 
    Note that the returned value may not actually reflect how many
    references to the object are actually held.  For example, some
-   objects are "immortal" and have a very high refcount that does not
+   objects are :term:`immortal` and have a very high refcount that does not
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
@@ -1182,8 +1182,8 @@ always available.
    names used in Python programs are automatically interned, and the dictionaries
    used to hold module, class or instance attributes have interned keys.
 
-   Interned strings are not immortal; you must keep a reference to the return
-   value of :func:`intern` around to benefit from it.
+   Interned strings are not :term:`immortal`; you must keep a reference to the
+   return value of :func:`intern` around to benefit from it.
 
 
 .. function:: is_finalizing()

@@ -105,7 +105,7 @@ UOp = OpName | CacheEffect
 
 @dataclass
 class InstHeader(Node):
-    annotations : list[str]
+    annotations: list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
@@ -114,7 +114,7 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
-    annotations : list[str]
+    annotations: list[str]
     kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
