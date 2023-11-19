@@ -1122,13 +1122,10 @@ os.close(fd)
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
         with test_utils.run_test_server() as httpd:
-            try:
+            with self.assertRaises(RuntimeError):
+                # This exception is caused by `self.loop.stop()` as expected.
                 self.loop.run_until_complete(inner(httpd))
-            # This exception is caused by `self.loop.stop()` as expected.
-            except RuntimeError:
-                pass
-            finally:
-                gc.collect()
+            gc.collect()
 
         self.assertEqual(messages, [])
 
