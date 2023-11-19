@@ -43,8 +43,8 @@ class nonascii:
 
 if test.support.HAVE_DOCSTRINGS:
     expected_data_docstrings = (
-        'dictionary for instance variables (if defined)',
-        'list of weak references to the object (if defined)',
+        'dictionary for instance variables',
+        'list of weak references to the object',
         ) * 2
 else:
     expected_data_docstrings = ('', '', '', '')
@@ -108,10 +108,10 @@ CLASSES
      |  Data descriptors defined here:
      |
      |  __dict__
-     |      dictionary for instance variables (if defined)
+     |      dictionary for instance variables
      |
      |  __weakref__
-     |      list of weak references to the object (if defined)
+     |      list of weak references to the object
 
 FUNCTIONS
     doc_func()
@@ -169,16 +169,16 @@ class A(builtins.object)
 
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 
 class B(builtins.object)
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
         __annotations__ = {'NO_MEANING': <class 'str'>}
@@ -195,9 +195,9 @@ class C(builtins.object)
         __class_getitem__(item) from builtins.type
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-             list of weak references to the object (if defined)
+             list of weak references to the object
 
 Functions
     doc_func()
@@ -829,10 +829,10 @@ class B(A)
  |  Data descriptors inherited from A:
  |
  |  __dict__
- |      dictionary for instance variables (if defined)
+ |      dictionary for instance variables
  |
  |  __weakref__
- |      list of weak references to the object (if defined)
+ |      list of weak references to the object
 ''' % __name__)
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
@@ -861,9 +861,9 @@ class B(A)
 
     Data descriptors inherited from A:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 """
         as_text = html2text(doc)
         expected_lines = [line.strip() for line in expected_text.split("\n") if line]
