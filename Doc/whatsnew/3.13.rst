@@ -423,6 +423,11 @@ Deprecated
   (as has always been the case for an executing frame).
   (Contributed by Irit Katriel in :gh:`79932`.)
 
+* Providing anything but a string or bytes object to :mod:`urllib.parse`
+  functions expecting strings or bytes now raises :exc:`DeprecationWarning`
+  if the value tests false, or :exc:`TypeError` if it tests true.
+  (Contributed by Jacob Walls in :issue:`19094`.)
+
 * Assignment to a function's ``__code__`` attribute where the new code
   object's type does not match the function's type, is deprecated. The
   different types are: plain function, generator, async generator and
