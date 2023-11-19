@@ -1,1 +1,1 @@
-Omit the interface scope from IPv6 address when used as Host header.
+Omit the interface scope from an IPv6 address when used as Host header by :mod:`http.client`.
