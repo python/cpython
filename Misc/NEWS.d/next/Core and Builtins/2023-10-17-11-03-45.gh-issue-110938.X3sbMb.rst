@@ -1,0 +1,2 @@
+Fix error messages for indented blocks with functions and classes with
+generic type parameters. Patch by Pablo Galindo

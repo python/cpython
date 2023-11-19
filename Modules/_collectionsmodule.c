@@ -1,9 +1,10 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>
 
 typedef struct {
@@ -1630,7 +1631,7 @@ static PyMethodDef deque_methods[] = {
 };
 
 static PyMemberDef deque_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(dequeobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(dequeobject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -2054,7 +2055,7 @@ static PyMethodDef defdict_methods[] = {
 };
 
 static PyMemberDef defdict_members[] = {
-    {"default_factory", T_OBJECT,
+    {"default_factory", _Py_T_OBJECT,
      offsetof(defdictobject, default_factory), 0,
      PyDoc_STR("Factory for default value called by __missing__().")},
     {NULL}
@@ -2466,7 +2467,7 @@ tuplegetter_repr(_tuplegetterobject *self)
 
 
 static PyMemberDef tuplegetter_members[] = {
-    {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
+    {"__doc__",  _Py_T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
     {0}
 };
 

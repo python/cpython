@@ -372,7 +372,7 @@ ABC hierarchy::
             The list of locations where the package's submodules will be found.
             Most of the time this is a single directory.
             The import system passes this attribute to ``__import__()`` and to finders
-            in the same way as :attr:`sys.path` but just for the package.
+            in the same way as :data:`sys.path` but just for the package.
             It is not set on non-package modules so it can be used
             as an indicator that the module is a package.
 
@@ -609,7 +609,7 @@ ABC hierarchy::
         automatically.
 
         When writing to the path fails because the path is read-only
-        (:attr:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
+        (:const:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
         exception.
 
         .. versionchanged:: 3.4
@@ -643,6 +643,160 @@ ABC hierarchy::
         :meth:`ExecutionLoader.get_filename`) is a file named
         ``__init__`` when the file extension is removed **and** the module name
         itself does not end in ``__init__``.
+
+
+.. class:: ResourceReader
+
+    *Superseded by TraversableResources*
+
+    An :term:`abstract base class` to provide the ability to read
+    *resources*.
+
+    From the perspective of this ABC, a *resource* is a binary
+    artifact that is shipped within a package. Typically this is
+    something like a data file that lives next to the ``__init__.py``
+    file of the package. The purpose of this class is to help abstract
+    out the accessing of such data files so that it does not matter if
+    the package and its data file(s) are stored in a e.g. zip file
+    versus on the file system.
+
+    For any of methods of this class, a *resource* argument is
+    expected to be a :term:`path-like object` which represents
+    conceptually just a file name. This means that no subdirectory
+    paths should be included in the *resource* argument. This is
+    because the location of the package the reader is for, acts as the
+    "directory". Hence the metaphor for directories and file
+    names is packages and resources, respectively. This is also why
+    instances of this class are expected to directly correlate to
+    a specific package (instead of potentially representing multiple
+    packages or a module).
+
+    Loaders that wish to support resource reading are expected to
+    provide a method called ``get_resource_reader(fullname)`` which
+    returns an object implementing this ABC's interface. If the module
+    specified by fullname is not a package, this method should return
+    :const:`None`. An object compatible with this ABC should only be
+    returned when the specified module is a package.
+
+    .. versionadded:: 3.7
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
+
+    .. abstractmethod:: open_resource(resource)
+
+        Returns an opened, :term:`file-like object` for binary reading
+        of the *resource*.
+
+        If the resource cannot be found, :exc:`FileNotFoundError` is
+        raised.
+
+    .. abstractmethod:: resource_path(resource)
+
+        Returns the file system path to the *resource*.
+
+        If the resource does not concretely exist on the file system,
+        raise :exc:`FileNotFoundError`.
+
+    .. abstractmethod:: is_resource(name)
+
+        Returns ``True`` if the named *name* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *name* does not exist.
+
+    .. abstractmethod:: contents()
+
+        Returns an :term:`iterable` of strings over the contents of
+        the package. Do note that it is not required that all names
+        returned by the iterator be actual resources, e.g. it is
+        acceptable to return names for which :meth:`is_resource` would
+        be false.
+
+        Allowing non-resource names to be returned is to allow for
+        situations where how a package and its resources are stored
+        are known a priori and the non-resource names would be useful.
+        For instance, returning subdirectory names is allowed so that
+        when it is known that the package and resources are stored on
+        the file system then those subdirectory names can be used
+        directly.
+
+        The abstract method returns an iterable of no items.
+
+
+.. class:: Traversable
+
+    An object with a subset of :class:`pathlib.Path` methods suitable for
+    traversing directories and opening files.
+
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
+
+    .. versionadded:: 3.9
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.Traversable` instead.
+
+    .. attribute:: name
+
+       Abstract. The base name of this object without any parent references.
+
+    .. abstractmethod:: iterdir()
+
+       Yield ``Traversable`` objects in ``self``.
+
+    .. abstractmethod:: is_dir()
+
+       Return ``True`` if ``self`` is a directory.
+
+    .. abstractmethod:: is_file()
+
+       Return ``True`` if ``self`` is a file.
+
+    .. abstractmethod:: joinpath(child)
+
+       Return Traversable child in ``self``.
+
+    .. abstractmethod:: __truediv__(child)
+
+       Return ``Traversable`` child in ``self``.
+
+    .. abstractmethod:: open(mode='r', *args, **kwargs)
+
+       *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
+       suitable for reading (same as :attr:`pathlib.Path.open`).
+
+       When opening as text, accepts encoding parameters such as those
+       accepted by :attr:`io.TextIOWrapper`.
+
+    .. method:: read_bytes()
+
+       Read contents of ``self`` as bytes.
+
+    .. method:: read_text(encoding=None)
+
+       Read contents of ``self`` as text.
+
+
+.. class:: TraversableResources
+
+    An abstract base class for resource readers capable of serving
+    the :meth:`importlib.resources.files` interface. Subclasses
+    :class:`importlib.resources.abc.ResourceReader` and provides
+    concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
+    abstract methods. Therefore, any loader supplying
+    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
+
+    Loaders that wish to support resource reading are expected to
+    implement this interface.
+
+    .. versionadded:: 3.9
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
+
+    .. abstractmethod:: files()
+
+       Returns a :class:`importlib.resources.abc.Traversable` object for the loaded
+       package.
 
 
 
@@ -843,7 +997,7 @@ find and load modules.
 
    .. classmethod:: path_hook(*loader_details)
 
-      A class method which returns a closure for use on :attr:`sys.path_hooks`.
+      A class method which returns a closure for use on :data:`sys.path_hooks`.
       An instance of :class:`FileFinder` is returned by the closure using the
       path argument given to the closure directly and *loader_details*
       indirectly.
@@ -941,7 +1095,14 @@ find and load modules.
    The *fullname* argument specifies the name of the module the loader is to
    support. The *path* argument is the path to the extension module's file.
 
+   Note that, by default, importing an extension module will fail
+   in subinterpreters if it doesn't implement multi-phase init
+   (see :pep:`489`), even if it would otherwise import successfully.
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.12
+      Multi-phase init is now required for use in subinterpreters.
 
    .. attribute:: name
 
@@ -1184,10 +1345,10 @@ an :term:`importer`.
 .. function:: find_spec(name, package=None)
 
    Find the :term:`spec <module spec>` for a module, optionally relative to
-   the specified **package** name. If the module is in :attr:`sys.modules`,
+   the specified **package** name. If the module is in :data:`sys.modules`,
    then ``sys.modules[name].__spec__`` is returned (unless the spec would be
    ``None`` or is not set, in which case :exc:`ValueError` is raised).
-   Otherwise a search using :attr:`sys.meta_path` is done. ``None`` is
+   Otherwise a search using :data:`sys.meta_path` is done. ``None`` is
    returned if no spec is found.
 
    If **name** is for a submodule (contains a dot), the parent module is
@@ -1248,6 +1409,30 @@ an :term:`importer`.
 
    .. versionadded:: 3.7
 
+.. function:: _incompatible_extension_module_restrictions(*, disable_check)
+
+   A context manager that can temporarily skip the compatibility check
+   for extension modules.  By default the check is enabled and will fail
+   when a single-phase init module is imported in a subinterpreter.
+   It will also fail for a multi-phase init module that doesn't
+   explicitly support a per-interpreter GIL, when imported
+   in an interpreter with its own GIL.
+
+   Note that this function is meant to accommodate an unusual case;
+   one which is likely to eventually go away.  There's is a pretty good
+   chance this is not what you were looking for.
+
+   You can get the same effect as this function by implementing the
+   basic interface of multi-phase init (:pep:`489`) and lying about
+   support for multiple interpreters (or per-interpreter GIL).
+
+   .. warning::
+      Using this function to disable the check can lead to
+      unexpected behavior and even crashes.  It should only be used during
+      extension module development.
+
+   .. versionadded:: 3.12
+
 .. class:: LazyLoader(loader)
 
    A class which postpones the execution of the loader of a module until the
@@ -1259,7 +1444,7 @@ an :term:`importer`.
    :meth:`~importlib.abc.Loader.create_module` method must return ``None`` or a
    type for which its ``__class__`` attribute can be mutated along with not
    using :term:`slots <__slots__>`. Finally, modules which substitute the object
-   placed into :attr:`sys.modules` will not work as there is no way to properly
+   placed into :data:`sys.modules` will not work as there is no way to properly
    replace the module references throughout the interpreter safely;
    :exc:`ValueError` is raised if such a substitution is detected.
 
@@ -1383,9 +1568,9 @@ For deep customizations of import, you typically want to implement an
 :term:`importer`. This means managing both the :term:`finder` and :term:`loader`
 side of things. For finders there are two flavours to choose from depending on
 your needs: a :term:`meta path finder` or a :term:`path entry finder`. The
-former is what you would put on :attr:`sys.meta_path` while the latter is what
-you create using a :term:`path entry hook` on :attr:`sys.path_hooks` which works
-with :attr:`sys.path` entries to potentially create a finder. This example will
+former is what you would put on :data:`sys.meta_path` while the latter is what
+you create using a :term:`path entry hook` on :data:`sys.path_hooks` which works
+with :data:`sys.path` entries to potentially create a finder. This example will
 show you how to register your own importers so that import will use them (for
 creating an importer for yourself, read the documentation for the appropriate
 classes defined within this package)::

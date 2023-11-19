@@ -1,9 +1,10 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
-#include "pycore_long.h"           // _PyLong
-#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_format.h"        // F_LJUST
+#include "pycore_long.h"          // _PyLong
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 
 
 typedef struct {
@@ -141,15 +142,6 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
         }
         return limit;
     }
-    else if (PyFrozenSet_Check(obj)) {
-        Py_ssize_t i = 0;
-        PyObject *item;
-        Py_hash_t hash;
-        limit -= PySet_GET_SIZE(obj);
-        while (limit >= 0 && _PySet_NextEntry(obj, &i, &item, &hash)) {
-            limit = check_complexity(item, limit);
-        }
-    }
     return limit;
 }
 
@@ -173,9 +165,8 @@ safe_multiply(PyObject *v, PyObject *w)
             return NULL;
         }
     }
-    else if (PyLong_Check(v) && (PyTuple_Check(w) || PyFrozenSet_Check(w))) {
-        Py_ssize_t size = PyTuple_Check(w) ? PyTuple_GET_SIZE(w) :
-                                             PySet_GET_SIZE(w);
+    else if (PyLong_Check(v) && PyTuple_Check(w)) {
+        Py_ssize_t size = PyTuple_GET_SIZE(w);
         if (size) {
             long n = PyLong_AsLong(v);
             if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
@@ -197,8 +188,7 @@ safe_multiply(PyObject *v, PyObject *w)
         }
     }
     else if (PyLong_Check(w) &&
-             (PyTuple_Check(v) || PyFrozenSet_Check(v) ||
-              PyUnicode_Check(v) || PyBytes_Check(v)))
+             (PyTuple_Check(v) || PyUnicode_Check(v) || PyBytes_Check(v)))
     {
         return safe_multiply(w, v);
     }
@@ -1111,7 +1101,7 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_SEQ
 
 /* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 3
+#define COMPILER_STACK_FRAME_SCALE 2
 
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
@@ -1129,10 +1119,10 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    state.recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());

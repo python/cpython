@@ -20,7 +20,6 @@
 #define PyPARSE_IGNORE_COOKIE 0x0010
 #define PyPARSE_BARRY_AS_BDFL 0x0020
 #define PyPARSE_TYPE_COMMENTS 0x0040
-#define PyPARSE_ASYNC_HACKS   0x0080
 #define PyPARSE_ALLOW_INCOMPLETE_INPUT 0x0100
 
 #define CURRENT_POS (-5)
@@ -167,6 +166,8 @@ void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                           Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                           const char *errmsg, va_list va);
 void _Pypegen_set_syntax_error(Parser* p, Token* last_token);
+void _Pypegen_stack_overflow(Parser *p);
+
 Py_LOCAL_INLINE(void *)
 RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
                            Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -349,7 +350,8 @@ void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehensi
 Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
-                                    const char *, const char *, PyCompilerFlags *, int *, PyArena *);
+                                    const char *, const char *, PyCompilerFlags *, int *, PyObject **,
+                                    PyArena *);
 void *_PyPegen_run_parser(Parser *);
 mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);

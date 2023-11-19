@@ -1,12 +1,10 @@
+// Error handling definitions
+
 #ifndef Py_ERRORS_H
 #define Py_ERRORS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdarg.h>               // va_list
-
-/* Error handling definitions */
 
 PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);

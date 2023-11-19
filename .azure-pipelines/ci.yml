@@ -1,7 +1,4 @@
-variables:
-  coverage: false
-
-trigger: ['main', '3.11', '3.10', '3.9', '3.8', '3.7']
+trigger: ['main', '3.12', '3.11', '3.10', '3.9', '3.8', '3.7']
 
 jobs:
 - job: Prebuild
@@ -12,70 +9,6 @@ jobs:
 
   steps:
   - template: ./prebuild-checks.yml
-
-
-- job: macOS_CI_Tests
-  displayName: macOS CI Tests
-  dependsOn: Prebuild
-  #condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
-  # bpo-39837: macOS tests on Azure Pipelines are disabled
-  condition: false
-
-  variables:
-    testRunTitle: '$(build.sourceBranchName)-macos'
-    testRunPlatform: macos
-
-  pool:
-    vmImage: macos-10.15
-
-  steps:
-  - template: ./macos-steps.yml
-
-
-- job: Ubuntu_CI_Tests
-  displayName: Ubuntu CI Tests
-  dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
-
-  pool:
-    vmImage: ubuntu-22.04
-
-  variables:
-    testRunTitle: '$(build.sourceBranchName)-linux'
-    testRunPlatform: linux
-    openssl_version: 1.1.1u
-
-  steps:
-  - template: ./posix-steps.yml
-    parameters:
-      dependencies: apt
-
-
-- job: Ubuntu_Coverage_CI_Tests
-  displayName: Ubuntu CI Tests (coverage)
-  dependsOn: Prebuild
-  condition: |
-    and(
-        and(
-            succeeded(),
-            eq(variables['coverage'], 'true')
-        ),
-        eq(dependencies.Prebuild.outputs['tests.run'], 'true')
-    )
-
-  pool:
-    vmImage: ubuntu-22.04
-
-  variables:
-    testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
-    testRunPlatform: linux-coverage
-    openssl_version: 1.1.1u
-
-  steps:
-  - template: ./posix-steps.yml
-    parameters:
-      dependencies: apt
-      coverage: true
 
 
 - job: Windows_CI_Tests

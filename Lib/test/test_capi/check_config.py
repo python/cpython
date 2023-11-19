@@ -12,7 +12,7 @@ def import_singlephase():
     try:
         import _testsinglephase
     except ImportError:
-        sys.modules.pop('_testsinglephase')
+        sys.modules.pop('_testsinglephase', None)
         return False
     else:
         del sys.modules['_testsinglephase']
