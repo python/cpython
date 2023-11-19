@@ -45,7 +45,7 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj) {
         // clear_weakref() was called
         is_dead = 1;
     }
-    else {  
+    else {
         // See _PyWeakref_GET_REF() for the rationale of this test
         is_dead = (Py_REFCNT(obj) == 0);
     }
