@@ -37,20 +37,20 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj) {
 
 static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj) {
     assert(PyWeakref_Check(ref_obj));
-    int ret;
+    int is_dead;
     Py_BEGIN_CRITICAL_SECTION(ref_obj);
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
     PyObject *obj = ref->wr_object;
     if (obj == Py_None) {
         // clear_weakref() was called
-        ret = 1;
+        is_dead = 1;
     }
     else {  
         // See _PyWeakref_GET_REF() for the rationale of this test
-        ret = (Py_REFCNT(obj) == 0);
+        is_dead = (Py_REFCNT(obj) == 0);
     }
     Py_END_CRITICAL_SECTION();
-    return ret;
+    return is_dead;
 }
 
 extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
