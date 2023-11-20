@@ -289,7 +289,8 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # We use a separate process because the unicodedata module may already
         # have been loaded in this process.
         result = script_helper.assert_python_failure("-c", code)
-        error = 'ImportError: PyCapsule_Import could not import module "unicodedata"'
+        error = "SyntaxError: (unicode error) \\N escapes not supported " \
+                "(can't load unicodedata module)"
         self.assertIn(error, result.err.decode("ascii"))
 
     def test_decimal_numeric_consistent(self):

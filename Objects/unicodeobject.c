@@ -6050,6 +6050,10 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
         case 'N':
             ucnhash_capi = _PyUnicode_GetNameCAPI();
             if (ucnhash_capi == NULL) {
+                PyErr_SetString(
+                        PyExc_UnicodeError,
+                        "\\N escapes not supported (can't load unicodedata module)"
+                );
                 goto onError;
             }
 
