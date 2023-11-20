@@ -689,8 +689,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
-    uint8_t opcode;       /* Current opcode */
-    int oparg;            /* Current opcode argument, if any */
+    uint8_t opcode;    /* Current opcode */
+    int oparg;         /* Current opcode argument, if any */
 #ifdef LLTRACE
     int lltrace = 0;
 #endif
