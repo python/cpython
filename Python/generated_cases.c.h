@@ -21,9 +21,9 @@
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                            "'%.200s' object does not support the "
-                            "asynchronous context manager protocol",
-                            Py_TYPE(mgr)->tp_name);
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
                 }
                 GOTO_ERROR(error);
             }
@@ -31,10 +31,10 @@
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                            "'%.200s' object does not support the "
-                            "asynchronous context manager protocol "
-                            "(missed __aexit__ method)",
-                            Py_TYPE(mgr)->tp_name);
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol "
+                                  "(missed __aexit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
                 GOTO_ERROR(error);
@@ -67,9 +67,9 @@
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                            "'%.200s' object does not support the "
-                            "context manager protocol",
-                            Py_TYPE(mgr)->tp_name);
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
                 }
                 GOTO_ERROR(error);
             }
@@ -77,10 +77,10 @@
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                            "'%.200s' object does not support the "
-                            "context manager protocol "
-                            "(missed __exit__ method)",
-                            Py_TYPE(mgr)->tp_name);
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol "
+                                  "(missed __exit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
                 GOTO_ERROR(error);
@@ -609,12 +609,12 @@
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
-                           "bad BUILD_CONST_KEY_MAP keys argument");
+                                 "bad BUILD_CONST_KEY_MAP keys argument");
                 GOTO_ERROR(error);  // Pop the keys and values.
             }
             map = _PyDict_FromItems(
-                              &PyTuple_GET_ITEM(keys, 0), 1,
-                              values, 1, oparg);
+                                    &PyTuple_GET_ITEM(keys, 0), 1,
+                                    values, 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
@@ -648,9 +648,9 @@
             values = &stack_pointer[-oparg*2];
 
             map = _PyDict_FromItems(
-                              values, 2,
-                              values+1, 2,
-                              oparg);
+                                    values, 2,
+                                    values+1, 2,
+                                    oparg);
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
@@ -817,9 +817,9 @@
                 }
                 /* Callable is not a normal Python function */
                 res = PyObject_Vectorcall(
-                                callable, args,
-                                total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                NULL);
+                                      callable, args,
+                                      total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                      NULL);
                 if (opcode == INSTRUMENTED_CALL) {
                     PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : args[0];
@@ -1400,9 +1400,9 @@
             }
             /* Callable is not a normal Python function */
             res = PyObject_Vectorcall(
-                                callable, args,
-                                positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                kwnames);
+                                      callable, args,
+                                      positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                      kwnames);
             if (opcode == INSTRUMENTED_CALL_KW) {
                 PyObject *arg = total_args == 0 ?
                 &_PyInstrumentation_MISSING : args[0];
@@ -2066,7 +2066,7 @@
             DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
-             _PyLong_DigitCount((PyLongObject *)right) <= 1);
+                   _PyLong_DigitCount((PyLongObject *)right) <= 1);
             Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left);
             Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
             // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
@@ -2229,7 +2229,7 @@
             if (err != 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
+                        NAME_ERROR_MSG, name);
                 }
                 GOTO_ERROR(error);
             }
@@ -2245,15 +2245,15 @@
             int err;
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
-                        "no locals when deleting %R", name);
+                              "no locals when deleting %R", name);
                 GOTO_ERROR(error);
             }
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
             if (err != 0) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                    NAME_ERROR_MSG,
-                                    name);
+                    NAME_ERROR_MSG,
+                    name);
                 GOTO_ERROR(error);
             }
             DISPATCH();
@@ -2308,8 +2308,8 @@
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                            "'%.200s' object is not a mapping",
-                            Py_TYPE(update)->tp_name);
+                                  "'%.200s' object is not a mapping",
+                                  Py_TYPE(update)->tp_name);
                 }
                 Py_DECREF(update);
                 if (true) goto pop_1_error;
@@ -2412,8 +2412,8 @@
             assert(STACK_LEVEL() == 2);
             if (should_be_none != Py_None) {
                 PyErr_Format(PyExc_TypeError,
-                       "__init__() should return None, not '%.200s'",
-                       Py_TYPE(should_be_none)->tp_name);
+                             "__init__() should return None, not '%.200s'",
+                             Py_TYPE(should_be_none)->tp_name);
                 GOTO_ERROR(error);
             }
             stack_pointer += -1;
@@ -2509,7 +2509,7 @@
                     }
                     /* iterator ended normally */
                     assert(next_instr[oparg].op.code == END_FOR ||
-                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
+                       next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
                     /* Jump forward oparg, then skip following END_FOR instruction */
@@ -2542,7 +2542,7 @@
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             assert(next_instr[oparg].op.code == END_FOR ||
-             next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
+                   next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             assert(next_instr - this_instr + oparg <= UINT16_MAX);
             frame->return_offset = (uint16_t)(next_instr - this_instr + oparg);
             DISPATCH_INLINED(gen_frame);
@@ -2702,9 +2702,9 @@
             }
             if (getter == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                        "'async for' requires an object with "
-                        "__aiter__ method, got %.100s",
-                        type->tp_name);
+                              "'async for' requires an object with "
+                              "__aiter__ method, got %.100s",
+                              type->tp_name);
                 Py_DECREF(obj);
                 if (true) goto pop_1_error;
             }
@@ -2715,9 +2715,9 @@
             if (Py_TYPE(iter)->tp_as_async == NULL ||
                 Py_TYPE(iter)->tp_as_async->am_anext == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                        "'async for' received an object from __aiter__ "
-                        "that does not implement __anext__: %.100s",
-                        Py_TYPE(iter)->tp_name);
+                              "'async for' received an object from __aiter__ "
+                              "that does not implement __anext__: %.100s",
+                              Py_TYPE(iter)->tp_name);
                 Py_DECREF(iter);
                 if (true) goto pop_1_error;
             }
@@ -2752,18 +2752,18 @@
                 }
                 else {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                            "'async for' requires an iterator with "
-                            "__anext__ method, got %.100s",
-                            type->tp_name);
+                                  "'async for' requires an iterator with "
+                                  "__anext__ method, got %.100s",
+                                  type->tp_name);
                     GOTO_ERROR(error);
                 }
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
                 if (awaitable == NULL) {
                     _PyErr_FormatFromCause(
-                                     PyExc_TypeError,
-                                     "'async for' received an invalid object "
-                                     "from __anext__: %.100s",
-                                     Py_TYPE(next_iter)->tp_name);
+                        PyExc_TypeError,
+                        "'async for' received an invalid object "
+                        "from __anext__: %.100s",
+                        Py_TYPE(next_iter)->tp_name);
                     Py_DECREF(next_iter);
                     GOTO_ERROR(error);
                 } else {
@@ -2797,7 +2797,7 @@
                     Py_DECREF(yf);
                     Py_CLEAR(iter);
                     _PyErr_SetString(tstate, PyExc_RuntimeError,
-                               "coroutine is being awaited already");
+                                     "coroutine is being awaited already");
                     /* The code below jumps to `error` if `iter` is NULL. */
                 }
             }
@@ -2854,8 +2854,8 @@
                     /* and it is used in a 'yield from' expression of a
                        regular generator. */
                     _PyErr_SetString(tstate, PyExc_TypeError,
-                               "cannot 'yield from' a coroutine object "
-                               "in a non-coroutine generator");
+                                     "cannot 'yield from' a coroutine object "
+                                     "in a non-coroutine generator");
                     GOTO_ERROR(error);
                 }
                 iter = iterable;
@@ -3021,7 +3021,7 @@
                 }
                 /* iterator ended normally */
                 assert(next_instr[oparg].op.code == END_FOR ||
-                 next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
+                       next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
                 /* Skip END_FOR */
@@ -3384,8 +3384,8 @@
                 {
                     _PyErr_Clear(tstate);
                     _PyErr_Format(tstate, PyExc_TypeError,
-                            "Value after * must be an iterable, not %.200s",
-                            Py_TYPE(iterable)->tp_name);
+                                  "Value after * must be an iterable, not %.200s",
+                                  Py_TYPE(iterable)->tp_name);
                 }
                 Py_DECREF(iterable);
                 if (true) goto pop_1_error;
@@ -3962,7 +3962,7 @@
             if (PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0) goto error;
             if (bc == NULL) {
                 _PyErr_SetString(tstate, PyExc_NameError,
-                           "__build_class__ not found");
+                                 "__build_class__ not found");
                 if (true) goto error;
             }
             stack_pointer[0] = bc;
@@ -4151,8 +4151,8 @@
                     && PyDict_CheckExact(BUILTINS()))
                 {
                     res = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
-                                   (PyDictObject *)BUILTINS(),
-                                   name);
+                        (PyDictObject *)BUILTINS(),
+                        name);
                     if (res == NULL) {
                         if (!_PyErr_Occurred(tstate)) {
                             /* _PyDict_LoadGlobal() returns NULL without raising
@@ -4272,7 +4272,7 @@
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
-                           "no locals found");
+                                 "no locals found");
                 if (true) goto error;
             }
             Py_INCREF(locals);
@@ -4290,7 +4290,7 @@
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
-                           "no locals found");
+                                 "no locals found");
                 if (true) goto error;
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -4442,7 +4442,7 @@
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             attr = _PySuper_Lookup(cls, self, name,
-                             Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             Py_DECREF(global_super);
             Py_DECREF(class);
             if (attr == NULL) {
@@ -4491,7 +4491,7 @@
                 GOTO_ERROR(error);
             }
             _PyFunction_SetVersion(
-                             func_obj, ((PyCodeObject *)codeobj)->co_version);
+                                   func_obj, ((PyCodeObject *)codeobj)->co_version);
             func = (PyObject *)func_obj;
             stack_pointer[-1] = func;
             DISPATCH();
@@ -4778,7 +4778,7 @@
                 break;
                 default:
                 _PyErr_SetString(tstate, PyExc_SystemError,
-                           "bad RAISE_VARARGS oparg");
+                                 "bad RAISE_VARARGS oparg");
                 break;
             }
             if (true) { stack_pointer += -oparg; goto error; }
@@ -5068,7 +5068,7 @@
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
-                        "no locals found when setting up annotations");
+                              "no locals found when setting up annotations");
                 if (true) goto error;
             }
             /* check if __annotations__ in locals()... */
@@ -5077,7 +5077,7 @@
                 ann_dict = PyDict_New();
                 if (ann_dict == NULL) goto error;
                 err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                 ann_dict);
+                                       ann_dict);
                 Py_DECREF(ann_dict);
                 if (err) goto error;
             }
@@ -5405,7 +5405,7 @@
             int err;
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
-                        "no locals found when storing %R", name);
+                              "no locals found when storing %R", name);
                 Py_DECREF(v);
                 if (true) goto pop_1_error;
             }
@@ -5887,7 +5887,7 @@
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
-                                3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+                                      3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL) goto error;
             stack_pointer[0] = res;
             stack_pointer += 1;

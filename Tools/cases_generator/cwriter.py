@@ -39,7 +39,7 @@ class CWriter:
     def maybe_indent(self, txt: str):
         parens = txt.count("(") - txt.count(")")
         if parens > 0:
-            offset = self.column - self.base_column + 2
+            offset = self.column
             if offset <= self.indents[-1] or offset > 40:
                 offset = self.indents[-1] + 4
             self.indents.append(offset)
