@@ -1,0 +1,3 @@
+:class:`tempfile.NamedTemporaryFile` and  :class:`tempfile.TemporaryDirectory`
+includes a new ``.path`` property. This provides the temporary file name as a
+:class:`pathlib.Path` object

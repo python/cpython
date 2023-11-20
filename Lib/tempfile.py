@@ -40,6 +40,7 @@ import functools as _functools
 import warnings as _warnings
 import io as _io
 import os as _os
+from pathlib import Path as _Path
 import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
@@ -518,6 +519,10 @@ class _TemporaryFileWrapper:
         for line in self.file:
             yield line
 
+    @_functools.cached_property
+    def path(self):
+        return _Path(self.name)
+
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
                        dir=None, delete=True, *, errors=None,
@@ -917,6 +922,10 @@ class TemporaryDirectory:
     def __exit__(self, exc, value, tb):
         if self._delete:
             self.cleanup()
+
+    @_functools.cached_property
+    def path(self):
+        return _Path(self.name)
 
     def cleanup(self):
         if self._finalizer.detach() or _os.path.exists(self.name):
