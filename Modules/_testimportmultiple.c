@@ -5,10 +5,10 @@
  */
 
 #ifndef _MSC_VER
-#include "pyconfig.h"   // Py_NOGIL
+#include "pyconfig.h"   // Py_GIL_DISABLED
 #endif
 
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
 #define Py_LIMITED_API 0x03020000
 #endif
 
