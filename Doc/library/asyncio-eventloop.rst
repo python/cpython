@@ -1152,7 +1152,8 @@ DNS
    versions through the loop's default thread pool executor.
    When this executor is saturated, these methods may experience delays,
    which can manifest as "DNS timeouts" in higher-level networking libraries.
-   To mitigate this, consider using a custom executor for other user tasks.
+   To mitigate this, consider using a custom executor for other user tasks,
+   or setting a default executor with a larger number of workers.
 
 .. versionchanged:: 3.7
    Both *getaddrinfo* and *getnameinfo* methods were always documented
