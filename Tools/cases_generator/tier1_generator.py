@@ -217,6 +217,7 @@ REPLACEMENT_FUNCTIONS = {
 #Move this to formatter
 def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction) -> None:
     tkn_iter = iter(uop.body[1:-1])
+    out.set_position(uop.body[1], False)
     for tkn in tkn_iter:
         if tkn.kind == "IDENTIFIER" and tkn.text in REPLACEMENT_FUNCTIONS:
             out.set_position(tkn)
@@ -237,7 +238,7 @@ def write_uop(uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruct
         for var in reversed(uop.stack.inputs):
             out.emit(stack.pop(var))
         if braces:
-            out.emit("{")
+            out.emit("{\n")
         if not uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
                 out.emit(stack.push(var))
@@ -257,7 +258,7 @@ def write_uop(uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruct
                 out.emit(stack.push(var))
         if braces:
             out.start_line()
-            out.emit("}")
+            out.emit("}\n")
         # out.emit(stack.as_comment() + "\n")
         return offset
     except SizeMismatch as ex:
@@ -280,7 +281,8 @@ def generate_tier1(filenames: str, analysis: Analysis, outfile: TextIO, lines: b
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         needs_this = uses_this(inst)
-        out.emit(f"TARGET({name}) {{")
+        out.emit("\n")
+        out.emit(f"TARGET({name}) {{\n")
         if needs_this and not inst.is_target:
             out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;\n")
         else:

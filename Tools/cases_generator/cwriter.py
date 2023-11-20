@@ -13,10 +13,11 @@ class CWriter:
         self.column = 0
         self.line_directives = line_directives
 
-    def set_position(self, tkn: Token):
+    def set_position(self, tkn: Token, emit_lines=True):
         if self.line < tkn.line:
             self.column = 0
-            self.out.write("\n")
+            if emit_lines:
+                self.out.write("\n")
             if self.line_directives:
                 self.out.write(f'#line {tkn.line} "{tkn.filename}"\n')
         if self.column == 0:
@@ -66,9 +67,8 @@ class CWriter:
             self.line += 1
         elif txt.endswith("{") or txt.startswith("}"):
             if self.column:
-                self.out.write("\n")
                 self.column = 0
-                self.line += 1
+                self.line = 0
         else:
             self.column += len(txt)
         self.maybe_indent(txt)
