@@ -2,8 +2,8 @@ from parsing import InstDef, Macro, Pseudo, Family, Parser, Context, CacheEffect
 from formatting import prettify_filename
 
 
-BEGIN_MARKER = "// BEGIN BYTECODES //\n"
-END_MARKER = "// END BYTECODES //\n"
+BEGIN_MARKER = "// BEGIN BYTECODES //"
+END_MARKER = "// END BYTECODES //"
 
 AstNode = InstDef | Macro | Pseudo | Family
 

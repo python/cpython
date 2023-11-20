@@ -112,7 +112,7 @@ STRING = "STRING"
 char = r"\'.\'"  # TODO: escape sequence
 CHARACTER = "CHARACTER"
 
-comment_re = r"(//.*\n)|/\*([^*]|\*[^/])*\*/"
+comment_re = r"(//.*)|/\*([^*]|\*[^/])*\*/"
 COMMENT = "COMMENT"
 
 newline = r"\n"
