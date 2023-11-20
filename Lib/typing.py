@@ -308,42 +308,67 @@ def _unpack_args(args):
             newargs.append(arg)
     return newargs
 
-def _deduplicate(params):
+def _deduplicate(params, *, unhashable_fallback=True):
     # Weed out strict duplicates, preserving the first of each occurrence.
     try:
         all_params = set(params)
     except TypeError:
-        pass  # might happen when some parts of type is unhashable
-    else:
-        if len(all_params) == len(params):  # fast case
-            return params
+        if not unhashable_fallback:
+            raise
 
+        # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
+        hasable, unhashable = _deduplicate_unhashable(params)
+        return hasable + unhashable
+
+    if len(all_params) == len(params):  # fast case
+        return params
+    new_params = []
+    for t in params:
+        if t in all_params:
+            new_params.append(t)
+            all_params.remove(t)
+    assert not all_params, all_params
+    return new_params
+
+def _deduplicate_unhashable(params):
     regular_params = []
-    annotated_params = []
+    unhashable_params = []
     for param in params:
-        if isinstance(param, _AnnotatedAlias):
-            annotated_params.append(param)
+        try:
+            hash(param)
+        except TypeError:
+            unhashable_params.append(param)
         else:
             regular_params.append(param)
 
     unique_params = set(regular_params)
-    new_params = []
+    new_hashable = []
     for t in regular_params:
         if t in unique_params:
-            new_params.append(t)
+            new_hashable.append(t)
             unique_params.remove(t)
     assert not unique_params, unique_params
-    if not annotated_params:
-        return new_params
 
-    new_annotated = []
-    for t in annotated_params:
+    new_unhashable = []
+    for t in unhashable_params:
         # This is slow, but this is the only safe way to compare
         # two `Annotated[]` instances, since `metadata` might be unhashable.
-        if t not in new_annotated:
-            new_annotated.append(t)
-    return new_params + new_annotated
+        if t not in new_unhashable:
+            new_unhashable.append(t)
+    return new_hashable, new_unhashable
 
+def _compare_args_orderless(first_args, second_args):
+    first_hashable, first_unhashable = _deduplicate_unhashable(first_args)
+    second_hashable, second_unhashable = _deduplicate_unhashable(second_args)
+    if set(first_hashable) != set(second_hashable):
+        return False
+    t = list(second_unhashable)
+    try:
+        for elem in first_unhashable:
+            t.remove(elem)
+    except ValueError:
+        return False
+    return not t
 
 def _remove_dups_flatten(parameters):
     """Internal helper for Union creation and substitution.
@@ -774,7 +799,12 @@ def Literal(self, *parameters):
     parameters = _flatten_literal_params(parameters)
 
     try:
-        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
+        parameters = tuple(
+            p for p, _ in _deduplicate(
+                list(_value_and_type_iter(parameters)),
+                unhashable_fallback=False,
+            )
+        )
     except TypeError:  # unhashable parameters
         pass
 
@@ -1559,7 +1589,7 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
         try:  # fast path
             return set(self.__args__) == set(other.__args__)
         except TypeError:  # not hashable, slow path
-            return _deduplicate(self.__args__) == _deduplicate(other.__args__)
+            return _compare_args_orderless(self.__args__, other.__args__)
 
     def __hash__(self):
         return hash(frozenset(self.__args__))

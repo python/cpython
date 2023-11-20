@@ -8267,7 +8267,7 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(A.__metadata__, (4, 5))
         self.assertEqual(A.__origin__, int)
 
-    def test_deduplicate(self):
+    def test_deduplicate_from_union(self):
         # Regular:
         self.assertEqual(get_args(Annotated[int, 1] | int),
                          (Annotated[int, 1], int))
@@ -8288,7 +8288,7 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(Union[Annotated[int, 1], Annotated[int, 1], int],
                          Union[Annotated[int, 1], int])
 
-        # Unhashable metdata:
+        # Unhashable metadata:
         self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[int, set()] | int),
                          (str, int, Annotated[int, {}], Annotated[int, set()]))
         self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[int, set()], int]),
@@ -8299,9 +8299,9 @@ class AnnotatedTests(BaseTestCase):
                          (str, int, Annotated[int, {}], Annotated[str, {}]))
 
         self.assertEqual(get_args(Annotated[int, 1] | str | Annotated[str, {}] | int),
-                         (str, int, Annotated[int, 1], Annotated[str, {}]))
+                         (Annotated[int, 1], str, int, Annotated[str, {}]))
         self.assertEqual(get_args(Union[Annotated[int, 1], str, Annotated[str, {}], int]),
-                         (str, int, Annotated[int, 1], Annotated[str, {}]))
+                         (Annotated[int, 1], str, int, Annotated[str, {}]))
 
         import dataclasses
         @dataclasses.dataclass
@@ -8325,6 +8325,19 @@ class AnnotatedTests(BaseTestCase):
                          Union[Annotated[int, {}], int])
         self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
                          Union[int, Annotated[int, {}]])
+
+    def test_order_in_union(self):
+        import operator, functools
+
+        expr1 = Annotated[int, 1] | str | Annotated[str, {}] | int
+        for args in itertools.permutations(get_args(expr1)):
+            with self.subTest(args=args):
+                self.assertEqual(expr1, functools.reduce(operator.or_, args))
+
+        expr2 = Union[Annotated[int, 1], str, Annotated[str, {}], int]
+        for args in itertools.permutations(get_args(expr2)):
+            with self.subTest(args=args):
+                self.assertEqual(expr2, Union[args])
 
     def test_specialize(self):
         L = Annotated[List[T], "my decoration"]
