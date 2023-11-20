@@ -1,0 +1,1 @@
+Lower the max parser stack depth to 1000 under WASI debug builds.
