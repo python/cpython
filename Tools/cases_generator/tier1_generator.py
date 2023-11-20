@@ -30,7 +30,7 @@ class Stack:
         self.base_offset: StackOffset = StackOffset()
         self.peek_offset: StackOffset = StackOffset()
         self.variables: list[StackItem] = []
-        self.defined: Set[str] = set()
+        self.defined: set[str] = set()
 
     def pop(self, var: StackItem) -> str:
         self.top_offset.pop(var)
@@ -263,7 +263,7 @@ def generate_tier1(filename: str, analysis: Analysis, outfile: TextIO) -> None:
     write_header(filename, outfile)
     out = CWriter(outfile, 2)
     out.emit("\n")
-    for name, inst in analysis.instructions.items():
+    for name, inst in sorted(analysis.instructions.items()):
         needs_this = uses_this(inst)
         out.emit(f"TARGET({name}) {{")
         if needs_this and not inst.is_target:
