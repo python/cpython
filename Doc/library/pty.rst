@@ -16,6 +16,8 @@ The :mod:`pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
+.. availability:: Unix.
+
 Pseudo-terminal handling is highly platform dependent. This code is mainly
 tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
 platforms but it's not been thoroughly tested).
@@ -71,7 +73,7 @@ The :mod:`pty` module defines the following functions:
 
    Return the exit status value from :func:`os.waitpid` on the child process.
 
-   :func:`waitstatus_to_exitcode` can be used to convert the exit status into
+   :func:`os.waitstatus_to_exitcode` can be used to convert the exit status into
    an exit code.
 
    .. audit-event:: pty.spawn argv pty.spawn

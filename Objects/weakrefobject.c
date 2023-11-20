@@ -1,8 +1,9 @@
 #include "Python.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
-#include "structmember.h"         // PyMemberDef
+
 
 
 #define GET_WEAKREFS_LISTPTR(o) \
@@ -351,7 +352,7 @@ weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 
 
 static PyMemberDef weakref_members[] = {
-    {"__callback__", T_OBJECT, offsetof(PyWeakReference, wr_callback), READONLY},
+    {"__callback__", _Py_T_OBJECT, offsetof(PyWeakReference, wr_callback), Py_READONLY},
     {NULL} /* Sentinel */
 };
 

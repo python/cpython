@@ -93,11 +93,12 @@ class MmapTests(unittest.TestCase):
             self.assertEqual(end, PAGESIZE + 6)
 
         # test seeking around (try to overflow the seek implementation)
-        m.seek(0,0)
+        self.assertTrue(m.seekable())
+        self.assertEqual(m.seek(0, 0), 0)
         self.assertEqual(m.tell(), 0)
-        m.seek(42,1)
+        self.assertEqual(m.seek(42, 1), 42)
         self.assertEqual(m.tell(), 42)
-        m.seek(0,2)
+        self.assertEqual(m.seek(0, 2), len(m))
         self.assertEqual(m.tell(), len(m))
 
         # Try to seek to negative position...
@@ -162,7 +163,7 @@ class MmapTests(unittest.TestCase):
 
             # Ensuring that readonly mmap can't be write() to
             try:
-                m.seek(0,0)
+                m.seek(0, 0)
                 m.write(b'abc')
             except TypeError:
                 pass
@@ -171,7 +172,7 @@ class MmapTests(unittest.TestCase):
 
             # Ensuring that readonly mmap can't be write_byte() to
             try:
-                m.seek(0,0)
+                m.seek(0, 0)
                 m.write_byte(b'd')
             except TypeError:
                 pass
@@ -255,10 +256,15 @@ class MmapTests(unittest.TestCase):
             # Try writing with PROT_EXEC and without PROT_WRITE
             prot = mmap.PROT_READ | getattr(mmap, 'PROT_EXEC', 0)
             with open(TESTFN, "r+b") as f:
-                m = mmap.mmap(f.fileno(), mapsize, prot=prot)
-                self.assertRaises(TypeError, m.write, b"abcdef")
-                self.assertRaises(TypeError, m.write_byte, 0)
-                m.close()
+                try:
+                    m = mmap.mmap(f.fileno(), mapsize, prot=prot)
+                except PermissionError:
+                    # on macOS 14, PROT_READ | PROT_EXEC is not allowed
+                    pass
+                else:
+                    self.assertRaises(TypeError, m.write, b"abcdef")
+                    self.assertRaises(TypeError, m.write_byte, 0)
+                    m.close()
 
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...

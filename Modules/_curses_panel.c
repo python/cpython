@@ -10,6 +10,11 @@ static const char PyCursesVersion[] = "2.1";
 
 /* Includes */
 
+// clinic/_curses_panel.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include "py_curses.h"
@@ -662,8 +667,7 @@ _curses_panel_exec(PyObject *mod)
     state->PyCursesError = PyErr_NewException(
         "_curses_panel.error", NULL, NULL);
 
-    if (PyModule_AddObject(mod, "error", Py_NewRef(state->PyCursesError)) < 0) {
-        Py_DECREF(state->PyCursesError);
+    if (PyModule_AddObjectRef(mod, "error", state->PyCursesError) < 0) {
         return -1;
     }
 

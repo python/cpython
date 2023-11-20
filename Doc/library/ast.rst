@@ -585,7 +585,7 @@ Expressions
    :class:`Name` or :class:`Attribute` object. Of the arguments:
 
    * ``args`` holds a list of the arguments passed by position.
-   * ``keywords`` holds a list of :class:`keyword` objects representing
+   * ``keywords`` holds a list of :class:`.keyword` objects representing
      arguments passed by keyword.
 
    When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
@@ -650,10 +650,10 @@ Expressions
 
 .. class:: NamedExpr(target, value)
 
-    A named expression. This AST node is produced by the assignment expressions
-    operator (also known as the walrus operator). As opposed to the :class:`Assign`
-    node in which the first argument can be multiple nodes, in this case both
-    ``target`` and ``value`` must be single nodes.
+   A named expression. This AST node is produced by the assignment expressions
+   operator (also known as the walrus operator). As opposed to the :class:`Assign`
+   node in which the first argument can be multiple nodes, in this case both
+   ``target`` and ``value`` must be single nodes.
 
    .. doctest::
 
@@ -663,6 +663,7 @@ Expressions
                 target=Name(id='x', ctx=Store()),
                 value=Constant(value=4)))
 
+   .. versionadded:: 3.8
 
 Subscripting
 ~~~~~~~~~~~~
@@ -1036,6 +1037,7 @@ Statements
                     value=Name(id='int', ctx=Load()))],
             type_ignores=[])
 
+   .. versionadded:: 3.12
 
 Other statements which are only applicable inside functions or loops are
 described in other sections.
@@ -1318,6 +1320,7 @@ Control flow
                     finalbody=[])],
             type_ignores=[])
 
+   .. versionadded:: 3.11
 
 .. class:: ExceptHandler(type, name, body)
 
@@ -1407,6 +1410,8 @@ Pattern matching
    that is being matched against the cases) and ``cases`` contains an iterable of
    :class:`match_case` nodes with the different cases.
 
+   .. versionadded:: 3.10
+
 .. class:: match_case(pattern, guard, body)
 
    A single case pattern in a ``match`` statement. ``pattern`` contains the
@@ -1458,6 +1463,8 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+   .. versionadded:: 3.10
+
 .. class:: MatchValue(value)
 
    A match literal or value pattern that compares by equality. ``value`` is
@@ -1485,6 +1492,8 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+   .. versionadded:: 3.10
+
 .. class:: MatchSingleton(value)
 
    A match literal pattern that compares by identity. ``value`` is the
@@ -1509,6 +1518,8 @@ Pattern matching
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
+
+   .. versionadded:: 3.10
 
 .. class:: MatchSequence(patterns)
 
@@ -1540,6 +1551,8 @@ Pattern matching
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
+
+   .. versionadded:: 3.10
 
 .. class:: MatchStar(name)
 
@@ -1580,6 +1593,8 @@ Pattern matching
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
+
+   .. versionadded:: 3.10
 
 .. class:: MatchMapping(keys, patterns, rest)
 
@@ -1626,6 +1641,8 @@ Pattern matching
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
+
+   .. versionadded:: 3.10
 
 .. class:: MatchClass(cls, patterns, kwd_attrs, kwd_patterns)
 
@@ -1691,6 +1708,8 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+   .. versionadded:: 3.10
+
 .. class:: MatchAs(pattern, name)
 
    A match "as-pattern", capture pattern or wildcard pattern. ``pattern``
@@ -1732,6 +1751,8 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+   .. versionadded:: 3.10
+
 .. class:: MatchOr(patterns)
 
    A match "or-pattern". An or-pattern matches each of its subpatterns in turn
@@ -1764,6 +1785,8 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
+   .. versionadded:: 3.10
+
 .. _ast-type-params:
 
 Type parameters
@@ -1795,6 +1818,8 @@ aliases.
                         ctx=Load()))],
             type_ignores=[])
 
+   .. versionadded:: 3.12
+
 .. class:: ParamSpec(name)
 
    A :class:`typing.ParamSpec`. ``name`` is the name of the parameter specification.
@@ -1817,6 +1842,8 @@ aliases.
                             ctx=Load()),
                         ctx=Load()))],
             type_ignores=[])
+
+   .. versionadded:: 3.12
 
 .. class:: TypeVarTuple(name)
 
@@ -1842,6 +1869,8 @@ aliases.
                         ctx=Load()))],
             type_ignores=[])
 
+   .. versionadded:: 3.12
+
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1860,6 +1889,9 @@ Function and class definitions
    .. attribute:: type_comment
 
        ``type_comment`` is an optional string with the type annotation as a comment.
+
+   .. versionchanged:: 3.12
+        Added ``type_params``.
 
 
 .. class:: Lambda(args, body)
@@ -2024,7 +2056,7 @@ Function and class definitions
 
    * ``name`` is a raw string for the class name
    * ``bases`` is a list of nodes for explicitly specified base classes.
-   * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
+   * ``keywords`` is a list of :class:`.keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
      <https://peps.python.org/pep-3115/>`_.
    * ``body`` is a list of nodes representing the code within the class
@@ -2059,6 +2091,9 @@ Function and class definitions
                     type_params=[])],
             type_ignores=[])
 
+   .. versionchanged:: 3.12
+        Added ``type_params``.
+
 Async and await
 ^^^^^^^^^^^^^^^
 
@@ -2066,6 +2101,9 @@ Async and await
 
    An ``async def`` function definition. Has the same fields as
    :class:`FunctionDef`.
+
+   .. versionchanged:: 3.12
+        Added ``type_params``.
 
 
 .. class:: Await(value)
@@ -2122,10 +2160,12 @@ Async and await
 Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None)
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
-   filename, mode, ast.PyCF_ONLY_AST)``.
+   filename, mode, flags=FLAGS_VALUE, optimize=optimize)``,
+   where ``FLAGS_VALUE`` is ``ast.PyCF_ONLY_AST`` if ``optimize <= 0``
+   and ``ast.PyCF_OPTIMIZED_AST`` otherwise.
 
    If ``type_comments=True`` is given, the parser is modified to check
    and return type comments as specified by :pep:`484` and :pep:`526`.
@@ -2146,7 +2186,7 @@ and classes for traversing abstract syntax trees:
    Currently ``major`` must equal to ``3``.  For example, setting
    ``feature_version=(3, 4)`` will allow the use of ``async`` and
    ``await`` as variable names.  The lowest supported version is
-   ``(3, 4)``; the highest is ``sys.version_info[0:2]``.
+   ``(3, 7)``; the highest is ``sys.version_info[0:2]``.
 
    If source contains a null character ('\0'), :exc:`ValueError` is raised.
 
@@ -2168,6 +2208,10 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.8
       Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
+
+   .. versionchanged:: 3.13
+      The minimum supported version for feature_version is now (3,7)
+      The ``optimize`` argument was added.
 
 
 .. function:: unparse(ast_obj)
@@ -2439,26 +2483,26 @@ The following options are accepted:
 
 .. program:: ast
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message and exit.
 
-.. cmdoption:: -m <mode>
-               --mode <mode>
+.. option:: -m <mode>
+            --mode <mode>
 
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
-.. cmdoption:: --no-type-comments
+.. option:: --no-type-comments
 
    Don't parse type comments.
 
-.. cmdoption:: -a, --include-attributes
+.. option:: -a, --include-attributes
 
    Include attributes such as line numbers and column offsets.
 
-.. cmdoption:: -i <indent>
-               --indent <indent>
+.. option:: -i <indent>
+            --indent <indent>
 
    Indentation of nodes in AST (number of spaces).
 

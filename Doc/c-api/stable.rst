@@ -18,7 +18,7 @@ way; see :ref:`stable-abi-platform` below).
 So, code compiled for Python 3.10.0 will work on 3.10.8 and vice versa,
 but will need to be compiled separately for 3.9.x and 3.10.x.
 
-There are two tiers of C API with different stability exepectations:
+There are two tiers of C API with different stability expectations:
 
 - :ref:`Unstable API <unstable-c-api>`, may change in minor versions without
   a deprecation period. It is marked by the ``PyUnstable`` prefix in names.
@@ -74,7 +74,7 @@ Contents of the Limited API are :ref:`listed below <limited-api-list>`.
    Define this macro before including ``Python.h`` to opt in to only use
    the Limited API, and to select the Limited API version.
 
-   Define ``Py_LIMITED_API`` to the value of :c:data:`PY_VERSION_HEX`
+   Define ``Py_LIMITED_API`` to the value of :c:macro:`PY_VERSION_HEX`
    corresponding to the lowest Python version your extension supports.
    The extension will work without recompilation with all Python 3 releases
    from the specified one onward, and can use Limited API introduced up to that
