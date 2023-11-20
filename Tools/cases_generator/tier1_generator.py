@@ -276,8 +276,10 @@ def generate_tier1(filename: str, analysis: Analysis, outfile: TextIO) -> None:
             out.emit(f"PREDICTED({name});\n")
             if needs_this:
                 out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {inst.size};\n")
-        #out.static_assert_family_size(mac.name, mac.family, mac.cache_offset)
-
+        if inst.family is not None:
+            out.emit(
+                f"static_assert({inst.family.size} == {inst.size-1}"
+                ', "incorrect cache size");\n')
         declare_variables(inst, out)
         offset = 1 # The instruction itself
         stack = Stack()

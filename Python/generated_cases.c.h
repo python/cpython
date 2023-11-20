@@ -47,6 +47,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESUME_CHECK);
+            static_assert(0 == 0, "incorrect cache size");
             #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -313,6 +314,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_BOOL);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             value = stack_pointer[-1];
 
@@ -325,6 +327,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_INT);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -346,6 +349,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_LIST);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -361,6 +365,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_NONE);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -376,6 +381,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_STR);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -398,6 +404,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_ALWAYS_TRUE);
+            static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -487,6 +494,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_LIST_INT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *list;
             PyObject *res;
@@ -513,6 +521,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_STR_INT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *str;
             PyObject *res;
@@ -539,6 +548,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_TUPLE_INT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *tuple;
             PyObject *res;
@@ -565,6 +575,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_DICT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *dict;
             PyObject *res;
@@ -589,6 +600,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *container;
             sub = stack_pointer[-1];
@@ -648,6 +660,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_LIST_INT);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *list;
             PyObject *value;
@@ -677,6 +690,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_DICT);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *dict;
             PyObject *value;
@@ -961,6 +975,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(SEND_GEN);
+            static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
             PyObject *v;
             PyObject *receiver;
             v = stack_pointer[-1];
@@ -1218,6 +1233,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_TWO_TUPLE);
+            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -1238,6 +1254,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_TUPLE);
+            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -1258,6 +1275,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_LIST);
+            static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -1802,6 +1820,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_ATTR);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1829,6 +1848,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_METHOD);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1868,6 +1888,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&this_instr[2].cache);
@@ -1900,6 +1921,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&this_instr[2].cache);
@@ -1933,6 +1955,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_WITH_HINT);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner;
             PyObject *value;
             owner = stack_pointer[-1];
@@ -1986,6 +2009,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_FLOAT);
+            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -2012,6 +2036,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_INT);
+            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -2041,6 +2066,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_STR);
+            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -2457,6 +2483,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_GEN);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             PyObject *iter;
             iter = stack_pointer[-1];
 
@@ -2651,6 +2678,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_WITH_DEFAULTS);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2696,6 +2724,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TYPE_1);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2720,6 +2749,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_STR_1);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2747,6 +2777,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TUPLE_1);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2774,6 +2805,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2850,6 +2882,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_CLASS);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2884,6 +2917,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_O);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2925,6 +2959,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2970,6 +3005,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST_WITH_KEYWORDS);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3009,6 +3045,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LEN);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3045,6 +3082,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ISINSTANCE);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3083,6 +3121,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LIST_APPEND);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self;
             PyObject *callable;
@@ -3111,6 +3150,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_O);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3156,6 +3196,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3198,6 +3239,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_NOARGS);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3242,6 +3284,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3862,6 +3905,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_INT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -3891,6 +3935,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_INT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -3919,6 +3964,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_INT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -3947,6 +3993,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_FLOAT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -3975,6 +4022,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_FLOAT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -4003,6 +4051,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_FLOAT);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -4031,6 +4080,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_UNICODE);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -4059,6 +4109,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_INPLACE_ADD_UNICODE);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *right;
             PyObject *left;
             // _GUARD_BOTH_UNICODE
@@ -4460,6 +4511,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_MODULE);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *res;
             PyObject *null = NULL;
             /* Skip 1 cache entry */
@@ -4494,6 +4546,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_BUILTIN);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *res;
             PyObject *null = NULL;
             /* Skip 1 cache entry */
@@ -4677,6 +4730,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_INSTANCE_VALUE);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -4719,6 +4773,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_MODULE);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -4757,6 +4812,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_WITH_HINT);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -4813,6 +4869,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_SLOT);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -4848,6 +4905,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_CLASS);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -4880,6 +4938,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_INSTANCE_VALUE);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner;
             PyObject *value;
             /* Skip 1 cache entry */
@@ -4923,6 +4982,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_SLOT);
+            static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner;
             PyObject *value;
             /* Skip 1 cache entry */
@@ -5149,6 +5209,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_LIST);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             PyObject *iter;
             PyObject *next;
             /* Skip 1 cache entry */
@@ -5196,6 +5257,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_TUPLE);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             PyObject *iter;
             PyObject *next;
             /* Skip 1 cache entry */
@@ -5242,6 +5304,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_RANGE);
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             PyObject *iter;
             PyObject *next;
             /* Skip 1 cache entry */
@@ -5286,6 +5349,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_WITH_VALUES);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *self = NULL;
@@ -5333,6 +5397,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_NO_DICT);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *self = NULL;
@@ -5368,6 +5433,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             /* Skip 1 cache entry */
@@ -5412,6 +5478,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_NO_DICT);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             /* Skip 1 cache entry */
@@ -5444,6 +5511,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_LAZY_DICT);
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
             PyObject *attr;
             PyObject *self = NULL;
@@ -5590,6 +5658,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BOUND_METHOD_EXACT_ARGS);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject *null;
             PyObject *callable;
             PyObject *func;
@@ -5693,6 +5762,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_EXACT_ARGS);
+            static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject *self_or_null;
             PyObject *callable;
             PyObject **args;

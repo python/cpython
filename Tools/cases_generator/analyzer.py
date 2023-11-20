@@ -159,6 +159,7 @@ class PseudoInstruction:
 @dataclass
 class Family:
     name: str
+    size: str
     members: list[Instruction]
 
     def dump(self, indent):
@@ -308,6 +309,7 @@ def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: d
 def add_family(family: parser.Family, instructions: dict[str, Instruction], families: dict[str, Family]):
     family = Family(
         family.name,
+        family.size,
         [ instructions[member] for member in family.members ]
     )
     for member in family.members:
