@@ -50,3 +50,6 @@ The :mod:`getpass` module provides two functions:
    is raised.
 
    In general, this function should be preferred over :func:`os.getlogin()`.
+
+   .. versionchanged:: 3.13
+      Previously, various exceptions beyond just :exc:`OSError` were raised.

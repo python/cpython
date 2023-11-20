@@ -159,9 +159,8 @@ def getuser():
     Any failure to find a username raises OSError.
 
     .. versionchanged:: 3.13
-        Failure to find a username raises :exc:`OSError` instead of
-        :exc:`ImportError` on non-Unix platforms and instead of
-        :exc:`KeyError` on Unix platforms if the password database is empty.
+        Previously, various exceptions beyond just :exc:`OSError`
+        were raised.
     """
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
