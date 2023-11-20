@@ -290,7 +290,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # have been loaded in this process.
         result = script_helper.assert_python_failure("-c", code)
         error = "SyntaxError: (unicode error) \\N escapes not supported " \
-                "(can't load unicodedata module)"
+            "(can't load unicodedata module)"
         self.assertIn(error, result.err.decode("ascii"))
 
     def test_decimal_numeric_consistent(self):
