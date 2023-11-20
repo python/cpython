@@ -46,7 +46,7 @@ class CWriter:
         self.maybe_indent(tkn.text)
 
     def emit_text(self, txt: str):
-        if self.column == 0:
+        if self.column == 0 and txt.strip():
             self.out.write("    " * self.indent)
             self.column = self.initial_indent * 4
         self.out.write(txt)
