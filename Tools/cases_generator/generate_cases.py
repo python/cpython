@@ -810,6 +810,8 @@ class Generator(Analyzer):
                     n_uops += 1
                     self.out.emit("")
                     with self.out.block(f"case {instr.name}:"):
+                        if instr.instr_flags.HAS_ARG_FLAG:
+                            self.out.emit("oparg = CURRENT_OPARG();")
                         stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
