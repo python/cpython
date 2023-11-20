@@ -1,0 +1,1 @@
+Improved error messages for ``elif``/``else`` statements not matching any valid statements. Patch by Jeremiah Vivian.
