@@ -25,6 +25,10 @@ extern void _JIT_OPARG;
 extern void _JIT_OPERAND;
 extern void _JIT_TARGET;
 
+#undef CURRENT_OPARG
+#define CURRENT_OPARG() (_oparg)
+#undef CURRENT_OPERAND
+#define CURRENT_OPERAND() (_operand)
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
@@ -55,16 +59,17 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
     // Locals that the instruction implementations expect to exist:
     _PyUOpExecutorObject *current_executor = &_JIT_CURRENT_EXECUTOR;
     uint32_t opcode = _JIT_OPCODE;
-    int32_t oparg = (uintptr_t)&_JIT_OPARG;
-    uint64_t operand = (uintptr_t)&_JIT_OPERAND;
-    uint32_t target = (uintptr_t)&_JIT_TARGET;
-    // Pretend to modify the values to keep clang from being clever and
-    // optimizing them based on valid extern addresses, which must be in
+    int32_t oparg;
+    int32_t _oparg = (uintptr_t)&_JIT_OPARG;
+    uint64_t _operand = (uintptr_t)&_JIT_OPERAND;
+    uint32_t _target = (uintptr_t)&_JIT_TARGET;
+    // Pretend to modify the burned-in values to keep clang from being clever
+    // and optimizing them based on valid extern addresses, which must be in
     // range(1, 2**31 - 2**24):
     asm("" : "+r" (current_executor));
-    asm("" : "+r" (oparg));
-    asm("" : "+r" (operand));
-    asm("" : "+r" (target));
+    asm("" : "+r" (_oparg));
+    asm("" : "+r" (_operand));
+    asm("" : "+r" (_target));
     // Now, the actual instruction definitions (only one will be used):
     if (opcode == _JUMP_TO_TOP) {
         CHECK_EVAL_BREAKER();
@@ -92,6 +97,6 @@ error_tier_two:
     TAIL_CALL(_JIT_ERROR);
 deoptimize:
 exit_trace:
-    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + target;
+    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
     TAIL_CALL(_JIT_DEOPTIMIZE);
 }

@@ -46,13 +46,13 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS) && !defined(Py_NOGIL)
+#if !defined(Py_DEBUG) && !defined(Py_TRACE_REFS) && !defined(Py_GIL_DISABLED)
 // GH-89279: The MSVC compiler does not inline these static inline functions
 // in PGO build in _PyEval_EvalFrameDefault(), because this function is over
 // the limit of PGO, and that limit cannot be configured.
 // Define them as macros to make sure that they are always inlined by the
 // preprocessor.
-// TODO: implement Py_DECREF macro for Py_NOGIL
+// TODO: implement Py_DECREF macro for Py_GIL_DISABLED
 
 #undef Py_DECREF
 #define Py_DECREF(arg) \
@@ -994,21 +994,18 @@ enter_tier_two:
 
     OPT_STAT_INC(traces_executed);
     _PyUOpInstruction *next_uop = current_executor->trace;
-    uint64_t operand;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
     for (;;) {
         opcode = next_uop->opcode;
-        oparg = next_uop->oparg;
-        operand = next_uop->operand;
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
                 (int)(next_uop - current_executor->trace),
                 _PyUopName(opcode),
-                oparg,
-                operand,
+                next_uop->oparg,
+                next_uop->operand,
                 next_uop->target,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         next_uop++;
@@ -1025,8 +1022,9 @@ enter_tier_two:
             default:
 #ifdef Py_DEBUG
             {
-                fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 "\n",
-                        opcode, oparg, operand);
+                fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 " @ %d\n",
+                        opcode, next_uop[-1].oparg, next_uop[-1].operand,
+                        (int)(next_uop - current_executor->trace - 1));
                 Py_FatalError("Unknown uop");
             }
 #else
@@ -1055,7 +1053,7 @@ pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
     DPRINTF(2, "Error: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
-            opcode, _PyUopName(opcode), oparg, operand, next_uop[-1].target,
+            opcode, _PyUopName(opcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
             (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
@@ -1068,13 +1066,13 @@ deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
-            opcode, _PyUopName(opcode), oparg, operand, next_uop[-1].target,
+            opcode, _PyUopName(opcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
             (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(opcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE((PyCodeObject *)frame->f_executable);
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     Py_DECREF(current_executor);
     // Fall through
 // Jump here from ENTER_EXECUTOR
@@ -1085,7 +1083,7 @@ enter_tier_one:
 // Jump here from _EXIT_TRACE
 exit_trace:
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE((PyCodeObject *)frame->f_executable);
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     Py_DECREF(current_executor);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     goto enter_tier_one;

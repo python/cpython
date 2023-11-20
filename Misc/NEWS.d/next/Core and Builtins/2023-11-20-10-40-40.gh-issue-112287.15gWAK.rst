@@ -1,0 +1,3 @@
+Slightly optimize the Tier 2 (uop) interpreter by only loading ``oparg`` and
+``operand`` when needed. Also double the trace size limit again, to 512 this
+time.
