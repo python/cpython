@@ -746,7 +746,6 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
         new_source_line = (show_lineno and
                            instr.starts_line and
                            instr.offset > 0)
-
         if new_source_line:
             print(file=file)
         if show_caches:
