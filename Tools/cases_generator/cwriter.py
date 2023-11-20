@@ -8,7 +8,7 @@ class CWriter:
     def __init__(self, out: TextIO, indent: int, line_directives: bool):
         self.out = out
         self.base_column = indent * 4
-        self.indents = [ i for i in range(indent+1) ]
+        self.indents = [ i*4 for i in range(indent+1) ]
         self.line = -1
         self.column = 0
         self.line_directives = line_directives
