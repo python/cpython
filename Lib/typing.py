@@ -310,16 +310,39 @@ def _unpack_args(args):
 
 def _deduplicate(params):
     # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
-    return params
+    try:
+        all_params = set(params)
+    except TypeError:
+        pass  # might happen when some parts of type is unhashable
+    else:
+        if len(all_params) == len(params):  # fast case
+            return params
+
+    regular_params = []
+    annotated_params = []
+    for param in params:
+        if isinstance(param, _AnnotatedAlias):
+            annotated_params.append(param)
+        else:
+            regular_params.append(param)
+
+    unique_params = set(regular_params)
+    new_params = []
+    for t in regular_params:
+        if t in unique_params:
+            new_params.append(t)
+            unique_params.remove(t)
+    assert not unique_params, unique_params
+    if not annotated_params:
+        return new_params
+
+    new_annotated = []
+    for t in annotated_params:
+        # This is slow, but this is the only safe way to compare
+        # two `Annotated[]` instances, since `metadata` might be unhashable.
+        if t not in new_annotated:
+            new_annotated.append(t)
+    return new_params + new_annotated
 
 
 def _remove_dups_flatten(parameters):
@@ -1533,7 +1556,10 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __eq__(self, other):
         if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
             return NotImplemented
-        return set(self.__args__) == set(other.__args__)
+        try:  # fast path
+            return set(self.__args__) == set(other.__args__)
+        except TypeError:  # not hashable, slow path
+            return _deduplicate(self.__args__) == _deduplicate(other.__args__)
 
     def __hash__(self):
         return hash(frozenset(self.__args__))

@@ -8267,6 +8267,61 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(A.__metadata__, (4, 5))
         self.assertEqual(A.__origin__, int)
 
+    def test_deduplicate(self):
+        # Regular:
+        self.assertEqual(get_args(Annotated[int, 1] | int),
+                         (Annotated[int, 1], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], int]),
+                         (Annotated[int, 1], int))
+        self.assertEqual(get_args(Annotated[int, 1] | Annotated[int, 2] | int),
+                         (Annotated[int, 1], Annotated[int, 2], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], Annotated[int, 2], int]),
+                         (Annotated[int, 1], Annotated[int, 2], int))
+        self.assertEqual(get_args(Annotated[int, 1] | Annotated[str, 1] | int),
+                         (Annotated[int, 1], Annotated[str, 1], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], Annotated[str, 1], int]),
+                         (Annotated[int, 1], Annotated[str, 1], int))
+
+        # Duplicates:
+        self.assertEqual(Annotated[int, 1] | Annotated[int, 1] | int,
+                         Annotated[int, 1] | int)
+        self.assertEqual(Union[Annotated[int, 1], Annotated[int, 1], int],
+                         Union[Annotated[int, 1], int])
+
+        # Unhashable metdata:
+        self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[int, set()] | int),
+                         (str, int, Annotated[int, {}], Annotated[int, set()]))
+        self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[int, set()], int]),
+                         (str, int, Annotated[int, {}], Annotated[int, set()]))
+        self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[str, {}] | int),
+                         (str, int, Annotated[int, {}], Annotated[str, {}]))
+        self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[str, {}], int]),
+                         (str, int, Annotated[int, {}], Annotated[str, {}]))
+
+        self.assertEqual(get_args(Annotated[int, 1] | str | Annotated[str, {}] | int),
+                         (str, int, Annotated[int, 1], Annotated[str, {}]))
+        self.assertEqual(get_args(Union[Annotated[int, 1], str, Annotated[str, {}], int]),
+                         (str, int, Annotated[int, 1], Annotated[str, {}]))
+
+        import dataclasses
+        @dataclasses.dataclass
+        class ValueRange:
+            lo: int
+            hi: int
+        v = ValueRange(1, 2)
+        self.assertEqual(get_args(Annotated[int, v] | None),
+                         (type(None), Annotated[int, v]))
+        self.assertEqual(get_args(Union[Annotated[int, v], None]),
+                         (type(None), Annotated[int, v]))
+        self.assertEqual(get_args(Optional[Annotated[int, v]]),
+                         (type(None), Annotated[int, v]))
+
+        # Unhashable metadata duplicated:
+        self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
+                         Annotated[int, {}] | int)
+        self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
+                         Union[Annotated[int, {}], int])
+
     def test_specialize(self):
         L = Annotated[List[T], "my decoration"]
         LI = Annotated[List[int], "my decoration"]
@@ -8287,6 +8342,11 @@ class AnnotatedTests(BaseTestCase):
             {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
             {Annotated[int, 4, 5], Annotated[T, 4, 5]}
         )
+        # Unhashable `metadata` raises `TypeError`:
+        self.assertRaises(TypeError, hash, Annotated[int, []])
+        class A:
+            __hash__ = None
+        self.assertRaises(TypeError, hash, Annotated[int, A()])
 
     def test_instantiate(self):
         class C:
