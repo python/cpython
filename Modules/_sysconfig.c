@@ -57,12 +57,12 @@ _sysconfig_config_vars_impl(PyObject *module)
     }
 #endif
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
     PyObject *py_nogil = _PyLong_GetOne();
 #else
     PyObject *py_nogil = _PyLong_GetZero();
 #endif
-    if (PyDict_SetItemString(config, "Py_NOGIL", py_nogil) < 0) {
+    if (PyDict_SetItemString(config, "Py_GIL_DISABLED", py_nogil) < 0) {
         Py_DECREF(config);
         return NULL;
     }

@@ -290,7 +290,7 @@ def get_build_info():
     build = []
 
     # --disable-gil
-    if sysconfig.get_config_var('Py_NOGIL'):
+    if sysconfig.get_config_var('Py_GIL_DISABLED'):
         build.append("nogil")
 
     if hasattr(sys, 'gettotalrefcount'):

@@ -33,11 +33,11 @@ extern "C" {
 //   ...
 //   PyMutex_Unlock(&m);
 
-// NOTE: In Py_NOGIL builds, `struct _PyMutex` is defined in Include/object.h.
-// The Py_NOGIL builds need the definition in Include/object.h for the
+// NOTE: In Py_GIL_DISABLED builds, `struct _PyMutex` is defined in Include/object.h.
+// The Py_GIL_DISABLED builds need the definition in Include/object.h for the
 // `ob_mutex` field in PyObject. For the default (non-free-threaded) build,
 // we define the struct here to avoid exposing it in the public API.
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
 struct _PyMutex { uint8_t v; };
 #endif
 

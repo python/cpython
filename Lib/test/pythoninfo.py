@@ -517,7 +517,7 @@ def collect_sysconfig(info_add):
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
-        'Py_NOGIL',
+        'Py_GIL_DISABLED',
         'SHELL',
         'SOABI',
         'abs_builddir',

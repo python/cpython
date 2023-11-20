@@ -106,9 +106,9 @@ check by comparing the reference count field to the immortality reference count.
 #define _Py_IMMORTAL_REFCNT (UINT_MAX >> 2)
 #endif
 
-// Py_NOGIL builds indicate immortal objects using `ob_ref_local`, which is
+// Py_GIL_DISABLED builds indicate immortal objects using `ob_ref_local`, which is
 // always 32-bits.
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 #define _Py_IMMORTAL_REFCNT_LOCAL UINT32_MAX
 #endif
 
@@ -117,7 +117,7 @@ check by comparing the reference count field to the immortality reference count.
 
 // Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
 // C-API expectation that the refcnt will be set to 1.
-#if defined(Py_NOGIL)
+#if defined(Py_GIL_DISABLED)
 #define PyObject_HEAD_INIT(type)    \
     {                               \
         0,                          \
@@ -162,7 +162,7 @@ check by comparing the reference count field to the immortality reference count.
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
 struct _object {
 #if (defined(__GNUC__) || defined(__clang__)) \
         && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
@@ -238,7 +238,7 @@ typedef struct {
 PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
-#if defined(Py_NOGIL) && !defined(Py_LIMITED_API)
+#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -275,7 +275,7 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 #endif
 
 static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
     return ob->ob_refcnt;
 #else
     uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
@@ -316,7 +316,7 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
-#if defined(Py_NOGIL)
+#if defined(Py_GIL_DISABLED)
     return op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL;
 #elif SIZEOF_VOID_P > 4
     return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
@@ -350,7 +350,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     if (_Py_IsImmortal(ob)) {
         return;
     }
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
     ob->ob_refcnt = refcnt;
 #else
     if (_Py_IsOwnedByCurrentThread(ob)) {
@@ -367,7 +367,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         ob->ob_ref_local = 0;
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
-#endif  // Py_NOGIL
+#endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API+0 < 0x030d0000
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
@@ -746,7 +746,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-#if defined(Py_NOGIL)
+#if defined(Py_GIL_DISABLED)
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     uint32_t new_local = local + 1;
     if (new_local == 0) {
@@ -784,7 +784,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
 
 
-#if !defined(Py_LIMITED_API) && defined(Py_NOGIL)
+#if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
 // Implements Py_DECREF on objects not owned by the current thread.
 PyAPI_FUNC(void) _Py_DecRefShared(PyObject *);
 PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
@@ -810,7 +810,7 @@ static inline void Py_DECREF(PyObject *op) {
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
-#elif defined(Py_NOGIL) && defined(Py_REF_DEBUG)
+#elif defined(Py_GIL_DISABLED) && defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
@@ -835,7 +835,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 }
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
-#elif defined(Py_NOGIL)
+#elif defined(Py_GIL_DISABLED)
 static inline void Py_DECREF(PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);

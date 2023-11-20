@@ -86,7 +86,7 @@ extern "C" {
 #define _Py_CRITICAL_SECTION_TWO_MUTEXES    0x2
 #define _Py_CRITICAL_SECTION_MASK           0x3
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 # define Py_BEGIN_CRITICAL_SECTION(op)                                  \
     {                                                                   \
         _PyCriticalSection _cs;                                         \
@@ -104,13 +104,13 @@ extern "C" {
 # define Py_END_CRITICAL_SECTION2()                                     \
         _PyCriticalSection2_End(&_cs2);                                 \
     }
-#else  /* !Py_NOGIL */
+#else  /* !Py_GIL_DISABLED */
 // The critical section APIs are no-ops with the GIL.
 # define Py_BEGIN_CRITICAL_SECTION(op)
 # define Py_END_CRITICAL_SECTION()
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
 # define Py_END_CRITICAL_SECTION2()
-#endif  /* !Py_NOGIL */
+#endif  /* !Py_GIL_DISABLED */
 
 typedef struct {
     // Tagged pointer to an outer active critical section (or 0).

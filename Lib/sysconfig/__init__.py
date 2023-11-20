@@ -348,7 +348,7 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, and Py_NOGIL
+    # Add EXT_SUFFIX, SOABI, and Py_GIL_DISABLED
     vars.update(_sysconfig.config_vars())
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))

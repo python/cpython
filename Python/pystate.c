@@ -1857,7 +1857,7 @@ tstate_deactivate(PyThreadState *tstate)
 static int
 tstate_try_attach(PyThreadState *tstate)
 {
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
     int expected = _Py_THREAD_DETACHED;
     if (_Py_atomic_compare_exchange_int(
             &tstate->state,
@@ -1877,7 +1877,7 @@ static void
 tstate_set_detached(PyThreadState *tstate)
 {
     assert(tstate->state == _Py_THREAD_ATTACHED);
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
     _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
 #else
     tstate->state = _Py_THREAD_DETACHED;

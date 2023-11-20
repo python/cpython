@@ -151,7 +151,7 @@ struct _ts {
 
     /* Tagged pointer to top-most critical section, or zero if there is no
      * active critical section. Critical sections are only used in
-     * `--disable-gil` builds (i.e., when Py_NOGIL is defined to 1). In the
+     * `--disable-gil` builds (i.e., when Py_GIL_DISABLED is defined to 1). In the
      * default build, this field is always zero.
      */
     uintptr_t critical_section;
