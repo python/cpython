@@ -1519,8 +1519,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyUnicodeWriter *writer,
     bool first = true;
 
     if (PyDict_CheckExact(dct)) {
-        if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
+        if (PyDict_GET_SIZE(dct) == 0) {  /* Fast path */
             return _PyUnicodeWriter_WriteASCIIString(writer, "{}", 2);
+        }
     } else {
         // Note that as noted in #55186, we can't use `PyDict_Size` here since we're dealing with a subclass.
         if (PyMapping_Size(dct) == 0)  /* Fast path for subclasses */
