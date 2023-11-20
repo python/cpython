@@ -392,6 +392,7 @@ _PyUop_Replacements[OPCODE_METADATA_SIZE] = {
     [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
+    [_FOR_ITER] = _FOR_ITER_TIER_TWO,
 };
 
 static const uint16_t
@@ -620,6 +621,11 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 }
                                 if (_PyUop_Replacements[uop]) {
                                     uop = _PyUop_Replacements[uop];
+                                    if (uop == _FOR_ITER_TIER_TWO) {
+                                        target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
+                                        assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
+                                               _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
+                                    }
                                 }
                                 break;
                             case OPARG_CACHE_1:
