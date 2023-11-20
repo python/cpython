@@ -95,7 +95,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        # implement fair scheduling, where thread always waits
+        # Implement fair scheduling, where thread always waits
         # its turn.
         # Jumping the queue if all are cancelled is an optimization.
         if (not self._locked and (self._waiters is None or
@@ -113,7 +113,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         except BaseException:
             self._waiters.remove(fut)
             if not self._locked:
-                # Error occurred after release() was called, must re-do release
+                # Error occurred after release() was called, must re-do release.
                 self._wake_up_first()
             raise
 
