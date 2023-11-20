@@ -83,9 +83,6 @@ typedef struct pyruntimestate {
        Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
-    /* The ID of the OS thread in which we are finalizing.
-       We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
-    _Py_atomic_address _finalizing_id;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
@@ -164,6 +161,10 @@ typedef struct pyruntimestate {
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
+
+    /* The ID of the OS thread in which we are finalizing.
+       We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
+    _Py_atomic_address _finalizing_id;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.
