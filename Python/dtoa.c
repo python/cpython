@@ -309,7 +309,7 @@ BCinfo {
 // struct Bigint is defined in pycore_dtoa.h.
 typedef struct Bigint Bigint;
 
-#if !defined(Py_NOGIL) && !defined(Py_USING_MEMORY_DEBUGGER)
+#if !defined(Py_GIL_DISABLED) && !defined(Py_USING_MEMORY_DEBUGGER)
 
 /* Memory management: memory is allocated from, and returned to, Kmax+1 pools
    of memory, where pool k (0 <= k <= Kmax) is for Bigints b with b->maxwds ==
@@ -428,7 +428,7 @@ Bfree(Bigint *v)
     }
 }
 
-#endif /* !defined(Py_NOGIL) && !defined(Py_USING_MEMORY_DEBUGGER) */
+#endif /* !defined(Py_GIL_DISABLED) && !defined(Py_USING_MEMORY_DEBUGGER) */
 
 #define Bcopy(x,y) memcpy((char *)&x->sign, (char *)&y->sign,   \
                           y->wds*sizeof(Long) + 2*sizeof(int))
