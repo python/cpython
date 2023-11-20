@@ -1579,6 +1579,9 @@ x = (
         self.assertEqual(f'X{x  =  }Y', 'Xx  =  '+repr(x)+'Y')
         self.assertEqual(f"sadsd {1 + 1 =  :{1 + 1:1d}f}", "sadsd 1 + 1 =  2.000000")
 
+        self.assertEqual(f"{1+2 = # my comment
+  }", '1+2 = \n  3')
+
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
         # patchcheck doesn't like these tabs.  So the only way to test
