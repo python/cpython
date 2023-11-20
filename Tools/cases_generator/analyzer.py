@@ -371,8 +371,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
     return Analysis(instructions, uops, families, pseudos)
 
-def analyze_file(filename: str) -> Analysis:
-    return analyze_forest(parser.parse_file(filename))
+def analyze_files(filenames: list[str]) -> Analysis:
+    return analyze_forest(parser.parse_files(filenames))
 
 def dump_analysis(analysis: Analysis) -> None:
     print("Uops:")
