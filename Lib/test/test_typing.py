@@ -8319,8 +8319,12 @@ class AnnotatedTests(BaseTestCase):
         # Unhashable metadata duplicated:
         self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
                          Annotated[int, {}] | int)
+        self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
+                         int | Annotated[int, {}])
         self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
                          Union[Annotated[int, {}], int])
+        self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
+                         Union[int, Annotated[int, {}]])
 
     def test_specialize(self):
         L = Annotated[List[T], "my decoration"]
