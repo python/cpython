@@ -234,6 +234,7 @@ def make_syntax_error(
 
 @dataclass(slots=True)
 class Token:
+    filename: str
     kind: str
     text: str
     begin: tuple[int, int]
@@ -261,7 +262,7 @@ class Token:
 
     def replaceText(self, txt: str) -> "Token":
         assert isinstance(txt, str)
-        return Token(self.kind, txt, self.begin, self.end)
+        return Token(self.filename, self.kind, txt, self.begin, self.end)
 
     def __repr__(self) -> str:
         b0, b1 = self.begin
@@ -323,7 +324,7 @@ def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[T
         else:
             begin = line, start - linestart
         if kind != "\n":
-            yield Token(kind, text, begin, (line, start - linestart + len(text)))
+            yield Token(filename, kind, text, begin, (line, start - linestart + len(text)))
 
 
 def to_text(tkns: list[Token], dedent: int = 0) -> str:

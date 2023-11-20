@@ -5,16 +5,19 @@ from typing import TextIO
 class CWriter:
     'A writer that understands tokens and how to format C code'
 
-    def __init__(self, out: TextIO, indent: int = 0):
+    def __init__(self, out: TextIO, indent: int, line_directives: bool):
         self.out = out
         self.initial_indent = self.indent = indent
         self.line = -1
         self.column = 0
+        self.line_directives = line_directives
 
     def set_position(self, tkn: Token):
         if self.line < tkn.line:
             self.column = 0
             self.out.write("\n")
+            if self.line_directives:
+                self.out.write(f'#line {tkn.line} "{tkn.filename}"\n')
         if self.column == 0:
             self.out.write("    " * self.indent)
         else:

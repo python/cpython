@@ -274,9 +274,9 @@ def uses_this(inst: Instruction) -> bool:
                 return True
     return False
 
-def generate_tier1(filenames: str, analysis: Analysis, outfile: TextIO) -> None:
+def generate_tier1(filenames: str, analysis: Analysis, outfile: TextIO, lines: bool) -> None:
     write_header(filenames, outfile)
-    out = CWriter(outfile, 2)
+    out = CWriter(outfile, 2, lines)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         needs_this = uses_this(inst)
@@ -318,13 +318,6 @@ arg_parser = argparse.ArgumentParser(
 )
 
 arg_parser.add_argument(
-    "-v",
-    "--verbose",
-    help="Print list of non-viable uops and exit",
-    action="store_true",
-)
-
-arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 
@@ -342,4 +335,4 @@ if __name__ == "__main__":
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
     with open(args.output, "w") as outfile:
-        generate_tier1(args.input, data, outfile)
+        generate_tier1(args.input, data, outfile, args.emit_line_directives)
