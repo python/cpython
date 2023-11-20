@@ -112,7 +112,7 @@ class WindowsRegistryFinderTests:
 class WindowsExtensionSuffixTests:
     def test_tagged_suffix(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
-        abi_flags = "t" if sysconfig.get_config_var("Py_NOGIL") else ""
+        abi_flags = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
         ver = sys.version_info
         platform = re.sub('[^a-zA-Z0-9]', '_', get_platform())
         expected_tag = f".cp{ver.major}{ver.minor}{abi_flags}-{platform}.pyd"
