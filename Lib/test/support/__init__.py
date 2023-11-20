@@ -796,7 +796,7 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
-if sysconfig.get_config_var('Py_NOGIL'):
+if sysconfig.get_config_var('Py_GIL_DISABLED'):
     _header = 'PHBBInP'
 else:
     _header = 'nP'
