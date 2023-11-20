@@ -7,7 +7,8 @@ class CWriter:
 
     def __init__(self, out: TextIO, indent: int, line_directives: bool):
         self.out = out
-        self.initial_indent = self.indent = indent
+        self.base_column = indent * 4
+        self.indents = [ i for i in range(indent+1) ]
         self.line = -1
         self.column = 0
         self.line_directives = line_directives
@@ -19,7 +20,7 @@ class CWriter:
             if self.line_directives:
                 self.out.write(f'#line {tkn.line} "{tkn.filename}"\n')
         if self.column == 0:
-            self.out.write("    " * self.indent)
+            self.out.write(" " * self.indents[-1])
         else:
             #Token colums are 1 based
             column = tkn.column - 1
@@ -31,16 +32,19 @@ class CWriter:
     def maybe_dedent(self, txt: str):
         parens = txt.count("(") - txt.count(")")
         if parens < 0:
-            self.indent += parens
+            self.indents.pop()
         elif "}" in txt or txt.endswith(":"):
-            self.indent -= 1
+            self.indents.pop()
 
     def maybe_indent(self, txt: str):
         parens = txt.count("(") - txt.count(")")
         if parens > 0:
-            self.indent += parens
+            offset = self.column - self.base_column + 2
+            if offset <= self.indents[-1] or offset > 40:
+                offset = self.indents[-1] + 4
+            self.indents.append(offset)
         elif "{" in txt or txt.endswith(":"):
-            self.indent += 1
+            self.indents.append(self.indents[-1] + 4)
 
     def emit_token(self, tkn: Token):
         self.maybe_dedent(tkn.text)
@@ -50,8 +54,8 @@ class CWriter:
 
     def emit_text(self, txt: str):
         if self.column == 0 and txt.strip():
-            self.out.write("    " * self.indent)
-            self.column = self.initial_indent * 4
+            self.out.write(" " * self.indents[-1])
+            self.column = self.base_column
         self.out.write(txt)
 
     def emit_str(self, txt: str):
