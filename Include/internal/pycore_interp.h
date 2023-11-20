@@ -169,9 +169,6 @@ struct _is {
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry xidregistry;
-
 #ifdef HAVE_FORK
     PyObject *before_forkers;
     PyObject *after_forkers_parent;
@@ -222,6 +219,9 @@ struct _is {
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
+
+    // XXX Remove this field once we have a tp_* slot.
+    struct _xidregistry xidregistry;
 
    /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
