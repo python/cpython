@@ -15,7 +15,7 @@
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
     <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
-    <PyConfigArgs Condition="'$(DisableGil)' == 'true'">Py_NOGIL=1,$(PyConfigArgs)</PyConfigArgs>
+    <PyConfigArgs Condition="'$(DisableGil)' == 'true'">Py_GIL_DISABLED=1,$(PyConfigArgs)</PyConfigArgs>
   </PropertyGroup>
 
   <ItemDefinitionGroup>

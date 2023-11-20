@@ -711,7 +711,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_ERFC 1
 
 /* Define if you want to disable the GIL */
-#undef Py_NOGIL
+#undef Py_GIL_DISABLED
 
 // netdb.h functions (provided by winsock.h)
 #define HAVE_GETHOSTNAME 1
