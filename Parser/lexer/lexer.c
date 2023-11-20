@@ -115,7 +115,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     PyObject *res = NULL;
 
     // Check if there is a # character in the expression
-    int hash_detected;
+    int hash_detected = 0;
     for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
         if (tok_mode->last_expr_buffer[i] == '#') {
             hash_detected = 1;
@@ -125,7 +125,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
 
     if (hash_detected) {
         Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
-        char *result = (char *)PyObject_Malloc((input_length + 1) * sizeof(char)); 
+        char *result = (char *)PyObject_Malloc((input_length + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
@@ -136,7 +136,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         for (i = 0, j = 0; i < input_length; i++) {
             if (tok_mode->last_expr_buffer[i] == '#') {
                 // Skip characters until newline or end of string
-                while (tok_mode->last_expr_buffer[i] != '\0') {
+                while (tok_mode->last_expr_buffer[i] != '\0' && i < input_length) {
                     if (tok_mode->last_expr_buffer[i] == '\n') {
                         result[j++] = tok_mode->last_expr_buffer[i];
                         break;
@@ -157,9 +157,9 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
             tok_mode->last_expr_size - tok_mode->last_expr_end,
             NULL
         );
-    
+
     }
- 
+
 
    if (!res) {
         return -1;
