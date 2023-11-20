@@ -1569,25 +1569,6 @@ class PurePathSubclassTest(PurePathTest):
     test_repr_roundtrips = None
 
 
-@only_posix
-class PosixPathAsPureTest(PurePosixPathTest):
-    cls = pathlib.PosixPath
-
-@only_nt
-class WindowsPathAsPureTest(PureWindowsPathTest):
-    cls = pathlib.WindowsPath
-
-    def test_owner(self):
-        P = self.cls
-        with self.assertRaises(pathlib.UnsupportedOperation):
-            P('c:/').owner()
-
-    def test_group(self):
-        P = self.cls
-        with self.assertRaises(pathlib.UnsupportedOperation):
-            P('c:/').group()
-
-
 #
 # Tests for the virtual classes.
 #
@@ -1781,6 +1762,7 @@ class DummyPathTest(unittest.TestCase):
     #
 
     def setUp(self):
+        super().setUp()
         pathmod = self.cls.pathmod
         p = self.cls(BASE)
         p.mkdir(parents=True)
@@ -2803,7 +2785,7 @@ class DummyPathWithSymlinksTest(DummyPathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(DummyPathTest):
+class PathTest(DummyPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -3419,7 +3401,7 @@ class PathTest(DummyPathTest):
 
 
 @only_posix
-class PosixPathTest(PathTest):
+class PosixPathTest(PathTest, PurePosixPathTest):
     cls = pathlib.PosixPath
 
     def test_absolute(self):
@@ -3595,7 +3577,7 @@ class PosixPathTest(PathTest):
 
 
 @only_nt
-class WindowsPathTest(PathTest):
+class WindowsPathTest(PathTest, PureWindowsPathTest):
     cls = pathlib.WindowsPath
 
     def test_absolute(self):
@@ -3737,6 +3719,16 @@ class WindowsPathTest(PathTest):
         P = self.cls
         self.assertEqual(P.from_uri('file:' + pathname2url(r'c:\path\to\file')), P('c:/path/to/file'))
         self.assertEqual(P.from_uri('file:' + pathname2url(r'\\server\path\to\file')), P('//server/path/to/file'))
+
+    def test_owner(self):
+        P = self.cls
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            P('c:/').owner()
+
+    def test_group(self):
+        P = self.cls
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            P('c:/').group()
 
 
 class PathSubclassTest(PathTest):
