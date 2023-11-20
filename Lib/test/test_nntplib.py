@@ -20,7 +20,7 @@ except ImportError:
     ssl = None
 
 
-certfile = os.path.join(os.path.dirname(__file__), 'keycert3.pem')
+certfile = os.path.join(os.path.dirname(__file__), 'certdata', 'keycert3.pem')
 
 if ssl is not None:
     SSLError = ssl.SSLError

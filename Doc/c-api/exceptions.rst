@@ -88,8 +88,16 @@ Printing and clearing
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
+   If *obj* is ``NULL``, only the traceback is printed.
 
    An exception must be set when calling this function.
+
+   .. versionchanged:: 3.4
+      Print a traceback. Print only traceback if *obj* is ``NULL``.
+
+   .. versionchanged:: 3.8
+      Use :func:`sys.unraisablehook`.
+
 
 .. c:function:: void PyErr_DisplayException(PyObject *exc)
 
@@ -786,7 +794,7 @@ Exception Objects
 
    Implement part of the interpreter's implementation of :keyword:`!except*`.
    *orig* is the original exception that was caught, and *excs* is the list of
-   the exceptions that need to be raised. This list contains the the unhandled
+   the exceptions that need to be raised. This list contains the unhandled
    part of *orig*, if any, as well as the exceptions that were raised from the
    :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
    those that were reraised (and have the same traceback as *orig*).

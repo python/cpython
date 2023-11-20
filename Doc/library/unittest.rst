@@ -206,13 +206,13 @@ Command-line options
 
 .. program:: unittest
 
-.. cmdoption:: -b, --buffer
+.. option:: -b, --buffer
 
    The standard output and standard error streams are buffered during the test
    run. Output during a passing test is discarded. Output is echoed normally
    on test fail or error and is added to the failure messages.
 
-.. cmdoption:: -c, --catch
+.. option:: -c, --catch
 
    :kbd:`Control-C` during the test run waits for the current test to end and then
    reports all the results so far. A second :kbd:`Control-C` raises the normal
@@ -220,11 +220,11 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
-.. cmdoption:: -f, --failfast
+.. option:: -f, --failfast
 
    Stop the test run on the first error or failure.
 
-.. cmdoption:: -k
+.. option:: -k
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
@@ -240,11 +240,11 @@ Command-line options
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
    ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
 
-.. cmdoption:: --locals
+.. option:: --locals
 
    Show local variables in tracebacks.
 
-.. cmdoption:: --durations N
+.. option:: --durations N
 
    Show the N slowest test cases (N=0 for all).
 
@@ -292,19 +292,19 @@ The ``discover`` sub-command has the following options:
 
 .. program:: unittest discover
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output
 
-.. cmdoption:: -s, --start-directory directory
+.. option:: -s, --start-directory directory
 
    Directory to start discovery (``.`` default)
 
-.. cmdoption:: -p, --pattern pattern
+.. option:: -p, --pattern pattern
 
    Pattern to match test files (``test*.py`` default)
 
-.. cmdoption:: -t, --top-level-directory directory
+.. option:: -t, --top-level-directory directory
 
    Top level directory of project (defaults to start directory)
 

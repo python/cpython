@@ -1580,13 +1580,13 @@ The initialization of the default warnings filters has changed as follows:
 * warnings filters enabled via the command line or the environment now have the
   following order of precedence:
 
-     * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
-     * any filters specified with the :option:`-W` option
-     * any filters specified with the :envvar:`PYTHONWARNINGS` environment
-       variable
-     * any other CPython specific filters (e.g. the ``default`` filter added
-       for the new ``-X dev`` mode)
-     * any implicit filters defined directly by the warnings machinery
+  * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
+  * any filters specified with the :option:`-W` option
+  * any filters specified with the :envvar:`PYTHONWARNINGS` environment
+    variable
+  * any other CPython specific filters (e.g. the ``default`` filter added
+    for the new ``-X dev`` mode)
+  * any implicit filters defined directly by the warnings machinery
 
 * in :ref:`CPython debug builds <debug-build>`, all warnings are now displayed
   by default (the implicit filter list is empty)

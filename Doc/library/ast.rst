@@ -2477,26 +2477,26 @@ The following options are accepted:
 
 .. program:: ast
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message and exit.
 
-.. cmdoption:: -m <mode>
-               --mode <mode>
+.. option:: -m <mode>
+            --mode <mode>
 
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
-.. cmdoption:: --no-type-comments
+.. option:: --no-type-comments
 
    Don't parse type comments.
 
-.. cmdoption:: -a, --include-attributes
+.. option:: -a, --include-attributes
 
    Include attributes such as line numbers and column offsets.
 
-.. cmdoption:: -i <indent>
-               --indent <indent>
+.. option:: -i <indent>
+            --indent <indent>
 
    Indentation of nodes in AST (number of spaces).
 

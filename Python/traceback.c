@@ -108,6 +108,29 @@ tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
 }
 
 static int
+tb_get_lineno(PyTracebackObject* tb) {
+    PyFrameObject* frame = tb->tb_frame;
+    assert(frame != NULL);
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    int lineno = PyCode_Addr2Line(code, tb->tb_lasti);
+    Py_DECREF(code);
+    return lineno;
+}
+
+static PyObject *
+tb_lineno_get(PyTracebackObject *self, void *Py_UNUSED(_))
+{
+    int lineno = self->tb_lineno;
+    if (lineno == -1) {
+        lineno = tb_get_lineno(self);
+        if (lineno < 0) {
+            Py_RETURN_NONE;
+        }
+    }
+    return PyLong_FromLong(lineno);
+}
+
+static int
 tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
 {
     if (!new_next) {
@@ -150,12 +173,12 @@ static PyMethodDef tb_methods[] = {
 static PyMemberDef tb_memberlist[] = {
     {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
     {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
-    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
     {NULL}      /* Sentinel */
 };
 
 static PyGetSetDef tb_getsetters[] = {
     {"tb_next", (getter)tb_next_get, (setter)tb_next_set, NULL, NULL},
+    {"tb_lineno", (getter)tb_lineno_get, NULL, NULL, NULL},
     {NULL}      /* Sentinel */
 };
 
@@ -234,8 +257,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
     int addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr,
-                         PyFrame_GetLineNumber(frame));
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr, -1);
 }
 
 
@@ -900,8 +922,39 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         goto done;
     }
 
-    if (print_error_location_carets(f, truncation, start_offset, end_offset,
-                                    right_start_offset, left_end_offset,
+    // Convert all offsets to display offsets (e.g. the space they would take up if printed
+    // on the screen).
+    Py_ssize_t dp_start = _PyPegen_calculate_display_width(source_line, start_offset);
+    if (dp_start < 0) {
+        err = ignore_source_errors() < 0;
+        goto done;
+    }
+
+    Py_ssize_t dp_end = _PyPegen_calculate_display_width(source_line, end_offset);
+    if (dp_end < 0) {
+        err = ignore_source_errors() < 0;
+        goto done;
+    }
+
+    Py_ssize_t dp_left_end = -1;
+    Py_ssize_t dp_right_start = -1;
+    if (has_secondary_ranges) {
+        dp_left_end = _PyPegen_calculate_display_width(source_line, left_end_offset);
+        if (dp_left_end < 0) {
+            err = ignore_source_errors() < 0;
+            goto done;
+        }
+
+        dp_right_start = _PyPegen_calculate_display_width(source_line, right_start_offset);
+        if (dp_right_start < 0) {
+            err = ignore_source_errors() < 0;
+            goto done;
+        }
+    }
+
+
+    if (print_error_location_carets(f, truncation, dp_start, dp_end,
+                                    dp_right_start, dp_left_end,
                                     primary_error_char, secondary_error_char) < 0) {
         err = -1;
         goto done;
@@ -952,9 +1005,13 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
     }
     while (tb != NULL) {
         code = PyFrame_GetCode(tb->tb_frame);
+        int tb_lineno = tb->tb_lineno;
+        if (tb_lineno == -1) {
+            tb_lineno = tb_get_lineno(tb);
+        }
         if (last_file == NULL ||
             code->co_filename != last_file ||
-            last_line == -1 || tb->tb_lineno != last_line ||
+            last_line == -1 || tb_lineno != last_line ||
             last_name == NULL || code->co_name != last_name) {
             if (cnt > TB_RECURSIVE_CUTOFF) {
                 if (tb_print_line_repeated(f, cnt) < 0) {
@@ -962,13 +1019,13 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
                 }
             }
             last_file = code->co_filename;
-            last_line = tb->tb_lineno;
+            last_line = tb_lineno;
             last_name = code->co_name;
             cnt = 0;
         }
         cnt++;
         if (cnt <= TB_RECURSIVE_CUTOFF) {
-            if (tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
+            if (tb_displayline(tb, f, code->co_filename, tb_lineno,
                                tb->tb_frame, code->co_name, indent, margin) < 0) {
                 goto error;
             }
@@ -1218,23 +1275,45 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     PUTS(fd, "\n");
 }
 
+static int
+tstate_is_freed(PyThreadState *tstate)
+{
+    if (_PyMem_IsPtrFreed(tstate)) {
+        return 1;
+    }
+    if (_PyMem_IsPtrFreed(tstate->interp)) {
+        return 1;
+    }
+    return 0;
+}
+
+
+static int
+interp_is_freed(PyInterpreterState *interp)
+{
+    return _PyMem_IsPtrFreed(interp);
+}
+
+
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    _PyInterpreterFrame *frame;
-    unsigned int depth;
-
     if (write_header) {
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = tstate->cframe->current_frame;
+    if (tstate_is_freed(tstate)) {
+        PUTS(fd, "  <tstate is freed>\n");
+        return;
+    }
+
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         PUTS(fd, "  <no Python frame>\n");
         return;
     }
 
-    depth = 0;
+    unsigned int depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
             PUTS(fd, "  ...\n");
@@ -1298,9 +1377,6 @@ const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
                          PyThreadState *current_tstate)
 {
-    PyThreadState *tstate;
-    unsigned int nthreads;
-
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
@@ -1314,6 +1390,10 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
            _PyThreadState_GET() cannot be used. Read the thread specific
            storage (TSS) instead: call PyGILState_GetThisThreadState(). */
         current_tstate = PyGILState_GetThisThreadState();
+    }
+
+    if (current_tstate != NULL && tstate_is_freed(current_tstate)) {
+        return "tstate is freed";
     }
 
     if (interp == NULL) {
@@ -1330,14 +1410,18 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     }
     assert(interp != NULL);
 
+    if (interp_is_freed(interp)) {
+        return "interp is freed";
+    }
+
     /* Get the current interpreter from the current thread */
-    tstate = PyInterpreterState_ThreadHead(interp);
+    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     if (tstate == NULL)
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
     tstate = PyInterpreterState_ThreadHead(interp);
-    nthreads = 0;
+    unsigned int nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {

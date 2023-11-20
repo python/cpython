@@ -790,8 +790,7 @@ class Bytecode:
             return output.getvalue()
 
 
-def _test():
-    """Simple test program to disassemble a file."""
+def main():
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -803,4 +802,4 @@ def _test():
     dis(code)
 
 if __name__ == "__main__":
-    _test()
+    main()

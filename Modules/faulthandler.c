@@ -176,7 +176,6 @@ faulthandler_dump_traceback(int fd, int all_threads,
                             PyInterpreterState *interp)
 {
     static volatile int reentrant = 0;
-    PyThreadState *tstate;
 
     if (reentrant)
         return;
@@ -191,7 +190,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
        fault if the thread released the GIL, and so this function cannot be
        used. Read the thread specific storage (TSS) instead: call
        PyGILState_GetThisThreadState(). */
-    tstate = PyGILState_GetThisThreadState();
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
 
     if (all_threads) {
         (void)_Py_DumpTracebackThreads(fd, NULL, tstate);

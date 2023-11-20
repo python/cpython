@@ -5655,8 +5655,9 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
-#ifdef _AIX
-/* issue #18259, not declared in any useful header file */
+#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
+/* issue #18259, sethostname is not declared in any useful header file on AIX
+ * the same is true for Solaris 10 */
 extern int sethostname(const char *, size_t);
 #endif
 
@@ -7702,10 +7703,10 @@ socket_exec(PyObject *m)
 
 /* FreeBSD divert(4) */
 #ifdef PF_DIVERT
-    PyModule_AddIntMacro(m, PF_DIVERT);
+    ADD_INT_MACRO(m, PF_DIVERT);
 #endif
 #ifdef AF_DIVERT
-    PyModule_AddIntMacro(m, AF_DIVERT);
+    ADD_INT_MACRO(m, AF_DIVERT);
 #endif
 
 #ifdef AF_PACKET

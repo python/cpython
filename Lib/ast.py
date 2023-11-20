@@ -1268,13 +1268,15 @@ class _Unparser(NodeVisitor):
         quote_type = quote_types[0]
         self.write(f"{quote_type}{value}{quote_type}")
 
-    def _write_fstring_inner(self, node):
+    def _write_fstring_inner(self, node, scape_newlines=False):
         if isinstance(node, JoinedStr):
             # for both the f-string itself, and format_spec
             for value in node.values:
-                self._write_fstring_inner(value)
+                self._write_fstring_inner(value, scape_newlines=scape_newlines)
         elif isinstance(node, Constant) and isinstance(node.value, str):
             value = node.value.replace("{", "{{").replace("}", "}}")
+            if scape_newlines:
+                value = value.replace("\n", "\\n")
             self.write(value)
         elif isinstance(node, FormattedValue):
             self.visit_FormattedValue(node)
@@ -1297,7 +1299,10 @@ class _Unparser(NodeVisitor):
                 self.write(f"!{chr(node.conversion)}")
             if node.format_spec:
                 self.write(":")
-                self._write_fstring_inner(node.format_spec)
+                self._write_fstring_inner(
+                    node.format_spec,
+                    scape_newlines=True
+                )
 
     def visit_Name(self, node):
         self.write(node.id)

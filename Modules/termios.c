@@ -183,17 +183,25 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
-    mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
-    mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
-    mode.c_lflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 3));
-    speed_t ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
-    speed_t ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
-    PyObject *cc = PyList_GetItem(term, 6);
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
+    speed_t ispeed, ospeed;
+#define SET_FROM_LIST(TYPE, VAR, LIST, N) do {  \
+    PyObject *item = PyList_GET_ITEM(LIST, N);  \
+    long num = PyLong_AsLong(item);             \
+    if (num == -1 && PyErr_Occurred()) {        \
+        return NULL;                            \
+    }                                           \
+    VAR = (TYPE)num;                            \
+} while (0)
 
+    SET_FROM_LIST(tcflag_t, mode.c_iflag, term, 0);
+    SET_FROM_LIST(tcflag_t, mode.c_oflag, term, 1);
+    SET_FROM_LIST(tcflag_t, mode.c_cflag, term, 2);
+    SET_FROM_LIST(tcflag_t, mode.c_lflag, term, 3);
+    SET_FROM_LIST(speed_t, ispeed, term, 4);
+    SET_FROM_LIST(speed_t, ospeed, term, 5);
+#undef SET_FROM_LIST
+
+    PyObject *cc = PyList_GET_ITEM(term, 6);
     if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
         PyErr_Format(PyExc_TypeError,
             "tcsetattr: attributes[6] must be %d element list",
@@ -208,8 +216,13 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
 
         if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
-        else if (PyLong_Check(v))
-            mode.c_cc[i] = (cc_t) PyLong_AsLong(v);
+        else if (PyLong_Check(v)) {
+            long num = PyLong_AsLong(v);
+            if (num == -1 && PyErr_Occurred()) {
+                return NULL;
+            }
+            mode.c_cc[i] = (cc_t)num;
+        }
         else {
             PyErr_SetString(PyExc_TypeError,
      "tcsetattr: elements of attributes must be characters or integers");

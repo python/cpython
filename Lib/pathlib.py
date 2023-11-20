@@ -630,8 +630,7 @@ class PurePath(object):
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
         f = self._flavour
-        drv, root, tail = f.splitroot(name)
-        if drv or root or not tail or f.sep in tail or (f.altsep and f.altsep in tail):
+        if not name or f.sep in name or (f.altsep and f.altsep in name) or name == '.':
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self.drive, self.root,
                                        self._tail[:-1] + [name])

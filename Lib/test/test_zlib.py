@@ -513,18 +513,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
         # Try 17K of data
         # generate random data stream
-        try:
-            # In 2.3 and later, WichmannHill is the RNG of the bug report
-            gen = random.WichmannHill()
-        except AttributeError:
-            try:
-                # 2.2 called it Random
-                gen = random.Random()
-            except AttributeError:
-                # others might simply have a single RNG
-                gen = random
-        gen.seed(1)
-        data = gen.randbytes(17 * 1024)
+        data = random.randbytes(17 * 1024)
 
         # compress, sync-flush, and decompress
         first = co.compress(data)

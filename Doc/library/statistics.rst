@@ -14,6 +14,7 @@
 .. testsetup:: *
 
    from statistics import *
+   import math
    __name__ = '<doctest>'
 
 --------------
@@ -740,6 +741,24 @@ However, for reading convenience, most of the examples show sorted sequences.
    function simplifies to:
 
       *y = slope \* x + noise*
+
+   Continuing the example from :func:`correlation`, we look to see
+   how well a model based on major planets can predict the orbital
+   distances for dwarf planets:
+
+   .. doctest::
+
+      >>> model = linear_regression(period_squared, dist_cubed, proportional=True)
+      >>> slope = model.slope
+
+      >>> # Dwarf planets:   Pluto,  Eris,    Makemake, Haumea, Ceres
+      >>> orbital_periods = [90_560, 204_199, 111_845, 103_410, 1_680]  # days
+      >>> predicted_dist = [math.cbrt(slope * (p * p)) for p in orbital_periods]
+      >>> list(map(round, predicted_dist))
+      [5912, 10166, 6806, 6459, 414]
+
+      >>> [5_906, 10_152, 6_796, 6_450, 414]  # actual distance in million km
+      [5906, 10152, 6796, 6450, 414]
 
    .. versionadded:: 3.10
 

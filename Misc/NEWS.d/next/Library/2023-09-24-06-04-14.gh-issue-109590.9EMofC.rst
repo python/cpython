@@ -1,0 +1,3 @@
+:func:`shutil.which` will prefer files with an extension in ``PATHEXT`` if the given mode includes ``os.X_OK`` on win32.
+If no ``PATHEXT`` match is found, a file without an extension in ``PATHEXT`` can be returned.
+This change will have :func:`shutil.which` act more similarly to previous behavior in Python 3.11.

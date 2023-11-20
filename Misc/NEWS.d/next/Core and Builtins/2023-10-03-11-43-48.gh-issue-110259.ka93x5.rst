@@ -1,0 +1,3 @@
+Correctly identify the format spec in f-strings (with single or triple
+quotes) that have multiple lines in the expression part and include a
+formatting spec. Patch by Pablo Galindo

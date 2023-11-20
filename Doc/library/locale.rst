@@ -303,7 +303,7 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. deprecated-removed:: 3.11 3.13
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. function:: getlocale(category=LC_CTYPE)
@@ -464,11 +464,16 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_CTYPE
 
-   .. index:: pair: module; string
+   Locale category for the character type functions.  Most importantly, this
+   category defines the text encoding, i.e. how bytes are interpreted as
+   Unicode codepoints.  See :pep:`538` and :pep:`540` for how this variable
+   might be automatically coerced to ``C.UTF-8`` to avoid issues created by
+   invalid settings in containers or incompatible settings passed over remote
+   SSH connections.
 
-   Locale category for the character type functions.  Depending on the settings of
-   this category, the functions of module :mod:`string` dealing with case change
-   their behaviour.
+   Python doesn't internally use locale-dependent character transformation functions
+   from ``ctype.h``. Instead, an internal ``pyctype.h`` provides locale-independent
+   equivalents like :c:macro:`!Py_TOLOWER`.
 
 
 .. data:: LC_COLLATE

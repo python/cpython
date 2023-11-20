@@ -12,9 +12,9 @@ from sys import *
 
 # different import patterns to check that __annotations__ does not interfere
 # with import machinery
-import test.ann_module as ann_module
+import test.typinganndata.ann_module as ann_module
 import typing
-from test import ann_module2
+from test.typinganndata import ann_module2
 import test
 
 # These are shared with test_tokenize and other test modules.
@@ -235,6 +235,10 @@ class TokenTests(unittest.TestCase):
             check(f"x if {num}else y", error=(num == "0xf"))
             check(f"[{num}for x in ()]")
             check(f"{num}spam", error=True)
+
+            # gh-88943: Invalid non-ASCII character following a numerical literal.
+            with self.assertRaisesRegex(SyntaxError, r"invalid character '⁄' \(U\+2044\)"):
+                compile(f"{num}⁄7", "<testcase>", "eval")
 
             with self.assertWarnsRegex(SyntaxWarning, r'invalid \w+ literal'):
                 compile(f"{num}is x", "<testcase>", "eval")
@@ -463,7 +467,7 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_in_module(self):
         # check that functions fail the same way when executed
         # outside of module where they were defined
-        ann_module3 = import_helper.import_fresh_module("test.ann_module3")
+        ann_module3 = import_helper.import_fresh_module("test.typinganndata.ann_module3")
         with self.assertRaises(NameError):
             ann_module3.f_bad_ann()
         with self.assertRaises(NameError):

@@ -905,27 +905,27 @@ For a list of the files in a ZIP archive, use the :option:`-l` option:
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
-.. cmdoption:: -l <zipfile>
-               --list <zipfile>
+.. option:: -l <zipfile>
+            --list <zipfile>
 
    List files in a zipfile.
 
-.. cmdoption:: -c <zipfile> <source1> ... <sourceN>
-               --create <zipfile> <source1> ... <sourceN>
+.. option:: -c <zipfile> <source1> ... <sourceN>
+            --create <zipfile> <source1> ... <sourceN>
 
    Create zipfile from source files.
 
-.. cmdoption:: -e <zipfile> <output_dir>
-               --extract <zipfile> <output_dir>
+.. option:: -e <zipfile> <output_dir>
+            --extract <zipfile> <output_dir>
 
    Extract zipfile into target directory.
 
-.. cmdoption:: -t <zipfile>
-               --test <zipfile>
+.. option:: -t <zipfile>
+            --test <zipfile>
 
    Test whether the zipfile is valid or not.
 
-.. cmdoption:: --metadata-encoding <encoding>
+.. option:: --metadata-encoding <encoding>
 
    Specify encoding of member names for :option:`-l`, :option:`-e` and
    :option:`-t`.

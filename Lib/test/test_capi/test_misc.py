@@ -298,6 +298,86 @@ class CAPITest(unittest.TestCase):
             # test _Py_CheckFunctionResult() instead.
             self.assertIn('returned a result with an exception set', err)
 
+    def test_buildvalue(self):
+        # Test Py_BuildValue() with object arguments
+        buildvalue = _testcapi.py_buildvalue
+        self.assertEqual(buildvalue(''), None)
+        self.assertEqual(buildvalue('()'), ())
+        self.assertEqual(buildvalue('[]'), [])
+        self.assertEqual(buildvalue('{}'), {})
+        self.assertEqual(buildvalue('()[]{}'), ((), [], {}))
+        self.assertEqual(buildvalue('O', 1), 1)
+        self.assertEqual(buildvalue('(O)', 1), (1,))
+        self.assertEqual(buildvalue('[O]', 1), [1])
+        self.assertRaises(SystemError, buildvalue, '{O}', 1)
+        self.assertEqual(buildvalue('OO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(OO)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[OO]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{OO}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{OOOO}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('((O))', 1), ((1,),))
+        self.assertEqual(buildvalue('((OO))', 1, 2), ((1, 2),))
+
+        self.assertEqual(buildvalue(' \t,:'), None)
+        self.assertEqual(buildvalue('   O   ', 1), 1)
+        self.assertEqual(buildvalue('\tO\t', 1), 1)
+        self.assertEqual(buildvalue('O,O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O, O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O,\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O,O)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O, O)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue(' ( O O) ', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('\t(\tO\tO)\t', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[O,O]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('[O, O]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [ O O] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{O:O}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{O:O,O:O}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('{O: O, O: O}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue(' { O O O O} ', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('\t{\tO\tO\tO\tO}\t', 1, 2, 3, 4), {1: 2, 3: 4})
+
+        self.assertRaises(SystemError, buildvalue, 'O', NULL)
+        self.assertRaises(SystemError, buildvalue, '(O)', NULL)
+        self.assertRaises(SystemError, buildvalue, '[O]', NULL)
+        self.assertRaises(SystemError, buildvalue, '{O}', NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '(OO)', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '(OO)', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '[OO]', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '[OO]', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '{OO}', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '{OO}', NULL, 2)
+
+    def test_buildvalue_ints(self):
+        # Test Py_BuildValue() with integer arguments
+        buildvalue = _testcapi.py_buildvalue_ints
+        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX
+        self.assertEqual(buildvalue('i', INT_MAX), INT_MAX)
+        self.assertEqual(buildvalue('i', INT_MIN), INT_MIN)
+        self.assertEqual(buildvalue('I', UINT_MAX), UINT_MAX)
+
+        self.assertEqual(buildvalue('h', SHRT_MAX), SHRT_MAX)
+        self.assertEqual(buildvalue('h', SHRT_MIN), SHRT_MIN)
+        self.assertEqual(buildvalue('H', USHRT_MAX), USHRT_MAX)
+
+        self.assertEqual(buildvalue('b', 127), 127)
+        self.assertEqual(buildvalue('b', -128), -128)
+        self.assertEqual(buildvalue('B', 255), 255)
+
+        self.assertEqual(buildvalue('c', ord('A')), b'A')
+        self.assertEqual(buildvalue('c', 255), b'\xff')
+        self.assertEqual(buildvalue('c', 256), b'\x00')
+        self.assertEqual(buildvalue('c', -1), b'\xff')
+
+        self.assertEqual(buildvalue('C', 255), chr(255))
+        self.assertEqual(buildvalue('C', 256), chr(256))
+        self.assertEqual(buildvalue('C', sys.maxunicode), chr(sys.maxunicode))
+        self.assertRaises(ValueError, buildvalue, 'C', -1)
+        self.assertRaises(ValueError, buildvalue, 'C', sys.maxunicode+1)
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
@@ -325,6 +405,8 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
                          'need _testcapi.decref_freed_object()')
+    @support.skip_if_sanitizer("use after free on purpose",
+                               address=True, memory=True, ub=True)
     def test_decref_freed_object(self):
         code = """
             import _testcapi
@@ -1007,46 +1089,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(d.extra, 30)
         del d.extra
         self.assertIsNone(d.extra)
-
-    def test_sys_getobject(self):
-        getobject = _testcapi.sys_getobject
-
-        self.assertIs(getobject(b'stdout'), sys.stdout)
-        with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(getobject('\U0001f40d'.encode()), 42)
-
-        self.assertIs(getobject(b'nonexisting'), AttributeError)
-        self.assertIs(getobject(b'\xff'), AttributeError)
-        # CRASHES getobject(NULL)
-
-    def test_sys_setobject(self):
-        setobject = _testcapi.sys_setobject
-
-        value = ['value']
-        value2 = ['value2']
-        try:
-            self.assertEqual(setobject(b'newattr', value), 0)
-            self.assertIs(sys.newattr, value)
-            self.assertEqual(setobject(b'newattr', value2), 0)
-            self.assertIs(sys.newattr, value2)
-            self.assertEqual(setobject(b'newattr', NULL), 0)
-            self.assertFalse(hasattr(sys, 'newattr'))
-            self.assertEqual(setobject(b'newattr', NULL), 0)
-        finally:
-            with contextlib.suppress(AttributeError):
-                del sys.newattr
-        try:
-            self.assertEqual(setobject('\U0001f40d'.encode(), value), 0)
-            self.assertIs(getattr(sys, '\U0001f40d'), value)
-            self.assertEqual(setobject('\U0001f40d'.encode(), NULL), 0)
-            self.assertFalse(hasattr(sys, '\U0001f40d'))
-        finally:
-            with contextlib.suppress(AttributeError):
-                delattr(sys, '\U0001f40d')
-
-        with self.assertRaises(UnicodeDecodeError):
-            setobject(b'\xff', value)
-        # CRASHES setobject(NULL, value)
 
 
 @requires_limited_api

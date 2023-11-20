@@ -703,7 +703,7 @@ specified, :data:`sys.stdin` and :data:`sys.stdout` will be used respectively:
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
-.. cmdoption:: infile
+.. option:: infile
 
    The JSON file to be validated or pretty-printed:
 
@@ -723,36 +723,36 @@ Command line options
 
    If *infile* is not specified, read from :data:`sys.stdin`.
 
-.. cmdoption:: outfile
+.. option:: outfile
 
    Write the output of the *infile* to the given *outfile*. Otherwise, write it
    to :data:`sys.stdout`.
 
-.. cmdoption:: --sort-keys
+.. option:: --sort-keys
 
    Sort the output of dictionaries alphabetically by key.
 
    .. versionadded:: 3.5
 
-.. cmdoption:: --no-ensure-ascii
+.. option:: --no-ensure-ascii
 
    Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --json-lines
+.. option:: --json-lines
 
    Parse every input line as separate JSON object.
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --indent, --tab, --no-indent, --compact
+.. option:: --indent, --tab, --no-indent, --compact
 
    Mutually exclusive options for whitespace control.
 
    .. versionadded:: 3.9
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message.
 
