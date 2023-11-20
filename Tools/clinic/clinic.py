@@ -1111,7 +1111,8 @@ class CLanguage(Language):
             if include:
                 clinic.add_include(include.filename, include.reason,
                                    condition=include.condition)
-
+        if f.critical_section:
+            clinic.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         simple_return = (f.return_converter.type == 'PyObject *'
                          and not f.critical_section)
@@ -1866,8 +1867,18 @@ class CLanguage(Language):
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         if f.critical_section:
-            data.lock.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
-            data.unlock.append('Py_END_CRITICAL_SECTION();')
+            match len(f.target_critical_section):
+                case 0:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION({self_name});'
+                    unlock = 'Py_END_CRITICAL_SECTION();'
+                case 1:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION({target_critical_section});'
+                    unlock = 'Py_END_CRITICAL_SECTION();'
+                case _:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION2({target_critical_section});'
+                    unlock = 'Py_END_CRITICAL_SECTION2();'
+            data.lock.append(lock)
+            data.unlock.append(unlock)
 
         last_group = 0
         first_optional = len(selfless)
@@ -1922,6 +1933,7 @@ class CLanguage(Language):
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
+        template_dict['target_critical_section'] = ', '.join(f.target_critical_section)
         for converter in converters:
             converter.set_template_dict(template_dict)
 
@@ -2970,6 +2982,7 @@ class Function:
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
     critical_section: bool = False
+    target_critical_section: list[str] = dc.field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -5160,6 +5173,7 @@ class DSLParser:
         self.parameter_continuation = ''
         self.preserve_output = False
         self.critical_section = False
+        self.target_critical_section: list[str] = []
 
     def directive_version(self, required: str) -> None:
         global version
@@ -5288,7 +5302,10 @@ class DSLParser:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
-    def at_critical_section(self) -> None:
+    def at_critical_section(self, *args: str) -> None:
+        if len(args) > 2:
+            fail("Up to 2 critical section variables are supported")
+        self.target_critical_section.extend(args)
         self.critical_section = True
 
     def at_staticmethod(self) -> None:
@@ -5514,7 +5531,8 @@ class DSLParser:
 
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist,
-                                 critical_section=self.critical_section)
+                                 critical_section=self.critical_section,
+                                 target_critical_section=self.target_critical_section)
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically
