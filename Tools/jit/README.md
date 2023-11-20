@@ -5,7 +5,7 @@ The JIT Compiler
 
 </div>
 
-This branch has an (always-on) JIT compiler. While most everything you already know about building and using CPython is unchanged, you will probably need to install a compatible version of LLVM first.
+This version of CPython can be built with an experimental just-in-time compiler. While most everything you already know about building and using CPython is unchanged, you will probably need to install a compatible version of LLVM first.
 
 ### Installing LLVM
 
@@ -43,4 +43,8 @@ LLVM 16 can be installed on Windows by using the installers published on [LLVM's
 
 ### Building
 
-Once LLVM is installed, just configure and build as you normally would (either with `PCbuild/build.bat` or `./configure` and `make`). Cross-compiling "just works", too, since the JIT is built for the host platform.
+For `PCbuild`-based builds, pass the new `--experimental-jit` option to `build.bat`.
+
+For all other builds, pass the new `--enable-experimental-jit` option to `configure`.
+
+Otherwise, just configure and build as you normally would. Even cross-compiling "just works", since the JIT is built for the host platform.

@@ -21,7 +21,7 @@
   <Import Project="pyproject.props"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
-  <Target Name="Build" DependsOnTargets="FindPythonForBuild">
+  <Target Name="Build" DependsOnTargets="FindPythonForBuild" Condition="$(UseJIT)">
 	  <Exec Condition="$(Configuration) != 'Debug' and $(Platform) == 'Win32'"
           Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc'
           WorkingDirectory="$(PySourcePath)"/>

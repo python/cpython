@@ -1,4 +1,7 @@
 #include "Python.h"
+
+#ifdef _Py_JIT
+
 #include "pycore_abstract.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
@@ -374,3 +377,5 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     assert(head_data == data + data_size);
     return (_PyJITFunction)text;
 }
+
+#endif

@@ -66,14 +66,14 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
-          ./PCbuild/build.bat ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
+          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
       - name: macOS
         if: runner.os == 'macOS'
         run: |
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 3
           ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
       - name: Native Linux
@@ -81,7 +81,7 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 2
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
       - name: Emulated Linux
@@ -100,6 +100,6 @@ jobs:
           export CPP="$CC --preprocess"
           export HOSTRUNNER=qemu-${{ matrix.architecture }}
           export QEMU_LD_PREFIX="/usr/$HOST"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 2
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3

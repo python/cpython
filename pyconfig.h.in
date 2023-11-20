@@ -1885,6 +1885,9 @@
 /* framework name */
 #undef _PYTHONFRAMEWORK
 
+/* Define if you want to build the experimental just-in-time compiler. */
+#undef _Py_JIT
+
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 

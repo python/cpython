@@ -1579,6 +1579,32 @@ else
   AC_MSG_RESULT([no])
 fi
 
+# Check for --enable-experimental-jit:
+AC_MSG_CHECKING([for --enable-experimental-jit])
+AC_ARG_ENABLE(
+  [experimental-jit],
+  AS_HELP_STRING(
+    [--enable-experimental-jit],
+    [build the experimental just-in-time compiler (default is no)],
+  ),
+  [],
+  [enable_experimental_jit=no],
+)
+AS_VAR_IF(
+  [enable_experimental_jit],
+  [no],
+  [],
+  [REGEN_JIT_COMMAND='$(PYTHON_FOR_REGEN) $(srcdir)/Tools/jit/build.py $(HOST_GNU_TYPE)']
+)
+AS_VAR_IF(
+  [enable_experimental_jit],
+  [no],
+  [],
+  [AC_DEFINE([_Py_JIT], [], [Define if you want to build the experimental just-in-time compiler.])]
+)
+AC_MSG_RESULT([$enable_experimental_jit])
+AC_SUBST([REGEN_JIT_COMMAND])
+
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])
 AC_SUBST([DEF_MAKE_RULE])

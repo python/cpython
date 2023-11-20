@@ -832,6 +832,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
+#ifdef _Py_JIT
     _PyJITFunction execute = _PyJIT_CompileTrace(executor, executor->trace, length);
     if (execute == NULL) {
         if (PyErr_Occurred()) {
@@ -841,6 +842,9 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         execute = _PyUopExecute;
     }
     executor->base.execute = execute;
+#else
+    executor->base.execute = _PyUopExecute;
+#endif
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
