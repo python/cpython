@@ -1,9 +1,8 @@
 import sys
 from analyzer import Analysis, Instruction, Uop, Part, analyze_file, Skip, StackItem, analysis_error
 from cwriter import CWriter
-from typing import Tuple, TextIO, Iterator
+from typing import TextIO, Iterator
 from lexer import Token
-from dataclasses import dataclass
 from stack import StackOffset
 
 def write_header(filename: str, outfile: TextIO) -> None:
@@ -129,8 +128,7 @@ def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str):
             parens -= 1
         out.emit(tkn)
 
-def replace_deopt(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction):
-    parens = 0
+def replace_deopt(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, unused: Stack, inst: Instruction):
     out.emit("DEOPT_IF")
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
@@ -265,7 +263,7 @@ def generate_tier1(filename: str, analysis: Analysis, outfile: TextIO) -> None:
     write_header(filename, outfile)
     out = CWriter(outfile, 2)
     out.emit("\n")
-    for name, inst in sorted(analysis.instructions.items()):
+    for name, inst in analysis.instructions.items():
         needs_this = uses_this(inst)
         out.emit(f"TARGET({name}) {{")
         if needs_this and not inst.is_target:

@@ -2,7 +2,6 @@
 from dataclasses import dataclass
 import lexer
 import parser
-from _typing_backports import assert_never
 
 @dataclass
 class Properties:
@@ -302,7 +301,7 @@ def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: d
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
             case _:
-                assert_never(part)
+                assert False
     assert(parts)
     add_instruction(macro.name, parts, instructions)
 
@@ -343,7 +342,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
             case parser.Pseudo():
                 pass
             case _:
-                assert_never(node)
+                assert False
     for node in forest:
         if isinstance(node, parser.Macro):
             add_macro(node, instructions, uops)
