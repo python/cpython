@@ -637,7 +637,6 @@ class StartupTests(TestBase):
                 sp0_main, sp0_sub = data['main'], data['sub']
                 self.assertEqual(sp0_sub, sp0_main)
                 self.assertEqual(sp0_sub, expected)
-        # XXX Also check them all with the -P cmdline flag?
 
 
 class TestIsShareable(TestBase):

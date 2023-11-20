@@ -559,9 +559,6 @@ pymain_run_python(int *exitcode)
         goto error;
     }
 
-    // XXX Calculate runtime->sys_path_0 in getpath.py.
-    // The tricky part is that we can't check the path importers yet
-    // at that point.
     assert(interp->runtime->sys_path_0 == NULL);
 
     if (config->run_filename != NULL) {
@@ -592,8 +589,6 @@ pymain_run_python(int *exitcode)
             Py_CLEAR(path0);
         }
     }
-    // XXX Apply runtime->sys_path_0 in init_interp_main().  We have
-    // to be sure to get readline/rlcompleter imported at the correct time.
     if (path0 != NULL) {
         wchar_t *wstr = PyUnicode_AsWideCharString(path0, NULL);
         if (wstr == NULL) {
