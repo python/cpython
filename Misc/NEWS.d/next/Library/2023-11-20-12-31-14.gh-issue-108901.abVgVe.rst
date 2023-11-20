@@ -1,0 +1,2 @@
+Deprecate undocumented ``inspect.getargs`` function. Instead use
+``inspect.signature(types.FunctionType(co, {}))``.
