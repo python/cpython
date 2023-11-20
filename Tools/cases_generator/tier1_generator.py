@@ -213,12 +213,12 @@ def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction) -> None
 
 def write_uop(uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruction, braces:bool) -> int:
     try:
-        out.start_line()
         # out.emit(stack.as_comment() + "\n")
         if isinstance(uop, Skip):
             entries = "entries" if uop.size > 1 else "entry"
             out.emit(f"/* Skip {uop.size} cache {entries} */\n")
             return offset + uop.size
+        out.start_line()
         if braces:
             out.emit(f"// {uop.name}\n")
         for var in reversed(uop.stack.inputs):

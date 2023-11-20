@@ -3,89 +3,78 @@ from lexer import Token
 from typing import TextIO
 
 class CWriter:
-    'A writer that understands how to format C code.'
+    'A writer that understands tokens and how to format C code'
 
     def __init__(self, out: TextIO, indent: int = 0):
         self.out = out
-        self.indent = indent
+        self.initial_indent = self.indent = indent
         self.line = -1
         self.column = 0
-        self.newline = False
 
     def set_position(self, tkn: Token):
-        if self.line < tkn.line and not self.newline:
-            self.newline = True
-            self.out.write("\n")
-        self.line = tkn.end_line
-        self.column = tkn.end_column
-
-    def emit_token(self, tkn: Token):
         if self.line < tkn.line:
-            self.line = tkn.line
-            self.newline = True
-            self.out.write("\n")
-        if self.newline:
             self.column = 0
-        elif self.column > 0 and self.column < tkn.column:
-            self.out.write(" ") * (tkn.column-self.column)
-        self.line = tkn.end_line
-        if tkn.kind == "COMMENT" and "\n" in tkn.text:
-            # Try to format multi-line comments sensibly
-            first = True
-            for line in tkn.text.splitlines(True):
-                line = line.lstrip(" ")
-                if not first:
-                    adjust = 1 if line[0] == "*" else 3
-                    self.out.write(" " * (self.column + adjust))
-                self.emit_text(line)
-                first = False
-            self.column = tkn.end_column
-            self.newline = False
-            return
-        self.column = tkn.end_column
-        if tkn.kind == "CMACRO":
-            self.out.write(tkn.text)
+            self.out.write("\n")
+        if self.column == 0:
+            self.out.write("    " * self.indent)
         else:
-            self.emit_text(tkn.text)
+            #Token colums are 1 based
+            column = tkn.column - 1
+            if self.column < column:
+                self.out.write(" " * (column-self.column))
+        self.line = tkn.end_line
+        self.column = tkn.end_column - 1
 
-    def emit_text(self, txt: Token):
+    def maybe_dedent(self, txt: str):
         parens = txt.count("(") - txt.count(")")
         if parens < 0:
             self.indent += parens
-        if "}" in txt or txt.endswith(":"):
+        elif "}" in txt or txt.endswith(":"):
             self.indent -= 1
-            assert self.indent >= 0
-        if self.newline:
-            self.out.write("    "*self.indent)
-            self.newline = False
-            txt = txt.lstrip(" ")
-        self.out.write(txt)
-        if txt.endswith("\n"):
-            self.line += 1
-            self.newline = True
-        elif txt.endswith("{") or txt.startswith("}"):
-            if not self.newline:
-                self.out.write("\n")
-                self.line += 1
-                self.newline = True
-        if "{" in txt or txt.endswith(":"):
-            self.indent += 1
+
+    def maybe_indent(self, txt: str):
+        parens = txt.count("(") - txt.count(")")
         if parens > 0:
             self.indent += parens
+        elif "{" in txt or txt.endswith(":"):
+            self.indent += 1
+
+    def emit_token(self, tkn: Token):
+        self.maybe_dedent(tkn.text)
+        self.set_position(tkn)
+        self.emit_text(tkn.text)
+        self.maybe_indent(tkn.text)
+
+    def emit_text(self, txt: str):
+        if self.column == 0:
+            self.out.write("    " * self.indent)
+            self.column = self.initial_indent * 4
+        self.out.write(txt)
+
+    def emit_str(self, txt: str):
+        self.maybe_dedent(txt)
+        self.emit_text(txt)
+        if txt.endswith("\n"):
+            self.column = 0
+            self.line += 1
+        elif txt.endswith("{") or txt.startswith("}"):
+            if self.column:
+                self.out.write("\n")
+                self.column = 0
+                self.line += 1
+        else:
+            self.column += len(txt)
+        self.maybe_indent(txt)
 
     def emit(self, txt: str | Token):
         if isinstance(txt, Token):
             self.emit_token(txt)
         elif isinstance(txt, str):
-            if txt.count("\n") > 1:
-                for line in txt.splitlines(True):
-                    self.emit_text(line)
-                return
-            self.emit_text(txt)
+            self.emit_str(txt)
         else:
             assert False
 
     def start_line(self):
-        if not self.newline:
+        if self.column:
             self.out.write("\n")
-            self.newline = True
+            self.column = 0
