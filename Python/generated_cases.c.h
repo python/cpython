@@ -61,8 +61,8 @@
             PyObject *res;
             mgr = stack_pointer[-1];
             /* pop the context manager, push its __exit__ and the
-                             * value returned from calling its __enter__
-                             */PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
+                           * value returned from calling its __enter__
+                           */PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -245,16 +245,16 @@
                 DEOPT_IF(*target_local != left, BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 /* Handle `left = left + right` or `left += right` for str.
-                   *
-                   * When possible, extend `left` in place rather than
-                   * allocating a new PyUnicodeObject. This attempts to avoid
-                   * quadratic behavior when one neglects to use str.join().
-                   *
-                   * If `left` has only two references remaining (one from
-                   * the stack, one in the locals), DECREFing `left` leaves
-                   * only the locals reference, so PyUnicode_Append knows
-                   * that the string is safe to mutate.
-                   */assert(Py_REFCNT(left) >= 2);
+                 *
+                 * When possible, extend `left` in place rather than
+                 * allocating a new PyUnicodeObject. This attempts to avoid
+                 * quadratic behavior when one neglects to use str.join().
+                 *
+                 * If `left` has only two references remaining (one from
+                 * the stack, one in the locals), DECREFing `left` leaves
+                 * only the locals reference, so PyUnicode_Append knows
+                 * that the string is safe to mutate.
+                 */assert(Py_REFCNT(left) >= 2);
                 _Py_DECREF_NO_DEALLOC(left);
                 PyUnicode_Append(target_local, right);
                 _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
@@ -847,10 +847,10 @@ DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
             callable = stack_pointer[-2 - oparg];
             
             /* This instruction does the following:
-               * 1. Creates the object (by calling ``object.__new__``)
-               * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
-               * 3. Pushes the frame for ``__init__`` to the frame stack
-               * */_PyCallCache *cache = (_PyCallCache *)&this_instr[1];
+             * 1. Creates the object (by calling ``object.__new__``)
+             * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
+             * 3. Pushes the frame for ``__init__`` to the frame stack
+             * */_PyCallCache *cache = (_PyCallCache *)&this_instr[1];
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
@@ -888,8 +888,8 @@ DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
             frame = tstate->current_frame = init_frame;
             CALL_STAT_INC(inlined_py_calls);
             /* Account for pushing the extra frame.
-               * We don't check recursion depth here,
-               * as it will be checked after start_frame */tstate->py_recursion_remaining--;
+             * We don't check recursion depth here,
+             * as it will be checked after start_frame */tstate->py_recursion_remaining--;
             goto start_frame;
         }
         
@@ -1068,7 +1068,7 @@ DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
                wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
                'invalid'). In those cases an exception is set, so we must
                handle it.
-               */
+             */
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -2394,7 +2394,7 @@ if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             PyObject *res;
             value = stack_pointer[-1];
             /* If value is a unicode object, then we know the result
-                                            * of format(value) is value itself. */if (!PyUnicode_CheckExact(value)) {
+                                          * of format(value) is value itself. */if (!PyUnicode_CheckExact(value)) {
                 res = PyObject_Format(value, NULL);
                 Py_DECREF(value);
                 if (res == NULL) goto pop_1_error;
@@ -2917,7 +2917,7 @@ if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             receiver = stack_pointer[-2];
             TIER_ONE_ONLY
             /* Need to create a fake StopIteration error here,
-               * to conform to PEP 380 */if (PyGen_Check(receiver)) {
+             * to conform to PEP 380 */if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
                     GOTO_ERROR(error);
@@ -3254,7 +3254,7 @@ if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
 #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             /* We are using unsigned values, but we really want signed values, so
-               * do the 2s complement comparison manually */uint16_t ucounter = this_instr[1].cache + (1 << 15);
+             * do the 2s complement comparison manually */uint16_t ucounter = this_instr[1].cache + (1 << 15);
             uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
             // Double-check that the opcode isn't instrumented or something:
  if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
@@ -3289,10 +3289,10 @@ if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
 
             /* This bytecode is used in the `yield from` or `await` loop.
-               * If there is an interrupt, we want it handled in the innermost
-               * generator or coroutine, so we deliberately do not check it here.
-               * (see bpo-30039).
-               */JUMPBY(-oparg);
+             * If there is an interrupt, we want it handled in the innermost
+             * generator or coroutine, so we deliberately do not check it here.
+             * (see bpo-30039).
+             */JUMPBY(-oparg);
             DISPATCH();
         }
         
@@ -3392,7 +3392,7 @@ if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
                         /* We can bypass temporary bound method object.
                            meth is unbound method and obj is self.
                            meth | self | arg1 | ... | argN
-                           */assert(attr != NULL); // No errors on this branch
+                         */assert(attr != NULL); // No errors on this branch
  self_or_null = owner; // Transfer ownership
  }
                     else {
@@ -3401,7 +3401,7 @@ if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
                            the second element of the stack to NULL, to signal
                            CALL that it's not a method call.
                            NULL | meth | arg1 | ... | argN
-                           */Py_DECREF(owner);
+                         */Py_DECREF(owner);
                         if (attr == NULL) goto pop_1_error;
                         self_or_null = NULL;
                     }
@@ -4088,7 +4088,7 @@ if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
                     if (res == NULL) {
                         if (!_PyErr_Occurred(tstate)) {
                             /* _PyDict_LoadGlobal() returns NULL without raising
-                               * an exception if the key doesn't exist */_PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                             * an exception if the key doesn't exist */_PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                 NAME_ERROR_MSG, name);
                         }
                         if (true) goto error;
@@ -5783,7 +5783,7 @@ DEOPT_IF(!Py_IsNone(value), TO_BOOL);
                - exit_func: FOURTH = the context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
-               */PyObject *exc, *tb;
+             */PyObject *exc, *tb;
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);

@@ -359,4 +359,4 @@ if __name__ == "__main__":
         src = open(filename).read()
     # print(to_text(tokenize(src)))
     for tkn in tokenize(src, filename=filename):
-        print(tkn)
+        pass #print(tkn)

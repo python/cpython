@@ -1,24 +1,25 @@
 
 from lexer import Token
+from typing import TextIO
 
 class CWriter:
     'A writer that understands how to format C code.'
 
-    def __init__(self, out, indent = 0):
+    def __init__(self, out: TextIO, indent: int = 0):
         self.out = out
         self.indent = indent
-        self.line = 1
+        self.line = -1
         self.column = 0
         self.newline = False
 
-    def set_position(self, tkn):
+    def set_position(self, tkn: Token):
         if self.line < tkn.line and not self.newline:
             self.newline = True
             self.out.write("\n")
         self.line = tkn.end_line
         self.column = tkn.end_column
 
-    def emit_token(self, tkn):
+    def emit_token(self, tkn: Token):
         if self.line < tkn.line:
             self.line = tkn.line
             self.newline = True
@@ -32,10 +33,11 @@ class CWriter:
             # Try to format multi-line comments sensibly
             first = True
             for line in tkn.text.splitlines(True):
+                line = line.lstrip(" ")
                 if not first:
                     adjust = 1 if line[0] == "*" else 3
                     self.out.write(" " * (self.column + adjust))
-                self.emit_text(line.lstrip(" "))
+                self.emit_text(line)
                 first = False
             self.column = tkn.end_column
             self.newline = False
@@ -46,7 +48,7 @@ class CWriter:
         else:
             self.emit_text(tkn.text)
 
-    def emit_text(self, txt):
+    def emit_text(self, txt: Token):
         parens = txt.count("(") - txt.count(")")
         if parens < 0:
             self.indent += parens
@@ -71,7 +73,7 @@ class CWriter:
         if parens > 0:
             self.indent += parens
 
-    def emit(self, txt):
+    def emit(self, txt: str | Token):
         if isinstance(txt, Token):
             self.emit_token(txt)
         elif isinstance(txt, str):
