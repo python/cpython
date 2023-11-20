@@ -81,45 +81,46 @@
 #define _IS_NONE 353
 #define _SPECIALIZE_FOR_ITER 354
 #define _FOR_ITER 355
-#define _ITER_CHECK_LIST 356
-#define _ITER_JUMP_LIST 357
-#define _GUARD_NOT_EXHAUSTED_LIST 358
-#define _ITER_NEXT_LIST 359
-#define _ITER_CHECK_TUPLE 360
-#define _ITER_JUMP_TUPLE 361
-#define _GUARD_NOT_EXHAUSTED_TUPLE 362
-#define _ITER_NEXT_TUPLE 363
-#define _ITER_CHECK_RANGE 364
-#define _ITER_JUMP_RANGE 365
-#define _GUARD_NOT_EXHAUSTED_RANGE 366
-#define _ITER_NEXT_RANGE 367
-#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 368
-#define _GUARD_KEYS_VERSION 369
-#define _LOAD_ATTR_METHOD_WITH_VALUES 370
-#define _LOAD_ATTR_METHOD_NO_DICT 371
-#define _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES 372
-#define _LOAD_ATTR_NONDESCRIPTOR_NO_DICT 373
-#define _CHECK_ATTR_METHOD_LAZY_DICT 374
-#define _LOAD_ATTR_METHOD_LAZY_DICT 375
-#define _SPECIALIZE_CALL 376
-#define _CALL 377
-#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 378
-#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 379
-#define _CHECK_PEP_523 380
-#define _CHECK_FUNCTION_EXACT_ARGS 381
-#define _CHECK_STACK_SPACE 382
-#define _INIT_CALL_PY_EXACT_ARGS 383
-#define _PUSH_FRAME 384
-#define _SPECIALIZE_BINARY_OP 385
-#define _BINARY_OP 386
-#define _GUARD_IS_TRUE_POP 387
-#define _GUARD_IS_FALSE_POP 388
-#define _GUARD_IS_NONE_POP 389
-#define _GUARD_IS_NOT_NONE_POP 390
-#define _JUMP_TO_TOP 391
-#define _SAVE_RETURN_OFFSET 392
-#define _INSERT 393
-#define _CHECK_VALIDITY 394
+#define _FOR_ITER_TIER_TWO 356
+#define _ITER_CHECK_LIST 357
+#define _ITER_JUMP_LIST 358
+#define _GUARD_NOT_EXHAUSTED_LIST 359
+#define _ITER_NEXT_LIST 360
+#define _ITER_CHECK_TUPLE 361
+#define _ITER_JUMP_TUPLE 362
+#define _GUARD_NOT_EXHAUSTED_TUPLE 363
+#define _ITER_NEXT_TUPLE 364
+#define _ITER_CHECK_RANGE 365
+#define _ITER_JUMP_RANGE 366
+#define _GUARD_NOT_EXHAUSTED_RANGE 367
+#define _ITER_NEXT_RANGE 368
+#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 369
+#define _GUARD_KEYS_VERSION 370
+#define _LOAD_ATTR_METHOD_WITH_VALUES 371
+#define _LOAD_ATTR_METHOD_NO_DICT 372
+#define _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES 373
+#define _LOAD_ATTR_NONDESCRIPTOR_NO_DICT 374
+#define _CHECK_ATTR_METHOD_LAZY_DICT 375
+#define _LOAD_ATTR_METHOD_LAZY_DICT 376
+#define _SPECIALIZE_CALL 377
+#define _CALL 378
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 379
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 380
+#define _CHECK_PEP_523 381
+#define _CHECK_FUNCTION_EXACT_ARGS 382
+#define _CHECK_STACK_SPACE 383
+#define _INIT_CALL_PY_EXACT_ARGS 384
+#define _PUSH_FRAME 385
+#define _SPECIALIZE_BINARY_OP 386
+#define _BINARY_OP 387
+#define _GUARD_IS_TRUE_POP 388
+#define _GUARD_IS_FALSE_POP 389
+#define _GUARD_IS_NONE_POP 390
+#define _GUARD_IS_NOT_NONE_POP 391
+#define _JUMP_TO_TOP 392
+#define _SAVE_RETURN_OFFSET 393
+#define _INSERT 394
+#define _CHECK_VALIDITY 395
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -542,6 +543,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case _SPECIALIZE_FOR_ITER:
             return 1;
         case _FOR_ITER:
+            return 1;
+        case _FOR_ITER_TIER_TWO:
             return 1;
         case FOR_ITER:
             return 1;
@@ -1181,6 +1184,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case _FOR_ITER:
             return 2;
+        case _FOR_ITER_TIER_TWO:
+            return 2;
         case FOR_ITER:
             return 2;
         case INSTRUMENTED_FOR_ITER:
@@ -1676,6 +1681,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [_SPECIALIZE_FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ESCAPES_FLAG },
     [_FOR_ITER] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [_FOR_ITER_TIER_TWO] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [_ITER_CHECK_LIST] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
@@ -1906,6 +1912,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [MATCH_KEYS] = { .nuops = 1, .uops = { { MATCH_KEYS, 0, 0 } } },
     [GET_ITER] = { .nuops = 1, .uops = { { GET_ITER, 0, 0 } } },
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
+    [FOR_ITER] = { .nuops = 1, .uops = { { _FOR_ITER, 0, 0 } } },
     [FOR_ITER_LIST] = { .nuops = 3, .uops = { { _ITER_CHECK_LIST, 0, 0 }, { _ITER_JUMP_LIST, 0, 0 }, { _ITER_NEXT_LIST, 0, 0 } } },
     [FOR_ITER_TUPLE] = { .nuops = 3, .uops = { { _ITER_CHECK_TUPLE, 0, 0 }, { _ITER_JUMP_TUPLE, 0, 0 }, { _ITER_NEXT_TUPLE, 0, 0 } } },
     [FOR_ITER_RANGE] = { .nuops = 3, .uops = { { _ITER_CHECK_RANGE, 0, 0 }, { _ITER_JUMP_RANGE, 0, 0 }, { _ITER_NEXT_RANGE, 0, 0 } } },
@@ -2005,6 +2012,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_IS_NONE] = "_IS_NONE",
     [_SPECIALIZE_FOR_ITER] = "_SPECIALIZE_FOR_ITER",
     [_FOR_ITER] = "_FOR_ITER",
+    [_FOR_ITER_TIER_TWO] = "_FOR_ITER_TIER_TWO",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
     [_ITER_JUMP_LIST] = "_ITER_JUMP_LIST",
     [_GUARD_NOT_EXHAUSTED_LIST] = "_GUARD_NOT_EXHAUSTED_LIST",

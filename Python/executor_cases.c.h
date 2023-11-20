@@ -2101,6 +2101,31 @@
             break;
         }
 
+        case _FOR_ITER_TIER_TWO: {
+            PyObject *iter;
+            PyObject *next;
+            iter = stack_pointer[-1];
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        GOTO_ERROR(error);
+                    }
+                    _PyErr_Clear(tstate);
+                }
+                /* iterator ended normally */
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                /* The translator sets the deopt target just past END_FOR */
+                DEOPT_IF(true, _FOR_ITER_TIER_TWO);
+            }
+            // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            stack_pointer[-1] = next;
+            break;
+        }
+
         case _ITER_CHECK_LIST: {
             PyObject *iter;
             iter = stack_pointer[-1];
