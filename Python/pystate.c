@@ -2459,7 +2459,7 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
         }
     }
     else {
-        _Py_pending_call_func func = _release_xidata_pending;
+        int (*func)(void *) = _release_xidata_pending;
         if (rawfree) {
             func = _xidata_release_and_rawfree_pending;
         }

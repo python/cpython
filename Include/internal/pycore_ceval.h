@@ -26,7 +26,7 @@ extern void _PyEval_FiniState(struct _ceval_state *ceval);
 PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
-    _Py_pending_call_func func,
+    int (*func)(void *),
     void *arg,
     int mainthreadonly);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
