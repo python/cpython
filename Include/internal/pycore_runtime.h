@@ -105,11 +105,6 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
-    /* The value to use for sys.path[0] in new subinterpreters.
-       Normally this would be part of the PyConfig struct.  However,
-       we cannot add it there in 3.12 since that's an ABI change. */
-    wchar_t *sys_path_0;
-
     /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
      possible to facilitate out-of-process observability
@@ -166,6 +161,11 @@ typedef struct pyruntimestate {
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
+
+    /* The value to use for sys.path[0] in new subinterpreters.
+       Normally this would be part of the PyConfig struct.  However,
+       we cannot add it there in 3.12 since that's an ABI change. */
+    wchar_t *sys_path_0;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.
