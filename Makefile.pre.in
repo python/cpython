@@ -409,10 +409,10 @@ PYTHON_OBJS=	\
 		Python/codecs.o \
 		Python/compile.o \
 		Python/context.o \
+		Python/critical_section.o \
 		Python/crossinterp.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
-		Python/executor.o \
 		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
@@ -1344,6 +1344,14 @@ regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
+# Regenerate Unicode Data
+
+.PHONY: regen-unicodedata
+regen-unicodedata:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
+
+
+############################################################################
 # Regenerate all generated files
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
@@ -1353,8 +1361,8 @@ regen-all: regen-cases regen-typeslots \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi"
-	@echo "and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
+	@echo "make regen-configure and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1601,13 +1609,8 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
-
-Python/executor.o: \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
-		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/ceval_macros.h \
-		$(srcdir)/Python/executor_cases.c.h
 
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1766,6 +1769,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pyframe.h \
+		$(srcdir)/Include/cpython/pyhash.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
@@ -1801,6 +1805,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_complexobject.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_critical_section.h \
 		$(srcdir)/Include/internal/pycore_crossinterp.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dict_state.h \
@@ -2176,10 +2181,12 @@ LIBSUBDIRS=	asyncio \
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/audiodata \
+		test/archivetestdata \
 		test/certdata \
 		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
+		test/configdata \
 		test/data \
 		test/decimaltestdata \
 		test/dtracedata \
@@ -2290,8 +2297,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
-		test/xmltestdata/c14n-20 \
-		test/ziptestdata
+		test/xmltestdata/c14n-20
 
 COMPILEALL_OPTS=-j0
 
@@ -2637,15 +2643,9 @@ recheck:
 autoconf:
 	(cd $(srcdir); autoreconf -ivf -Werror)
 
-# See https://github.com/tiran/cpython_autoconf container
 .PHONY: regen-configure
 regen-configure:
-	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
-	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
-	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
-	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:271"; \
-	echo $$CMD; \
-	$$CMD || exit $?
+	$(srcdir)/Tools/build/regen-configure.sh
 
 # Create a tags file for vi
 tags::

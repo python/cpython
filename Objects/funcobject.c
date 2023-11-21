@@ -8,8 +8,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
 
-static PyObject* func_repr(PyFunctionObject *op);
-
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
     switch (event) {
@@ -35,21 +33,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                // Don't risk resurrecting the func if an unraisablehook keeps a
-                // reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = func_repr(func);
-                if (repr != NULL) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        func_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event), func->func_qualname, func);
             }
         }
         i++;
@@ -106,8 +92,8 @@ PyFunction_ClearWatcher(int watcher_id)
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
-    PyObject *module = Py_XNewRef(PyDict_GetItemWithError(constr->fc_globals, &_Py_ID(__name__)));
-    if (!module && PyErr_Occurred()) {
+    PyObject *module;
+    if (PyDict_GetItemRef(constr->fc_globals, &_Py_ID(__name__), &module) < 0) {
         return NULL;
     }
 
@@ -172,12 +158,11 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
+    PyObject *module;
     PyObject *builtins = NULL;
-    if (module == NULL && _PyErr_Occurred(tstate)) {
+    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) < 0) {
         goto error;
     }
-    Py_XINCREF(module);
 
     builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
@@ -571,6 +556,20 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
+
+    PyObject *func_code = PyFunction_GET_CODE(op);
+    int old_flags = ((PyCodeObject *)func_code)->co_flags;
+    int new_flags = ((PyCodeObject *)value)->co_flags;
+    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
+    if ((old_flags & mask) != (new_flags & mask)) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+            "Assigning a code object of non-matching type is deprecated "
+            "(e.g., from a generator to a plain function)") < 0)
+        {
+            return -1;
+        }
+    }
+
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
     _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_code, Py_NewRef(value));
@@ -1164,7 +1163,8 @@ cm_repr(classmethod *cm)
 }
 
 PyDoc_STRVAR(classmethod_doc,
-"classmethod(function) -> method\n\
+"classmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a class method.\n\
 \n\
@@ -1359,7 +1359,8 @@ sm_repr(staticmethod *sm)
 }
 
 PyDoc_STRVAR(staticmethod_doc,
-"staticmethod(function) -> method\n\
+"staticmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a static method.\n\
 \n\

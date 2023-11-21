@@ -124,6 +124,7 @@ simple_stmt[stmt_ty] (memo):
     | &'nonlocal' nonlocal_stmt
 
 compound_stmt[stmt_ty]:
+    | invalid_compound_stmt
     | &('def' | '@' | 'async') function_def
     | &'if' if_stmt
     | &('class' | '@') class_def
@@ -391,8 +392,8 @@ for_stmt[stmt_ty]:
 
 with_stmt[stmt_ty]:
     | invalid_with_stmt_indent
-    | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
-        CHECK_VERSION(stmt_ty, 9, "Parenthesized context managers are", _PyAST_With(a, b, NULL, EXTRA)) }
+    | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' tc=[TYPE_COMMENT] b=block {
+       CHECK_VERSION(stmt_ty, 9, "Parenthesized context managers are", _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
         _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | 'async' 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
@@ -1297,6 +1298,10 @@ invalid_import:
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
+
+invalid_compound_stmt:
+    | a='elif' named_expression ':' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' must match an if-statement here") }
+    | a='else' ':' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' must match a valid statement here") }
 
 invalid_with_stmt:
     | ['async'] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }

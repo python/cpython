@@ -1,0 +1,2 @@
+Make the ``DictProxy`` and ``ListProxy`` types in :mod:`multiprocessing.managers`
+:ref:`Generic Alias Types<types-genericalias>` for ``[]`` use in typing contexts.

@@ -110,6 +110,14 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 
 
 static PyObject*
+get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return PyLong_FromLong(tstate->c_recursion_remaining);
+}
+
+
+static PyObject*
 test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
 {
     uint16_t u16 = _Py_bswap16(UINT16_C(0x3412));
@@ -1518,37 +1526,6 @@ restore_crossinterp_data(PyObject *self, PyObject *args)
 }
 
 
-/*[clinic input]
-_testinternalcapi.write_unraisable_exc
-    exception as exc: object
-    err_msg: object
-    obj: object
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                            PyObject *err_msg, PyObject *obj)
-/*[clinic end generated code: output=a0f063cdd04aad83 input=274381b1a3fa5cd6]*/
-{
-
-    const char *err_msg_utf8;
-    if (err_msg != Py_None) {
-        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
-        if (err_msg_utf8 == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        err_msg_utf8 = NULL;
-    }
-
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
-    Py_RETURN_NONE;
-}
-
-
 static PyObject *
 raiseTestError(const char* test_name, const char* msg)
 {
@@ -1642,6 +1619,7 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
+    {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
@@ -1699,7 +1677,6 @@ static PyMethodDef module_functions[] = {
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
-    _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {NULL, NULL} /* sentinel */
 };
@@ -1717,6 +1694,9 @@ module_exec(PyObject *module)
         return 1;
     }
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
         return 1;
     }
 
