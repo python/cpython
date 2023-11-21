@@ -95,7 +95,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        # implement fair scheduling, where thread always waits
+        # Implement fair scheduling, where thread always waits
         # its turn.
         # Jumping the queue if all are cancelled is an optimization.
         if (not self._locked and (self._waiters is None or
@@ -114,7 +114,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
             finally:
                 self._waiters.remove(fut)
         except BaseException:
-            # ensure the lock invariant: If lock is not claimed (or about to be by us)
+            # Ensure the lock invariant: If lock is not claimed (or about to be by us)
             # and there is a Task in waiters,
             # ensure that that Task (now at the head) will run.
             if not self._locked:
@@ -394,7 +394,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
                 self._waiters.remove(fut)
         except BaseException:
             if fut.done() and not fut.cancelled():
-                # our Future was successfully set to True via _wake_up_next(),
+                # Our Future was successfully set to True via _wake_up_next(),
                 # but we are not about to successfully acquire().  Therefore we
                 # must undo the bookkeeping already done and attempt to wake
                 # up someone else.
