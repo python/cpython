@@ -1878,6 +1878,21 @@ class DummyPathTest(unittest.TestCase):
         self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
         self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
 
+    def test_read_text_with_newlines(self):
+        p = self.cls(BASE)
+        # Check that `\n` character change nothing
+        (p / 'fileA').write_bytes(b'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual((p / 'fileA').read_text(newline='\n'),
+                         'abcde\r\nfghlk\n\rmnopq')
+        # Check that `\r` character replaces `\n`
+        (p / 'fileA').write_bytes(b'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual((p / 'fileA').read_text(newline='\r'),
+                         'abcde\r\nfghlk\n\rmnopq')
+        # Check that `\r\n` character replaces `\n`
+        (p / 'fileA').write_bytes(b'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual((p / 'fileA').read_text(newline='\r\n'),
+                             'abcde\r\nfghlk\n\rmnopq')
+
     def test_write_text_with_newlines(self):
         p = self.cls(BASE)
         # Check that `\n` character change nothing
