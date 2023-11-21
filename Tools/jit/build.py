@@ -31,7 +31,7 @@ PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-STUBS = ["deoptimize", "error", "trampoline"]
+STUBS = ["deoptimize", "error", "wrapper"]
 
 LLVM_VERSION = 16
 
@@ -210,7 +210,6 @@ class MachOSection(typing.TypedDict):
 
 @enum.unique
 class HoleValue(enum.Enum):
-    _JIT_BODY = enum.auto()
     _JIT_CONTINUE = enum.auto()
     _JIT_CURRENT_EXECUTOR = enum.auto()
     _JIT_DATA = enum.auto()
@@ -219,6 +218,7 @@ class HoleValue(enum.Enum):
     _JIT_OPARG = enum.auto()
     _JIT_OPERAND = enum.auto()
     _JIT_TARGET = enum.auto()
+    _JIT_TEXT = enum.auto()
     _JIT_TOP = enum.auto()
     _JIT_ZERO = enum.auto()
 
@@ -366,7 +366,7 @@ class Parser(typing.Generic[S, R]):
         if "_JIT_ENTRY" in self.text_symbols:
             entry = self.text_symbols["_JIT_ENTRY"]
         else:
-            entry = self.text_symbols["_JIT_TRAMPOLINE"]
+            entry = self.text_symbols["_JIT_WRAPPER"]
         assert entry == 0, entry
         holes = []
         holes_data = []
@@ -403,7 +403,7 @@ class Parser(typing.Generic[S, R]):
             elif newhole.symbol in self.text_symbols:
                 addend = newhole.addend + self.text_symbols[newhole.symbol]
                 newhole = Hole(
-                    newhole.offset, newhole.kind, HoleValue._JIT_BODY, None, addend
+                    newhole.offset, newhole.kind, HoleValue._JIT_TEXT, None, addend
                 )
             holes.append(newhole)
         for base, relocation in self.data_relocations:
@@ -418,7 +418,7 @@ class Parser(typing.Generic[S, R]):
             elif newhole.symbol in self.text_symbols:
                 addend = newhole.addend + self.text_symbols[newhole.symbol]
                 newhole = Hole(
-                    newhole.offset, newhole.kind, HoleValue._JIT_BODY, None, addend
+                    newhole.offset, newhole.kind, HoleValue._JIT_TEXT, None, addend
                 )
             holes_data.append(newhole)
         offset = len(self.text) - padding
@@ -429,7 +429,7 @@ class Parser(typing.Generic[S, R]):
         for s, got_offset in self.got.items():
             if s in self.text_symbols:
                 addend = self.text_symbols[s]
-                value, symbol = HoleValue._JIT_BODY, None
+                value, symbol = HoleValue._JIT_TEXT, None
             elif s in self.data_symbols:
                 addend = self.data_symbols[s]
                 value, symbol = HoleValue._JIT_DATA, None
