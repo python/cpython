@@ -1314,7 +1314,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.read_text(encoding=None, errors=None)
+.. method:: Path.read_text(encoding=None, errors=None, newline=None)
 
    Return the decoded contents of the pointed-to file as a string::
 
@@ -1329,6 +1329,8 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.13
+      The *newline* parameter was added.
 
 .. method:: Path.readlink()
 
