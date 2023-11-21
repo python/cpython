@@ -1098,46 +1098,6 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
-    def test_sys_getobject(self):
-        getobject = _testcapi.sys_getobject
-
-        self.assertIs(getobject(b'stdout'), sys.stdout)
-        with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(getobject('\U0001f40d'.encode()), 42)
-
-        self.assertIs(getobject(b'nonexisting'), AttributeError)
-        self.assertIs(getobject(b'\xff'), AttributeError)
-        # CRASHES getobject(NULL)
-
-    def test_sys_setobject(self):
-        setobject = _testcapi.sys_setobject
-
-        value = ['value']
-        value2 = ['value2']
-        try:
-            self.assertEqual(setobject(b'newattr', value), 0)
-            self.assertIs(sys.newattr, value)
-            self.assertEqual(setobject(b'newattr', value2), 0)
-            self.assertIs(sys.newattr, value2)
-            self.assertEqual(setobject(b'newattr', NULL), 0)
-            self.assertFalse(hasattr(sys, 'newattr'))
-            self.assertEqual(setobject(b'newattr', NULL), 0)
-        finally:
-            with contextlib.suppress(AttributeError):
-                del sys.newattr
-        try:
-            self.assertEqual(setobject('\U0001f40d'.encode(), value), 0)
-            self.assertIs(getattr(sys, '\U0001f40d'), value)
-            self.assertEqual(setobject('\U0001f40d'.encode(), NULL), 0)
-            self.assertFalse(hasattr(sys, '\U0001f40d'))
-        finally:
-            with contextlib.suppress(AttributeError):
-                delattr(sys, '\U0001f40d')
-
-        with self.assertRaises(UnicodeDecodeError):
-            setobject(b'\xff', value)
-        # CRASHES setobject(NULL, value)
-
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
@@ -2159,7 +2119,7 @@ class TestThreadState(unittest.TestCase):
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
-                    if name.startswith('test_') and not name.endswith('_code'))
+                    if name.startswith('test_'))
 
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
@@ -2489,6 +2449,67 @@ def get_first_executor(func):
     return None
 
 
+class TestExecutorInvalidation(unittest.TestCase):
+
+    def setUp(self):
+        self.old = _testinternalcapi.get_optimizer()
+        self.opt = _testinternalcapi.get_counter_optimizer()
+        _testinternalcapi.set_optimizer(self.opt)
+
+    def tearDown(self):
+        _testinternalcapi.set_optimizer(self.old)
+
+    def test_invalidate_object(self):
+        # Generate a new set of functions at each call
+        ns = {}
+        func_src = "\n".join(
+            f"""
+            def f{n}():
+                for _ in range(1000):
+                    pass
+            """ for n in range(5)
+        )
+        exec(textwrap.dedent(func_src), ns, ns)
+        funcs = [ ns[f'f{n}'] for n in range(5)]
+        objects = [object() for _ in range(5)]
+
+        for f in funcs:
+            f()
+        executors = [get_first_executor(f) for f in funcs]
+        # Set things up so each executor depends on the objects
+        # with an equal or lower index.
+        for i, exe in enumerate(executors):
+            self.assertTrue(exe.is_valid())
+            for obj in objects[:i+1]:
+                _testinternalcapi.add_executor_dependency(exe, obj)
+            self.assertTrue(exe.is_valid())
+        # Assert that the correct executors are invalidated
+        # and check that nothing crashes when we invalidate
+        # an executor mutliple times.
+        for i in (4,3,2,1,0):
+            _testinternalcapi.invalidate_executors(objects[i])
+            for exe in executors[i:]:
+                self.assertFalse(exe.is_valid())
+            for exe in executors[:i]:
+                self.assertTrue(exe.is_valid())
+
+    def test_uop_optimizer_invalidation(self):
+        # Generate a new function at each call
+        ns = {}
+        exec(textwrap.dedent("""
+            def f():
+                for i in range(1000):
+                    pass
+        """), ns, ns)
+        f = ns['f']
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            f()
+        exe = get_first_executor(f)
+        self.assertTrue(exe.is_valid())
+        _testinternalcapi.invalidate_executors(f.__code__)
+        self.assertFalse(exe.is_valid())
+
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
@@ -2574,7 +2595,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("UNPACK_SEQUENCE", uops)
+        self.assertIn("_UNPACK_SEQUENCE", uops)
 
     def test_pop_jump_if_false(self):
         def testfunc(n):
@@ -2589,7 +2610,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_pop_jump_if_none(self):
         def testfunc(a):
@@ -2604,7 +2625,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
@@ -2620,7 +2641,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
+        self.assertIn("_GUARD_IS_NONE_POP", uops)
 
     def test_pop_jump_if_true(self):
         def testfunc(n):
@@ -2635,7 +2656,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_FALSE_POP", uops)
 
     def test_jump_backward(self):
         def testfunc(n):
@@ -2691,7 +2712,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_RANGE", uops)
+        self.assertIn("_GUARD_NOT_EXHAUSTED_RANGE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2713,7 +2734,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_LIST", uops)
+        self.assertIn("_GUARD_NOT_EXHAUSTED_LIST", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2735,7 +2756,7 @@ class TestUops(unittest.TestCase):
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_TUPLE", uops)
+        self.assertIn("_GUARD_NOT_EXHAUSTED_TUPLE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
 
@@ -2785,7 +2806,37 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
+        self.assertIn("_GUARD_IS_FALSE_POP", uops)
+
+    def test_for_iter_tier_two(self):
+        class MyIter:
+            def __init__(self, n):
+                self.n = n
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.n -= 1
+                if self.n < 0:
+                    raise StopIteration
+                return self.n
+
+        def testfunc(n, m):
+            x = 0
+            for i in range(m):
+                for j in MyIter(n):
+                    x += 1000*i + j
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            x = testfunc(10, 10)
+
+        self.assertEqual(x, sum(range(10)) * 10010)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
 
 if __name__ == "__main__":

@@ -716,6 +716,9 @@ importlib.resources
 * :func:`importlib.resources.as_file` now supports resource directories.
   (Contributed by Jason R. Coombs in :gh:`97930`.)
 
+* Rename first parameter of :func:`importlib.resources.files` to *anchor*.
+  (Contributed by Jason R. Coombs in :gh:`100598`.)
+
 inspect
 -------
 
@@ -1286,8 +1289,9 @@ Deprecated
 
 * :mod:`typing`:
 
-  * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-    and :class:`collections.abc.Sized`. (:gh:`94309`.)
+  * :class:`typing.Hashable` and :class:`typing.Sized`, aliases for
+    :class:`collections.abc.Hashable` and :class:`collections.abc.Sized` respectively, are
+    deprecated. (:gh:`94309`.)
 
   * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
     :exc:`DeprecationWarning` to be emitted when it is used.
@@ -1360,7 +1364,6 @@ Other modules:
 APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
-* :func:`locale.getdefaultlocale` (:gh:`90817`)
 * ``locale.resetlocale()`` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
@@ -1429,6 +1432,17 @@ and will be removed in Python 3.14.
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
 * The ``co_lnotab`` attribute of code objects.
+
+Pending Removal in Python 3.15
+------------------------------
+
+The following APIs have been deprecated
+and will be removed in Python 3.15.
+
+APIs:
+
+* :func:`locale.getdefaultlocale` (:gh:`90817`)
+
 
 Pending Removal in Future Versions
 ----------------------------------

@@ -521,12 +521,13 @@ buffered_closed_get(buffered *self, void *context)
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.close
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_close_impl(buffered *self)
-/*[clinic end generated code: output=7280b7b42033be0c input=d20b83d1ddd7d805]*/
+/*[clinic end generated code: output=7280b7b42033be0c input=56d95935b03fd326]*/
 {
     PyObject *res = NULL;
     int r;
