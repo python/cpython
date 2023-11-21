@@ -8,17 +8,14 @@
 */
 
 #include "Python.h"
-#include "pycore_bytesobject.h"   // _PyBytes_Join()
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
-#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+#include "pycore_bytesobject.h"         // _PyBytes_Join()
+#include "pycore_call.h"                // _PyObject_CallNoArgs()
+#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
+#include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
 
 #include "_iomodule.h"
-
-#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
-#include "clinic/bufferedio.c.h"
-#undef clinic_state
 
 /*[clinic input]
 module _io
@@ -265,6 +262,10 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
 } buffered;
+
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
+#include "clinic/bufferedio.c.h"
+#undef clinic_state
 
 /*
     Implementation notes:
