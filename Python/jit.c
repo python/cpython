@@ -44,8 +44,6 @@ static size_t pool_head;
 static size_t page_size;
 
 static int needs_initializing = 1;
-unsigned char *deoptimize_stub;
-unsigned char *error_stub;
 
 static bool
 is_page_aligned(void *p)
@@ -265,52 +263,6 @@ initialize_jit(void)
     }
     assert(mapped == pool + pool_head);
 #endif
-    // Write our deopt stub:
-    {
-        const StencilGroup *stencil_group = &deoptimize_stencil_group;
-        size_t text_pages = size_to_pages(stencil_group->text.body_size);
-        unsigned char *text = alloc(text_pages);
-        if (text == NULL) {
-            return needs_initializing;
-        }
-        size_t data_pages = size_to_pages(stencil_group->data.body_size);
-        unsigned char *data = alloc(data_pages);
-        if (data == NULL) {
-            return needs_initializing;
-        }
-        uint64_t patches[] = GET_PATCHES();
-        patches[HoleValue_DATA] = (uintptr_t)data;
-        patches[HoleValue_TEXT] = (uintptr_t)text;
-        patches[HoleValue_ZERO] = 0;
-        emit(stencil_group, patches);
-        if (mark_executable(text, text_pages) || mark_readable(data, data_pages)) {
-            return needs_initializing;
-        }
-        deoptimize_stub = text;
-    }
-    // Write our error stub:
-    {
-        const StencilGroup *stencil_group = &error_stencil_group;
-        size_t text_pages = size_to_pages(stencil_group->text.body_size);
-        unsigned char *text = alloc(text_pages);
-        if (text == NULL) {
-            return needs_initializing;
-        }
-        size_t data_pages = size_to_pages(stencil_group->data.body_size);
-        unsigned char *data = alloc(data_pages);
-        if (data == NULL) {
-            return needs_initializing;
-        }
-        uint64_t patches[] = GET_PATCHES();
-        patches[HoleValue_DATA] = (uintptr_t)data;
-        patches[HoleValue_TEXT] = (uintptr_t)text;
-        patches[HoleValue_ZERO] = 0;
-        emit(stencil_group, patches);
-        if (mark_executable(text, text_pages) || mark_readable(data, data_pages)) {
-            return needs_initializing;
-        }
-        error_stub = text;
-    }
     // Done:
     needs_initializing = 0;
     return needs_initializing;
@@ -362,8 +314,6 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         uint64_t patches[] = GET_PATCHES();
         patches[HoleValue_CONTINUE] = (uintptr_t)head_text + stencil_group->text.body_size;
         patches[HoleValue_CURRENT_EXECUTOR] = (uintptr_t)executor;
-        patches[HoleValue_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
-        patches[HoleValue_ERROR] = (uintptr_t)error_stub;
         patches[HoleValue_OPARG] = instruction->oparg;
         patches[HoleValue_OPERAND] = instruction->operand;
         patches[HoleValue_TARGET] = instruction->target;

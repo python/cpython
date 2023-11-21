@@ -67,9 +67,9 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
 {
     // Locals that the instruction implementations expect to exist:
     _PyUOpExecutorObject *current_executor = &_JIT_CURRENT_EXECUTOR;
-    uint32_t opcode = _JIT_OPCODE;
-    int32_t oparg;
-    int32_t _oparg = (uintptr_t)&_JIT_OPARG;
+    int opcode = _JIT_OPCODE;
+    int oparg;
+    uint16_t _oparg = (uintptr_t)&_JIT_OPARG;
     uint64_t _operand = (uintptr_t)&_JIT_OPERAND;
     uint32_t _target = (uintptr_t)&_JIT_TARGET;
     // Pretend to modify the burned-in values to keep clang from being clever
@@ -103,8 +103,12 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    TAIL_CALL(_JIT_ERROR);
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->return_offset = 0;
+    return NULL;
 exit_trace:
     frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
-    TAIL_CALL(_JIT_DEOPTIMIZE);
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->return_offset = 0;
+    return frame;
 }

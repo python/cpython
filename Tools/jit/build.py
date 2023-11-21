@@ -33,7 +33,7 @@ PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-STUBS = ["deoptimize", "error", "wrapper"]
+STUBS = ["wrapper"]
 
 LLVM_VERSION = 16
 
@@ -43,8 +43,6 @@ class HoleValue(enum.Enum):
     CONTINUE = enum.auto()
     CURRENT_EXECUTOR = enum.auto()
     DATA = enum.auto()
-    DEOPTIMIZE = enum.auto()
-    ERROR = enum.auto()
     OPARG = enum.auto()
     OPERAND = enum.auto()
     TARGET = enum.auto()
