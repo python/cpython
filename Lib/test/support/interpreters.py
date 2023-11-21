@@ -92,7 +92,7 @@ class Interpreter:
         return _interpreters.destroy(self._id)
 
     # XXX Rename "run" to "exec"?
-    def run(self, src_str, /, *, channels=None):
+    def run(self, src_str, /, channels=None):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
@@ -161,6 +161,14 @@ class _ChannelEnd:
     def id(self):
         return self._id
 
+    @property
+    def _info(self):
+        return _channels.get_info(self._id)
+
+    @property
+    def is_closed(self):
+        return self._info.closed
+
 
 _NOT_SET = object()
 
@@ -213,6 +221,11 @@ class SendChannel(_ChannelEnd):
 
     _end = 'send'
 
+    @property
+    def is_closed(self):
+        info = self._info
+        return info.closed or info.closing
+
     def send(self, obj, timeout=None):
         """Send the object (i.e. its data) to the channel's receiving end.
 
@@ -251,4 +264,4 @@ class SendChannel(_ChannelEnd):
 
 
 # XXX This is causing leaks (gh-110318):
-#_channels._register_end_types(SendChannel, RecvChannel)
+_channels._register_end_types(SendChannel, RecvChannel)

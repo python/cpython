@@ -1,0 +1,3 @@
+Fix regression in Python 3.12 where :meth:`types.CodeType.replace` would
+produce a broken code object if called on a module or class code object that
+contains a comprehension. Patch by Jelle Zijlstra.

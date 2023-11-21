@@ -778,6 +778,11 @@ class TestIsShareable(TestBase):
                 'spam',
                 10,
                 -10,
+                True,
+                False,
+                100.0,
+                (),
+                (1, ('spam', 'eggs'), True),
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -796,8 +801,6 @@ class TestIsShareable(TestBase):
 
         not_shareables = [
                 # singletons
-                True,
-                False,
                 NotImplemented,
                 ...,
                 # builtin types and objects
@@ -805,7 +808,6 @@ class TestIsShareable(TestBase):
                 object,
                 object(),
                 Exception(),
-                100.0,
                 # user-defined types and objects
                 Cheese,
                 Cheese('Wensleydale'),
@@ -833,7 +835,6 @@ class TestChannels(TestBase):
         after = set(interpreters.list_all_channels())
         self.assertEqual(after, created)
 
-    @unittest.expectedFailure  # See gh-110318:
     def test_shareable(self):
         rch, sch = interpreters.create_channel()
 
@@ -849,6 +850,19 @@ class TestChannels(TestBase):
 
         self.assertEqual(rch2, rch)
         self.assertEqual(sch2, sch)
+
+    def test_is_closed(self):
+        rch, sch = interpreters.create_channel()
+        rbefore = rch.is_closed
+        sbefore = sch.is_closed
+        rch.close()
+        rafter = rch.is_closed
+        safter = sch.is_closed
+
+        self.assertFalse(rbefore)
+        self.assertFalse(sbefore)
+        self.assertTrue(rafter)
+        self.assertTrue(safter)
 
 
 class TestRecvChannelAttrs(TestBase):

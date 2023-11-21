@@ -32,19 +32,34 @@ extern "C" {
 //   PyMutex_Lock(&m);
 //   ...
 //   PyMutex_Unlock(&m);
-typedef struct _PyMutex {
-    uint8_t v;
-} PyMutex;
+
+// NOTE: In Py_GIL_DISABLED builds, `struct _PyMutex` is defined in Include/object.h.
+// The Py_GIL_DISABLED builds need the definition in Include/object.h for the
+// `ob_mutex` field in PyObject. For the default (non-free-threaded) build,
+// we define the struct here to avoid exposing it in the public API.
+#ifndef Py_GIL_DISABLED
+struct _PyMutex { uint8_t v; };
+#endif
+
+typedef struct _PyMutex PyMutex;
 
 #define _Py_UNLOCKED    0
 #define _Py_LOCKED      1
 #define _Py_HAS_PARKED  2
+#define _Py_ONCE_INITIALIZED 4
 
 // (private) slow path for locking the mutex
 PyAPI_FUNC(void) _PyMutex_LockSlow(PyMutex *m);
 
 // (private) slow path for unlocking the mutex
 PyAPI_FUNC(void) _PyMutex_UnlockSlow(PyMutex *m);
+
+static inline int
+PyMutex_LockFast(uint8_t *lock_bits)
+{
+    uint8_t expected = _Py_UNLOCKED;
+    return _Py_atomic_compare_exchange_uint8(lock_bits, &expected, _Py_LOCKED);
+}
 
 // Locks the mutex.
 //
@@ -150,6 +165,35 @@ _PyRawMutex_Unlock(_PyRawMutex *m)
         return;
     }
     _PyRawMutex_UnlockSlow(m);
+}
+
+// A data structure that can be used to run initialization code once in a
+// thread-safe manner. The C++11 equivalent is std::call_once.
+typedef struct {
+    uint8_t v;
+} _PyOnceFlag;
+
+// Type signature for one-time initialization functions. The function should
+// return 0 on success and -1 on failure.
+typedef int _Py_once_fn_t(void *arg);
+
+// (private) slow path for one time initialization
+PyAPI_FUNC(int)
+_PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg);
+
+// Calls `fn` once using `flag`. The `arg` is passed to the call to `fn`.
+//
+// Returns 0 on success and -1 on failure.
+//
+// If `fn` returns 0 (success), then subsequent calls immediately return 0.
+// If `fn` returns -1 (failure), then subsequent calls will retry the call.
+static inline int
+_PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
+{
+    if (_Py_atomic_load_uint8(&flag->v) == _Py_ONCE_INITIALIZED) {
+        return 0;
+    }
+    return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
 #ifdef __cplusplus

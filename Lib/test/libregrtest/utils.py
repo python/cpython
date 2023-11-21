@@ -52,6 +52,7 @@ TestTuple = tuple[TestName, ...]
 TestList = list[TestName]
 # --match and --ignore options: list of patterns
 # ('*' joker character can be used)
+TestFilter = list[tuple[TestName, bool]]
 FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 
@@ -289,7 +290,7 @@ def get_build_info():
     build = []
 
     # --disable-gil
-    if sysconfig.get_config_var('Py_NOGIL'):
+    if sysconfig.get_config_var('Py_GIL_DISABLED'):
         build.append("nogil")
 
     if hasattr(sys, 'gettotalrefcount'):

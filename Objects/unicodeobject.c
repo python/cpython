@@ -3820,17 +3820,24 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
+        if (psize) {
+            *psize = -1;
+        }
         return NULL;
     }
 
     if (PyUnicode_UTF8(unicode) == NULL) {
         if (unicode_fill_utf8(unicode) == -1) {
+            if (psize) {
+                *psize = -1;
+            }
             return NULL;
         }
     }
 
-    if (psize)
+    if (psize) {
         *psize = PyUnicode_UTF8_LENGTH(unicode);
+    }
     return PyUnicode_UTF8(unicode);
 }
 
@@ -3838,6 +3845,18 @@ const char *
 PyUnicode_AsUTF8(PyObject *unicode)
 {
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
+}
+
+const char *
+_PyUnicode_AsUTF8NoNUL(PyObject *unicode)
+{
+    Py_ssize_t size;
+    const char *s = PyUnicode_AsUTF8AndSize(unicode, &size);
+    if (s && strlen(s) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return s;
 }
 
 /*
@@ -13371,15 +13390,17 @@ _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer)
 #include "stringlib/unicode_format.h"
 
 PyDoc_STRVAR(format__doc__,
-             "S.format(*args, **kwargs) -> str\n\
+             "format($self, /, *args, **kwargs)\n\
+--\n\
 \n\
-Return a formatted version of S, using substitutions from args and kwargs.\n\
+Return a formatted version of the string, using substitutions from args and kwargs.\n\
 The substitutions are identified by braces ('{' and '}').");
 
 PyDoc_STRVAR(format_map__doc__,
-             "S.format_map(mapping) -> str\n\
+             "format_map($self, /, mapping)\n\
+--\n\
 \n\
-Return a formatted version of S, using substitutions from mapping.\n\
+Return a formatted version of the string, using substitutions from mapping.\n\
 The substitutions are identified by braces ('{' and '}').");
 
 /*[clinic input]
@@ -14677,7 +14698,7 @@ errors is specified, then the object must expose a data buffer\n\
 that will be decoded using the given encoding and error handler.\n\
 Otherwise, returns the result of object.__str__() (if defined)\n\
 or repr(object).\n\
-encoding defaults to sys.getdefaultencoding().\n\
+encoding defaults to 'utf-8'.\n\
 errors defaults to 'strict'.");
 
 static PyObject *unicode_iter(PyObject *seq);
@@ -14954,7 +14975,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             // Skip the Immortal Instance check and restore
             // the two references (key and value) ignored
             // by PyUnicode_InternInPlace().
-            s->ob_refcnt = 2;
+            _Py_SetMortal(s, 2);
 #ifdef INTERNED_STATS
             total_length += PyUnicode_GET_LENGTH(s);
 #endif
