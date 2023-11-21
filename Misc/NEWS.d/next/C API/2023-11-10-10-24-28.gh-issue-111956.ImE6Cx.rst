@@ -1,0 +1,2 @@
+Add internal-only one-time initialization API: ``_PyOnceFlag`` and
+``_PyOnceFlag_CallOnce``.

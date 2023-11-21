@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_symtable_symtable__doc__,
 "symtable($module, source, filename, startstr, /)\n"
 "--\n"
@@ -48,4 +50,4 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3f7ccf535d750238 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=931964a76a72f850 input=a9049054013a1b77]*/

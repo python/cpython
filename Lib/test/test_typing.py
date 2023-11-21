@@ -9,8 +9,7 @@ import itertools
 import pickle
 import re
 import sys
-import warnings
-from unittest import TestCase, main, skipUnless, skip
+from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
 
@@ -45,9 +44,8 @@ import typing
 import weakref
 import types
 
-from test.support import import_helper, captured_stderr, cpython_only
-from test import mod_generics_cache
-from test import _typed_dict_helper
+from test.support import captured_stderr, cpython_only, infinite_recursion
+from test.typinganndata import mod_generics_cache, _typed_dict_helper
 
 
 CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
@@ -2011,13 +2009,13 @@ class BaseCallableTests:
         def f():
             pass
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], None])
+            isinstance(f, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], Any])
+            isinstance(f, Callable[[], Any])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], None])
+            isinstance(None, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], Any])
+            isinstance(None, Callable[[], Any])
 
     def test_repr(self):
         Callable = self.Callable
@@ -5623,10 +5621,11 @@ class ForwardRefTests(BaseTestCase):
         def cmp(o1, o2):
             return o1 == o2
 
-        r1 = namespace1()
-        r2 = namespace2()
-        self.assertIsNot(r1, r2)
-        self.assertRaises(RecursionError, cmp, r1, r2)
+        with infinite_recursion():
+            r1 = namespace1()
+            r2 = namespace2()
+            self.assertIsNot(r1, r2)
+            self.assertRaises(RecursionError, cmp, r1, r2)
 
     def test_union_forward_recursion(self):
         ValueList = List['Value']
@@ -9463,6 +9462,12 @@ class TypeIterationTests(BaseTestCase):
     def test_is_not_instance_of_iterable(self):
         for type_to_test in self._UNITERABLE_TYPES:
             self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
+
+
+def load_tests(loader, tests, pattern):
+    import doctest
+    tests.addTests(doctest.DocTestSuite(typing))
+    return tests
 
 
 if __name__ == '__main__':
