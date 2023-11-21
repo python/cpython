@@ -950,12 +950,12 @@ class _PathBase(PurePath):
         with self.open(mode='rb') as f:
             return f.read()
 
-    def read_text(self, encoding=None, errors=None):
+    def read_text(self, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, read it, and close the file.
         """
         encoding = io.text_encoding(encoding)
-        with self.open(mode='r', encoding=encoding, errors=errors) as f:
+        with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
 
     def write_bytes(self, data):
