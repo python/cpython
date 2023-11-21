@@ -1329,7 +1329,7 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       The *newline* parameter was added.
 
 .. method:: Path.readlink()
