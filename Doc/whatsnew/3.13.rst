@@ -258,9 +258,8 @@ typing
 unicodedata
 -----------
 
-* The Unicode database has been updated to version 15.1.0. (Contributed by
-  Benjamin Peterson in :gh:`109559`).
-  
+* The Unicode database has been updated to version 15.1.0. (Contributed by 
+  James Gerity in :gh:`109559`.) 
 venv
 ----
 
