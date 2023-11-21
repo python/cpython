@@ -31,17 +31,26 @@ extern void _JIT_TARGET;
 #define CURRENT_OPERAND() (_operand)
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
-    if ((COND)) {                \
-        goto deoptimize;         \
-    }
+    do {                         \
+        if ((COND)) {            \
+            goto exit_trace;     \
+        }                        \
+    } while (0)
 #undef ENABLE_SPECIALIZATION
-#define ENABLE_SPECIALIZATION 0
+#define ENABLE_SPECIALIZATION (0)
 #undef GOTO_ERROR
-#define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
+#define GOTO_ERROR(LABEL)        \
+    do {                         \
+        goto LABEL ## _tier_two; \
+    } while (0)
 #undef LOAD_IP
-#define LOAD_IP(UNUSED) ((void)0)
+#define LOAD_IP(UNUSED) \
+    do {                \
+    } while (0)
 #undef JUMP_TO_TOP
-#define JUMP_TO_TOP() ((void)0)
+#define JUMP_TO_TOP() \
+    do {              \
+    } while (0)
 
 #define TAIL_CALL(WHERE)                                         \
     do {                                                         \
@@ -95,7 +104,6 @@ pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
     TAIL_CALL(_JIT_ERROR);
-deoptimize:
 exit_trace:
     frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
     TAIL_CALL(_JIT_DEOPTIMIZE);
