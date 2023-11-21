@@ -1,1 +1,2 @@
-Added *newline* parameter to ``pathlib.Path.read_text()``.
+Added *newline* parameter to :meth:`pathlib.Path.read_text`.
+Patch by Junya Okabe.
