@@ -31,7 +31,7 @@ PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-STUBS = ["deoptimize", "error", "trampoline"]
+STUBS = ["wrapper"]
 
 LLVM_VERSION = 16
 
@@ -214,8 +214,6 @@ class HoleValue(enum.Enum):
     _JIT_CONTINUE = enum.auto()
     _JIT_CURRENT_EXECUTOR = enum.auto()
     _JIT_DATA = enum.auto()
-    _JIT_DEOPTIMIZE = enum.auto()
-    _JIT_ERROR = enum.auto()
     _JIT_OPARG = enum.auto()
     _JIT_OPERAND = enum.auto()
     _JIT_TARGET = enum.auto()
@@ -360,7 +358,7 @@ class Parser(typing.Generic[S, R]):
         if "_JIT_ENTRY" in self.text_symbols:
             entry = self.text_symbols["_JIT_ENTRY"]
         else:
-            entry = self.text_symbols["_JIT_TRAMPOLINE"]
+            entry = self.text_symbols["_JIT_WRAPPER"]
         assert entry == 0, entry
         holes = []
         holes_data = []

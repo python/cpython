@@ -89,9 +89,13 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    TAIL_CALL(_JIT_ERROR);
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->return_offset = 0;
+    return NULL;
 deoptimize:
 exit_trace:
     frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + target;
-    TAIL_CALL(_JIT_DEOPTIMIZE);
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->return_offset = 0;
+    return frame;
 }
