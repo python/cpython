@@ -16,6 +16,10 @@
 
 #include "_iomodule.h"
 
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
+#include "clinic/bufferedio.c.h"
+#undef clinic_state
+
 /*[clinic input]
 module _io
 class _io._BufferedIOBase "PyObject *" "clinic_state()->PyBufferedIOBase_Type"
@@ -516,10 +520,6 @@ buffered_closed(buffered *self)
     Py_DECREF(res);
     return closed;
 }
-
-#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
-#include "clinic/bufferedio.c.h"
-#undef clinic_state
 
 static PyObject *
 buffered_closed_get_impl(buffered *self, void *context)
