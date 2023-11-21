@@ -286,9 +286,9 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
 
             if err:
                 try:
-                    raise err  # re-raise same exception instance
+                    raise err  # Re-raise most recent exception instance
                 finally:
-                    err = None  # brake reference cycles
+                    err = None  # Break reference cycles
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
