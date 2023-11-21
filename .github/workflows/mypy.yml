@@ -10,6 +10,7 @@ on:
       - ".github/workflows/mypy.yml"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
+      - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
       - "Tools/wasm/**"
@@ -34,6 +35,7 @@ jobs:
         target: [
           "Tools/cases_generator",
           "Tools/clinic",
+          "Tools/jit",
           "Tools/peg_generator",
           "Tools/wasm",
         ]
