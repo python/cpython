@@ -307,6 +307,12 @@ typing
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 15.1.0. (Contributed by
+  James Gerity in :gh:`109559`.)
+
 venv
 ----
 
