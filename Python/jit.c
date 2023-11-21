@@ -225,9 +225,9 @@ copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
 static void
 emit(const StencilGroup *stencil_group, uint64_t patches[])
 {
-    unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
+    unsigned char *data = (unsigned char *)(uintptr_t)patches[HoleValue_DATA];
     copy_and_patch(data, &stencil_group->data, patches);
-    unsigned char *text = (unsigned char *)(uintptr_t)patches[_JIT_TEXT];
+    unsigned char *text = (unsigned char *)(uintptr_t)patches[HoleValue_TEXT];
     copy_and_patch(text, &stencil_group->text, patches);
 }
 
@@ -279,9 +279,9 @@ initialize_jit(void)
             return needs_initializing;
         }
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_DATA] = (uintptr_t)data;
-        patches[_JIT_TEXT] = (uintptr_t)text;
-        patches[_JIT_ZERO] = 0;
+        patches[HoleValue_DATA] = (uintptr_t)data;
+        patches[HoleValue_TEXT] = (uintptr_t)text;
+        patches[HoleValue_ZERO] = 0;
         emit(stencil_group, patches);
         if (mark_executable(text, text_pages) || mark_readable(data, data_pages)) {
             return needs_initializing;
@@ -302,9 +302,9 @@ initialize_jit(void)
             return needs_initializing;
         }
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_DATA] = (uintptr_t)data;
-        patches[_JIT_TEXT] = (uintptr_t)text;
-        patches[_JIT_ZERO] = 0;
+        patches[HoleValue_DATA] = (uintptr_t)data;
+        patches[HoleValue_TEXT] = (uintptr_t)text;
+        patches[HoleValue_ZERO] = 0;
         emit(stencil_group, patches);
         if (mark_executable(text, text_pages) || mark_readable(data, data_pages)) {
             return needs_initializing;
@@ -348,10 +348,10 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     // First, the wrapper:
     const StencilGroup *stencil_group = &wrapper_stencil_group;
     uint64_t patches[] = GET_PATCHES();
-    patches[_JIT_CONTINUE] = (uintptr_t)head_text + stencil_group->text.body_size;
-    patches[_JIT_DATA] = (uintptr_t)head_data;
-    patches[_JIT_TEXT] = (uintptr_t)head_text;
-    patches[_JIT_ZERO] = 0;
+    patches[HoleValue_CONTINUE] = (uintptr_t)head_text + stencil_group->text.body_size;
+    patches[HoleValue_DATA] = (uintptr_t)head_data;
+    patches[HoleValue_TEXT] = (uintptr_t)head_text;
+    patches[HoleValue_ZERO] = 0;
     emit(stencil_group, patches);
     head_text += stencil_group->text.body_size;
     head_data += stencil_group->data.body_size;
@@ -360,17 +360,17 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_CONTINUE] = (uintptr_t)head_text + stencil_group->text.body_size;
-        patches[_JIT_CURRENT_EXECUTOR] = (uintptr_t)executor;
-        patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
-        patches[_JIT_ERROR] = (uintptr_t)error_stub;
-        patches[_JIT_OPARG] = instruction->oparg;
-        patches[_JIT_OPERAND] = instruction->operand;
-        patches[_JIT_TARGET] = instruction->target;
-        patches[_JIT_DATA] = (uintptr_t)head_data;
-        patches[_JIT_TEXT] = (uintptr_t)head_text;
-        patches[_JIT_TOP] = (uintptr_t)text + wrapper_stencil_group.text.body_size;
-        patches[_JIT_ZERO] = 0;
+        patches[HoleValue_CONTINUE] = (uintptr_t)head_text + stencil_group->text.body_size;
+        patches[HoleValue_CURRENT_EXECUTOR] = (uintptr_t)executor;
+        patches[HoleValue_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
+        patches[HoleValue_ERROR] = (uintptr_t)error_stub;
+        patches[HoleValue_OPARG] = instruction->oparg;
+        patches[HoleValue_OPERAND] = instruction->operand;
+        patches[HoleValue_TARGET] = instruction->target;
+        patches[HoleValue_DATA] = (uintptr_t)head_data;
+        patches[HoleValue_TEXT] = (uintptr_t)head_text;
+        patches[HoleValue_TOP] = (uintptr_t)text + wrapper_stencil_group.text.body_size;
+        patches[HoleValue_ZERO] = 0;
         emit(stencil_group, patches);
         head_text += stencil_group->text.body_size;
         head_data += stencil_group->data.body_size;
