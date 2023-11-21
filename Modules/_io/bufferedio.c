@@ -263,10 +263,6 @@ typedef struct {
     PyObject *weakreflist;
 } buffered;
 
-#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
-#include "clinic/bufferedio.c.h"
-#undef clinic_state
-
 /*
     Implementation notes:
 
@@ -2480,6 +2476,10 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->ok = 1;
     return 0;
 }
+
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
+#include "clinic/bufferedio.c.h"
+#undef clinic_state
 
 static PyMethodDef bufferediobase_methods[] = {
     _IO__BUFFEREDIOBASE_DETACH_METHODDEF
