@@ -109,15 +109,19 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         self._waiters.append(fut)
 
         try:
-            await fut
+            try:
+                await fut
+            finally:
+                self._waiters.remove(fut)
         except BaseException:
-            self._waiters.remove(fut)
+            # ensure the lock invariant: If lock is not claimed (or about to be by us)
+            # and there is a Task in waiters,
+            # ensure that that Task (now at the head) will run.
             if not self._locked:
-                # Error occurred after release() was called, must re-do release
                 self._wake_up_first()
             raise
 
-        self._waiters.remove(fut)
+        # assert self._locked is False
         self._locked = True
         return True
 
@@ -384,17 +388,20 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         self._waiters.append(fut)
 
         try:
-            await fut
+            try:
+                await fut
+            finally:
+                self._waiters.remove(fut)
         except BaseException:
-            self._waiters.remove(fut)
             if fut.done() and not fut.cancelled():
-                # Error occurred after release() was called for us.  Must undo
-                # the bookkeeping done there and retry.
+                # our Future was successfully set to True via _wake_up_next(),
+                # but we are not about to successfully acquire().  Therefore we
+                # must undo the bookkeeping already done and attempt to wake
+                # up someone else.
                 self._value += 1
                 self._wake_up_next()
             raise
 
-        self._waiters.remove(fut)
         if self._value > 0:
             self._wake_up_next()
         return True
@@ -417,6 +424,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             if not fut.done():
                 self._value -= 1
                 fut.set_result(True)
+                # assert fut.true() and not fut.cancelled()
                 return
 
 
