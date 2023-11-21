@@ -17,7 +17,7 @@
 #endif
 
 #ifdef __APPLE__
-#  include <mach-o/dyld.h>
+#  include <dlfcn.h>
 #endif
 
 /* Reference the precompiled getpath.py */
@@ -768,16 +768,11 @@ library_to_dict(PyObject *dict, const char *key)
            which is in the framework, not relative to the executable, which may
            be outside of the framework. Except when we're in the build
            directory... */
-        NSSymbol symbol = NSLookupAndBindSymbol("_Py_Initialize");
-        if (symbol != NULL) {
-            NSModule pythonModule = NSModuleForSymbol(symbol);
-            if (pythonModule != NULL) {
-                /* Use dylib functions to find out where the framework was loaded from */
-                const char *path = NSLibraryNameForModule(pythonModule);
-                if (path) {
-                    strncpy(modPath, path, MAXPATHLEN);
-                    modPathInitialized = 1;
-                }
+        Dl_info pythonInfo;
+        if (dladdr(&Py_Initialize, &pythonInfo)) {
+            if (pythonInfo.dli_fname) {
+                strncpy(modPath, pythonInfo.dli_fname, MAXPATHLEN);
+                modPathInitialized = 1;
             }
         }
     }
