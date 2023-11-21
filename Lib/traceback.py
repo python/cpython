@@ -273,7 +273,7 @@ class FrameSummary:
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_line', '_line_dedented', 'locals')
+                 'name', '_lines', '_lines_dedented', 'locals')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
@@ -293,15 +293,12 @@ class FrameSummary:
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
-        self._line = line
-        self._line_dedented = None
+        self._lines = line
+        self._lines_dedented = None
         if lookup_line:
             self.line
         self.locals = {k: _safe_string(v, 'local', func=repr)
             for k, v in locals.items()} if locals else None
-        self.end_lineno = end_lineno
-        self.colno = colno
-        self.end_colno = end_colno
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):
@@ -326,33 +323,39 @@ class FrameSummary:
     def __len__(self):
         return 4
 
+    def _set_lines(self):
+        if (
+            self._lines is None
+            and self.lineno is not None
+            and self.end_lineno is not None
+        ):
+            lines = []
+            for lineno in range(self.lineno, self.end_lineno + 1):
+                # treat errors (empty string) and empty lines (newline) as the same
+                lines.append(linecache.getline(self.filename, lineno).rstrip())
+            self._lines = "\n".join(lines) + "\n"
+
     @property
-    def _original_line(self):
+    def _original_lines(self):
         # Returns the line as-is from the source, without modifying whitespace.
-        self.line
-        return self._line
+        self._set_lines()
+        return self._lines
 
     @property
     def _dedented_lines(self):
-        # Returns _original_line, but dedented
-        self.line
-        if self._line_dedented is None:
-            if self._line is not None:
-                self._line_dedented = textwrap.dedent(self._line).rstrip()
-        return self._line_dedented
+        # Returns _original_lines, but dedented (and rstripped)
+        self._set_lines()
+        if self._lines_dedented is None and self._lines is not None:
+            self._lines_dedented = textwrap.dedent(self._lines).rstrip()
+        return self._lines_dedented
 
     @property
     def line(self):
-        if self._line is None:
-            if self.lineno is None:
-                return None
-            end_lineno = self.lineno if self.end_lineno is None else self.end_lineno
-            self._line = ""
-            for lineno in range(self.lineno, end_lineno + 1):
-                # treat errors and empty lines as the same
-                self._line += linecache.getline(self.filename, lineno).rstrip() + "\n"
-        # return only the first line
-        return self._line.partition("\n")[0].strip()
+        self._set_lines()
+        if self._lines is None:
+            return None
+        # return only the first line, stripped
+        return self._lines.partition("\n")[0].strip()
 
 
 def walk_stack(f):
@@ -513,7 +516,7 @@ class StackSummary(list):
                 row.append(textwrap.indent(frame_summary.line, '    ') + "\n")
             else:
                 # get first and last line
-                all_lines_original = frame_summary._original_line.splitlines()
+                all_lines_original = frame_summary._original_lines.splitlines()
                 first_line = all_lines_original[0]
                 last_line = all_lines_original[frame_summary.end_lineno - frame_summary.lineno]
 
@@ -527,10 +530,8 @@ class StackSummary(list):
 
                 # adjust start/end offset based on dedent
                 dedent_characters = len(first_line) - len(all_lines[0])
-                start_offset -= dedent_characters
-                end_offset -= dedent_characters
-                start_offset = max(0, start_offset)
-                end_offset = max(0, end_offset)
+                start_offset = max(0, start_offset - dedent_characters)
+                end_offset = max(0, end_offset - dedent_characters)
 
                 # When showing this on a terminal, some of the non-ASCII characters
                 # might be rendered as double-width characters, so we need to take
@@ -543,11 +544,9 @@ class StackSummary(list):
                 segment = segment[start_offset:len(segment) - (len(all_lines[-1]) - end_offset)]
 
                 # attempt to parse for anchors
-                anchors: Optional[_Anchors] = None
-                try:
+                anchors = None
+                with suppress(Exception):
                     anchors = _extract_caret_anchors_from_line_segment(segment)
-                except Exception:
-                    pass
 
                 # only use carets if there are anchors or the carets do not span all lines
                 show_carets = False
@@ -594,8 +593,8 @@ class StackSummary(list):
                 significant_lines.discard(-1)
                 significant_lines.discard(len(all_lines))
 
-                # output all_lines[lineno] along with carets
                 def output_line(lineno):
+                    """output all_lines[lineno] along with carets"""
                     result.append(all_lines[lineno] + "\n")
                     if not show_carets:
                         return
@@ -731,34 +730,35 @@ def _extract_caret_anchors_from_line_segment(segment):
 
     lines = segment.splitlines()
 
-    # get character index given byte offset
     def normalize(lineno, offset):
+        """Get character index given byte offset"""
         return _byte_offset_to_character_offset(lines[lineno], offset)
 
-    # Gets the next valid character index in `lines`, if
-    # the current location is not valid. Handles empty lines.
     def next_valid_char(lineno, col):
+        """Gets the next valid character index in `lines`, if
+        the current location is not valid. Handles empty lines.
+        """
         while lineno < len(lines) and col >= len(lines[lineno]):
             col = 0
             lineno += 1
         assert lineno < len(lines) and col < len(lines[lineno])
         return lineno, col
 
-    # Get the next valid character index in `lines`.
     def increment(lineno, col):
+        """Get the next valid character index in `lines`."""
         col += 1
         lineno, col = next_valid_char(lineno, col)
         return lineno, col
 
-    # Get the next valid character at least on the next line
     def nextline(lineno, col):
+        """Get the next valid character at least on the next line"""
         col = 0
         lineno += 1
         lineno, col = next_valid_char(lineno, col)
         return lineno, col
 
-    # Get the next valid non-"\#" character that satisfies the `stop` predicate
     def increment_until(lineno, col, stop):
+        """Get the next valid non-"\\#" character that satisfies the `stop` predicate"""
         while True:
             ch = lines[lineno][col]
             if ch in "\\#":
@@ -769,10 +769,11 @@ def _extract_caret_anchors_from_line_segment(segment):
                 break
         return lineno, col
 
-    # Get the lineno/col position of the end of `expr`. If `force_valid` is True,
-    # forces the position to be a valid character (e.g. if the position is beyond the
-    # end of the line, move to the next line)
     def setup_positions(expr, force_valid=True):
+        """Get the lineno/col position of the end of `expr`. If `force_valid` is True,
+        forces the position to be a valid character (e.g. if the position is beyond the
+        end of the line, move to the next line)
+        """
         # -2 since end_lineno is 1-indexed and because we added an extra
         # bracket + newline to `segment` when calling ast.parse
         lineno = expr.end_lineno - 2
@@ -843,20 +844,18 @@ def _display_width(line, offset=None):
     code segment might take if it were to be displayed on a fixed
     width output device. Supports wide unicode characters and emojis."""
 
+    if offset is None:
+        offset = len(line)
+
     # Fast track for ASCII-only strings
     if line.isascii():
-        if offset is None:
-            return len(line)
         return offset
 
     import unicodedata
 
-    if offset is not None:
-        line = line[:offset]
-
     return sum(
         2 if unicodedata.east_asian_width(char) in _WIDE_CHAR_SPECIFIERS else 1
-        for char in line
+        for char in line[:offset]
     )
 
 

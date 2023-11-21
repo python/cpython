@@ -797,7 +797,7 @@ class TracebackErrorLocationCaretTestBase:
             '    callable()\n'
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
-        '       a = b    \\\n'
+            '       a = b    \\\n'
             '           ~~~~~~\n'
             '    +\\\n'
             '    ^~\n'
@@ -2914,7 +2914,7 @@ class TestFrame(unittest.TestCase):
     def test_lazy_lines(self):
         linecache.clearcache()
         f = traceback.FrameSummary("f", 1, "dummy", lookup_line=False)
-        self.assertEqual(None, f._line)
+        self.assertEqual(None, f._lines)
         linecache.lazycache("f", globals())
         self.assertEqual(
             '"""Test cases for traceback module"""',
