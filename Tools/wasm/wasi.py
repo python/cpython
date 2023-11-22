@@ -80,6 +80,7 @@ def prep_checkout(context):
     """Prepare the source checkout for cross-compiling."""
     # Without `Setup.local`, in-place execution fails to realize it's in a
     # build tree/checkout (the dreaded "No module named 'encodings'" error).
+    section(CHECKOUT)
     local_setup = CHECKOUT / "Modules" / "Setup.local"
     if local_setup.exists():
         print("Modules/Setup.local already exists ...")
