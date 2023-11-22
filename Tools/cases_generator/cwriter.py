@@ -2,6 +2,7 @@
 from lexer import Token
 from typing import TextIO
 
+
 class CWriter:
     'A writer that understands tokens and how to format C code'
 
@@ -34,7 +35,7 @@ class CWriter:
         parens = txt.count("(") - txt.count(")")
         if parens < 0:
             self.indents.pop()
-        elif "}" in txt or txt.endswith(":"):
+        elif "}" in txt or is_label(txt):
             self.indents.pop()
 
     def maybe_indent(self, txt: str) -> None:
@@ -44,7 +45,7 @@ class CWriter:
             if offset <= self.indents[-1] or offset > 40:
                 offset = self.indents[-1] + 4
             self.indents.append(offset)
-        elif "{" in txt or txt.endswith(":"):
+        elif "{" in txt or is_label(txt):
             self.indents.append(self.indents[-1] + 4)
 
     def emit_text(self, txt: str) -> None:
@@ -58,8 +59,8 @@ class CWriter:
 
     def emit_str(self, txt: str) -> None:
         self.maybe_dedent(txt)
-        if self.newline:
-            if txt != "\n":
+        if self.newline and txt:
+            if txt[0] != "\n":
                 self.out.write(" " * self.indents[-1])
             self.newline = False
         self.emit_text(txt)
@@ -81,3 +82,7 @@ class CWriter:
             self.out.write("\n")
         self.newline = True
         self.last_token = None
+
+
+def is_label(txt: str) -> bool:
+    return not txt.startswith("//") and txt.endswith(":")

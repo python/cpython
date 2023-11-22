@@ -542,7 +542,7 @@
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(PyUnicode_GET_LENGTH(str) <= index, BINARY_SUBSCR);
-        // Specialize for reading an ASCII character from any string:
+            // Specialize for reading an ASCII character from any string:
             Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
             DEOPT_IF(Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c, BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -3126,7 +3126,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
-        // GH-99729: We need to unlink the frame *before* clearing it:
+            // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
@@ -3150,7 +3150,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
-        // GH-99729: We need to unlink the frame *before* clearing it:
+            // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
@@ -3235,13 +3235,13 @@
              * do the 2s complement comparison manually */
             uint16_t ucounter = this_instr[1].cache + (1 << 15);
             uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
-        // Double-check that the opcode isn't instrumented or something:
+            // Double-check that the opcode isn't instrumented or something:
             if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
                 if (optimized < 0) goto error;
                 if (optimized) {
-                // Rewind and enter the executor:
+                    // Rewind and enter the executor:
                     assert(this_instr->op.code == ENTER_EXECUTOR);
                     next_instr = this_instr;
                     this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
@@ -4786,7 +4786,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(EMPTY());
                 _Py_LeaveRecursiveCallPy(tstate);
-            // GH-99729: We need to unlink the frame *before* clearing it:
+                // GH-99729: We need to unlink the frame *before* clearing it:
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
@@ -4844,7 +4844,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(EMPTY());
             _Py_LeaveRecursiveCallPy(tstate);
-        // GH-99729: We need to unlink the frame *before* clearing it:
+            // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);

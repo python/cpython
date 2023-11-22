@@ -222,7 +222,7 @@ def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction) -> None
     if not tkns:
         return
     tkn_iter = iter(tkns)
-    out.set_position(tkns[0])
+    out.start_line()
     for tkn in tkn_iter:
         if tkn.kind == "IDENTIFIER" and tkn.text in REPLACEMENT_FUNCTIONS:
             out.set_position(tkn)
