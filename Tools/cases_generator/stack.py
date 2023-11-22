@@ -3,7 +3,7 @@ from analyzer import StackItem
 from dataclasses import dataclass
 from formatting import maybe_parenthesize
 
-def var_size(var):
+def var_size(var: StackItem) -> str:
     if var.condition:
         # Special case simplification
         if var.condition == "oparg & 1" and var.size == "1":
@@ -17,17 +17,17 @@ def var_size(var):
 class StackOffset:
     "The stack offset of the virtual base of the stack from the physical stack pointer"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.popped: list[str] = []
         self.pushed: list[str] = []
 
-    def pop(self, item: StackItem):
+    def pop(self, item: StackItem) -> None:
         self.popped.append(var_size(item))
 
-    def push(self, item: StackItem):
+    def push(self, item: StackItem) -> None:
         self.pushed.append(var_size(item))
 
-    def simplify(self):
+    def simplify(self) -> None:
         if not self.popped or not self.pushed:
             return
         popped = sorted(self.popped)
@@ -48,7 +48,7 @@ class StackOffset:
         self.popped.extend(popped)
         self.pushed.extend(pushed)
 
-    def to_c(self):
+    def to_c(self) -> str:
         self.simplify()
         int_offset = 0
         symbol_offset = ""
@@ -72,6 +72,6 @@ class StackOffset:
             res = "-" + res[3:]
         return res
 
-    def clear(self):
+    def clear(self) -> None:
         self.popped = []
         self.pushed = []

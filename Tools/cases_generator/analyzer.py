@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import lexer
 import parser
+from typing import Optional
 
 @dataclass
 class Properties:
@@ -15,7 +16,7 @@ class Properties:
     always_exits: bool
     stores_sp: bool
 
-    def dump(self, indent):
+    def dump(self, indent:str) -> None:
         print(indent,
               "escapes:", self.escapes,
               ", infallible:", self.infallible,
@@ -48,11 +49,11 @@ class Skip:
    size: int
 
    @property
-   def name(self):
+   def name(self)->str:
        return f"unused/{self.size}"
 
    @property
-   def properties(self):
+   def properties(self)->Properties:
        return SKIP_PROPERTIES
 
 @dataclass
@@ -63,13 +64,13 @@ class StackItem:
     size: str
     peek: bool = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         cond = " if (" + self.condition + ")" if self.condition else ""
         size = "[" + self.size + "]" if self.size != "1" else ""
         type = "" if self.type is None else self.type + " "
         return f"{type}{self.name}{size}{cond} {self.peek}"
 
-    def is_array(self):
+    def is_array(self) -> bool:
         return self.type == "PyObject **"
 
 @dataclass
@@ -77,7 +78,7 @@ class StackEffect:
     inputs: list[StackItem]
     outputs: list[StackItem]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"({', '.join([str(i) for i in self.inputs])} -- {', '.join([str(i) for i in self.outputs])})"
 
 @dataclass
@@ -85,7 +86,7 @@ class CacheEntry:
     name: str
     size: int
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name}/{self.size}"
 
 @dataclass
@@ -99,13 +100,13 @@ class Uop:
     properties: Properties
     _size: int = -1
 
-    def dump(self, indent):
+    def dump(self, indent: str) -> None:
         print(indent, self.name, ", ".join(self.annotations) if self.annotations else "")
         print(indent, self.stack, ", ".join([str(c) for c in self.caches]))
         self.properties.dump("    " + indent)
 
     @property
-    def size(self):
+    def size(self) -> int:
         if self._size < 0:
             self._size = sum(c.size for c in self.caches)
         return self._size
@@ -118,7 +119,7 @@ class Instruction:
     uops: list[Part]
     _properties : Properties | None
     is_target: bool = False
-    family: "Family" = None
+    family: Optional["Family"] = None
 
     @property
     def properties(self) -> Properties:
@@ -139,12 +140,12 @@ class Instruction:
             any(part.properties.stores_sp for part in self.uops),
         )
 
-    def dump(self, indent):
+    def dump(self, indent: str) -> None:
         print(indent, self.name, "=", ", ".join([op.name for op in self.uops]))
         self.properties.dump("    " + indent)
 
     @property
-    def size(self):
+    def size(self) -> int:
         return 1 + sum(uop.size for uop in self.uops)
 
 @dataclass
@@ -152,7 +153,7 @@ class PseudoInstruction:
     name: str
     targets: list[Instruction]
 
-    def dump(self, indent):
+    def dump(self, indent: str) -> None:
         print(indent, self.name, "->", " or ".join([t.name for t in self.targets]))
 
 
@@ -162,7 +163,7 @@ class Family:
     size: str
     members: list[Instruction]
 
-    def dump(self, indent):
+    def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", ", ".join([m.name for m in self.members]))
 
 
@@ -181,7 +182,7 @@ def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
         message, "", tkn.line, tkn.column, ""
     )
 
-def override_error(name, context, prev_context, token) -> SyntaxError:
+def override_error(name: str, context: parser.Context, prev_context: parser.Context, token: lexer.Token) -> SyntaxError:
     return analysis_error(
         f"Duplicate definition of '{name}' @ {context} "
         f"previous definition @ {prev_context}",
@@ -232,10 +233,10 @@ EXITS = set([
     "DISPATCH_GOTO",
 ])
 
-def eval_breaker_at_end(op: parser.InstDef):
+def eval_breaker_at_end(op: parser.InstDef) -> bool:
     return op.tokens[-5].text == "CHECK_EVAL_BREAKER"
 
-def always_exits(op: parser.InstDef):
+def always_exits(op: parser.InstDef) -> bool:
     depth = 0
     for tkn in op.tokens:
         if tkn.kind == "LBRACE":
@@ -263,7 +264,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         variable_used(op, "STORE_SP"),
     )
 
-def make_uop(name, op: parser.InstDef) -> Uop:
+def make_uop(name: str, op: parser.InstDef) -> Uop:
     return Uop(
         name,
         op.context,
@@ -281,23 +282,23 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
             raise override_error(op.name, op.context, uops[op.name].context,op.tokens[0])
     uops[op.name] = make_uop(op.name, op)
 
-def add_instruction(name: str, parts: list[Part], instructions: dict[str, Instruction]):
+def add_instruction(name: str, parts: list[Part], instructions: dict[str, Instruction]) -> None:
     instructions[name] = Instruction(name, parts, None)
 
-def desugar_inst(inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]):
+def desugar_inst(inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]) -> None:
     assert inst.kind == "inst"
     name = inst.name
     uop = make_uop("_" + inst.name, inst)
     uops[inst.name] = uop
     add_instruction(name, [uop], instructions)
 
-def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]):
-    parts = []
+def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]) -> None:
+    parts: list[Uop | Skip] = []
     for part in macro.uops:
         match part:
             case parser.OpName():
                 if part.name not in uops:
-                    analysis_error(f"No Uop named {part.name}", macro.context, macro.tokens[0])
+                    analysis_error(f"No Uop named {part.name}", macro.tokens[0])
                 parts.append(uops[part.name])
             case parser.CacheEffect():
                 parts.append(Skip(part.size))
@@ -306,7 +307,7 @@ def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: d
     assert(parts)
     add_instruction(macro.name, parts, instructions)
 
-def add_family(family: parser.Family, instructions: dict[str, Instruction], families: dict[str, Family]):
+def add_family(family: parser.Family, instructions: dict[str, Instruction], families: dict[str, Family]) -> None:
     family = Family(
         family.name,
         family.size,
@@ -318,7 +319,7 @@ def add_family(family: parser.Family, instructions: dict[str, Instruction], fami
     instructions[family.name].is_target = True
     families[family.name] = family
 
-def add_pseudo(pseudo: parser.Pseudo, instructions: dict[str, Instruction], pseudos: dict[str, PseudoInstruction]):
+def add_pseudo(pseudo: parser.Pseudo, instructions: dict[str, Instruction], pseudos: dict[str, PseudoInstruction]) -> None:
     pseudos[pseudo.name] = PseudoInstruction(
         pseudo.name,
         [ instructions[target] for target in pseudo.targets ]
@@ -376,17 +377,17 @@ def analyze_files(filenames: list[str]) -> Analysis:
 
 def dump_analysis(analysis: Analysis) -> None:
     print("Uops:")
-    for i in analysis.uops.values():
-        i.dump("    ")
+    for u in analysis.uops.values():
+        u.dump("    ")
     print("Instructions:")
     for i in analysis.instructions.values():
         i.dump("    ")
     print("Families:")
-    for i in analysis.families.values():
-        i.dump("    ")
+    for f in analysis.families.values():
+        f.dump("    ")
     print("Pseudos:")
-    for i in analysis.pseudos.values():
-        i.dump("    ")
+    for p in analysis.pseudos.values():
+        p.dump("    ")
 
 
 if __name__ == "__main__":
@@ -394,8 +395,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("No input")
     else:
-        filename = sys.argv[1]
-        dump_analysis(analyze_file(filename))
+        filenames = sys.argv[1:]
+        dump_analysis(analyze_files(filenames))
 
 
 

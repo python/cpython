@@ -13,6 +13,7 @@ from typing import TextIO, Iterator
 from lexer import Token
 from stack import StackOffset
 
+
 HERE = os.path.dirname(__file__)
 ROOT = os.path.join(HERE, "../..")
 THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, "/")
@@ -40,7 +41,7 @@ class SizeMismatch(Exception):
 
 class Stack:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.top_offset: StackOffset = StackOffset()
         self.base_offset: StackOffset = StackOffset()
         self.peek_offset: StackOffset = StackOffset()
@@ -77,7 +78,7 @@ class Stack:
             return f"if ({var.condition}) {{ {assign} }}\n"
         return f"{assign}\n"
 
-    def push(self, var: StackItem) -> None:
+    def push(self, var: StackItem) -> str:
         self.variables.append(var)
         if var.is_array() and var.name not in self.defined and var.name != "unused":
             c_offset = self.top_offset.to_c()
@@ -107,7 +108,7 @@ class Stack:
         self.top_offset.clear()
         self.peek_offset.clear()
 
-    def as_comment(self):
+    def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
 
 
@@ -132,7 +133,7 @@ def declare_variables(inst: Instruction, out: CWriter)->None:
                     else:
                         out.emit(f"{type}{var.name};\n")
 
-def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str):
+def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
     parens = 0
     for tkn in tkn_iter:
         if tkn.kind == end and parens == 0:
@@ -143,16 +144,17 @@ def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str):
             parens -= 1
         out.emit(tkn)
 
-def replace_deopt(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, unused: Stack, inst: Instruction):
+def replace_deopt(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, unused: Stack, inst: Instruction) -> None:
     out.emit("DEOPT_IF")
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter) # Semi colon
     out.emit(", ")
+    assert inst.family is not None
     out.emit(inst.family.name)
     out.emit(");")
 
-def replace_error(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction):
+def replace_error(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     out.emit("if ")
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "COMMA")
@@ -174,7 +176,7 @@ def replace_error(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stac
     out.emit(label)
     out.emit(close)
 
-def replace_decrefs(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction):
+def replace_decrefs(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
@@ -190,14 +192,14 @@ def replace_decrefs(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: St
         else:
             out.emit(f"Py_DECREF({var.name});\n")
 
-def replace_store_sp(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction):
+def replace_store_sp(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
     stack.flush(out)
     out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
 
-def replace_check_eval_breaker(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction):
+def replace_check_eval_breaker(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
@@ -226,12 +228,12 @@ def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction) -> None
             out.emit(tkn)
 
 def write_uop(uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruction, braces:bool) -> int:
+    # out.emit(stack.as_comment() + "\n")
+    if isinstance(uop, Skip):
+        entries = "entries" if uop.size > 1 else "entry"
+        out.emit(f"/* Skip {uop.size} cache {entries} */\n")
+        return offset + uop.size
     try:
-        # out.emit(stack.as_comment() + "\n")
-        if isinstance(uop, Skip):
-            entries = "entries" if uop.size > 1 else "entry"
-            out.emit(f"/* Skip {uop.size} cache {entries} */\n")
-            return offset + uop.size
         out.start_line()
         if braces:
             out.emit(f"// {uop.name}\n")
@@ -262,7 +264,7 @@ def write_uop(uop: Part, out: CWriter, offset: int, stack: Stack, inst: Instruct
         # out.emit(stack.as_comment() + "\n")
         return offset
     except SizeMismatch as ex:
-        raise analysis_error(ex, uop.body[0])
+        raise analysis_error(ex.args[0], uop.body[0])
 
 def uses_this(inst: Instruction) -> bool:
     if inst.properties.needs_this:

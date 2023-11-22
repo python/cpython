@@ -7,7 +7,7 @@ END_MARKER = "// END BYTECODES //"
 
 AstNode = InstDef | Macro | Pseudo | Family
 
-def parse_files(filenames: list[str]) -> None:
+def parse_files(filenames: list[str]) -> list[AstNode]:
     result: list[AstNode] = []
     for filename in filenames:
         with open(filename) as file:
@@ -35,6 +35,7 @@ def parse_files(filenames: list[str]) -> None:
         psr.setpos(start)
         thing_first_token = psr.peek()
         while node := psr.definition():
+            assert node is not None
             result.append(node)
         if not psr.eof():
             psr.backup()

@@ -273,7 +273,7 @@ class Token:
             return f"{self.kind}({self.text!r}, {b0}:{b1}, {e0}:{e1})"
 
 
-def tokenize(src: str, line: int = 1, filename: str | None = None) -> Iterator[Token]:
+def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
     linestart = -1
     for m in matcher.finditer(src):
         start, end = m.span()
