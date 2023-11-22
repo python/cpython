@@ -1375,7 +1375,7 @@ def getargs(co):
     warnings._deprecated(
         "getargs",
         (
-            "{name!r} is deprecated and slated for removal in Python {remove}, "
+            "{name!r} is deprecated and slated for removal in Python {remove}; "
             "use `inspect.signature` instead."
         ),
         remove=(3, 15),
