@@ -243,16 +243,16 @@
                 DEOPT_IF(*target_local != left, BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 /* Handle `left = left + right` or `left += right` for str.
-             *
-             * When possible, extend `left` in place rather than
-             * allocating a new PyUnicodeObject. This attempts to avoid
-             * quadratic behavior when one neglects to use str.join().
-             *
-             * If `left` has only two references remaining (one from
-             * the stack, one in the locals), DECREFing `left` leaves
-             * only the locals reference, so PyUnicode_Append knows
-             * that the string is safe to mutate.
-             */
+                 *
+                 * When possible, extend `left` in place rather than
+                 * allocating a new PyUnicodeObject. This attempts to avoid
+                 * quadratic behavior when one neglects to use str.join().
+                 *
+                 * If `left` has only two references remaining (one from
+                 * the stack, one in the locals), DECREFing `left` leaves
+                 * only the locals reference, so PyUnicode_Append knows
+                 * that the string is safe to mutate.
+                 */
                 assert(Py_REFCNT(left) >= 2);
                 _Py_DECREF_NO_DEALLOC(left);
                 PyUnicode_Append(target_local, right);
@@ -1059,10 +1059,10 @@
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             /* Not deopting because this doesn't mean our optimization was
-                   wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
-                   'invalid'). In those cases an exception is set, so we must
-                   handle it.
-                */
+               wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
+               'invalid'). In those cases an exception is set, so we must
+               handle it.
+             */
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -3354,19 +3354,19 @@
                     attr = NULL;
                     if (_PyObject_GetMethod(owner, name, &attr)) {
                         /* We can bypass temporary bound method object.
-                       meth is unbound method and obj is self.
-                       meth | self | arg1 | ... | argN
-                     */
+                           meth is unbound method and obj is self.
+                           meth | self | arg1 | ... | argN
+                         */
                         assert(attr != NULL);  // No errors on this branch
                         self_or_null = owner;  // Transfer ownership
                     }
                     else {
                         /* meth is not an unbound method (but a regular attr, or
-                       something was returned by a descriptor protocol).  Set
-                       the second element of the stack to NULL, to signal
-                       CALL that it's not a method call.
-                       NULL | meth | arg1 | ... | argN
-                    */
+                           something was returned by a descriptor protocol).  Set
+                           the second element of the stack to NULL, to signal
+                           CALL that it's not a method call.
+                           NULL | meth | arg1 | ... | argN
+                         */
                         Py_DECREF(owner);
                         if (attr == NULL) goto pop_1_error;
                         self_or_null = NULL;
@@ -4052,7 +4052,7 @@
                     if (res == NULL) {
                         if (!_PyErr_Occurred(tstate)) {
                             /* _PyDict_LoadGlobal() returns NULL without raising
-                         * an exception if the key doesn't exist */
+                             * an exception if the key doesn't exist */
                             _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                 NAME_ERROR_MSG, name);
                         }
@@ -5737,7 +5737,7 @@
                - exit_func: FOURTH = the context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
-            */
+             */
             PyObject *exc, *tb;
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);

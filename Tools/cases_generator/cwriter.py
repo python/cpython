@@ -55,7 +55,27 @@ class CWriter:
     def emit_text(self, txt: str) -> None:
         self.out.write(txt)
 
+    def emit_multiline_comment(self, tkn: Token) -> None:
+        self.set_position(tkn)
+        lines = tkn.text.splitlines(True)
+        first = True
+        for line in lines:
+            text = line.lstrip()
+            if first:
+                spaces = 0
+            else:
+                spaces = self.indents[-1]
+                if text.startswith("*"):
+                    spaces += 1
+                else:
+                    spaces += 3
+            first = False
+            self.out.write(" " * spaces)
+            self.out.write(text)
+
     def emit_token(self, tkn: Token) -> None:
+        if tkn.kind == "COMMENT" and "\n" in tkn.text:
+            return self.emit_multiline_comment(tkn)
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
         self.emit_text(tkn.text)
