@@ -19,7 +19,12 @@ HOST_TRIPLE = "wasm32-wasi"
 
 def section(working_dir):
     """Print out a visible section header based on a working directory."""
-    print("#" * 80)
+    try:
+        tput_output = subprocess.check_output(["tput", "cols"], encoding="utf-8")
+        terminal_width = int(tput_output.strip())
+    except subprocess.CalledProcessError:
+        terminal_width = 80
+    print("#" * terminal_width)
     print("📁", working_dir)
 
 
@@ -61,6 +66,50 @@ def prep_checkout():
     else:
         print("Touching Modules/Setup.local ...")
         local_setup.touch()
+
+
+def configure_build_python(context):
+    """Configure the build/host Python."""
+
+    build_dir = CROSS_BUILD_DIR / "build"
+
+    section(build_dir)
+
+    configure = [os.path.relpath(CHECKOUT / 'configure', build_dir)]
+    if context.args:
+        configure.extend(context.args)
+
+    if context.clean and build_dir.exists():
+        print(f"Deleting {build_dir} (--clean)...")
+        shutil.rmtree(build_dir)
+
+    build_dir.mkdir(parents=True, exist_ok=True)
+
+    with contextlib.chdir(build_dir):
+        call(configure, quiet=context.quiet)
+
+
+def make_build_python(context):
+    """Make/build the build/host Python."""
+    build_dir = CROSS_BUILD_DIR / "build"
+
+    section(build_dir)
+
+    with contextlib.chdir(build_dir):
+        call(["make", "--jobs", str(cpu_count()), "all"],
+                quiet=context.quiet)
+
+    binary = build_dir / "python"
+    if not binary.is_file():
+        binary = binary.with_suffix(".exe")
+        if not binary.is_file():
+            raise FileNotFoundError(f"Unable to find `python(.exe)` in {build_dir}")
+    cmd = [binary, "-c",
+            "import sys; "
+            "print(f'{sys.version_info.major}.{sys.version_info.minor}')"]
+    version = subprocess.check_output(cmd, encoding="utf-8").strip()
+
+    print(f"{binary} {version}")
 
 
 def compile_host_python(context):
@@ -210,13 +259,23 @@ def compile_wasi_python(context, build_python, version):
 def main():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
-    build = subcommands.add_parser("build")
-    build.add_argument("--quiet", action="store_true", default=False,
-                       dest="quiet",
-                       help="Redirect output from subprocesses to a log file")
-    build.add_argument("--clean", action="store_true", default=False,
-                       dest="clean",
-                       help="Delete any build directories before building")
+    build = subcommands.add_parser("build", help="Build everything")
+    configure_build = subcommands.add_parser("configure-build-python",
+                                             help="Run `configure` for the build Python")
+    make_build = subcommands.add_parser("make-build-python",
+                                        help="Run `make` for the build Python")
+    for subcommand in build, configure_build, make_build:
+        subcommand.add_argument("--quiet", action="store_true", default=False,
+                        dest="quiet",
+                        help="Redirect output from subprocesses to a log file")
+    for subcommand in build, configure_build:
+        subcommand.add_argument("--clean", action="store_true", default=False,
+                        dest="clean",
+                        help="Delete any relevant directories before building")
+    # configure-build-python
+    configure_build.add_argument("args", nargs="*",
+                                 help="Extra arguments to pass to `configure`")
+    # build
     build.add_argument("--with-pydebug", action="store_true", default=False,
                        dest="debug",
                        help="Debug build (i.e., pydebug)")
@@ -252,16 +311,23 @@ def main():
                             "thread support is experimental in WASI)")
 
     context = parser.parse_args()
-    if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
-        raise ValueError("wasi-sdk not found or specified; "
-                         "see https://github.com/WebAssembly/wasi-sdk")
-
-    prep_checkout()
-    print()
-    build_python, version = compile_host_python(context)
-    if context.platform in {"all", "host"}:
+    if context.subcommand == "configure-build-python":
+        prep_checkout()
         print()
-        compile_wasi_python(context, build_python, version)
+        configure_build_python(context)
+    elif context.subcommand == "make-build-python":
+        make_build_python(context)
+    else:
+        if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
+            raise ValueError("wasi-sdk not found or specified; "
+                            "see https://github.com/WebAssembly/wasi-sdk")
+
+        prep_checkout()
+        print()
+        build_python, version = compile_host_python(context)
+        if context.platform in {"all", "host"}:
+            print()
+            compile_wasi_python(context, build_python, version)
 
 
 if  __name__ == "__main__":
