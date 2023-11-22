@@ -125,7 +125,7 @@ Tools/unicode/data/
 /config.status.lineno
 # hendrikmuhs/ccache-action@v1
 /.ccache
-/cross-build
+/cross-build/
 /platform
 /profile-clean-stamp
 /profile-run-stamp
