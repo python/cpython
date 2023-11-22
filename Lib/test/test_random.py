@@ -1077,16 +1077,22 @@ class TestDistributions(unittest.TestCase):
         # Cover all the code paths
         with self.assertRaises(ValueError):
             B(n=-1)                            # Negative n
+        with self.assertRaises(TypeError):
+            B(n=0.5)                           # float n
         with self.assertRaises(ValueError):
             B(n=1, p=-0.5)                     # Negative p
         with self.assertRaises(ValueError):
             B(n=1, p=1.5)                      # p > 1.0
+        self.assertEqual(B(0, 0.5), 0)         # n == 0
         self.assertEqual(B(10, 0.0), 0)        # p == 0.0
         self.assertEqual(B(10, 1.0), 10)       # p == 1.0
         self.assertTrue(B(1, 0.3) in {0, 1})   # n == 1 fast path
         self.assertTrue(B(1, 0.9) in {0, 1})   # n == 1 fast path
         self.assertTrue(B(1, 0.0) in {0})      # n == 1 fast path
         self.assertTrue(B(1, 1.0) in {1})      # n == 1 fast path
+
+        # BG method very small p
+        self.assertEqual(B(5, 1e-8), 0)
 
         # BG method p <= 0.5 and n*p=1.25
         self.assertTrue(B(5, 0.25) in set(range(6)))
