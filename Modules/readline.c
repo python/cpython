@@ -1028,10 +1028,10 @@ on_startup_hook(void)
     PyGILState_STATE gilstate = PyGILState_Ensure();
     PyObject* mod = PyState_FindModule(&readlinemodule);
     if (mod == NULL) {
-        PyGILState_Release(gilstate);
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ImportError, "readline import initialization failure during startup hook");
         }
+        PyGILState_Release(gilstate);
         return -1;
     }
     Py_INCREF(mod);
