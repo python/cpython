@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_io__BufferedIOBase_readinto__doc__,
@@ -324,7 +325,13 @@ _io__Buffered_close_impl(buffered *self);
 static PyObject *
 _io__Buffered_close(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_close_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_detach__doc__,
@@ -1075,4 +1082,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=090e70253e35fc22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d5f735188df3163 input=a9049054013a1b77]*/

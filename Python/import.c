@@ -395,8 +395,8 @@ remove_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *modules = MODULES(tstate->interp);
     if (PyDict_CheckExact(modules)) {
-        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
-        Py_XDECREF(mod);
+        // Error is reported to the caller
+        (void)PyDict_Pop(modules, name, NULL);
     }
     else if (PyMapping_DelItem(modules, name) < 0) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
@@ -2372,11 +2372,11 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
     if (nhooks < 0)
         return NULL; /* Shouldn't happen */
 
-    importer = PyDict_GetItemWithError(path_importer_cache, p);
-    if (importer != NULL || _PyErr_Occurred(tstate)) {
-        return Py_XNewRef(importer);
+    if (PyDict_GetItemRef(path_importer_cache, p, &importer) != 0) {
+        // found or error
+        return importer;
     }
-
+    // not found
     /* set path_importer_cache[p] to None to avoid recursion */
     if (PyDict_SetItem(path_importer_cache, p, Py_None) != 0)
         return NULL;
@@ -2565,7 +2565,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
 {
     PyObject *abs_name;
     PyObject *package = NULL;
-    PyObject *spec;
+    PyObject *spec = NULL;
     Py_ssize_t last_dot;
     PyObject *base;
     int level_up;
@@ -2578,20 +2578,18 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
         goto error;
     }
-    package = PyDict_GetItemWithError(globals, &_Py_ID(__package__));
-    if (package == Py_None) {
-        package = NULL;
-    }
-    else if (package == NULL && _PyErr_Occurred(tstate)) {
+    if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {
         goto error;
     }
-    spec = PyDict_GetItemWithError(globals, &_Py_ID(__spec__));
-    if (spec == NULL && _PyErr_Occurred(tstate)) {
+    if (package == Py_None) {
+        Py_DECREF(package);
+        package = NULL;
+    }
+    if (PyDict_GetItemRef(globals, &_Py_ID(__spec__), &spec) < 0) {
         goto error;
     }
 
     if (package != NULL) {
-        Py_INCREF(package);
         if (!PyUnicode_Check(package)) {
             _PyErr_SetString(tstate, PyExc_TypeError,
                              "package must be a string");
@@ -2635,16 +2633,15 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        package = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
+        if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &package) < 0) {
+            goto error;
+        }
         if (package == NULL) {
-            if (!_PyErr_Occurred(tstate)) {
-                _PyErr_SetString(tstate, PyExc_KeyError,
-                                 "'__name__' not in globals");
-            }
+            _PyErr_SetString(tstate, PyExc_KeyError,
+                             "'__name__' not in globals");
             goto error;
         }
 
-        Py_INCREF(package);
         if (!PyUnicode_Check(package)) {
             _PyErr_SetString(tstate, PyExc_TypeError,
                              "__name__ must be a string");
@@ -2692,6 +2689,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         }
     }
 
+    Py_XDECREF(spec);
     base = PyUnicode_Substring(package, 0, last_dot);
     Py_DECREF(package);
     if (base == NULL || PyUnicode_GET_LENGTH(name) == 0) {
@@ -2708,6 +2706,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                      "with no known parent package");
 
   error:
+    Py_XDECREF(spec);
     Py_XDECREF(package);
     return NULL;
 }
