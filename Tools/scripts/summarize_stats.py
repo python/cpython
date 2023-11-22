@@ -386,6 +386,7 @@ class Stats:
         trace_too_short = self._data["Optimization trace too short"]
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
+        low_confidence = self._data["Optimization low confidence"]
 
         return {
             "Optimization attempts": (attempts, None),
@@ -396,6 +397,7 @@ class Stats:
             "Trace too short": (trace_too_short, attempts),
             "Inner loop found": (inner_loop, attempts),
             "Recursive call": (recursive_call, attempts),
+            "Low confidence": (low_confidence, attempts),
             "Traces executed": (executed, None),
             "Uops executed": (uops, executed),
         }

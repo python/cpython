@@ -431,6 +431,7 @@ translate_bytecode_to_trace(
         _Py_CODEUNIT *instr;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
+    float confidence = 1.0;  // Adjusted by branch instructions
 
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -513,7 +514,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         uint32_t oparg = instr->op.arg;
         uint32_t extras = 0;
 
-
         if (opcode == EXTENDED_ARG) {
             instr++;
             extras += 1;
@@ -543,6 +543,18 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
+                if (jump_likely) {
+                    confidence *= bitcount / 16.0;
+                }
+                else {
+                    confidence *= (16 - bitcount) / 16.0;
+                }
+                // TODO: Tweak the confidence cutoff
+                if (confidence < 0.33) {
+                    DPRINTF(2, "Confidence too low (%.3f)\n", confidence);
+                    OPT_STAT_INC(low_confidence);
+                    goto done;
+                }
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, uopcode=%s\n",
