@@ -587,6 +587,11 @@ Pending Removal in Python 3.15
   All arguments will be removed from :func:`threading.RLock` in Python 3.15.
   (Contributed by Nikita Sobolev in :gh:`102029`.)
 
+* :func:`inspect.getfullargspec` is deprecated and slated for removal in 3.15,
+  use :func:`inspect.signature` instead or ``inspect313`` PyPI package
+  for older versions.
+  (Contributed by Nikita Sobolev in :gh:`108901`.)
+
 Pending Removal in Python 3.16
 ------------------------------
 

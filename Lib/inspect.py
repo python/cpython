@@ -1403,6 +1403,13 @@ def getfullargspec(func):
       - the "self" parameter is always reported, even for bound methods
       - wrapper chains defined by __wrapped__ *not* unwrapped automatically
     """
+    import warnings
+    warnings._deprecated(
+        "getfullargspec",
+        '{name!r} is deprecated since 3.13 and slated for removal in Python {remove}, '
+        'use `inspect.Signature` or `inspect313` for older Python versions instead',
+        remove=(3, 15),
+    )
     try:
         # Re: `skip_bound_arg=False`
         #
@@ -1579,7 +1586,10 @@ def getcallargs(func, /, *positional, **named):
     A dict is returned, with keys the function argument names (including the
     names of the * and ** arguments, if any), and values the respective bound
     values from 'positional' and 'named'."""
-    spec = getfullargspec(func)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        spec = getfullargspec(func)
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = spec
     f_name = func.__name__
     arg2value = {}
@@ -3103,10 +3113,12 @@ class Signature:
 
     @classmethod
     def from_callable(cls, obj, *,
-                      follow_wrapped=True, globals=None, locals=None, eval_str=False):
+                      follow_wrapped=True, skip_bound_arg=True,
+                      globals=None, locals=None, eval_str=False):
         """Constructs Signature for the given callable object."""
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
+                                        skip_bound_arg=skip_bound_arg,
                                         globals=globals, locals=locals, eval_str=eval_str)
 
     @property
@@ -3361,9 +3373,11 @@ class Signature:
         return rendered
 
 
-def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
+def signature(obj, *, follow_wrapped=True, skip_bound_arg=True,
+              globals=None, locals=None, eval_str=False):
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
+                                   skip_bound_arg=skip_bound_arg,
                                    globals=globals, locals=locals, eval_str=eval_str)
 
 

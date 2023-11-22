@@ -1,0 +1,4 @@
+Deprecate :func:`inspect.getfullargspec` and slate it for removal in 3.15.
+Instead use :func:`inspect.signature` with ``follow_wrapped=False,
+skip_bound_arg=False`` arguments or ``inspect313`` PyPI package for Python
+versions older than 3.13
