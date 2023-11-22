@@ -54,8 +54,7 @@ interpreter.
    .. versionchanged:: 3.13
       The output shows logical labels rather than instruction offsets
       for jump targets and exception handlers. The ``-O`` command line
-      option and the ``show_offsets`` argument were added to add the
-      instruction offsets to the output as well.
+      option and the ``show_offsets`` argument were added.
 
 Example: Given the function :func:`!myfunc`::
 
