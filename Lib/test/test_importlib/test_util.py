@@ -655,25 +655,19 @@ class MagicNumberTests(unittest.TestCase):
 @unittest.skipIf(_interpreters is None, 'subinterpreters required')
 class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
-    ERROR = re.compile("^ImportError: module (.*) does not support loading in subinterpreters")
-
     def run_with_own_gil(self, script):
         interpid = _interpreters.create(isolated=True)
-        try:
-            _interpreters.run_string(interpid, script)
-        except _interpreters.RunFailedError as exc:
-            if m := self.ERROR.match(str(exc)):
-                modname, = m.groups()
-                raise ImportError(modname)
+        excsnap = _interpreters.run_string(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
 
     def run_with_shared_gil(self, script):
         interpid = _interpreters.create(isolated=False)
-        try:
-            _interpreters.run_string(interpid, script)
-        except _interpreters.RunFailedError as exc:
-            if m := self.ERROR.match(str(exc)):
-                modname, = m.groups()
-                raise ImportError(modname)
+        excsnap = _interpreters.run_string(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     def test_single_phase_init_module(self):

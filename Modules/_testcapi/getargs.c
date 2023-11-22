@@ -71,18 +71,22 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
 
     if (result) {
         int objects_only = 1;
+        int count = 0;
         for (const char *f = sub_format; *f; f++) {
-            if (Py_ISALNUM(*f) && strchr("OSUY", *f) == NULL) {
-                objects_only = 0;
-                break;
+            if (Py_ISALNUM(*f)) {
+                if (strchr("OSUY", *f) == NULL) {
+                    objects_only = 0;
+                    break;
+                }
+                count++;
             }
         }
         if (objects_only) {
-            return_value = PyTuple_New(size);
+            return_value = PyTuple_New(count);
             if (return_value == NULL) {
                 goto exit;
             }
-            for (Py_ssize_t i = 0; i < size; i++) {
+            for (Py_ssize_t i = 0; i < count; i++) {
                 PyObject *arg = *(PyObject **)(buffers + i);
                 if (arg == NULL) {
                     arg = Py_None;

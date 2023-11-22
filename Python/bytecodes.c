@@ -2356,7 +2356,7 @@ dummy_func(
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
-            if (executor->execute == _PyUopExecute) {
+            if (executor->execute == _PyUOpExecute) {
                 current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
@@ -2830,15 +2830,15 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        pseudo(SETUP_FINALLY) = {
+        pseudo(SETUP_FINALLY, (HAS_ARG)) = {
             NOP,
         };
 
-        pseudo(SETUP_CLEANUP) = {
+        pseudo(SETUP_CLEANUP, (HAS_ARG)) = {
             NOP,
         };
 
-        pseudo(SETUP_WITH) = {
+        pseudo(SETUP_WITH, (HAS_ARG)) = {
             NOP,
         };
 
