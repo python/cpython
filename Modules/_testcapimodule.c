@@ -570,6 +570,12 @@ static PyType_Spec HeapTypeNameType_Spec = {
 };
 
 static PyObject *
+get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyType_FromSpec(&HeapTypeNameType_Spec);
+}
+
+static PyObject *
 test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *tp_name = PyType_GetName(&PyLong_Type);
@@ -3210,6 +3216,7 @@ static PyMethodDef TestMethods[] = {
     {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
+    {"get_heaptype_for_name",     get_heaptype_for_name,         METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},

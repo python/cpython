@@ -1098,6 +1098,21 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
+    def test_get_type_module_name(self):
+        from collections import OrderedDict
+        ht = _testcapi.get_heaptype_for_name()
+        for cls, expected in {
+            int: 'builtins',
+            OrderedDict: 'collections',
+            ht: '_testcapi',
+        }.items():
+            with self.subTest(repr(cls)):
+                modname = _testinternalcapi.get_type_module_name(cls)
+                self.assertEqual(modname, expected)
+
+        ht.__module__ = 'test_module'
+        modname = _testinternalcapi.get_type_module_name(ht)
+        self.assertEqual(modname, 'test_module')
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
