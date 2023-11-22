@@ -337,7 +337,7 @@ class Instruction(_Instruction):
 
     @staticmethod
     def _get_argval_argrepr(op, arg, offset, co_consts, names, varname_from_oparg,
-                            labels_map, label_width):
+                            labels_map):
         get_name = None if names is None else names.__getitem__
         argval = None
         argrepr = ''
@@ -409,11 +409,10 @@ class Instruction(_Instruction):
                co_consts=None, varname_from_oparg=None, names=None,
                labels_map=None, exceptions_map=None):
 
-        label_width = len(str(len(labels_map)))
+        label_width = 4 + len(str(len(labels_map)))
         argval, argrepr = cls._get_argval_argrepr(
                                op, arg, offset,
-                               co_consts, names, varname_from_oparg, labels_map,
-                               label_width)
+                               co_consts, names, varname_from_oparg, labels_map)
         label = labels_map.get(offset, None)
         instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
                             offset, start_offset, starts_line, line_number,
@@ -466,8 +465,7 @@ class Instruction(_Instruction):
         """True if other code jumps to here, otherwise False"""
         return self.label is not None
 
-    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=0,
-                     label_width=4):
+    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=0):
         """Format instruction details for inclusion in disassembly output.
 
         *lineno_width* sets the width of the line number field (0 omits it)
@@ -476,12 +474,6 @@ class Instruction(_Instruction):
         """
         fields = []
         #
-        # Column: Label
-        if self.label is not None:
-            lbl = f"L{self.label}:"
-            fields.append(f"{lbl:<{label_width}}")
-        else:
-            fields.append(' ' * label_width)
         # Column: Source code line number
         if lineno_width:
             if self.starts_line:
@@ -490,14 +482,20 @@ class Instruction(_Instruction):
                 fields.append(lineno_fmt % self.line_number)
             else:
                 fields.append(' ' * lineno_width)
+        # Column: Label
+        if self.label is not None:
+            lbl = f"L{self.label}:"
+            fields.append(f"{lbl:>{self.label_width}}")
+        else:
+            fields.append(' ' * self.label_width)
+        # Column: Instruction offset from start of code sequence
+        if offset_width > 0:
+            fields.append(f"{repr(self.offset):>{offset_width}}  ")
         # Column: Current instruction indicator
         if mark_as_current:
             fields.append('-->')
         else:
             fields.append('   ')
-        # Column: Instruction offset from start of code sequence
-        if offset_width > 0:
-            fields.append(f"{repr(self.offset):>{offset_width}}  ")
         # Column: Opcode name
         fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
