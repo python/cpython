@@ -397,16 +397,3 @@ if __name__ == "__main__":
     else:
         filenames = sys.argv[1:]
         dump_analysis(analyze_files(filenames))
-
-
-
-
-
-
-
-
-
-
-
-
-
