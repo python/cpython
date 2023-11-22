@@ -1165,7 +1165,6 @@ dummy_func(
             }
         }
 
-
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
