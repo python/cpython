@@ -1489,6 +1489,15 @@ def getargvalues(frame):
     'args' is a list of the argument names.
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'locals' is the locals dictionary of the given frame."""
+    import warnings
+    warnings._deprecated(
+        "getargvalues",
+        (
+            '{name!r} is deprecated and slated for removal in Python {remove}; '
+            'use `inspect.Singature.from_frame` instead'
+        ),
+        remove=(3, 15),
+    )
     args, varargs, varkw = getargs(frame.f_code)
     return ArgInfo(args, varargs, varkw, frame.f_locals)
 
@@ -1524,6 +1533,15 @@ def formatargvalues(args, varargs, varkw, locals,
     next four arguments are the corresponding optional formatting functions
     that are called to turn names and values into strings.  The ninth
     argument is an optional function to format the sequence of arguments."""
+    import warnings
+    warnings._deprecated(
+        "formatargvalues",
+        (
+            '{name!r} is deprecated and slated for removal in Python {remove}; '
+            'use `inspect.Singature.__str__` instead'
+        ),
+        remove=(3, 15),
+    )
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
         return formatarg(name) + formatvalue(locals[name])
@@ -2241,7 +2259,6 @@ def _signature_strip_non_python_syntax(signature):
     clean_signature = ''.join(text).strip().replace("\n", "")
     return clean_signature, self_parameter
 
-
 def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.
@@ -2416,20 +2433,53 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     s = getattr(func, "__text_signature__", None)
     if s:
         return _signature_fromstr(cls, func, s, skip_bound_arg)
+    return _signature_from_code(cls,
+                                func.__code__,
+                                globals=globals,
+                                locals=locals,
+                                eval_str=eval_str,
+                                is_duck_function=is_duck_function,
+                                func=func)
 
+def _signature_from_code(cls,
+                         func_code,
+                         *,
+                         globals=None,
+                         locals=None,
+                         eval_str=False,
+                         is_duck_function=False,
+                         func=None,
+                         compute_defaults=False):
+    """Private helper: function to get signature from code objects."""
     Parameter = cls._parameter_cls
 
     # Parameter information.
-    func_code = func.__code__
     pos_count = func_code.co_argcount
     arg_names = func_code.co_varnames
     posonly_count = func_code.co_posonlyargcount
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
-    defaults = func.__defaults__
-    kwdefaults = func.__kwdefaults__
+    if func is not None:
+        annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
+        defaults = func.__defaults__
+        kwdefaults = func.__kwdefaults__
+    else:
+        annotations = {}
+        if compute_defaults:
+            defaults = []
+            for name in positional:
+                if name in locals:
+                    defaults.append(locals[name])
+            defaults = tuple(defaults)
+
+            kwdefaults = {}
+            for name in keyword_only:
+                if name in locals:
+                    kwdefaults.update({name: locals[name]})
+        else:
+            defaults = None
+            kwdefaults = None
 
     if defaults:
         pos_default_count = len(defaults)
@@ -3108,6 +3158,14 @@ class Signature:
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
                                         globals=globals, locals=locals, eval_str=eval_str)
+
+    @classmethod
+    def from_frame(cls, frame):
+        """Constructs Signature from the given frame object."""
+        return _signature_from_code(cls, frame.f_code,
+                                    locals=frame.f_locals,
+                                    compute_defaults=True,
+                                    is_duck_function=True)
 
     @property
     def parameters(self):

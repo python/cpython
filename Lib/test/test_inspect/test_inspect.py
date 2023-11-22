@@ -505,6 +505,22 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
              '(a=7, b=8, c=9, d=3, e=4, f=5, *g=(), **h={})')
 
+    def test_frame_with_argument_override(self):
+        # This tests shows that the current implementation of `getargvalues`:
+        # 1. Does not render `/` correctly
+        # 2. Uses not real default values, but can also show redefined values
+        def inner(a=1, /, c=5, *, b=2):
+            global fr
+            a = 3
+            fr = inspect.currentframe()
+            b = 4
+
+        inner()
+        args, varargs, varkw, locals = inspect.getargvalues(fr)
+        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
+                         '(a=3, c=5, b=4)')
+
+
 class GetSourceBase(unittest.TestCase):
     # Subclasses must override.
     fodderModule = None
@@ -4135,6 +4151,42 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         self.assertEqual(inspect.signature(D2), inspect.signature(D1))
+
+
+class TestSignatureFromFrame(unittest.TestCase):
+    def test_signature_from_frame(self):
+        def inner(a=1, /, b=2, *e, c: int = 3, d, **f) -> None:
+            global fr
+            fr = inspect.currentframe()
+
+        inner(d=4)
+        self.assertEqual(str(inspect.Signature.from_frame(fr)),
+                         '(a=1, /, b=2, *e, c=3, d=4, **f)')
+
+        def inner(a, /, b, *e, c: int = 3, d, **f) -> None:
+            global fr
+            fr = inspect.currentframe()
+
+        inner(1, 2, d=4)
+        self.assertEqual(str(inspect.Signature.from_frame(fr)),
+                         '(a=1, /, b=2, *e, c=3, d=4, **f)')
+
+    def test_signature_from_frame_defaults_change(self):
+        def inner(a=1, /, c=5, *, b=2):
+            global fr
+            a = 3
+            fr = inspect.currentframe()
+            b = 4
+
+        inner()
+        self.assertEqual(str(inspect.Signature.from_frame(fr)),
+                         '(a=3, /, c=5, *, b=4)')
+
+    def test_signature_from_frame_mod(self):
+        self.assertEqual(str(inspect.Signature.from_frame(mod.fr)),
+                         '(x=11, y=14)')
+        self.assertEqual(str(inspect.Signature.from_frame(mod.fr.f_back)),
+                         '(a=7, /, b=8, c=9, d=3, e=4, f=5, *g, **h)')
 
 
 class TestParameterObject(unittest.TestCase):
