@@ -144,8 +144,8 @@ def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
             parens -= 1
         out.emit(tkn)
 
-def replace_deopt(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, unused: Stack, inst: Instruction) -> None:
-    out.emit("DEOPT_IF")
+def replace_deopt(out: CWriter, tkn: Token, tkn_iter: Iterator[Token], uop: Uop, unused: Stack, inst: Instruction) -> None:
+    out.emit_at("DEOPT_IF", tkn)
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter) # Semi colon
@@ -154,8 +154,8 @@ def replace_deopt(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, unused: Sta
     out.emit(inst.family.name)
     out.emit(");\n")
 
-def replace_error(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
-    out.emit("if ")
+def replace_error(out: CWriter, tkn: Token, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
+    out.emit_at("if ", tkn)
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "COMMA")
     label = next(tkn_iter).text
@@ -176,10 +176,11 @@ def replace_error(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stac
     out.emit(label)
     out.emit(close)
 
-def replace_decrefs(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
+def replace_decrefs(out: CWriter, tkn: Token, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
+    out.emit_at("", tkn)
     for var in uop.stack.inputs:
         if var.name == "unused" or var.name == "null" or var.peek:
             continue
@@ -192,19 +193,20 @@ def replace_decrefs(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: St
         else:
             out.emit(f"Py_DECREF({var.name});\n")
 
-def replace_store_sp(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
+def replace_store_sp(out: CWriter, tkn: Token, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
+    out.emit_at("", tkn)
     stack.flush(out)
     out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
 
-def replace_check_eval_breaker(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
+def replace_check_eval_breaker(out: CWriter, tkn: Token, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
     if not uop.properties.ends_with_eval_breaker:
-        out.emit("CHECK_EVAL_BREAKER();\n")
+        out.emit_at("CHECK_EVAL_BREAKER();", tkn)
 
 
 
@@ -225,8 +227,7 @@ def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction) -> None
     out.start_line()
     for tkn in tkn_iter:
         if tkn.kind == "IDENTIFIER" and tkn.text in REPLACEMENT_FUNCTIONS:
-            out.set_position(tkn)
-            REPLACEMENT_FUNCTIONS[tkn.text](out, tkn_iter, uop, stack, inst)
+            REPLACEMENT_FUNCTIONS[tkn.text](out, tkn, tkn_iter, uop, stack, inst)
         else:
             out.emit(tkn)
 

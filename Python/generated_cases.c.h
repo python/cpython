@@ -823,7 +823,6 @@
                     Py_DECREF(args[i]);
                 }
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-                
             }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
@@ -1019,7 +1018,6 @@
             }
             Py_DECREF(tp);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1065,7 +1063,6 @@
                    'invalid'). In those cases an exception is set, so we must
                    handle it.
                 */
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1105,7 +1102,6 @@
             }
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1147,7 +1143,6 @@
             Py_DECREF(arg);
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1233,7 +1228,6 @@
             Py_XDECREF(kwargs);
             assert(PEEK(2 + (oparg & 1)) == NULL);
             if (result == NULL) { stack_pointer += -3 - ((oparg & 1)); goto error; }
-            
             stack_pointer[-3 - ((oparg & 1))] = result;
             stack_pointer += -2 - ((oparg & 1));
             CHECK_EVAL_BREAKER();
@@ -1397,7 +1391,6 @@
                 Py_DECREF(args[i]);
             }
             if (res == NULL) { stack_pointer += -3 - oparg; goto error; }
-            
             stack_pointer[-3 - oparg] = res;
             stack_pointer += -2 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1506,7 +1499,6 @@
             }
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1549,7 +1541,6 @@
             }
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1594,7 +1585,6 @@
             Py_DECREF(self);
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1640,7 +1630,6 @@
             Py_DECREF(arg);
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1794,7 +1783,6 @@
             Py_DECREF(arg);
             Py_DECREF(&PyUnicode_Type);  // I.e., callable
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();
@@ -1822,7 +1810,6 @@
             Py_DECREF(arg);
             Py_DECREF(&PyTuple_Type);  // I.e., tuple
             if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
-            
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             CHECK_EVAL_BREAKER();

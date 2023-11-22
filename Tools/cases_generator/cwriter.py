@@ -31,6 +31,10 @@ class CWriter:
         self.last_token = tkn
         self.newline = False
 
+    def emit_at(self, txt: str, where: Token) -> None:
+        self.set_position(where)
+        self.out.write(txt)
+
     def maybe_dedent(self, txt: str) -> None:
         parens = txt.count("(") - txt.count(")")
         if parens < 0:
