@@ -238,17 +238,27 @@ def eval_breaker_at_end(op: parser.InstDef) -> bool:
 
 def always_exits(op: parser.InstDef) -> bool:
     depth = 0
-    for tkn in op.tokens:
+    tkn_iter = iter(op.tokens)
+    for tkn in tkn_iter:
         if tkn.kind == "LBRACE":
             depth += 1
         elif tkn.kind == "RBRACE":
             depth -= 1
+        elif depth > 1:
+            continue
         elif tkn.kind == "GOTO" or tkn.kind == "RETURN":
-            if depth <= 1:
+            return True
+        elif tkn.kind == "KEYWORD":
+            if tkn.text in EXITS:
                 return True
-        elif tkn.kind == "KEYWORD" or tkn.kind == "IDENTIFIER":
-            if depth <= 1 and tkn.text in EXITS:
+        elif tkn.kind == "IDENTIFIER":
+            if tkn.text in EXITS:
                 return True
+            if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
+                next(tkn_iter) # '('
+                t = next(tkn_iter)
+                if t.text == "true":
+                    return True
     return False
 
 def compute_properties(op: parser.InstDef) -> Properties:

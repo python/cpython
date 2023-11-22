@@ -4669,8 +4669,6 @@
                 break;
             }
             if (true) { stack_pointer += -oparg; goto error; }
-            stack_pointer += -oparg;
-            DISPATCH();
         }
 
         TARGET(RERAISE) {
