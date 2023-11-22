@@ -68,12 +68,12 @@ the following command can be used to display the disassembly of
 .. doctest::
 
    >>> dis.dis(myfunc)
-       2         RESUME                   0
+      2           RESUME                   0
    <BLANKLINE>
-       3         LOAD_GLOBAL              1 (len + NULL)
-                 LOAD_FAST                0 (alist)
-                 CALL                     1
-                 RETURN_VALUE
+      3           LOAD_GLOBAL              1 (len + NULL)
+                  LOAD_FAST                0 (alist)
+                  CALL                     1
+                  RETURN_VALUE
 
 (The "2" is a line number).
 
