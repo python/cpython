@@ -1,0 +1,2 @@
+Allow ``TracebackException.exc_type`` to be a minimal proxy instead of only
+an actual exception type.
