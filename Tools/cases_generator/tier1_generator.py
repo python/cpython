@@ -152,7 +152,7 @@ def replace_deopt(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, unused: Sta
     out.emit(", ")
     assert inst.family is not None
     out.emit(inst.family.name)
-    out.emit(");")
+    out.emit(");\n")
 
 def replace_error(out: CWriter, tkn_iter: Iterator[Token], uop: Uop, stack: Stack, inst: Instruction) -> None:
     out.emit("if ")
@@ -204,7 +204,7 @@ def replace_check_eval_breaker(out: CWriter, tkn_iter: Iterator[Token], uop: Uop
     next(tkn_iter)
     next(tkn_iter)
     if not uop.properties.ends_with_eval_breaker:
-        out.emit("CHECK_EVAL_BREAKER();")
+        out.emit("CHECK_EVAL_BREAKER();\n")
 
 
 
@@ -311,6 +311,7 @@ def generate_tier1(filenames: str, analysis: Analysis, outfile: TextIO, lines: b
             if inst.uops[-1].properties.ends_with_eval_breaker:
                 out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("DISPATCH();\n")
+        out.start_line()
         out.emit("}")
         out.emit("\n")
     outfile.write(FOOTER)

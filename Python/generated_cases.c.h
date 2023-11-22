@@ -1876,10 +1876,8 @@
             Py_DECREF(exc_value);
             Py_DECREF(match_type);
             if (res < 0) goto pop_2_error;
-
             assert((match == NULL) == (rest == NULL));
             if (match == NULL) goto pop_2_error;
-
             if (!Py_IsNone(match)) {
                 PyErr_SetHandledException(match);
             }
@@ -2656,7 +2654,6 @@
             iter = (*getter)(obj);
             Py_DECREF(obj);
             if (iter == NULL) goto pop_1_error;
-
             if (Py_TYPE(iter)->tp_as_async == NULL ||
                 Py_TYPE(iter)->tp_as_async->am_anext == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
@@ -2732,7 +2729,6 @@
                 _PyEval_FormatAwaitableError(tstate, Py_TYPE(iterable), oparg);
             }
             Py_DECREF(iterable);
-
             if (iter != NULL && PyCoro_CheckExact(iter)) {
                 PyObject *yf = _PyGen_yf((PyGenObject*)iter);
                 if (yf != NULL) {
