@@ -1,5 +1,6 @@
 import argparse
 import contextlib
+import functools
 import os
 try:
     from os import process_cpu_count as cpu_count
@@ -14,6 +15,7 @@ import tempfile
 
 CHECKOUT = pathlib.Path(__file__).parent.parent.parent
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
+BUILD_DIR = CROSS_BUILD_DIR / "build"
 HOST_TRIPLE = "wasm32-wasi"
 
 
@@ -27,6 +29,25 @@ def section(working_dir):
     print("#" * terminal_width)
     print("📁", working_dir)
 
+
+def subdir(working_dir):
+    """Decorator to change to a working directory."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(context):
+            if getattr(context, "clean", None) and working_dir.exists():
+                print(f"Deleting {working_dir} (--clean)...")
+                shutil.rmtree(working_dir)
+
+            working_dir.mkdir(parents=True, exist_ok=True)
+            section(working_dir)
+
+            with contextlib.chdir(working_dir):
+                return func(context, working_dir)
+
+        return wrapper
+
+    return decorator
 
 def call(command, *, quiet, **kwargs):
     """Execute a command.
@@ -54,13 +75,12 @@ def build_platform():
     return sysconfig.get_config_var("BUILD_GNU_TYPE")
 
 
-def prep_checkout():
+@subdir(CHECKOUT)
+def prep_checkout(context, working_dir):
     """Prepare the source checkout for cross-compiling."""
     # Without `Setup.local`, in-place execution fails to realize it's in a
     # build tree/checkout (the dreaded "No module named 'encodings'" error).
-    section(CHECKOUT)
-
-    local_setup = CHECKOUT / "Modules" / "Setup.local"
+    local_setup = working_dir / "Modules" / "Setup.local"
     if local_setup.exists():
         print("Modules/Setup.local already exists ...")
     else:
@@ -68,42 +88,27 @@ def prep_checkout():
         local_setup.touch()
 
 
-def configure_build_python(context):
+@subdir(BUILD_DIR)
+def configure_build_python(context, working_dir):
     """Configure the build/host Python."""
-
-    build_dir = CROSS_BUILD_DIR / "build"
-
-    section(build_dir)
-
-    configure = [os.path.relpath(CHECKOUT / 'configure', build_dir)]
+    configure = [os.path.relpath(CHECKOUT / 'configure', working_dir)]
     if context.args:
         configure.extend(context.args)
 
-    if context.clean and build_dir.exists():
-        print(f"Deleting {build_dir} (--clean)...")
-        shutil.rmtree(build_dir)
-
-    build_dir.mkdir(parents=True, exist_ok=True)
-
-    with contextlib.chdir(build_dir):
-        call(configure, quiet=context.quiet)
+    call(configure, quiet=context.quiet)
 
 
-def make_build_python(context):
+@subdir(BUILD_DIR)
+def make_build_python(context, working_dir):
     """Make/build the build/host Python."""
-    build_dir = CROSS_BUILD_DIR / "build"
+    call(["make", "--jobs", str(cpu_count()), "all"],
+            quiet=context.quiet)
 
-    section(build_dir)
-
-    with contextlib.chdir(build_dir):
-        call(["make", "--jobs", str(cpu_count()), "all"],
-                quiet=context.quiet)
-
-    binary = build_dir / "python"
+    binary = working_dir / "python"
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
         if not binary.is_file():
-            raise FileNotFoundError(f"Unable to find `python(.exe)` in {build_dir}")
+            raise FileNotFoundError(f"Unable to find `python(.exe)` in {working_dir}")
     cmd = [binary, "-c",
             "import sys; "
             "print(f'{sys.version_info.major}.{sys.version_info.minor}')"]
@@ -117,33 +122,31 @@ def compile_host_python(context):
 
     Returns the path to the new interpreter and it's major.minor version.
     """
-    build_dir = CROSS_BUILD_DIR / "build"
+    section(BUILD_DIR)
 
-    section(build_dir)
-
-    configure = [os.path.relpath(CHECKOUT / 'configure', build_dir), "-C"]
+    configure = [os.path.relpath(CHECKOUT / 'configure', BUILD_DIR), "-C"]
     if context.debug:
         configure.append("--with-pydebug")
 
     if context.platform not in {"all", "build"}:
         print("Skipping build (--platform=host)...")
     else:
-        if context.clean and build_dir.exists():
-            print(f"Deleting {build_dir} (--clean)...")
-            shutil.rmtree(build_dir)
+        if context.clean and BUILD_DIR.exists():
+            print(f"Deleting {BUILD_DIR} (--clean)...")
+            shutil.rmtree(BUILD_DIR)
 
-        build_dir.mkdir(parents=True, exist_ok=True)
+        BUILD_DIR.mkdir(parents=True, exist_ok=True)
 
-        with contextlib.chdir(build_dir):
+        with contextlib.chdir(BUILD_DIR):
             call(configure, quiet=context.quiet)
             call(["make", "--jobs", str(cpu_count()), "all"],
                  quiet=context.quiet)
 
-    binary = build_dir / "python"
+    binary = BUILD_DIR / "python"
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
         if not binary.is_file():
-            raise FileNotFoundError(f"Unable to find `python(.exe)` in {build_dir}")
+            raise FileNotFoundError(f"Unable to find `python(.exe)` in {BUILD_DIR}")
     cmd = [binary, "-c",
             "import sys; "
             "print(f'{sys.version_info.major}.{sys.version_info.minor}')"]
@@ -312,7 +315,7 @@ def main():
 
     context = parser.parse_args()
     if context.subcommand == "configure-build-python":
-        prep_checkout()
+        prep_checkout(context)
         print()
         configure_build_python(context)
     elif context.subcommand == "make-build-python":
@@ -322,7 +325,7 @@ def main():
             raise ValueError("wasi-sdk not found or specified; "
                             "see https://github.com/WebAssembly/wasi-sdk")
 
-        prep_checkout()
+        prep_checkout(context)
         print()
         build_python, version = compile_host_python(context)
         if context.platform in {"all", "host"}:
