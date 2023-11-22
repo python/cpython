@@ -10,7 +10,7 @@ extern "C" {
 
 #include "pycore_frame.h"         // _PyInterpreterFrame
 
-#define _Py_UOP_MAX_TRACE_LENGTH 128
+#define _Py_UOP_MAX_TRACE_LENGTH 256
 
 typedef struct {
     uint16_t opcode;
