@@ -1365,7 +1365,7 @@ def getargs(co):
     appended. 'varargs' and 'varkw' are the names of the * and **
     arguments or None.
 
-    Deprecated in 3.13 and slated for removal in 3.15.
+    Deprecated in Python 3.13; slated for removal in Python 3.15.
     ``inspect.signature`` is the most accurate way to obtain the signature
     of a callable. If you only have access to a code object, however,
     ``inspect.signature(types.FunctionType(co, {}))`` can be used as a
