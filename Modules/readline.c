@@ -1033,10 +1033,8 @@ on_startup_hook(void)
             PyErr_SetString(PyExc_ImportError, "readline import initialization failure during startup hook");
         }
         return -1;
-    } else {
-        Py_INCREF(mod);
     }
-
+    Py_INCREF(mod);
     r = on_hook(get_readline_state(mod)->startup_hook);
     Py_DECREF(mod);
     PyGILState_Release(gilstate);
