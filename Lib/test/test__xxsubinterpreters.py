@@ -796,6 +796,11 @@ class RunStringTests(TestBase):
                 sys.exit(42)
                 """))
 
+    def test_import_capsule(self):
+        interpreters.run_string(self.id, dedent("""
+            import zoneinfo
+            """))
+
     def test_with_shared(self):
         r, w = os.pipe()
 
