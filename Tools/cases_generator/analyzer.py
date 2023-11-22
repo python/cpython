@@ -195,8 +195,8 @@ def convert_stack_item(item: parser.StackEffect) -> StackItem:
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
-    inputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)]
-    outputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.outputs]
+    inputs: list[StackItem] = [convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)]
+    outputs: list[StackItem] = [convert_stack_item(i) for i in op.outputs]
     for (input, output) in zip(inputs, outputs):
         if input.name == output.name:
             input.peek = output.peek = True
