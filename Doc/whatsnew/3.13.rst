@@ -307,6 +307,12 @@ typing
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 15.1.0. (Contributed by
+  James Gerity in :gh:`109559`.)
+
 venv
 ----
 
@@ -1398,20 +1404,6 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
-
-* Remove the old aliases to functions calling functions which were kept for
-  backward compatibility with Python 3.8 provisional API:
-
-  * ``_PyObject_CallMethodNoArgs()``: use ``PyObject_CallMethodNoArgs()``
-  * ``_PyObject_CallMethodOneArg()``: use ``PyObject_CallMethodOneArg()``
-  * ``_PyObject_CallOneArg()``: use ``PyObject_CallOneArg()``
-  * ``_PyObject_FastCallDict()``: use ``PyObject_VectorcallDict()``
-  * ``_PyObject_Vectorcall()``: use ``PyObject_Vectorcall()``
-  * ``_PyObject_VectorcallMethod()``: use ``PyObject_VectorcallMethod()``
-  * ``_PyVectorcall_Function()``: use ``PyVectorcall_Function()``
-
-  Just remove the underscore prefix to update your code.
-  (Contributed by Victor Stinner in :gh:`106084`.)
 
 * Remove private ``_PyObject_FastCall()`` function:
   use ``PyObject_Vectorcall()`` which is available since Python 3.8
