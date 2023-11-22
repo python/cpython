@@ -1090,7 +1090,7 @@ Classes and functions
 
    .. versionadded:: 3.2
 
-   .. deprecated-removed:: 3.5, 3.15
+   .. deprecated-removed:: 3.5 3.15
       Use :meth:`Signature.bind` and :meth:`Signature.bind_partial` instead.
 
 

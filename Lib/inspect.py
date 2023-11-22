@@ -1582,7 +1582,7 @@ def getcallargs(func, /, *positional, **named):
     import warnings
     warnings._deprecated(
         "getcallargs",
-        '{name!r} is deprecated since 3.5 and slated for removal in Python {remove}, '
+        '{name!r} is deprecated since Python 3.5 and slated for removal in Python {remove}; '
         'use `inspect.Singature.bind` instead',
         remove=(3, 15),
     )
