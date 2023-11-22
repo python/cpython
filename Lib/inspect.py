@@ -1374,8 +1374,10 @@ def getargs(co):
     import warnings
     warnings._deprecated(
         "getargs",
-        "{name!r} is deprecated and slated for removal in Python {remove}, "
-        "use `inspect.signature` instead",
+        (
+            "{name!r} is deprecated and slated for removal in Python {remove}, "
+            "use `inspect.signature` instead."
+        ),
         remove=(3, 15),
     )
     if not iscode(co):
