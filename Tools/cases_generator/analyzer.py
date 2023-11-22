@@ -234,7 +234,7 @@ EXITS = set([
 ])
 
 def eval_breaker_at_end(op: parser.InstDef) -> bool:
-    return op.tokens[-5].text == "CHECK_EVAL_BREAKER"  # type: ignore
+    return op.tokens[-5].text == "CHECK_EVAL_BREAKER"
 
 def always_exits(op: parser.InstDef) -> bool:
     depth = 0
@@ -307,11 +307,11 @@ def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: d
     assert(parts)
     add_instruction(macro.name, parts, instructions)
 
-def add_family(family: parser.Family, instructions: dict[str, Instruction], families: dict[str, Family]) -> None:
+def add_family(pfamily: parser.Family, instructions: dict[str, Instruction], families: dict[str, Family]) -> None:
     family = Family(
-        family.name,
-        family.size,
-        [ instructions[member] for member in family.members ]
+        pfamily.name,
+        pfamily.size,
+        [ instructions[member_name] for member_name in pfamily.members ]
     )
     for member in family.members:
         member.family = family

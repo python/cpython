@@ -44,4 +44,8 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
     return result
 
 #Keep MyPy happy
-__all__ = [ "parse_files", "Context", "Macro", "InstDef", "Pseudo", "StackEffect", "CacheEffect", "StackItem" ]
+__all__ = [
+    "parse_files", "Context", "Macro",
+    "InstDef", "Family", "Pseudo", "AstNode",
+    "StackEffect", "CacheEffect", "StackItem"
+]
