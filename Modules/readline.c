@@ -1026,7 +1026,19 @@ on_startup_hook(void)
 {
     int r;
     PyGILState_STATE gilstate = PyGILState_Ensure();
-    r = on_hook(readlinestate_global->startup_hook);
+    PyObject* mod = PyState_FindModule(&readlinemodule);
+    if (mod == NULL) {
+        PyGILState_Release(gilstate);
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ImportError, "readline import initialization failure during startup hook");
+        }
+        return -1;
+    } else {
+        Py_INCREF(mod);
+    }
+
+    r = on_hook(get_readline_state(mod)->startup_hook);
+    Py_DECREF(mod);
     PyGILState_Release(gilstate);
     return r;
 }
@@ -1511,12 +1523,17 @@ PyInit_readline(void)
     }
 
     mod_state = (readlinestate *) PyModule_GetState(m);
+    if (mod_state == NULL){
+        goto error;
+    }
     PyOS_ReadlineFunctionPointer = call_readline;
     if (setup_readline(mod_state) < 0) {
         PyErr_NoMemory();
         goto error;
     }
-
+    if (PyErr_Occurred()){
+        goto error;
+    }
     return m;
 
 error:
