@@ -30,12 +30,12 @@ def section(working_dir):
     print("📁", working_dir)
 
 
-def subdir(working_dir):
+def subdir(working_dir, *, clean_ok=False):
     """Decorator to change to a working directory."""
     def decorator(func):
         @functools.wraps(func)
         def wrapper(context):
-            if getattr(context, "clean", None) and working_dir.exists():
+            if clean_ok and context.clean and working_dir.exists():
                 print(f"Deleting {working_dir} (--clean)...")
                 shutil.rmtree(working_dir)
 
@@ -75,13 +75,12 @@ def build_platform():
     return sysconfig.get_config_var("BUILD_GNU_TYPE")
 
 
-# Don't use subdir(); it will delete the checkout!
-def prep_checkout(context):
+@subdir(CHECKOUT)
+def prep_checkout(context, working_dir):
     """Prepare the source checkout for cross-compiling."""
     # Without `Setup.local`, in-place execution fails to realize it's in a
     # build tree/checkout (the dreaded "No module named 'encodings'" error).
-    section(CHECKOUT)
-    local_setup = CHECKOUT / "Modules" / "Setup.local"
+    local_setup = working_dir / "Modules" / "Setup.local"
     if local_setup.exists():
         print("Modules/Setup.local already exists ...")
     else:
@@ -89,7 +88,7 @@ def prep_checkout(context):
         local_setup.touch()
 
 
-@subdir(BUILD_DIR)
+@subdir(BUILD_DIR, clean_ok=True)
 def configure_build_python(context, working_dir):
     """Configure the build/host Python."""
     configure = [os.path.relpath(CHECKOUT / 'configure', working_dir)]
