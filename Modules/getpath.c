@@ -18,6 +18,7 @@
 
 #ifdef __APPLE__
 #  include <dlfcn.h>
+#  include <mach-o/dyld.h>
 #endif
 
 /* Reference the precompiled getpath.py */
