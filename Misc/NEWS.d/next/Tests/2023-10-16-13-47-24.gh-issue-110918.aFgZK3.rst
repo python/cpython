@@ -1,4 +1,0 @@
-Test case matching patterns specified by options ``--match``, ``--ignore``,
-``--matchfile`` and ``--ignorefile`` are now tested in the order of
-specification, and the last match determines whether the test case be run or
-ignored.
