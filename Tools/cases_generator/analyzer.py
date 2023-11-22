@@ -92,7 +92,7 @@ class CacheEntry:
 @dataclass
 class Uop:
     name: str
-    context: parser.Context
+    context: parser.Context # type: ignore
     annotations: list[str]
     stack: StackEffect
     caches: list[CacheEntry]
@@ -195,7 +195,7 @@ def convert_stack_item(item: parser.StackEffect) -> StackItem:
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
-    inputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)]
+    inputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)]  # type: ignore
     outputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.outputs]
     for (input, output) in zip(inputs, outputs):
         if input.name == output.name:
@@ -204,7 +204,7 @@ def analyze_stack(op: parser.InstDef) -> StackEffect:
 
 
 def analyze_caches(op: parser.InstDef) -> list[CacheEntry]:
-    caches: list[parser.CacheEffect] = [i for i in op.inputs if isinstance(i, parser.CacheEffect)]
+    caches: list[parser.CacheEffect] = [i for i in op.inputs if isinstance(i, parser.CacheEffect)]  # type: ignore
     return [ CacheEntry(i.name, int(i.size)) for i in caches ]
 
 
@@ -234,7 +234,7 @@ EXITS = set([
 ])
 
 def eval_breaker_at_end(op: parser.InstDef) -> bool:
-    return op.tokens[-5].text == "CHECK_EVAL_BREAKER"
+    return op.tokens[-5].text == "CHECK_EVAL_BREAKER"  # type: ignore
 
 def always_exits(op: parser.InstDef) -> bool:
     depth = 0
@@ -347,7 +347,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
             case _:
                 assert False
     for node in forest:
-        if isinstance(node, parser.Macro):
+        if isinstance(node, parser.Macro):  # type: ignore
             add_macro(node, instructions, uops)
     for node in forest:
         match node:
