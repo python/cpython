@@ -112,6 +112,19 @@ dis_f = """\
        _f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
 
+dis_f_with_offsets = """\
+%3d          0       RESUME                   0
+
+%3d          2       LOAD_GLOBAL              1 (print + NULL)
+            12       LOAD_FAST                0 (a)
+            14       CALL                     1
+            22       POP_TOP
+
+%3d         24       RETURN_CONST             1 (1)
+""" % (_f.__code__.co_firstlineno,
+       _f.__code__.co_firstlineno + 1,
+       _f.__code__.co_firstlineno + 2)
+
 
 dis_f_co_code = """\
           RESUME                   0
@@ -121,7 +134,6 @@ dis_f_co_code = """\
           POP_TOP
           RETURN_CONST             1
 """
-
 
 def bug708901():
     for res in range(1,
@@ -899,15 +911,15 @@ class DisTests(DisTestBase):
     def get_disassemble_as_string(self, func, lasti=-1):
         return self.get_disassembly(func, lasti, False)
 
-    def do_disassembly_test(self, func, expected):
+    def do_disassembly_test(self, func, expected, **kwargs):
         self.maxDiff = None
-        got = self.get_disassembly(func, depth=0)
+        got = self.get_disassembly(func, depth=0, **kwargs)
         self.do_disassembly_compare(got, expected)
         # Add checks for dis.disco
         if hasattr(func, '__code__'):
             got_disco = io.StringIO()
             with contextlib.redirect_stdout(got_disco):
-                dis.disco(func.__code__)
+                dis.disco(func.__code__, **kwargs)
             self.do_disassembly_compare(got_disco.getvalue(), expected)
 
     def test_opmap(self):
@@ -935,6 +947,9 @@ class DisTests(DisTestBase):
 
     def test_dis(self):
         self.do_disassembly_test(_f, dis_f)
+
+    def test_dis_with_offsets(self):
+        self.do_disassembly_test(_f, dis_f_with_offsets, show_offsets=True)
 
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
