@@ -4499,7 +4499,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(NOP);
-            
             DISPATCH();
         }
 

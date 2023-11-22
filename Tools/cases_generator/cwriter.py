@@ -13,7 +13,7 @@ class CWriter:
         self.last_token = None
         self.newline = True
 
-    def set_position(self, tkn: Token, emit_lines: bool = True) -> None:
+    def set_position(self, tkn: Token) -> None:
         if self.last_token is not None:
             if self.last_token.line < tkn.line:
                 self.out.write("\n")

@@ -218,8 +218,11 @@ REPLACEMENT_FUNCTIONS = {
 
 #Move this to formatter
 def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction) -> None:
-    tkn_iter = iter(uop.body[1:-1])
-    out.set_position(uop.body[1], False)
+    tkns = uop.body[1:-1]
+    if not tkns:
+        return
+    tkn_iter = iter(tkns)
+    out.set_position(tkns[0])
     for tkn in tkn_iter:
         if tkn.kind == "IDENTIFIER" and tkn.text in REPLACEMENT_FUNCTIONS:
             out.set_position(tkn)
