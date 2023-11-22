@@ -225,6 +225,18 @@ _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
     return 0;
 }
 
+static void
+_raise_formatted(PyObject *exctype, PyObject *excinfo)
+{
+    PyObject *formatted = PyObject_GetAttrString(excinfo, "formatted");
+    if (formatted == NULL) {
+        assert(PyErr_Occurred());
+        return;
+    }
+    PyErr_SetObject(exctype, formatted);
+    Py_DECREF(formatted);
+}
+
 static int
 _run_in_interpreter(PyInterpreterState *interp,
                     const char *codestr, Py_ssize_t codestrlen,
@@ -237,7 +249,10 @@ _run_in_interpreter(PyInterpreterState *interp,
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
         assert(!PyErr_Occurred());
-        _PyXI_ApplyError(session.error, excwrapper);
+        PyObject *excinfo = _PyXI_ApplyError(session.error);
+        if (excinfo != NULL) {
+            _raise_formatted(excwrapper, excinfo);
+        }
         assert(PyErr_Occurred());
         return -1;
     }
@@ -251,7 +266,10 @@ _run_in_interpreter(PyInterpreterState *interp,
     // Propagate any exception out to the caller.
     assert(!PyErr_Occurred());
     if (res < 0) {
-        _PyXI_ApplyCapturedException(&session, excwrapper);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(&session);
+        if (excinfo != NULL) {
+            _raise_formatted(excwrapper, excinfo);
+        }
     }
     else {
         assert(!_PyXI_HasCapturedException(&session));

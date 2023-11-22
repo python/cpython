@@ -5,6 +5,7 @@
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_typeobject.h"    // _PyType_GetModuleName()
@@ -1145,6 +1146,116 @@ _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
     Py_DECREF(formatted);
 }
 
+static PyObject *
+_PyXI_excinfo_TypeAsObject(_PyXI_excinfo *info)
+{
+    PyObject *ns = _PyNamespace_New(NULL);
+    if (ns == NULL) {
+        return NULL;
+    }
+    int empty = 1;
+
+    if (info->type.name != NULL) {
+        PyObject *name = PyUnicode_FromString(info->type.name);
+        if (name == NULL) {
+            goto error;
+        }
+        int res = PyObject_SetAttrString(ns, "__name__", name);
+        Py_DECREF(name);
+        if (res < 0) {
+            goto error;
+        }
+        empty = 0;
+    }
+
+    if (info->type.qualname != NULL) {
+        PyObject *qualname = PyUnicode_FromString(info->type.qualname);
+        if (qualname == NULL) {
+            goto error;
+        }
+        int res = PyObject_SetAttrString(ns, "__qualname__", qualname);
+        Py_DECREF(qualname);
+        if (res < 0) {
+            goto error;
+        }
+        empty = 0;
+    }
+
+    if (info->type.module != NULL) {
+        PyObject *module = PyUnicode_FromString(info->type.module);
+        if (module == NULL) {
+            goto error;
+        }
+        int res = PyObject_SetAttrString(ns, "__module__", module);
+        Py_DECREF(module);
+        if (res < 0) {
+            goto error;
+        }
+        empty = 0;
+    }
+
+    if (empty) {
+        Py_CLEAR(ns);
+    }
+
+    return ns;
+
+error:
+    Py_DECREF(ns);
+    return NULL;
+}
+
+static PyObject *
+_PyXI_excinfo_AsObject(_PyXI_excinfo *info)
+{
+    PyObject *ns = _PyNamespace_New(NULL);
+    if (ns == NULL) {
+        return NULL;
+    }
+    int res;
+
+    PyObject *type = _PyXI_excinfo_TypeAsObject(info);
+    if (type == NULL) {
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        type = Py_NewRef(Py_None);
+    }
+    res = PyObject_SetAttrString(ns, "type", type);
+    Py_DECREF(type);
+    if (res < 0) {
+        goto error;
+    }
+
+    PyObject *msg = info->msg != NULL
+        ? PyUnicode_FromString(info->msg)
+        : Py_NewRef(Py_None);
+    if (msg == NULL) {
+        goto error;
+    }
+    res = PyObject_SetAttrString(ns, "msg", msg);
+    Py_DECREF(msg);
+    if (res < 0) {
+        goto error;
+    }
+
+    PyObject *formatted = _PyXI_excinfo_format(info);
+    if (formatted == NULL) {
+        goto error;
+    }
+    res = PyObject_SetAttrString(ns, "formatted", formatted);
+    Py_DECREF(formatted);
+    if (res < 0) {
+        goto error;
+    }
+
+    return ns;
+
+error:
+    Py_DECREF(ns);
+    return NULL;
+}
+
 
 /***************************/
 /* short-term data sharing */
@@ -1238,15 +1349,12 @@ _PyXI_InitError(_PyXI_error *error, PyObject *excobj, _PyXI_errcode code)
     return failure;
 }
 
-void
-_PyXI_ApplyError(_PyXI_error *error, PyObject *exctype)
+PyObject *
+_PyXI_ApplyError(_PyXI_error *error)
 {
-    if (exctype == NULL) {
-        exctype = PyExc_RuntimeError;
-    }
     if (error->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         // Raise an exception that proxies the propagated exception.
-        _PyXI_excinfo_Apply(&error->uncaught, exctype);
+       return _PyXI_excinfo_AsObject(&error->uncaught);
     }
     else if (error->code == _PyXI_ERR_NOT_SHAREABLE) {
         // Propagate the exception directly.
@@ -1259,13 +1367,14 @@ _PyXI_ApplyError(_PyXI_error *error, PyObject *exctype)
         if (error->uncaught.type.name != NULL || error->uncaught.msg != NULL) {
             // __context__ will be set to a proxy of the propagated exception.
             PyObject *exc = PyErr_GetRaisedException();
-            _PyXI_excinfo_Apply(&error->uncaught, exctype);
+            _PyXI_excinfo_Apply(&error->uncaught, PyExc_RuntimeError);
             PyObject *exc2 = PyErr_GetRaisedException();
             PyException_SetContext(exc, exc2);
             PyErr_SetRaisedException(exc);
         }
     }
     assert(PyErr_Occurred());
+    return NULL;
 }
 
 /* shared namespaces */
@@ -1877,14 +1986,15 @@ _capture_current_exception(_PyXI_session *session)
     session->error  = err;
 }
 
-void
-_PyXI_ApplyCapturedException(_PyXI_session *session, PyObject *excwrapper)
+PyObject *
+_PyXI_ApplyCapturedException(_PyXI_session *session)
 {
     assert(!PyErr_Occurred());
     assert(session->error != NULL);
-    _PyXI_ApplyError(session->error, excwrapper);
-    assert(PyErr_Occurred());
+    PyObject *res = _PyXI_ApplyError(session->error);
+    assert((res == NULL) != (PyErr_Occurred() == NULL));
     session->error = NULL;
+    return res;
 }
 
 int

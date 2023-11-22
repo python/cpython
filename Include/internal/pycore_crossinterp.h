@@ -203,9 +203,7 @@ typedef struct _sharedexception {
     _PyXI_excinfo uncaught;
 } _PyXI_error;
 
-PyAPI_FUNC(void) _PyXI_ApplyError(
-    _PyXI_error *err,
-    PyObject *exctype);
+PyAPI_FUNC(PyObject *) _PyXI_ApplyError(_PyXI_error *err);
 
 
 typedef struct xi_session _PyXI_session;
@@ -273,9 +271,7 @@ PyAPI_FUNC(int) _PyXI_Enter(
     PyObject *nsupdates);
 PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
 
-PyAPI_FUNC(void) _PyXI_ApplyCapturedException(
-    _PyXI_session *session,
-    PyObject *excwrapper);
+PyAPI_FUNC(PyObject *) _PyXI_ApplyCapturedException(_PyXI_session *session);
 PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
 
 
