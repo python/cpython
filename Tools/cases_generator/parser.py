@@ -1,4 +1,4 @@
-from parsing import InstDef, Macro, Pseudo, Family, Parser, Context, CacheEffect, StackEffect, OpName, AstNode, StackItem
+from parsing import InstDef, Macro, Pseudo, Family, Parser, Context, CacheEffect, StackEffect, OpName, AstNode
 from formatting import prettify_filename
 
 
@@ -47,5 +47,5 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
 __all__ = [
     "parse_files", "Context", "Macro",
     "InstDef", "Family", "Pseudo", "AstNode",
-    "StackEffect", "CacheEffect", "StackItem",
+    "StackEffect", "CacheEffect",
 ]
