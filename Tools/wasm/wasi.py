@@ -75,12 +75,12 @@ def build_platform():
     return sysconfig.get_config_var("BUILD_GNU_TYPE")
 
 
-@subdir(CHECKOUT)
-def prep_checkout(context, working_dir):
+# Don't use subdir(); it will delete the checkout!
+def prep_checkout(context):
     """Prepare the source checkout for cross-compiling."""
     # Without `Setup.local`, in-place execution fails to realize it's in a
     # build tree/checkout (the dreaded "No module named 'encodings'" error).
-    local_setup = working_dir / "Modules" / "Setup.local"
+    local_setup = CHECKOUT / "Modules" / "Setup.local"
     if local_setup.exists():
         print("Modules/Setup.local already exists ...")
     else:
