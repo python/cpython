@@ -1,2 +1,6 @@
-Deprecate undocumented ``inspect.getargs`` function. Instead use
-``inspect.signature(types.FunctionType(co, {}))``.
+Undocumented ``inspect.getargs`` is deprecated in 3.13
+and slated for removal in 3.15.
+:func:`inspect.signature` is the most accurate way to obtain the signature
+of a callable. If you only have access to a code object, however,
+``inspect.signature(types.FunctionType(co, {}))`` can be used as a
+direct replacement for ``inspect.getargs()``.

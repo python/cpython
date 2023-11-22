@@ -1365,13 +1365,17 @@ def getargs(co):
     appended. 'varargs' and 'varkw' are the names of the * and **
     arguments or None.
 
-    Deprecated. Use ``inspect.signature(types.FunctionType(co, {}))`` instead.
+    Deprecated in 3.13 and slated for removal in 3.15.
+    ``inspect.signature`` is the most accurate way to obtain the signature
+    of a callable. If you only have access to a code object, however,
+    ``inspect.signature(types.FunctionType(co, {}))`` can be used as a
+    direct replacement for ``inspect.getargs()``.
     """
     import warnings
     warnings._deprecated(
         "getargs",
         "{name!r} is deprecated and slated for removal in Python {remove}, "
-        "use `inspect.signature(types.FunctionType(co, {{}}))` instead",
+        "use `inspect.signature` instead",
         remove=(3, 15),
     )
     if not iscode(co):
