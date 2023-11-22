@@ -92,7 +92,7 @@ class CacheEntry:
 @dataclass
 class Uop:
     name: str
-    context: parser.Context # type: ignore
+    context: parser.Context | None
     annotations: list[str]
     stack: StackEffect
     caches: list[CacheEntry]
@@ -182,7 +182,7 @@ def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
         message, "", tkn.line, tkn.column, ""
     )
 
-def override_error(name: str, context: parser.Context, prev_context: parser.Context, token: lexer.Token) -> SyntaxError:
+def override_error(name: str, context: parser.Context | None, prev_context: parser.Context | None, token: lexer.Token) -> SyntaxError:
     return analysis_error(
         f"Duplicate definition of '{name}' @ {context} "
         f"previous definition @ {prev_context}",
@@ -195,7 +195,7 @@ def convert_stack_item(item: parser.StackEffect) -> StackItem:
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
-    inputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)]  # type: ignore
+    inputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)]
     outputs: list[parser.StackItem] = [convert_stack_item(i) for i in op.outputs]
     for (input, output) in zip(inputs, outputs):
         if input.name == output.name:
@@ -204,7 +204,7 @@ def analyze_stack(op: parser.InstDef) -> StackEffect:
 
 
 def analyze_caches(op: parser.InstDef) -> list[CacheEntry]:
-    caches: list[parser.CacheEffect] = [i for i in op.inputs if isinstance(i, parser.CacheEffect)]  # type: ignore
+    caches: list[parser.CacheEffect] = [i for i in op.inputs if isinstance(i, parser.CacheEffect)]
     return [ CacheEntry(i.name, int(i.size)) for i in caches ]
 
 
@@ -347,7 +347,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
             case _:
                 assert False
     for node in forest:
-        if isinstance(node, parser.Macro):  # type: ignore
+        if isinstance(node, parser.Macro):
             add_macro(node, instructions, uops)
     for node in forest:
         match node:
