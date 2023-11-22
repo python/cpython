@@ -473,7 +473,6 @@ class Instruction(_Instruction):
         *offset_width* sets the width of the instruction offset field
         """
         fields = []
-        #
         # Column: Source code line number
         if lineno_width:
             if self.starts_line:
