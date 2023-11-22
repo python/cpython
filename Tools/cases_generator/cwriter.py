@@ -5,6 +5,8 @@ from typing import TextIO
 class CWriter:
     'A writer that understands tokens and how to format C code'
 
+    last_token : Token | None
+
     def __init__(self, out: TextIO, indent: int, line_directives: bool):
         self.out = out
         self.base_column = indent * 4
