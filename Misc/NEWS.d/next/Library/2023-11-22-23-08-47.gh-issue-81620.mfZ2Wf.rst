@@ -1,0 +1,1 @@
+Ensure *n* is integer in :func:`random.binomialvariate`
