@@ -157,7 +157,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         return res;
     }
 
-    PyObject *exc;
+    PyObject *exc = NULL;
     if (res == NULL) {
         exc = PyErr_GetRaisedException();
     }
@@ -171,7 +171,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         }
     }
     rc = internal_close(self);
-    if (res == NULL) {
+    if (exc != NULL) {
         _PyErr_ChainExceptions1(exc);
     }
     if (rc < 0) {
