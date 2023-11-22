@@ -1,2 +1,0 @@
-Update macOS installer to include an upstream Tcl/Tk fix
-for the ``ttk::ThemeChanged`` error encountered in Tkinter.

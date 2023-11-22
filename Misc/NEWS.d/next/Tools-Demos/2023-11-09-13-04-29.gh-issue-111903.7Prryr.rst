@@ -1,4 +1,0 @@
-Argument Clinic now supports the ``@critical_section`` directive that
-instructs Argument Clinic to generate a critical section around the function
-call, which locks the ``self`` object in ``--disable-gil`` builds. Patch by
-Sam Gross.

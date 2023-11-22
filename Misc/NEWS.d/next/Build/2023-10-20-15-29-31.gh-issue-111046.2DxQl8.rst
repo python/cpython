@@ -1,1 +1,0 @@
-For wasi-threads, memory is now exported to fix compatibility issues with some wasm runtimes.

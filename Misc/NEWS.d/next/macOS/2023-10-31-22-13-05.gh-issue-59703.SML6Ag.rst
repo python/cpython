@@ -1,4 +1,0 @@
-For macOS framework builds, in ``getpath.c`` use the system ``dladdr``
-function to find the path to the shared library rather than depending
-on deprecated macOS APIs.
-

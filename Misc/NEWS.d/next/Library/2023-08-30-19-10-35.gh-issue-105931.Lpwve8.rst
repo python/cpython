@@ -1,8 +1,0 @@
-Change :mod:`compileall` to only strip the stripdir prefix from the full path
-recorded in the compiled ``.pyc`` file, when the prefix matches the start of
-the full path in its entirety. When the prefix does not match, no stripping is
-performed and a warning to this effect is displayed.
-
-Previously all path components of the stripdir prefix that matched the full
-path were removed, while those that did not match were left alone (including
-ones interspersed between matching components).

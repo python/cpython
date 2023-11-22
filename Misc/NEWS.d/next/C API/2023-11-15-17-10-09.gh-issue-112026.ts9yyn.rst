@@ -1,2 +1,0 @@
-Restore the removed ``_PyDict_GetItemStringWithError()`` function. It is
-used by numpy. Patch by Victor Stinner.
