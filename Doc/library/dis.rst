@@ -51,6 +51,12 @@ interpreter.
       transparent for forward jumps but needs to be taken into account when
       reasoning about backward jumps.
 
+   .. versionchanged:: 3.13
+      The output shows logical labels rather than instruction offsets
+      for jump targets and exception handlers. The ``-O`` command line
+      option and the ``show_offsets`` argument were added to add the
+      instruction offsets to the output as well.
+
 Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
@@ -80,7 +86,7 @@ The :mod:`dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
-   python -m dis [-h] [-C] [infile]
+   python -m dis [-h] [-C] [-O] [infile]
 
 The following options are accepted:
 
@@ -93,6 +99,10 @@ The following options are accepted:
 .. cmdoption:: -C, --show-caches
 
    Show inline caches.
+
+.. cmdoption:: -O, --show-offsets
+
+   Show offsets of instructions.
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code recieved from stdin.
@@ -107,7 +117,7 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 code.
 
 .. class:: Bytecode(x, *, first_line=None, current_offset=None,\
-                    show_caches=False, adaptive=False)
+                    show_caches=False, adaptive=False, show_offsets=False)
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
    generator, coroutine, method, string of source code, or a code object (as
@@ -131,6 +141,9 @@ code.
 
    If *adaptive* is ``True``, :meth:`.dis` will display specialized bytecode
    that may be different from the original bytecode.
+
+   If *show_offsets* is ``True``, :meth:`.dis` will include instruction
+   offsets in the output.
 
    .. classmethod:: from_traceback(tb, *, show_caches=False)
 
@@ -254,7 +267,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_caches* and *adaptive* parameters.
 
 
-.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False)
+.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,
+                    show_offset=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
    traceback if none was passed.  The instruction causing the exception is
@@ -269,9 +283,12 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter.
 
 .. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
-              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
+              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,
+              show_offsets=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
@@ -296,6 +313,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter.
 
 .. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False)
 
