@@ -6421,6 +6421,7 @@ class SendfileUsingSendfileTest(SendfileUsingSendTest):
         return getattr(sock, "_sendfile_use_sendfile")
 
 
+@unittest.skipUnless(sys.platform == "win32", "Windows only test.")
 class SendfileUsingTransmitfileTest(SendfileUsingSendTest):
     """
     Test the TransmitFile() implementation of socket.sendfile().
