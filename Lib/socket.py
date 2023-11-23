@@ -56,6 +56,13 @@ import os, sys, io, selectors
 from enum import IntEnum, IntFlag
 
 try:
+    import _overlapped
+    import msvcrt
+except ImportError:
+    _overlapped = None
+    msvcrt = None
+
+try:
     import errno
 except ImportError:
     errno = None
@@ -450,6 +457,22 @@ class socket(_socket.socket):
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + total_sent)
+
+    if _overlapped:
+        def _sendfile_use_transmitfile(self, file, offset=0, count=None):
+            self._check_sendfile_params(file, offset, count)
+            if self.gettimeout() == 0:
+                raise ValueError("non-blocking sockets are not supported")
+            ov = _overlapped.Overlapped()
+            offset_low = offset & 0xffff_ffff
+            offset_high = (offset >> 32) & 0xffff_ffff
+            count = count or 0
+            ov.TransmitFile(self.fileno(), msvcrt.get_osfhandle(file.fileno()),
+                            offset_low, offset_high, count, 0, 0)
+            sent = ov.getresult(True)
+            if sent > 0 and hasattr(file, 'seek'):
+                file.seek(offset + sent)
+            return sent
 
     def _check_sendfile_params(self, file, offset, count):
         if 'b' not in getattr(file, 'mode', 'b'):
