@@ -1699,7 +1699,7 @@ def _get_local_protocol_members(namespace):
     # annotated attributes are always considered protocol members
     annotations = namespace.get("__annotations__", {})
     # only namespace members outside the excluded set are considered protocol members
-    return (set(namespace) - EXCLUDED_ATTRIBUTES) | set(annotations)
+    return (namespace.keys() - EXCLUDED_ATTRIBUTES) | annotations.keys()
 
 
 def _get_parent_members(cls):
