@@ -4107,15 +4107,14 @@ class ProtocolTests(BaseTestCase):
         class TakesKWARGS(Protocol):
             def __init__(self, **kwargs): ...  # NOTE: For static checking.
 
-        assert TakesKWARGS.__protocol_attrs__ == {"__init__"}
-
+        self.assertEqual(TakesKWARGS.__protocol_attrs__, {"__init__"})
 
     def test_protocol_special_attributes(self):
         class Documented(Protocol):
             """Matches classes that have a docstring."""
             __doc__: str  # NOTE: For static checking, undocumented classes have __doc__ = None.
 
-        assert Documented.__protocol_attrs__ == {"__doc__"}
+        self.assertEqual(Documented.__protocol_attrs__, {"__doc__"})
 
         @runtime_checkable
         class Slotted(Protocol):
@@ -4125,13 +4124,12 @@ class ProtocolTests(BaseTestCase):
         class Unslotted:
             pass
 
-        class WithSLots:
+        class WithSlots:
             __slots__ = ("foo", "bar")
 
-        assert Slotted.__protocol_attrs__ == {"__slots__"}
+        self.assertEqual(Slotted.__protocol_attrs__, {"__slots__"})
         self.assertNotIsInstance(Unslotted(), Slotted)
-        self.assertIsInstance(WithSLots(), Slotted)
-
+        self.assertIsInstance(WithSlots(), Slotted)
 
 
 class GenericTests(BaseTestCase):
