@@ -14,11 +14,25 @@ from _xxinterpchannels import (
 
 __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
+    'RunFailedError',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
     'ChannelError', 'ChannelNotFoundError',
     'ChannelEmptyError',
     ]
+
+
+class RunFailedError(RuntimeError):
+
+    def __init__(self, excinfo):
+        msg = excinfo.formatted
+        if not msg:
+            if excinfo.type and snapshot.msg:
+                msg = f'{snapshot.type.__name__}: {snapshot.msg}'
+            else:
+                msg = snapshot.type.__name__ or snapshot.msg
+        super().__init__(msg)
+        self.snapshot = excinfo
 
 
 def create(*, isolated=True):
@@ -110,7 +124,9 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        _interpreters.exec(self._id, src_str, channels)
+        excinfo = _interpreters.exec(self._id, src_str, channels)
+        if excinfo is not None:
+            raise RunFailedError(excinfo)
 
 
 def create_channel():
