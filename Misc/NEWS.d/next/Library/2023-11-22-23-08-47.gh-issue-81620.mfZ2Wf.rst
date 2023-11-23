@@ -1,1 +1,1 @@
-Ensure *n* is integer in :func:`random.binomialvariate`
+Add extra tests for :func:`random.binomialvariate`
