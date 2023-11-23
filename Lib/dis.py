@@ -478,7 +478,8 @@ class Instruction(_Instruction):
             if self.starts_line:
                 lineno_fmt = "%%%dd" if self.line_number is not None else "%%%ds"
                 lineno_fmt = lineno_fmt % lineno_width
-                fields.append(lineno_fmt % self.line_number)
+                lineno = self.line_number if self.line_number is not None else '--'
+                fields.append(lineno_fmt % lineno)
             else:
                 fields.append(' ' * lineno_width)
         # Column: Label
