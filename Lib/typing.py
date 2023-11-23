@@ -1689,7 +1689,7 @@ EXCLUDED_MEMBERS = EXCLUDED_ATTRIBUTES | _SPECIAL_CALLABLE_NAMES
 def _get_local_members(namespace):
     """Collect the specified attributes from a classes' namespace."""
     annotations = namespace.get("__annotations__", {})
-    attrs = (set(namespace) | set(annotations)) - EXCLUDED_MEMBERS
+    attrs = (namespace.keys() | annotations.keys()) - EXCLUDED_MEMBERS
     # exclude special "_abc_" attributes
     return {attr for attr in attrs if not attr.startswith('_abc_')}
 
