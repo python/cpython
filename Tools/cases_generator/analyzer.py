@@ -1,8 +1,8 @@
-
 from dataclasses import dataclass
 import lexer
 import parser
 from typing import Optional
+
 
 @dataclass
 class Properties:
@@ -16,18 +16,28 @@ class Properties:
     always_exits: bool
     stores_sp: bool
 
-    def dump(self, indent:str) -> None:
-        print(indent,
-              "escapes:", self.escapes,
-              ", infallible:", self.infallible,
-              ", deopts:", self.deopts,
-              ", oparg:", self.oparg,
-              ", jumps:", self.jumps,
-              ", eval_breaker:", self.ends_with_eval_breaker,
-              ", needs_this:", self.needs_this,
-              ", always_exits:", self.always_exits,
-              ", stores_sp:", self.stores_sp,
-              sep=""
+    def dump(self, indent: str) -> None:
+        print(
+            indent,
+            "escapes:",
+            self.escapes,
+            ", infallible:",
+            self.infallible,
+            ", deopts:",
+            self.deopts,
+            ", oparg:",
+            self.oparg,
+            ", jumps:",
+            self.jumps,
+            ", eval_breaker:",
+            self.ends_with_eval_breaker,
+            ", needs_this:",
+            self.needs_this,
+            ", always_exits:",
+            self.always_exits,
+            ", stores_sp:",
+            self.stores_sp,
+            sep="",
         )
 
 
@@ -43,18 +53,20 @@ SKIP_PROPERTIES = Properties(
     False,
 )
 
+
 @dataclass
 class Skip:
-   "Unused cache entry"
-   size: int
+    "Unused cache entry"
+    size: int
 
-   @property
-   def name(self)->str:
-       return f"unused/{self.size}"
+    @property
+    def name(self) -> str:
+        return f"unused/{self.size}"
 
-   @property
-   def properties(self)->Properties:
-       return SKIP_PROPERTIES
+    @property
+    def properties(self) -> Properties:
+        return SKIP_PROPERTIES
+
 
 @dataclass
 class StackItem:
@@ -73,6 +85,7 @@ class StackItem:
     def is_array(self) -> bool:
         return self.type == "PyObject **"
 
+
 @dataclass
 class StackEffect:
     inputs: list[StackItem]
@@ -81,6 +94,7 @@ class StackEffect:
     def __str__(self) -> str:
         return f"({', '.join([str(i) for i in self.inputs])} -- {', '.join([str(i) for i in self.outputs])})"
 
+
 @dataclass
 class CacheEntry:
     name: str
@@ -88,6 +102,7 @@ class CacheEntry:
 
     def __str__(self) -> str:
         return f"{self.name}/{self.size}"
+
 
 @dataclass
 class Uop:
@@ -101,7 +116,9 @@ class Uop:
     _size: int = -1
 
     def dump(self, indent: str) -> None:
-        print(indent, self.name, ", ".join(self.annotations) if self.annotations else "")
+        print(
+            indent, self.name, ", ".join(self.annotations) if self.annotations else ""
+        )
         print(indent, self.stack, ", ".join([str(c) for c in self.caches]))
         self.properties.dump("    " + indent)
 
@@ -111,13 +128,15 @@ class Uop:
             self._size = sum(c.size for c in self.caches)
         return self._size
 
+
 Part = Uop | Skip
+
 
 @dataclass
 class Instruction:
     name: str
     uops: list[Part]
-    _properties : Properties | None
+    _properties: Properties | None
     is_target: bool = False
     family: Optional["Family"] = None
 
@@ -148,6 +167,7 @@ class Instruction:
     def size(self) -> int:
         return 1 + sum(uop.size for uop in self.uops)
 
+
 @dataclass
 class PseudoInstruction:
     name: str
@@ -176,36 +196,44 @@ class Analysis:
 
 
 def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
-    #To do -- support file and line output
+    # To do -- support file and line output
     # Construct a SyntaxError instance from message and token
-    return lexer.make_syntax_error(
-        message, "", tkn.line, tkn.column, ""
-    )
+    return lexer.make_syntax_error(message, "", tkn.line, tkn.column, "")
 
-def override_error(name: str, context: parser.Context | None, prev_context: parser.Context | None, token: lexer.Token) -> SyntaxError:
+
+def override_error(
+    name: str,
+    context: parser.Context | None,
+    prev_context: parser.Context | None,
+    token: lexer.Token,
+) -> SyntaxError:
     return analysis_error(
         f"Duplicate definition of '{name}' @ {context} "
         f"previous definition @ {prev_context}",
-        token
+        token,
     )
 
+
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
-    return StackItem(item.name, item.type,
-                     item.cond, (item.size if item.size else "1"))
+    return StackItem(item.name, item.type, item.cond, (item.size if item.size else "1"))
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
-    inputs: list[StackItem] = [convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)]
+    inputs: list[StackItem] = [
+        convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)
+    ]
     outputs: list[StackItem] = [convert_stack_item(i) for i in op.outputs]
-    for (input, output) in zip(inputs, outputs):
+    for input, output in zip(inputs, outputs):
         if input.name == output.name:
             input.peek = output.peek = True
     return StackEffect(inputs, outputs)
 
 
 def analyze_caches(op: parser.InstDef) -> list[CacheEntry]:
-    caches: list[parser.CacheEffect] = [i for i in op.inputs if isinstance(i, parser.CacheEffect)]
-    return [ CacheEntry(i.name, int(i.size)) for i in caches ]
+    caches: list[parser.CacheEffect] = [
+        i for i in op.inputs if isinstance(i, parser.CacheEffect)
+    ]
+    return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
 def variable_used(node: parser.InstDef, name: str) -> bool:
@@ -213,6 +241,7 @@ def variable_used(node: parser.InstDef, name: str) -> bool:
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
+
 
 def is_infallible(op: parser.InstDef) -> bool:
     return not (
@@ -223,18 +252,23 @@ def is_infallible(op: parser.InstDef) -> bool:
         or variable_used(op, "resume_with_error")
     )
 
+
 from flags import makes_escaping_api_call
 
-EXITS = set([
-    "DISPATCH",
-    "GO_TO_INSTRUCTION",
-    "Py_UNREACHABLE",
-    "DISPATCH_INLINED",
-    "DISPATCH_GOTO",
-])
+EXITS = set(
+    [
+        "DISPATCH",
+        "GO_TO_INSTRUCTION",
+        "Py_UNREACHABLE",
+        "DISPATCH_INLINED",
+        "DISPATCH_GOTO",
+    ]
+)
+
 
 def eval_breaker_at_end(op: parser.InstDef) -> bool:
     return op.tokens[-5].text == "CHECK_EVAL_BREAKER"
+
 
 def always_exits(op: parser.InstDef) -> bool:
     depth = 0
@@ -255,11 +289,12 @@ def always_exits(op: parser.InstDef) -> bool:
             if tkn.text in EXITS:
                 return True
             if tkn.text == "DEOPT_IF" or tkn.text == "ERROR_IF":
-                next(tkn_iter) # '('
+                next(tkn_iter)  # '('
                 t = next(tkn_iter)
                 if t.text == "true":
                     return True
     return False
+
 
 def compute_properties(op: parser.InstDef) -> Properties:
     return Properties(
@@ -274,6 +309,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         variable_used(op, "STORE_SP"),
     )
 
+
 def make_uop(name: str, op: parser.InstDef) -> Uop:
     return Uop(
         name,
@@ -285,24 +321,36 @@ def make_uop(name: str, op: parser.InstDef) -> Uop:
         compute_properties(op),
     )
 
+
 def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
     assert op.kind == "op"
     if op.name in uops:
         if "override" not in op.annotations:
-            raise override_error(op.name, op.context, uops[op.name].context,op.tokens[0])
+            raise override_error(
+                op.name, op.context, uops[op.name].context, op.tokens[0]
+            )
     uops[op.name] = make_uop(op.name, op)
 
-def add_instruction(name: str, parts: list[Part], instructions: dict[str, Instruction]) -> None:
+
+def add_instruction(
+    name: str, parts: list[Part], instructions: dict[str, Instruction]
+) -> None:
     instructions[name] = Instruction(name, parts, None)
 
-def desugar_inst(inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]) -> None:
+
+def desugar_inst(
+    inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]
+) -> None:
     assert inst.kind == "inst"
     name = inst.name
     uop = make_uop("_" + inst.name, inst)
     uops[inst.name] = uop
     add_instruction(name, [uop], instructions)
 
-def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]) -> None:
+
+def add_macro(
+    macro: parser.Macro, instructions: dict[str, Instruction], uops: dict[str, Uop]
+) -> None:
     parts: list[Uop | Skip] = []
     for part in macro.uops:
         match part:
@@ -314,26 +362,36 @@ def add_macro(macro: parser.Macro, instructions: dict[str, Instruction], uops: d
                 parts.append(Skip(part.size))
             case _:
                 assert False
-    assert(parts)
+    assert parts
     add_instruction(macro.name, parts, instructions)
 
-def add_family(pfamily: parser.Family, instructions: dict[str, Instruction], families: dict[str, Family]) -> None:
+
+def add_family(
+    pfamily: parser.Family,
+    instructions: dict[str, Instruction],
+    families: dict[str, Family],
+) -> None:
     family = Family(
         pfamily.name,
         pfamily.size,
-        [ instructions[member_name] for member_name in pfamily.members ]
+        [instructions[member_name] for member_name in pfamily.members],
     )
     for member in family.members:
         member.family = family
-    #The head of the family is an implicit jump target for DEOPTs
+    # The head of the family is an implicit jump target for DEOPTs
     instructions[family.name].is_target = True
     families[family.name] = family
 
-def add_pseudo(pseudo: parser.Pseudo, instructions: dict[str, Instruction], pseudos: dict[str, PseudoInstruction]) -> None:
+
+def add_pseudo(
+    pseudo: parser.Pseudo,
+    instructions: dict[str, Instruction],
+    pseudos: dict[str, PseudoInstruction],
+) -> None:
     pseudos[pseudo.name] = PseudoInstruction(
-        pseudo.name,
-        [ instructions[target] for target in pseudo.targets ]
+        pseudo.name, [instructions[target] for target in pseudo.targets]
     )
+
 
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
@@ -378,12 +436,14 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                     continue
                 if target.text in instructions:
                     instructions[target.text].is_target = True
-    #Hack
+    # Hack
     instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
     return Analysis(instructions, uops, families, pseudos)
 
+
 def analyze_files(filenames: list[str]) -> Analysis:
     return analyze_forest(parser.parse_files(filenames))
+
 
 def dump_analysis(analysis: Analysis) -> None:
     print("Uops:")
@@ -402,6 +462,7 @@ def dump_analysis(analysis: Analysis) -> None:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("No input")
     else:

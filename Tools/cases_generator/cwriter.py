@@ -1,17 +1,16 @@
-
 from lexer import Token
 from typing import TextIO
 
 
 class CWriter:
-    'A writer that understands tokens and how to format C code'
+    "A writer that understands tokens and how to format C code"
 
-    last_token : Token | None
+    last_token: Token | None
 
     def __init__(self, out: TextIO, indent: int, line_directives: bool):
         self.out = out
         self.base_column = indent * 4
-        self.indents = [ i*4 for i in range(indent+1) ]
+        self.indents = [i * 4 for i in range(indent + 1)]
         self.line_directives = line_directives
         self.last_token = None
         self.newline = True

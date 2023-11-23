@@ -1,4 +1,15 @@
-from parsing import InstDef, Macro, Pseudo, Family, Parser, Context, CacheEffect, StackEffect, OpName, AstNode
+from parsing import (
+    InstDef,
+    Macro,
+    Pseudo,
+    Family,
+    Parser,
+    Context,
+    CacheEffect,
+    StackEffect,
+    OpName,
+    AstNode,
+)
 from formatting import prettify_filename
 
 
@@ -7,6 +18,7 @@ END_MARKER = "// END BYTECODES //"
 
 
 Context = Context
+
 
 def parse_files(filenames: list[str]) -> list[AstNode]:
     result: list[AstNode] = []
@@ -37,15 +49,24 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
         thing_first_token = psr.peek()
         while node := psr.definition():
             assert node is not None
-            result.append(node) #type: ignore[arg-type]
+            result.append(node)  # type: ignore[arg-type]
         if not psr.eof():
             psr.backup()
-            raise psr.make_syntax_error(f"Extra stuff at the end of {filename}", psr.next(True))
+            raise psr.make_syntax_error(
+                f"Extra stuff at the end of {filename}", psr.next(True)
+            )
     return result
 
-#Keep MyPy happy
+
+# Keep MyPy happy
 __all__ = [
-    "parse_files", "Context", "Macro",
-    "InstDef", "Family", "Pseudo", "AstNode",
-    "StackEffect", "CacheEffect",
+    "parse_files",
+    "Context",
+    "Macro",
+    "InstDef",
+    "Family",
+    "Pseudo",
+    "AstNode",
+    "StackEffect",
+    "CacheEffect",
 ]

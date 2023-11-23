@@ -3,6 +3,7 @@ from analyzer import StackItem
 from dataclasses import dataclass
 from formatting import maybe_parenthesize
 
+
 def var_size(var: StackItem) -> str:
     if var.condition:
         # Special case simplification
@@ -12,6 +13,7 @@ def var_size(var: StackItem) -> str:
             return f"(({var.condition}) ? {var.size} : 0)"
     else:
         return var.size
+
 
 @dataclass
 class StackOffset:
