@@ -1968,10 +1968,12 @@ class SubinterpImportTests(unittest.TestCase):
             print(_testsinglephase)
             ''')
         interpid = _interpreters.create()
-        with self.assertRaises(_interpreters.RunFailedError):
-            _interpreters.run_string(interpid, script)
-        with self.assertRaises(_interpreters.RunFailedError):
-            _interpreters.run_string(interpid, script)
+
+        excsnap = _interpreters.run_string(interpid, script)
+        self.assertIsNot(excsnap, None)
+
+        excsnap = _interpreters.run_string(interpid, script)
+        self.assertIsNot(excsnap, None)
 
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):

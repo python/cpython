@@ -28,31 +28,11 @@ _get_current_interp(void)
     return PyInterpreterState_Get();
 }
 
-static PyObject *
-add_new_exception(PyObject *mod, const char *name, PyObject *base)
-{
-    assert(!PyObject_HasAttrStringWithError(mod, name));
-    PyObject *exctype = PyErr_NewException(name, base, NULL);
-    if (exctype == NULL) {
-        return NULL;
-    }
-    int res = PyModule_AddType(mod, (PyTypeObject *)exctype);
-    if (res < 0) {
-        Py_DECREF(exctype);
-        return NULL;
-    }
-    return exctype;
-}
-
-#define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
-    add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
-
 
 /* module state *************************************************************/
 
 typedef struct {
-    /* exceptions */
-    PyObject *RunFailedError;
+    int _notused;
 } module_state;
 
 static inline module_state *
@@ -67,18 +47,12 @@ get_module_state(PyObject *mod)
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
-    /* exceptions */
-    Py_VISIT(state->RunFailedError);
-
     return 0;
 }
 
 static int
 clear_module_state(module_state *state)
 {
-    /* exceptions */
-    Py_CLEAR(state->RunFailedError);
-
     return 0;
 }
 
@@ -178,30 +152,6 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
 /* interpreter-specific code ************************************************/
 
 static int
-exceptions_init(PyObject *mod)
-{
-    module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        return -1;
-    }
-
-#define ADD(NAME, BASE) \
-    do { \
-        assert(state->NAME == NULL); \
-        state->NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
-        if (state->NAME == NULL) { \
-            return -1; \
-        } \
-    } while (0)
-
-    // An uncaught exception came out of interp_run_string().
-    ADD(RunFailedError, PyExc_RuntimeError);
-#undef ADD
-
-    return 0;
-}
-
-static int
 _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 {
     PyObject *result = NULL;
@@ -229,7 +179,7 @@ static int
 _run_in_interpreter(PyInterpreterState *interp,
                     const char *codestr, Py_ssize_t codestrlen,
                     PyObject *shareables, int flags,
-                    PyObject *excwrapper)
+                    PyObject **p_excinfo)
 {
     assert(!PyErr_Occurred());
     _PyXI_session session = {0};
@@ -237,7 +187,10 @@ _run_in_interpreter(PyInterpreterState *interp,
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
         assert(!PyErr_Occurred());
-        _PyXI_ApplyExceptionInfo(session.exc, excwrapper);
+        PyObject *excinfo = _PyXI_ApplyError(session.error);
+        if (excinfo != NULL) {
+            *p_excinfo = excinfo;
+        }
         assert(PyErr_Occurred());
         return -1;
     }
@@ -251,7 +204,10 @@ _run_in_interpreter(PyInterpreterState *interp,
     // Propagate any exception out to the caller.
     assert(!PyErr_Occurred());
     if (res < 0) {
-        _PyXI_ApplyCapturedException(&session, excwrapper);
+        PyObject *excinfo = _PyXI_ApplyCapturedException(&session);
+        if (excinfo != NULL) {
+            *p_excinfo = excinfo;
+        }
     }
     else {
         assert(!_PyXI_HasCapturedException(&session));
@@ -521,7 +477,8 @@ convert_code_arg(PyObject *arg, const char *fname, const char *displayname,
 
 static int
 _interp_exec(PyObject *self,
-             PyObject *id_arg, PyObject *code_arg, PyObject *shared_arg)
+             PyObject *id_arg, PyObject *code_arg, PyObject *shared_arg,
+             PyObject **p_excinfo)
 {
     // Look up the interpreter.
     PyInterpreterState *interp = PyInterpreterID_LookUp(id_arg);
@@ -540,10 +497,8 @@ _interp_exec(PyObject *self,
     }
 
     // Run the code in the interpreter.
-    module_state *state = get_module_state(self);
-    assert(state != NULL);
     int res = _run_in_interpreter(interp, codestr, codestrlen,
-                                  shared_arg, flags, state->RunFailedError);
+                                  shared_arg, flags, p_excinfo);
     Py_XDECREF(bytes_obj);
     if (res < 0) {
         return -1;
@@ -577,10 +532,12 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, code, shared);
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, id, code, shared, &excinfo);
     Py_DECREF(code);
     if (res < 0) {
-        return NULL;
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
     }
     Py_RETURN_NONE;
 }
@@ -620,10 +577,12 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, script, shared);
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, id, script, shared, &excinfo);
     Py_DECREF(script);
     if (res < 0) {
-        return NULL;
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
     }
     Py_RETURN_NONE;
 }
@@ -654,10 +613,12 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, (PyObject *)code, shared);
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, id, (PyObject *)code, shared, &excinfo);
     Py_DECREF(code);
     if (res < 0) {
-        return NULL;
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
     }
     Py_RETURN_NONE;
 }
@@ -759,11 +720,6 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    /* Add exception types */
-    if (exceptions_init(mod) != 0) {
-        goto error;
-    }
-
     // PyInterpreterID
     if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
         goto error;

@@ -940,7 +940,6 @@ class RunFailedTests(TestBase):
         return script_helper.make_script(tempdir, modname, text)
 
     def run_script(self, text, *, fails=False):
-        excwrapper = interpreters.RunFailedError
         r, w = os.pipe()
         try:
             script = dedent(f"""
@@ -956,11 +955,12 @@ class RunFailedTests(TestBase):
                 raise NeverError  # never raised
                 """).format(dedent(text))
             if fails:
-                with self.assertRaises(excwrapper) as caught:
-                    interpreters.run_string(self.id, script)
-                return caught.exception
+                err = interpreters.run_string(self.id, script)
+                self.assertIsNot(err, None)
+                return err
             else:
-                interpreters.run_string(self.id, script)
+                err = interpreters.run_string(self.id, script)
+                self.assertIs(err, None)
                 return None
         except:
             raise  # re-raise
@@ -979,17 +979,18 @@ class RunFailedTests(TestBase):
             exctype_name = exctype.__name__
 
         # Run the script.
-        exc = self.run_script(script, fails=True)
+        excinfo = self.run_script(script, fails=True)
 
         # Check the wrapper exception.
+        self.assertEqual(excinfo.type.__name__, exctype_name)
         if msg is None:
-            self.assertEqual(str(exc).split(':')[0],
+            self.assertEqual(excinfo.formatted.split(':')[0],
                              exctype_name)
         else:
-            self.assertEqual(str(exc),
+            self.assertEqual(excinfo.formatted,
                              '{}: {}'.format(exctype_name, msg))
 
-        return exc
+        return excinfo
 
     def assert_run_failed(self, exctype, script):
         self._assert_run_failed(exctype, None, script)

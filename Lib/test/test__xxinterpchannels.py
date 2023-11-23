@@ -1017,16 +1017,16 @@ class ChannelTests(TestBase):
             _channels.recv({cid})
             """))
         channels.close(cid)
-        with self.assertRaises(interpreters.RunFailedError) as cm:
-            interpreters.run_string(id1, dedent(f"""
+
+        excsnap = interpreters.run_string(id1, dedent(f"""
                 _channels.send({cid}, b'spam')
                 """))
-        self.assertIn('ChannelClosedError', str(cm.exception))
-        with self.assertRaises(interpreters.RunFailedError) as cm:
-            interpreters.run_string(id2, dedent(f"""
+        self.assertEqual(excsnap.type.__name__, 'ChannelClosedError')
+
+        excsnap = interpreters.run_string(id2, dedent(f"""
                 _channels.send({cid}, b'spam')
                 """))
-        self.assertIn('ChannelClosedError', str(cm.exception))
+        self.assertEqual(excsnap.type.__name__, 'ChannelClosedError')
 
     def test_close_multiple_times(self):
         cid = channels.create()
