@@ -1885,8 +1885,7 @@ class _ProtocolMeta(ABCMeta):
                 and cls.__dict__.get("__subclasshook__") is _proto_hook
             ):
                 raise TypeError(
-                    f"Protocols with non-method members don't support issubclass()."
-                    f" Non-method members: {cls.__protocol_attrs__}."
+                    "Protocols with non-method members don't support issubclass()"
                 )
             if not getattr(cls, '_is_runtime_protocol', False):
                 raise TypeError(
