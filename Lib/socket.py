@@ -468,7 +468,15 @@ class socket(_socket.socket):
             offset_low = offset & 0xffff_ffff
             offset_high = (offset >> 32) & 0xffff_ffff
             count = count or 0
-            ov.TransmitFile(self.fileno(), msvcrt.get_osfhandle(file.fileno()),
+            try:
+                fileno = file.fileno()
+            except (AttributeError, io.UnsupportedOperation) as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            try:
+                os.fstat(fileno)
+            except OSError as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            ov.TransmitFile(self.fileno(), msvcrt.get_osfhandle(fileno),
                             offset_low, offset_high, count, 0, 0)
             timeout_ms = _overlapped.INFINITE
             if timeout is not None:
@@ -514,9 +522,9 @@ class socket(_socket.socket):
         The socket must be of SOCK_STREAM type.
         Non-blocking sockets are not supported.
         """
-        if sys.platform == "win32":
-            return self._sendfile_use_transmitfile(file, offset, count)
         try:
+            if sys.platform == "win32":
+                return self._sendfile_use_transmitfile(file, offset, count)
             return self._sendfile_use_sendfile(file, offset, count)
         except _GiveupOnSendfile:
             return self._sendfile_use_send(file, offset, count)
