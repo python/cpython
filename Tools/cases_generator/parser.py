@@ -17,9 +17,6 @@ BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 
 
-Context = Context
-
-
 def parse_files(filenames: list[str]) -> list[AstNode]:
     result: list[AstNode] = []
     for filename in filenames:
@@ -56,17 +53,3 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
                 f"Extra stuff at the end of {filename}", psr.next(True)
             )
     return result
-
-
-# Keep MyPy happy
-__all__ = [
-    "parse_files",
-    "Context",
-    "Macro",
-    "InstDef",
-    "Family",
-    "Pseudo",
-    "AstNode",
-    "StackEffect",
-    "CacheEffect",
-]

@@ -17,27 +17,22 @@ class Properties:
     stores_sp: bool
 
     def dump(self, indent: str) -> None:
-        print(
-            indent,
-            "escapes:",
-            self.escapes,
-            ", infallible:",
-            self.infallible,
-            ", deopts:",
-            self.deopts,
-            ", oparg:",
-            self.oparg,
-            ", jumps:",
-            self.jumps,
-            ", eval_breaker:",
-            self.ends_with_eval_breaker,
-            ", needs_this:",
-            self.needs_this,
-            ", always_exits:",
-            self.always_exits,
-            ", stores_sp:",
-            self.stores_sp,
-            sep="",
+        print(indent, end="")
+        text = ", ".join([f"{key}: {value}" for (key, value) in self.__dict__.items()])
+        print(indent, text, sep="")
+
+    @staticmethod
+    def from_list(properties: list["Properties"]) -> "Properties":
+        return Properties(
+            any(p.escapes for p in properties),
+            all(p.infallible for p in properties),
+            any(p.deopts for p in properties),
+            any(p.oparg for p in properties),
+            any(p.jumps for p in properties),
+            any(p.ends_with_eval_breaker for p in properties),
+            any(p.needs_this for p in properties),
+            any(p.always_exits for p in properties),
+            any(p.stores_sp for p in properties),
         )
 
 
@@ -77,9 +72,9 @@ class StackItem:
     peek: bool = False
 
     def __str__(self) -> str:
-        cond = " if (" + self.condition + ")" if self.condition else ""
-        size = "[" + self.size + "]" if self.size != "1" else ""
-        type = "" if self.type is None else self.type + " "
+        cond = f" if ({self.condition})" if self.condition else ""
+        size = f"[{self.size}]" if self.size != "1" else ""
+        type = "" if self.type is None else f"{self.type} "
         return f"{type}{self.name}{size}{cond} {self.peek}"
 
     def is_array(self) -> bool:
@@ -147,17 +142,7 @@ class Instruction:
         return self._properties
 
     def _compute_properties(self) -> Properties:
-        return Properties(
-            any(part.properties.escapes for part in self.uops),
-            all(part.properties.infallible for part in self.uops),
-            any(part.properties.deopts for part in self.uops),
-            any(part.properties.oparg for part in self.uops),
-            any(part.properties.jumps for part in self.uops),
-            any(part.properties.ends_with_eval_breaker for part in self.uops),
-            any(part.properties.needs_this for part in self.uops),
-            any(part.properties.always_exits for part in self.uops),
-            any(part.properties.stores_sp for part in self.uops),
-        )
+        return Properties.from_list([part.properties for part in self.uops])
 
     def dump(self, indent: str) -> None:
         print(indent, self.name, "=", ", ".join([op.name for op in self.uops]))
@@ -172,6 +157,7 @@ class Instruction:
 class PseudoInstruction:
     name: str
     targets: list[Instruction]
+    flags: list[str]
 
     def dump(self, indent: str) -> None:
         print(indent, self.name, "->", " or ".join([t.name for t in self.targets]))
@@ -298,27 +284,27 @@ def always_exits(op: parser.InstDef) -> bool:
 
 def compute_properties(op: parser.InstDef) -> Properties:
     return Properties(
-        makes_escaping_api_call(op),
-        is_infallible(op),
-        variable_used(op, "DEOPT_IF"),
-        variable_used(op, "oparg"),
-        variable_used(op, "JUMPBY"),
-        eval_breaker_at_end(op),
-        variable_used(op, "this_instr"),
-        always_exits(op),
-        variable_used(op, "STORE_SP"),
+        escapes=makes_escaping_api_call(op),
+        infallible=is_infallible(op),
+        deopts=variable_used(op, "DEOPT_IF"),
+        oparg=variable_used(op, "oparg"),
+        jumps=variable_used(op, "JUMPBY"),
+        ends_with_eval_breaker=eval_breaker_at_end(op),
+        needs_this=variable_used(op, "this_instr"),
+        always_exits=always_exits(op),
+        stores_sp=variable_used(op, "STORE_SP"),
     )
 
 
 def make_uop(name: str, op: parser.InstDef) -> Uop:
     return Uop(
-        name,
-        op.context,
-        op.annotations,
-        analyze_stack(op),
-        analyze_caches(op),
-        op.block.tokens,
-        compute_properties(op),
+        name=name,
+        context=op.context,
+        annotations=op.annotations,
+        stack=analyze_stack(op),
+        caches=analyze_caches(op),
+        body=op.block.tokens,
+        properties=compute_properties(op),
     )
 
 
@@ -389,7 +375,9 @@ def add_pseudo(
     pseudos: dict[str, PseudoInstruction],
 ) -> None:
     pseudos[pseudo.name] = PseudoInstruction(
-        pseudo.name, [instructions[target] for target in pseudo.targets]
+        pseudo.name,
+        [instructions[target] for target in pseudo.targets],
+        pseudo.flags,
     )
 
 
