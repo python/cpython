@@ -849,18 +849,6 @@ _overlapped_Overlapped_cancel_impl(OverlappedObject *self)
     Py_RETURN_NONE;
 }
 
-/*[clinic input]
-_overlapped.Overlapped.getresult
-
-    wait: BOOL(c_default='FALSE') = False
-    /
-
-Retrieve result of operation.
-
-If wait is true then it blocks until the operation is finished.  If wait
-is false and the operation is still pending then an error is raised.
-[clinic start generated code]*/
-
 static PyObject *
 check_getresult_error(OverlappedObject *self, DWORD transferred)
 {
@@ -958,6 +946,18 @@ check_getresult_error(OverlappedObject *self, DWORD transferred)
             return PyLong_FromUnsignedLong((unsigned long) transferred);
     }
 }
+
+/*[clinic input]
+_overlapped.Overlapped.getresult
+
+    wait: BOOL(c_default='FALSE') = False
+    /
+
+Retrieve result of operation.
+
+If wait is true then it blocks until the operation is finished.  If wait
+is false and the operation is still pending then an error is raised.
+[clinic start generated code]*/
 
 static PyObject *
 _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
