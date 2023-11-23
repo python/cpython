@@ -4099,7 +4099,7 @@ class ProtocolTests(BaseTestCase):
             def square_norm(self) -> float:
                 return self.x ** 2 + self.y ** 2
 
-        assert Vec2D.__protocol_attrs__ == {'x', 'y', 'square_norm'}
+        self.assertEqual(Vec2D.__protocol_attrs__, {'x', 'y', 'square_norm'})
         expected_error_message = (
             "Protocols with non-method members don't support issubclass()."
             " Non-method members: {'x', 'y'}."
