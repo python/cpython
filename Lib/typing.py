@@ -1675,13 +1675,66 @@ _TYPING_INTERNALS = frozenset({
 
 _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
-    '__init__', '__module__', '__new__', '__slots__',
-    '__subclasshook__', '__weakref__', '__class_getitem__',
-    '__match_args__',
+    '__module__', '__slots__', '__match_args__', '__qualname__',
+})
+_SPECIAL_CALLABLE_NAMES = frozenset({
+    '__init__', '__new__', '__subclasshook__','__class_getitem__', '__weakref__',
 })
 
 # These special attributes will be not collected as protocol members.
 EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS | _SPECIAL_NAMES | {'_MutableMapping__marker'}
+EXCLUDED_MEMBERS = EXCLUDED_ATTRIBUTES | _SPECIAL_CALLABLE_NAMES
+
+
+def _get_local_members(namespace):
+    """Collect the specified attributes from a classes' namespace."""
+    annotations = namespace.get("__annotations__", {})
+    attrs = (set(namespace) | set(annotations)) - EXCLUDED_MEMBERS
+    # exclude special "_abc_" attributes
+    return {attr for attr in attrs if not attr.startswith('_abc_')}
+
+
+def _get_local_protocol_members(namespace):
+    """Collect the specified attributes from the protocols' namespace."""
+    # annotated attributes are always considered protocol members
+    annotations = namespace.get("__annotations__", {})
+    # only namespace members outside the excluded set are considered protocol members
+    return (set(namespace) - EXCLUDED_ATTRIBUTES) | set(annotations)
+
+
+
+def _get_parent_members(cls):
+    """Collect protocol members from parents of arbitrary class object.
+
+    This includes names actually defined in the class dictionary, as well
+    as names that appear in annotations. Special names (above) are skipped.
+    """
+    attrs = set()
+    for base in cls.__mro__[1:-1]:  # without self and object
+        if base.__name__ in {'Protocol', 'Generic'}:
+            continue
+        elif getattr(base, "_is_protocol", False):
+            attrs |= getattr(base, "__protocol_attrs__", set())
+        else:  # get from annotations
+            attrs |= _get_local_members(base.__dict__)
+    return attrs
+
+
+def _get_cls_members(cls):
+    """Collect protocol members from an arbitrary class object.
+
+    This includes names actually defined in the class dictionary, as well
+    as names that appear in annotations. Special names (above) are skipped.
+    """
+    attrs = set()
+    for base in cls.__mro__[:-1]:  # without object
+        if base.__name__ in {'Protocol', 'Generic'}:
+            continue
+        elif getattr(base, "_is_protocol", False):
+            attrs |= getattr(base, "__protocol_attrs__", set())
+        else:
+            attrs |= _get_local_members(base.__dict__)
+    return attrs
 
 
 def _get_protocol_attrs(cls):
@@ -1696,9 +1749,10 @@ def _get_protocol_attrs(cls):
             continue
         annotations = getattr(base, '__annotations__', {})
         for attr in (*base.__dict__, *annotations):
-            if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
+            if attr not in EXCLUDED_MEMBERS and not attr.startswith('_abc_'):
                 attrs.add(attr)
     return attrs
+
 
 
 def _no_init_or_replace_init(self, *args, **kwargs):
@@ -1804,10 +1858,14 @@ class _ProtocolMeta(ABCMeta):
                     )
         return super().__new__(mcls, name, bases, namespace, **kwargs)
 
-    def __init__(cls, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if getattr(cls, "_is_protocol", False):
-            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+    def __init__(cls, name, bases, namespace, **kwds):
+        super().__init__(name, bases, namespace, **kwds)
+        if getattr(cls, "_is_protocol", False) and cls.__name__ != "Protocol":
+            cls.__protocol_attrs__ = (
+                _get_local_protocol_members(namespace) | _get_parent_members(cls)
+            )
+            # local_attrs =  _get_local_protocol_members(namespace)
+            # cls.__protocol_attrs__ = local_attrs.union(*map(_get_cls_members, bases))
             # PEP 544 prohibits using issubclass()
             # with protocols that have non-method members.
             cls.__callable_proto_members_only__ = all(
@@ -1829,7 +1887,8 @@ class _ProtocolMeta(ABCMeta):
                 and cls.__dict__.get("__subclasshook__") is _proto_hook
             ):
                 raise TypeError(
-                    "Protocols with non-method members don't support issubclass()"
+                    f"Protocols with non-method members don't support issubclass()."
+                    f" Non-method members: {cls.__protocol_attrs__}."
                 )
             if not getattr(cls, '_is_runtime_protocol', False):
                 raise TypeError(

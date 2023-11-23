@@ -3907,7 +3907,7 @@ class ProtocolTests(BaseTestCase):
             def close(self):
                 return 0
 
-        self.assertIsSubclass(B, Custom)
+        self.assertIsSubclass(B, Custom, msg=Custom.__protocol_attrs__)
         self.assertNotIsSubclass(A, Custom)
 
         @runtime_checkable
@@ -4090,6 +4090,48 @@ class ProtocolTests(BaseTestCase):
 
         self.assertIsInstance(Foo(), ProtocolWithMixedMembers)
         self.assertNotIsInstance(42, ProtocolWithMixedMembers)
+
+    def test_protocol_special_members(self):
+        # See https://github.com/python/cpython/issues/112319
+
+        T_co = TypeVar("T_co", covariant=True)
+
+        @runtime_checkable
+        class GenericIterable(Protocol[T_co]):
+            def __class_getitem__(cls, item): ...
+            def __iter__(self): ...
+
+        self.assertIsInstance([1,2,3], GenericIterable)
+        self.assertNotIsInstance("123", GenericIterable)  # str is not a generic type!
+
+        class TakesKWARGS(Protocol):
+            def __init__(self, **kwargs): ...  # NOTE: For static checking.
+
+        assert TakesKWARGS.__protocol_attrs__ == {"__init__"}
+
+
+    def test_protocol_special_attributes(self):
+        class Documented(Protocol):
+            """Matches classes that have a docstring."""
+            __doc__: str  # NOTE: For static checking, undocumented classes have __doc__ = None.
+
+        assert Documented.__protocol_attrs__ == {"__doc__"}
+
+        @runtime_checkable
+        class Slotted(Protocol):
+            """Matches classes that have a __slots__ attribute."""
+            __slots__: tuple
+
+        class Unslotted:
+            pass
+
+        class WithSLots:
+            __slots__ = ("foo", "bar")
+
+        assert Slotted.__protocol_attrs__ == {"__slots__"}
+        self.assertNotIsInstance(Unslotted(), Slotted)
+        self.assertIsInstance(WithSLots(), Slotted)
+
 
 
 class GenericTests(BaseTestCase):
