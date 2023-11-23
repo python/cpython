@@ -832,7 +832,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
-    executor->base.execute = _PyUopExecute;
+    executor->base.execute = _PyUOpExecute;
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -892,7 +892,7 @@ uop_optimize(
  * The actual implementation is inlined in ceval.c,
  * in _PyEval_EvalFrameDefault(). */
 _PyInterpreterFrame *
-_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+_PyUOpExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     Py_FatalError("Tier 2 is now inlined into Tier 1");
 }
