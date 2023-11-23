@@ -801,8 +801,6 @@ class Random(_random.Random):
 
         """
         # Error check inputs and handle edge cases
-        if not isinstance(n, int):
-            raise TypeError("n must be an integer")
         if n < 0:
             raise ValueError("n must be non-negative")
         if p <= 0.0 or p >= 1.0:
@@ -815,8 +813,6 @@ class Random(_random.Random):
         random = self.random
 
         # Fast path for a common case
-        if n == 0:
-            return 0
         if n == 1:
             return _index(random() < p)
 
@@ -829,7 +825,7 @@ class Random(_random.Random):
             # https://dl.acm.org/doi/pdf/10.1145/42372.42381
             x = y = 0
             c = _log2(1.0 - p)
-            if c == 0:
+            if not c:
                 return x
             while True:
                 y += _floor(_log2(random()) / c) + 1
