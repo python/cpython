@@ -4099,17 +4099,12 @@ class ProtocolTests(BaseTestCase):
             def square_norm(self) -> float:
                 return self.x ** 2 + self.y ** 2
 
-        self.assertEqual(Vec2D.__protocol_attrs__, {'x', 'y', 'square_norm'})
         expected_error_message = (
             "Protocols with non-method members don't support issubclass()."
             " Non-method members: {'x', 'y'}."
         )
-
-        try:
-            issubclass(int, Vec2D)
-        except TypeError as exc:
-            self.assertEqual(str(exc), expected_error_message)
-
+        self.assertRaisesRegex(TypeError, f'^{re.escape(expected_error_message)}$')
+        self.assertEqual(Vec2D.__protocol_attrs__, {'x', 'y', 'square_norm'})
 
 class GenericTests(BaseTestCase):
 
