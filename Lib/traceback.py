@@ -709,10 +709,12 @@ def _resolve_exc_type(exc_type):
         raise ValueError(f'unsupported exc_type {exc_type!r}')
 
 
-def _match_class(exc_type, *expected):
+def _match_class(exc_type, expected):
     assert expected
     if exc_type is None:
         return False
+    if isinstance(expected, type):
+        expected = (expected,)
     assert all(et.__module__ == 'builtins' for et in expected)
     if isinstance(exc_type, type):
         if not issubclass(exc_type, expected):
@@ -811,7 +813,7 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
-        elif _match_class(exc_type, NameError, AttributeError) and \
+        elif _match_class(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)

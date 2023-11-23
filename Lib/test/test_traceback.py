@@ -49,6 +49,7 @@ class ModuleTestBase:
 
         if not mod_name:
             mod_name = ''.join(random.choices(string.ascii_letters, k=16))
+            assert mod_name not in sys.modules, repr(mod_name)
         self.addCleanup(lambda: sys.modules.pop(mod_name, None))
 
         module = tmpdir / (mod_name + ".py")
@@ -2731,7 +2732,6 @@ class TestStack(unittest.TestCase):
 class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
-
 
 class TestTracebackException(unittest.TestCase):
 
