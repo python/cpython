@@ -5,6 +5,7 @@ import itertools
 import linecache
 import sys
 import textwrap
+import warnings
 from contextlib import suppress
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
@@ -719,7 +720,8 @@ class TracebackException:
     - :attr:`__suppress_context__` The *__suppress_context__* value from the
       original exception.
     - :attr:`stack` A `StackSummary` representing the traceback.
-    - :attr:`exc_type` The class of the original traceback.
+    - :attr:`exc_type` (deprecated) The class of the original traceback.
+    - :attr:`exc_type_str` String display of exc_type
     - :attr:`filename` For syntax errors - the filename where the error
       occurred.
     - :attr:`lineno` For syntax errors - the linenumber where the error
@@ -755,7 +757,7 @@ class TracebackException:
             limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
 
-        self.exc_type = exc_type if save_exc_type else None
+        self._exc_type = exc_type if save_exc_type else None
 
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
@@ -765,11 +767,11 @@ class TracebackException:
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
         if exc_type is not None:
-            self._exc_type_qualname = exc_type.__qualname__
-            self._exc_type_module = exc_type.__module__
+            self.exc_type_qualname = exc_type.__qualname__
+            self.exc_type_module = exc_type.__module__
         else:
-            self._exc_type_qualname = None
-            self._exc_type_module = None
+            self.exc_type_qualname = None
+            self.exc_type_module = None
 
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
@@ -881,6 +883,24 @@ class TracebackException:
         """Create a TracebackException from an exception."""
         return cls(type(exc), exc, exc.__traceback__, *args, **kwargs)
 
+    @property
+    def exc_type(self):
+        warnings.warn('Deprecated in 3.13. Use exc_type_str instead.',
+                      DeprecationWarning, stacklevel=2)
+        return self._exc_type
+
+    @property
+    def exc_type_str(self):
+        if not self._have_exc_type:
+            return None
+        stype = self.exc_type_qualname
+        smod = self.exc_type_module
+        if smod not in ("__main__", "builtins"):
+            if not isinstance(smod, str):
+                smod = "<unknown>"
+            stype = smod + '.' + stype
+        return stype
+
     def _load_lines(self):
         """Private API. force all lines in the stack to be loaded."""
         for frame in self.stack:
@@ -917,13 +937,7 @@ class TracebackException:
             yield indent + _format_final_exc_line(None, self._str)
             return
 
-        stype = self._exc_type_qualname
-        smod = self._exc_type_module
-        if smod not in ("__main__", "builtins"):
-            if not isinstance(smod, str):
-                smod = "<unknown>"
-            stype = smod + '.' + stype
-
+        stype = self.exc_type_str
         if not self._is_syntax_error:
             if _depth > 0:
                 # Nested exceptions needs correct handling of multiline messages.
