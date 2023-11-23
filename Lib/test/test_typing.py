@@ -3907,7 +3907,7 @@ class ProtocolTests(BaseTestCase):
             def close(self):
                 return 0
 
-        self.assertIsSubclass(B, Custom, msg=Custom.__protocol_attrs__)
+        self.assertIsSubclass(B, Custom)
         self.assertNotIsSubclass(A, Custom)
 
         @runtime_checkable
