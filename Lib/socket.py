@@ -360,7 +360,7 @@ class socket(_socket.socket):
             if not fsize:
                 return 0  # empty file
             # Truncate to 1GiB to avoid OverflowError, see bpo-38319.
-            blocksize = min(count or fsize, 2 ** 30)
+            blocksize = min(count or fsize - offset, 2 ** 30)
             timeout = self.gettimeout()
             if timeout == 0:
                 raise ValueError("non-blocking sockets are not supported")
