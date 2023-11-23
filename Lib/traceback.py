@@ -737,7 +737,7 @@ class TracebackException:
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
-            max_group_width=15, max_group_depth=10, _seen=None):
+            max_group_width=15, max_group_depth=10, save_exc_type=True, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
@@ -754,11 +754,22 @@ class TracebackException:
             _walk_tb_with_full_positions(exc_traceback),
             limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
-        self.exc_type = exc_type
+
+        self.exc_type = exc_type if save_exc_type else None
+
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _safe_string(exc_value, 'exception')
         self.__notes__ = getattr(exc_value, '__notes__', None)
+
+        self._is_syntax_error = False
+        self._have_exc_type = exc_type is not None
+        if exc_type is not None:
+            self._exc_type_qualname = exc_type.__qualname__
+            self._exc_type_module = exc_type.__module__
+        else:
+            self._exc_type_qualname = None
+            self._exc_type_module = None
 
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
@@ -771,6 +782,7 @@ class TracebackException:
             self.offset = exc_value.offset
             self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
+            self._is_syntax_error = True
         elif exc_type and issubclass(exc_type, ImportError) and \
                 getattr(exc_value, "name_from", None) is not None:
             wrong_name = getattr(exc_value, "name_from", None)
@@ -901,18 +913,18 @@ class TracebackException:
         """
 
         indent = 3 * _depth * ' '
-        if self.exc_type is None:
+        if not self._have_exc_type:
             yield indent + _format_final_exc_line(None, self._str)
             return
 
-        stype = self.exc_type.__qualname__
-        smod = self.exc_type.__module__
+        stype = self._exc_type_qualname
+        smod = self._exc_type_module
         if smod not in ("__main__", "builtins"):
             if not isinstance(smod, str):
                 smod = "<unknown>"
             stype = smod + '.' + stype
 
-        if not issubclass(self.exc_type, SyntaxError):
+        if not self._is_syntax_error:
             if _depth > 0:
                 # Nested exceptions needs correct handling of multiline messages.
                 formatted = _format_final_exc_line(
