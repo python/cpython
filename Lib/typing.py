@@ -1748,7 +1748,7 @@ def _get_protocol_attrs(cls):
             continue
         annotations = getattr(base, '__annotations__', {})
         for attr in (*base.__dict__, *annotations):
-            if attr not in EXCLUDED_MEMBERS and not attr.startswith('_abc_'):
+            if not attr.startswith('_abc_') and attr not in EXCLUDED_MEMBERS:
                 attrs.add(attr)
     return attrs
 
