@@ -201,7 +201,7 @@ def override_error(
 
 
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
-    return StackItem(item.name, item.type, item.cond, (item.size if item.size else "1"))
+    return StackItem(item.name, item.type, item.cond, (item.size or "1"))
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
