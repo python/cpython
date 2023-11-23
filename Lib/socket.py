@@ -461,7 +461,8 @@ class socket(_socket.socket):
     if _overlapped:
         def _sendfile_use_transmitfile(self, file, offset=0, count=None):
             self._check_sendfile_params(file, offset, count)
-            if self.gettimeout() == 0:
+            timeout = self.gettimeout()
+            if timeout == 0:
                 raise ValueError("non-blocking sockets are not supported")
             ov = _overlapped.Overlapped()
             offset_low = offset & 0xffff_ffff
@@ -469,7 +470,15 @@ class socket(_socket.socket):
             count = count or 0
             ov.TransmitFile(self.fileno(), msvcrt.get_osfhandle(file.fileno()),
                             offset_low, offset_high, count, 0, 0)
-            sent = ov.getresult(True)
+            timeout_ms = _overlapped.INFINITE
+            if timeout is not None:
+                timeout_ms = int(timeout * 1000)
+            try:
+                sent = ov.getresultex(timeout_ms, False)
+            except WindowsError as e:
+                if e.winerror == 258:
+                    raise TimeoutError('timed out')
+                raise
             if sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + sent)
             return sent

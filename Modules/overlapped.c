@@ -862,31 +862,12 @@ is false and the operation is still pending then an error is raised.
 [clinic start generated code]*/
 
 static PyObject *
-_overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
-/*[clinic end generated code: output=8c9bd04d08994f6c input=aa5b03e9897ca074]*/
+check_getresult_error(OverlappedObject *self, DWORD transferred)
 {
-    DWORD transferred = 0;
-    BOOL ret;
-    DWORD err;
-    PyObject *addr;
+    PyObject *addr = NULL;
+    DWORD err = self->error;
 
-    if (self->type == TYPE_NONE) {
-        PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
-        return NULL;
-    }
-
-    if (self->type == TYPE_NOT_STARTED) {
-        PyErr_SetString(PyExc_ValueError, "operation failed to start");
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    ret = GetOverlappedResult(self->handle, &self->overlapped, &transferred,
-                              wait);
-    Py_END_ALLOW_THREADS
-
-    self->error = err = ret ? ERROR_SUCCESS : GetLastError();
-    switch (err) {
+    switch (self->error) {
         case ERROR_SUCCESS:
         case ERROR_MORE_DATA:
             break;
@@ -976,6 +957,70 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
     }
+}
+
+static PyObject *
+_overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
+/*[clinic end generated code: output=8c9bd04d08994f6c input=aa5b03e9897ca074]*/
+{
+    DWORD transferred = 0;
+    BOOL ret;
+
+    if (self->type == TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
+        return NULL;
+    }
+
+    if (self->type == TYPE_NOT_STARTED) {
+        PyErr_SetString(PyExc_ValueError, "operation failed to start");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = GetOverlappedResult(self->handle, &self->overlapped, &transferred,
+                              wait);
+    Py_END_ALLOW_THREADS
+
+    self->error = ret ? ERROR_SUCCESS : GetLastError();
+
+    return check_getresult_error(self, transferred);
+}
+
+/*[clinic input]
+_overlapped.Overlapped.getresultex
+
+    milliseconds: DWORD
+    alertable: BOOL
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_overlapped_Overlapped_getresultex_impl(OverlappedObject *self,
+                                        DWORD milliseconds, BOOL alertable)
+/*[clinic end generated code: output=ce0eb6ffb9618e54 input=ef4f4cab49ac1d80]*/
+{
+    DWORD transferred = 0;
+    BOOL ret;
+
+    if (self->type == TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation not yet attempted");
+        return NULL;
+    }
+
+    if (self->type == TYPE_NOT_STARTED) {
+        PyErr_SetString(PyExc_ValueError, "operation failed to start");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = GetOverlappedResultEx(self->handle, &self->overlapped, &transferred,
+                                milliseconds, alertable);
+    Py_END_ALLOW_THREADS
+
+    self->error = ret ? ERROR_SUCCESS : GetLastError();
+
+    return check_getresult_error(self, transferred);
 }
 
 static PyObject *
@@ -1927,6 +1972,7 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
 
 static PyMethodDef Overlapped_methods[] = {
     _OVERLAPPED_OVERLAPPED_GETRESULT_METHODDEF
+    _OVERLAPPED_OVERLAPPED_GETRESULTEX_METHODDEF
     _OVERLAPPED_OVERLAPPED_CANCEL_METHODDEF
     _OVERLAPPED_OVERLAPPED_READFILE_METHODDEF
     _OVERLAPPED_OVERLAPPED_READFILEINTO_METHODDEF
