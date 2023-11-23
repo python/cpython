@@ -316,10 +316,10 @@ PyUnstable_Optimizer_NewCounter(void)
     return (PyObject *)opt;
 }
 
-///////////////////// Experimental UOp Optimizer /////////////////////
+///////////////////// Experimental Uop Optimizer /////////////////////
 
 static void
-uop_dealloc(_PyUOpExecutorObject *self) {
+uop_dealloc(_PyUopExecutorObject *self) {
     _Py_ExecutorClear((_PyExecutorObject *)self);
     PyObject_Free(self);
 }
@@ -334,13 +334,13 @@ _PyUopName(int index)
 }
 
 static Py_ssize_t
-uop_len(_PyUOpExecutorObject *self)
+uop_len(_PyUopExecutorObject *self)
 {
     return Py_SIZE(self);
 }
 
 static PyObject *
-uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
+uop_item(_PyUopExecutorObject *self, Py_ssize_t index)
 {
     Py_ssize_t len = uop_len(self);
     if (index < 0 || index >= len) {
@@ -375,11 +375,11 @@ PySequenceMethods uop_as_sequence = {
     .sq_item = (ssizeargfunc)uop_item,
 };
 
-PyTypeObject _PyUOpExecutor_Type = {
+PyTypeObject _PyUopExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
-    .tp_basicsize = sizeof(_PyUOpExecutorObject) - sizeof(_PyUOpInstruction),
-    .tp_itemsize = sizeof(_PyUOpInstruction),
+    .tp_basicsize = sizeof(_PyUopExecutorObject) - sizeof(_PyUopInstruction),
+    .tp_itemsize = sizeof(_PyUopInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
@@ -417,7 +417,7 @@ static int
 translate_bytecode_to_trace(
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
-    _PyUOpInstruction *trace,
+    _PyUopInstruction *trace,
     int buffer_size,
     _PyBloomFilter *dependencies)
 {
@@ -770,7 +770,7 @@ done:
  * NOPs are excluded from the count.
 */
 static int
-compute_used(_PyUOpInstruction *buffer, uint32_t *used)
+compute_used(_PyUopInstruction *buffer, uint32_t *used)
 {
     int count = 0;
     SET_BIT(used, 0);
@@ -803,11 +803,11 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
  * and not a NOP.
  */
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
+make_executor_from_uops(_PyUopInstruction *buffer, _PyBloomFilter *dependencies)
 {
     uint32_t used[(_Py_UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
     int length = compute_used(buffer, used);
-    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &_PyUOpExecutor_Type, length);
+    _PyUopExecutorObject *executor = PyObject_NewVar(_PyUopExecutorObject, &_PyUopExecutor_Type, length);
     if (executor == NULL) {
         return NULL;
     }
@@ -865,7 +865,7 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyUOpInstruction buffer[_Py_UOP_MAX_TRACE_LENGTH];
+    _PyUopInstruction buffer[_Py_UOP_MAX_TRACE_LENGTH];
     int err = translate_bytecode_to_trace(code, instr, buffer, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
@@ -902,7 +902,7 @@ uop_opt_dealloc(PyObject *self) {
     PyObject_Free(self);
 }
 
-PyTypeObject _PyUOpOptimizer_Type = {
+PyTypeObject _PyUopOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_optimizer",
     .tp_basicsize = sizeof(_PyOptimizerObject),
@@ -912,9 +912,9 @@ PyTypeObject _PyUOpOptimizer_Type = {
 };
 
 PyObject *
-PyUnstable_Optimizer_NewUOpOptimizer(void)
+PyUnstable_Optimizer_NewUopOptimizer(void)
 {
-    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
+    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUopOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }

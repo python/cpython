@@ -24,7 +24,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
-#include "pycore_uops.h"          // _PyUOpExecutorObject
+#include "pycore_uops.h"          // _PyUopExecutorObject
 #include "pycore_pyerrors.h"
 
 #include "pycore_dict.h"
@@ -738,7 +738,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     }
 
     /* State shared between Tier 1 and Tier 2 interpreter */
-    _PyUOpExecutorObject *current_executor = NULL;
+    _PyUopExecutorObject *current_executor = NULL;
 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
@@ -991,7 +991,7 @@ enter_tier_two:
 #endif
 
     OPT_STAT_INC(traces_executed);
-    _PyUOpInstruction *next_uop = current_executor->trace;
+    _PyUopInstruction *next_uop = current_executor->trace;
     uint16_t uopcode;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;

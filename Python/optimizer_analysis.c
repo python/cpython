@@ -13,7 +13,7 @@
 #include "pycore_optimizer.h"
 
 static void
-remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
+remove_unneeded_uops(_PyUopInstruction *buffer, int buffer_size)
 {
     // Note that we don't enter stubs, those SET_IPs are needed.
     int last_set_ip = -1;
@@ -55,7 +55,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 int
 _Py_uop_analyze_and_optimize(
     PyCodeObject *co,
-    _PyUOpInstruction *buffer,
+    _PyUopInstruction *buffer,
     int buffer_size,
     int curr_stacklen
 )

@@ -75,7 +75,7 @@ extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
-PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
+PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUopOptimizer(void);
 
 #define OPTIMIZER_BITS_IN_COUNTER 4
 /* Minimum of 16 additional executions before retry */

@@ -17,12 +17,12 @@ typedef struct {
     uint16_t oparg;
     uint32_t target;
     uint64_t operand;  // A cache entry
-} _PyUOpInstruction;
+} _PyUopInstruction;
 
 typedef struct {
     _PyExecutorObject base;
-    _PyUOpInstruction trace[1];
-} _PyUOpExecutorObject;
+    _PyUopInstruction trace[1];
+} _PyUopExecutorObject;
 
 _PyInterpreterFrame *_PyUopExecute(
     _PyExecutorObject *executor,

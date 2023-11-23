@@ -68,7 +68,7 @@ static size_t jump;
 static uint16_t invert, counter, index, hint;
 #define unused 0  // Used in a macro def, can't be static
 static uint32_t type_version;
-static _PyUOpExecutorObject *current_executor;
+static _PyUopExecutorObject *current_executor;
 
 static PyObject *
 dummy_func(
@@ -2358,7 +2358,7 @@ dummy_func(
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             if (executor->execute == _PyUopExecute) {
-                current_executor = (_PyUOpExecutorObject *)executor;
+                current_executor = (_PyUopExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
             frame = executor->execute(executor, frame, stack_pointer);

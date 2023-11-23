@@ -1241,7 +1241,7 @@ init_interp_main(PyThreadState *tstate)
             enabled = 1;
         }
         if (enabled) {
-            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+            PyObject *opt = PyUnstable_Optimizer_NewUopOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
