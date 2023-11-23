@@ -1132,11 +1132,12 @@ on_completion_display_matches_hook(char **matches,
 {
     int i;
     PyObject *sub, *m=NULL, *s=NULL, *r=NULL;
+    PyGILState_STATE gilstate = PyGILState_Ensure();
     readlinestate *state = get_global_readline_state(false);
     if (state == NULL) {
+        PyGILState_Release(gilstate);
         return;
     }
-    PyGILState_STATE gilstate = PyGILState_Ensure();
     m = PyList_New(num_matches);
     if (m == NULL)
         goto error;
@@ -1195,13 +1196,14 @@ static char *
 on_completion(const char *text, int state)
 {
     char *result = NULL;
+    PyGILState_STATE gilstate = PyGILState_Ensure();
     readlinestate *module_state = get_global_readline_state(false);
     if (module_state == NULL) {
+        PyGILState_Release(gilstate);
         return NULL;
     }
     if (module_state->completer != NULL) {
         PyObject *r = NULL, *t;
-        PyGILState_STATE gilstate = PyGILState_Ensure();
         rl_attempted_completion_over = 1;
         t = decode(text);
         r = PyObject_CallFunction(module_state->completer, "Ni", t, state);
@@ -1226,6 +1228,7 @@ on_completion(const char *text, int state)
         PyGILState_Release(gilstate);
         return result;
     }
+    PyGILState_Release(gilstate);
     return result;
 }
 
@@ -1240,8 +1243,8 @@ flex_complete(const char *text, int start, int end)
     char saved;
     size_t start_size, end_size;
     wchar_t *s;
-    readlinestate *state = get_global_readline_state(false);
     PyGILState_STATE gilstate = PyGILState_Ensure();
+    readlinestate *state = get_global_readline_state(false);
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     rl_completion_append_character ='\0';
 #endif
