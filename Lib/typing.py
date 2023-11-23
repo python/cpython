@@ -1754,7 +1754,6 @@ def _get_protocol_attrs(cls):
     return attrs
 
 
-
 def _no_init_or_replace_init(self, *args, **kwargs):
     cls = type(self)
 
