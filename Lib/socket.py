@@ -514,6 +514,8 @@ class socket(_socket.socket):
         The socket must be of SOCK_STREAM type.
         Non-blocking sockets are not supported.
         """
+        if sys.platform == "win32":
+            return self._sendfile_use_transmitfile(file, offset, count)
         try:
             return self._sendfile_use_sendfile(file, offset, count)
         except _GiveupOnSendfile:
