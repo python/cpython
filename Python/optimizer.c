@@ -379,7 +379,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
     .tp_basicsize = sizeof(_PyUOpExecutorObject) - sizeof(_PyUOpInstruction),
-    .tp_itemsize = sizeof(_PyUOpInstruction),
+    .tp_itemsize = sizeof(_PyUOpInstruction) + sizeof(uintptr_t),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
@@ -825,6 +825,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     if (executor == NULL) {
         return NULL;
     }
+    executor->extra = (uintptr_t *)(executor->trace + length);
+    memset(executor->extra, 0, sizeof(uintptr_t) * length);
     int dest = length - 1;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {

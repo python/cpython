@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
     _PyExecutorObject base;
+    uintptr_t *extra;  // An array of uintptr_t of size base.ob_base.ob_size
     _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
