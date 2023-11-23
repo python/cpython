@@ -1,0 +1,22 @@
+:class:`Protocol` classes now allow specification of previously excluded attributes and methods.
+
+Example::
+
+    class Documented(Protocol):
+        """A Protocol for documented classes."""
+        __doc__: str
+
+    class Slotted(Protocol):
+        """A Protocol for classes with __slots__."""
+        __slots__: tuple[str, ...]
+
+    @runtime_checkable
+    class GenericIterable(Protocol):
+        """An iterable that must also be a generic type."""
+        def __class_getitem__(cls, item): ...
+        def __iter__(self): ...
+
+    assert isinstance(["a", "b", "c"], GenericIterable)  # ✅
+    assert not isinstance("abc", GenericIterable)  # ✅
+
+Patch by Randolf Scholz.
