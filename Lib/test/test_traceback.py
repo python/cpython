@@ -2884,6 +2884,17 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
         self.assertEqual(str(exc_obj), str(exc))
 
+    def test_no_save_exc_type(self):
+        try:
+            1/0
+        except Exception as e:
+            exc = e
+
+        te = traceback.TracebackException.from_exception(
+                 exc, save_exc_type=False)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(te.exc_type)
+
     def test_no_refs_to_exception_and_traceback_objects(self):
         try:
             1/0
