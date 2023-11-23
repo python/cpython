@@ -40,10 +40,10 @@
    where, normally, *OptionalRelease* is less than *MandatoryRelease*, and both are
    5-tuples of the same form as :data:`sys.version_info`::
 
-      (PY_MAJOR_VERSION,  # the major version number,"2" in "2.1.0a3"; an integer
-       PY_MINOR_VERSION,  # the minor version number,"1" in "2.1.0a3"; an integer
-       PY_MICRO_VERSION,  # the micro version number,"0" in "2.1.0a3"; an integer
-       PY_RELEASE_LEVEL,  # "alpha", "beta", "candidate", or "final"; a string
+      (PY_MAJOR_VERSION, # the major version number,"2" in "2.1.0a3"; an integer
+       PY_MINOR_VERSION, # the minor version number,"1" in "2.1.0a3"; an integer
+       PY_MICRO_VERSION, # the micro version number,"0" in "2.1.0a3"; an integer
+       PY_RELEASE_LEVEL, # "alpha", "beta", "candidate", or "final"; a string
        PY_RELEASE_SERIAL, # the release serial number,"3" in "2.1.0a3"; an integer
       )
 
