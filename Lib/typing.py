@@ -1702,7 +1702,6 @@ def _get_local_protocol_members(namespace):
     return (set(namespace) - EXCLUDED_ATTRIBUTES) | set(annotations)
 
 
-
 def _get_parent_members(cls):
     """Collect protocol members from parents of arbitrary class object.
 
