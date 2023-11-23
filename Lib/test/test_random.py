@@ -1090,7 +1090,7 @@ class TestDistributions(unittest.TestCase):
         self.assertTrue(B(1, 1.0) in {1})      # n == 1 fast path
 
         # BG method very small p
-        self.assertEqual(B(5, 1e-8), 0)
+        self.assertEqual(B(5, 1e-18), 0)
 
         # BG method p <= 0.5 and n*p=1.25
         self.assertTrue(B(5, 0.25) in set(range(6)))
