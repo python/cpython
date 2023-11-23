@@ -1800,8 +1800,8 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        co_instr.op.code = _PyOpcode_Deopt[co_instr.op.code];
-        cp_instr.op.code = _PyOpcode_Deopt[cp_instr.op.code];
+        co_instr.op.code = _Py_GetBaseOpcode(co, i);
+        cp_instr.op.code = _Py_GetBaseOpcode(cp, i);
         eq = co_instr.cache == cp_instr.cache;
         if (!eq) {
             goto unequal;
