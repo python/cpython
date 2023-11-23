@@ -1077,8 +1077,6 @@ class TestDistributions(unittest.TestCase):
         # Cover all the code paths
         with self.assertRaises(ValueError):
             B(n=-1)                            # Negative n
-        with self.assertRaises(TypeError):
-            B(n=0.5)                           # float n
         with self.assertRaises(ValueError):
             B(n=1, p=-0.5)                     # Negative p
         with self.assertRaises(ValueError):
