@@ -225,23 +225,11 @@ _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
     return 0;
 }
 
-static void
-_raise_formatted(PyObject *exctype, PyObject *excinfo)
-{
-    PyObject *formatted = PyObject_GetAttrString(excinfo, "formatted");
-    if (formatted == NULL) {
-        assert(PyErr_Occurred());
-        return;
-    }
-    PyErr_SetObject(exctype, formatted);
-    Py_DECREF(formatted);
-}
-
 static int
 _run_in_interpreter(PyInterpreterState *interp,
                     const char *codestr, Py_ssize_t codestrlen,
                     PyObject *shareables, int flags,
-                    PyObject *excwrapper)
+                    PyObject **p_excinfo)
 {
     assert(!PyErr_Occurred());
     _PyXI_session session = {0};
@@ -251,7 +239,7 @@ _run_in_interpreter(PyInterpreterState *interp,
         assert(!PyErr_Occurred());
         PyObject *excinfo = _PyXI_ApplyError(session.error);
         if (excinfo != NULL) {
-            _raise_formatted(excwrapper, excinfo);
+            *p_excinfo = excinfo;
         }
         assert(PyErr_Occurred());
         return -1;
@@ -268,7 +256,7 @@ _run_in_interpreter(PyInterpreterState *interp,
     if (res < 0) {
         PyObject *excinfo = _PyXI_ApplyCapturedException(&session);
         if (excinfo != NULL) {
-            _raise_formatted(excwrapper, excinfo);
+            *p_excinfo = excinfo;
         }
     }
     else {
@@ -539,7 +527,8 @@ convert_code_arg(PyObject *arg, const char *fname, const char *displayname,
 
 static int
 _interp_exec(PyObject *self,
-             PyObject *id_arg, PyObject *code_arg, PyObject *shared_arg)
+             PyObject *id_arg, PyObject *code_arg, PyObject *shared_arg,
+             PyObject **p_excinfo)
 {
     // Look up the interpreter.
     PyInterpreterState *interp = PyInterpreterID_LookUp(id_arg);
@@ -558,10 +547,8 @@ _interp_exec(PyObject *self,
     }
 
     // Run the code in the interpreter.
-    module_state *state = get_module_state(self);
-    assert(state != NULL);
     int res = _run_in_interpreter(interp, codestr, codestrlen,
-                                  shared_arg, flags, state->RunFailedError);
+                                  shared_arg, flags, p_excinfo);
     Py_XDECREF(bytes_obj);
     if (res < 0) {
         return -1;
@@ -595,10 +582,12 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, code, shared);
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, id, code, shared, &excinfo);
     Py_DECREF(code);
     if (res < 0) {
-        return NULL;
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
     }
     Py_RETURN_NONE;
 }
@@ -638,10 +627,12 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, script, shared);
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, id, script, shared, &excinfo);
     Py_DECREF(script);
     if (res < 0) {
-        return NULL;
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
     }
     Py_RETURN_NONE;
 }
@@ -672,10 +663,12 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, (PyObject *)code, shared);
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, id, (PyObject *)code, shared, &excinfo);
     Py_DECREF(code);
     if (res < 0) {
-        return NULL;
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
     }
     Py_RETURN_NONE;
 }

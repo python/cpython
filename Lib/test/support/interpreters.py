@@ -110,7 +110,11 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        _interpreters.exec(self._id, src_str, channels)
+        err = _interpreters.exec(self._id, src_str, channels)
+        if err is not None:
+            exc = RunFailedError(err.formatted)
+            exc.snapshot = err
+            raise exc
 
 
 def create_channel():
