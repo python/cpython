@@ -898,9 +898,9 @@ SAX2 Support
 SAX defines an event-driven interface for parsing XML.  To use SAX, you must
 write a SAX handler class.  Handler classes inherit from various classes
 provided by SAX, and override various methods that will then be called by the
-XML parser.  For example, the :meth:`!startElement` and :meth:`!endElement`
+XML parser.  For example, the :meth:`~xml.sax.handler.ContentHandler.startElement` and :meth:`~xml.sax.handler.ContentHandler.endElement`
 methods are called for every starting and end tag encountered by the parser, the
-:meth:`!characters` method is called for every chunk of character data, and so
+:meth:`~xml.sax.handler.ContentHandler.characters` method is called for every chunk of character data, and so
 forth.
 
 The advantage of the event-driven approach is that the whole document doesn't
