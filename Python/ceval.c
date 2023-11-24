@@ -1086,6 +1086,14 @@ deoptimize:
         DPRINTF(2, "Avoiding ENTER_EXECUTOR in favor of underlying %s\n", _PyOpcode_OpName[opcode]);
         DISPATCH_GOTO();
     }
+    // Increment side exit counter for this uop
+    int pc = next_uop - 1 - current_executor->trace;
+    uintptr_t *pcounter = current_executor->extra + pc;
+    *pcounter += 1;
+    if (*pcounter >= 10) {
+        DPRINTF(2, "--> %s @ %d in %p has %d side exits\n",
+                _PyUopName(uopcode), pc, current_executor, (int)(*pcounter));
+    }
     Py_DECREF(current_executor);
     // Fall through
 // Jump here from ENTER_EXECUTOR
