@@ -1051,9 +1051,10 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1));
+            (int)(next_uop - current_executor->trace - 1),
+            _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
