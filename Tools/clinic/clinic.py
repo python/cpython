@@ -5138,6 +5138,7 @@ class DSLParser:
     parameter_continuation: str
     preserve_output: bool
     critical_section: bool
+    target_critical_section: list[str]
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
 
     def __init__(self, clinic: Clinic) -> None:
