@@ -85,9 +85,6 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     }
     else {
         // integer overflow
-        items = NULL;
-    }
-    if (items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
