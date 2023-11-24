@@ -298,100 +298,44 @@ AddType application/wasm wasm
 
 ## WASI (wasm32-wasi)
 
-WASI builds require the [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
-See `.devcontainer/Dockerfile` for an example of how to download and
-install the WASI SDK.
+**NOTE**: The instructions below assume a Unix-based OS due to cross-compilation for CPython being set up for `./configure`.
 
-### Build
+### Prerequisites
 
-The script ``wasi-env`` sets necessary compiler and linker flags as well as
-``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
-``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
+Developing WASI requires two things to be installed:
 
-There are two scripts you can use to do a WASI build from a source checkout. You can either use:
+1. [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+
+   (see `.devcontainer/Dockerfile` for an example of how to download and install the WASI SDK)
+2. A WASI host/runtime ([wasmtime](https://wasmtime.dev) is recommended)
 
+
+### Building
+
+Building for WASI requires doing a cross-build where you have a "build" Python and then your WASI build (technically it's a "host x host" cross-build because the build Python is also the target Python while the host build is the WASI build). What this leads to is you building two separate copies of Python. In the end you should have a build Python in `cross-build/build` and `cross-build/wasm32-wasi`.
+
+The easiest way to do a build is to use the `wasi.py` script. You can either have it perform the entire build process from start to finish in one command, or you can do it in discrete steps (which later on are beneficial when you only need to do a specific step).
+
+To do it in a single command, run:
 ```shell
-./Tools/wasm/wasm_build.py wasi build
+python Tools/wasm/wasi.py build
 ```
 
-or:
-```shell
-./Tools/wasm/build_wasi.sh
-```
+That will:
 
-The commands are equivalent to the following steps:
+1. Run `configure` for the build Python (same as `wasi.py configure-build-python`)
+2. Run `make` for the build Python (`wasi.py make-build-python`)
+3. Run `configure` for the WASI build (`wasi.py configure-host`)
+4. Run `make` for the WASI build (`wasi.py make-host`)
 
-- Make sure `Modules/Setup.local` exists
-- Make sure the necessary build tools are installed:
-  - [WASI SDK](https://github.com/WebAssembly/wasi-sdk) (which ships with `clang`)
-  - `make`
-  - `pkg-config` (on Linux)
-- Create the build Python
-  - `mkdir -p builddir/build`
-  - `pushd builddir/build`
-  - Get the build platform
-    - Python: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
-    - Shell: `../../config.guess`
-  - `../../configure -C`
-  - `make all`
-  - ```PYTHON_VERSION=`./python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'` ```
-  - `popd`
-- Create the host/WASI Python
-  - `mkdir builddir/wasi`
-  - `pushd builddir/wasi`
-  - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$(../../config.guess) --with-build-python=../build/python`
-    - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
-    - `HOSTRUNNER="wasmtime run --mapdir /::$(dirname $(dirname $(pwd))) --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION $(pwd)/python.wasm --"`
-      - Maps the source checkout to `/` in the WASI runtime
-      - Stdlib gets loaded from `/Lib`
-      - Gets `_sysconfigdata__wasi_wasm32-wasi.py` on to `sys.path` via `PYTHONPATH`
-    - Set by `wasi-env`
-      - `WASI_SDK_PATH`
-      - `WASI_SYSROOT`
-      - `CC`
-      - `CPP`
-      - `CXX`
-      - `LDSHARED`
-      - `AR`
-      - `RANLIB`
-      - `CFLAGS`
-      - `LDFLAGS`
-      - `PKG_CONFIG_PATH`
-      - `PKG_CONFIG_LIBDIR`
-      - `PKG_CONFIG_SYSROOT_DIR`
-      - `PATH`
-  - `make all`
+See the `--help` for the various options available for any of the subcommands. Extra options passed in after `build --` will be given to **both** `configure` commands (e.g., `build -- --with-pydebug` for a pydebug build). This also applies to `configure-build-python` and `configure-host`.
+
+The output from the script should clearly document what it is going on so that you can replicate any step manually if desired. But there are some included niceties like inferring a pydebug build for the host/WASI build based on the build Python which make using `wasi.py` a bit easier.
 
 
 ### Running
 
-If you followed the instructions above, you can run the interpreter via e.g., `wasmtime` from within the `Tools/wasi` directory (make sure to set/change `$PYTHON_VERSION` and do note the paths are relative to running in`builddir/wasi` for simplicity only):
+If you used `wasi.py` then there will be a `cross-build/wasm32-wasi/python.sh` file which you can use to run the WASI build. While there is a `python.wasm`, various details to run from a checkout need to be set up -- e.g. `PYTHONPATH` for `sysconfig` data -- which are annoying to do manually.
 
-```shell
-wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm -- <args>
-```
-
-There are also helpers provided by `Tools/wasm/wasm_build.py` as listed below. Also, if you used `Tools/wasm/build_wasi.sh`, a `run_wasi.sh` file will be created in `builddir/wasi` which will run the above command for you (it also uses absolute paths, so it can be executed from anywhere).
-
-#### REPL
-
-```shell
-./Tools/wasm/wasm_build.py wasi repl
-```
-
-#### Tests
-
-```shell
-./Tools/wasm/wasm_build.py wasi test
-```
-
-### Debugging
-
-* ``wasmtime run -g`` generates debugging symbols for gdb and lldb. The
-  feature is currently broken, see
-  https://github.com/bytecodealliance/wasmtime/issues/4669 .
-* The environment variable ``RUST_LOG=wasi_common`` enables debug and
-  trace logging.
 
 ## Detect WebAssembly builds
 
@@ -402,15 +346,17 @@ import os, sys
 
 if sys.platform == "emscripten":
     # Python on Emscripten
+    ...
 if sys.platform == "wasi":
     # Python on WASI
+    ...
 
 if os.name == "posix":
     # WASM platforms identify as POSIX-like.
     # Windows does not provide os.uname().
     machine = os.uname().machine
     if machine.startswith("wasm"):
-        # WebAssembly (wasm32, wasm64 in the future)
+        # WebAssembly (wasm32, wasm64 potentially in the future)
 ```
 
 ```python
