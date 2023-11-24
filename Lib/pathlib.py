@@ -1009,26 +1009,28 @@ class _PathBase(PurePath):
         return contextlib.nullcontext(self.iterdir())
 
     def _make_child_relpath(self, name, trailing_slash=False):
-        path_str = str(self)
-        tail = list(self._tail)
+        drive = self.drive
+        root = self.root
+        tail = self._tail.copy()
+        parts = []
         if tail:
+            parts.append(str(self))
             if tail[-1]:
-                path_str = f'{path_str}{self.pathmod.sep}{name}'
+                parts.append(self.pathmod.sep)
             else:
-                path_str = f'{path_str}{name}'
                 tail.pop(-1)
-        elif path_str != '.':
-            path_str = f'{path_str}{name}'
-        else:
-            path_str = name
+        elif root or drive:
+            parts.append(str(self))
+        parts.append(name)
         tail.append(name)
         if trailing_slash:
-            path_str = f'{path_str}{self.pathmod.sep}'
+            parts.append(self.pathmod.sep)
             tail.append('')
+        path_str = ''.join(parts)
         path = self.with_segments(path_str)
         path._str = path_str
-        path._drv = self.drive
-        path._root = self.root
+        path._drv = drive
+        path._root = root
         path._tail_cached = tail
         return path
 
