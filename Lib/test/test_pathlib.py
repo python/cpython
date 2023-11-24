@@ -2069,7 +2069,7 @@ class DummyPathTest(unittest.TestCase):
                 "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
                 "dirC/dirD/", "dirE/", "linkB/",
             ])
-        _check(p.rglob(""), ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p.rglob(""), ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(BASE, "dirC")
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
@@ -2101,7 +2101,7 @@ class DummyPathTest(unittest.TestCase):
                             "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                          "dirC/", "dirC/dirD/", "dirE/", "linkB/", "linkB/linkD/"])
-        _check(p, "", ["./", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
+        _check(p, "", ["", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                        "dirC/", "dirE/", "dirC/dirD/", "linkB/", "linkB/linkD/"])
 
         p = P(BASE, "dirC")
@@ -2128,7 +2128,7 @@ class DummyPathTest(unittest.TestCase):
         _check(p, "*/fileB", ["dirB/fileB"])
         _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
-        _check(p, "", ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(BASE, "dirC")
         _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
