@@ -1074,6 +1074,18 @@ deoptimize:
     UOP_STAT_INC(uopcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    if (frame->instr_ptr->op.code == ENTER_EXECUTOR) {
+        // Avoid recursing into the same executor over and over
+        Py_DECREF(current_executor);
+        next_instr = frame->instr_ptr;
+        PyCodeObject *code = _PyFrame_GetCode(frame);
+        oparg = next_instr->op.arg;
+        _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
+        opcode = executor->vm_data.opcode;
+        oparg = executor->vm_data.oparg;
+        DPRINTF(2, "Avoiding ENTER_EXECUTOR in favor of underlying %s\n", _PyOpcode_OpName[opcode]);
+        DISPATCH_GOTO();
+    }
     Py_DECREF(current_executor);
     // Fall through
 // Jump here from ENTER_EXECUTOR
