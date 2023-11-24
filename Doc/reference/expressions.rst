@@ -833,7 +833,7 @@ method.  The :meth:`__getattribute__` method is called first and either
 returns a value or raises :exc:`AttributeError` if the attribute is not
 available.
 
-If an :exc:`AttributeError` raised and the object has a :meth:`__getattr__`
+If an :exc:`AttributeError` is raised and the object has a :meth:`__getattr__`
 method, that method is called as a fallback.
 
 .. _subscriptions:
