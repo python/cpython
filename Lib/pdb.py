@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import token
 import codeop
 import pprint
 import signal
@@ -590,6 +591,36 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             self._error_exc()
 
+    def _replace_convenience_variable(self, line):
+        """Replace the convenience variable in line"""
+        last_token_is_dollar = False
+        dollar_start = None
+        dollar_end = None
+        replace_variables = []
+        try:
+            for t in tokenize.generate_tokens(io.StringIO(line).readline):
+                token_type, token_string, start, end, _ = t
+                if token_type == token.OP and token_string == '$':
+                    last_token_is_dollar = True
+                    dollar_end = end
+                    dollar_start = start
+                else:
+                    if (last_token_is_dollar and
+                        token_type == token.NAME and
+                        start == dollar_end):
+                        # line is a one line command so we only care about column
+                        replace_variables.append((dollar_start[1], end[1], token_string))
+                    last_token_is_dollar = False
+        except tokenize.TokenError:
+            return line
+        last_end = 0
+        new_line = ''
+        for start, end, name in replace_variables:
+            new_line += line[last_end:start] + f'__pdb_convenience_variables["{name}"]'
+            last_end = end
+        new_line += line[last_end:]
+        return new_line
+
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
         if not line.strip():
@@ -624,7 +655,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 line = line[:marker].rstrip()
 
         # Replace all the convenience variables
-        line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
+        line = self._replace_convenience_variable(line)
 
         return line
 
