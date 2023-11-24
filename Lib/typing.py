@@ -1834,7 +1834,7 @@ class _ProtocolMeta(ABCMeta):
                 )
                 raise TypeError(
                     "Protocols with non-method members don't support issubclass()."
-                    f" Non-method members: {non_method_attrs}."
+                    f" Non-method members: {str(non_method_attrs)[1:-1]}."
                 )
             if not getattr(cls, '_is_runtime_protocol', False):
                 raise TypeError(
