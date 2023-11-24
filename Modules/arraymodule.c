@@ -11,7 +11,7 @@
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_long.h"          // _PyLong_FromByteArray()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 
 #include <stddef.h>               // offsetof()

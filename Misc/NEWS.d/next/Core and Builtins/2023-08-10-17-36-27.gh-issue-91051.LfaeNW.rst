@@ -1,2 +1,0 @@
-Fix abort / segfault when using all eight type watcher slots, on platforms
-where ``char`` is signed by default.

@@ -25,18 +25,10 @@ class ActiveCacheEffect:
 
 
 FORBIDDEN_NAMES_IN_UOPS = (
-    "resume_with_error",
-    "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "JUMPBY",
     "DISPATCH",
-    "INSTRUMENTED_JUMP",
-    "throwflag",
-    "exception_unwind",
-    "import_from",
-    "import_name",
-    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
     "TIER_ONE_ONLY",
 )
 
@@ -54,6 +46,7 @@ class Instruction:
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
     name: str
+    annotations: list[str]
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
     block_line: int  # First line of block in original code
@@ -61,6 +54,7 @@ class Instruction:
     # Computed by constructor
     always_exits: str  # If the block always exits, its last line; else ""
     has_deopt: bool
+    needs_this_instr: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -77,6 +71,7 @@ class Instruction:
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
         self.name = inst.name
+        self.annotations = inst.annotations
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
             self.block
@@ -87,6 +82,7 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
+        self.needs_this_instr = variable_used(self.inst, "this_instr") or any(c.name != UNUSED for c in self.cache_effects)
         self.input_effects = [
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
@@ -124,6 +120,8 @@ class Instruction:
 
         if self.name == "_EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
+        if self.name == "_SAVE_RETURN_OFFSET":
+            return True  # Adjusts next_instr, but only in tier 1 code
         if self.always_exits:
             dprint(f"Skipping {self.name} because it always exits: {self.always_exits}")
             return False
@@ -144,7 +142,8 @@ class Instruction:
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
@@ -163,10 +162,11 @@ class Instruction:
                 func = f"read_u{bits}"
             if tier == TIER_ONE:
                 out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
+                    f"{typ}{ceffect.name} = "
+                    f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
-                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})CURRENT_OPERAND();")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
@@ -201,12 +201,24 @@ class Instruction:
                 ninputs, symbolic = list_effect_size(ieffs)
                 if ninputs:
                     label = f"pop_{ninputs}_{label}"
+                if tier == TIER_TWO:
+                    label = label + "_tier_two"
                 if symbolic:
                     out.write_raw(
                         f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
+            elif m := re.match(r"(\s*)DEOPT_IF\((.+)\);\s*(?://.*)?$", line):
+                space, cond = m.groups()
+                space = extra + space
+                target = family.name if family else self.name
+                out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
+            elif "DEOPT" in line:
+                filename = context.owner.filename
+                lineno = context.owner.tokens[context.begin].line
+                print(f"{filename}:{lineno}: ERROR: DEOPT_IF() must be all on one line")
+                out.write_raw(extra + line)
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 out.reset_lineno()
                 space = extra + m.group(1)
@@ -244,7 +256,8 @@ class AbstractInstruction(Instruction):
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         pass
 
@@ -268,7 +281,9 @@ class MacroInstruction:
     macro: parsing.Macro
     parts: MacroParts
     cache_offset: int
+    # Set later
     predicted: bool = False
+    family: parsing.Family | None = None
 
 
 @dataclasses.dataclass
@@ -276,14 +291,8 @@ class PseudoInstruction:
     """A pseudo instruction."""
 
     name: str
-    targets: list[Instruction]
-    instr_fmt: str
+    targets: list[Instruction | MacroInstruction]
     instr_flags: InstructionFlags
-
-
-@dataclasses.dataclass
-class OverriddenInstructionPlaceHolder:
-    name: str
 
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction

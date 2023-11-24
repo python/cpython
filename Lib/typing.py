@@ -212,8 +212,12 @@ def _should_unflatten_callable_args(typ, args):
 
     For example::
 
-        assert collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
-        assert collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
+        >>> import collections.abc
+        >>> P = ParamSpec('P')
+        >>> collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
+        True
+        >>> collections.abc.Callable[P, str].__args__ == (P, str)
+        True
 
     As a result, if we need to reconstruct the Callable from its __args__,
     we need to unflatten it.
@@ -255,7 +259,10 @@ def _collect_parameters(args):
 
     For example::
 
-        assert _collect_parameters((T, Callable[P, T])) == (T, P)
+        >>> P = ParamSpec('P')
+        >>> T = TypeVar('T')
+        >>> _collect_parameters((T, Callable[P, T]))
+        (~T, ~P)
     """
     parameters = []
     for t in args:
@@ -935,13 +942,6 @@ def _is_unpacked_typevartuple(x: Any) -> bool:
 
 def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
-
-
-class _PickleUsingNameMixin:
-    """Mixin enabling pickling based on self.__name__."""
-
-    def __reduce__(self):
-        return self.__name__
 
 
 def _typevar_subst(self, arg):
@@ -1676,7 +1676,8 @@ _TYPING_INTERNALS = frozenset({
 _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
-    '__subclasshook__', '__weakref__', '__class_getitem__'
+    '__subclasshook__', '__weakref__', '__class_getitem__',
+    '__match_args__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -1827,8 +1828,13 @@ class _ProtocolMeta(ABCMeta):
                 not cls.__callable_proto_members_only__
                 and cls.__dict__.get("__subclasshook__") is _proto_hook
             ):
+                non_method_attrs = sorted(
+                    attr for attr in cls.__protocol_attrs__
+                    if not callable(getattr(cls, attr, None))
+                )
                 raise TypeError(
-                    "Protocols with non-method members don't support issubclass()"
+                    "Protocols with non-method members don't support issubclass()."
+                    f" Non-method members: {str(non_method_attrs)[1:-1]}."
                 )
             if not getattr(cls, '_is_runtime_protocol', False):
                 raise TypeError(
@@ -2250,14 +2256,15 @@ def get_origin(tp):
 
     Examples::
 
-        assert get_origin(Literal[42]) is Literal
-        assert get_origin(int) is None
-        assert get_origin(ClassVar[int]) is ClassVar
-        assert get_origin(Generic) is Generic
-        assert get_origin(Generic[T]) is Generic
-        assert get_origin(Union[T, int]) is Union
-        assert get_origin(List[Tuple[T, T]][int]) is list
-        assert get_origin(P.args) is P
+        >>> P = ParamSpec('P')
+        >>> assert get_origin(Literal[42]) is Literal
+        >>> assert get_origin(int) is None
+        >>> assert get_origin(ClassVar[int]) is ClassVar
+        >>> assert get_origin(Generic) is Generic
+        >>> assert get_origin(Generic[T]) is Generic
+        >>> assert get_origin(Union[T, int]) is Union
+        >>> assert get_origin(List[Tuple[T, T]][int]) is list
+        >>> assert get_origin(P.args) is P
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
@@ -2278,11 +2285,12 @@ def get_args(tp):
 
     Examples::
 
-        assert get_args(Dict[str, int]) == (str, int)
-        assert get_args(int) == ()
-        assert get_args(Union[int, Union[T, int], str][int]) == (int, str)
-        assert get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
-        assert get_args(Callable[[], T][int]) == ([], int)
+        >>> T = TypeVar('T')
+        >>> assert get_args(Dict[str, int]) == (str, int)
+        >>> assert get_args(int) == ()
+        >>> assert get_args(Union[int, Union[T, int], str][int]) == (int, str)
+        >>> assert get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
+        >>> assert get_args(Callable[[], T][int]) == ([], int)
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
@@ -2301,12 +2309,15 @@ def is_typeddict(tp):
 
     For example::
 
-        class Film(TypedDict):
-            title: str
-            year: int
-
-        is_typeddict(Film)              # => True
-        is_typeddict(Union[list, str])  # => False
+        >>> from typing import TypedDict
+        >>> class Film(TypedDict):
+        ...     title: str
+        ...     year: int
+        ...
+        >>> is_typeddict(Film)
+        True
+        >>> is_typeddict(dict)
+        False
     """
     return isinstance(tp, _TypedDictMeta)
 
@@ -2904,15 +2915,15 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
 
     Usage::
 
-        class Point2D(TypedDict):
-            x: int
-            y: int
-            label: str
-
-        a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
-        b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
-
-        assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+        >>> class Point2D(TypedDict):
+        ...     x: int
+        ...     y: int
+        ...     label: str
+        ...
+        >>> a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
+        >>> b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
+        >>> Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+        True
 
     The type info can be accessed via the Point2D.__annotations__ dict, and
     the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
@@ -3351,7 +3362,7 @@ def override[F: _Func](method: F, /) -> F:
     Usage::
 
         class Base:
-            def method(self) -> None: ...
+            def method(self) -> None:
                 pass
 
         class Child(Base):
@@ -3410,8 +3421,8 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
         >>> class P(Protocol):
         ...     def a(self) -> str: ...
         ...     b: int
-        >>> get_protocol_members(P)
-        frozenset({'a', 'b'})
+        >>> get_protocol_members(P) == frozenset({'a', 'b'})
+        True
 
     Raise a TypeError for arguments that are not Protocols.
     """
