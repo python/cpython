@@ -30,8 +30,10 @@ class StackOffset:
         self.pushed.append(var_size(item))
 
     def simplify(self) -> None:
+        "Remove matching values from both the popped and pushed list"
         if not self.popped or not self.pushed:
             return
+        # Sort the list so the lexically largest element is last.
         popped = sorted(self.popped)
         pushed = sorted(self.pushed)
         self.popped = []
@@ -42,6 +44,7 @@ class StackOffset:
             if pop == push:
                 pass
             elif pop > push:
+                # if pop > push, there can be no element in pushed matching pop.
                 self.popped.append(pop)
                 pushed.append(push)
             else:
