@@ -1,0 +1,1 @@
+Switch to :mod:`tokenize` for convenience variables to avoid replacing strings.
