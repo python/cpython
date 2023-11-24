@@ -9,11 +9,11 @@
 --------------
 
 * To use a specific feature, import it from the :mod:`__future__` module using the
-  syntax `from __future__ import <feature>`. It is important to note that the
-  `__future__ import` statement must be placed as the first statement in the
+  syntax ``from __future__ import <feature>``. It is important to note that the
+  ``__future__ import`` statement must be placed as the first statement in the
   source file, except for a module docstring.
 
-* If a feature has been imported, the `__future__ import` remains valid even
+* If a feature has been imported, the ``__future__ import`` remains valid even
   after the *MandatoryRelease* version. However, it has no behavioural effect.
   code will be compatible with multiple versions during the transition phase of
   a feature. If code only supports versions greater than or equal to the
