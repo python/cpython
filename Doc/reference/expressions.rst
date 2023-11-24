@@ -827,13 +827,13 @@ attribute whose name is the identifier. The type and value produced is
 determined by the object.  Multiple evaluations of the same attribute
 reference may yield different objects.
 
-This production can be customized by overriding the :meth:`__getattribute__`
-method or the :meth:`__getattr__` method.  The :meth:`__getattribute__`
-is called first and either returns a value or raises :exc:`AttributeError`
-if the attribute is not available.
+This production can be customized by overriding the
+:meth:`~object.__getattribute__` method or the :meth:`__getattr__` method.
+The :meth:`__getattribute__` method is called first and either returns a value
+or raises :exc:`AttributeError` if the attribute is not available.
 
-If an :exc:`AttributeError` raised and the object has a :meth:`__getattr__`
-method, that method is called as a fallback.
+If an :exc:`AttributeError` raised and the object has a
+:meth:`~object.__getattr__` method, that method is called as a fallback.
 
 .. _subscriptions:
 
