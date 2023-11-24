@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import contextlib
 import functools
@@ -50,7 +52,8 @@ def subdir(working_dir, *, clean_ok=False):
         @functools.wraps(func)
         def wrapper(context):
             try:
-                tput_output = subprocess.check_output(["tput", "cols"], encoding="utf-8")
+                tput_output = subprocess.check_output(["tput", "cols"],
+                                                      encoding="utf-8")
                 terminal_width = int(tput_output.strip())
             except subprocess.CalledProcessError:
                 terminal_width = 80
@@ -102,7 +105,8 @@ def build_python_path():
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
         if not binary.is_file():
-            raise FileNotFoundError(f"Unable to find `python(.exe)` in {BUILD_DIR}")
+            raise FileNotFoundError("Unable to find `python(.exe)` in "
+                                    f"{BUILD_DIR}")
 
     return binary
 
@@ -182,8 +186,9 @@ def configure_wasi_python(context, working_dir):
     """Configure the WASI/host build."""
     if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
             raise ValueError("WASI-SDK not found; "
-                            "download from https://github.com/WebAssembly/wasi-sdk "
-                            "and/or specify via $WASI_SDK_PATH or --wasi-sdk")
+                            "download from "
+                            "https://github.com/WebAssembly/wasi-sdk and/or "
+                            "specify via $WASI_SDK_PATH or --wasi-sdk")
 
     config_site = os.fsdecode(CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-wasi")
 
@@ -244,15 +249,18 @@ def make_wasi_python(context, working_dir):
 
 def build_all(context):
     """Build everything."""
-    for step in configure_build_python, make_build_python, configure_wasi_python, make_wasi_python:
+    steps = [configure_build_python, make_build_python, configure_wasi_python,
+             make_wasi_python]
+    for step in steps:
         step(context)
 
 
 def main():
     default_host_runner = (f"{shutil.which('wasmtime')} run "
-                        # Make sure the stack size will work for a pydebug build.
-                        # The 8388608 value comes from `ulimit -s` under Linux which
-                        # is 8291 KiB.
+                        # Make sure the stack size will work for a pydebug
+                        # build.
+                        # The 8388608 value comes from `ulimit -s` under Linux
+                        # which equates to 8291 KiB.
                         "--wasm max-wasm-stack=8388608 "
                         # Enable thread support.
                         "--wasm threads=y --wasi threads=y "
@@ -267,11 +275,15 @@ def main():
     subcommands = parser.add_subparsers(dest="subcommand")
     build = subcommands.add_parser("build", help="Build everything")
     configure_build = subcommands.add_parser("configure-build-python",
-                                             help="Run `configure` for the build Python")
+                                             help="Run `configure` for the "
+                                             "build Python")
     make_build = subcommands.add_parser("make-build-python",
                                         help="Run `make` for the build Python")
     configure_host = subcommands.add_parser("configure-host",
-                                            help="Run `configure` for the host/WASI")
+                                            help="Run `configure` for the "
+                                                 "host/WASI (pydebug builds "
+                                                 "are inferred from the build "
+                                                 "Python)")
     make_host = subcommands.add_parser("make-host",
                                        help="Run `make` for the host/WASI")
     for subcommand in build, configure_build, make_build, configure_host, make_host:
@@ -286,14 +298,15 @@ def main():
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
     for subcommand in build, configure_host:
-        subcommand.add_argument("--wasi-sdk", type=pathlib.Path, dest="wasi_sdk_path",
-                        default=find_wasi_sdk(),
-                        help="Path to wasi-sdk; defaults to "
-                                "$WASI_SDK_PATH or /opt/wasi-sdk")
+        subcommand.add_argument("--wasi-sdk", type=pathlib.Path,
+                                dest="wasi_sdk_path",
+                                default=find_wasi_sdk(),
+                                help="Path to wasi-sdk; defaults to "
+                                     "$WASI_SDK_PATH or /opt/wasi-sdk")
         subcommand.add_argument("--host-runner", action="store",
                         default=default_host_runner, dest="host_runner",
-                        help="Command template for running the WebAssembly code "
-                                "(default meant for wasmtime 14 or newer: "
+                        help="Command template for running the WebAssembly "
+                             "code (default meant for wasmtime 14 or newer: "
                                 f"`{default_host_runner}`)")
 
     context = parser.parse_args()
