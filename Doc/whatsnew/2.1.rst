@@ -175,21 +175,21 @@ In Python 2.1, rich comparisons were added in order to support this need.
 Python classes can now individually overload each of the ``<``, ``<=``, ``>``,
 ``>=``, ``==``, and ``!=`` operations.  The new magic method names are:
 
-+-----------+-----------------+
-| Operation | Method name     |
-+===========+=================+
-| ``<``     | :meth:`!__lt__` |
-+-----------+-----------------+
-| ``<=``    | :meth:`!__le__` |
-+-----------+-----------------+
-| ``>``     | :meth:`!__gt__` |
-+-----------+-----------------+
-| ``>=``    | :meth:`!__ge__` |
-+-----------+-----------------+
-| ``==``    | :meth:`!__eq__` |
-+-----------+-----------------+
-| ``!=``    | :meth:`!__ne__` |
-+-----------+-----------------+
++-----------+------------------------+
+| Operation | Method name            |
++===========+========================+
+| ``<``     | :func:`~object.__lt__` |
++-----------+------------------------+
+| ``<=``    | :meth:`~object.__le__` |
++-----------+------------------------+
+| ``>``     | :meth:`~object.__gt__` |
++-----------+------------------------+
+| ``>=``    | :meth:`~object.__ge__` |
++-----------+------------------------+
+| ``==``    | :meth:`~object.__eq__` |
++-----------+------------------------+
+| ``!=``    | :meth:`~object.__ne__` |
++-----------+------------------------+
 
 (The magic methods are named after the corresponding Fortran operators ``.LT.``.
 ``.LE.``, &c.  Numeric programmers are almost certainly quite familiar with
@@ -616,7 +616,7 @@ New and Improved Modules
   Kent Beck's Smalltalk testing framework.  See https://pyunit.sourceforge.net/ for
   more information about PyUnit.
 
-* The :mod:`difflib` module contains a class, :class:`!SequenceMatcher`, which
+* The :mod:`difflib` module contains a class, :class:`~difflib.SequenceMatcher`, which
   compares two sequences and computes the changes required to transform one
   sequence into the other.  For example, this module can be used to write a tool
   similar to the Unix :program:`diff` program, and in fact the sample program
@@ -642,8 +642,8 @@ New and Improved Modules
   printing an extended traceback that not only lists the stack frames, but also
   lists the function arguments and the local variables for each frame.
 
-* Various functions in the :mod:`time` module, such as :func:`!asctime` and
-  :func:`!localtime`, require a floating point argument containing the time in
+* Various functions in the :mod:`time` module, such as :func:`~time.asctime` and
+  :func:`~time.localtime`, require a floating point argument containing the time in
   seconds since the epoch.  The most common use of these functions is to work with
   the current time, so the floating point argument has been made optional; when a
   value isn't provided, the current time will be used.  For example, log file
@@ -736,7 +736,7 @@ of the more notable changes are:
   For a fuller discussion of the line I/O changes, see the python-dev summary for
   January 1--15, 2001 at https://mail.python.org/pipermail/python-dev/2001-January/.
 
-* A new method, :meth:`!popitem`, was added to dictionaries to enable
+* A new method, :meth:`~dict.popitem`, was added to dictionaries to enable
   destructively iterating through the contents of a dictionary; this can be faster
   for large dictionaries because there's no need to construct a list containing
   all the keys or values. ``D.popitem()`` removes a random ``(key, value)`` pair
