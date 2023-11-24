@@ -1,1 +1,1 @@
-Switch to :mod:`tokenize` for convenience variables to avoid replacing strings.
+Improve handling of pdb convenience variables to avoid replacing string contents.
