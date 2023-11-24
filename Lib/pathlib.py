@@ -400,13 +400,14 @@ class PurePath:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        if not self.name:
-            raise ValueError("%r has an empty name" % (self,))
         m = self.pathmod
         if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
-            raise ValueError("Invalid name %r" % (name))
-        return self._from_parsed_parts(self.drive, self.root,
-                                       self._tail[:-1] + [name])
+            raise ValueError(f"Invalid name {name!r}")
+        tail = self._tail.copy()
+        if not tail:
+            raise ValueError(f"{self!r} has an empty name")
+        tail[-1] = name
+        return self._from_parsed_parts(self.drive, self.root, tail)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -417,21 +418,12 @@ class PurePath:
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
         """
-        m = self.pathmod
-        if m.sep in suffix or m.altsep and m.altsep in suffix:
-            raise ValueError("Invalid suffix %r" % (suffix,))
-        if suffix and not suffix.startswith('.') or suffix == '.':
-            raise ValueError("Invalid suffix %r" % (suffix))
-        name = self.name
-        if not name:
-            raise ValueError("%r has an empty name" % (self,))
-        old_suffix = self.suffix
-        if not old_suffix:
-            name = name + suffix
+        if not suffix:
+            return self.with_name(self.stem)
+        elif suffix.startswith('.') and len(suffix) > 1:
+            return self.with_name(self.stem + suffix)
         else:
-            name = name[:-len(old_suffix)] + suffix
-        return self._from_parsed_parts(self.drive, self.root,
-                                       self._tail[:-1] + [name])
+            raise ValueError(f"Invalid suffix {suffix!r}")
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -993,18 +985,19 @@ class _PathBase(PurePath):
 
     def _make_child_relpath(self, name):
         path_str = str(self)
-        tail = self._tail
+        tail = self._tail.copy()
         if tail:
             path_str = f'{path_str}{self.pathmod.sep}{name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
         else:
             path_str = name
+        tail.append(name)
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
         path._root = self.root
-        path._tail_cached = tail + [name]
+        path._tail_cached = tail
         return path
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
@@ -1029,7 +1022,7 @@ class _PathBase(PurePath):
         elif not path_pattern._tail:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
-        pattern_parts = list(path_pattern._tail)
+        pattern_parts = path_pattern._tail.copy()
         if pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
