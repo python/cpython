@@ -88,6 +88,12 @@ def _compile_pattern(pat, sep, case_sensitive):
     return re.compile(regex, flags).match
 
 
+def _select_parents(paths, dir_only):
+    """Yield lexical '..' children of the given paths."""
+    for path in paths:
+        yield path._make_child_relpath('..', dir_only)
+
+
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
     """Yield direct children of given paths, filtering by name and type."""
     if follow_symlinks is None:
@@ -110,7 +116,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                         continue
                 name = entry.name
                 if match(name):
-                    yield parent_path._make_child_relpath(name)
+                    yield parent_path._make_child_relpath(name, dir_only)
 
 
 def _select_recursive(parent_paths, dir_only, follow_symlinks):
@@ -133,7 +139,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks):
                 for entry in entries:
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
-                            paths.append(path._make_child_relpath(entry.name))
+                            paths.append(path._make_child_relpath(entry.name, dir_only))
                             continue
                     except OSError:
                         pass
@@ -271,6 +277,9 @@ class PurePath:
                 # e.g. //?/unc/server/share
                 root = sep
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
+        if parsed and not rel.endswith(parsed[-1]):
+            # Preserve trailing slash
+            parsed.append('')
         return drv, root, parsed
 
     def _load_parts(self):
@@ -359,7 +368,7 @@ class PurePath:
         tail = self._tail
         if not tail:
             return ''
-        return tail[-1]
+        return tail[-1] or tail[-2]
 
     @property
     def suffix(self):
@@ -398,15 +407,38 @@ class PurePath:
         else:
             return name
 
+    @property
+    def has_trailing_sep(self):
+        tail = self._tail
+        return tail and not tail[-1]
+
+    def without_trailing_sep(self):
+        tail = self._tail
+        if tail and not tail[-1]:
+            return self._from_parsed_parts(self.drive, self.root, tail[:-1])
+        else:
+            return self
+
+    def with_trailing_sep(self):
+        tail = self._tail
+        if not tail:
+            raise ValueError('empty name')
+        elif tail[-1]:
+            return self._from_parsed_parts(self.drive, self.root, tail + [''])
+        else:
+            return self
+
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        if not self.name:
-            raise ValueError("%r has an empty name" % (self,))
         m = self.pathmod
         if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
             raise ValueError("Invalid name %r" % (name))
-        return self._from_parsed_parts(self.drive, self.root,
-                                       self._tail[:-1] + [name])
+        tail = list(self._tail)
+        if not tail:
+            raise ValueError("%r has an empty name" % (self,))
+        idx = -1 if tail[-1] else -2
+        tail[idx] = name
+        return self._from_parsed_parts(self.drive, self.root, tail)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -417,21 +449,9 @@ class PurePath:
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
         """
-        m = self.pathmod
-        if m.sep in suffix or m.altsep and m.altsep in suffix:
-            raise ValueError("Invalid suffix %r" % (suffix,))
         if suffix and not suffix.startswith('.') or suffix == '.':
             raise ValueError("Invalid suffix %r" % (suffix))
-        name = self.name
-        if not name:
-            raise ValueError("%r has an empty name" % (self,))
-        old_suffix = self.suffix
-        if not old_suffix:
-            name = name + suffix
-        else:
-            name = name[:-len(old_suffix)] + suffix
-        return self._from_parsed_parts(self.drive, self.root,
-                                       self._tail[:-1] + [name])
+        return self.with_name(self.stem + suffix)
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -450,6 +470,7 @@ class PurePath:
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePath):
             other = self.with_segments(other)
+        other = other.without_trailing_sep()
         for step, path in enumerate([other] + list(other.parents)):
             if path == self or path in self.parents:
                 break
@@ -474,6 +495,7 @@ class PurePath:
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePath):
             other = self.with_segments(other)
+        other = other.without_trailing_sep()
         return other == self or other in self.parents
 
     @property
@@ -513,7 +535,8 @@ class PurePath:
         tail = self._tail
         if not tail:
             return self
-        path = self._from_parsed_parts(drv, root, tail[:-1])
+        idx = -1 if tail[-1] else -2
+        path = self._from_parsed_parts(drv, root, tail[:idx])
         path._resolving = self._resolving
         return path
 
@@ -522,7 +545,7 @@ class PurePath:
         """A sequence of this path's logical parents."""
         # The value of this property should not be cached on the path object,
         # as doing so would introduce a reference cycle.
-        return _PathParents(self)
+        return _PathParents(self.without_trailing_sep())
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
@@ -991,20 +1014,28 @@ class _PathBase(PurePath):
         # context manager. This method is called by walk() and glob().
         return contextlib.nullcontext(self.iterdir())
 
-    def _make_child_relpath(self, name):
+    def _make_child_relpath(self, name, trailing_slash=False):
         path_str = str(self)
-        tail = self._tail
+        tail = list(self._tail)
         if tail:
-            path_str = f'{path_str}{self.pathmod.sep}{name}'
+            if tail[-1]:
+                path_str = f'{path_str}{self.pathmod.sep}{name}'
+            else:
+                path_str = f'{path_str}{name}'
+                tail.pop(-1)
         elif path_str != '.':
             path_str = f'{path_str}{name}'
         else:
             path_str = name
+        tail.append(name)
+        if trailing_slash:
+            path_str = f'{path_str}{self.pathmod.sep}'
+            tail.append('')
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
         path._root = self.root
-        path._tail_cached = tail + [name]
+        path._tail_cached = tail
         return path
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
@@ -1030,9 +1061,6 @@ class _PathBase(PurePath):
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
         pattern_parts = list(path_pattern._tail)
-        if pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
-            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
-            pattern_parts.append('')
         if pattern_parts[-1] == '**':
             # GH-70303: '**' only matches directories. Add trailing slash.
             warnings.warn(
@@ -1056,7 +1084,7 @@ class _PathBase(PurePath):
         filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
         sep = self.pathmod.sep
-        paths = iter([self] if self.is_dir() else [])
+        paths = iter([self.with_trailing_sep()] if self.is_dir() else [])
         part_idx = 0
         while part_idx < len(pattern_parts):
             part = pattern_parts[part_idx]
@@ -1065,7 +1093,8 @@ class _PathBase(PurePath):
                 # Trailing slash.
                 pass
             elif part == '..':
-                paths = (path._make_child_relpath('..') for path in paths)
+                dir_only = part_idx < len(pattern_parts)
+                paths = _select_parents(paths, dir_only)
             elif part == '**':
                 # Consume adjacent '**' components.
                 while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
@@ -1214,6 +1243,8 @@ class _PathBase(PurePath):
                     # Delete '..' segment and its predecessor
                     path = path.parent
                     continue
+            elif not part:
+                continue
             next_path = path._make_child_relpath(part)
             if querying and part != '..':
                 next_path._resolving = True
