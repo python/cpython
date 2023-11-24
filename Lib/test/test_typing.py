@@ -4102,7 +4102,7 @@ class ProtocolTests(BaseTestCase):
         self.assertEqual(Vec2D.__protocol_attrs__, {'x', 'y', 'square_norm'})
         expected_error_message = (
             "Protocols with non-method members don't support issubclass()."
-            " Non-method members: ['x', 'y']."
+            " Non-method members: 'x', 'y'."
         )
         with self.assertRaisesRegex(TypeError, re.escape(expected_error_message)):
             issubclass(int, Vec2D)
