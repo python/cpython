@@ -967,8 +967,8 @@ b2d(Bigint *a, int *e)
 /* Convert a scaled double to a Bigint plus an exponent.  Similar to d2b,
    except that it accepts the scale parameter used in _Py_dg_strtod (which
    should be either 0 or 2*P), and the normalization for the return value is
-   different (see below).  On input, d should be finite and nonnegative, and d
-   / 2**scale should be exactly representable as an IEEE 754 double.
+   different (see below).  On input, d should be finite and nonnegative, and
+   d / 2**scale should be exactly representable as an IEEE 754 double.
 
    Returns a Bigint b and an integer e such that
 
@@ -1456,8 +1456,8 @@ _Py_dg_strtod(const char *s00, char **se)
     }
 
     /* Now lz is true if and only if there were leading zero digits, and
-       ndigits gives the total number of digits ignoring leading zeros.  A
-       valid input must have at least one digit. */
+       ndigits gives the total number of digits ignoring leading zeros.
+       A valid input must have at least one digit. */
     if (!ndigits && !lz) {
         if (se)
             *se = (char *)s00;
@@ -2363,8 +2363,8 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         try_quick = 0;
     }
     leftright = 1;
-    ilim = ilim1 = -1;  /* Values for cases 0 and 1; done here to */
-    /* silence erroneous "gcc -Wall" warning. */
+    ilim = ilim1 = -1;  /* Values for cases 0 and 1; done here to
+                           silence erroneous "gcc -Wall" warning. */
     switch(mode) {
     case 0:
     case 1:
