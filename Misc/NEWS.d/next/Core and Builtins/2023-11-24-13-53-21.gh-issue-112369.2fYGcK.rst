@@ -1,0 +1,1 @@
+- Removed unnecessary conditional branching from list_resize() function
