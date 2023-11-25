@@ -414,6 +414,23 @@ Compare `DocTest`:
     False
     >>> test != other_test
     True
+    >>> test < other_test
+    False
+    >>> other_test < test
+    True
+
+Test comparison with lineno None on one side
+
+    >>> no_lineno = parser.get_doctest(docstring, globs, 'some_test',
+    ...                               'some_test', None)
+    >>> test.lineno is None
+    False
+    >>> no_lineno.lineno is None
+    True
+    >>> test < no_lineno
+    False
+    >>> no_lineno < test
+    True
 
 Compare `DocTestCase`:
 

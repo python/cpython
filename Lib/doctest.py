@@ -575,9 +575,11 @@ class DocTest:
     def __lt__(self, other):
         if not isinstance(other, DocTest):
             return NotImplemented
-        return ((self.name, self.filename, self.lineno, id(self))
+        self_lno = self.lineno if self.lineno is not None else -1
+        other_lno = other.lineno if other.lineno is not None else -1
+        return ((self.name, self.filename, self_lno, id(self))
                 <
-                (other.name, other.filename, other.lineno, id(other)))
+                (other.name, other.filename, other_lno, id(other)))
 
 ######################################################################
 ## 3. DocTestParser
