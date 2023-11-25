@@ -41,7 +41,7 @@ for example, a package and its resources can be imported from a zip file using
 ``get_resource_reader(fullname)`` method as specified by
 :class:`importlib.resources.abc.ResourceReader`.
 
-.. data:: Package
+.. class:: Package
 
     Whenever a function accepts a ``Package`` argument, you can pass in
     either a :class:`module object <types.ModuleType>` or a module name
@@ -58,7 +58,7 @@ for example, a package and its resources can be imported from a zip file using
     containers (think subdirectories).
 
     *package* is either a name or a module object which conforms to the
-    :data:`Package` requirements.
+    :class:`Package` requirements.
 
     .. versionadded:: 3.9
 
