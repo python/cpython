@@ -521,11 +521,11 @@ everyday Python programs.
 Descriptor protocol
 -------------------
 
-``descr.__get__(self, obj, type=None) -> value``
+``descr.__get__(self, obj, type=None)``
 
-``descr.__set__(self, obj, value) -> None``
+``descr.__set__(self, obj, value)``
 
-``descr.__delete__(self, obj) -> None``
+``descr.__delete__(self, obj)``
 
 That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
@@ -942,6 +942,10 @@ it can be updated:
     >>> Movie('Star Wars').director = 'J.J. Abrams'
     >>> Movie('Star Wars').director
     'J.J. Abrams'
+
+.. testcleanup::
+
+   conn.close()
 
 
 Pure Python Equivalents

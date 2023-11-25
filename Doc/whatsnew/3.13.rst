@@ -149,6 +149,13 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+asyncio
+-------
+
+* :meth:`asyncio.loop.create_unix_server` will now automatically remove
+  the Unix socket when the server is closed.
+  (Contributed by Pierre Ossman in :gh:`111246`.)
+
 copy
 ----
 
@@ -160,6 +167,15 @@ copy
   :class:`~inspect.Parameter` objects, :ref:`code object <code-objects>`, and
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
+
+dis
+---
+
+* Change the output of :mod:`dis` module functions to show logical
+  labels for jump targets and exception handlers, rather than offsets.
+  The offsets can be added with the new ``-O`` command line option or
+  the ``show_offsets`` parameter.
+  (Contributed by Irit Katriel in :gh:`112137`.)
 
 dbm
 ---
@@ -176,6 +192,13 @@ doctest
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
 
+glob
+----
+
+* Add :func:`glob.translate` function that converts a path specification with
+  shell-style wildcards to a regular expression.
+  (Contributed by Barney Gale in :gh:`72904`.)
+
 io
 --
 
@@ -184,6 +207,20 @@ The :class:`io.IOBase` finalizer now logs the ``close()`` method errors with
 and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
+
+ipaddress
+---------
+
+* Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
+  (Contributed by Charles Machalow in :gh:`109466`.)
+
+mmap
+----
+
+* The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
+  that can be used where it requires a file-like object with seekable and
+  the :meth:`~mmap.mmap.seek` method return the new absolute position.
+  (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
 
 opcode
 ------
@@ -278,6 +315,12 @@ typing
   defining a :class:`typing.Protocol`. Add :func:`typing.is_protocol` to
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 15.1.0. (Contributed by
+  James Gerity in :gh:`109559`.)
 
 venv
 ----
@@ -390,6 +433,16 @@ Deprecated
 * Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
   and methods that consider plural forms even if the translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
+* Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
+  (as has always been the case for an executing frame).
+  (Contributed by Irit Katriel in :gh:`79932`.)
+
+* Assignment to a function's ``__code__`` attribute where the new code
+  object's type does not match the function's type, is deprecated. The
+  different types are: plain function, generator, async generator and
+  coroutine.
+  (Contributed by Irit Katriel in :gh:`81137`.)
 
 
 Pending Removal in Python 3.14
@@ -970,6 +1023,15 @@ Changes in the Python API
   The result is now the same if ``wantobjects`` is set to ``0``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
+* Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
+  :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
+  :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
+  :c:func:`PySys_GetObject`, which clear all errors occurred during calling
+  the function, report now them using :func:`sys.unraisablehook`.
+  You can consider to replace these functions with other functions as
+  recomended in the documentation.
+  (Contributed by Serhiy Storchaka in :gh:`106672`.)
+
 
 Build Changes
 =============
@@ -1124,8 +1186,15 @@ New Features
   :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
-* Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
-  (Contributed by Victor Stinner in :gh:`111089`.)
+* Add :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions: similar to
+  Python ``list.extend()`` and ``list.clear()`` methods.
+  (Contributed by Victor Stinner in :gh:`111138`.)
+
+* Add :c:func:`PyDict_Pop` and :c:func:`PyDict_PopString` functions: remove a
+  key from a dictionary and optionally return the removed value. This is
+  similar to :meth:`dict.pop`, but without the default value and not raising
+  :exc:`KeyError` if the key missing.
+  (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
 
 Porting to Python 3.13
@@ -1137,30 +1206,12 @@ Porting to Python 3.13
   also the ``HAVE_IEEEFP_H`` macro.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
-* ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
-  needed, it should now be included explicitly. For example, it provides the
-  functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
-  ``getpid()``, ``getcwd()``, ``sysconf()``, ``getpagesize()``, ``alarm()`` and
-  ``pause()``.
-  As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
-  longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
-  macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
-  ``<pthread.h>`` header files can be included.
-  (Contributed by Victor Stinner in :gh:`108765`.)
-
 * ``Python.h`` no longer includes these standard header files: ``<time.h>``,
   ``<sys/select.h>`` and ``<sys/time.h>``. If needed, they should now be
   included explicitly. For example, ``<time.h>`` provides the ``clock()`` and
   ``gmtime()`` functions, ``<sys/select.h>`` provides the ``select()``
   function, and ``<sys/time.h>`` provides the ``futimes()``, ``gettimeofday()``
   and ``setitimer()`` functions.
-  (Contributed by Victor Stinner in :gh:`108765`.)
-
-* ``Python.h`` no longer includes the ``<ctype.h>`` standard header file. If
-  needed, it should now be included explicitly. For example, it provides
-  ``isalpha()`` and ``tolower()`` functions which are locale dependent. Python
-  provides locale independent functions, like :c:func:`!Py_ISALPHA` and
-  :c:func:`!Py_TOLOWER`.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
 * If the :c:macro:`Py_LIMITED_API` macro is defined, :c:macro:`!Py_BUILD_CORE`,
@@ -1196,12 +1247,6 @@ Porting to Python 3.13
 
   Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
   should be the deallocation function it is in.
-
-* The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
-  contains embedded null characters. To accept embedded null characters and
-  truncate on purpose at the first null byte,
-  ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
-  (Contributed by Victor Stinner in :gh:`111089`.)
 
 * On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
   header file. If needed, it should now be included explicitly. For example, it
@@ -1368,20 +1413,6 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
-
-* Remove the old aliases to functions calling functions which were kept for
-  backward compatibility with Python 3.8 provisional API:
-
-  * ``_PyObject_CallMethodNoArgs()``: use ``PyObject_CallMethodNoArgs()``
-  * ``_PyObject_CallMethodOneArg()``: use ``PyObject_CallMethodOneArg()``
-  * ``_PyObject_CallOneArg()``: use ``PyObject_CallOneArg()``
-  * ``_PyObject_FastCallDict()``: use ``PyObject_VectorcallDict()``
-  * ``_PyObject_Vectorcall()``: use ``PyObject_Vectorcall()``
-  * ``_PyObject_VectorcallMethod()``: use ``PyObject_VectorcallMethod()``
-  * ``_PyVectorcall_Function()``: use ``PyVectorcall_Function()``
-
-  Just remove the underscore prefix to update your code.
-  (Contributed by Victor Stinner in :gh:`106084`.)
 
 * Remove private ``_PyObject_FastCall()`` function:
   use ``PyObject_Vectorcall()`` which is available since Python 3.8
