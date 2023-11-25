@@ -135,14 +135,14 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
-                    _Py_CODEUNIT *next_instr)
+                    _Py_CODEUNIT *next_instr,
+                    int opcode,
+                    int oparg)
 {
     if (frame->owner == FRAME_OWNED_BY_CSTACK) {
         return;
     }
     dump_stack(frame, stack_pointer);
-    int oparg = next_instr->op.arg;
-    int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
