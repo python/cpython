@@ -5338,6 +5338,7 @@ class DSLParser:
 
     def at_getter(self) -> None:
         self.getter = True
+        self.kind = GETTER
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
@@ -5462,8 +5463,6 @@ class DSLParser:
                     "'__init__' must be a normal method, "
                     "not a classmethod, staticmethod or getter!"
                 )
-        elif self.getter and cls:
-            self.kind = GETTER
 
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column

@@ -638,7 +638,7 @@ class ClinicWholeFileTest(TestCase):
             C.__init__ = C.meth
             [clinic start generated code]*/
         """
-        err = "'__init__' must be a normal method, not a class or static method"
+        err = "'__init__' must be a normal method, not a classmethod, staticmethod or getter!"
         self.expect_failure(block, err, lineno=8)
 
     def test_validate_cloned_new(self):
@@ -2180,7 +2180,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
-        err = "'__init__' must be a normal method, not a class or static method!"
+        err = "'__init__' must be a normal method, not a classmethod, staticmethod or getter!"
         annotations = ["@classmethod", "@staticmethod", "@getter"]
         for annotation in annotations:
             with self.subTest(annotation=annotation):
