@@ -829,7 +829,7 @@ reference may yield different objects.
 
 This production can be customized by overriding the
 :meth:`~object.__getattribute__` method or the :meth:`~object.__getattr__`
-method.  The :meth:`__getattribute__` method is called first and either
+method.  The :meth:`!__getattribute__` method is called first and either
 returns a value or raises :exc:`AttributeError` if the attribute is not
 available.
 
