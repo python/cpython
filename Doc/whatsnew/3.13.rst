@@ -168,6 +168,15 @@ copy
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
+dis
+---
+
+* Change the output of :mod:`dis` module functions to show logical
+  labels for jump targets and exception handlers, rather than offsets.
+  The offsets can be added with the new ``-O`` command line option or
+  the ``show_offsets`` parameter.
+  (Contributed by Irit Katriel in :gh:`112137`.)
+
 dbm
 ---
 

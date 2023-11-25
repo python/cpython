@@ -1,1 +1,0 @@
-Rename ``Py_NOGIL`` to ``Py_GIL_DISABLED``. Patch by Hugo van Kemenade.
