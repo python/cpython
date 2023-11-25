@@ -1327,7 +1327,7 @@ Example Objects
       A dictionary mapping from option flags to ``True`` or ``False``, which is used
       to override default options for this example.  Any option flags not contained
       in this dictionary are left at their default value (as specified by the
-      :class:`DocTestRunner`'s :attr:`!optionflags`). By default, no options are set.
+      :class:`DocTestRunner`'s :ref:`optionflags <doctest-options>`). By default, no options are set.
 
 
 .. _doctest-doctestfinder:
