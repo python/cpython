@@ -1100,9 +1100,29 @@ deoptimize:
     int pc = next_uop - 1 - current_executor->trace;
     uintptr_t *pcounter = current_executor->extra + pc;
     *pcounter += 1;
-    if (*pcounter >= 10) {
+    if (*pcounter == 16 &&
+        (frame->instr_ptr->op.code == POP_JUMP_IF_FALSE ||
+         frame->instr_ptr->op.code == POP_JUMP_IF_TRUE ||
+         frame->instr_ptr->op.code == POP_JUMP_IF_NONE ||
+         frame->instr_ptr->op.code == POP_JUMP_IF_NOT_NONE))
+    {
         DPRINTF(2, "--> %s @ %d in %p has %d side exits\n",
                 _PyUopName(uopcode), pc, current_executor, (int)(*pcounter));
+        DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[frame->instr_ptr->op.code]);
+        // The counter will cycle around in 2**64 executions :-)
+        int optimized = _PyOptimizer_Anywhere(frame, frame->instr_ptr, stack_pointer);
+        if (optimized < 0) {
+            goto error_tier_two;
+        }
+        if (optimized) {
+            DPRINTF(2, "--> Optimized %s @ %d in %p\n",
+                    _PyUopName(uopcode), pc, current_executor);
+        DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[frame->instr_ptr->op.code]);
+        }
+        else {
+            DPRINTF(2, "--> Failed to optimize %s @ %d in %p\n",
+                    _PyUopName(uopcode), pc, current_executor);
+        }
     }
     Py_DECREF(current_executor);
     // Fall through
