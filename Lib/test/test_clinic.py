@@ -2181,13 +2181,16 @@ class ClinicParserTest(TestCase):
 
     def test_init_must_be_a_normal_method(self):
         err = "'__init__' must be a normal method, not a class or static method!"
-        block = """
-            module foo
-            class Foo "" ""
-            @classmethod
-            Foo.__init__
-        """
-        self.expect_failure(block, err, lineno=3)
+        annotations = ["@classmethod", "@staticmethod", "@getter"]
+        for annotation in annotations:
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.__init__
+                """
+                self.expect_failure(block, err, lineno=3)
 
     def test_duplicate_coexist(self):
         err = "Called @coexist twice"

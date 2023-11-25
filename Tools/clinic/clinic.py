@@ -5449,11 +5449,11 @@ class DSLParser:
         if name in unsupported_special_methods:
             fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
         if name == '__new__':
-            if (self.kind is not CLASS_METHOD) or (not cls):
+            if (self.kind is not CLASS_METHOD) or (not cls) or self.getter:
                 fail("'__new__' must be a class method!")
             self.kind = METHOD_NEW
         elif name == '__init__':
-            if (self.kind is not CALLABLE) or (not cls):
+            if (self.kind is not CALLABLE) or (not cls) or self.getter:
                 fail("'__init__' must be a normal method, not a class or static method!")
             self.kind = METHOD_INIT
         elif self.getter and cls:
