@@ -72,9 +72,9 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       "package" parameter was renamed to "anchor". "anchor" can now
+       *package* parameter was renamed to *anchor*. *anchor* can now
        be a non-package module and if omitted will default to the caller's
-       module. "package" is still accepted for compatibility but will raise
+       module. *package* is still accepted for compatibility but will raise
        a DeprecationWarning. Consider passing the anchor positionally or
        using ``importlib_resources >= 5.10`` for a compatible interface
        on older Pythons.
@@ -96,4 +96,4 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       Added support for ``traversable`` representing a directory.
+       Added support for *traversable* representing a directory.
