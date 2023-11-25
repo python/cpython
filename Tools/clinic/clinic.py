@@ -1169,7 +1169,7 @@ class CLanguage(Language):
         methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
-        elif f.kind == GETTER:
+        elif f.kind is GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
         else:
@@ -1228,7 +1228,7 @@ class CLanguage(Language):
         parsearg: str | None
         if not parameters:
             parser_code: list[str] | None
-            if f.kind == GETTER:
+            if f.kind is GETTER:
                 flags = "NULL"
                 parser_prototype = self.PARSER_PROTOTYPE_GETTER
                 parser_code = []
@@ -1685,7 +1685,7 @@ class CLanguage(Language):
         methoddef_cast_end = ""
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
-        elif f.kind == GETTER:
+        elif f.kind is GETTER:
             methoddef_cast = "(getter)"
         elif limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
@@ -1944,7 +1944,7 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.kind == GETTER:
+        if f.kind is GETTER:
             template_dict['methoddef_name'] = f.c_basename.upper() + "_GETTERDEF"
             template_dict['c_basename'] = f.c_basename + "_get"
         else:
@@ -3006,7 +3006,6 @@ class Function:
     docstring_only: bool = False
     critical_section: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
-    getter: bool = False
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -5164,7 +5163,6 @@ class DSLParser:
     preserve_output: bool
     critical_section: bool
     target_critical_section: list[str]
-    getter: bool
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
 
     def __init__(self, clinic: Clinic) -> None:
