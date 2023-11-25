@@ -327,7 +327,7 @@ _io__Buffered_simple_flush(buffered *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#define _IO__BUFFERED_CLOSED_GET_GETTERDEF    \
+#define _IO__BUFFERED_CLOSED_GETTERDEF    \
     {"closed", (getter)_io__Buffered_closed_get, NULL, NULL},
 
 static PyObject *
@@ -460,7 +460,7 @@ _io__Buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#define _IO__BUFFERED_NAME_GET_GETTERDEF    \
+#define _IO__BUFFERED_NAME_GETTERDEF    \
     {"name", (getter)_io__Buffered_name_get, NULL, NULL},
 
 static PyObject *
@@ -478,7 +478,7 @@ _io__Buffered_name_get(buffered *self, void *context)
     return return_value;
 }
 
-#define _IO__BUFFERED_MODE_GET_GETTERDEF    \
+#define _IO__BUFFERED_MODE_GETTERDEF    \
     {"mode", (getter)_io__Buffered_mode_get, NULL, NULL},
 
 static PyObject *
@@ -1218,4 +1218,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b0d994daa11b05ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03bb6139474e961a input=a9049054013a1b77]*/

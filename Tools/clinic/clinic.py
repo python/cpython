@@ -1944,11 +1944,12 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        template_dict['c_basename'] = f.c_basename
         if f.getter:
             template_dict['methoddef_name'] = f.c_basename.upper() + "_GETTERDEF"
+            template_dict['c_basename'] = f.c_basename + "_get"
         else:
             template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
+            template_dict['c_basename'] = f.c_basename
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
@@ -5533,8 +5534,6 @@ class DSLParser:
         line, _, returns = line.partition('->')
         returns = returns.strip()
         full_name, c_basename = self.parse_function_names(line)
-        if self.getter:
-            c_basename += '_get'
 
         return_converter = None
         if returns:
