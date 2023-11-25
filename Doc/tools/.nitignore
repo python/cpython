@@ -21,7 +21,6 @@ Doc/c-api/sys.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
-Doc/extending/newtypes.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
