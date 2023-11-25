@@ -50,7 +50,7 @@ for example, a package and its resources can be imported from a zip file using
 ``get_resource_reader(fullname)`` method as specified by
 :class:`importlib.resources.abc.ResourceReader`.
 
-.. data:: Anchor
+.. class:: Anchor
 
     Represents an anchor for resources, either a :class:`module object
     <types.ModuleType>` or a module name as a string. Defined as
@@ -63,7 +63,7 @@ for example, a package and its resources can be imported from a zip file using
     (think files). A Traversable may contain other containers (think
     subdirectories).
 
-    *anchor* is an optional :data:`Anchor`. If the anchor is a
+    *anchor* is an optional :class:`Anchor`. If the anchor is a
     package, resources are resolved from that package. If a module,
     resources are resolved adjacent to that module (in the same package
     or the package root). If the anchor is omitted, the caller's module
