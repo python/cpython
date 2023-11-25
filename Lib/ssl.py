@@ -704,6 +704,12 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     else:
         raise ValueError(purpose)
 
+    # Make OpenSSL's chain building behave more like RFC 3280 5280,
+    # which specify that chain building stops with the first trust
+    # anchor, even if that anchor is not self-signed.
+    context.verify_flags |= (_ssl.VERIFY_X509_PARTIAL_CHAIN |
+                             _ssl.VERIFY_X509_STRICT)
+
     if cafile or capath or cadata:
         context.load_verify_locations(cafile, capath, cadata)
     elif context.verify_mode != CERT_NONE:

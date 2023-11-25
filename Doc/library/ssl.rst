@@ -194,6 +194,11 @@ purposes.
       :data:`PROTOCOL_TLS_SERVER` protocol instead of generic
       :data:`PROTOCOL_TLS`.
 
+   .. versionchanged:: 3.13
+
+      The context now uses :data:`VERIFY_X509_PARTIAL_CHAIN` and
+      :data:`VERIFY_X509_STRICT` in its default flags.
+
 
 Exceptions
 ^^^^^^^^^^

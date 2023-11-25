@@ -86,9 +86,9 @@ CERTFILE_INFO = {
                (('localityName', 'Castle Anthrax'),),
                (('organizationName', 'Python Software Foundation'),),
                (('commonName', 'localhost'),)),
-    'notAfter': 'Aug 26 14:23:15 2028 GMT',
-    'notBefore': 'Aug 29 14:23:15 2018 GMT',
-    'serialNumber': '98A7CF88C74A32ED',
+    'notAfter': 'Jan 24 04:21:36 2043 GMT',
+    'notBefore': 'Nov 25 04:21:36 2023 GMT',
+    'serialNumber': '53E14833F7546C29256DD0F034F776C5E983004C',
     'subject': ((('countryName', 'XY'),),
              (('localityName', 'Castle Anthrax'),),
              (('organizationName', 'Python Software Foundation'),),
@@ -1496,6 +1496,10 @@ class ContextTests(unittest.TestCase):
 
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ctx.verify_flags & ssl.VERIFY_X509_PARTIAL_CHAIN,
+                         ssl.VERIFY_X509_PARTIAL_CHAIN)
+        self.assertEqual(ctx.verify_flags & ssl.VERIFY_X509_STRICT,
+                    ssl.VERIFY_X509_STRICT)
         self.assertTrue(ctx.check_hostname)
         self._assert_context_options(ctx)
 
