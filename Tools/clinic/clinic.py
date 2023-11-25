@@ -4704,7 +4704,7 @@ class Py_buffer_converter(CConverter):
 def correct_name_for_self(
         f: Function
 ) -> tuple[str, str]:
-    if f.kind in (CALLABLE, METHOD_INIT, GETTER):
+    if f.kind in {CALLABLE, METHOD_INIT, GETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
@@ -5460,7 +5460,6 @@ class DSLParser:
             self.kind = METHOD_INIT
         elif self.getter and cls:
             self.kind = GETTER
-
 
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
