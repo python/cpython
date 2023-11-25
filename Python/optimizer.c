@@ -155,11 +155,12 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
     Py_DECREF(old);
 }
 
-int
-_PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
+// src is where to insert ENTER_EXECUTOR
+// dest is where to start tracing
+static int
+optimizer_wherever(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
-    assert(src->op.code == JUMP_BACKWARD);
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, src)) {
@@ -187,6 +188,26 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     insert_executor(code, src, index, executor);
     Py_DECREF(executor);
     return 1;
+}
+
+int
+_PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
+{
+    assert(src->op.code == JUMP_BACKWARD);
+    return optimizer_wherever(frame, src, dest, stack_pointer);
+}
+
+// Start tracing at src and insert ENTER_EXECUTOR at the same place
+int
+_PyOptimizer_Anywhere(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, PyObject **stack_pointer)
+{
+    if (src->op.code == JUMP_BACKWARD) {
+        return 0;
+    }
+    if (src->op.code == ENTER_EXECUTOR) {
+        return 0;
+    }
+    return optimizer_wherever(frame, src, src, stack_pointer);
 }
 
 _PyExecutorObject *
@@ -499,7 +520,7 @@ translate_bytecode_to_trace(
     code = trace_stack[trace_stack_depth].code; \
     instr = trace_stack[trace_stack_depth].instr;
 
-    DPRINTF(4,
+    DPRINTF(2,
             "Optimizing %s (%s:%d) at byte offset %d\n",
             PyUnicode_AsUTF8(code->co_qualname),
             PyUnicode_AsUTF8(code->co_filename),
