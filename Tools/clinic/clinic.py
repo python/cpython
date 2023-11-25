@@ -1169,7 +1169,7 @@ class CLanguage(Language):
         methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
-        elif f.getter:
+        elif f.kind == GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
         else:
@@ -1228,7 +1228,7 @@ class CLanguage(Language):
         parsearg: str | None
         if not parameters:
             parser_code: list[str] | None
-            if f.getter:
+            if f.kind == GETTER:
                 flags = "NULL"
                 parser_prototype = self.PARSER_PROTOTYPE_GETTER
                 parser_code = []
@@ -1685,7 +1685,7 @@ class CLanguage(Language):
         methoddef_cast_end = ""
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
-        elif f.getter:
+        elif f.kind == GETTER:
             methoddef_cast = "(getter)"
         elif limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
@@ -1944,7 +1944,7 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.getter:
+        if f.kind == GETTER:
             template_dict['methoddef_name'] = f.c_basename.upper() + "_GETTERDEF"
             template_dict['c_basename'] = f.c_basename + "_get"
         else:
@@ -5201,7 +5201,6 @@ class DSLParser:
         self.preserve_output = False
         self.critical_section = False
         self.target_critical_section = []
-        self.getter = False
 
     def directive_version(self, required: str) -> None:
         global version
@@ -5337,7 +5336,6 @@ class DSLParser:
         self.critical_section = True
 
     def at_getter(self) -> None:
-        self.getter = True
         self.kind = GETTER
 
     def at_staticmethod(self) -> None:
@@ -5451,12 +5449,12 @@ class DSLParser:
             fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
 
         if name == '__new__':
-            if (self.kind is CLASS_METHOD) and cls and not self.getter:
+            if (self.kind is CLASS_METHOD) and cls:
                 self.kind = METHOD_NEW
             else:
                 fail("'__new__' must be a class method!")
         elif name == '__init__':
-            if (self.kind is CALLABLE) and cls and not self.getter:
+            if (self.kind is CALLABLE) and cls:
                 self.kind = METHOD_INIT
             else:
                 fail(
@@ -5570,8 +5568,7 @@ class DSLParser:
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist,
                                  critical_section=self.critical_section,
-                                 target_critical_section=self.target_critical_section,
-                                 getter=self.getter)
+                                 target_critical_section=self.target_critical_section)
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically
