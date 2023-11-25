@@ -1,0 +1,2 @@
+Add :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`
+to the default SSL context created with :func:`ssl.create_default_context`.
