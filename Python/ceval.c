@@ -1072,20 +1072,30 @@ deoptimize:
             _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    frame->return_offset = 0;  // Dispatch to frame->instr_ptr
-    _PyFrame_SetStackPointer(frame, stack_pointer);
     if (frame->instr_ptr->op.code == ENTER_EXECUTOR) {
         // Avoid recursing into the same executor over and over
-        Py_DECREF(current_executor);
         next_instr = frame->instr_ptr;
         PyCodeObject *code = _PyFrame_GetCode(frame);
         oparg = next_instr->op.arg;
-        _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-        opcode = executor->vm_data.opcode;
-        oparg = executor->vm_data.oparg;
-        DPRINTF(2, "Avoiding ENTER_EXECUTOR in favor of underlying %s\n", _PyOpcode_OpName[opcode]);
-        DISPATCH_GOTO();
+        _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg];
+        if (executor == (_PyExecutorObject *)current_executor) {
+            opcode = _PyOpcode_Deopt[executor->vm_data.opcode];
+            DPRINTF(1, "Avoiding ENTER_EXECUTOR %d in favor of underlying base opcode %s %d\n",
+                    oparg, _PyOpcode_OpName[opcode], executor->vm_data.oparg);
+            DPRINTF(1,
+                    " for %s (%s:%d) at byte offset %d\n",
+                    PyUnicode_AsUTF8(code->co_qualname),
+                    PyUnicode_AsUTF8(code->co_filename),
+                    code->co_firstlineno,
+                    2 * (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))));
+            Py_DECREF(current_executor);
+            oparg = executor->vm_data.oparg;
+            PRE_DISPATCH_GOTO();
+            DISPATCH_GOTO();
+        }
     }
+    frame->return_offset = 0;  // Don't leave this random
+    _PyFrame_SetStackPointer(frame, stack_pointer);
     // Increment side exit counter for this uop
     int pc = next_uop - 1 - current_executor->trace;
     uintptr_t *pcounter = current_executor->extra + pc;
