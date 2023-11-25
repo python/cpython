@@ -846,6 +846,10 @@ class CLanguage(Language):
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
     """)
+    PARSER_PROTOTYPE_GETTER: Final[str] = normalize_snippet("""
+        static PyObject *
+        {c_basename}({self_type}{self_name}, void *context)
+    """)
     METH_O_PROTOTYPE: Final[str] = normalize_snippet("""
         static PyObject *
         {c_basename}({impl_parameters})
@@ -864,6 +868,10 @@ class CLanguage(Language):
     METHODDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #define {methoddef_name}    \
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
+    """)
+    GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #define {methoddef_name}    \
+            {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, NULL, NULL}},
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
         #ifndef {methoddef_name}
@@ -1161,6 +1169,9 @@ class CLanguage(Language):
         methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
+        elif f.getter:
+            methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
+            docstring_prototype = docstring_definition = ''
         else:
             docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
             docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
@@ -1217,7 +1228,11 @@ class CLanguage(Language):
         parsearg: str | None
         if not parameters:
             parser_code: list[str] | None
-            if not requires_defining_class:
+            if f.getter:
+                flags = "NULL"
+                parser_prototype = self.PARSER_PROTOTYPE_GETTER
+                parser_code = []
+            elif not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
                 parser_prototype = self.PARSER_PROTOTYPE_NOARGS
@@ -1670,6 +1685,8 @@ class CLanguage(Language):
         methoddef_cast_end = ""
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
+        elif f.getter:
+            methoddef_cast = "(getter)"
         elif limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
         else:
@@ -1928,7 +1945,10 @@ class CLanguage(Language):
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
         template_dict['c_basename'] = f.c_basename
-        template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
+        if f.getter:
+            template_dict['methoddef_name'] = f.c_basename.upper() + "_GETTERDEF"
+        else:
+            template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
@@ -2932,6 +2952,7 @@ class FunctionKind(enum.Enum):
     CLASS_METHOD    = enum.auto()
     METHOD_INIT     = enum.auto()
     METHOD_NEW      = enum.auto()
+    GETTER          = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -2947,6 +2968,7 @@ STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
 CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
 METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
+GETTER: Final = FunctionKind.GETTER
 
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
@@ -2983,6 +3005,7 @@ class Function:
     docstring_only: bool = False
     critical_section: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
+    getter: bool = False
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -3032,6 +3055,8 @@ class Function:
                 flags.append('METH_CLASS')
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
+            case FunctionKind.GETTER:
+                pass
             case _ as kind:
                 assert kind is FunctionKind.CALLABLE, f"unknown kind: {kind!r}"
         if self.coexist:
@@ -4678,7 +4703,7 @@ class Py_buffer_converter(CConverter):
 def correct_name_for_self(
         f: Function
 ) -> tuple[str, str]:
-    if f.kind in (CALLABLE, METHOD_INIT):
+    if f.kind in (CALLABLE, METHOD_INIT, GETTER):
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
@@ -5140,6 +5165,7 @@ class DSLParser:
     preserve_output: bool
     critical_section: bool
     target_critical_section: list[str]
+    getter: bool
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
 
     def __init__(self, clinic: Clinic) -> None:
@@ -5176,6 +5202,7 @@ class DSLParser:
         self.preserve_output = False
         self.critical_section = False
         self.target_critical_section = []
+        self.getter = False
 
     def directive_version(self, required: str) -> None:
         global version
@@ -5310,6 +5337,9 @@ class DSLParser:
         self.target_critical_section.extend(args)
         self.critical_section = True
 
+    def at_getter(self) -> None:
+        self.getter = True
+
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
             fail("Can't set @staticmethod, function is not a normal callable")
@@ -5427,6 +5457,9 @@ class DSLParser:
             if (self.kind is not CALLABLE) or (not cls):
                 fail("'__init__' must be a normal method, not a class or static method!")
             self.kind = METHOD_INIT
+        elif self.getter and cls:
+            self.kind = GETTER
+
 
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
@@ -5500,6 +5533,8 @@ class DSLParser:
         line, _, returns = line.partition('->')
         returns = returns.strip()
         full_name, c_basename = self.parse_function_names(line)
+        if self.getter:
+            c_basename += '_get'
 
         return_converter = None
         if returns:
@@ -5534,7 +5569,8 @@ class DSLParser:
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist,
                                  critical_section=self.critical_section,
-                                 target_critical_section=self.target_critical_section)
+                                 target_critical_section=self.target_critical_section,
+                                 getter=self.getter)
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically
