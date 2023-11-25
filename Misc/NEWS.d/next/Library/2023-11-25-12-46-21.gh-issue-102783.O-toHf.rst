@@ -1,0 +1,2 @@
+Speed up ``pathlib.PurePath.__fspath__()`` by returning an unnormalized
+path.

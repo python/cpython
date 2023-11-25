@@ -209,6 +209,12 @@ class PurePath:
         # in the `__init__()` method.
         '_raw_paths',
 
+        # The `_raw_path_cached` slot stores a joined but unnormalized string
+        # path. This is set in the `__init__()` method or `_raw_path`
+        # property. It's returned from `__fspath__()`, and used as the basis
+        # for the normalized path parts (see following slots).
+        '_raw_path_cached',
+
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -273,19 +279,6 @@ class PurePath:
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
         return drv, root, parsed
 
-    def _load_parts(self):
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self.pathmod.join(*paths)
-        drv, root, tail = self._parse_path(path)
-        self._drv = drv
-        self._root = root
-        self._tail_cached = tail
-
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
         path = self.with_segments(path_str)
@@ -322,12 +315,21 @@ class PurePath:
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     @property
+    def _raw_path(self):
+        """The joined (but unnormalized) string path."""
+        try:
+            return self._raw_path_cached
+        except AttributeError:
+            self._raw_path_cached = self.pathmod.join(*self._raw_paths)
+            return self._raw_path_cached
+
+    @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
         try:
             return self._drv
         except AttributeError:
-            self._load_parts()
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._drv
 
     @property
@@ -336,7 +338,7 @@ class PurePath:
         try:
             return self._root
         except AttributeError:
-            self._load_parts()
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._root
 
     @property
@@ -344,7 +346,7 @@ class PurePath:
         try:
             return self._tail_cached
         except AttributeError:
-            self._load_parts()
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._tail_cached
 
     @property
@@ -605,6 +607,10 @@ class PurePath:
                         f"not {type(path).__name__!r}")
                 paths.append(path)
         self._raw_paths = paths
+        if len(paths) == 1:
+            self._raw_path_cached = paths[0]
+        elif len(paths) == 0:
+            self._raw_path_cached = ''
         self._resolving = False
 
     def __reduce__(self):
@@ -613,12 +619,12 @@ class PurePath:
         return (self.__class__, self.parts)
 
     def __fspath__(self):
-        return str(self)
+        return self._raw_path
 
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
-        return os.fsencode(self)
+        return os.fsencode(str(self))
 
     @property
     def _str_normcase(self):
