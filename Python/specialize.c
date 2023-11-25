@@ -2353,6 +2353,7 @@ int
 void
 _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
 {
+    assert(_PyOpcode_Deopt[instr->op.code] == FOR_ITER);
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
