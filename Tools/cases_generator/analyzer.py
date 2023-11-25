@@ -24,28 +24,28 @@ class Properties:
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
         return Properties(
-            any(p.escapes for p in properties),
-            all(p.infallible for p in properties),
-            any(p.deopts for p in properties),
-            any(p.oparg for p in properties),
-            any(p.jumps for p in properties),
-            any(p.ends_with_eval_breaker for p in properties),
-            any(p.needs_this for p in properties),
-            any(p.always_exits for p in properties),
-            any(p.stores_sp for p in properties),
+            escapes = any(p.escapes for p in properties),
+            infallible = all(p.infallible for p in properties),
+            deopts = any(p.deopts for p in properties),
+            oparg = any(p.oparg for p in properties),
+            jumps = any(p.jumps for p in properties),
+            ends_with_eval_breaker = any(p.ends_with_eval_breaker for p in properties),
+            needs_this = any(p.needs_this for p in properties),
+            always_exits = any(p.always_exits for p in properties),
+            stores_sp = any(p.stores_sp for p in properties),
         )
 
 
 SKIP_PROPERTIES = Properties(
-    False,
-    True,
-    False,
-    False,
-    False,
-    False,
-    False,
-    False,
-    False,
+    escapes = False,
+    infallible = True,
+    deopts = False,
+    oparg = False,
+    jumps = False,
+    ends_with_eval_breaker = False,
+    needs_this = False,
+    always_exits = False,
+    stores_sp = False,
 )
 
 
@@ -130,7 +130,7 @@ Part = Uop | Skip
 @dataclass
 class Instruction:
     name: str
-    uops: list[Part]
+    parts: list[Part]
     _properties: Properties | None
     is_target: bool = False
     family: Optional["Family"] = None
@@ -142,15 +142,15 @@ class Instruction:
         return self._properties
 
     def _compute_properties(self) -> Properties:
-        return Properties.from_list([part.properties for part in self.uops])
+        return Properties.from_list([part.properties for part in self.parts])
 
     def dump(self, indent: str) -> None:
-        print(indent, self.name, "=", ", ".join([op.name for op in self.uops]))
+        print(indent, self.name, "=", ", ".join([part.name for part in self.parts]))
         self.properties.dump("    " + indent)
 
     @property
     def size(self) -> int:
-        return 1 + sum(uop.size for uop in self.uops)
+        return 1 + sum(part.size for part in self.parts)
 
 
 @dataclass
@@ -241,15 +241,13 @@ def is_infallible(op: parser.InstDef) -> bool:
 
 from flags import makes_escaping_api_call
 
-EXITS = set(
-    [
-        "DISPATCH",
-        "GO_TO_INSTRUCTION",
-        "Py_UNREACHABLE",
-        "DISPATCH_INLINED",
-        "DISPATCH_GOTO",
-    ]
-)
+EXITS = {
+    "DISPATCH",
+    "GO_TO_INSTRUCTION",
+    "Py_UNREACHABLE",
+    "DISPATCH_INLINED",
+    "DISPATCH_GOTO",
+}
 
 
 def eval_breaker_at_end(op: parser.InstDef) -> bool:

@@ -55,9 +55,9 @@ class SizeMismatch(Exception):
 
 class Stack:
     def __init__(self) -> None:
-        self.top_offset: StackOffset = StackOffset()
-        self.base_offset: StackOffset = StackOffset()
-        self.peek_offset: StackOffset = StackOffset()
+        self.top_offset = StackOffset()
+        self.base_offset = StackOffset()
+        self.peek_offset = StackOffset()
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
@@ -133,7 +133,7 @@ class Stack:
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
     variables = {"unused"}
-    for uop in inst.uops:
+    for uop in inst.parts:
         if isinstance(uop, Uop):
             for var in reversed(uop.stack.inputs):
                 if var.name not in variables:
@@ -339,7 +339,7 @@ def write_uop(
 def uses_this(inst: Instruction) -> bool:
     if inst.properties.needs_this:
         return True
-    for uop in inst.uops:
+    for uop in inst.parts:
         if isinstance(uop, Skip):
             continue
         for cache in uop.caches:
@@ -376,13 +376,13 @@ def generate_tier1(
         declare_variables(inst, out)
         offset = 1  # The instruction itself
         stack = Stack()
-        for uop in inst.uops:
+        for part in inst.parts:
             # Only emit braces if more than one uop
-            offset = write_uop(uop, out, offset, stack, inst, len(inst.uops) > 1)
+            offset = write_uop(part, out, offset, stack, inst, len(inst.parts) > 1)
         out.start_line()
-        if not inst.uops[-1].properties.always_exits:
+        if not inst.parts[-1].properties.always_exits:
             stack.flush(out)
-            if inst.uops[-1].properties.ends_with_eval_breaker:
+            if inst.parts[-1].properties.ends_with_eval_breaker:
                 out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("DISPATCH();\n")
         out.start_line()

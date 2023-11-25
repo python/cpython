@@ -15,7 +15,6 @@ def var_size(var: StackItem) -> str:
         return var.size
 
 
-@dataclass
 class StackOffset:
     "The stack offset of the virtual base of the stack from the physical stack pointer"
 
