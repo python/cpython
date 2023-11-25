@@ -425,6 +425,7 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--fast-ci']
         use_resources = sorted(cmdline.ALL_RESOURCES)
         use_resources.remove('cpu')
+        use_resources.remove('curses')
         regrtest = self.check_ci_mode(args, use_resources)
         self.assertEqual(regrtest.timeout, 10 * 60)
 
@@ -432,6 +433,7 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--fast-ci', '--python', 'python -X dev']
         use_resources = sorted(cmdline.ALL_RESOURCES)
         use_resources.remove('cpu')
+        use_resources.remove('curses')
         regrtest = self.check_ci_mode(args, use_resources, rerun=False)
         self.assertEqual(regrtest.timeout, 10 * 60)
         self.assertEqual(regrtest.python_cmd, ('python', '-X', 'dev'))
@@ -441,6 +443,7 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--fast-ci', '-u-network']
         use_resources = sorted(cmdline.ALL_RESOURCES)
         use_resources.remove('cpu')
+        use_resources.remove('curses')
         use_resources.remove('network')
         self.check_ci_mode(args, use_resources)
 
