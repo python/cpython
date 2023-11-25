@@ -72,18 +72,23 @@ def _is_case_sensitive(pathmod):
 # Globbing helpers
 #
 
+re = glob = None
+
 
 @functools.lru_cache(maxsize=256)
 def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
-    from glob import translate
-    regex = translate(pat, recursive=True, include_hidden=True, seps=sep)
+    global re, glob
+    if re is None:
+        import re, glob
+
+    flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+    regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
     # The string representation of an empty path is a single dot ('.'). Empty
     # paths shouldn't match wildcards, so we consume it with an atomic group.
     regex = r'(\.\Z)?+' + regex
-    from re import compile, NOFLAG, IGNORECASE
-    return compile(regex, flags=NOFLAG if case_sensitive else IGNORECASE).match
+    return re.compile(regex, flags=flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
