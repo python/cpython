@@ -138,13 +138,37 @@ _PyThreadState_GET(void)
 //
 // High-level code should generally call PyEval_RestoreThread() instead, which
 // calls this function.
-void _PyThreadState_Attach(PyThreadState *tstate);
+extern void _PyThreadState_Attach(PyThreadState *tstate);
 
 // Detaches the current thread from the interpreter.
 //
 // High-level code should generally call PyEval_SaveThread() instead, which
 // calls this function.
-void _PyThreadState_Detach(PyThreadState *tstate);
+extern void _PyThreadState_Detach(PyThreadState *tstate);
+
+// Temporarily pauses the thread in the GC state.
+//
+// This is used to implement stop-the-world pauses. The thread must be in the
+// "attached" state. It will switch to the "GC" state and pause until the
+// stop-the-world event completes, after which it will switch back to the
+// "attached" state.
+extern void _PyThreadState_Park(PyThreadState *tstate);
+
+// Perform a stop-the-world pause for all threads in the all interpreters.
+//
+// Threads in the "attached" state are paused and transitioned to the "GC"
+// state. Threads in the "detached" state switch to the "GC" state, preventing
+// them from reattaching until the stop-the-world pause is complete.
+//
+// NOTE: This is a no-op outside of Py_GIL_DISABLED builds.
+extern void _PyRuntimeState_StopTheWorld(_PyRuntimeState *runtime);
+extern void _PyRuntimeState_StartTheWorld(_PyRuntimeState *runtime);
+
+// Perform a stop-the-world pause for threads in the specified interpreter.
+//
+// NOTE: This is a no-op outside of Py_GIL_DISABLED builds.
+extern void _PyInterpreterState_StopTheWorld(PyInterpreterState *interp);
+extern void _PyInterpreterState_StartTheWorld(PyInterpreterState *interp);
 
 
 static inline void

@@ -227,6 +227,9 @@ typedef struct pyruntimestate {
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
 
+    _PyRWMutex stoptheworld_mutex;
+    struct _stoptheworld_state stoptheworld;
+
     PyPreConfig preconfig;
 
     // Audit values must be preserved when Py_Initialize()/Py_Finalize()
