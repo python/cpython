@@ -816,12 +816,18 @@ An attribute reference is a primary followed by a period and a name:
 
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
-attribute whose name is the identifier.  This production can be customized by
-overriding the :meth:`__getattr__` method.  If this attribute is not available,
-the exception :exc:`AttributeError` is raised.  Otherwise, the type and value of
-the object produced is determined by the object.  Multiple evaluations of the
-same attribute reference may yield different objects.
+attribute whose name is the identifier. The type and value produced is
+determined by the object.  Multiple evaluations of the same attribute
+reference may yield different objects.
 
+This production can be customized by overriding the
+:meth:`~object.__getattribute__` method or the :meth:`~object.__getattr__`
+method.  The :meth:`!__getattribute__` method is called first and either
+returns a value or raises :exc:`AttributeError` if the attribute is not
+available.
+
+If an :exc:`AttributeError` is raised and the object has a :meth:`!__getattr__`
+method, that method is called as a fallback.
 
 .. _subscriptions:
 
