@@ -149,7 +149,7 @@ continue to do it) is to end each module :mod:`!M` with::
        import doctest
        doctest.testmod()
 
-:mod:`doctest` then examines docstrings in module :mod:`!M`.
+:mod:`!doctest` then examines docstrings in module :mod:`!M`.
 
 Running the module as a script causes the examples in the docstrings to get
 executed and verified::
@@ -958,7 +958,8 @@ and :ref:`doctest-simple-testfile`.
 
    Optional argument *exclude_empty* defaults to false.  If true, objects for which
    no doctests are found are excluded from consideration. The default is a backward
-   compatibility hack, so that code still using :meth:`doctest.master.summarize <DocTestRunner.summarize>` in
+   compatibility hack, so that code still using
+   :meth:`doctest.master.summarize <DocTestRunner.summarize>` in
    conjunction with :func:`testmod` continues to get output for objects with no
    tests. The *exclude_empty* argument to the newer :class:`DocTestFinder`
    constructor defaults to true.
@@ -1152,11 +1153,11 @@ reporting flags specific to :mod:`unittest` support, via this function:
    :mod:`unittest`:  the :meth:`!runTest` method of :class:`!DocTestCase` looks at
    the option flags specified for the test case when the :class:`!DocTestCase`
    instance was constructed.  If no reporting flags were specified (which is the
-   typical and expected case), :mod:`doctest`'s :mod:`unittest` reporting flags are
+   typical and expected case), :mod:`!doctest`'s :mod:`unittest` reporting flags are
    :ref:`bitwise ORed <bitwise>` into the option flags, and the option flags
    so augmented are passed to the :class:`DocTestRunner` instance created to
    run the doctest.  If any reporting flags were specified when the
-   :class:`!DocTestCase` instance was constructed, :mod:`doctest`'s
+   :class:`!DocTestCase` instance was constructed, :mod:`!doctest`'s
    :mod:`unittest` reporting flags are ignored.
 
    The value of the :mod:`unittest` reporting flags in effect before the function
