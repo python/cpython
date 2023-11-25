@@ -5458,7 +5458,10 @@ class DSLParser:
             if (self.kind is CALLABLE) and cls and not self.getter:
                 self.kind = METHOD_INIT
             else:
-                fail("'__init__' must be a normal method, not a class or static method!")
+                fail(
+                    "'__init__' must be a normal method, "
+                    "not a classmethod, staticmethod or getter!"
+                )
         elif self.getter and cls:
             self.kind = GETTER
 
