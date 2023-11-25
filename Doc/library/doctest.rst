@@ -1455,7 +1455,7 @@ DocTestRunner objects
    passing a subclass of :class:`OutputChecker` to the constructor.
 
    The test runner's display output can be controlled in two ways. First, an output
-   function can be passed to :meth:`TestRunner.run`; this function will be called
+   function can be passed to :meth:`run`; this function will be called
    with strings that should be displayed.  It defaults to ``sys.stdout.write``.  If
    capturing the output is not sufficient, then the display output can be also
    customized by subclassing DocTestRunner, and overriding the methods
