@@ -998,7 +998,7 @@ As your collection of doctest'ed modules grows, you'll want a way to run all
 their doctests systematically.  :mod:`doctest` provides two functions that can
 be used to create :mod:`unittest` test suites from modules and text files
 containing doctests.  To integrate with :mod:`unittest` test discovery, include
-a :func:`!load_tests` function in your test module::
+a :ref:`load_tests <load_tests-protocol>` function in your test module::
 
    import unittest
    import doctest
