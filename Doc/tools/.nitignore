@@ -56,7 +56,6 @@ Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
-Doc/library/doctest.rst
 Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
 Doc/library/email.errors.rst
