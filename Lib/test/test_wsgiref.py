@@ -211,7 +211,7 @@ class IntegrationTests(TestCase):
         self.assertEqual(
             err.splitlines()[-2], "AssertionError"
         )
-    
+
     def test_wsgi_input_read(self):
         bad_app = input_app("read")
         good_app = input_app("read", 5)
@@ -227,7 +227,7 @@ class IntegrationTests(TestCase):
 
         out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
         self.assertTrue(out.endswith(b"Test "))
-        
+
     def test_wsgi_input_readlines(self):
         bad_app = input_app("readlines", 3, 5)
         good_app = input_app("readlines", 1)
@@ -241,12 +241,12 @@ class IntegrationTests(TestCase):
         )
         out, err = run_amock(validator(good_app), b"GET / HTTP/1.0\n\nTest Line 1\nTest Line 2\n")
         self.assertTrue(out.endswith(b"Test Line 1\n"))
-    
+
     def test_wsgi_input_readline(self):
         bad_app = input_app("readline", 3, 4)
         good_app = input_app("readline", 2)
 
-        out, err = run_amock(validator(bad_app))        
+        out, err = run_amock(validator(bad_app))
         self.assertTrue(out.endswith(
             b"A server error occurred.  Please contact the administrator."
         ))
@@ -274,7 +274,7 @@ class IntegrationTests(TestCase):
         out, err = run_amock(validator(app), b"GET / HTTP/1.0\n\nTest 1\nTest 2\n")
         self.assertTrue(out.endswith(b"Test 1\n;Test 2\n"))
 
-    def test_wsgi_errors_write(self):      
+    def test_wsgi_errors_write(self):
         bad_app = errors_app("write", b"Test")
         good_app = errors_app("write", "Test")
 
