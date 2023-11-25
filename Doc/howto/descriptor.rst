@@ -1013,17 +1013,23 @@ here is a pure Python equivalent:
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError(f"property '{self._name}' has no getter")
+                raise AttributeError(
+                    f'property {self._name!r} of {type(obj).__name__!r} object has no getter'
+                 )
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f"property '{self._name}' has no setter")
+                raise AttributeError(
+                    f'property {self._name!r} of {type(obj).__name__!r} object has no setter'
+                 )
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f"property '{self._name}' has no deleter")
+                raise AttributeError(
+                    f'property {self._name!r} of {type(obj).__name__!r} object has no deleter'
+                 )
             self.fdel(obj)
 
         def getter(self, fget):
@@ -1054,6 +1060,11 @@ here is a pure Python equivalent:
         def delx(self):
             del self.__x
         x = Property(getx, setx, delx, "I'm the 'x' property.")
+        no_getter = Property(None, setx, delx, "I'm the 'x' property.")
+        no_setter = Property(getx, None, delx, "I'm the 'x' property.")
+        no_deleter = Property(getx, setx, None, "I'm the 'x' property.")
+        no_doc = Property(getx, setx, delx, None)
+
 
     # Now do it again but use the decorator style
 
@@ -1091,6 +1102,32 @@ here is a pure Python equivalent:
     >>> del ccc.x
     >>> hasattr(ccc, 'x')
     False
+
+    >>> cc = CC()
+    >>> cc.x = 33
+    >>> try:
+    ...     cc.no_getter
+    ... except AttributeError as e:
+    ...     e.args[0]
+    ...
+    "property 'no_getter' of 'CC' object has no getter"
+
+    >>> try:
+    ...     cc.no_setter = 33
+    ... except AttributeError as e:
+    ...     e.args[0]
+    ...
+    "property 'no_setter' of 'CC' object has no setter"
+
+    >>> try:
+    ...     del cc.no_deleter
+    ... except AttributeError as e:
+    ...     e.args[0]
+    ...
+    "property 'no_deleter' of 'CC' object has no deleter"
+
+    >>> CC.no_doc.__doc__ is None
+    True
 
 The :func:`property` builtin helps whenever a user interface has granted
 attribute access and then subsequent changes require the intervention of a
