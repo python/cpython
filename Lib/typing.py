@@ -1828,8 +1828,13 @@ class _ProtocolMeta(ABCMeta):
                 not cls.__callable_proto_members_only__
                 and cls.__dict__.get("__subclasshook__") is _proto_hook
             ):
+                non_method_attrs = sorted(
+                    attr for attr in cls.__protocol_attrs__
+                    if not callable(getattr(cls, attr, None))
+                )
                 raise TypeError(
-                    "Protocols with non-method members don't support issubclass()"
+                    "Protocols with non-method members don't support issubclass()."
+                    f" Non-method members: {str(non_method_attrs)[1:-1]}."
                 )
             if not getattr(cls, '_is_runtime_protocol', False):
                 raise TypeError(
