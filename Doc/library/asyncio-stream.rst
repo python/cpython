@@ -204,6 +204,10 @@ StreamReader
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
+   .. method:: feed_eof()
+
+      Acknowledge the EOF.
+
    .. coroutinemethod:: read(n=-1)
 
       Read up to *n* bytes from the stream.

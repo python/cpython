@@ -73,7 +73,7 @@ decompression bomb         Safe                Safe                Safe         
 1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
    "quadratic blowup" vulnerabilities. Items still listed as vulnerable due to
    potential reliance on system-provided libraries. Check
-   :const:`pyexpat.EXPAT_VERSION`.
+   :const:`!pyexpat.EXPAT_VERSION`.
 2. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
    :exc:`~xml.etree.ElementTree.ParseError` when an entity occurs.
 3. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
