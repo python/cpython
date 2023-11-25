@@ -1,0 +1,2 @@
+Slightly improve the import time of the :mod:`pathlib` module by deferring
+some imports. Patch by Barney Gale.

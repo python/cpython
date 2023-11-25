@@ -5,14 +5,11 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
-import contextlib
 import functools
-import glob
 import io
 import ntpath
 import os
 import posixpath
-import re
 import sys
 import warnings
 from _collections_abc import Sequence
@@ -75,17 +72,23 @@ def _is_case_sensitive(pathmod):
 # Globbing helpers
 #
 
+re = glob = None
+
 
 @functools.lru_cache(maxsize=256)
 def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
+    global re, glob
+    if re is None:
+        import re, glob
+
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
     # The string representation of an empty path is a single dot ('.'). Empty
     # paths shouldn't match wildcards, so we consume it with an atomic group.
     regex = r'(\.\Z)?+' + regex
-    return re.compile(regex, flags).match
+    return re.compile(regex, flags=flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -981,7 +984,8 @@ class _PathBase(PurePath):
     def _scandir(self):
         # Emulate os.scandir(), which returns an object that can be used as a
         # context manager. This method is called by walk() and glob().
-        return contextlib.nullcontext(self.iterdir())
+        from contextlib import nullcontext
+        return nullcontext(self.iterdir())
 
     def _make_child_relpath(self, name):
         path_str = str(self)
