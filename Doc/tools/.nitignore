@@ -15,14 +15,12 @@ Doc/c-api/memory.rst
 Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
 Doc/c-api/object.rst
-Doc/c-api/set.rst
 Doc/c-api/stable.rst
 Doc/c-api/structures.rst
 Doc/c-api/sys.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
-Doc/extending/newtypes.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
@@ -36,7 +34,6 @@ Doc/library/aifc.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
-Doc/library/asyncio-stream.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/asyncio-task.rst
 Doc/library/audioop.rst
@@ -59,7 +56,6 @@ Doc/library/decimal.rst
 Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
 Doc/library/email.errors.rst
-Doc/library/email.headerregistry.rst
 Doc/library/email.mime.rst
 Doc/library/email.parser.rst
 Doc/library/email.policy.rst
@@ -72,12 +68,10 @@ Doc/library/functions.rst
 Doc/library/functools.rst
 Doc/library/getopt.rst
 Doc/library/gettext.rst
-Doc/library/gzip.rst
 Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.cookies.rst
 Doc/library/http.server.rst
-Doc/library/importlib.resources.rst
 Doc/library/importlib.rst
 Doc/library/inspect.rst
 Doc/library/locale.rst
@@ -139,7 +133,6 @@ Doc/library/xdrlib.rst
 Doc/library/xml.dom.minidom.rst
 Doc/library/xml.dom.pulldom.rst
 Doc/library/xml.dom.rst
-Doc/library/xml.rst
 Doc/library/xml.sax.handler.rst
 Doc/library/xml.sax.reader.rst
 Doc/library/xml.sax.rst
