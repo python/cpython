@@ -1,1 +1,0 @@
-:func:`wsgiref.util.is_hop_by_hop` is now exposed correctly in ``__all__``.

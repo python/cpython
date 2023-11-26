@@ -232,6 +232,9 @@ The modules that provide Tk support include:
 
 Additional modules:
 
+.. module:: _tkinter
+   :synopsis: A binary module that contains the low-level interface to Tcl/Tk.
+
 :mod:`_tkinter`
    A binary module that contains the low-level interface to Tcl/Tk.
    It is automatically imported by the main :mod:`tkinter` module,
