@@ -1261,6 +1261,11 @@ always available.
         This is still called as a fallback if a :data:`meta_path` entry doesn't
         have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
+    .. versionchanged:: 3.12
+
+        :meth:`!find_module` have been removed and wouldn't been called as a
+        callback.
+
 .. data:: modules
 
    This is a dictionary that maps module names to modules which have already been
