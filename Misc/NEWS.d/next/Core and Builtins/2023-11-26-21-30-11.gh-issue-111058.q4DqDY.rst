@@ -1,0 +1,3 @@
+Change coro.cr_frame to return ``None`` after the coroutine has been closed.
+This fixes a bug where :func:`~inspect.getcoroutinestate` returns the wrong
+state for a closed coroutine.

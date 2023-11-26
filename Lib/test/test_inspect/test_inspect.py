@@ -2493,6 +2493,10 @@ class TestGetCoroutineState(unittest.TestCase):
             self.coroutine.throw(RuntimeError)
         self.assertEqual(self._coroutinestate(), inspect.CORO_CLOSED)
 
+    def test_closed_after_close(self):
+        self.coroutine.close()
+        self.assertEqual(self._coroutinestate(), inspect.CORO_CLOSED)
+
     def test_easy_debugging(self):
         # repr() and str() of a coroutine state should contain the state name
         names = 'CORO_CREATED CORO_RUNNING CORO_SUSPENDED CORO_CLOSED'.split()
