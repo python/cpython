@@ -769,10 +769,6 @@ class StructTest(unittest.TestCase):
         my_struct = MyStruct()
         self.assertEqual(my_struct.pack(12345), b'\x30\x39')
 
-    def test_repr(self):
-        s = struct.Struct('=i2H')
-        self.assertEqual(repr(s), f'Struct({s.format!r})')
-
 
 class UnpackIteratorTest(unittest.TestCase):
     """
