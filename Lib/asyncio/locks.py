@@ -366,6 +366,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     def locked(self):
         """Returns True if semaphore cannot be acquired immediately."""
+        # due to state, or FIFO rules (must allow others to run first)
         return self._value == 0 or (
             any(not w.cancelled() for w in (self._waiters or ())))
 
@@ -379,6 +380,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         True.
         """
         if not self.locked():
+            # Maintain FIFO, wait for others to start even if _value > 0
             self._value -= 1
             return True
 
@@ -403,7 +405,8 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             raise
 
         finally:
-            # new waiters may have arrived. Wake up as many as are allowed
+            # new waiters may have arrived but had to wait due to FIFO.
+            # Wake up as many as are allowed.
             while self._value > 0:
                 if not self._wake_up_next():
                     break  # there was no-one to wake up
