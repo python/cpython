@@ -2039,12 +2039,12 @@ to speed up repeated connections from the same clients.
       context.set_ciphers('PSK')
 
       # A simple lambda:
-      psk = bytes.fromhex('deadbeef')
+      psk = bytes.fromhex('c0ffee')
       context.set_psk_client_callback(lambda hint: (None, psk))
 
       # A table using the hint from the server:
-      psk_table = { 'ServerId_1': bytes.fromhex('deadbeef'),
-                    'ServerId_2': bytes.fromhex('cafebabe')
+      psk_table = { 'ServerId_1': bytes.fromhex('c0ffee'),
+                    'ServerId_2': bytes.fromhex('facade')
       }
       def callback(hint):
           return 'ClientId_1', psk_table[hint]
@@ -2081,12 +2081,12 @@ to speed up repeated connections from the same clients.
       context.set_ciphers('PSK')
 
       # A simple lambda:
-      psk = bytes.fromhex('deadbeef')
+      psk = bytes.fromhex('c0ffee')
       context.set_psk_server_callback(lambda identity: psk)
 
       # A table using the identity of the client:
-      psk_table = { 'ClientId_1': bytes.fromhex('deadbeef'),
-                    'ClientId_2': bytes.fromhex('cafed00d')
+      psk_table = { 'ClientId_1': bytes.fromhex('c0ffee'),
+                    'ClientId_2': bytes.fromhex('facade')
       }
       def callback(identity):
           return psk_table[identity]
