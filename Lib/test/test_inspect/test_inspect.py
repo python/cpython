@@ -2384,6 +2384,10 @@ class TestGetGeneratorState(unittest.TestCase):
             self.generator.throw(RuntimeError)
         self.assertEqual(self._generatorstate(), inspect.GEN_CLOSED)
 
+    def test_closed_after_close(self):
+        self.generator.close()
+        self.assertEqual(self._generatorstate(), inspect.GEN_CLOSED)
+
     def test_running(self):
         # As mentioned on issue #10220, checking for the RUNNING state only
         # makes sense inside the generator itself.
