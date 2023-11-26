@@ -1,4 +1,0 @@
-Check for an instance-dict cached value in the :meth:`__get__` method of
-:func:`functools.cached_property`. This better matches the pre-3.12 behavior
-and improves compatibility for users subclassing
-:func:`functools.cached_property` and adding a :meth:`__set__` method.
