@@ -10,12 +10,7 @@ import sys
 from analyzer import (
     Analysis,
     Instruction,
-    Uop,
-    Part,
     analyze_files,
-    Skip,
-    StackItem,
-    analysis_error,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -23,9 +18,7 @@ from generators_common import (
     write_header,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
-from lexer import Token
-from stack import StackOffset
+from typing import TextIO
 
 
 DEFAULT_OUTPUT = ROOT / "Include/opcode_ids.h"
