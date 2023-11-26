@@ -759,9 +759,8 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.wait_for(condition.wait(), timeout=0.5)
 
     async def test_cancelled_error_wakeup(self):
-        """Test that a cancelled error, received when awaiting wakeup
-        will be re-raised un-modified.
-        """
+        # Test that a cancelled error, received when awaiting wakeup
+        # will be re-raised un-modified.
         wake = False
         raised = None
         cond = asyncio.Condition()
@@ -785,9 +784,8 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(err.exception, raised)
 
     async def test_cancelled_error_re_aquire(self):
-        """Test that a cancelled error, received when re-aquiring lock,
-        will be re-raised un-modified.
-        """
+        # Test that a cancelled error, received when re-aquiring lock,
+        # will be re-raised un-modified.
         wake = False
         raised = None
         cond = asyncio.Condition()

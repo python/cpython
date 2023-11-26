@@ -113,10 +113,12 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
                 await fut
             finally:
                 self._waiters.remove(fut)
-        except BaseException:
+        except exceptions.CancelledError:
+            # Currently the only exception designed be able to occur here.
+
             # Ensure the lock invariant: If lock is not claimed (or about to be by us)
             # and there is a Task in waiters,
-            # ensure that that Task (now at the head) will run.
+            # ensure that the Task at the head will run.
             if not self._locked:
                 self._wake_up_first()
             raise
@@ -143,7 +145,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
             raise RuntimeError('Lock is not acquired.')
 
     def _wake_up_first(self):
-        """Wake up the first waiter if it isn't done."""
+        """Ensure that the first waiter will wake up."""
         if not self._waiters:
             return
         try:
@@ -151,9 +153,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         except StopIteration:
             return
 
-        # .done() necessarily means that a waiter will wake up later on and
-        # either take the lock, or, if it was cancelled and lock wasn't
-        # taken already, will hit this again and wake up a new waiter.
+        # .done() means that the waiter is already set to wake up
         if not fut.done():
             fut.set_result(True)
 
@@ -392,18 +392,21 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
                 await fut
             finally:
                 self._waiters.remove(fut)
-        except BaseException:
+        except exceptions.CancelledError:
+            # Currently the only exception designed be able to occur here.
             if fut.done() and not fut.cancelled():
                 # Our Future was successfully set to True via _wake_up_next(),
                 # but we are not about to successfully acquire().  Therefore we
                 # must undo the bookkeeping already done and attempt to wake
                 # up someone else.
                 self._value += 1
-                self._wake_up_next()
             raise
 
-        if self._value > 0:
-            self._wake_up_next()
+        finally:
+            # new waiters may have arrived. Wake up as many as are allowed
+            while self._value > 0:
+                if not self._wake_up_next():
+                    break  # there was no-one to wake up
         return True
 
     def release(self):
@@ -418,14 +421,15 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
     def _wake_up_next(self):
         """Wake up the first waiter that isn't done."""
         if not self._waiters:
-            return
+            return False
 
         for fut in self._waiters:
             if not fut.done():
                 self._value -= 1
                 fut.set_result(True)
-                # assert fut.true() and not fut.cancelled()
-                return
+                # fut is now `done()` and not `cancelled()`
+                return True
+        return False
 
 
 class BoundedSemaphore(Semaphore):
