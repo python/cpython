@@ -17,18 +17,20 @@ from analyzer import (
     StackItem,
     analysis_error,
 )
+from generators_common import (
+    DEFAULT_INPUT,
+    ROOT,
+    root_relative_path,
+)
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
 from stack import StackOffset
 
 
-HERE = os.path.dirname(__file__)
-ROOT = os.path.join(HERE, "../..")
-THIS = os.path.relpath(__file__, ROOT).replace(os.path.sep, "/")
+THIS = root_relative_path(__file__)
 
-DEFAULT_INPUT = os.path.relpath(os.path.join(ROOT, "Python/bytecodes.c"))
-DEFAULT_OUTPUT = os.path.relpath(os.path.join(ROOT, "Python/generated_cases.c.h"))
+DEFAULT_OUTPUT = (ROOT / "Python/generated_cases.c.h")
 
 
 def write_header(filename: str, outfile: TextIO) -> None:
