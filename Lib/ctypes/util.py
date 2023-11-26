@@ -204,12 +204,13 @@ elif os.name == "posix":
             return nums or [sys.maxsize]
 
         def find_library(name):
+            ldconfig_bin = shutil.which('ldconfig') or '/sbin/ldconfig'
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
             expr = os.fsencode(expr)
 
             try:
-                proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
+                proc = subprocess.Popen((ldconfig_bin, '-r'),
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL)
             except OSError:  # E.g. command not found
