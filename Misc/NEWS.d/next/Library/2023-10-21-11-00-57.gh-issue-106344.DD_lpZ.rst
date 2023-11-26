@@ -1,0 +1,1 @@
+return ciphers in :meth:`ssl.SSLSocket.shared_ciphers` after session reuse

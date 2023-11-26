@@ -301,6 +301,8 @@ typedef struct {
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
+    unsigned char *client_hello_ciphers;
+    size_t client_hello_ciphers_len;
 } PySSLContext;
 
 typedef struct {
@@ -2032,10 +2034,9 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 /*[clinic end generated code: output=3d174ead2e42c4fd input=0bfe149da8fe6306]*/
 {
     STACK_OF(SSL_CIPHER) *server_ciphers;
-    STACK_OF(SSL_CIPHER) *client_ciphers;
-    int i, len;
     PyObject *res;
-    const SSL_CIPHER* cipher;
+    Py_ssize_t it, inlen, outlen;
+    PySSLContext *ctx = self->ctx;
 
     /* Rather than use SSL_get_shared_ciphers, we use an equivalent algorithm because:
 
@@ -2045,30 +2046,50 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
           done so, if the buffer is too small.
      */
 
-    server_ciphers = SSL_get_ciphers(self->ssl);
-    if (!server_ciphers)
+    if (ctx->client_hello_ciphers_len == 0) {
         Py_RETURN_NONE;
-    client_ciphers = SSL_get_client_ciphers(self->ssl);
-    if (!client_ciphers)
-        Py_RETURN_NONE;
+    }
 
-    res = PyList_New(sk_SSL_CIPHER_num(server_ciphers));
-    if (!res)
+    if (ctx->client_hello_ciphers_len > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_RuntimeError, ERRSTR("cannot cast to Py_ssize_t"));
         return NULL;
-    len = 0;
-    for (i = 0; i < sk_SSL_CIPHER_num(server_ciphers); i++) {
-        cipher = sk_SSL_CIPHER_value(server_ciphers, i);
-        if (sk_SSL_CIPHER_find(client_ciphers, cipher) < 0)
+    }
+    inlen = (Py_ssize_t)ctx->client_hello_ciphers_len;
+
+    server_ciphers = SSL_get_ciphers(self->ssl);
+    if (!server_ciphers) {
+        Py_RETURN_NONE;
+    }
+
+    res = PyList_New(inlen);
+    if (!res) {
+        return NULL;
+    }
+
+    outlen = 0;
+    for (it = 0; it < inlen; it += 2) {
+        const SSL_CIPHER *cipher = SSL_CIPHER_find(self->ssl, ctx->client_hello_ciphers + it);
+        if (cipher == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, ERRSTR("SSL_CIPHER_find returned NULL"));
+            Py_DECREF(res);
+            return NULL;
+        }
+
+        if (sk_SSL_CIPHER_find(server_ciphers, cipher) == -1) {
+            // Omit ciphers not supported by server.
             continue;
+        }
 
         PyObject *tup = cipher_to_tuple(cipher);
         if (!tup) {
             Py_DECREF(res);
             return NULL;
         }
-        PyList_SET_ITEM(res, len++, tup);
+        PyList_SET_ITEM(res, outlen++, tup);
     }
-    Py_SET_SIZE(res, len);
+
+    Py_SET_SIZE(res, outlen);
+
     return res;
 }
 
@@ -3020,6 +3041,36 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
     return 0;
 }
 
+int
+hello_cb(SSL *s, int *al, void *arg)
+{
+    PySSLContext *self = (PySSLContext *)arg;
+    const unsigned char *out;
+    size_t outlen;
+    PyGILState_STATE gstate;
+
+    (void)al;  // Unused.
+
+    outlen = SSL_client_hello_get0_ciphers(s, &out);
+    if (outlen == 0) {
+        return 1;  // Proceed with hello.
+    }
+
+    gstate = PyGILState_Ensure();
+    PyMem_Free(self->client_hello_ciphers);
+    self->client_hello_ciphers = PyMem_Malloc(outlen);
+    if (!self->client_hello_ciphers) {
+        // No memory.
+        PyGILState_Release(gstate);
+        return 1;  // Proceed with hello.
+    }
+
+    memcpy(self->client_hello_ciphers, out, outlen);
+    self->client_hello_ciphers_len = outlen;
+    PyGILState_Release(gstate);
+    return 1;  // Proceed with hello.
+}
+
 /*[clinic input]
 @classmethod
 _ssl._SSLContext.__new__
@@ -3123,6 +3174,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
+    self->client_hello_ciphers = NULL;
+    self->client_hello_ciphers_len = 0;
 
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
@@ -3213,6 +3266,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
 #endif
 
+    SSL_CTX_set_client_hello_cb (ctx, hello_cb, self /* arg */);
+
     return (PyObject *)self;
   error:
     Py_XDECREF(self);
@@ -3253,6 +3308,7 @@ context_dealloc(PySSLContext *self)
     context_clear(self);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
+    PyMem_FREE(self->client_hello_ciphers);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
