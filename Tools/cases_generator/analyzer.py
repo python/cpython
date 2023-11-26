@@ -24,28 +24,28 @@ class Properties:
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
         return Properties(
-            escapes = any(p.escapes for p in properties),
-            infallible = all(p.infallible for p in properties),
-            deopts = any(p.deopts for p in properties),
-            oparg = any(p.oparg for p in properties),
-            jumps = any(p.jumps for p in properties),
-            ends_with_eval_breaker = any(p.ends_with_eval_breaker for p in properties),
-            needs_this = any(p.needs_this for p in properties),
-            always_exits = any(p.always_exits for p in properties),
-            stores_sp = any(p.stores_sp for p in properties),
+            escapes=any(p.escapes for p in properties),
+            infallible=all(p.infallible for p in properties),
+            deopts=any(p.deopts for p in properties),
+            oparg=any(p.oparg for p in properties),
+            jumps=any(p.jumps for p in properties),
+            ends_with_eval_breaker=any(p.ends_with_eval_breaker for p in properties),
+            needs_this=any(p.needs_this for p in properties),
+            always_exits=any(p.always_exits for p in properties),
+            stores_sp=any(p.stores_sp for p in properties),
         )
 
 
 SKIP_PROPERTIES = Properties(
-    escapes = False,
-    infallible = True,
-    deopts = False,
-    oparg = False,
-    jumps = False,
-    ends_with_eval_breaker = False,
-    needs_this = False,
-    always_exits = False,
-    stores_sp = False,
+    escapes=False,
+    infallible=True,
+    deopts=False,
+    oparg=False,
+    jumps=False,
+    ends_with_eval_breaker=False,
+    needs_this=False,
+    always_exits=False,
+    stores_sp=False,
 )
 
 
