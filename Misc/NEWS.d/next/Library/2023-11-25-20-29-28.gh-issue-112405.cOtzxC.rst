@@ -1,1 +1,1 @@
-Optimise :meth:`pathlib.Path.relative_to`. Patch by Alex Waygood.
+Optimize :meth:`pathlib.Path.relative_to`. Patch by Alex Waygood.
