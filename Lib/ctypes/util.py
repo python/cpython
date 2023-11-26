@@ -90,7 +90,7 @@ elif sys.platform.startswith("aix"):
     from ctypes._aix import find_library
 
 elif os.name == "posix":
-    # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
+    # Andreas Degert's find functions, using gcc, ldconfig, objdump
     import re, tempfile
 
     def _is_elf(filename):
@@ -266,8 +266,9 @@ elif os.name == "posix":
             return _get_soname(_findLib_crle(name, is64) or _findLib_gcc(name))
 
     else:
-
+        # Linux distros and any others which did not match on sys.platform
         def _findSoname_ldconfig(name):
+            ldconfig_bin = shutil.which("ldconfig") or "/sbin/ldconfig"
             import struct
             if struct.calcsize('l') == 4:
                 machine = os.uname().machine + '-32'
@@ -281,12 +282,11 @@ elif os.name == "posix":
                 'ia64-64': 'libc6,IA-64',
                 }
             abi_type = mach_map.get(machine, 'libc6')
-
             # XXX assuming GLIBC's ldconfig (with option -p)
             regex = r'\s+(lib%s\.[^\s]+)\s+\(%s'
             regex = os.fsencode(regex % (re.escape(name), abi_type))
             try:
-                with subprocess.Popen(['/sbin/ldconfig', '-p'],
+                with subprocess.Popen([ldconfig_bin, '-p'],
                                       stdin=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL,
                                       stdout=subprocess.PIPE,
