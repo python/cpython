@@ -1,0 +1,2 @@
+Make code generated for an empty f-string identical to the code of an empty
+normal string.
