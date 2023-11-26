@@ -269,7 +269,7 @@ elif os.name == "posix":
     else:
         # Linux distros and any others which did not match on sys.platform
         def _findSoname_ldconfig(name):
-            ldconfig_bin = shutil.which("ldconfig") or "/sbin/ldconfig"
+            ldconfig_bin = shutil.which('ldconfig') or '/sbin/ldconfig'
             import struct
             if struct.calcsize('l') == 4:
                 machine = os.uname().machine + '-32'
