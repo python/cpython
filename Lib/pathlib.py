@@ -14,6 +14,7 @@ import sys
 import warnings
 from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
+from itertools import chain
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 try:
@@ -445,7 +446,7 @@ class PurePath:
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePath):
             other = self.with_segments(other)
-        for step, path in enumerate([other] + list(other.parents)):
+        for step, path in enumerate(chain([other], other.parents)):
             if path == self or path in self.parents:
                 break
             elif not walk_up:
