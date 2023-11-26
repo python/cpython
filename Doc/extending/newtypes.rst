@@ -448,7 +448,7 @@ instance of your data type. Here is a simple example::
        return result;
    }
 
-:c:type:`Py_hash_t` is a signed integer type with a platform-varying width.
+:c:type:`!Py_hash_t` is a signed integer type with a platform-varying width.
 Returning ``-1`` from :c:member:`~PyTypeObject.tp_hash` indicates an error,
 which is why you should be careful to avoid returning it when hash computation
 is successful, as seen above.
