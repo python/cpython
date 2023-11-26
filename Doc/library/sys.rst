@@ -1264,7 +1264,7 @@ always available.
     .. versionchanged:: 3.12
 
         :meth:`!find_module` has been removed and wouldn't be called as a
-        callback.
+        fallback.
 
 .. data:: modules
 
