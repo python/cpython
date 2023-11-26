@@ -760,6 +760,15 @@ class StructTest(unittest.TestCase):
         test_error_propagation('N')
         test_error_propagation('n')
 
+    def test_struct_subclass_instantiation(self):
+        # Regression test for https://github.com/python/cpython/issues/112358
+        class MyStruct(struct.Struct):
+            def __init__(self):
+                super().__init__('>h')
+
+        my_struct = MyStruct()
+        self.assertEqual(my_struct.pack(12345), b'\x30\x39')
+
     def test_repr(self):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
