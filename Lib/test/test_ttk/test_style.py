@@ -220,7 +220,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(a.winfo_reqwidth(), 12)
         self.assertEqual(a.winfo_reqheight(), 10)
 
-        imgfile = support.findfile('python.xbm', subdir='tkinterdata')
+        imgfile = support.findfile('python.xbm', subdir='imghdrdata')
         img1 = tkinter.BitmapImage(master=self.root, file=imgfile,
                                    foreground='yellow', background='blue')
         img2 = tkinter.BitmapImage(master=self.root, file=imgfile,
