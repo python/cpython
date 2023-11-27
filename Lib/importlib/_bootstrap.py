@@ -826,8 +826,9 @@ def _module_repr_from_spec(spec):
     if spec.origin is None:
         if spec.loader is None:
             return f'<module {name!r}>'
-        else:
+        if isinstance(spec.loader, _bootstrap_external.NamespaceLoader):
             return f'<module {name!r} (namespace) from {list(spec.loader._path)}>'
+        return f'<module {name!r} ({spec.loader!r})>'
     else:
         if spec.has_location:
             return f'<module {name!r} from {spec.origin!r}>'
