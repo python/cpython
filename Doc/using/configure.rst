@@ -287,7 +287,7 @@ General Options
 
    .. versionadded:: 3.11
 
-.. _free-threading-buid:
+.. _free-threading-build:
 
 .. option:: --disable-gil
 
