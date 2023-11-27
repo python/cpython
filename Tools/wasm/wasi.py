@@ -28,10 +28,14 @@ def updated_env(updates={}):
 
     The changes made to the execution environment are printed out.
     """
-    # Python's first commit:
-    # Thu, 09 Aug 1990 14:25:15 +0000 (1990-08-09)
-    # https://hg.python.org/cpython/rev/3cd033e6b530
-    env_defaults = {"SOURCE_DATE_EPOCH": "650211915"}
+    env_defaults = {}
+    # https://reproducible-builds.org/docs/source-date-epoch/
+    git_epoch_cmd = ["git", "log", "-1", "--pretty=%ct"]
+    try:
+        epoch = subprocess.check_output(git_epoch_cmd, encoding="utf-8").strip()
+        env_defaults["SOURCE_DATE_EPOCH"] = epoch
+    except subprocess.CalledProcessError:
+        pass  # Might be building from a tarball.
     environment = env_defaults | os.environ | updates
 
     env_diff = {}
