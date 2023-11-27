@@ -126,6 +126,7 @@ readline_clear(PyObject *m)
    return 0;
 }
 
+/* This undoes any readline configuration done in setup_readline(). */
 static void
 readline_cleanup(void)
 {
