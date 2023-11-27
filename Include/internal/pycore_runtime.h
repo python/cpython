@@ -165,6 +165,10 @@ typedef struct pyruntimestate {
     /* The ID of the OS thread in which we are finalizing.
        We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
     _Py_atomic_address _finalizing_id;
+    /* The value to use for sys.path[0] in new subinterpreters.
+       Normally this would be part of the PyConfig struct.  However,
+       we cannot add it there in 3.12 since that's an ABI change. */
+    wchar_t *sys_path_0;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.

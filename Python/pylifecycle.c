@@ -1200,6 +1200,32 @@ init_interp_main(PyThreadState *tstate)
 #endif
     }
 
+    if (!is_main_interp) {
+        // The main interpreter is handled in Py_Main(), for now.
+        wchar_t *sys_path_0 = interp->runtime->sys_path_0;
+        if (sys_path_0 != NULL) {
+            PyObject *path0 = PyUnicode_FromWideChar(sys_path_0, -1);
+            if (path0 == NULL) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sysdict = interp->sysdict;
+            if (sysdict == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
+            if (sys_path == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            int res = PyList_Insert(sys_path, 0, path0);
+            Py_DECREF(path0);
+            if (res) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+        }
+    }
+
     assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();

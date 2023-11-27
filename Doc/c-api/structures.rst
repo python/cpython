@@ -406,7 +406,11 @@ Accessing attributes of extension types
 .. c:type:: PyMemberDef
 
    Structure which describes an attribute of a type which corresponds to a C
-   struct member.  Its fields are, in order:
+   struct member.
+   When defining a class, put a NULL-terminated array of these
+   structures in the :c:member:`~PyTypeObject.tp_members` slot.
+
+   Its fields are, in order:
 
    .. c:member:: const char* name
 

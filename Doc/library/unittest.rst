@@ -2318,6 +2318,8 @@ Loading and running tests
       test names.
 
 
+.. _load_tests-protocol:
+
 load_tests Protocol
 ###################
 
