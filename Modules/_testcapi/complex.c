@@ -1,7 +1,5 @@
 #include "parts.h"
 #include "util.h"
-#define Py_BUILD_CORE
-#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
 static PyObject *
@@ -113,7 +111,6 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
                                                                  \
         errno = 0;                                               \
         num = _Py_c_##suffix(num, exp);                          \
-        _Py_ADJUST_ERANGE2(num.real, num.imag);                  \
                                                                  \
         res = PyComplex_FromCComplex(num);                       \
         if (!res) {                                              \
