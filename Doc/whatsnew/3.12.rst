@@ -1773,6 +1773,14 @@ Others
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
+* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
+  (Contributed by Nikita Sobolev in :gh:`99482`.)
+
+* Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
+  from :mod:`ctypes` module.
+  (Contributed by Nikita Sobolev in :gh:`99285`.)
+
+
 .. _whatsnew312-porting-to-python312:
 
 Porting to Python 3.12
@@ -2426,10 +2434,3 @@ Removed
 
 * Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
-
-* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
-  (Contributed by Nikita Sobolev in :gh:`99482`.)
-
-* Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
-  from :mod:`ctypes` module.
-  (Contributed by Nikita Sobolev in :gh:`99285`.)
