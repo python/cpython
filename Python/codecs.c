@@ -146,14 +146,13 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     PyUnicode_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
-    PyObject *result = PyDict_GetItemWithError(interp->codec_search_cache, v);
+    PyObject *result;
+    if (PyDict_GetItemRef(interp->codec_search_cache, v, &result) < 0) {
+        goto onError;
+    }
     if (result != NULL) {
-        Py_INCREF(result);
         Py_DECREF(v);
         return result;
-    }
-    else if (PyErr_Occurred()) {
-        goto onError;
     }
 
     /* Next, scan the search functions in order of registration */
