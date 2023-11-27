@@ -212,6 +212,10 @@ exit:
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     if (p->fill == 0) {
         va_list va;
         va_start(va, errmsg);
