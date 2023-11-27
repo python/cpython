@@ -1314,7 +1314,7 @@ Cursor objects
 
    .. method:: execute(sql, parameters=(), /)
 
-      Execute SQL a single SQL statement,
+      Execute a single SQL statement,
       optionally binding Python values using
       :ref:`placeholders <sqlite3-placeholders>`.
 
