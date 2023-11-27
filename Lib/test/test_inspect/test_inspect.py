@@ -31,12 +31,13 @@ from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
-from test import inspect_fodder as mod
-from test import inspect_fodder2 as mod2
 from test import support
-from test import inspect_stock_annotations
-from test import inspect_stringized_annotations
-from test import inspect_stringized_annotations_2
+
+from . import inspect_fodder as mod
+from . import inspect_fodder2 as mod2
+from . import inspect_stock_annotations
+from . import inspect_stringized_annotations
+from . import inspect_stringized_annotations_2
 
 
 # Functions tested in this suite:
@@ -4515,19 +4516,14 @@ class TestSignatureDefinitions(unittest.TestCase):
         # These have unrepresentable parameter default values of NULL
         needs_null = {"anext"}
         no_signature |= needs_null
-        # These need PEP 457 groups or a signature change to accept None
-        needs_semantic_update = {"round"}
-        no_signature |= needs_semantic_update
         # These need *args support in Argument Clinic
-        needs_varargs = {"breakpoint", "min", "max", "print",
-                         "__build_class__"}
+        needs_varargs = {"breakpoint", "min", "max", "__build_class__"}
         no_signature |= needs_varargs
-        # These simply weren't covered in the initial AC conversion
-        # for builtin callables
-        not_converted_yet = {"open", "__import__"}
-        no_signature |= not_converted_yet
         # These builtin types are expected to provide introspection info
-        types_with_signatures = set()
+        types_with_signatures = {
+            'complex', 'enumerate', 'float', 'list', 'memoryview', 'object',
+            'property', 'reversed', 'tuple',
+        }
         # Check the signatures we expect to be there
         ns = vars(builtins)
         for name, obj in sorted(ns.items()):
@@ -4546,9 +4542,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         # This ensures this test will start failing as more signatures are
         # added, so the affected items can be moved into the scope of the
         # regression test above
-        for name in no_signature:
+        for name in no_signature - needs_null - needs_groups:
             with self.subTest(builtin=name):
-                self.assertIsNone(obj.__text_signature__)
+                self.assertIsNone(ns[name].__text_signature__)
 
     def test_python_function_override_signature(self):
         def func(*args, **kwargs):

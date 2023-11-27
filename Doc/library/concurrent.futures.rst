@@ -29,83 +29,83 @@ Executor Objects
    An abstract class that provides methods to execute calls asynchronously.  It
    should not be used directly, but through its concrete subclasses.
 
-    .. method:: submit(fn, /, *args, **kwargs)
+   .. method:: submit(fn, /, *args, **kwargs)
 
-       Schedules the callable, *fn*, to be executed as ``fn(*args, **kwargs)``
-       and returns a :class:`Future` object representing the execution of the
-       callable. ::
+      Schedules the callable, *fn*, to be executed as ``fn(*args, **kwargs)``
+      and returns a :class:`Future` object representing the execution of the
+      callable. ::
 
-          with ThreadPoolExecutor(max_workers=1) as executor:
-              future = executor.submit(pow, 323, 1235)
-              print(future.result())
+         with ThreadPoolExecutor(max_workers=1) as executor:
+             future = executor.submit(pow, 323, 1235)
+             print(future.result())
 
-    .. method:: map(func, *iterables, timeout=None, chunksize=1)
+   .. method:: map(func, *iterables, timeout=None, chunksize=1)
 
-       Similar to :func:`map(func, *iterables) <map>` except:
+      Similar to :func:`map(func, *iterables) <map>` except:
 
-       * the *iterables* are collected immediately rather than lazily;
+      * the *iterables* are collected immediately rather than lazily;
 
-       * *func* is executed asynchronously and several calls to
-         *func* may be made concurrently.
+      * *func* is executed asynchronously and several calls to
+        *func* may be made concurrently.
 
-       The returned iterator raises a :exc:`TimeoutError`
-       if :meth:`~iterator.__next__` is called and the result isn't available
-       after *timeout* seconds from the original call to :meth:`Executor.map`.
-       *timeout* can be an int or a float.  If *timeout* is not specified or
-       ``None``, there is no limit to the wait time.
+      The returned iterator raises a :exc:`TimeoutError`
+      if :meth:`~iterator.__next__` is called and the result isn't available
+      after *timeout* seconds from the original call to :meth:`Executor.map`.
+      *timeout* can be an int or a float.  If *timeout* is not specified or
+      ``None``, there is no limit to the wait time.
 
-       If a *func* call raises an exception, then that exception will be
-       raised when its value is retrieved from the iterator.
+      If a *func* call raises an exception, then that exception will be
+      raised when its value is retrieved from the iterator.
 
-       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
-       into a number of chunks which it submits to the pool as separate
-       tasks.  The (approximate) size of these chunks can be specified by
-       setting *chunksize* to a positive integer.  For very long iterables,
-       using a large value for *chunksize* can significantly improve
-       performance compared to the default size of 1.  With
-       :class:`ThreadPoolExecutor`, *chunksize* has no effect.
+      When using :class:`ProcessPoolExecutor`, this method chops *iterables*
+      into a number of chunks which it submits to the pool as separate
+      tasks.  The (approximate) size of these chunks can be specified by
+      setting *chunksize* to a positive integer.  For very long iterables,
+      using a large value for *chunksize* can significantly improve
+      performance compared to the default size of 1.  With
+      :class:`ThreadPoolExecutor`, *chunksize* has no effect.
 
-       .. versionchanged:: 3.5
-          Added the *chunksize* argument.
+      .. versionchanged:: 3.5
+         Added the *chunksize* argument.
 
-    .. method:: shutdown(wait=True, *, cancel_futures=False)
+   .. method:: shutdown(wait=True, *, cancel_futures=False)
 
-       Signal the executor that it should free any resources that it is using
-       when the currently pending futures are done executing.  Calls to
-       :meth:`Executor.submit` and :meth:`Executor.map` made after shutdown will
-       raise :exc:`RuntimeError`.
+      Signal the executor that it should free any resources that it is using
+      when the currently pending futures are done executing.  Calls to
+      :meth:`Executor.submit` and :meth:`Executor.map` made after shutdown will
+      raise :exc:`RuntimeError`.
 
-       If *wait* is ``True`` then this method will not return until all the
-       pending futures are done executing and the resources associated with the
-       executor have been freed.  If *wait* is ``False`` then this method will
-       return immediately and the resources associated with the executor will be
-       freed when all pending futures are done executing.  Regardless of the
-       value of *wait*, the entire Python program will not exit until all
-       pending futures are done executing.
+      If *wait* is ``True`` then this method will not return until all the
+      pending futures are done executing and the resources associated with the
+      executor have been freed.  If *wait* is ``False`` then this method will
+      return immediately and the resources associated with the executor will be
+      freed when all pending futures are done executing.  Regardless of the
+      value of *wait*, the entire Python program will not exit until all
+      pending futures are done executing.
 
-       If *cancel_futures* is ``True``, this method will cancel all pending
-       futures that the executor has not started running. Any futures that
-       are completed or running won't be cancelled, regardless of the value
-       of *cancel_futures*.
+      If *cancel_futures* is ``True``, this method will cancel all pending
+      futures that the executor has not started running. Any futures that
+      are completed or running won't be cancelled, regardless of the value
+      of *cancel_futures*.
 
-       If both *cancel_futures* and *wait* are ``True``, all futures that the
-       executor has started running will be completed prior to this method
-       returning. The remaining futures are cancelled.
+      If both *cancel_futures* and *wait* are ``True``, all futures that the
+      executor has started running will be completed prior to this method
+      returning. The remaining futures are cancelled.
 
-       You can avoid having to call this method explicitly if you use the
-       :keyword:`with` statement, which will shutdown the :class:`Executor`
-       (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
-       ``True``)::
+      You can avoid having to call this method explicitly if you use the
+      :keyword:`with` statement, which will shutdown the :class:`Executor`
+      (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
+      ``True``)::
 
-          import shutil
-          with ThreadPoolExecutor(max_workers=4) as e:
-              e.submit(shutil.copy, 'src1.txt', 'dest1.txt')
-              e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
-              e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
-              e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
+         import shutil
+         with ThreadPoolExecutor(max_workers=4) as e:
+             e.submit(shutil.copy, 'src1.txt', 'dest1.txt')
+             e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
+             e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
+             e.submit(shutil.copy, 'src4.txt', 'dest4.txt')
 
-       .. versionchanged:: 3.9
-          Added *cancel_futures*.
+      .. versionchanged:: 3.9
+         Added *cancel_futures*.
 
 
 ThreadPoolExecutor
@@ -353,117 +353,117 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
    instances are created by :meth:`Executor.submit` and should not be created
    directly except for testing.
 
-    .. method:: cancel()
+   .. method:: cancel()
 
-       Attempt to cancel the call.  If the call is currently being executed or
-       finished running and cannot be cancelled then the method will return
-       ``False``, otherwise the call will be cancelled and the method will
-       return ``True``.
+      Attempt to cancel the call.  If the call is currently being executed or
+      finished running and cannot be cancelled then the method will return
+      ``False``, otherwise the call will be cancelled and the method will
+      return ``True``.
 
-    .. method:: cancelled()
+   .. method:: cancelled()
 
-       Return ``True`` if the call was successfully cancelled.
+      Return ``True`` if the call was successfully cancelled.
 
-    .. method:: running()
+   .. method:: running()
 
-       Return ``True`` if the call is currently being executed and cannot be
-       cancelled.
+      Return ``True`` if the call is currently being executed and cannot be
+      cancelled.
 
-    .. method:: done()
+   .. method:: done()
 
-       Return ``True`` if the call was successfully cancelled or finished
-       running.
+      Return ``True`` if the call was successfully cancelled or finished
+      running.
 
-    .. method:: result(timeout=None)
+   .. method:: result(timeout=None)
 
-       Return the value returned by the call. If the call hasn't yet completed
-       then this method will wait up to *timeout* seconds.  If the call hasn't
-       completed in *timeout* seconds, then a
-       :exc:`TimeoutError` will be raised. *timeout* can be
-       an int or float.  If *timeout* is not specified or ``None``, there is no
-       limit to the wait time.
+      Return the value returned by the call. If the call hasn't yet completed
+      then this method will wait up to *timeout* seconds.  If the call hasn't
+      completed in *timeout* seconds, then a
+      :exc:`TimeoutError` will be raised. *timeout* can be
+      an int or float.  If *timeout* is not specified or ``None``, there is no
+      limit to the wait time.
 
-       If the future is cancelled before completing then :exc:`.CancelledError`
-       will be raised.
+      If the future is cancelled before completing then :exc:`.CancelledError`
+      will be raised.
 
-       If the call raised an exception, this method will raise the same exception.
+      If the call raised an exception, this method will raise the same exception.
 
-    .. method:: exception(timeout=None)
+   .. method:: exception(timeout=None)
 
-       Return the exception raised by the call.  If the call hasn't yet
-       completed then this method will wait up to *timeout* seconds.  If the
-       call hasn't completed in *timeout* seconds, then a
-       :exc:`TimeoutError` will be raised.  *timeout* can be
-       an int or float.  If *timeout* is not specified or ``None``, there is no
-       limit to the wait time.
+      Return the exception raised by the call.  If the call hasn't yet
+      completed then this method will wait up to *timeout* seconds.  If the
+      call hasn't completed in *timeout* seconds, then a
+      :exc:`TimeoutError` will be raised.  *timeout* can be
+      an int or float.  If *timeout* is not specified or ``None``, there is no
+      limit to the wait time.
 
-       If the future is cancelled before completing then :exc:`.CancelledError`
-       will be raised.
+      If the future is cancelled before completing then :exc:`.CancelledError`
+      will be raised.
 
-       If the call completed without raising, ``None`` is returned.
+      If the call completed without raising, ``None`` is returned.
 
-    .. method:: add_done_callback(fn)
+   .. method:: add_done_callback(fn)
 
-       Attaches the callable *fn* to the future.  *fn* will be called, with the
-       future as its only argument, when the future is cancelled or finishes
-       running.
+      Attaches the callable *fn* to the future.  *fn* will be called, with the
+      future as its only argument, when the future is cancelled or finishes
+      running.
 
-       Added callables are called in the order that they were added and are
-       always called in a thread belonging to the process that added them.  If
-       the callable raises an :exc:`Exception` subclass, it will be logged and
-       ignored.  If the callable raises a :exc:`BaseException` subclass, the
-       behavior is undefined.
+      Added callables are called in the order that they were added and are
+      always called in a thread belonging to the process that added them.  If
+      the callable raises an :exc:`Exception` subclass, it will be logged and
+      ignored.  If the callable raises a :exc:`BaseException` subclass, the
+      behavior is undefined.
 
-       If the future has already completed or been cancelled, *fn* will be
-       called immediately.
+      If the future has already completed or been cancelled, *fn* will be
+      called immediately.
 
    The following :class:`Future` methods are meant for use in unit tests and
    :class:`Executor` implementations.
 
-    .. method:: set_running_or_notify_cancel()
+   .. method:: set_running_or_notify_cancel()
 
-       This method should only be called by :class:`Executor` implementations
-       before executing the work associated with the :class:`Future` and by unit
-       tests.
+      This method should only be called by :class:`Executor` implementations
+      before executing the work associated with the :class:`Future` and by unit
+      tests.
 
-       If the method returns ``False`` then the :class:`Future` was cancelled,
-       i.e. :meth:`Future.cancel` was called and returned ``True``.  Any threads
-       waiting on the :class:`Future` completing (i.e. through
-       :func:`as_completed` or :func:`wait`) will be woken up.
+      If the method returns ``False`` then the :class:`Future` was cancelled,
+      i.e. :meth:`Future.cancel` was called and returned ``True``.  Any threads
+      waiting on the :class:`Future` completing (i.e. through
+      :func:`as_completed` or :func:`wait`) will be woken up.
 
-       If the method returns ``True`` then the :class:`Future` was not cancelled
-       and has been put in the running state, i.e. calls to
-       :meth:`Future.running` will return ``True``.
+      If the method returns ``True`` then the :class:`Future` was not cancelled
+      and has been put in the running state, i.e. calls to
+      :meth:`Future.running` will return ``True``.
 
-       This method can only be called once and cannot be called after
-       :meth:`Future.set_result` or :meth:`Future.set_exception` have been
-       called.
+      This method can only be called once and cannot be called after
+      :meth:`Future.set_result` or :meth:`Future.set_exception` have been
+      called.
 
-    .. method:: set_result(result)
+   .. method:: set_result(result)
 
-       Sets the result of the work associated with the :class:`Future` to
-       *result*.
+      Sets the result of the work associated with the :class:`Future` to
+      *result*.
 
-       This method should only be used by :class:`Executor` implementations and
-       unit tests.
+      This method should only be used by :class:`Executor` implementations and
+      unit tests.
 
-       .. versionchanged:: 3.8
-          This method raises
-          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
-          already done.
+      .. versionchanged:: 3.8
+         This method raises
+         :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+         already done.
 
-    .. method:: set_exception(exception)
+   .. method:: set_exception(exception)
 
-       Sets the result of the work associated with the :class:`Future` to the
-       :class:`Exception` *exception*.
+      Sets the result of the work associated with the :class:`Future` to the
+      :class:`Exception` *exception*.
 
-       This method should only be used by :class:`Executor` implementations and
-       unit tests.
+      This method should only be used by :class:`Executor` implementations and
+      unit tests.
 
-       .. versionchanged:: 3.8
-          This method raises
-          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
-          already done.
+      .. versionchanged:: 3.8
+         This method raises
+         :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+         already done.
 
 Module Functions
 ----------------

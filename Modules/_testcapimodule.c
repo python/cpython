@@ -3243,35 +3243,6 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
-static PyObject *
-sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
-{
-    const char *name;
-    Py_ssize_t size;
-    if (!PyArg_Parse(arg, "z#", &name, &size)) {
-        return NULL;
-    }
-    PyObject *result = PySys_GetObject(name);
-    if (result == NULL) {
-        result = PyExc_AttributeError;
-    }
-    return Py_NewRef(result);
-}
-
-static PyObject *
-sys_setobject(PyObject *Py_UNUSED(module), PyObject *args)
-{
-    const char *name;
-    Py_ssize_t size;
-    PyObject *value;
-    if (!PyArg_ParseTuple(args, "z#O", &name, &size, &value)) {
-        return NULL;
-    }
-    NULLABLE(value);
-    RETURN_INT(PySys_SetObject(name, value));
-}
-
-
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3410,8 +3381,6 @@ static PyMethodDef TestMethods[] = {
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
-    {"sys_getobject", sys_getobject, METH_O},
-    {"sys_setobject", sys_setobject, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3978,7 +3947,9 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
+    PyModule_AddObject(m, "SIZE_MAX", PyLong_FromSize_t(SIZE_MAX));
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
+    PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
@@ -4008,6 +3979,12 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Abstract(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_ByteArray(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Bytes(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
@@ -4035,10 +4012,22 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Float(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Complex(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Numbers(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Dict(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Set(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_List(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Tuple(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {
@@ -4054,6 +4043,15 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_File(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Codec(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Sys(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Immortal(m) < 0) {

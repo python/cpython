@@ -50,7 +50,7 @@ for example, a package and its resources can be imported from a zip file using
 ``get_resource_reader(fullname)`` method as specified by
 :class:`importlib.resources.abc.ResourceReader`.
 
-.. data:: Anchor
+.. class:: Anchor
 
     Represents an anchor for resources, either a :class:`module object
     <types.ModuleType>` or a module name as a string. Defined as
@@ -63,7 +63,7 @@ for example, a package and its resources can be imported from a zip file using
     (think files). A Traversable may contain other containers (think
     subdirectories).
 
-    *anchor* is an optional :data:`Anchor`. If the anchor is a
+    *anchor* is an optional :class:`Anchor`. If the anchor is a
     package, resources are resolved from that package. If a module,
     resources are resolved adjacent to that module (in the same package
     or the package root). If the anchor is omitted, the caller's module
@@ -72,10 +72,10 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       "package" parameter was renamed to "anchor". "anchor" can now
+       *package* parameter was renamed to *anchor*. *anchor* can now
        be a non-package module and if omitted will default to the caller's
-       module. "package" is still accepted for compatibility but will raise
-       a DeprecationWarning. Consider passing the anchor positionally or
+       module. *package* is still accepted for compatibility but will raise
+       a :exc:`DeprecationWarning`. Consider passing the anchor positionally or
        using ``importlib_resources >= 5.10`` for a compatible interface
        on older Pythons.
 
@@ -96,7 +96,7 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       Added support for ``traversable`` representing a directory.
+       Added support for *traversable* representing a directory.
 
 
 Deprecated functions

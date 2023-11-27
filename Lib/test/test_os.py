@@ -1142,9 +1142,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_putenv_unsetenv_error(self):
         # Empty variable name is invalid.
         # "=" and null character are not allowed in a variable name.
-        for name in ('', '=name', 'na=me', 'name=', 'name\0', 'na\0me'):
+        for name in ('', '=name', 'na=me', 'name='):
             self.assertRaises((OSError, ValueError), os.putenv, name, "value")
             self.assertRaises((OSError, ValueError), os.unsetenv, name)
+        for name in ('name\0', 'na\0me'):
+            self.assertRaises(ValueError, os.putenv, name, "value")
+            self.assertRaises(ValueError, os.unsetenv, name)
 
         if sys.platform == "win32":
             # On Windows, an environment variable string ("name=value" string)
