@@ -2349,6 +2349,7 @@ func(
 
     def test_invisible_characters(self):
         self._check_error('print\x17("Hello")', "invalid non-printable character")
+        self._check_error(b"with(0,,):\n\x01", "invalid non-printable character")
 
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
