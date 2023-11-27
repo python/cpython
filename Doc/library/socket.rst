@@ -404,7 +404,7 @@ Constants
 
    Many constants of these forms, documented in the Unix documentation on sockets
    and/or the IP protocol, are also defined in the socket module. They are
-   generally used in arguments to the :meth:`setsockopt` and :meth:`getsockopt`
+   generally used in arguments to the :meth:`~socket.setsockopt` and :meth:`~socket.getsockopt`
    methods of socket objects.  In most cases, only those symbols that are defined
    in the Unix header files are defined; for a few symbols, default values are
    provided.
@@ -1331,7 +1331,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket *sock*.
    The *fds* parameter is a sequence of file descriptors.
-   Consult :meth:`sendmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
@@ -1345,7 +1345,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Receive up to *maxfds* file descriptors from an :const:`AF_UNIX` socket *sock*.
    Return ``(msg, list(fds), flags, addr)``.
-   Consult :meth:`recvmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
