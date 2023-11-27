@@ -379,12 +379,11 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 9
+#define NUMLOCKS 8
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
         &(runtime)->xi.registry.mutex, \
-        &(runtime)->getargs.mutex, \
         &(runtime)->unicode_state.ids.lock, \
         &(runtime)->imports.extensions.mutex, \
         &(runtime)->ceval.pending_mainthread.lock, \
@@ -1858,7 +1857,7 @@ tstate_deactivate(PyThreadState *tstate)
 static int
 tstate_try_attach(PyThreadState *tstate)
 {
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
     int expected = _Py_THREAD_DETACHED;
     if (_Py_atomic_compare_exchange_int(
             &tstate->state,
@@ -1878,7 +1877,7 @@ static void
 tstate_set_detached(PyThreadState *tstate)
 {
     assert(tstate->state == _Py_THREAD_ATTACHED);
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
     _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
 #else
     tstate->state = _Py_THREAD_DETACHED;
