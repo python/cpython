@@ -14,6 +14,7 @@ _testcapi = import_helper.import_module('_testcapi')
 NULL = None
 INF = float("inf")
 NAN = float("nan")
+DBL_MAX = _testcapi.DBL_MAX
 
 
 class BadComplex3:
@@ -207,7 +208,7 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_pow(0j, -1)[1], errno.EDOM)
         self.assertEqual(_py_c_pow(0j, 1j)[1], errno.EDOM)
-        self.assertEqual(_py_c_pow(1e200+1j, 1e200+1j)[1], errno.ERANGE)
+        self.assertEqual(_py_c_pow(*[DBL_MAX+1j]*2)[1], errno.ERANGE)
 
 
     def test_py_c_abs(self):
@@ -225,7 +226,7 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertTrue(isnan(_py_c_abs(complex('1.25+nanj'))[0]))
         self.assertTrue(isnan(_py_c_abs(complex('nan-1j'))[0]))
 
-        self.assertEqual(_py_c_abs(complex(1.4e308, 1.4e308))[1], errno.ERANGE)
+        self.assertEqual(_py_c_abs(complex(*[DBL_MAX]*2))[1], errno.ERANGE)
 
 
 if __name__ == "__main__":
