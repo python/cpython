@@ -5457,8 +5457,8 @@ class DSLParser:
                 self.kind = METHOD_INIT
             else:
                 fail(
-                    "'__init__' must be a normal method, "
-                    "not a classmethod, staticmethod or getter!"
+                    "'__init__' must be a normal method; "
+                    f"got '{self.kind}'!"
                 )
 
     def state_modulename_name(self, line: str) -> None:
