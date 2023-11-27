@@ -2334,6 +2334,10 @@ func(
 """
         self._check_error(code, "parenthesis '\\)' does not match opening parenthesis '\\['")
 
+        # Examples with dencodings
+        s = b'# coding=latin\n(aaaaaaaaaaaaaaaaa\naaaaaaaaaaa\xb5'
+        self._check_error(s, "'\(' was never closed")
+
     def test_error_string_literal(self):
 
         self._check_error("'blech", r"unterminated string literal \(.*\)$")
