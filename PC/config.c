@@ -7,7 +7,6 @@
 
 extern PyObject* PyInit__abc(void);
 extern PyObject* PyInit_array(void);
-extern PyObject* PyInit_audioop(void);
 extern PyObject* PyInit_binascii(void);
 extern PyObject* PyInit_cmath(void);
 extern PyObject* PyInit_errno(void);
@@ -23,6 +22,7 @@ extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha2(void);
 extern PyObject* PyInit__sha3(void);
 extern PyObject* PyInit__statistics(void);
+extern PyObject* PyInit__sysconfig(void);
 extern PyObject* PyInit__typing(void);
 extern PyObject* PyInit__blake2(void);
 extern PyObject* PyInit_time(void);
@@ -89,7 +89,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"_abc", PyInit__abc},
     {"array", PyInit_array},
     {"_ast", PyInit__ast},
-    {"audioop", PyInit_audioop},
     {"binascii", PyInit_binascii},
     {"cmath", PyInit_cmath},
     {"errno", PyInit_errno},
@@ -104,6 +103,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sha2", PyInit__sha2},
     {"_sha3", PyInit__sha3},
     {"_blake2", PyInit__blake2},
+    {"_sysconfig", PyInit__sysconfig},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
     {"_tokenize", PyInit__tokenize},

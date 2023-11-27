@@ -1,8 +1,5 @@
 from importlib import machinery
-import sys
-import types
 import unittest
-import warnings
 
 from test.test_importlib import util
 
@@ -26,6 +23,10 @@ class SpecLoaderAttributeTests:
         with util.uncache('blah'), util.import_state(meta_path=[loader]):
             module = self.__import__('blah')
         self.assertEqual(loader, module.__loader__)
+        expected_repr_pattern = (
+            r"<module 'blah' \(<test\.test_importlib\..*SpecLoaderMock object at .+>\)>"
+        )
+        self.assertRegex(repr(module), expected_repr_pattern)
 
 
 (Frozen_SpecTests,

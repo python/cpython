@@ -112,6 +112,59 @@ def find_spec(name, package=None):
             return spec
 
 
+# Normally we would use contextlib.contextmanager.  However, this module
+# is imported by runpy, which means we want to avoid any unnecessary
+# dependencies.  Thus we use a class.
+
+class _incompatible_extension_module_restrictions:
+    """A context manager that can temporarily skip the compatibility check.
+
+    NOTE: This function is meant to accommodate an unusual case; one
+    which is likely to eventually go away.  There's is a pretty good
+    chance this is not what you were looking for.
+
+    WARNING: Using this function to disable the check can lead to
+    unexpected behavior and even crashes.  It should only be used during
+    extension module development.
+
+    If "disable_check" is True then the compatibility check will not
+    happen while the context manager is active.  Otherwise the check
+    *will* happen.
+
+    Normally, extensions that do not support multiple interpreters
+    may not be imported in a subinterpreter.  That implies modules
+    that do not implement multi-phase init or that explicitly of out.
+
+    Likewise for modules import in a subinterpreter with its own GIL
+    when the extension does not support a per-interpreter GIL.  This
+    implies the module does not have a Py_mod_multiple_interpreters slot
+    set to Py_MOD_PER_INTERPRETER_GIL_SUPPORTED.
+
+    In both cases, this context manager may be used to temporarily
+    disable the check for compatible extension modules.
+
+    You can get the same effect as this function by implementing the
+    basic interface of multi-phase init (PEP 489) and lying about
+    support for mulitple interpreters (or per-interpreter GIL).
+    """
+
+    def __init__(self, *, disable_check):
+        self.disable_check = bool(disable_check)
+
+    def __enter__(self):
+        self.old = _imp._override_multi_interp_extensions_check(self.override)
+        return self
+
+    def __exit__(self, *args):
+        old = self.old
+        del self.old
+        _imp._override_multi_interp_extensions_check(old)
+
+    @property
+    def override(self):
+        return -1 if self.disable_check else 1
+
+
 class _LazyModule(types.ModuleType):
 
     """A subclass of the module type which triggers loading upon attribute access."""

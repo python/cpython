@@ -1,5 +1,3 @@
-
-import ast
 import types
 
 from test.support.bytecode_helper import AssemblerTestCase
@@ -16,7 +14,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
             metadata.setdefault(key, key)
         for key in ['consts']:
             metadata.setdefault(key, [])
-        for key in ['names', 'varnames', 'cellvars', 'freevars']:
+        for key in ['names', 'varnames', 'cellvars', 'freevars', 'fasthidden']:
             metadata.setdefault(key, {})
         for key in ['argcount', 'posonlyargcount', 'kwonlyargcount']:
             metadata.setdefault(key, 0)
@@ -33,6 +31,9 @@ class IsolatedAssembleTests(AssemblerTestCase):
 
         expected_metadata = {}
         for key, value in metadata.items():
+            if key == "fasthidden":
+                # not exposed on code object
+                continue
             if isinstance(value, list):
                 expected_metadata[key] = tuple(value)
             elif isinstance(value, dict):
@@ -52,7 +53,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
             'filename' : 'avg.py',
             'name'     : 'avg',
             'qualname' : 'stats.avg',
-            'consts'   : [2],
+            'consts'   : {2 : 0},
             'argcount' : 2,
             'varnames' : {'x' : 0, 'y' : 1},
         }
@@ -69,3 +70,41 @@ class IsolatedAssembleTests(AssemblerTestCase):
         ]
         expected = {(3, 4) : 3.5, (-100, 200) : 50, (10, 18) : 14}
         self.assemble_test(insts, metadata, expected)
+
+
+    def test_expression_with_pseudo_instruction_load_closure(self):
+
+        def mod_two(x):
+            def inner():
+                return x
+            return inner() % 2
+
+        inner_code = mod_two.__code__.co_consts[1]
+        assert isinstance(inner_code, types.CodeType)
+
+        metadata = {
+            'filename' : 'mod_two.py',
+            'name'     : 'mod_two',
+            'qualname' : 'nested.mod_two',
+            'cellvars' : {'x' : 0},
+            'consts': {None: 0, inner_code: 1, 2: 2},
+            'argcount' : 1,
+            'varnames' : {'x' : 0},
+        }
+
+        instructions = [
+            ('RESUME', 0,),
+            ('LOAD_CLOSURE', 0, 1),
+            ('BUILD_TUPLE', 1, 1),
+            ('LOAD_CONST', 1, 1),
+            ('MAKE_FUNCTION', 0, 2),
+            ('SET_FUNCTION_ATTRIBUTE', 8, 2),
+            ('PUSH_NULL', 0, 1),
+            ('CALL', 0, 2),                     # (lambda: x)()
+            ('LOAD_CONST', 2, 2),               # 2
+            ('BINARY_OP', 6, 2),                # %
+            ('RETURN_VALUE', 0, 2)
+        ]
+
+        expected = {(0,): 0, (1,): 1, (2,): 0, (120,): 0, (121,): 1}
+        self.assemble_test(instructions, metadata, expected)

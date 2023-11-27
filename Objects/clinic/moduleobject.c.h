@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(module___init____doc__,
 "module(name, doc=None)\n"
@@ -63,9 +63,6 @@ module___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("module", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
-    if (PyUnicode_READY(fastargs[0]) == -1) {
-        goto exit;
-    }
     name = fastargs[0];
     if (!noptargs) {
         goto skip_optional_pos;
@@ -77,4 +74,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2f897c9e4721f03f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e8a71bfbed774c15 input=a9049054013a1b77]*/

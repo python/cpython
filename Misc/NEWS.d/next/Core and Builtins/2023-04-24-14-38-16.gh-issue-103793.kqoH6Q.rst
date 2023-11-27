@@ -1,3 +1,0 @@
-Optimized asyncio Task creation by deferring expensive string formatting
-(task name generation) from Task creation to the first time ``get_name`` is
-called. This makes asyncio benchmarks up to 5% faster.

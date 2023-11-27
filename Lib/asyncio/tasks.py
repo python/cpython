@@ -15,8 +15,8 @@ import contextvars
 import functools
 import inspect
 import itertools
+import math
 import types
-import warnings
 import weakref
 from types import GenericAlias
 
@@ -67,34 +67,31 @@ def all_tasks(loop=None):
             if futures._get_loop(t) is loop and not t.done()}
 
 
-def _set_task_name(task, name):
-    if name is not None:
-        try:
-            set_name = task.set_name
-        except AttributeError:
-            warnings.warn("Task.set_name() was added in Python 3.8, "
-                      "the method support will be mandatory for third-party "
-                      "task implementations since 3.13.",
-                      DeprecationWarning, stacklevel=3)
-        else:
-            set_name(name)
-
-
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
     """A coroutine wrapped in a Future."""
 
     # An important invariant maintained while a Task not done:
+    # _fut_waiter is either None or a Future.  The Future
+    # can be either done() or not done().
+    # The task can be in any of 3 states:
     #
-    # - Either _fut_waiter is None, and _step() is scheduled;
-    # - or _fut_waiter is some Future, and _step() is *not* scheduled.
+    # - 1: _fut_waiter is not None and not _fut_waiter.done():
+    #      __step() is *not* scheduled and the Task is waiting for _fut_waiter.
+    # - 2: (_fut_waiter is None or _fut_waiter.done()) and __step() is scheduled:
+    #       the Task is waiting for __step() to be executed.
+    # - 3:  _fut_waiter is None and __step() is *not* scheduled:
+    #       the Task is currently executing (in __step()).
     #
-    # The only transition from the latter to the former is through
-    # _wakeup().  When _fut_waiter is not None, one of its callbacks
-    # must be _wakeup().
+    # * In state 1, one of the callbacks of __fut_waiter must be __wakeup().
+    # * The transition from 1 to 2 happens when _fut_waiter becomes done(),
+    #   as it schedules __wakeup() to be called (which calls __step() so
+    #   we way that __step() is scheduled).
+    # * It transitions from 2 to 3 when __step() is executed, and it clears
+    #   _fut_waiter to None.
 
-    # If False, don't log a message if the task is destroyed whereas its
+    # If False, don't log a message if the task is destroyed while its
     # status is still pending
     _log_destroy_pending = True
 
@@ -411,7 +408,7 @@ def create_task(coro, *, name=None, context=None):
     else:
         task = loop.create_task(coro, context=context)
 
-    _set_task_name(task, name)
+    task.set_name(name)
     return task
 
 
@@ -426,8 +423,6 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures or Tasks given by fs to complete.
 
     The fs iterable must not be empty.
-
-    Coroutines will be wrapped in Tasks.
 
     Returns two sets of Future: (done, pending).
 
@@ -646,6 +641,9 @@ async def sleep(delay, result=None):
         await __sleep0()
         return result
 
+    if math.isnan(delay):
+        raise ValueError("Invalid delay: NaN (not a number)")
+
     loop = events.get_running_loop()
     future = loop.create_future()
     h = loop.call_later(delay,
@@ -813,6 +811,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     children = []
     nfuts = 0
     nfinished = 0
+    done_futs = []
     loop = None
     outer = None  # bpo-46672
     for arg in coros_or_futures:
@@ -829,7 +828,10 @@ def gather(*coros_or_futures, return_exceptions=False):
 
             nfuts += 1
             arg_to_fut[arg] = fut
-            fut.add_done_callback(_done_callback)
+            if fut.done():
+                done_futs.append(fut)
+            else:
+                fut.add_done_callback(_done_callback)
 
         else:
             # There's a duplicate Future object in coros_or_futures.
@@ -838,6 +840,13 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    # Run done callbacks after GatheringFuture created so any post-processing
+    # can be performed at this point
+    # optimization: in the special case that *all* futures finished eagerly,
+    # this will effectively complete the gather eagerly, with the last
+    # callback setting the result (or exception) on outer before returning it
+    for fut in done_futs:
+        _done_callback(fut)
     return outer
 
 
@@ -931,17 +940,30 @@ def run_coroutine_threadsafe(coro, loop):
 
 
 def create_eager_task_factory(custom_task_constructor):
+    """Create a function suitable for use as a task factory on an event-loop.
 
-    if "eager_start" not in inspect.signature(custom_task_constructor).parameters:
-        raise TypeError(
-            "Provided constructor does not support eager task execution")
+        Example usage:
+
+            loop.set_task_factory(
+                asyncio.create_eager_task_factory(my_task_constructor))
+
+        Now, tasks created will be started immediately (rather than being first
+        scheduled to an event loop). The constructor argument can be any callable
+        that returns a Task-compatible object and has a signature compatible
+        with `Task.__init__`; it must have the `eager_start` keyword argument.
+
+        Most applications will use `Task` for `custom_task_constructor` and in
+        this case there's no need to call `create_eager_task_factory()`
+        directly. Instead the  global `eager_task_factory` instance can be
+        used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
+        """
 
     def factory(loop, coro, *, name=None, context=None):
         return custom_task_constructor(
             coro, loop=loop, name=name, context=context, eager_start=True)
 
-
     return factory
+
 
 eager_task_factory = create_eager_task_factory(Task)
 

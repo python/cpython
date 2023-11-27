@@ -1,12 +1,14 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_abspath()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
+#include "pycore_pymem.h"         // _PyMem_RawWcsdup()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString
 #include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
 
 #ifdef MS_WINDOWS
@@ -15,6 +17,7 @@
 #endif
 
 #ifdef __APPLE__
+#  include <dlfcn.h>
 #  include <mach-o/dyld.h>
 #endif
 
@@ -341,11 +344,12 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         return NULL;
     }
     FILE *fp = _Py_wfopen(path, L"rb");
-    PyMem_Free((void *)path);
     if (!fp) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyMem_Free((void *)path);
         return NULL;
     }
+    PyMem_Free((void *)path);
 
     r = PyList_New(0);
     if (!r) {
@@ -765,16 +769,11 @@ library_to_dict(PyObject *dict, const char *key)
            which is in the framework, not relative to the executable, which may
            be outside of the framework. Except when we're in the build
            directory... */
-        NSSymbol symbol = NSLookupAndBindSymbol("_Py_Initialize");
-        if (symbol != NULL) {
-            NSModule pythonModule = NSModuleForSymbol(symbol);
-            if (pythonModule != NULL) {
-                /* Use dylib functions to find out where the framework was loaded from */
-                const char *path = NSLibraryNameForModule(pythonModule);
-                if (path) {
-                    strncpy(modPath, path, MAXPATHLEN);
-                    modPathInitialized = 1;
-                }
+        Dl_info pythonInfo;
+        if (dladdr(&Py_Initialize, &pythonInfo)) {
+            if (pythonInfo.dli_fname) {
+                strncpy(modPath, pythonInfo.dli_fname, MAXPATHLEN);
+                modPathInitialized = 1;
             }
         }
     }
@@ -818,7 +817,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    if (!_PyThreadState_UncheckedGet()) {
+    if (!_PyThreadState_GET()) {
         return PyStatus_Error("cannot calculate path configuration without GIL");
     }
 
@@ -907,7 +906,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        _PyErr_WriteUnraisableMsg("error evaluating initial values", NULL);
+        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -916,30 +915,13 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        _PyErr_WriteUnraisableMsg("error evaluating path", NULL);
+        PyErr_FormatUnraisable("Exception ignored in running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);
 
-#if 0
-    PyObject *it = PyObject_GetIter(configDict);
-    for (PyObject *k = PyIter_Next(it); k; k = PyIter_Next(it)) {
-        if (!strcmp("__builtins__", PyUnicode_AsUTF8(k))) {
-            Py_DECREF(k);
-            continue;
-        }
-        fprintf(stderr, "%s = ", PyUnicode_AsUTF8(k));
-        PyObject *o = PyDict_GetItem(configDict, k);
-        o = PyObject_Repr(o);
-        fprintf(stderr, "%s\n", PyUnicode_AsUTF8(o));
-        Py_DECREF(o);
-        Py_DECREF(k);
-    }
-    Py_DECREF(it);
-#endif
-
     if (_PyConfig_FromDict(config, configDict) < 0) {
-        _PyErr_WriteUnraisableMsg("reading getpath results", NULL);
+        PyErr_FormatUnraisable("Exception ignored in reading getpath results");
         Py_DECREF(dict);
         return PyStatus_Error("error getting getpath results");
     }
@@ -948,4 +930,3 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
-

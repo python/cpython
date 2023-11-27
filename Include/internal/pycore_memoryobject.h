@@ -8,8 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+extern PyTypeObject _PyManagedBuffer_Type;
+
 PyObject *
-PyMemoryView_FromObjectAndFlags(PyObject *v, int flags);
+_PyMemoryView_FromBufferProc(PyObject *v, int flags,
+                             getbufferproc bufferproc);
 
 #ifdef __cplusplus
 }

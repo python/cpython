@@ -86,6 +86,10 @@ List Objects
    Macro form of :c:func:`PyList_SetItem` without error checking. This is
    normally only used to fill in new lists where there is no previous content.
 
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions
+   <--with-assertions>`.
+
    .. note::
 
       This macro "steals" a reference to *item*, and, unlike
@@ -122,6 +126,30 @@ List Objects
    be ``NULL``, indicating the assignment of an empty list (slice deletion).
    Return ``0`` on success, ``-1`` on failure.  Indexing from the end of the
    list is not supported.
+
+
+.. c:function:: int PyList_Extend(PyObject *list, PyObject *iterable)
+
+   Extend *list* with the contents of *iterable*.  This is the same as
+   ``PyList_SetSlice(list, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, iterable)``
+   and analogous to ``list.extend(iterable)`` or ``list += iterable``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object. Return 0 on success.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyList_Clear(PyObject *list)
+
+   Remove all items from *list*.  This is the same as
+   ``PyList_SetSlice(list, 0, PY_SSIZE_T_MAX, NULL)`` and analogous to
+   ``list.clear()`` or ``del list[:]``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object.  Return 0 on success.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyList_Sort(PyObject *list)
