@@ -3056,7 +3056,8 @@ class Function:
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
             case _ as kind:
-                assert kind in {FunctionKind.CALLABLE, FunctionKind.GETTER}, f"unknown kind: {kind!r}"
+                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER}
+                assert kind in acceptable_kinds, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
