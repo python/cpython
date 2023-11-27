@@ -3517,7 +3517,6 @@ class ThreadedTests(unittest.TestCase):
         s.setblocking(False)
         self.assertEqual(s.recv(0), b"")
         self.assertEqual(s.recv_into(bytearray()), 0)
-        self.assertEqual(s.recv_into(bytearray(10)), 0)
 
     def test_recv_into_buffer_protocol_len(self):
         server = ThreadedEchoServer(CERTFILE)
@@ -3531,6 +3530,14 @@ class ThreadedTests(unittest.TestCase):
         buf = array.array('I', [0, 0])
         self.assertEqual(s.recv_into(buf), 4)
         self.assertEqual(bytes(buf)[:4], b"data")
+
+        class B(bytearray):
+            def __len__(self):
+                1/0
+        s.send(b"data")
+        buf = B(6)
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf), b"data\0\0")
 
     def test_nonblocking_send(self):
         server = ThreadedEchoServer(CERTFILE,
