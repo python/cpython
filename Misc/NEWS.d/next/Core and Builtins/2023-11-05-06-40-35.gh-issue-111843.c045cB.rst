@@ -1,2 +1,0 @@
-Use exponential backoff to reduce the number of failed tier 2 optimization
-attempts by over 99%.

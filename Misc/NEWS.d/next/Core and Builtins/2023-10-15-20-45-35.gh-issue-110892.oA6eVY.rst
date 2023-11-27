@@ -1,1 +1,0 @@
-Return ``NULL`` for ``PyTrace_RETURN`` events caused by an exception

@@ -151,7 +151,7 @@ struct _ts {
 
     /* Tagged pointer to top-most critical section, or zero if there is no
      * active critical section. Critical sections are only used in
-     * `--disable-gil` builds (i.e., when Py_NOGIL is defined to 1). In the
+     * `--disable-gil` builds (i.e., when Py_GIL_DISABLED is defined to 1). In the
      * default build, this field is always zero.
      */
     uintptr_t critical_section;
@@ -214,7 +214,11 @@ struct _ts {
 
 };
 
-#ifdef __wasi__
+#ifdef Py_DEBUG
+   // A debug build is likely built with low optimization level which implies
+   // higher stack memory usage than a release build: use a lower limit.
+#  define Py_C_RECURSION_LIMIT 500
+#elif defined(__wasi__)
    // WASI has limited call stack. Python's recursion limit depends on code
    // layout, optimization, and WASI runtime. Wasmtime can handle about 700
    // recursions, sometimes less. 500 is a more conservative limit.
