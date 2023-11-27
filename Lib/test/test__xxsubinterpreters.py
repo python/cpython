@@ -679,7 +679,7 @@ class RunStringTests(TestBase):
             self.assertEqual(out, 'it worked!')
 
     def test_site_flag_propagates(self):
-        self.assertTrue(sys.flags.no_site)
+        self.assertFalse(sys.flags.no_site)
         subinterp = interpreters.create()
         script, file = _captured_script("import sys; print('sys.flags.no_site', sys.flags.no_site)")
         with file:
@@ -689,7 +689,7 @@ class RunStringTests(TestBase):
         self.assertEqual(out, 'sys.flags.no_site 1')
 
     def test_nosite(self):
-        self.assertTrue(sys.flags.no_site)
+        self.assertFalse(sys.flags.no_site)
         subinterp = interpreters.create(site=False)
         script, file = _captured_script("import sys; print('sys.flags.no_site', sys.flags.no_site)")
         with file:
