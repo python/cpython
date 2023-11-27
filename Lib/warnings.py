@@ -509,13 +509,7 @@ class catch_warnings(object):
 
 
 
-def deprecated(
-    msg: str,
-    /,
-    *,
-    category: type[Warning] | None = DeprecationWarning,
-    stacklevel: int = 1,
-):
+class deprecated:
     """Indicate that a class, function or overload is deprecated.
 
     When this decorator is applied to an object, the type checker
@@ -555,8 +549,24 @@ def deprecated(
     See PEP 702 for details.
 
     """
+    def __init__(
+        self,
+        msg: str,
+        /,
+        *,
+        category: type[Warning] | None = DeprecationWarning,
+        stacklevel: int = 1,
+    ) -> None:
+        self.msg = msg
+        self.category = category
+        self.stacklevel = stacklevel
 
-    def decorator(arg, /):
+    def __call__(self, arg, /):
+        # Make sure the inner functions created below don't
+        # retain a reference to self.
+        msg = self.msg
+        category = self.category
+        stacklevel = self.stacklevel
         if category is None:
             arg.__deprecated__ = msg
             return arg
@@ -620,8 +630,6 @@ def deprecated(
                 "@deprecated decorator with non-None category must be applied to "
                 f"a class or callable, not {arg!r}"
             )
-
-    return decorator
 
 
 _DEPRECATED_MSG = "{name!r} is deprecated and slated for removal in Python {remove}"
