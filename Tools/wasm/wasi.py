@@ -189,10 +189,10 @@ def wasi_sdk_env(context):
 def configure_wasi_python(context, working_dir):
     """Configure the WASI/host build."""
     if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
-            raise ValueError("WASI-SDK not found; "
-                            "download from "
-                            "https://github.com/WebAssembly/wasi-sdk and/or "
-                            "specify via $WASI_SDK_PATH or --wasi-sdk")
+        raise ValueError("WASI-SDK not found; "
+                        "download from "
+                        "https://github.com/WebAssembly/wasi-sdk and/or "
+                        "specify via $WASI_SDK_PATH or --wasi-sdk")
 
     config_site = os.fsdecode(CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-wasi")
 
