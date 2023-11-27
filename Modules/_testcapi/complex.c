@@ -121,6 +121,7 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
         }                                                        \
         err = PyLong_FromLong(errno);                            \
         if (!err) {                                              \
+            Py_DECREF(res);                                      \
             return NULL;                                         \
         }                                                        \
                                                                  \
@@ -156,6 +157,7 @@ _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
     }
     err = PyLong_FromLong(errno);
     if (!err) {
+        Py_DECREF(res);
         return NULL;
     }
 
