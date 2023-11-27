@@ -1594,7 +1594,7 @@ regen-cases:
 		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
 		$(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) \
-	    $(srcdir)/Tools/cases_generator/opcode_generator.py -o $(srcdir)/Include/opcode_ids.h.new $(srcdir)/Python/bytecodes.c
+	    $(srcdir)/Tools/cases_generator/opcode_id_generator.py -o $(srcdir)/Include/opcode_ids.h.new $(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/tier1_generator.py -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
