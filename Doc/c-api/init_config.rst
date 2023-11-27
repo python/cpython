@@ -253,10 +253,20 @@ PyPreConfig
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
         memory allocator <pymalloc>` with :ref:`debug hooks
         <pymem-debug-hooks>`.
+      * ``PYMEM_ALLOCATOR_MIMALLOC`` (``6``): use ``mimalloc``, a fast
+        malloc replacement.
+      * ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` (``7``): use ``mimalloc``, a fast
+        malloc replacement with :ref:`debug hooks <pymem-debug-hooks>`.
+
 
       ``PYMEM_ALLOCATOR_PYMALLOC`` and ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` are
       not supported if Python is :option:`configured using --without-pymalloc
       <--without-pymalloc>`.
+
+      ``PYMEM_ALLOCATOR_MIMALLOC`` and ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` are
+      not supported if Python is :option:`configured using --without-mimalloc
+      <--without-mimalloc>` or if the underlying atomic support isn't
+      available.
 
       See :ref:`Memory Management <memory>`.
 
@@ -1160,7 +1170,7 @@ PyConfig
 
    .. c:member:: int show_ref_count
 
-      Show total reference count at exit (excluding immortal objects)?
+      Show total reference count at exit (excluding :term:`immortal` objects)?
 
       Set to ``1`` by :option:`-X showrefcount <-X>` command line option.
 

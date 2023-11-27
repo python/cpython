@@ -1,4 +1,3 @@
-import doctest
 import faulthandler
 import gc
 import importlib
@@ -70,7 +69,7 @@ def _run_suite(suite):
             err = result.failures[0][1]
         else:
             err = "multiple errors occurred"
-            if not verbose: err += "; run in verbose mode for details"
+            if not support.verbose: err += "; run in verbose mode for details"
         errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
         failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
         raise support.TestFailedWithDetails(err, errors, failures, stats=stats)
@@ -99,14 +98,18 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
             stats = test_result
         case unittest.TestResult():
             stats = TestStats.from_unittest(test_result)
-        case doctest.TestResults():
-            stats = TestStats.from_doctest(test_result)
         case None:
             print_warning(f"{result.test_name} test runner returned None: {test_func}")
             stats = None
         case _:
-            print_warning(f"Unknown test result type: {type(test_result)}")
-            stats = None
+            # Don't import doctest at top level since only few tests return
+            # a doctest.TestResult instance.
+            import doctest
+            if isinstance(test_result, doctest.TestResults):
+                stats = TestStats.from_doctest(test_result)
+            else:
+                print_warning(f"Unknown test result type: {type(test_result)}")
+                stats = None
 
     result.stats = stats
 

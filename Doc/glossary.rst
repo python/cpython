@@ -579,6 +579,16 @@ Glossary
       :ref:`idle` is a basic editor and interpreter environment
       which ships with the standard distribution of Python.
 
+   immortal
+      If an object is immortal, its reference count is never modified, and
+      therefore it is never deallocated.
+
+      Built-in strings and singletons are immortal objects. For example,
+      :const:`True` and :const:`None` singletons are immmortal.
+
+      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
+      <https://peps.python.org/pep-0683/>`_ for more information.
+
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
       tuples.  Such an object cannot be altered.  A new object has to
@@ -1056,7 +1066,7 @@ Glossary
    reference count
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Some objects are
-      "immortal" and have reference counts that are never modified, and
+      :term:`immortal` and have reference counts that are never modified, and
       therefore the objects are never deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
       :term:`CPython` implementation.  Programmers can call the
@@ -1138,6 +1148,11 @@ Glossary
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
+   static type checker
+      An external tool that reads Python code and analyzes it, looking for
+      issues such as incorrect types. See also :term:`type hints <type hint>`
+      and the :mod:`typing` module.
+
    strong reference
       In Python's C API, a strong reference is a reference to an object
       which is owned by the code holding the reference.  The strong
@@ -1214,8 +1229,8 @@ Glossary
       attribute, or a function parameter or return value.
 
       Type hints are optional and are not enforced by Python but
-      they are useful to static type analysis tools, and aid IDEs with code
-      completion and refactoring.
+      they are useful to :term:`static type checkers <static type checker>`.
+      They can also aid IDEs with code completion and refactoring.
 
       Type hints of global variables, class attributes, and functions,
       but not local variables, can be accessed using
