@@ -4707,7 +4707,7 @@ static unsigned int psk_client_callback(SSL *s,
     const char *psk_;
     const char *identity_;
     Py_ssize_t psk_len_;
-    Py_ssize_t identity_len_;
+    Py_ssize_t identity_len_ = 0;
     if (!PyArg_ParseTuple(result, "z#y#", &identity_, &identity_len_, &psk_, &psk_len_)) {
         Py_DECREF(result);
         goto error;
@@ -4718,7 +4718,9 @@ static unsigned int psk_client_callback(SSL *s,
         goto error;
     }
     memcpy(psk, psk_, psk_len_);
-    memcpy(identity, identity_, identity_len_);
+    if (identity_ != NULL) {
+        memcpy(identity, identity_, identity_len_);
+    }
     identity[identity_len_] = 0;
 
     Py_DECREF(result);
