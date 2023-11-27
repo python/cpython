@@ -462,10 +462,7 @@ readline_set_completion_display_matches_hook_impl(PyObject *module,
                                                   PyObject *function)
 /*[clinic end generated code: output=516e5cb8db75a328 input=4f0bfd5ab0179a26]*/
 {
-    readlinestate *state = get_global_readline_state_with_error();
-    if (state == NULL) {
-        return NULL;
-    }
+    readlinestate *state = get_readline_state(module);
     PyObject *result = set_hook("completion_display_matches_hook",
                     &state->completion_display_matches_hook,
                     function);
@@ -500,10 +497,7 @@ static PyObject *
 readline_set_startup_hook_impl(PyObject *module, PyObject *function)
 /*[clinic end generated code: output=02cd0e0c4fa082ad input=7783b4334b26d16d]*/
 {
-    readlinestate *state = get_global_readline_state_with_error();
-    if (state == NULL) {
-        return NULL;
-    }
+    readlinestate *state = get_readline_state(module);
     return set_hook("startup_hook", &state->startup_hook,
             function);
 }
@@ -529,10 +523,7 @@ static PyObject *
 readline_set_pre_input_hook_impl(PyObject *module, PyObject *function)
 /*[clinic end generated code: output=fe1a96505096f464 input=4f3eaeaf7ce1fdbe]*/
 {
-    readlinestate *state = get_global_readline_state_with_error();
-    if (state == NULL) {
-        return NULL;
-    }
+    readlinestate *state = get_readline_state(module);
     return set_hook("pre_input_hook", &state->pre_input_hook,
             function);
 }
@@ -566,10 +557,7 @@ static PyObject *
 readline_get_begidx_impl(PyObject *module)
 /*[clinic end generated code: output=362616ee8ed1b2b1 input=e083b81c8eb4bac3]*/
 {
-    readlinestate *state = get_global_readline_state_with_error();
-    if (state == NULL) {
-        return NULL;
-    }
+    readlinestate *state = get_readline_state(module);
     return Py_NewRef(state->begidx);
 }
 
@@ -585,10 +573,7 @@ static PyObject *
 readline_get_endidx_impl(PyObject *module)
 /*[clinic end generated code: output=7f763350b12d7517 input=d4c7e34a625fd770]*/
 {
-    readlinestate *state = get_global_readline_state_with_error();
-    if (state == NULL) {
-        return NULL;
-    }
+    readlinestate *state = get_readline_state(module);
     return Py_NewRef(state->endidx);
 }
 
@@ -816,10 +801,7 @@ static PyObject *
 readline_set_completer_impl(PyObject *module, PyObject *function)
 /*[clinic end generated code: output=171a2a60f81d3204 input=51e81e13118eb877]*/
 {
-    readlinestate *state = get_global_readline_state_with_error();
-    if (state == NULL) {
-        return NULL;
-    }
+    readlinestate *state = get_readline_state(module);
     return set_hook("completer", &state->completer, function);
 }
 
@@ -833,10 +815,7 @@ static PyObject *
 readline_get_completer_impl(PyObject *module)
 /*[clinic end generated code: output=6e6bbd8226d14475 input=6457522e56d70d13]*/
 {
-    readlinestate *state = get_global_readline_state_with_error();
-    if (state == NULL) {
-        return NULL;
-    }
+    readlinestate *state = get_readline_state(module);
     if (state->completer == NULL) {
         Py_RETURN_NONE;
     }
@@ -1078,18 +1057,12 @@ on_startup_hook(void)
 {
     int r;
     PyGILState_STATE gilstate = PyGILState_Ensure();
-    PyObject* mod = PyState_FindModule(&readlinemodule);
-    if (mod == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ImportError, "readline import initialization failure during startup hook");
-        }
-        readline_cleanup();
+    readlinestate *state = get_hook_module_state();
+    if (state == NULL) {
         PyGILState_Release(gilstate);
         return -1;
     }
-    Py_INCREF(mod);
-    r = on_hook(get_readline_state(mod)->startup_hook);
-    Py_DECREF(mod);
+    r = on_hook(state->startup_hook);
     PyGILState_Release(gilstate);
     return r;
 }
@@ -1134,7 +1107,7 @@ on_completion_display_matches_hook(char **matches,
     int i;
     PyObject *sub, *m=NULL, *s=NULL, *r=NULL;
     PyGILState_STATE gilstate = PyGILState_Ensure();
-    readlinestate *state = get_global_readline_state(false);
+    readlinestate *state = get_hook_module_state();
     if (state == NULL) {
         PyGILState_Release(gilstate);
         return;
@@ -1198,7 +1171,7 @@ on_completion(const char *text, int state)
 {
     char *result = NULL;
     PyGILState_STATE gilstate = PyGILState_Ensure();
-    readlinestate *module_state = get_global_readline_state(false);
+    readlinestate *state = get_hook_module_state();
     if (module_state == NULL) {
         PyGILState_Release(gilstate);
         return NULL;
