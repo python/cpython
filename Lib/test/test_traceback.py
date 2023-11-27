@@ -922,8 +922,63 @@ class TracebackErrorLocationCaretTestBase:
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
             "    callable()",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 4}, in f",
-            "    print(1, ｗｗｗ(",
-            "             ^^^^",
+            f"    print(1, ｗｗｗ(",
+            f"             ^^^^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_with_wide_characters_term_highlight(self):
+        def f():
+            说明说明 = 1
+            şçöğıĤellö = 0 # not wide but still non-ascii
+            return 说明说明 / şçöğıĤellö
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 3}, in f",
+            f"    return 说明说明 / şçöğıĤellö",
+            f"           ~~~~~~~~~^~~~~~~~~~~~",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_with_emojis_term_highlight(self):
+        def f():
+            return "✨🐍" + func_说明说明("📗🚛",
+                "📗🚛") + "🐍"
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            f'    return "✨🐍" + func_说明说明("📗🚛",',
+            f"                    ^^^^^^^^^^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_wide_chars_subscript(self):
+        def f():
+            my_dct = {
+                "✨🚛✨": {
+                    "说明": {
+                        "🐍🐍🐍": None
+                    }
+                }
+            }
+            return my_dct["✨🚛✨"]["说明"]["🐍"]["说明"]["🐍🐍"]
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 8}, in f",
+            f'    return my_dct["✨🚛✨"]["说明"]["🐍"]["说明"]["🐍🐍"]',
+            f"           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^",
         ]
         self.assertEqual(actual, expected)
 

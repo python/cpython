@@ -833,10 +833,8 @@ class SysLogHandler(logging.Handler):
         "local7":       LOG_LOCAL7,
         }
 
-    #The map below appears to be trivially lowercasing the key. However,
-    #there's more to it than meets the eye - in some locales, lowercasing
-    #gives unexpected results. See SF #1524081: in the Turkish locale,
-    #"INFO".lower() != "info"
+    # Originally added to work around GH-43683. Unnecessary since GH-50043 but kept
+    # for backwards compatibility.
     priority_map = {
         "DEBUG" : "debug",
         "INFO" : "info",

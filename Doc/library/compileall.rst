@@ -16,6 +16,8 @@ have write permission to the library directories.
 
 .. include:: ../includes/wasm-notavail.rst
 
+.. _compileall-cli:
+
 Command-line use
 ----------------
 

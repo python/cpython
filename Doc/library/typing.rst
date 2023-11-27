@@ -18,8 +18,8 @@
 .. note::
 
    The Python runtime does not enforce function and variable type annotations.
-   They can be used by third party tools such as type checkers, IDEs, linters,
-   etc.
+   They can be used by third party tools such as :term:`type checkers <static type checker>`,
+   IDEs, linters, etc.
 
 --------------
 
@@ -304,7 +304,7 @@ a callable with any arbitrary parameter list would be acceptable:
    x = concat  # Also OK
 
 ``Callable`` cannot express complex signatures such as functions that take a
-variadic number of arguments, :func:`overloaded functions <overload>`, or
+variadic number of arguments, :ref:`overloaded functions <overload>`, or
 functions that have keyword-only parameters. However, these signatures can be
 expressed by defining a :class:`Protocol` class with a
 :meth:`~object.__call__` method:
@@ -526,7 +526,7 @@ A user-defined class can be defined as a generic class.
            self.logger.info('%s: %s', self.name, message)
 
 This syntax indicates that the class ``LoggedVar`` is parameterised around a
-single :class:`type variable <TypeVar>` ``T`` . This also makes ``T`` valid as
+single :ref:`type variable <typevar>` ``T`` . This also makes ``T`` valid as
 a type within the class body.
 
 Generic classes implicitly inherit from :class:`Generic`. For compatibility
@@ -1135,16 +1135,13 @@ These can be used as types in annotations. They all support subscription using
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Concatenate, ParamSpec, TypeVar
-
-      P = ParamSpec('P')
-      R = TypeVar('R')
+      from typing import Concatenate
 
       # Use this lock to ensure that only one thread is executing a function
       # at any time.
       my_lock = Lock()
 
-      def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
+      def with_lock[**P, R](f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
           '''A type-safe decorator which provides a lock.'''
           def inner(*args: P.args, **kwargs: P.kwargs) -> R:
               # Provide the lock as the first argument.
@@ -1483,7 +1480,7 @@ These can be used as types in annotations. They all support subscription using
    Typing operator to conceptually mark an object as having been unpacked.
 
    For example, using the unpack operator ``*`` on a
-   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
+   :ref:`type variable tuple <typevartuple>` is equivalent to using ``Unpack``
    to mark the type variable tuple as having been unpacked::
 
       Ts = TypeVarTuple('Ts')
@@ -1573,6 +1570,8 @@ without the dedicated syntax, as documented below.
           def __getitem__(self, key: KT) -> VT:
               ...
               # Etc.
+
+.. _typevar:
 
 .. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False)
 
@@ -1718,9 +1717,11 @@ without the dedicated syntax, as documented below.
       :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
       The ``infer_variance`` parameter was added.
 
+.. _typevartuple:
+
 .. class:: TypeVarTuple(name)
 
-   Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
+   Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
 
    Type variable tuples can be declared in :ref:`type parameter lists <type-params>`
@@ -1838,7 +1839,7 @@ without the dedicated syntax, as documented below.
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
    Parameter specification variable.  A specialized version of
-   :class:`type variables <TypeVar>`.
+   :ref:`type variables <typevar>`.
 
    In :ref:`type parameter lists <type-params>`, parameter specifications
    can be declared with two asterisks (``**``)::
@@ -1940,7 +1941,7 @@ without the dedicated syntax, as documented below.
 
    .. doctest::
 
-      >>> from typing import ParamSpec
+      >>> from typing import ParamSpec, get_origin
       >>> P = ParamSpec("P")
       >>> get_origin(P.args) is P
       True
@@ -2748,6 +2749,8 @@ Functions and decorators
    See :pep:`681` for more details.
 
    .. versionadded:: 3.11
+
+.. _overload:
 
 .. decorator:: overload
 

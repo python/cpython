@@ -1119,6 +1119,15 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     else if (io_check_errors(errors)) {
         return -1;
     }
+    Py_ssize_t errors_len;
+    const char *errors_str = PyUnicode_AsUTF8AndSize(errors, &errors_len);
+    if (errors_str == NULL) {
+        return -1;
+    }
+    if (strlen(errors_str) != (size_t)errors_len) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return -1;
+    }
 
     if (validate_newline(newline) < 0) {
         return -1;
@@ -1191,11 +1200,11 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Build the decoder object */
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->state = state;
-    if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
+    if (_textiowrapper_set_decoder(self, codec_info, errors_str) != 0)
         goto error;
 
     /* Build the encoder object */
-    if (_textiowrapper_set_encoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
+    if (_textiowrapper_set_encoder(self, codec_info, errors_str) != 0)
         goto error;
 
     /* Finished sorting out the codec details */
@@ -1292,30 +1301,40 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
             errors = &_Py_ID(strict);
         }
     }
+    Py_INCREF(errors);
 
+    const char *c_encoding = PyUnicode_AsUTF8(encoding);
+    if (c_encoding == NULL) {
+        Py_DECREF(encoding);
+        Py_DECREF(errors);
+        return -1;
+    }
     const char *c_errors = PyUnicode_AsUTF8(errors);
     if (c_errors == NULL) {
         Py_DECREF(encoding);
+        Py_DECREF(errors);
         return -1;
     }
 
     // Create new encoder & decoder
     PyObject *codec_info = _PyCodec_LookupTextEncoding(
-        PyUnicode_AsUTF8(encoding), "codecs.open()");
+        c_encoding, "codecs.open()");
     if (codec_info == NULL) {
         Py_DECREF(encoding);
+        Py_DECREF(errors);
         return -1;
     }
     if (_textiowrapper_set_decoder(self, codec_info, c_errors) != 0 ||
             _textiowrapper_set_encoder(self, codec_info, c_errors) != 0) {
         Py_DECREF(codec_info);
         Py_DECREF(encoding);
+        Py_DECREF(errors);
         return -1;
     }
     Py_DECREF(codec_info);
 
     Py_SETREF(self->encoding, encoding);
-    Py_SETREF(self->errors, Py_NewRef(errors));
+    Py_SETREF(self->errors, errors);
 
     return _textiowrapper_fix_encoder_state(self);
 }
@@ -1346,6 +1365,26 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     int write_through;
     const char *newline = NULL;
 
+    if (encoding != Py_None && !PyUnicode_Check(encoding)) {
+        PyErr_Format(PyExc_TypeError,
+                "reconfigure() argument 'encoding' must be str or None, not %s",
+                Py_TYPE(encoding)->tp_name);
+        return NULL;
+    }
+    if (errors != Py_None && !PyUnicode_Check(errors)) {
+        PyErr_Format(PyExc_TypeError,
+                "reconfigure() argument 'errors' must be str or None, not %s",
+                Py_TYPE(errors)->tp_name);
+        return NULL;
+    }
+    if (newline_obj != NULL && newline_obj != Py_None &&
+        !PyUnicode_Check(newline_obj))
+    {
+        PyErr_Format(PyExc_TypeError,
+                "reconfigure() argument 'newline' must be str or None, not %s",
+                Py_TYPE(newline_obj)->tp_name);
+        return NULL;
+    }
     /* Check if something is in the read buffer */
     if (self->decoded_chars != NULL) {
         if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
@@ -1365,9 +1404,12 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
 
     line_buffering = convert_optional_bool(line_buffering_obj,
                                            self->line_buffering);
+    if (line_buffering < 0) {
+        return NULL;
+    }
     write_through = convert_optional_bool(write_through_obj,
                                           self->write_through);
-    if (line_buffering < 0 || write_through < 0) {
+    if (write_through < 0) {
         return NULL;
     }
 
