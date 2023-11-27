@@ -185,12 +185,11 @@ created.  Socket addresses are represented as follows:
   .. versionadded:: 3.7
 
 - :const:`AF_PACKET` is a low-level interface directly to network devices.
-  The packets are represented by the tuple
+  The addresses are represented by the tuple
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - An in network-byte-order integer specifying the Ethernet
-    protocol number.
+  - *proto* - An integer specifying the Ethernet protocol number.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
