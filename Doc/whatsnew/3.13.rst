@@ -301,6 +301,11 @@ tkinter
   :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
   (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
 
+* Add support of the "vsapi" element type in
+  the :meth:`~tkinter.ttk.Style.element_create` method of
+  :class:`tkinter.ttk.Style`.
+  (Contributed by Serhiy Storchaka in :gh:`68166`.)
+
 traceback
 ---------
 
