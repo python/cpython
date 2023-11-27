@@ -7547,16 +7547,18 @@ class NamedTupleTests(BaseTestCase):
 
         class Annoying:
             def __set_name__(self, owner, name):
-                raise CustomException("Cannot do that!")
+                raise CustomException
 
-        with self.assertRaisesRegex(CustomException, "Cannot do that!") as cm:
+        annoying = Annoying()
+
+        with self.assertRaises(CustomException) as cm:
             class NormalClass:
-                attr = Annoying()
+                attr = annoying
         normal_exception = cm.exception
 
-        with self.assertRaisesRegex(CustomException, "Cannot do that!") as cm:
+        with self.assertRaises(CustomException) as cm:
             class NamedTupleClass(NamedTuple):
-                attr = Annoying()
+                attr = annoying
         namedtuple_exception = cm.exception
 
         self.assertIs(type(namedtuple_exception), CustomException)
@@ -7578,19 +7580,21 @@ class NamedTupleTests(BaseTestCase):
         )
 
     def test_strange_errors_when_accessing_set_name_itself(self):
+        class CustomException(Exception): pass
+
         class Meta(type):
             def __getattribute__(self, attr):
                 if attr == "__set_name__":
-                    raise TypeError("NO")
+                    raise CustomException
                 return object.__getattribute__(self, attr)
 
         class VeryAnnoying(metaclass=Meta): pass
 
-        annoying = VeryAnnoying()
+        very_annoying = VeryAnnoying()
 
-        with self.assertRaisesRegex(TypeError, "NO"):
+        with self.assertRaises(CustomException):
             class Foo(NamedTuple):
-                attr = annoying
+                attr = very_annoying
 
 
 class TypedDictTests(BaseTestCase):
