@@ -68,8 +68,8 @@ arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 arg_parser.add_argument(
-    "-n", 
-    "--namespace", 
+    "-n",
+    "--namespace",
     help="Give uops a distinct namespace",
     action="store_true",
 )
