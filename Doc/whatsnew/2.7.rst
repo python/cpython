@@ -2383,8 +2383,8 @@ Port-Specific Changes: Mac OS X
 Port-Specific Changes: FreeBSD
 -----------------------------------
 
-* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with
-  :func:`~socket.getsockopt`/:func:`~socket.setsockopt` to select an
+* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with the :func:`~socket.socket` methods
+  :func:`~socket.socket.getsockopt`/:func:`~socket.socket.setsockopt` to select an
   alternate routing table, is now available in the :mod:`socket`
   module.  (Added by Kyle VanderBeek; :issue:`8235`.)
 
