@@ -677,6 +677,13 @@ pow5mult(Bigint *b, int k)
     int i;
     static const int p05[3] = { 5, 25, 125 };
 
+    // For double-to-string conversion, the maximum value of k is limited by
+    // DBL_MAX_10_EXP (308), the maximum decimal base-10 exponent for binary64.
+    // For string-to-double conversion, the extreme case is constrained by our
+    // hardcoded exponent limit before we underflow of -512, adjusted by
+    // STRTOD_DIGLIM-DBL_DIG-1, giving a maximum of k=535.
+    assert(0 <= k && k < 1024);
+
     if ((i = k & 3)) {
         b = multadd(b, p05[i-1], 0);
         if (b == NULL)
@@ -685,12 +692,12 @@ pow5mult(Bigint *b, int k)
 
     if (!(k >>= 2))
         return b;
-    assert(k < (1 << (Bigint_Pow5max)));
     PyInterpreterState *interp = _PyInterpreterState_GET();
     p5s = interp->dtoa.p5s;
     for(;;) {
         p5 = *p5s;
         p5s++;
+        assert(p5s != interp->dtoa.p5s + Bigint_Pow5size);
         if (k & 1) {
             b1 = mult(b, p5);
             Bfree(b);
@@ -2808,7 +2815,7 @@ _PyDtoa_Init(PyInterpreterState *interp)
     p5s[0] = p5;
 
     // compute 5**8, 5**16, 5**32, ..., 5**512
-    for (Py_ssize_t i = 1; i < Bigint_Pow5max; i++) {
+    for (Py_ssize_t i = 1; i < Bigint_Pow5size; i++) {
         p5 = mult(p5, p5);
         if (p5 == NULL) {
             return PyStatus_NoMemory();
@@ -2825,7 +2832,7 @@ _PyDtoa_Fini(PyInterpreterState *interp)
 {
 #if _PY_SHORT_FLOAT_REPR == 1 && !defined(Py_USING_MEMORY_DEBUGGER)
     Bigint **p5s = interp->dtoa.p5s;
-    for (Py_ssize_t i = 0; i < Bigint_Pow5max; i++) {
+    for (Py_ssize_t i = 0; i < Bigint_Pow5size; i++) {
         Bigint *p5 = p5s[i];
         p5s[i] = NULL;
         Bfree(p5);

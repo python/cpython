@@ -36,7 +36,7 @@ struct _dtoa_state {
 #define Bigint_Kmax 7
 
 /* The size of the cached powers of 5 array */
-#define Bigint_Pow5max 8
+#define Bigint_Pow5size 8
 
 #ifndef PRIVATE_MEM
 #define PRIVATE_MEM 2304
@@ -45,8 +45,9 @@ struct _dtoa_state {
     ((PRIVATE_MEM+sizeof(double)-1)/sizeof(double))
 
 struct _dtoa_state {
-    /* p5s is an array of powers of 5 of the form 5**(2**i), i >= 2 */
-    struct Bigint *p5s[Bigint_Pow5max];
+    // p5s is an array of powers of 5 of the form:
+    // 5**(2**(i+2)) for 0 <= i < Bigint_Pow5size
+    struct Bigint *p5s[Bigint_Pow5size];
     // XXX This should be freed during runtime fini.
     struct Bigint *freelist[Bigint_Kmax+1];
     double preallocated[Bigint_PREALLOC_SIZE];
