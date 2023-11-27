@@ -1245,7 +1245,7 @@ flex_complete(const char *text, int start, int end)
     size_t start_size, end_size;
     wchar_t *s;
     PyGILState_STATE gilstate = PyGILState_Ensure();
-    readlinestate *state = get_global_readline_state(false);
+    readlinestate *state = get_hook_module_state();
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     rl_completion_append_character ='\0';
 #endif
