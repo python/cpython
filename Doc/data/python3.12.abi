@@ -3896,17 +3896,17 @@
       <parameter type-id='type-id-19' name='extra_size' filepath='Modules/gcmodule.c' line='2347' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyObject_GC_IsTracked' mangled-name='PyObject_GC_IsTracked' filepath='Modules/gcmodule.c' line='2401' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_GC_IsTracked'>
-      <parameter type-id='type-id-2' name='obj' filepath='Modules/gcmodule.c' line='2401' column='1'/>
+    <function-decl name='PyObject_GC_IsTracked' mangled-name='PyObject_GC_IsTracked' filepath='Modules/gcmodule.c' line='2403' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_GC_IsTracked'>
+      <parameter type-id='type-id-2' name='obj' filepath='Modules/gcmodule.c' line='2403' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyObject_GC_IsFinalized' mangled-name='PyObject_GC_IsFinalized' filepath='Modules/gcmodule.c' line='2410' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_GC_IsFinalized'>
-      <parameter type-id='type-id-2' name='obj' filepath='Modules/gcmodule.c' line='2410' column='1'/>
+    <function-decl name='PyObject_GC_IsFinalized' mangled-name='PyObject_GC_IsFinalized' filepath='Modules/gcmodule.c' line='2412' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_GC_IsFinalized'>
+      <parameter type-id='type-id-2' name='obj' filepath='Modules/gcmodule.c' line='2412' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyUnstable_GC_VisitObjects' mangled-name='PyUnstable_GC_VisitObjects' filepath='Modules/gcmodule.c' line='2419' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_GC_VisitObjects'>
-      <parameter type-id='type-id-237' name='callback' filepath='Modules/gcmodule.c' line='2419' column='1'/>
-      <parameter type-id='type-id-22' name='arg' filepath='Modules/gcmodule.c' line='2419' column='1'/>
+    <function-decl name='PyUnstable_GC_VisitObjects' mangled-name='PyUnstable_GC_VisitObjects' filepath='Modules/gcmodule.c' line='2421' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_GC_VisitObjects'>
+      <parameter type-id='type-id-237' name='callback' filepath='Modules/gcmodule.c' line='2421' column='1'/>
+      <parameter type-id='type-id-22' name='arg' filepath='Modules/gcmodule.c' line='2421' column='1'/>
       <return type-id='type-id-46'/>
     </function-decl>
     <function-type size-in-bits='64' id='type-id-238'>
@@ -3924,17 +3924,17 @@
       <parameter type-id='type-id-8'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='Py_RunMain' mangled-name='Py_RunMain' filepath='Modules/main.c' line='706' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_RunMain'>
+    <function-decl name='Py_RunMain' mangled-name='Py_RunMain' filepath='Modules/main.c' line='701' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_RunMain'>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='Py_Main' mangled-name='Py_Main' filepath='Modules/main.c' line='745' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_Main'>
-      <parameter type-id='type-id-8' name='argc' filepath='Modules/main.c' line='745' column='1'/>
-      <parameter type-id='type-id-235' name='argv' filepath='Modules/main.c' line='745' column='1'/>
+    <function-decl name='Py_Main' mangled-name='Py_Main' filepath='Modules/main.c' line='740' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_Main'>
+      <parameter type-id='type-id-8' name='argc' filepath='Modules/main.c' line='740' column='1'/>
+      <parameter type-id='type-id-235' name='argv' filepath='Modules/main.c' line='740' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='Py_BytesMain' mangled-name='Py_BytesMain' filepath='Modules/main.c' line='757' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_BytesMain'>
-      <parameter type-id='type-id-8' name='argc' filepath='Modules/main.c' line='757' column='1'/>
-      <parameter type-id='type-id-239' name='argv' filepath='Modules/main.c' line='757' column='1'/>
+    <function-decl name='Py_BytesMain' mangled-name='Py_BytesMain' filepath='Modules/main.c' line='752' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_BytesMain'>
+      <parameter type-id='type-id-8' name='argc' filepath='Modules/main.c' line='752' column='1'/>
+      <parameter type-id='type-id-239' name='argv' filepath='Modules/main.c' line='752' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
@@ -3955,11 +3955,6 @@
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-248'/>
       <parameter type-id='type-id-19'/>
-      <parameter type-id='type-id-2'/>
-      <return type-id='type-id-2'/>
-    </function-decl>
-    <function-decl name='PyObject_CallOneArg' mangled-name='PyObject_CallOneArg' filepath='./Include/cpython/abstract.h' line='88' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_CallOneArg'>
-      <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-2'/>
     </function-decl>
@@ -4932,18 +4927,10 @@
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyObject_Malloc' mangled-name='PyObject_Malloc' filepath='./Include/objimpl.h' line='97' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_Malloc'>
-      <parameter type-id='type-id-19'/>
-      <return type-id='type-id-22'/>
-    </function-decl>
     <function-decl name='PyObject_Realloc' mangled-name='PyObject_Realloc' filepath='./Include/objimpl.h' line='101' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_Realloc'>
       <parameter type-id='type-id-22'/>
       <parameter type-id='type-id-19'/>
       <return type-id='type-id-22'/>
-    </function-decl>
-    <function-decl name='PyObject_Free' mangled-name='PyObject_Free' filepath='./Include/objimpl.h' line='102' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_Free'>
-      <parameter type-id='type-id-22'/>
-      <return type-id='type-id-46'/>
     </function-decl>
     <function-decl name='_PyObject_New' mangled-name='_PyObject_New' filepath='./Include/objimpl.h' line='131' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyObject_New'>
       <parameter type-id='type-id-1'/>
@@ -5905,81 +5892,81 @@
       <parameter type-id='type-id-2' name='exceptiontable' filepath='Objects/codeobject.c' line='607' column='1'/>
       <return type-id='type-id-328'/>
     </function-decl>
-    <function-decl name='PyUnstable_Code_New' mangled-name='PyUnstable_Code_New' filepath='Objects/codeobject.c' line='724' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Code_New'>
-      <parameter type-id='type-id-8' name='argcount' filepath='Objects/codeobject.c' line='724' column='1'/>
-      <parameter type-id='type-id-8' name='kwonlyargcount' filepath='Objects/codeobject.c' line='724' column='1'/>
-      <parameter type-id='type-id-8' name='nlocals' filepath='Objects/codeobject.c' line='725' column='1'/>
-      <parameter type-id='type-id-8' name='stacksize' filepath='Objects/codeobject.c' line='725' column='1'/>
-      <parameter type-id='type-id-8' name='flags' filepath='Objects/codeobject.c' line='725' column='1'/>
-      <parameter type-id='type-id-2' name='code' filepath='Objects/codeobject.c' line='726' column='1'/>
-      <parameter type-id='type-id-2' name='consts' filepath='Objects/codeobject.c' line='726' column='1'/>
-      <parameter type-id='type-id-2' name='names' filepath='Objects/codeobject.c' line='726' column='1'/>
-      <parameter type-id='type-id-2' name='varnames' filepath='Objects/codeobject.c' line='727' column='1'/>
-      <parameter type-id='type-id-2' name='freevars' filepath='Objects/codeobject.c' line='727' column='1'/>
-      <parameter type-id='type-id-2' name='cellvars' filepath='Objects/codeobject.c' line='727' column='1'/>
-      <parameter type-id='type-id-2' name='filename' filepath='Objects/codeobject.c' line='728' column='1'/>
-      <parameter type-id='type-id-2' name='name' filepath='Objects/codeobject.c' line='728' column='1'/>
-      <parameter type-id='type-id-2' name='qualname' filepath='Objects/codeobject.c' line='728' column='1'/>
-      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='729' column='1'/>
-      <parameter type-id='type-id-2' name='linetable' filepath='Objects/codeobject.c' line='730' column='1'/>
-      <parameter type-id='type-id-2' name='exceptiontable' filepath='Objects/codeobject.c' line='731' column='1'/>
-      <return type-id='type-id-328'/>
-    </function-decl>
-    <function-decl name='PyCode_NewEmpty' mangled-name='PyCode_NewEmpty' filepath='Objects/codeobject.c' line='758' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewEmpty'>
-      <parameter type-id='type-id-12' name='filename' filepath='Objects/codeobject.c' line='758' column='1'/>
-      <parameter type-id='type-id-12' name='funcname' filepath='Objects/codeobject.c' line='758' column='1'/>
+    <function-decl name='PyUnstable_Code_New' mangled-name='PyUnstable_Code_New' filepath='Objects/codeobject.c' line='753' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Code_New'>
+      <parameter type-id='type-id-8' name='argcount' filepath='Objects/codeobject.c' line='753' column='1'/>
+      <parameter type-id='type-id-8' name='kwonlyargcount' filepath='Objects/codeobject.c' line='753' column='1'/>
+      <parameter type-id='type-id-8' name='nlocals' filepath='Objects/codeobject.c' line='754' column='1'/>
+      <parameter type-id='type-id-8' name='stacksize' filepath='Objects/codeobject.c' line='754' column='1'/>
+      <parameter type-id='type-id-8' name='flags' filepath='Objects/codeobject.c' line='754' column='1'/>
+      <parameter type-id='type-id-2' name='code' filepath='Objects/codeobject.c' line='755' column='1'/>
+      <parameter type-id='type-id-2' name='consts' filepath='Objects/codeobject.c' line='755' column='1'/>
+      <parameter type-id='type-id-2' name='names' filepath='Objects/codeobject.c' line='755' column='1'/>
+      <parameter type-id='type-id-2' name='varnames' filepath='Objects/codeobject.c' line='756' column='1'/>
+      <parameter type-id='type-id-2' name='freevars' filepath='Objects/codeobject.c' line='756' column='1'/>
+      <parameter type-id='type-id-2' name='cellvars' filepath='Objects/codeobject.c' line='756' column='1'/>
+      <parameter type-id='type-id-2' name='filename' filepath='Objects/codeobject.c' line='757' column='1'/>
+      <parameter type-id='type-id-2' name='name' filepath='Objects/codeobject.c' line='757' column='1'/>
+      <parameter type-id='type-id-2' name='qualname' filepath='Objects/codeobject.c' line='757' column='1'/>
       <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='758' column='1'/>
+      <parameter type-id='type-id-2' name='linetable' filepath='Objects/codeobject.c' line='759' column='1'/>
+      <parameter type-id='type-id-2' name='exceptiontable' filepath='Objects/codeobject.c' line='760' column='1'/>
       <return type-id='type-id-328'/>
     </function-decl>
-    <function-decl name='PyCode_Addr2Line' mangled-name='PyCode_Addr2Line' filepath='Objects/codeobject.c' line='820' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Line'>
-      <parameter type-id='type-id-328' name='co' filepath='Objects/codeobject.c' line='820' column='1'/>
-      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='820' column='1'/>
+    <function-decl name='PyCode_NewEmpty' mangled-name='PyCode_NewEmpty' filepath='Objects/codeobject.c' line='787' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewEmpty'>
+      <parameter type-id='type-id-12' name='filename' filepath='Objects/codeobject.c' line='787' column='1'/>
+      <parameter type-id='type-id-12' name='funcname' filepath='Objects/codeobject.c' line='787' column='1'/>
+      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='787' column='1'/>
+      <return type-id='type-id-328'/>
+    </function-decl>
+    <function-decl name='PyCode_Addr2Line' mangled-name='PyCode_Addr2Line' filepath='Objects/codeobject.c' line='849' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Line'>
+      <parameter type-id='type-id-328' name='co' filepath='Objects/codeobject.c' line='849' column='1'/>
+      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='849' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyCode_CheckLineNumber' mangled-name='_PyCode_CheckLineNumber' filepath='Objects/codeobject.c' line='855' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckLineNumber'>
-      <parameter type-id='type-id-8' name='lasti' filepath='Objects/codeobject.c' line='855' column='1'/>
-      <parameter type-id='type-id-320' name='bounds' filepath='Objects/codeobject.c' line='855' column='1'/>
+    <function-decl name='_PyCode_CheckLineNumber' mangled-name='_PyCode_CheckLineNumber' filepath='Objects/codeobject.c' line='884' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckLineNumber'>
+      <parameter type-id='type-id-8' name='lasti' filepath='Objects/codeobject.c' line='884' column='1'/>
+      <parameter type-id='type-id-320' name='bounds' filepath='Objects/codeobject.c' line='884' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyCode_Addr2Location' mangled-name='PyCode_Addr2Location' filepath='Objects/codeobject.c' line='1032' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Location'>
-      <parameter type-id='type-id-328' name='co' filepath='Objects/codeobject.c' line='1032' column='1'/>
-      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='1032' column='1'/>
-      <parameter type-id='type-id-179' name='start_line' filepath='Objects/codeobject.c' line='1033' column='1'/>
-      <parameter type-id='type-id-179' name='start_column' filepath='Objects/codeobject.c' line='1033' column='1'/>
-      <parameter type-id='type-id-179' name='end_line' filepath='Objects/codeobject.c' line='1034' column='1'/>
-      <parameter type-id='type-id-179' name='end_column' filepath='Objects/codeobject.c' line='1034' column='1'/>
+    <function-decl name='PyCode_Addr2Location' mangled-name='PyCode_Addr2Location' filepath='Objects/codeobject.c' line='1061' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Location'>
+      <parameter type-id='type-id-328' name='co' filepath='Objects/codeobject.c' line='1061' column='1'/>
+      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='1061' column='1'/>
+      <parameter type-id='type-id-179' name='start_line' filepath='Objects/codeobject.c' line='1062' column='1'/>
+      <parameter type-id='type-id-179' name='start_column' filepath='Objects/codeobject.c' line='1062' column='1'/>
+      <parameter type-id='type-id-179' name='end_line' filepath='Objects/codeobject.c' line='1063' column='1'/>
+      <parameter type-id='type-id-179' name='end_column' filepath='Objects/codeobject.c' line='1063' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyUnstable_Code_GetExtra' mangled-name='PyUnstable_Code_GetExtra' filepath='Objects/codeobject.c' line='1353' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Code_GetExtra'>
-      <parameter type-id='type-id-2' name='code' filepath='Objects/codeobject.c' line='1353' column='1'/>
-      <parameter type-id='type-id-14' name='index' filepath='Objects/codeobject.c' line='1353' column='1'/>
-      <parameter type-id='type-id-253' name='extra' filepath='Objects/codeobject.c' line='1353' column='1'/>
+    <function-decl name='PyUnstable_Code_GetExtra' mangled-name='PyUnstable_Code_GetExtra' filepath='Objects/codeobject.c' line='1382' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Code_GetExtra'>
+      <parameter type-id='type-id-2' name='code' filepath='Objects/codeobject.c' line='1382' column='1'/>
+      <parameter type-id='type-id-14' name='index' filepath='Objects/codeobject.c' line='1382' column='1'/>
+      <parameter type-id='type-id-253' name='extra' filepath='Objects/codeobject.c' line='1382' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyUnstable_Code_SetExtra' mangled-name='PyUnstable_Code_SetExtra' filepath='Objects/codeobject.c' line='1374' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Code_SetExtra'>
-      <parameter type-id='type-id-2' name='code' filepath='Objects/codeobject.c' line='1374' column='1'/>
-      <parameter type-id='type-id-14' name='index' filepath='Objects/codeobject.c' line='1374' column='1'/>
-      <parameter type-id='type-id-22' name='extra' filepath='Objects/codeobject.c' line='1374' column='1'/>
+    <function-decl name='PyUnstable_Code_SetExtra' mangled-name='PyUnstable_Code_SetExtra' filepath='Objects/codeobject.c' line='1403' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnstable_Code_SetExtra'>
+      <parameter type-id='type-id-2' name='code' filepath='Objects/codeobject.c' line='1403' column='1'/>
+      <parameter type-id='type-id-14' name='index' filepath='Objects/codeobject.c' line='1403' column='1'/>
+      <parameter type-id='type-id-22' name='extra' filepath='Objects/codeobject.c' line='1403' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyCode_GetVarnames' mangled-name='PyCode_GetVarnames' filepath='Objects/codeobject.c' line='1447' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetVarnames'>
-      <parameter type-id='type-id-328' name='code' filepath='Objects/codeobject.c' line='1447' column='1'/>
+    <function-decl name='PyCode_GetVarnames' mangled-name='PyCode_GetVarnames' filepath='Objects/codeobject.c' line='1476' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetVarnames'>
+      <parameter type-id='type-id-328' name='code' filepath='Objects/codeobject.c' line='1476' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyCode_GetCellvars' mangled-name='PyCode_GetCellvars' filepath='Objects/codeobject.c' line='1462' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCellvars'>
-      <parameter type-id='type-id-328' name='code' filepath='Objects/codeobject.c' line='1462' column='1'/>
+    <function-decl name='PyCode_GetCellvars' mangled-name='PyCode_GetCellvars' filepath='Objects/codeobject.c' line='1491' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCellvars'>
+      <parameter type-id='type-id-328' name='code' filepath='Objects/codeobject.c' line='1491' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyCode_GetFreevars' mangled-name='PyCode_GetFreevars' filepath='Objects/codeobject.c' line='1477' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetFreevars'>
-      <parameter type-id='type-id-328' name='code' filepath='Objects/codeobject.c' line='1477' column='1'/>
+    <function-decl name='PyCode_GetFreevars' mangled-name='PyCode_GetFreevars' filepath='Objects/codeobject.c' line='1506' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetFreevars'>
+      <parameter type-id='type-id-328' name='code' filepath='Objects/codeobject.c' line='1506' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyCode_GetCode' mangled-name='PyCode_GetCode' filepath='Objects/codeobject.c' line='1518' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCode'>
-      <parameter type-id='type-id-328' name='co' filepath='Objects/codeobject.c' line='1518' column='1'/>
+    <function-decl name='PyCode_GetCode' mangled-name='PyCode_GetCode' filepath='Objects/codeobject.c' line='1547' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_GetCode'>
+      <parameter type-id='type-id-328' name='co' filepath='Objects/codeobject.c' line='1547' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='_PyCode_ConstantKey' mangled-name='_PyCode_ConstantKey' filepath='Objects/codeobject.c' line='2158' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ConstantKey'>
-      <parameter type-id='type-id-2' name='op' filepath='Objects/codeobject.c' line='2158' column='1'/>
+    <function-decl name='_PyCode_ConstantKey' mangled-name='_PyCode_ConstantKey' filepath='Objects/codeobject.c' line='2187' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_ConstantKey'>
+      <parameter type-id='type-id-2' name='op' filepath='Objects/codeobject.c' line='2187' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
@@ -6533,11 +6520,6 @@
     </function-type>
   </abi-instr>
   <abi-instr address-size='64' path='Objects/enumobject.c' comp-dir-path='/home/runner/work/cpython/cpython' language='LANG_C11'>
-    <function-decl name='_PyUnicode_EqualToASCIIString' mangled-name='_PyUnicode_EqualToASCIIString' filepath='./Include/cpython/unicodeobject.h' line='767' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EqualToASCIIString'>
-      <parameter type-id='type-id-2'/>
-      <parameter type-id='type-id-12'/>
-      <return type-id='type-id-8'/>
-    </function-decl>
     <var-decl name='PyEnum_Type' type-id='type-id-256' mangled-name='PyEnum_Type' visibility='default' filepath='./Include/enumobject.h' line='10' column='1' elf-symbol-id='PyEnum_Type'/>
     <var-decl name='PyReversed_Type' type-id='type-id-256' mangled-name='PyReversed_Type' visibility='default' filepath='./Include/enumobject.h' line='11' column='1' elf-symbol-id='PyReversed_Type'/>
   </abi-instr>
@@ -7254,66 +7236,66 @@
       <parameter type-id='type-id-365' name='f' filepath='Objects/frameobject.c' line='40' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyFrame_New' mangled-name='PyFrame_New' filepath='Objects/frameobject.c' line='1069' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_New'>
-      <parameter type-id='type-id-177' name='tstate' filepath='Objects/frameobject.c' line='1069' column='1'/>
-      <parameter type-id='type-id-328' name='code' filepath='Objects/frameobject.c' line='1069' column='1'/>
-      <parameter type-id='type-id-2' name='globals' filepath='Objects/frameobject.c' line='1070' column='1'/>
-      <parameter type-id='type-id-2' name='locals' filepath='Objects/frameobject.c' line='1070' column='1'/>
+    <function-decl name='PyFrame_New' mangled-name='PyFrame_New' filepath='Objects/frameobject.c' line='1071' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_New'>
+      <parameter type-id='type-id-177' name='tstate' filepath='Objects/frameobject.c' line='1071' column='1'/>
+      <parameter type-id='type-id-328' name='code' filepath='Objects/frameobject.c' line='1071' column='1'/>
+      <parameter type-id='type-id-2' name='globals' filepath='Objects/frameobject.c' line='1072' column='1'/>
+      <parameter type-id='type-id-2' name='locals' filepath='Objects/frameobject.c' line='1072' column='1'/>
       <return type-id='type-id-365'/>
     </function-decl>
-    <function-decl name='PyFrame_GetVar' mangled-name='PyFrame_GetVar' filepath='Objects/frameobject.c' line='1311' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetVar'>
-      <parameter type-id='type-id-365' name='frame_obj' filepath='Objects/frameobject.c' line='1311' column='1'/>
-      <parameter type-id='type-id-2' name='name' filepath='Objects/frameobject.c' line='1311' column='1'/>
+    <function-decl name='PyFrame_GetVar' mangled-name='PyFrame_GetVar' filepath='Objects/frameobject.c' line='1313' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetVar'>
+      <parameter type-id='type-id-365' name='frame_obj' filepath='Objects/frameobject.c' line='1313' column='1'/>
+      <parameter type-id='type-id-2' name='name' filepath='Objects/frameobject.c' line='1313' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyFrame_GetVarString' mangled-name='PyFrame_GetVarString' filepath='Objects/frameobject.c' line='1345' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetVarString'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1345' column='1'/>
-      <parameter type-id='type-id-12' name='name' filepath='Objects/frameobject.c' line='1345' column='1'/>
+    <function-decl name='PyFrame_GetVarString' mangled-name='PyFrame_GetVarString' filepath='Objects/frameobject.c' line='1347' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetVarString'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1347' column='1'/>
+      <parameter type-id='type-id-12' name='name' filepath='Objects/frameobject.c' line='1347' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyFrame_FastToLocalsWithError' mangled-name='PyFrame_FastToLocalsWithError' filepath='Objects/frameobject.c' line='1358' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocalsWithError'>
-      <parameter type-id='type-id-365' name='f' filepath='Objects/frameobject.c' line='1358' column='1'/>
+    <function-decl name='PyFrame_FastToLocalsWithError' mangled-name='PyFrame_FastToLocalsWithError' filepath='Objects/frameobject.c' line='1360' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocalsWithError'>
+      <parameter type-id='type-id-365' name='f' filepath='Objects/frameobject.c' line='1360' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyFrame_FastToLocals' mangled-name='PyFrame_FastToLocals' filepath='Objects/frameobject.c' line='1373' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocals'>
-      <parameter type-id='type-id-365' name='f' filepath='Objects/frameobject.c' line='1373' column='1'/>
+    <function-decl name='PyFrame_FastToLocals' mangled-name='PyFrame_FastToLocals' filepath='Objects/frameobject.c' line='1375' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocals'>
+      <parameter type-id='type-id-365' name='f' filepath='Objects/frameobject.c' line='1375' column='1'/>
       <return type-id='type-id-46'/>
     </function-decl>
-    <function-decl name='PyFrame_LocalsToFast' mangled-name='PyFrame_LocalsToFast' filepath='Objects/frameobject.c' line='1459' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_LocalsToFast'>
-      <parameter type-id='type-id-365' name='f' filepath='Objects/frameobject.c' line='1459' column='1'/>
-      <parameter type-id='type-id-8' name='clear' filepath='Objects/frameobject.c' line='1459' column='1'/>
+    <function-decl name='PyFrame_LocalsToFast' mangled-name='PyFrame_LocalsToFast' filepath='Objects/frameobject.c' line='1461' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_LocalsToFast'>
+      <parameter type-id='type-id-365' name='f' filepath='Objects/frameobject.c' line='1461' column='1'/>
+      <parameter type-id='type-id-8' name='clear' filepath='Objects/frameobject.c' line='1461' column='1'/>
       <return type-id='type-id-46'/>
     </function-decl>
-    <function-decl name='_PyFrame_IsEntryFrame' mangled-name='_PyFrame_IsEntryFrame' filepath='Objects/frameobject.c' line='1469' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyFrame_IsEntryFrame'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1469' column='1'/>
+    <function-decl name='_PyFrame_IsEntryFrame' mangled-name='_PyFrame_IsEntryFrame' filepath='Objects/frameobject.c' line='1471' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyFrame_IsEntryFrame'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1471' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyFrame_GetCode' mangled-name='PyFrame_GetCode' filepath='Objects/frameobject.c' line='1478' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetCode'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1478' column='1'/>
+    <function-decl name='PyFrame_GetCode' mangled-name='PyFrame_GetCode' filepath='Objects/frameobject.c' line='1480' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetCode'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1480' column='1'/>
       <return type-id='type-id-328'/>
     </function-decl>
-    <function-decl name='PyFrame_GetBack' mangled-name='PyFrame_GetBack' filepath='Objects/frameobject.c' line='1489' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBack'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1489' column='1'/>
+    <function-decl name='PyFrame_GetBack' mangled-name='PyFrame_GetBack' filepath='Objects/frameobject.c' line='1491' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBack'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1491' column='1'/>
       <return type-id='type-id-365'/>
     </function-decl>
-    <function-decl name='PyFrame_GetLocals' mangled-name='PyFrame_GetLocals' filepath='Objects/frameobject.c' line='1505' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLocals'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1505' column='1'/>
+    <function-decl name='PyFrame_GetLocals' mangled-name='PyFrame_GetLocals' filepath='Objects/frameobject.c' line='1507' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLocals'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1507' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyFrame_GetGlobals' mangled-name='PyFrame_GetGlobals' filepath='Objects/frameobject.c' line='1512' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGlobals'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1512' column='1'/>
+    <function-decl name='PyFrame_GetGlobals' mangled-name='PyFrame_GetGlobals' filepath='Objects/frameobject.c' line='1514' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGlobals'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1514' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyFrame_GetBuiltins' mangled-name='PyFrame_GetBuiltins' filepath='Objects/frameobject.c' line='1519' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBuiltins'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1519' column='1'/>
+    <function-decl name='PyFrame_GetBuiltins' mangled-name='PyFrame_GetBuiltins' filepath='Objects/frameobject.c' line='1521' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBuiltins'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1521' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='PyFrame_GetLasti' mangled-name='PyFrame_GetLasti' filepath='Objects/frameobject.c' line='1526' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLasti'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1526' column='1'/>
+    <function-decl name='PyFrame_GetLasti' mangled-name='PyFrame_GetLasti' filepath='Objects/frameobject.c' line='1528' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLasti'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1528' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyFrame_GetGenerator' mangled-name='PyFrame_GetGenerator' filepath='Objects/frameobject.c' line='1537' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGenerator'>
-      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1537' column='1'/>
+    <function-decl name='PyFrame_GetGenerator' mangled-name='PyFrame_GetGenerator' filepath='Objects/frameobject.c' line='1539' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGenerator'>
+      <parameter type-id='type-id-365' name='frame' filepath='Objects/frameobject.c' line='1539' column='1'/>
       <return type-id='type-id-2'/>
     </function-decl>
   </abi-instr>
@@ -7938,33 +7920,33 @@
         <var-decl name='value' type-id='type-id-22' visibility='default' filepath='./Include/moduleobject.h' line='76' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='PyModuleDef' size-in-bits='832' is-struct='yes' visibility='default' filepath='./Include/moduleobject.h' line='94' column='1' id='type-id-393'>
+    <class-decl name='PyModuleDef' size-in-bits='832' is-struct='yes' visibility='default' filepath='./Include/moduleobject.h' line='96' column='1' id='type-id-393'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='m_base' type-id='type-id-391' visibility='default' filepath='./Include/moduleobject.h' line='95' column='1'/>
+        <var-decl name='m_base' type-id='type-id-391' visibility='default' filepath='./Include/moduleobject.h' line='97' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='m_name' type-id='type-id-12' visibility='default' filepath='./Include/moduleobject.h' line='96' column='1'/>
+        <var-decl name='m_name' type-id='type-id-12' visibility='default' filepath='./Include/moduleobject.h' line='98' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='384'>
-        <var-decl name='m_doc' type-id='type-id-12' visibility='default' filepath='./Include/moduleobject.h' line='97' column='1'/>
+        <var-decl name='m_doc' type-id='type-id-12' visibility='default' filepath='./Include/moduleobject.h' line='99' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='448'>
-        <var-decl name='m_size' type-id='type-id-14' visibility='default' filepath='./Include/moduleobject.h' line='98' column='1'/>
+        <var-decl name='m_size' type-id='type-id-14' visibility='default' filepath='./Include/moduleobject.h' line='100' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='512'>
-        <var-decl name='m_methods' type-id='type-id-337' visibility='default' filepath='./Include/moduleobject.h' line='99' column='1'/>
+        <var-decl name='m_methods' type-id='type-id-337' visibility='default' filepath='./Include/moduleobject.h' line='101' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='576'>
-        <var-decl name='m_slots' type-id='type-id-394' visibility='default' filepath='./Include/moduleobject.h' line='100' column='1'/>
+        <var-decl name='m_slots' type-id='type-id-394' visibility='default' filepath='./Include/moduleobject.h' line='102' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='640'>
-        <var-decl name='m_traverse' type-id='type-id-395' visibility='default' filepath='./Include/moduleobject.h' line='101' column='1'/>
+        <var-decl name='m_traverse' type-id='type-id-395' visibility='default' filepath='./Include/moduleobject.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='704'>
-        <var-decl name='m_clear' type-id='type-id-396' visibility='default' filepath='./Include/moduleobject.h' line='102' column='1'/>
+        <var-decl name='m_clear' type-id='type-id-396' visibility='default' filepath='./Include/moduleobject.h' line='104' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='768'>
-        <var-decl name='m_free' type-id='type-id-397' visibility='default' filepath='./Include/moduleobject.h' line='103' column='1'/>
+        <var-decl name='m_free' type-id='type-id-397' visibility='default' filepath='./Include/moduleobject.h' line='105' column='1'/>
       </data-member>
     </class-decl>
     <typedef-decl name='PyModuleDef' type-id='type-id-393' filepath='./Include/pytypedefs.h' line='12' column='1' id='type-id-3'/>
@@ -10824,7 +10806,7 @@
       <parameter type-id='type-id-12'/>
       <return type-id='type-id-15'/>
     </function-decl>
-    <function-decl name='_PyPegen_new_identifier' filepath='Parser/pegen.h' line='296' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_new_identifier' filepath='Parser/pegen.h' line='297' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-12'/>
       <return type-id='type-id-2'/>
@@ -10895,10 +10877,10 @@
     <array-type-def dimensions='1' type-id='type-id-593' size-in-bits='5120' id='type-id-594'>
       <subrange length='80' type-id='type-id-28' id='type-id-575'/>
     </array-type-def>
-    <array-type-def dimensions='1' type-id='type-id-595' size-in-bits='49152' id='type-id-596'>
+    <array-type-def dimensions='1' type-id='type-id-595' size-in-bits='65536' id='type-id-596'>
       <subrange length='128' type-id='type-id-28' id='type-id-437'/>
     </array-type-def>
-    <array-type-def dimensions='1' type-id='type-id-597' size-in-bits='65536' id='type-id-598'>
+    <array-type-def dimensions='1' type-id='type-id-597' size-in-bits='49152' id='type-id-598'>
       <subrange length='128' type-id='type-id-28' id='type-id-437'/>
     </array-type-def>
     <array-type-def dimensions='1' type-id='type-id-599' size-in-bits='98304' id='type-id-600'>
@@ -13471,10 +13453,10 @@
         <var-decl name='identifiers' type-id='type-id-869' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='751' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='304704'>
-        <var-decl name='ascii' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='755' column='1'/>
+        <var-decl name='ascii' type-id='type-id-598' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='755' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='353856'>
-        <var-decl name='latin1' type-id='type-id-598' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='759' column='1'/>
+        <var-decl name='latin1' type-id='type-id-596' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='759' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='__anonymous_struct__22' size-in-bits='11008' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='30' column='1' id='type-id-868'>
@@ -13503,7 +13485,7 @@
         <var-decl name='_py_anon_unknown' type-id='type-id-871' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='38' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3584'>
-        <var-decl name='_py_close_br' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1'/>
+        <var-decl name='_py_close_br' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3968'>
         <var-decl name='_py_dbl_close_br' type-id='type-id-873' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='40' column='1'/>
@@ -13518,7 +13500,7 @@
         <var-decl name='_py_defaults' type-id='type-id-871' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='43' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5568'>
-        <var-decl name='_py_dot' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='44' column='1'/>
+        <var-decl name='_py_dot' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='44' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5952'>
         <var-decl name='_py_dot_locals' type-id='type-id-871' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='45' column='1'/>
@@ -13539,13 +13521,13 @@
         <var-decl name='_py_list_err' type-id='type-id-878' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='50' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8640'>
-        <var-decl name='_py_newline' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='51' column='1'/>
+        <var-decl name='_py_newline' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='51' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9024'>
-        <var-decl name='_py_open_br' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='52' column='1'/>
+        <var-decl name='_py_open_br' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='52' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9408'>
-        <var-decl name='_py_percent' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='53' column='1'/>
+        <var-decl name='_py_percent' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='53' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9792'>
         <var-decl name='_py_shim_name' type-id='type-id-879' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='54' column='1'/>
@@ -13581,7 +13563,7 @@
         <var-decl name='_data' type-id='type-id-694' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='33' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__32' size-in-bits='384' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1' id='type-id-595'>
+    <class-decl name='__anonymous_struct__32' size-in-bits='384' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1' id='type-id-597'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='_ascii' type-id='type-id-794' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='39' column='1'/>
       </data-member>
@@ -13682,7 +13664,7 @@
         <var-decl name='_py_WarningMessage' type-id='type-id-884' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='68' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3776'>
-        <var-decl name='_py__' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='69' column='1'/>
+        <var-decl name='_py__' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='69' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4160'>
         <var-decl name='_py__WindowsConsoleIO' type-id='type-id-885' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='70' column='1'/>
@@ -14282,7 +14264,7 @@
         <var-decl name='_py__xoptions' type-id='type-id-871' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='268' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='93440'>
-        <var-decl name='_py_a' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='269' column='1'/>
+        <var-decl name='_py_a' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='269' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='93824'>
         <var-decl name='_py_abs_tol' type-id='type-id-882' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='270' column='1'/>
@@ -14342,7 +14324,7 @@
         <var-decl name='_py_autocommit' type-id='type-id-870' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='288' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='101888'>
-        <var-decl name='_py_b' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='289' column='1'/>
+        <var-decl name='_py_b' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='289' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='102272'>
         <var-decl name='_py_backtick' type-id='type-id-872' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='290' column='1'/>
@@ -14396,7 +14378,7 @@
         <var-decl name='_py_bytes_per_sep' type-id='type-id-875' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='306' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='109312'>
-        <var-decl name='_py_c' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='307' column='1'/>
+        <var-decl name='_py_c' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='307' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='109696'>
         <var-decl name='_py_c_call' type-id='type-id-879' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='308' column='1'/>
@@ -14555,7 +14537,7 @@
         <var-decl name='_py_cwd' type-id='type-id-893' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='359' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='131840'>
-        <var-decl name='_py_d' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='360' column='1'/>
+        <var-decl name='_py_d' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='360' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='132224'>
         <var-decl name='_py_data' type-id='type-id-883' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='361' column='1'/>
@@ -14639,7 +14621,7 @@
         <var-decl name='_py_duration' type-id='type-id-872' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='387' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='143488'>
-        <var-decl name='_py_e' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='388' column='1'/>
+        <var-decl name='_py_e' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='388' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='143872'>
         <var-decl name='_py_eager_start' type-id='type-id-877' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='389' column='1'/>
@@ -15122,7 +15104,7 @@
         <var-decl name='_py_mycmp' type-id='type-id-880' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='548' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='209984'>
-        <var-decl name='_py_n' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='549' column='1'/>
+        <var-decl name='_py_n' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='549' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='210368'>
         <var-decl name='_py_n_arg' type-id='type-id-880' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='550' column='1'/>
@@ -15257,7 +15239,7 @@
         <var-decl name='_py_owner' type-id='type-id-880' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='593' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='228736'>
-        <var-decl name='_py_p' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='594' column='1'/>
+        <var-decl name='_py_p' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='594' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='229120'>
         <var-decl name='_py_pages' type-id='type-id-880' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='595' column='1'/>
@@ -15341,7 +15323,7 @@
         <var-decl name='_py_quotetabs' type-id='type-id-871' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='621' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='240384'>
-        <var-decl name='_py_r' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='622' column='1'/>
+        <var-decl name='_py_r' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='622' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='240768'>
         <var-decl name='_py_raw' type-id='type-id-893' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='623' column='1'/>
@@ -15413,7 +15395,7 @@
         <var-decl name='_py_reversed' type-id='type-id-872' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='645' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='250304'>
-        <var-decl name='_py_s' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='646' column='1'/>
+        <var-decl name='_py_s' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='646' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='250688'>
         <var-decl name='_py_salt' type-id='type-id-883' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='647' column='1'/>
@@ -15719,7 +15701,7 @@
         <var-decl name='_py_write_through' type-id='type-id-875' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='747' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='292544'>
-        <var-decl name='_py_x' type-id='type-id-595' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='748' column='1'/>
+        <var-decl name='_py_x' type-id='type-id-597' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='748' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='292928'>
         <var-decl name='_py_year' type-id='type-id-883' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='749' column='1'/>
@@ -15856,7 +15838,7 @@
         <var-decl name='_data' type-id='type-id-679' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='696' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__743' size-in-bits='512' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='756' column='1' id='type-id-597'>
+    <class-decl name='__anonymous_struct__743' size-in-bits='512' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='756' column='1' id='type-id-595'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='_latin1' type-id='type-id-797' visibility='default' filepath='./Include/internal/pycore_global_strings.h' line='757' column='1'/>
       </data-member>
@@ -16591,91 +16573,91 @@
         <var-decl name='main_thread' type-id='type-id-28' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='106' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='576'>
-        <var-decl name='sys_path_0' type-id='type-id-52' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='111' column='1'/>
+        <var-decl name='xidregistry' type-id='type-id-984' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='117' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='640'>
-        <var-decl name='xidregistry' type-id='type-id-984' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='122' column='1'/>
+      <data-member access='public' layout-offset-in-bits='704'>
+        <var-decl name='allocators' type-id='type-id-970' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='119' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='768'>
-        <var-decl name='allocators' type-id='type-id-970' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='124' column='1'/>
+      <data-member access='public' layout-offset-in-bits='3072'>
+        <var-decl name='obmalloc' type-id='type-id-961' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='120' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='3136'>
-        <var-decl name='obmalloc' type-id='type-id-961' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='125' column='1'/>
+      <data-member access='public' layout-offset-in-bits='3200'>
+        <var-decl name='pyhash_state' type-id='type-id-964' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='121' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='3264'>
-        <var-decl name='pyhash_state' type-id='type-id-964' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='126' column='1'/>
+      <data-member access='public' layout-offset-in-bits='3392'>
+        <var-decl name='time' type-id='type-id-985' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='122' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='3456'>
-        <var-decl name='time' type-id='type-id-985' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='127' column='1'/>
+      <data-member access='public' layout-offset-in-bits='3520'>
+        <var-decl name='threads' type-id='type-id-973' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='123' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='3584'>
-        <var-decl name='threads' type-id='type-id-973' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='128' column='1'/>
+      <data-member access='public' layout-offset-in-bits='3712'>
+        <var-decl name='signals' type-id='type-id-986' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='124' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='3776'>
-        <var-decl name='signals' type-id='type-id-986' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='129' column='1'/>
+      <data-member access='public' layout-offset-in-bits='12352'>
+        <var-decl name='autoTSSkey' type-id='type-id-408' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='127' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12416'>
-        <var-decl name='autoTSSkey' type-id='type-id-408' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='132' column='1'/>
+        <var-decl name='trashTSSkey' type-id='type-id-408' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='130' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12480'>
-        <var-decl name='trashTSSkey' type-id='type-id-408' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='135' column='1'/>
+        <var-decl name='orig_argv' type-id='type-id-741' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='132' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='12544'>
-        <var-decl name='orig_argv' type-id='type-id-741' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='137' column='1'/>
+      <data-member access='public' layout-offset-in-bits='12608'>
+        <var-decl name='parser' type-id='type-id-962' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='134' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='12672'>
-        <var-decl name='parser' type-id='type-id-962' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='139' column='1'/>
+      <data-member access='public' layout-offset-in-bits='13056'>
+        <var-decl name='atexit' type-id='type-id-800' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='136' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='13120'>
-        <var-decl name='atexit' type-id='type-id-800' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='141' column='1'/>
+      <data-member access='public' layout-offset-in-bits='15232'>
+        <var-decl name='imports' type-id='type-id-923' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='138' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='15296'>
-        <var-decl name='imports' type-id='type-id-923' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='143' column='1'/>
+      <data-member access='public' layout-offset-in-bits='15552'>
+        <var-decl name='ceval' type-id='type-id-820' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='139' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='15616'>
-        <var-decl name='ceval' type-id='type-id-820' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='144' column='1'/>
+      <data-member access='public' layout-offset-in-bits='20480'>
+        <var-decl name='gilstate' type-id='type-id-978' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='140' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='20544'>
-        <var-decl name='gilstate' type-id='type-id-978' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='145' column='1'/>
+      <data-member access='public' layout-offset-in-bits='20608'>
+        <var-decl name='getargs' type-id='type-id-977' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='141' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='20672'>
-        <var-decl name='getargs' type-id='type-id-977' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='146' column='1'/>
+      <data-member access='public' layout-offset-in-bits='20736'>
+        <var-decl name='fileutils' type-id='type-id-843' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='142' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='20800'>
-        <var-decl name='fileutils' type-id='type-id-843' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='147' column='1'/>
+        <var-decl name='faulthandler' type-id='type-id-839' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='143' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='20864'>
-        <var-decl name='faulthandler' type-id='type-id-839' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='148' column='1'/>
+      <data-member access='public' layout-offset-in-bits='22144'>
+        <var-decl name='tracemalloc' type-id='type-id-987' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='144' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='22208'>
-        <var-decl name='tracemalloc' type-id='type-id-987' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='149' column='1'/>
+      <data-member access='public' layout-offset-in-bits='24000'>
+        <var-decl name='preconfig' type-id='type-id-744' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='146' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='24064'>
-        <var-decl name='preconfig' type-id='type-id-744' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='151' column='1'/>
+      <data-member access='public' layout-offset-in-bits='24320'>
+        <var-decl name='open_code_hook' type-id='type-id-355' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='150' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='24384'>
-        <var-decl name='open_code_hook' type-id='type-id-355' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='155' column='1'/>
+        <var-decl name='open_code_userdata' type-id='type-id-22' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='151' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='24448'>
-        <var-decl name='open_code_userdata' type-id='type-id-22' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='156' column='1'/>
+        <var-decl name='audit_hooks' type-id='type-id-988' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='155' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='24512'>
-        <var-decl name='audit_hooks' type-id='type-id-988' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='160' column='1'/>
+      <data-member access='public' layout-offset-in-bits='24576'>
+        <var-decl name='object_state' type-id='type-id-944' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='157' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='24640'>
-        <var-decl name='object_state' type-id='type-id-944' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='162' column='1'/>
+      <data-member access='public' layout-offset-in-bits='24608'>
+        <var-decl name='float_state' type-id='type-id-846' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='158' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='24672'>
-        <var-decl name='float_state' type-id='type-id-846' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='163' column='1'/>
+      <data-member access='public' layout-offset-in-bits='24704'>
+        <var-decl name='unicode_state' type-id='type-id-989' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='159' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='24768'>
-        <var-decl name='unicode_state' type-id='type-id-989' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='164' column='1'/>
+      <data-member access='public' layout-offset-in-bits='24832'>
+        <var-decl name='types' type-id='type-id-990' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='160' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='24896'>
-        <var-decl name='types' type-id='type-id-990' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='165' column='1'/>
+        <var-decl name='static_objects' type-id='type-id-860' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='163' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='24960'>
-        <var-decl name='static_objects' type-id='type-id-860' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='168' column='1'/>
+      <data-member access='public' layout-offset-in-bits='610944'>
+        <var-decl name='sys_path_0' type-id='type-id-52' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='168' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='611008'>
         <var-decl name='_main_interpreter' type-id='type-id-991' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='185' column='1'/>
@@ -16695,20 +16677,20 @@
         <var-decl name='next_id' type-id='type-id-377' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='103' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='_xidregistry' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='119' column='1' id='type-id-984'>
+    <class-decl name='_xidregistry' size-in-bits='128' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='114' column='1' id='type-id-984'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='mutex' type-id='type-id-801' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='120' column='1'/>
+        <var-decl name='mutex' type-id='type-id-801' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='115' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='head' type-id='type-id-943' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='121' column='1'/>
+        <var-decl name='head' type-id='type-id-943' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='116' column='1'/>
       </data-member>
     </class-decl>
-    <class-decl name='__anonymous_struct__19' size-in-bits='128' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='157' column='1' id='type-id-988'>
+    <class-decl name='__anonymous_struct__19' size-in-bits='128' is-struct='yes' is-anonymous='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='152' column='1' id='type-id-988'>
       <data-member access='public' layout-offset-in-bits='0'>
-        <var-decl name='mutex' type-id='type-id-801' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='158' column='1'/>
+        <var-decl name='mutex' type-id='type-id-801' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='153' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='head' type-id='type-id-980' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='159' column='1'/>
+        <var-decl name='head' type-id='type-id-980' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='154' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='_signals_runtime_state' size-in-bits='8640' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_signal.h' line='37' column='1' id='type-id-986'>
@@ -17413,8 +17395,8 @@
     <pointer-type-def type-id='type-id-1085' size-in-bits='64' id='type-id-756'/>
     <pointer-type-def type-id='type-id-1086' size-in-bits='64' id='type-id-762'/>
     <pointer-type-def type-id='type-id-1087' size-in-bits='64' id='type-id-763'/>
-    <qualified-type-def type-id='type-id-994' volatile='yes' id='type-id-992'/>
     <qualified-type-def type-id='type-id-993' volatile='yes' id='type-id-698'/>
+    <qualified-type-def type-id='type-id-994' volatile='yes' id='type-id-992'/>
     <pointer-type-def type-id='type-id-422' size-in-bits='64' id='type-id-52'/>
     <pointer-type-def type-id='type-id-52' size-in-bits='64' id='type-id-235'/>
     <class-decl name='PyAsyncGenASend' is-struct='yes' visibility='default' is-declaration-only='yes' id='type-id-621'/>
@@ -17756,13 +17738,13 @@
       </data-member>
     </class-decl>
     <typedef-decl name='ResultTokenWithMetadata' type-id='type-id-1112' filepath='Parser/pegen.h' line='125' column='1' id='type-id-1111'/>
-    <enum-decl name='TARGETS_TYPE' naming-typedef-id='type-id-1113' filepath='Parser/pegen.h' line='156' column='1' id='type-id-1114'>
+    <enum-decl name='TARGETS_TYPE' naming-typedef-id='type-id-1113' filepath='Parser/pegen.h' line='157' column='1' id='type-id-1114'>
       <underlying-type type-id='type-id-24'/>
       <enumerator name='STAR_TARGETS' value='0'/>
       <enumerator name='DEL_TARGETS' value='1'/>
       <enumerator name='FOR_TARGETS' value='2'/>
     </enum-decl>
-    <typedef-decl name='TARGETS_TYPE' type-id='type-id-1114' filepath='Parser/pegen.h' line='160' column='1' id='type-id-1113'/>
+    <typedef-decl name='TARGETS_TYPE' type-id='type-id-1114' filepath='Parser/pegen.h' line='161' column='1' id='type-id-1113'/>
     <pointer-type-def type-id='type-id-1107' size-in-bits='64' id='type-id-1115'/>
     <pointer-type-def type-id='type-id-1094' size-in-bits='64' id='type-id-1116'/>
     <pointer-type-def type-id='type-id-1098' size-in-bits='64' id='type-id-1117'/>
@@ -18607,76 +18589,76 @@
       <parameter type-id='type-id-568'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_Pypegen_stack_overflow' filepath='Parser/pegen.h' line='171' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_Pypegen_stack_overflow' filepath='Parser/pegen.h' line='172' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <return type-id='type-id-46'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_invalid_target' filepath='Parser/pegen.h' line='222' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_invalid_target' filepath='Parser/pegen.h' line='223' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-1113'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_expr_name' filepath='Parser/pegen.h' line='223' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_expr_name' filepath='Parser/pegen.h' line='224' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-12'/>
     </function-decl>
-    <function-decl name='_PyPegen_dummy_name' filepath='Parser/pegen.h' line='248' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_dummy_name' filepath='Parser/pegen.h' line='249' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_last_item' filepath='Parser/pegen.h' line='249' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_last_item' filepath='Parser/pegen.h' line='250' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_first_item' filepath='Parser/pegen.h' line='251' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_first_item' filepath='Parser/pegen.h' line='252' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_PyPegen_new_type_comment' filepath='Parser/pegen.h' line='256' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_new_type_comment' filepath='Parser/pegen.h' line='257' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-12'/>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='_PyPegen_add_type_comment_to_arg' filepath='Parser/pegen.h' line='295' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_add_type_comment_to_arg' filepath='Parser/pegen.h' line='296' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-567'/>
       <parameter type-id='type-id-569'/>
       <return type-id='type-id-567'/>
     </function-decl>
-    <function-decl name='_PyPegen_singleton_seq' filepath='Parser/pegen.h' line='297' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_singleton_seq' filepath='Parser/pegen.h' line='298' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-22'/>
       <return type-id='type-id-1104'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_insert_in_front' filepath='Parser/pegen.h' line='298' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_insert_in_front' filepath='Parser/pegen.h' line='299' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-22'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-1104'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_append_to_end' filepath='Parser/pegen.h' line='299' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_append_to_end' filepath='Parser/pegen.h' line='300' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <parameter type-id='type-id-22'/>
       <return type-id='type-id-1104'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_flatten' filepath='Parser/pegen.h' line='300' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_flatten' filepath='Parser/pegen.h' line='301' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-1104'/>
     </function-decl>
-    <function-decl name='_PyPegen_join_names_with_dot' filepath='Parser/pegen.h' line='301' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_join_names_with_dot' filepath='Parser/pegen.h' line='302' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_count_dots' filepath='Parser/pegen.h' line='302' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_count_dots' filepath='Parser/pegen.h' line='303' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyPegen_alias_for_star' filepath='Parser/pegen.h' line='303' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_alias_for_star' filepath='Parser/pegen.h' line='304' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-8'/>
       <parameter type-id='type-id-8'/>
@@ -18685,86 +18667,86 @@
       <parameter type-id='type-id-563'/>
       <return type-id='type-id-444'/>
     </function-decl>
-    <function-decl name='_PyPegen_map_names_to_ids' filepath='Parser/pegen.h' line='304' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_map_names_to_ids' filepath='Parser/pegen.h' line='305' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-503'/>
       <return type-id='type-id-535'/>
     </function-decl>
-    <function-decl name='_PyPegen_cmpop_expr_pair' filepath='Parser/pegen.h' line='305' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_cmpop_expr_pair' filepath='Parser/pegen.h' line='306' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1093'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-1116'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_cmpops' filepath='Parser/pegen.h' line='306' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_cmpops' filepath='Parser/pegen.h' line='307' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-564'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_exprs' filepath='Parser/pegen.h' line='307' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_exprs' filepath='Parser/pegen.h' line='308' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-503'/>
     </function-decl>
-    <function-decl name='_PyPegen_set_expr_context' filepath='Parser/pegen.h' line='308' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_set_expr_context' filepath='Parser/pegen.h' line='309' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-566'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_key_value_pair' filepath='Parser/pegen.h' line='309' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_key_value_pair' filepath='Parser/pegen.h' line='310' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-1118'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_keys' filepath='Parser/pegen.h' line='310' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_keys' filepath='Parser/pegen.h' line='311' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-503'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_values' filepath='Parser/pegen.h' line='311' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_values' filepath='Parser/pegen.h' line='312' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-503'/>
     </function-decl>
-    <function-decl name='_PyPegen_key_pattern_pair' filepath='Parser/pegen.h' line='312' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_key_pattern_pair' filepath='Parser/pegen.h' line='313' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-450'/>
       <return type-id='type-id-1117'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_pattern_keys' filepath='Parser/pegen.h' line='313' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_pattern_keys' filepath='Parser/pegen.h' line='314' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-503'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_patterns' filepath='Parser/pegen.h' line='314' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_patterns' filepath='Parser/pegen.h' line='315' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-553'/>
     </function-decl>
-    <function-decl name='_PyPegen_name_default_pair' filepath='Parser/pegen.h' line='315' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_name_default_pair' filepath='Parser/pegen.h' line='316' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-567'/>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-569'/>
       <return type-id='type-id-1120'/>
     </function-decl>
-    <function-decl name='_PyPegen_slash_with_default' filepath='Parser/pegen.h' line='316' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_slash_with_default' filepath='Parser/pegen.h' line='317' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-565'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-1122'/>
     </function-decl>
-    <function-decl name='_PyPegen_star_etc' filepath='Parser/pegen.h' line='317' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_star_etc' filepath='Parser/pegen.h' line='318' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-567'/>
       <parameter type-id='type-id-1104'/>
       <parameter type-id='type-id-567'/>
       <return type-id='type-id-1123'/>
     </function-decl>
-    <function-decl name='_PyPegen_make_arguments' filepath='Parser/pegen.h' line='318' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_make_arguments' filepath='Parser/pegen.h' line='319' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-565'/>
       <parameter type-id='type-id-1122'/>
@@ -18773,11 +18755,11 @@
       <parameter type-id='type-id-1123'/>
       <return type-id='type-id-526'/>
     </function-decl>
-    <function-decl name='_PyPegen_empty_arguments' filepath='Parser/pegen.h' line='320' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_empty_arguments' filepath='Parser/pegen.h' line='321' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <return type-id='type-id-526'/>
     </function-decl>
-    <function-decl name='_PyPegen_formatted_value' filepath='Parser/pegen.h' line='321' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_formatted_value' filepath='Parser/pegen.h' line='322' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-569'/>
@@ -18791,40 +18773,40 @@
       <parameter type-id='type-id-563'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_augoperator' filepath='Parser/pegen.h' line='323' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_augoperator' filepath='Parser/pegen.h' line='324' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-530'/>
       <return type-id='type-id-1115'/>
     </function-decl>
-    <function-decl name='_PyPegen_function_def_decorators' filepath='Parser/pegen.h' line='324' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_function_def_decorators' filepath='Parser/pegen.h' line='325' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-503'/>
       <parameter type-id='type-id-452'/>
       <return type-id='type-id-452'/>
     </function-decl>
-    <function-decl name='_PyPegen_class_def_decorators' filepath='Parser/pegen.h' line='325' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_class_def_decorators' filepath='Parser/pegen.h' line='326' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-503'/>
       <parameter type-id='type-id-452'/>
       <return type-id='type-id-452'/>
     </function-decl>
-    <function-decl name='_PyPegen_keyword_or_starred' filepath='Parser/pegen.h' line='326' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_keyword_or_starred' filepath='Parser/pegen.h' line='327' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-22'/>
       <parameter type-id='type-id-8'/>
       <return type-id='type-id-1119'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_extract_starred_exprs' filepath='Parser/pegen.h' line='327' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_extract_starred_exprs' filepath='Parser/pegen.h' line='328' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-503'/>
     </function-decl>
-    <function-decl name='_PyPegen_seq_delete_starred_exprs' filepath='Parser/pegen.h' line='328' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_seq_delete_starred_exprs' filepath='Parser/pegen.h' line='329' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-529'/>
     </function-decl>
-    <function-decl name='_PyPegen_collect_call_seqs' filepath='Parser/pegen.h' line='329' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_collect_call_seqs' filepath='Parser/pegen.h' line='330' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-503'/>
       <parameter type-id='type-id-1104'/>
@@ -18835,22 +18817,22 @@
       <parameter type-id='type-id-563'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_constant_from_token' filepath='Parser/pegen.h' line='332' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_constant_from_token' filepath='Parser/pegen.h' line='333' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_decoded_constant_from_token' filepath='Parser/pegen.h' line='333' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_decoded_constant_from_token' filepath='Parser/pegen.h' line='334' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_constant_from_string' filepath='Parser/pegen.h' line='334' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_constant_from_string' filepath='Parser/pegen.h' line='335' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_concatenate_strings' filepath='Parser/pegen.h' line='335' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_concatenate_strings' filepath='Parser/pegen.h' line='336' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-503'/>
       <parameter type-id='type-id-8'/>
@@ -18860,39 +18842,39 @@
       <parameter type-id='type-id-563'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_ensure_imaginary' filepath='Parser/pegen.h' line='337' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_ensure_imaginary' filepath='Parser/pegen.h' line='338' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_ensure_real' filepath='Parser/pegen.h' line='338' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_ensure_real' filepath='Parser/pegen.h' line='339' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_join_sequences' filepath='Parser/pegen.h' line='339' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_join_sequences' filepath='Parser/pegen.h' line='340' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-1104'/>
       <parameter type-id='type-id-1104'/>
       <return type-id='type-id-1104'/>
     </function-decl>
-    <function-decl name='_PyPegen_check_barry_as_flufl' filepath='Parser/pegen.h' line='340' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_check_barry_as_flufl' filepath='Parser/pegen.h' line='341' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyPegen_check_legacy_stmt' filepath='Parser/pegen.h' line='341' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_check_legacy_stmt' filepath='Parser/pegen.h' line='342' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyPegen_check_fstring_conversion' filepath='Parser/pegen.h' line='342' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_check_fstring_conversion' filepath='Parser/pegen.h' line='343' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-1121'/>
     </function-decl>
-    <function-decl name='_PyPegen_setup_full_format_spec' filepath='Parser/pegen.h' line='343' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_setup_full_format_spec' filepath='Parser/pegen.h' line='344' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <parameter type-id='type-id-503'/>
@@ -18903,31 +18885,31 @@
       <parameter type-id='type-id-563'/>
       <return type-id='type-id-1121'/>
     </function-decl>
-    <function-decl name='_PyPegen_make_module' filepath='Parser/pegen.h' line='345' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_make_module' filepath='Parser/pegen.h' line='346' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-500'/>
       <return type-id='type-id-468'/>
     </function-decl>
-    <function-decl name='_PyPegen_arguments_parsing_error' filepath='Parser/pegen.h' line='346' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_arguments_parsing_error' filepath='Parser/pegen.h' line='347' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_PyPegen_get_last_comprehension_item' filepath='Parser/pegen.h' line='347' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_get_last_comprehension_item' filepath='Parser/pegen.h' line='348' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-1142'/>
       <return type-id='type-id-502'/>
     </function-decl>
-    <function-decl name='_PyPegen_nonparen_genexp_in_call' filepath='Parser/pegen.h' line='348' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_nonparen_genexp_in_call' filepath='Parser/pegen.h' line='349' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-502'/>
       <parameter type-id='type-id-1141'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_PyPegen_interactive_exit' filepath='Parser/pegen.h' line='358' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_interactive_exit' filepath='Parser/pegen.h' line='359' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <return type-id='type-id-500'/>
     </function-decl>
-    <function-decl name='_PyPegen_joined_str' filepath='Parser/pegen.h' line='361' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_joined_str' filepath='Parser/pegen.h' line='362' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <parameter type-id='type-id-503'/>
@@ -18970,7 +18952,7 @@
       <parameter is-variadic='yes'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyPegen_run_parser_from_file_pointer' filepath='Parser/pegen.h' line='354' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_run_parser_from_file_pointer' filepath='Parser/pegen.h' line='355' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-229'/>
       <parameter type-id='type-id-8'/>
       <parameter type-id='type-id-2'/>
@@ -18982,7 +18964,7 @@
       <parameter type-id='type-id-563'/>
       <return type-id='type-id-468'/>
     </function-decl>
-    <function-decl name='_PyPegen_run_parser_from_string' filepath='Parser/pegen.h' line='357' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_run_parser_from_string' filepath='Parser/pegen.h' line='358' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-12'/>
       <parameter type-id='type-id-8'/>
       <parameter type-id='type-id-2'/>
@@ -20651,6 +20633,11 @@
       <parameter type-id='type-id-14'/>
       <return type-id='type-id-2'/>
     </function-decl>
+    <function-decl name='PyObject_CallOneArg' mangled-name='PyObject_CallOneArg' filepath='./Include/cpython/abstract.h' line='88' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_CallOneArg'>
+      <parameter type-id='type-id-2'/>
+      <parameter type-id='type-id-2'/>
+      <return type-id='type-id-2'/>
+    </function-decl>
     <function-decl name='PyComplex_FromCComplex' mangled-name='PyComplex_FromCComplex' filepath='./Include/cpython/complexobject.h' line='31' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyComplex_FromCComplex'>
       <parameter type-id='type-id-327'/>
       <return type-id='type-id-2'/>
@@ -20667,6 +20654,11 @@
     <function-decl name='PyUnicode_AsUTF8' mangled-name='PyUnicode_AsUTF8' filepath='./Include/cpython/unicodeobject.h' line='625' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_AsUTF8'>
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-12'/>
+    </function-decl>
+    <function-decl name='_PyUnicode_EqualToASCIIString' mangled-name='_PyUnicode_EqualToASCIIString' filepath='./Include/cpython/unicodeobject.h' line='767' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyUnicode_EqualToASCIIString'>
+      <parameter type-id='type-id-2'/>
+      <parameter type-id='type-id-12'/>
+      <return type-id='type-id-8'/>
     </function-decl>
     <function-decl name='PyFloat_FromDouble' mangled-name='PyFloat_FromDouble' filepath='./Include/floatobject.h' line='39' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFloat_FromDouble'>
       <parameter type-id='type-id-251'/>
@@ -20774,6 +20766,12 @@
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-251'/>
     </function-decl>
+    <function-decl name='PyUnicode_Substring' mangled-name='PyUnicode_Substring' filepath='./Include/unicodeobject.h' line='142' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Substring'>
+      <parameter type-id='type-id-2'/>
+      <parameter type-id='type-id-14'/>
+      <parameter type-id='type-id-14'/>
+      <return type-id='type-id-2'/>
+    </function-decl>
     <function-decl name='PyUnicode_InternInPlace' mangled-name='PyUnicode_InternInPlace' filepath='./Include/unicodeobject.h' line='254' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_InternInPlace'>
       <parameter type-id='type-id-233'/>
       <return type-id='type-id-46'/>
@@ -20817,19 +20815,19 @@
       <parameter type-id='type-id-12'/>
       <return type-id='type-id-19'/>
     </function-decl>
-    <function-decl name='_Pypegen_raise_decode_error' filepath='Parser/pegen.h' line='162' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_Pypegen_raise_decode_error' filepath='Parser/pegen.h' line='163' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyPegen_raise_tokenizer_init_error' filepath='Parser/pegen.h' line='163' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_raise_tokenizer_init_error' filepath='Parser/pegen.h' line='164' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-46'/>
     </function-decl>
-    <function-decl name='_Pypegen_tokenizer_error' filepath='Parser/pegen.h' line='164' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_Pypegen_tokenizer_error' filepath='Parser/pegen.h' line='165' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyPegen_raise_error' filepath='Parser/pegen.h' line='165' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_raise_error' filepath='Parser/pegen.h' line='166' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-8'/>
@@ -20837,7 +20835,7 @@
       <parameter is-variadic='yes'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_PyPegen_raise_error_known_location' filepath='Parser/pegen.h' line='166' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_raise_error_known_location' filepath='Parser/pegen.h' line='167' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-14'/>
@@ -20848,12 +20846,12 @@
       <parameter type-id='type-id-306'/>
       <return type-id='type-id-22'/>
     </function-decl>
-    <function-decl name='_Pypegen_set_syntax_error' filepath='Parser/pegen.h' line='170' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_Pypegen_set_syntax_error' filepath='Parser/pegen.h' line='171' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <parameter type-id='type-id-569'/>
       <return type-id='type-id-46'/>
     </function-decl>
-    <function-decl name='_PyPegen_parse' filepath='Parser/pegen.h' line='364' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyPegen_parse' filepath='Parser/pegen.h' line='365' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-568'/>
       <return type-id='type-id-22'/>
     </function-decl>
@@ -21210,6 +21208,14 @@
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-2'/>
     </function-decl>
+    <function-decl name='PyObject_Malloc' mangled-name='PyObject_Malloc' filepath='./Include/objimpl.h' line='97' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_Malloc'>
+      <parameter type-id='type-id-19'/>
+      <return type-id='type-id-22'/>
+    </function-decl>
+    <function-decl name='PyObject_Free' mangled-name='PyObject_Free' filepath='./Include/objimpl.h' line='102' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyObject_Free'>
+      <parameter type-id='type-id-22'/>
+      <return type-id='type-id-46'/>
+    </function-decl>
     <function-decl name='PyErr_SetFromErrnoWithFilename' mangled-name='PyErr_SetFromErrnoWithFilename' filepath='./Include/pyerrors.h' line='177' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyErr_SetFromErrnoWithFilename'>
       <parameter type-id='type-id-2'/>
       <parameter type-id='type-id-12'/>
@@ -21219,12 +21225,6 @@
       <parameter type-id='type-id-12'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-46'/>
-    </function-decl>
-    <function-decl name='PyUnicode_Substring' mangled-name='PyUnicode_Substring' filepath='./Include/unicodeobject.h' line='142' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Substring'>
-      <parameter type-id='type-id-2'/>
-      <parameter type-id='type-id-14'/>
-      <parameter type-id='type-id-14'/>
-      <return type-id='type-id-2'/>
     </function-decl>
     <function-decl name='PyUnicode_Decode' mangled-name='PyUnicode_Decode' filepath='./Include/unicodeobject.h' line='345' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyUnicode_Decode'>
       <parameter type-id='type-id-12'/>
@@ -23146,49 +23146,49 @@
     <function-decl name='_Py_GetLocaleEncodingObject' mangled-name='_Py_GetLocaleEncodingObject' filepath='Python/fileutils.c' line='936' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_GetLocaleEncodingObject'>
       <return type-id='type-id-2'/>
     </function-decl>
-    <function-decl name='_Py_stat' mangled-name='_Py_stat' filepath='Python/fileutils.c' line='1355' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_stat'>
-      <parameter type-id='type-id-2' name='path' filepath='Python/fileutils.c' line='1355' column='1'/>
-      <parameter type-id='type-id-51' name='statbuf' filepath='Python/fileutils.c' line='1355' column='1'/>
+    <function-decl name='_Py_stat' mangled-name='_Py_stat' filepath='Python/fileutils.c' line='1360' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_stat'>
+      <parameter type-id='type-id-2' name='path' filepath='Python/fileutils.c' line='1360' column='1'/>
+      <parameter type-id='type-id-51' name='statbuf' filepath='Python/fileutils.c' line='1360' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_get_inheritable' mangled-name='_Py_get_inheritable' filepath='Python/fileutils.c' line='1435' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_inheritable'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1435' column='1'/>
+    <function-decl name='_Py_get_inheritable' mangled-name='_Py_get_inheritable' filepath='Python/fileutils.c' line='1440' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_inheritable'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1440' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_set_inheritable' mangled-name='_Py_set_inheritable' filepath='Python/fileutils.c' line='1595' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1595' column='1'/>
-      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1595' column='1'/>
-      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1595' column='1'/>
+    <function-decl name='_Py_set_inheritable' mangled-name='_Py_set_inheritable' filepath='Python/fileutils.c' line='1600' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1600' column='1'/>
+      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1600' column='1'/>
+      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1600' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_set_inheritable_async_safe' mangled-name='_Py_set_inheritable_async_safe' filepath='Python/fileutils.c' line='1604' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable_async_safe'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1604' column='1'/>
-      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1604' column='1'/>
-      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1604' column='1'/>
+    <function-decl name='_Py_set_inheritable_async_safe' mangled-name='_Py_set_inheritable_async_safe' filepath='Python/fileutils.c' line='1609' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_inheritable_async_safe'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='1609' column='1'/>
+      <parameter type-id='type-id-8' name='inheritable' filepath='Python/fileutils.c' line='1609' column='1'/>
+      <parameter type-id='type-id-179' name='atomic_flag_works' filepath='Python/fileutils.c' line='1609' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_wfopen' mangled-name='_Py_wfopen' filepath='Python/fileutils.c' line='1707' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_wfopen'>
-      <parameter type-id='type-id-16' name='path' filepath='Python/fileutils.c' line='1707' column='1'/>
-      <parameter type-id='type-id-16' name='mode' filepath='Python/fileutils.c' line='1707' column='1'/>
+    <function-decl name='_Py_wfopen' mangled-name='_Py_wfopen' filepath='Python/fileutils.c' line='1712' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_wfopen'>
+      <parameter type-id='type-id-16' name='path' filepath='Python/fileutils.c' line='1712' column='1'/>
+      <parameter type-id='type-id-16' name='mode' filepath='Python/fileutils.c' line='1712' column='1'/>
       <return type-id='type-id-229'/>
     </function-decl>
-    <function-decl name='_Py_normpath' mangled-name='_Py_normpath' filepath='Python/fileutils.c' line='2514' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_normpath'>
-      <parameter type-id='type-id-52' name='path' filepath='Python/fileutils.c' line='2514' column='1'/>
-      <parameter type-id='type-id-14' name='size' filepath='Python/fileutils.c' line='2514' column='1'/>
+    <function-decl name='_Py_normpath' mangled-name='_Py_normpath' filepath='Python/fileutils.c' line='2519' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_normpath'>
+      <parameter type-id='type-id-52' name='path' filepath='Python/fileutils.c' line='2519' column='1'/>
+      <parameter type-id='type-id-14' name='size' filepath='Python/fileutils.c' line='2519' column='1'/>
       <return type-id='type-id-52'/>
     </function-decl>
-    <function-decl name='_Py_get_blocking' mangled-name='_Py_get_blocking' filepath='Python/fileutils.c' line='2629' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_blocking'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2629' column='1'/>
+    <function-decl name='_Py_get_blocking' mangled-name='_Py_get_blocking' filepath='Python/fileutils.c' line='2634' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_get_blocking'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2634' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_set_blocking' mangled-name='_Py_set_blocking' filepath='Python/fileutils.c' line='2650' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_blocking'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2650' column='1'/>
-      <parameter type-id='type-id-8' name='blocking' filepath='Python/fileutils.c' line='2650' column='1'/>
+    <function-decl name='_Py_set_blocking' mangled-name='_Py_set_blocking' filepath='Python/fileutils.c' line='2655' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_set_blocking'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/fileutils.c' line='2655' column='1'/>
+      <parameter type-id='type-id-8' name='blocking' filepath='Python/fileutils.c' line='2655' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_Py_closerange' mangled-name='_Py_closerange' filepath='Python/fileutils.c' line='2901' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_closerange'>
-      <parameter type-id='type-id-8' name='first' filepath='Python/fileutils.c' line='2901' column='1'/>
-      <parameter type-id='type-id-8' name='last' filepath='Python/fileutils.c' line='2901' column='1'/>
+    <function-decl name='_Py_closerange' mangled-name='_Py_closerange' filepath='Python/fileutils.c' line='2906' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_closerange'>
+      <parameter type-id='type-id-8' name='first' filepath='Python/fileutils.c' line='2906' column='1'/>
+      <parameter type-id='type-id-8' name='last' filepath='Python/fileutils.c' line='2906' column='1'/>
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
@@ -25221,7 +25221,7 @@
       <parameter type-id='type-id-20'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyModule_IsExtension' filepath='./Include/moduleobject.h' line='109' column='1' visibility='default' binding='global' size-in-bits='64'>
+    <function-decl name='_PyModule_IsExtension' filepath='./Include/moduleobject.h' line='111' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-8'/>
     </function-decl>
@@ -26415,20 +26415,25 @@
       <return type-id='type-id-2'/>
     </function-decl>
     <var-decl name='PyTraceBack_Type' type-id='type-id-256' mangled-name='PyTraceBack_Type' visibility='default' filepath='./Include/traceback.h' line='13' column='1' elf-symbol-id='PyTraceBack_Type'/>
+    <function-decl name='_PyPegen_calculate_display_width' filepath='Python/../Parser/pegen.h' line='154' column='1' visibility='default' binding='global' size-in-bits='64'>
+      <parameter type-id='type-id-2'/>
+      <parameter type-id='type-id-14'/>
+      <return type-id='type-id-14'/>
+    </function-decl>
     <function-decl name='_PyTokenizer_FindEncodingFilename' filepath='Python/traceback.c' line='34' column='1' visibility='default' binding='global' size-in-bits='64'>
       <parameter type-id='type-id-8'/>
       <parameter type-id='type-id-2'/>
       <return type-id='type-id-15'/>
     </function-decl>
-    <function-decl name='_PyTraceback_Add' mangled-name='_PyTraceback_Add' filepath='Python/traceback.c' line='261' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTraceback_Add'>
-      <parameter type-id='type-id-12' name='funcname' filepath='Python/traceback.c' line='261' column='1'/>
-      <parameter type-id='type-id-12' name='filename' filepath='Python/traceback.c' line='261' column='1'/>
-      <parameter type-id='type-id-8' name='lineno' filepath='Python/traceback.c' line='261' column='1'/>
+    <function-decl name='_PyTraceback_Add' mangled-name='_PyTraceback_Add' filepath='Python/traceback.c' line='283' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTraceback_Add'>
+      <parameter type-id='type-id-12' name='funcname' filepath='Python/traceback.c' line='283' column='1'/>
+      <parameter type-id='type-id-12' name='filename' filepath='Python/traceback.c' line='283' column='1'/>
+      <parameter type-id='type-id-8' name='lineno' filepath='Python/traceback.c' line='283' column='1'/>
       <return type-id='type-id-46'/>
     </function-decl>
-    <function-decl name='_Py_DumpTraceback' mangled-name='_Py_DumpTraceback' filepath='Python/traceback.c' line='1290' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpTraceback'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1290' column='1'/>
-      <parameter type-id='type-id-177' name='tstate' filepath='Python/traceback.c' line='1290' column='1'/>
+    <function-decl name='_Py_DumpTraceback' mangled-name='_Py_DumpTraceback' filepath='Python/traceback.c' line='1347' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpTraceback'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1347' column='1'/>
+      <parameter type-id='type-id-177' name='tstate' filepath='Python/traceback.c' line='1347' column='1'/>
       <return type-id='type-id-46'/>
     </function-decl>
   </abi-instr>
