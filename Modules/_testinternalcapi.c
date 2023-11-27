@@ -1625,6 +1625,222 @@ get_type_module_name(PyObject *self, PyObject *type)
 }
 
 
+Py_NO_INLINE static Py_hash_t
+hash_api_A(PyObject *inst, double v)
+{
+    int e, sign;
+    double m;
+    Py_uhash_t x, y;
+
+    if (!Py_IS_FINITE(v)) {
+        if (Py_IS_INFINITY(v))
+            return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
+        else
+            return _Py_HashPointer(inst);
+    }
+
+    m = frexp(v, &e);
+
+    sign = 1;
+    if (m < 0) {
+        sign = -1;
+        m = -m;
+    }
+
+    /* process 28 bits at a time;  this should work well both for binary
+       and hexadecimal floating point. */
+    x = 0;
+    while (m) {
+        x = ((x << 28) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - 28);
+        m *= 268435456.0;  /* 2**28 */
+        e -= 28;
+        y = (Py_uhash_t)m;  /* pull out integer part */
+        m -= y;
+        x += y;
+        if (x >= _PyHASH_MODULUS)
+            x -= _PyHASH_MODULUS;
+    }
+
+    /* adjust for the exponent;  first reduce it modulo _PyHASH_BITS */
+    e = e >= 0 ? e % _PyHASH_BITS : _PyHASH_BITS-1-((-1-e) % _PyHASH_BITS);
+    x = ((x << e) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - e);
+
+    x = x * sign;
+    if (x == (Py_uhash_t)-1)
+        x = (Py_uhash_t)-2;
+    return (Py_hash_t)x;
+}
+
+Py_NO_INLINE static int
+hash_api_B(double v, Py_hash_t *result)
+{
+    int e, sign;
+    double m;
+    Py_uhash_t x, y;
+
+    if (!Py_IS_FINITE(v)) {
+        if (Py_IS_INFINITY(v)) {
+            *result = (v > 0 ? _PyHASH_INF : -_PyHASH_INF);
+            return 1;
+        }
+        else {
+            assert(Py_IS_NAN(v));
+            *result = _PyHASH_NAN;
+            return 0;
+        }
+    }
+
+    m = frexp(v, &e);
+
+    sign = 1;
+    if (m < 0) {
+        sign = -1;
+        m = -m;
+    }
+
+    /* process 28 bits at a time;  this should work well both for binary
+       and hexadecimal floating point. */
+    x = 0;
+    while (m) {
+        x = ((x << 28) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - 28);
+        m *= 268435456.0;  /* 2**28 */
+        e -= 28;
+        y = (Py_uhash_t)m;  /* pull out integer part */
+        m -= y;
+        x += y;
+        if (x >= _PyHASH_MODULUS)
+            x -= _PyHASH_MODULUS;
+    }
+
+    /* adjust for the exponent;  first reduce it modulo _PyHASH_BITS */
+    e = e >= 0 ? e % _PyHASH_BITS : _PyHASH_BITS-1-((-1-e) % _PyHASH_BITS);
+    x = ((x << e) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - e);
+
+    x = x * sign;
+    if (x == (Py_uhash_t)-1)
+        x = (Py_uhash_t)-2;
+    *result = (Py_hash_t)x;
+    return 1;
+}
+
+Py_NO_INLINE static Py_hash_t
+hash_api_C(double v)
+{
+    int e, sign;
+    double m;
+    Py_uhash_t x, y;
+
+    if (!Py_IS_FINITE(v)) {
+        if (Py_IS_INFINITY(v)) {
+            return (v > 0 ? _PyHASH_INF : -_PyHASH_INF);
+        }
+        else {
+            assert(Py_IS_NAN(v));
+            return _PyHASH_NAN;
+        }
+    }
+
+    m = frexp(v, &e);
+
+    sign = 1;
+    if (m < 0) {
+        sign = -1;
+        m = -m;
+    }
+
+    /* process 28 bits at a time;  this should work well both for binary
+       and hexadecimal floating point. */
+    x = 0;
+    while (m) {
+        x = ((x << 28) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - 28);
+        m *= 268435456.0;  /* 2**28 */
+        e -= 28;
+        y = (Py_uhash_t)m;  /* pull out integer part */
+        m -= y;
+        x += y;
+        if (x >= _PyHASH_MODULUS)
+            x -= _PyHASH_MODULUS;
+    }
+
+    /* adjust for the exponent;  first reduce it modulo _PyHASH_BITS */
+    e = e >= 0 ? e % _PyHASH_BITS : _PyHASH_BITS-1-((-1-e) % _PyHASH_BITS);
+    x = ((x << e) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - e);
+
+    x = x * sign;
+    if (x == (Py_uhash_t)-1)
+        x = (Py_uhash_t)-2;
+    return (Py_hash_t)x;
+}
+
+
+static PyObject *
+bench_api_A(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    Py_ssize_t loops;
+    double d;
+    if (!PyArg_ParseTuple(args, "nd", &loops, &d)) {
+        return NULL;
+    }
+    PyObject *obj = Py_None;
+
+    _PyTime_t t1 = _PyTime_GetPerfCounter();
+    for (Py_ssize_t i=0; i < loops; i++) {
+        Py_hash_t hash = hash_api_A(obj, d);
+        if (hash == 0) {
+            return NULL;
+        }
+    }
+    _PyTime_t t2 = _PyTime_GetPerfCounter();
+
+    return PyFloat_FromDouble(_PyTime_AsSecondsDouble(t2 - t1));
+}
+
+
+static PyObject *
+bench_api_B(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    Py_ssize_t loops;
+    double d;
+    if (!PyArg_ParseTuple(args, "nd", &loops, &d)) {
+        return NULL;
+    }
+
+    _PyTime_t t1 = _PyTime_GetPerfCounter();
+    for (Py_ssize_t i=0; i < loops; i++) {
+        Py_hash_t hash;
+        (void)hash_api_B(d, &hash);
+        if (hash == 0) {
+            return NULL;
+        }
+    }
+    _PyTime_t t2 = _PyTime_GetPerfCounter();
+
+    return PyFloat_FromDouble(_PyTime_AsSecondsDouble(t2 - t1));
+}
+
+
+static PyObject *
+bench_api_C(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    Py_ssize_t loops;
+    double d;
+    if (!PyArg_ParseTuple(args, "nd", &loops, &d)) {
+        return NULL;
+    }
+
+    _PyTime_t t1 = _PyTime_GetPerfCounter();
+    for (Py_ssize_t i=0; i < loops; i++) {
+        Py_hash_t hash = hash_api_C(d);
+        if (hash == 0) {
+            return NULL;
+        }
+    }
+    _PyTime_t t2 = _PyTime_GetPerfCounter();
+
+    return PyFloat_FromDouble(_PyTime_AsSecondsDouble(t2 - t1));
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1688,6 +1904,9 @@ static PyMethodDef module_functions[] = {
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_type_module_name",    get_type_module_name,            METH_O},
+    {"bench_api_A", bench_api_A, METH_VARARGS},
+    {"bench_api_B", bench_api_B, METH_VARARGS},
+    {"bench_api_C", bench_api_C, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
