@@ -1115,12 +1115,10 @@ local_getattro(localobject *self, PyObject *name)
     }
 
     /* Optimization: just look in dict ourselves */
-    PyObject *value = PyDict_GetItemWithError(ldict, name);
-    if (value != NULL) {
-        return Py_NewRef(value);
-    }
-    if (PyErr_Occurred()) {
-        return NULL;
+    PyObject *value;
+    if (PyDict_GetItemRef(ldict, name, &value) != 0) {
+        // found or error
+        return value;
     }
 
     /* Fall back on generic to get __class__ and __dict__ */
