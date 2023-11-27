@@ -10,6 +10,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+import array
 import re
 import socket
 import select
@@ -3516,22 +3517,20 @@ class ThreadedTests(unittest.TestCase):
         s.setblocking(False)
         self.assertEqual(s.recv(0), b"")
         self.assertEqual(s.recv_into(bytearray()), 0)
+        self.assertEqual(s.recv_into(bytearray(10)), 0)
 
     def test_recv_into_buffer_protocol_len(self):
         server = ThreadedEchoServer(CERTFILE)
-        server.__enter__()
-        self.addCleanup(server.__exit__, None, None)
+        self.enterContext(server)
         s = socket.create_connection((HOST, server.port))
         self.addCleanup(s.close)
         s = test_wrap_socket(s, suppress_ragged_eofs=False)
         self.addCleanup(s.close)
 
-        class B(bytearray):
-            def __len__(self):
-                return 1
-
         s.send(b"data")
-        self.assertEqual(s.recv_into(B(4)), 4)
+        buf = array.array('I', [0, 0])
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf)[:4], b"data")
 
     def test_nonblocking_send(self):
         server = ThreadedEchoServer(CERTFILE,
