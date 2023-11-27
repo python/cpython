@@ -366,7 +366,7 @@ capture data for later printing in a lightweight fashion.
          The exception's notes are now included in the output.
 
       .. versionchanged:: 3.13
-         Added the *show_group* parameter.
+         *show_group* parameter was added.
 
 
 :class:`StackSummary` Objects

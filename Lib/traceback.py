@@ -703,7 +703,7 @@ class TracebackException:
     to this intermediary form to ensure that no references are held, while
     still being able to fully print or format it.
 
-    max_group_width and max_group_depth control the formatting of exception
+    `max_group_width` and `max_group_depth` control the formatting of exception
     groups. The depth refers to the nesting level of the group, and the width
     refers to the size of a single exception group's exceptions array. The
     formatted output is truncated when either limit is exceeded.
@@ -734,6 +734,8 @@ class TracebackException:
       the error occurred. Can be `None` if not present.
     - :attr:`msg` For syntax errors - the compiler error message.
     """
+
+    _max_depth_label = '... (max_group_depth is {max_group_depth})\n'
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
@@ -912,34 +914,67 @@ class TracebackException:
                 smod = "<unknown>"
             stype = smod + '.' + stype
 
-        if not issubclass(self.exc_type, SyntaxError):
-            if _depth > 0:
-                # Nested exceptions needs correct handling of multiline messages.
-                formatted = _format_final_exc_line(
-                    stype, self._str, insert_final_newline=False,
-                ).split('\n')
-                yield from [
-                    indent + l + '\n'
-                    for l in formatted
-                ]
-            else:
-                yield _format_final_exc_line(stype, self._str)
+        if issubclass(self.exc_type, BaseExceptionGroup):
+            limit = self.max_group_depth - 1  # minus ExceptionGroup itself
         else:
-            yield from [indent + l for l in self._format_syntax_error(stype)]
+            limit = self.max_group_depth
 
-        if (
-            isinstance(self.__notes__, collections.abc.Sequence)
-            and not isinstance(self.__notes__, (str, bytes))
-        ):
-            for note in self.__notes__:
-                note = _safe_string(note, 'note')
-                yield from [indent + l + '\n' for l in note.split('\n')]
-        elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+        if _depth <= limit:
+            if not issubclass(self.exc_type, SyntaxError):
+                if _depth > 0:
+                    # Nested exceptions needs correct handling of multiline messages.
+                    formatted = _format_final_exc_line(
+                        stype, self._str, insert_final_newline=False,
+                    ).split('\n')
+                    yield from [
+                        indent + l + '\n'
+                        for l in formatted
+                    ]
+                else:
+                    yield _format_final_exc_line(stype, self._str)
+            else:
+                yield from [indent + l for l in self._format_syntax_error(stype)]
+
+            if (
+                isinstance(self.__notes__, collections.abc.Sequence)
+                and not isinstance(self.__notes__, (str, bytes))
+            ):
+                for note in self.__notes__:
+                    note = _safe_string(note, 'note')
+                    yield from [indent + l + '\n' for l in note.split('\n')]
+            elif self.__notes__ is not None:
+                yield indent + "{}\n".format(
+                    _safe_string(self.__notes__, '__notes__', func=repr),
+                )
 
         if self.exceptions and show_group:
-            for ex in self.exceptions:
-                yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1)
+            if _depth >= self.max_group_depth:
+                # exception group, but depth exceeds limit
+                yield indent + self._max_depth_label.format(
+                    max_group_depth=_depth,
+                )
+            else:
+                num_excs = len(self.exceptions)
+                if num_excs <= self.max_group_width:
+                    n = num_excs
+                else:
+                    n = self.max_group_width + 1
+                for i in range(n):
+                    ex = self.exceptions[i]
+                    if self.max_group_width is not None:
+                        truncated = (i >= self.max_group_width)
+                    else:
+                        truncated = False
+                    if truncated:
+                        yield (
+                            (3 * (_depth + 1) * ' ') +
+                            self._format_remaining(num_excs)
+                        )
+                    else:
+                        yield from ex.format_exception_only(
+                            show_group=show_group,
+                            _depth=_depth+1,
+                        )
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
@@ -1028,7 +1063,10 @@ class TracebackException:
             elif _ctx.exception_group_depth > self.max_group_depth:
                 # exception group, but depth exceeds limit
                 yield from _ctx.emit(
-                    f"... (max_group_depth is {self.max_group_depth})\n")
+                    self._max_depth_label.format(
+                        max_group_depth=self.max_group_depth,
+                    ),
+                )
             else:
                 # format exception group
                 is_toplevel = (_ctx.exception_group_depth == 0)
@@ -1088,6 +1126,13 @@ class TracebackException:
             file = sys.stderr
         for line in self.format(chain=chain):
             print(line, file=file, end="")
+
+    # Internal API:
+
+    def _format_remaining(self, num_excs):
+        remaining = num_excs - self.max_group_width
+        plural = 's' if remaining > 1 else ''
+        return f"and {remaining} more exception{plural}\n"
 
 
 _MAX_CANDIDATE_ITEMS = 750
