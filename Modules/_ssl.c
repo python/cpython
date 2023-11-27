@@ -301,6 +301,8 @@ typedef struct {
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
+    PyObject *psk_client_callback;
+    PyObject *psk_server_callback;
 } PySSLContext;
 
 typedef struct {
@@ -3123,6 +3125,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
+    self->psk_client_callback = NULL;
+    self->psk_server_callback = NULL;
 
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
@@ -3235,6 +3239,8 @@ context_clear(PySSLContext *self)
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
     Py_CLEAR(self->keylog_filename);
+    Py_CLEAR(self->psk_client_callback);
+    Py_CLEAR(self->psk_server_callback);
     if (self->keylog_bio != NULL) {
         PySSL_BEGIN_ALLOW_THREADS
         BIO_free_all(self->keylog_bio);
@@ -4662,6 +4668,222 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
     return NULL;
 }
 
+static unsigned int psk_client_callback(SSL *s,
+                                        const char *hint,
+                                        char *identity,
+                                        unsigned int max_identity_len,
+                                        unsigned char *psk,
+                                        unsigned int max_psk_len)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject *callback = NULL;
+
+    PySSLSocket *ssl = SSL_get_app_data(s);
+    if (ssl == NULL || ssl->ctx == NULL) {
+        goto error;
+    }
+    callback = ssl->ctx->psk_client_callback;
+    if (callback == NULL) {
+        goto error;
+    }
+
+    PyObject *hint_str = (hint != NULL && hint[0] != '\0') ?
+            PyUnicode_DecodeUTF8(hint, strlen(hint), "strict") :
+            Py_NewRef(Py_None);
+    if (hint_str == NULL) {
+        /* The remote side has sent an invalid UTF-8 string
+         * (breaking the standard), drop the connection without
+         * raising a decode exception. */
+        PyErr_Clear();
+        goto error;
+    }
+    PyObject *result = PyObject_CallFunctionObjArgs(callback, hint_str, NULL);
+    Py_DECREF(hint_str);
+
+    if (result == NULL) {
+        goto error;
+    }
+
+    const char *psk_;
+    const char *identity_;
+    Py_ssize_t psk_len_;
+    Py_ssize_t identity_len_ = 0;
+    if (!PyArg_ParseTuple(result, "z#y#", &identity_, &identity_len_, &psk_, &psk_len_)) {
+        Py_DECREF(result);
+        goto error;
+    }
+
+    if (identity_len_ + 1 > max_identity_len || psk_len_ > max_psk_len) {
+        Py_DECREF(result);
+        goto error;
+    }
+    memcpy(psk, psk_, psk_len_);
+    if (identity_ != NULL) {
+        memcpy(identity, identity_, identity_len_);
+    }
+    identity[identity_len_] = 0;
+
+    Py_DECREF(result);
+
+    PyGILState_Release(gstate);
+    return (unsigned int)psk_len_;
+
+error:
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(callback);
+    }
+    PyGILState_Release(gstate);
+    return 0;
+}
+
+/*[clinic input]
+_ssl._SSLContext.set_psk_client_callback
+    callback: object
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
+                                              PyObject *callback)
+/*[clinic end generated code: output=0aba86f6ed75119e input=7627bae0e5ee7635]*/
+{
+    if (self->protocol == PY_SSL_VERSION_TLS_SERVER) {
+        _setSSLError(get_state_ctx(self),
+                     "Cannot add PSK client callback to a "
+                     "PROTOCOL_TLS_SERVER context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    SSL_psk_client_cb_func ssl_callback;
+    if (callback == Py_None) {
+        callback = NULL;
+        // Delete the existing callback
+        ssl_callback = NULL;
+    } else {
+        if (!PyCallable_Check(callback)) {
+            PyErr_SetString(PyExc_TypeError, "callback must be callable");
+            return NULL;
+        }
+        ssl_callback = psk_client_callback;
+    }
+
+    Py_XDECREF(self->psk_client_callback);
+    Py_XINCREF(callback);
+
+    self->psk_client_callback = callback;
+    SSL_CTX_set_psk_client_callback(self->ctx, ssl_callback);
+
+    Py_RETURN_NONE;
+}
+
+static unsigned int psk_server_callback(SSL *s,
+                                        const char *identity,
+                                        unsigned char *psk,
+                                        unsigned int max_psk_len)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject *callback = NULL;
+
+    PySSLSocket *ssl = SSL_get_app_data(s);
+    if (ssl == NULL || ssl->ctx == NULL) {
+        goto error;
+    }
+    callback = ssl->ctx->psk_server_callback;
+    if (callback == NULL) {
+        goto error;
+    }
+
+    PyObject *identity_str = (identity != NULL && identity[0] != '\0') ?
+            PyUnicode_DecodeUTF8(identity, strlen(identity), "strict") :
+            Py_NewRef(Py_None);
+    if (identity_str == NULL) {
+        /* The remote side has sent an invalid UTF-8 string
+         * (breaking the standard), drop the connection without
+         * raising a decode exception. */
+        PyErr_Clear();
+        goto error;
+    }
+    PyObject *result = PyObject_CallFunctionObjArgs(callback, identity_str, NULL);
+    Py_DECREF(identity_str);
+
+    if (result == NULL) {
+        goto error;
+    }
+
+    char *psk_;
+    Py_ssize_t psk_len_;
+    if (PyBytes_AsStringAndSize(result, &psk_, &psk_len_) < 0) {
+        Py_DECREF(result);
+        goto error;
+    }
+
+    if (psk_len_ > max_psk_len) {
+        Py_DECREF(result);
+        goto error;
+    }
+    memcpy(psk, psk_, psk_len_);
+
+    Py_DECREF(result);
+
+    PyGILState_Release(gstate);
+    return (unsigned int)psk_len_;
+
+error:
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(callback);
+    }
+    PyGILState_Release(gstate);
+    return 0;
+}
+
+/*[clinic input]
+_ssl._SSLContext.set_psk_server_callback
+    callback: object
+    identity_hint: str(accept={str, NoneType}) = None
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
+                                              PyObject *callback,
+                                              const char *identity_hint)
+/*[clinic end generated code: output=1f4d6a4e09a92b03 input=65d4b6022aa85ea3]*/
+{
+    if (self->protocol == PY_SSL_VERSION_TLS_CLIENT) {
+        _setSSLError(get_state_ctx(self),
+                     "Cannot add PSK server callback to a "
+                     "PROTOCOL_TLS_CLIENT context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    SSL_psk_server_cb_func ssl_callback;
+    if (callback == Py_None) {
+        callback = NULL;
+        // Delete the existing callback and hint
+        ssl_callback = NULL;
+        identity_hint = NULL;
+    } else {
+        if (!PyCallable_Check(callback)) {
+            PyErr_SetString(PyExc_TypeError, "callback must be callable");
+            return NULL;
+        }
+        ssl_callback = psk_server_callback;
+    }
+
+    if (SSL_CTX_use_psk_identity_hint(self->ctx, identity_hint) != 1) {
+        PyErr_SetString(PyExc_ValueError, "failed to set identity hint");
+        return NULL;
+    }
+
+    Py_XDECREF(self->psk_server_callback);
+    Py_XINCREF(callback);
+
+    self->psk_server_callback = callback;
+    SSL_CTX_set_psk_server_callback(self->ctx, ssl_callback);
+
+    Py_RETURN_NONE;
+}
+
 
 static PyGetSetDef context_getsetlist[] = {
     {"check_hostname", (getter) get_check_hostname,
@@ -4716,6 +4938,8 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF
     _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF
     _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_SET_PSK_CLIENT_CALLBACK_METHODDEF
+    _SSL__SSLCONTEXT_SET_PSK_SERVER_CALLBACK_METHODDEF
     {NULL, NULL}        /* sentinel */
 };
 
