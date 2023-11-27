@@ -4620,7 +4620,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
     }
 
     int hour = 0, minute = 0, second = 0, microsecond = 0;
-    int tzoffset, tzimicrosecond = 0;
+    int tzoffset = 0, tzimicrosecond = 0;
     int rv = parse_isoformat_time(p, len,
                                   &hour, &minute, &second, &microsecond,
                                   &tzoffset, &tzimicrosecond);

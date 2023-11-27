@@ -125,6 +125,7 @@ byte-code cache files in the directory containing the source code.
       This option is useful when the ``.pycs`` are kept up to date by some
       system external to Python like a build system.
 
+.. _py_compile-cli:
 
 Command-Line Interface
 ----------------------

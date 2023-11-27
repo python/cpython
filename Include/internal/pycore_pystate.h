@@ -153,6 +153,8 @@ extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 extern void _PySignal_AfterFork(void);
 #endif
 
+PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
+
 
 PyAPI_FUNC(int) _PyState_AddModule(
     PyThreadState *tstate,

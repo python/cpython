@@ -88,8 +88,16 @@ Printing and clearing
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
+   If *obj* is ``NULL``, only the traceback is printed.
 
    An exception must be set when calling this function.
+
+   .. versionchanged:: 3.4
+      Print a traceback. Print only traceback if *obj* is ``NULL``.
+
+   .. versionchanged:: 3.8
+      Use :func:`sys.unraisablehook`.
+
 
 .. c:function:: void PyErr_DisplayException(PyObject *exc)
 

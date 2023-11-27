@@ -10,6 +10,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+import array
 import re
 import socket
 import select
@@ -1739,6 +1740,10 @@ class MemoryBIOTests(unittest.TestCase):
         self.assertEqual(bio.read(), b'bar')
         bio.write(memoryview(b'baz'))
         self.assertEqual(bio.read(), b'baz')
+        m = memoryview(bytearray(b'noncontig'))
+        noncontig_writable = m[::-2]
+        with self.assertRaises(BufferError):
+            bio.write(memoryview(noncontig_writable))
 
     def test_error_types(self):
         bio = ssl.MemoryBIO()
@@ -3512,6 +3517,27 @@ class ThreadedTests(unittest.TestCase):
         s.setblocking(False)
         self.assertEqual(s.recv(0), b"")
         self.assertEqual(s.recv_into(bytearray()), 0)
+
+    def test_recv_into_buffer_protocol_len(self):
+        server = ThreadedEchoServer(CERTFILE)
+        self.enterContext(server)
+        s = socket.create_connection((HOST, server.port))
+        self.addCleanup(s.close)
+        s = test_wrap_socket(s, suppress_ragged_eofs=False)
+        self.addCleanup(s.close)
+
+        s.send(b"data")
+        buf = array.array('I', [0, 0])
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf)[:4], b"data")
+
+        class B(bytearray):
+            def __len__(self):
+                1/0
+        s.send(b"data")
+        buf = B(6)
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf), b"data\0\0")
 
     def test_nonblocking_send(self):
         server = ThreadedEchoServer(CERTFILE,

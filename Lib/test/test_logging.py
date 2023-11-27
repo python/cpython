@@ -3014,6 +3014,39 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    class CustomFormatter(logging.Formatter):
+        custom_property = "."
+
+        def format(self, record):
+            return super().format(record)
+
+    config17 = {
+        'version': 1,
+        'formatters': {
+            "custom": {
+                "()": CustomFormatter,
+                "style": "{",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "format": "{message}", # <-- to force an exception when configuring
+                ".": {
+                    "custom_property": "value"
+                }
+            }
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'custom',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3495,7 +3528,10 @@ class ConfigDictTest(BaseTest):
             {'msg': 'Hello'}))
         self.assertEqual(result, 'Hello ++ defaultvalue')
 
-
+    def test_config17_ok(self):
+        self.apply_config(self.config17)
+        h = logging._handlers['hand1']
+        self.assertEqual(h.formatter.custom_property, 'value')
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")

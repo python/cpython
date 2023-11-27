@@ -14,7 +14,15 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_time.h"          // _PyTime_t
 #include "structmember.h"         // PyMemberDef
+
+#include <stdbool.h>
+#include <stddef.h>               // offsetof()
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // close()
+#endif
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
@@ -70,13 +78,26 @@ extern void bzero(void *, int);
 #  define POLLPRI 0
 #endif
 
+#ifdef HAVE_KQUEUE
+// Linked list to track kqueue objects with an open fd, so
+// that we can invalidate them at fork;
+typedef struct _kqueue_list_item {
+    struct kqueue_queue_Object *obj;
+    struct _kqueue_list_item *next;
+} _kqueue_list_item, *_kqueue_list;
+#endif
+
 typedef struct {
     PyObject *close;
     PyTypeObject *poll_Type;
     PyTypeObject *devpoll_Type;
     PyTypeObject *pyEpoll_Type;
+#ifdef HAVE_KQUEUE
     PyTypeObject *kqueue_event_Type;
     PyTypeObject *kqueue_queue_Type;
+    _kqueue_list kqueue_open_list;
+    bool kqueue_tracking_initialized;
+#endif
 } _selectstate;
 
 static struct PyModuleDef selectmodule;
@@ -1749,7 +1770,7 @@ typedef struct {
 
 #define kqueue_event_Check(op, state) (PyObject_TypeCheck((op), state->kqueue_event_Type))
 
-typedef struct {
+typedef struct kqueue_queue_Object {
     PyObject_HEAD
     SOCKET kqfd;                /* kqueue control fd */
 } kqueue_queue_Object;
@@ -1935,6 +1956,107 @@ kqueue_queue_err_closed(void)
     return NULL;
 }
 
+static PyObject*
+kqueue_tracking_after_fork(PyObject *module) {
+    _selectstate *state = get_select_state(module);
+    _kqueue_list_item *item = state->kqueue_open_list;
+    state->kqueue_open_list = NULL;
+    while (item) {
+        // Safety: we hold the GIL, and references are removed from this list
+        // before the object is deallocated.
+        kqueue_queue_Object *obj = item->obj;
+        assert(obj->kqfd != -1);
+        obj->kqfd = -1;
+        _kqueue_list_item *next = item->next;
+        PyMem_Free(item);
+        item = next;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef kqueue_tracking_after_fork_def = {
+    "kqueue_tracking_after_fork", (PyCFunction)kqueue_tracking_after_fork,
+    METH_NOARGS, "Invalidate open select.kqueue objects after fork."
+};
+
+static void
+kqueue_tracking_init(PyObject *module) {
+    _selectstate *state = get_select_state(module);
+    assert(state->kqueue_open_list == NULL);
+    // Register a callback to invalidate kqueues with open fds after fork.
+    PyObject *register_at_fork = NULL, *cb = NULL, *args = NULL,
+             *kwargs = NULL, *result = NULL;
+    register_at_fork = _PyImport_GetModuleAttrString("posix",
+                                                     "register_at_fork");
+    if (register_at_fork == NULL) {
+        goto finally;
+    }
+    cb = PyCFunction_New(&kqueue_tracking_after_fork_def, module);
+    if (cb == NULL) {
+        goto finally;
+    }
+    args = PyTuple_New(0);
+    assert(args != NULL);
+    kwargs = Py_BuildValue("{sO}", "after_in_child", cb);
+    if (kwargs == NULL) {
+        goto finally;
+    }
+    result = PyObject_Call(register_at_fork, args, kwargs);
+
+finally:
+    if (PyErr_Occurred()) {
+        // There are a few reasons registration can fail, especially if someone
+        // touched posix.register_at_fork. But everything else still works so
+        // instead of raising we issue a warning and move along.
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *exctype = (PyObject*)Py_TYPE(exc);
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
+            "An exception of type %S was raised while registering an "
+            "after-fork handler for select.kqueue objects: %S", exctype, exc);
+        Py_DECREF(exc);
+    }
+    Py_XDECREF(register_at_fork);
+    Py_XDECREF(cb);
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    Py_XDECREF(result);
+    state->kqueue_tracking_initialized = true;
+}
+
+static int
+kqueue_tracking_add(_selectstate *state, kqueue_queue_Object *self) {
+    if (!state->kqueue_tracking_initialized) {
+        kqueue_tracking_init(PyType_GetModule(Py_TYPE(self)));
+    }
+    assert(self->kqfd >= 0);
+    _kqueue_list_item *item = PyMem_New(_kqueue_list_item, 1);
+    if (item == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    item->obj = self;
+    item->next = state->kqueue_open_list;
+    state->kqueue_open_list = item;
+    return 0;
+}
+
+static void
+kqueue_tracking_remove(_selectstate *state, kqueue_queue_Object *self) {
+    _kqueue_list *listptr = &state->kqueue_open_list;
+    while (*listptr != NULL) {
+        _kqueue_list_item *item = *listptr;
+        if (item->obj == self) {
+            *listptr = item->next;
+            PyMem_Free(item);
+            return;
+        }
+        listptr = &item->next;
+    }
+    // The item should be in the list when we remove it,
+    // and it should only be removed once at close time.
+    assert(0);
+}
+
 static int
 kqueue_queue_internal_close(kqueue_queue_Object *self)
 {
@@ -1942,6 +2064,8 @@ kqueue_queue_internal_close(kqueue_queue_Object *self)
     if (self->kqfd >= 0) {
         int kqfd = self->kqfd;
         self->kqfd = -1;
+        _selectstate *state = _selectstate_by_type(Py_TYPE(self));
+        kqueue_tracking_remove(state, self);
         Py_BEGIN_ALLOW_THREADS
         if (close(kqfd) < 0)
             save_errno = errno;
@@ -1982,6 +2106,13 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
             return NULL;
         }
     }
+
+    _selectstate *state = _selectstate_by_type(type);
+    if (kqueue_tracking_add(state, self) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+
     return (PyObject *)self;
 }
 
@@ -2012,13 +2143,11 @@ select_kqueue_impl(PyTypeObject *type)
 }
 
 static void
-kqueue_queue_dealloc(kqueue_queue_Object *self)
+kqueue_queue_finalize(kqueue_queue_Object *self)
 {
-    PyTypeObject* type = Py_TYPE(self);
+    PyObject* error = PyErr_GetRaisedException();
     kqueue_queue_internal_close(self);
-    freefunc kqueue_free = PyType_GetSlot(type, Py_tp_free);
-    kqueue_free((PyObject *)self);
-    Py_DECREF((PyObject *)type);
+    PyErr_SetRaisedException(error);
 }
 
 /*[clinic input]
@@ -2352,11 +2481,11 @@ static PyMethodDef kqueue_queue_methods[] = {
 };
 
 static PyType_Slot kqueue_queue_Type_slots[] = {
-    {Py_tp_dealloc, kqueue_queue_dealloc},
     {Py_tp_doc, (void*)select_kqueue__doc__},
     {Py_tp_getset, kqueue_queue_getsetlist},
     {Py_tp_methods, kqueue_queue_methods},
     {Py_tp_new, select_kqueue},
+    {Py_tp_finalize, kqueue_queue_finalize},
     {0, 0},
 };
 
@@ -2401,8 +2530,11 @@ _select_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->poll_Type);
     Py_VISIT(state->devpoll_Type);
     Py_VISIT(state->pyEpoll_Type);
+#ifdef HAVE_KQUEUE
     Py_VISIT(state->kqueue_event_Type);
     Py_VISIT(state->kqueue_queue_Type);
+    // state->kqueue_open_list only holds borrowed refs
+#endif
     return 0;
 }
 
@@ -2415,8 +2547,10 @@ _select_clear(PyObject *module)
     Py_CLEAR(state->poll_Type);
     Py_CLEAR(state->devpoll_Type);
     Py_CLEAR(state->pyEpoll_Type);
+#ifdef HAVE_KQUEUE
     Py_CLEAR(state->kqueue_event_Type);
     Py_CLEAR(state->kqueue_queue_Type);
+#endif
     return 0;
 }
 
@@ -2550,6 +2684,8 @@ _select_exec(PyObject *m)
 #endif /* HAVE_EPOLL */
 
 #ifdef HAVE_KQUEUE
+    state->kqueue_open_list = NULL;
+
     state->kqueue_event_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &kqueue_event_Type_spec, NULL);
     if (state->kqueue_event_Type == NULL) {

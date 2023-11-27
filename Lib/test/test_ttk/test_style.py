@@ -2,6 +2,7 @@ import unittest
 import sys
 import tkinter
 from tkinter import ttk
+from tkinter import TclError
 from test import support
 from test.support import requires
 from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel
@@ -122,7 +123,6 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         self.style.theme_use(curr_theme)
 
-
     def test_configure_custom_copy(self):
         style = self.style
 
@@ -175,6 +175,188 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                     self.assertEqual(style.map(newname), default)
                     for key, value in default.items():
                         self.assertEqual(style.map(newname, key), value)
+
+    def test_element_options(self):
+        style = self.style
+        element_names = style.element_names()
+        self.assertNotIsInstance(element_names, str)
+        for name in element_names:
+            self.assertIsInstance(name, str)
+            element_options = style.element_options(name)
+            self.assertNotIsInstance(element_options, str)
+            for optname in element_options:
+                self.assertIsInstance(optname, str)
+
+    def test_element_create_errors(self):
+        style = self.style
+        with self.assertRaises(TypeError):
+            style.element_create('plain.newelem')
+        with self.assertRaisesRegex(TclError, 'No such element type spam'):
+            style.element_create('plain.newelem', 'spam')
+
+    def test_element_create_from(self):
+        style = self.style
+        style.element_create('plain.background', 'from', 'default')
+        self.assertIn('plain.background', style.element_names())
+        style.element_create('plain.arrow', 'from', 'default', 'rightarrow')
+        self.assertIn('plain.arrow', style.element_names())
+
+    def test_element_create_from_errors(self):
+        style = self.style
+        with self.assertRaises(IndexError):
+            style.element_create('plain.newelem', 'from')
+        with self.assertRaisesRegex(TclError, 'theme "spam" doesn\'t exist'):
+            style.element_create('plain.newelem', 'from', 'spam')
+
+    def test_element_create_image(self):
+        style = self.style
+        image = tkinter.PhotoImage(master=self.root, width=12, height=10)
+        style.element_create('block', 'image', image)
+        self.assertIn('block', style.element_names())
+
+        style.layout('TestLabel1', [('block', {'sticky': 'news'})])
+        a = ttk.Label(self.root, style='TestLabel1')
+        a.pack(expand=True, fill='both')
+        self.assertEqual(a.winfo_reqwidth(), 12)
+        self.assertEqual(a.winfo_reqheight(), 10)
+
+        imgfile = support.findfile('python.xbm', subdir='imghdrdata')
+        img1 = tkinter.BitmapImage(master=self.root, file=imgfile,
+                                   foreground='yellow', background='blue')
+        img2 = tkinter.BitmapImage(master=self.root, file=imgfile,
+                                   foreground='blue', background='yellow')
+        img3 = tkinter.BitmapImage(master=self.root, file=imgfile,
+                                   foreground='white', background='black')
+        style.element_create('Button.button', 'image',
+                             img1, ('pressed', img2), ('active', img3),
+                             border=(2, 4), sticky='we')
+        self.assertIn('Button.button', style.element_names())
+
+        style.layout('Button', [('Button.button', {'sticky': 'news'})])
+        b = ttk.Button(self.root, style='Button')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 16)
+        self.assertEqual(b.winfo_reqheight(), 16)
+
+    def test_element_create_image_errors(self):
+        style = self.style
+        image = tkinter.PhotoImage(master=self.root, width=10, height=10)
+        with self.assertRaises(IndexError):
+            style.element_create('block2', 'image')
+        with self.assertRaises(TypeError):
+            style.element_create('block2', 'image', image, 1)
+        with self.assertRaises(ValueError):
+            style.element_create('block2', 'image', image, ())
+        with self.assertRaisesRegex(TclError, 'Invalid state name'):
+            style.element_create('block2', 'image', image, ('spam', image))
+        with self.assertRaisesRegex(TclError, 'Invalid state name'):
+            style.element_create('block2', 'image', image, (1, image))
+        with self.assertRaises(TypeError):
+            style.element_create('block2', 'image', image, ('pressed', 1, image))
+        with self.assertRaises(TypeError):
+            style.element_create('block2', 'image', image, (1, 'selected', image))
+        with self.assertRaisesRegex(TclError, 'bad option'):
+            style.element_create('block2', 'image', image, spam=1)
+
+    def test_theme_create(self):
+        style = self.style
+        curr_theme = style.theme_use()
+        curr_layout = style.layout('TLabel')
+        style.theme_create('testtheme1')
+        self.assertIn('testtheme1', style.theme_names())
+
+        style.theme_create('testtheme2', settings={
+            'elem' : {'element create': ['from', 'default'],},
+            'TLabel' : {
+                'configure': {'padding': 10},
+                'layout': [('elem', {'sticky': 'we'})],
+            },
+        })
+        self.assertIn('testtheme2', style.theme_names())
+
+        style.theme_create('testtheme3', 'testtheme2')
+        self.assertIn('testtheme3', style.theme_names())
+
+        style.theme_use('testtheme1')
+        self.assertEqual(style.element_names(), ())
+        self.assertEqual(style.layout('TLabel'), curr_layout)
+
+        style.theme_use('testtheme2')
+        self.assertEqual(style.element_names(), ('elem',))
+        self.assertEqual(style.lookup('TLabel', 'padding'), '10')
+        self.assertEqual(style.layout('TLabel'), [('elem', {'sticky': 'we'})])
+
+        style.theme_use('testtheme3')
+        self.assertEqual(style.element_names(), ())
+        self.assertEqual(style.lookup('TLabel', 'padding'), '')
+        self.assertEqual(style.layout('TLabel'), [('elem', {'sticky': 'we'})])
+
+        style.theme_use(curr_theme)
+
+    def test_theme_create_image(self):
+        style = self.style
+        curr_theme = style.theme_use()
+        image = tkinter.PhotoImage(master=self.root, width=10, height=10)
+        new_theme = 'testtheme4'
+        style.theme_create(new_theme, settings={
+            'block' : {
+                'element create': ['image', image, {'width': 120, 'height': 100}],
+            },
+            'TestWidget.block2' : {
+                'element create': ['image', image],
+            },
+            'TestWidget' : {
+                'configure': {
+                    'anchor': 'left',
+                    'padding': (3, 0, 0, 2),
+                    'foreground': 'yellow',
+                },
+                'map': {
+                    'foreground': [
+                        ('pressed', 'red'),
+                        ('active', 'disabled', 'blue'),
+                    ],
+                },
+                'layout': [
+                    ('TestWidget.block', {'sticky': 'we', 'side': 'left'}),
+                    ('TestWidget.border', {
+                        'sticky': 'nsw',
+                        'border': 1,
+                        'children': [
+                            ('TestWidget.block2', {'sticky': 'nswe'})
+                        ]
+                    })
+                ],
+            },
+        })
+
+        style.theme_use(new_theme)
+        self.assertIn('block', style.element_names())
+        self.assertEqual(style.lookup('TestWidget', 'anchor'), 'left')
+        self.assertEqual(style.lookup('TestWidget', 'padding'), '3 0 0 2')
+        self.assertEqual(style.lookup('TestWidget', 'foreground'), 'yellow')
+        self.assertEqual(style.lookup('TestWidget', 'foreground',
+                                      ['active']), 'yellow')
+        self.assertEqual(style.lookup('TestWidget', 'foreground',
+                                      ['active', 'pressed']), 'red')
+        self.assertEqual(style.lookup('TestWidget', 'foreground',
+                                      ['active', 'disabled']), 'blue')
+        self.assertEqual(style.layout('TestWidget'),
+            [
+                ('TestWidget.block', {'side': 'left', 'sticky': 'we'}),
+                ('TestWidget.border', {
+                    'sticky': 'nsw',
+                    'border': '1',
+                    'children': [('TestWidget.block2', {'sticky': 'nswe'})]
+                })
+            ])
+
+        b = ttk.Label(self.root, style='TestWidget')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 134)
+        self.assertEqual(b.winfo_reqheight(), 100)
+
+        style.theme_use(curr_theme)
 
 
 if __name__ == "__main__":

@@ -559,6 +559,8 @@ pymain_run_python(int *exitcode)
         goto error;
     }
 
+    assert(interp->runtime->sys_path_0 == NULL);
+
     if (config->run_filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
            __main__.py, main_importer_path is set to filename and will be
@@ -574,24 +576,38 @@ pymain_run_python(int *exitcode)
     // import readline and rlcompleter before script dir is added to sys.path
     pymain_import_readline(config);
 
+    PyObject *path0 = NULL;
     if (main_importer_path != NULL) {
-        if (pymain_sys_path_add_path0(interp, main_importer_path) < 0) {
-            goto error;
-        }
+        path0 = Py_NewRef(main_importer_path);
     }
     else if (!config->safe_path) {
-        PyObject *path0 = NULL;
         int res = _PyPathConfig_ComputeSysPath0(&config->argv, &path0);
         if (res < 0) {
             goto error;
         }
-
-        if (res > 0) {
-            if (pymain_sys_path_add_path0(interp, path0) < 0) {
-                Py_DECREF(path0);
-                goto error;
-            }
+        else if (res == 0) {
+            Py_CLEAR(path0);
+        }
+    }
+    if (path0 != NULL) {
+        wchar_t *wstr = PyUnicode_AsWideCharString(path0, NULL);
+        if (wstr == NULL) {
             Py_DECREF(path0);
+            goto error;
+        }
+        PyMemAllocatorEx old_alloc;
+        _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+        interp->runtime->sys_path_0 = _PyMem_RawWcsdup(wstr);
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+        PyMem_Free(wstr);
+        if (interp->runtime->sys_path_0 == NULL) {
+            Py_DECREF(path0);
+            goto error;
+        }
+        int res = pymain_sys_path_add_path0(interp, path0);
+        Py_DECREF(path0);
+        if (res < 0) {
+            goto error;
         }
     }
 

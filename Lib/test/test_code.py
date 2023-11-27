@@ -498,6 +498,25 @@ class CodeTest(unittest.TestCase):
         self.assertNotEqual(c, c1)
         self.assertNotEqual(hash(c), hash(c1))
 
+    @cpython_only
+    def test_code_equal_with_instrumentation(self):
+        """ GH-109052
+
+        Make sure the instrumentation doesn't affect the code equality
+        The validity of this test relies on the fact that "x is x" and
+        "x in x" have only one different instruction and the instructions
+        have the same argument.
+
+        """
+        code1 = compile("x is x", "example.py", "eval")
+        code2 = compile("x in x", "example.py", "eval")
+        sys._getframe().f_trace_opcodes = True
+        sys.settrace(lambda *args: None)
+        exec(code1, {'x': []})
+        exec(code2, {'x': []})
+        self.assertNotEqual(code1, code2)
+        sys.settrace(None)
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])

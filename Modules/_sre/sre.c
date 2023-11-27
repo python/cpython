@@ -2024,8 +2024,6 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             GET_SKIP;
             GET_ARG; /* 0 for lookahead, width for lookbehind */
             code--; /* Back up over arg to simplify math below */
-            if (arg & 0x80000000)
-                FAIL; /* Width too large */
             /* Stop 1 before the end; we check the SUCCESS below */
             if (_validate_inner(code+1, code+skip-2, groups))
                 FAIL;
