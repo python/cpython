@@ -413,7 +413,7 @@ complex_hash(PyComplexObject *v)
     Py_uhash_t hashreal, hashimag, combined;
     hashreal = (Py_uhash_t)_Py_HashDouble((PyObject *) v, v->cval.real);
     hashimag = (Py_uhash_t)_Py_HashDouble((PyObject *)v, v->cval.imag);
-    /* In current implementation of hasing for numberic types,
+    /* In current implementation of hashing for numberic types,
      * -1 is reserved. */
     assert(hashreal != (Py_uhash_t)-1 && hashimag != (Py_uhash_t)-1);
     /* Note:  if the imaginary part is 0, hashimag is 0 now,
