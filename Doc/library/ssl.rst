@@ -2047,7 +2047,7 @@ to speed up repeated connections from the same clients.
                     'ServerId_2': bytes.fromhex('facade')
       }
       def callback(hint):
-          return 'ClientId_1', psk_table[hint]
+          return 'ClientId_1', psk_table.get(hint, b'')
       context.set_psk_client_callback(callback)
 
    .. versionadded:: 3.13
@@ -2089,7 +2089,7 @@ to speed up repeated connections from the same clients.
                     'ClientId_2': bytes.fromhex('facade')
       }
       def callback(identity):
-          return psk_table[identity]
+          return psk_table.get(identity, b'')
       context.set_psk_server_callback(callback, 'ServerId_1')
 
    .. versionadded:: 3.13
