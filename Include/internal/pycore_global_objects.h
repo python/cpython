@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_hashtable.h"       // _Py_hashtable_t
 #include "pycore_gc.h"              // PyGC_Head
 #include "pycore_global_strings.h"  // struct _Py_global_strings
 #include "pycore_hamt.h"            // PyHamtNode_Bitmap
@@ -27,6 +28,11 @@ extern "C" {
     _PyRuntime.static_objects.NAME
 #define _Py_SINGLETON(NAME) \
     _Py_GLOBAL_OBJECT(singletons.NAME)
+
+struct _Py_cached_objects {
+    // XXX We could statically allocate the hashtable.
+    _Py_hashtable_t *interned_strings;
+};
 
 struct _Py_static_objects {
     struct {
