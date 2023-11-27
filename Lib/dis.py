@@ -30,6 +30,7 @@ CONVERT_VALUE = opmap['CONVERT_VALUE']
 SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
 FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
 
+ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
 LOAD_CONST = opmap['LOAD_CONST']
 RETURN_CONST = opmap['RETURN_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
@@ -373,6 +374,8 @@ class Instruction(_Instruction):
                 argval = offset + 2 + signed_arg*2
                 caches = _get_cache_size(_all_opname[deop])
                 argval += 2 * caches
+                if deop == ENTER_EXECUTOR:
+                    argval += 2
                 argrepr = f"to L{labels_map[argval]}"
             elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
@@ -605,7 +608,9 @@ def _parse_exception_table(code):
         return entries
 
 def _is_backward_jump(op):
-    return 'JUMP_BACKWARD' in opname[op]
+    return opname[op] in ('JUMP_BACKWARD',
+                          'JUMP_BACKWARD_NO_INTERRUPT',
+                          'ENTER_EXECUTOR')
 
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
