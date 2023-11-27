@@ -109,6 +109,7 @@ class Uop:
     body: list[lexer.Token]
     properties: Properties
     _size: int = -1
+    implicitly_created: bool = False
 
     def dump(self, indent: str) -> None:
         print(
@@ -122,6 +123,22 @@ class Uop:
         if self._size < 0:
             self._size = sum(c.size for c in self.caches)
         return self._size
+
+    @property
+    def viable(self) -> bool:
+        if self.name == "_SAVE_RETURN_OFFSET":
+            return True
+        if self.properties.needs_this:
+            return False
+        if "INSTRUMENTED" in self.name:
+            return False
+        if "replaced" in self.annotations:
+            return False
+        if self.name in ("INTERPRETER_EXIT", "JUMP_BACKWARD"):
+            return False
+        if len([c for c in self.caches if c.name != "unused"]) > 1:
+            return False
+        return True
 
 
 Part = Uop | Skip
@@ -328,6 +345,7 @@ def desugar_inst(
     assert inst.kind == "inst"
     name = inst.name
     uop = make_uop("_" + inst.name, inst)
+    uop.implicitly_created = True
     uops[inst.name] = uop
     add_instruction(name, [uop], instructions)
 
