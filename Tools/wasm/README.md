@@ -302,18 +302,18 @@ AddType application/wasm wasm
 
 ### Prerequisites
 
-Developing WASI requires two things to be installed:
+Developing for WASI requires two things to be installed:
 
-1. [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+
+1. The [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+
    (see `.devcontainer/Dockerfile` for an example of how to download and install the WASI SDK)
-2. A WASI host/runtime ([wasmtime](https://wasmtime.dev) is recommended)
+2. A WASI host/runtime ([wasmtime](https://wasmtime.dev) 14+ is recommended and what the instructions below assume)
 
 
 ### Building
 
-Building for WASI requires doing a cross-build where you have a "build" Python and then your WASI build (technically it's a "host x host" cross-build because the build Python is also the target Python while the host build is the WASI build). What this leads to is you building two separate copies of Python. In the end you should have a build Python in `cross-build/build` and `cross-build/wasm32-wasi`.
+Building for WASI requires doing a cross-build where you have a "build" Python to help produce a WASI build of CPython (technically it's a "host x host" cross-build because the build Python is also the target Python while the host build is the WASI build; yes, it's confusing terminology). In the end you should have a build Python in `cross-build/build` and a WASI build in `cross-build/wasm32-wasi`.
 
-The easiest way to do a build is to use the `wasi.py` script. You can either have it perform the entire build process from start to finish in one command, or you can do it in discrete steps (which are beneficial when you only need to do a specific step after getting a complete build).
+The easiest way to do a build is to use the `wasi.py` script. You can either have it perform the entire build process from start to finish in one step, or you can do it in discrete steps that mirror running `configure` and `make` for each of the two builds of Python you end up producing (which are beneficial when you only need to do a specific step after getting a complete build, e.g. editing some code and you just need to run `make` for the WASI build).
 
 The discrete steps are:
 ```shell
@@ -335,12 +335,12 @@ That will:
 3. Run `configure` for the WASI build (`wasi.py configure-host`)
 4. Run `make` for the WASI build (`wasi.py make-host`)
 
-See the `--help` for the various options available for any of the subcommands which can control things like the location of the WASI SDK, the command to use with the WASI host/runtime, etc. Also note that you can use `--` as a separtor for any of the `configure`-related commands -- including `build` -- to pass arguments to `configure` itself. As an example, if you want a pydebug command that also caches the results from `configure`, you can do:
+See the `--help` for the various options available for each of the subcommands which controls things like the location of the WASI SDK, the command to use with the WASI host/runtime, etc. Also note that you can use `--` as a separtor for any of the `configure`-related commands -- including `build` -- to pass arguments to `configure` itself. For example, if you want a pydebug build that also caches the results from `configure`, you can do:
 ```shell
 python Tools/wasm/wasi.py build -- -C --with-pydebug
 ```
 
-The `wasi.py` script is able to infer details from the build Python, and so you only technically need to specify `--with-pydebug` once for `configure-build-python` and `configure-host` will detect its use:
+The `wasi.py` script is able to infer details from the build Python, and so you only technically need to specify `--with-pydebug` once for `configure-build-python` and `configure-host` will detect its use if you use the discrete steps:
 ```shell
 python Tools/wasm/wasi.py configure-build-python -- -C --with-pydebug
 python Tools/wasm/wasi.py make-build-python
@@ -351,7 +351,12 @@ python Tools/wasm/wasi.py make-host
 
 ### Running
 
-If you used `wasi.py` then there will be a `cross-build/wasm32-wasi/python.sh` file which you can use to run the WASI build (see the output from the `configure-host` subcommand). While there is a `python.wasm` file, you can't run it naively as there are various things need to be set (e.g. `PYTHONPATH` for `sysconfig` data). As such, the `python.sh` file handles these details for you.
+If you used `wasi.py` to do your build then there will be a `cross-build/wasm32-wasi/python.sh` file which you can use to run the `python.wasm` file (see the output from the `configure-host` subcommand):
+```shell
+cross-build/wasm32-wasi/python.sh --version
+```
+
+While you _can_ run `python.wasm` directly, Python will fail to start up without certain things being set (e.g. `PYTHONPATH` for `sysconfig` data). As such, the `python.sh` file records these details for you.
 
 
 ## Detect WebAssembly builds
