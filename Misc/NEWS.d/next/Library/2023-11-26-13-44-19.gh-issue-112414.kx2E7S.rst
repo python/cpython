@@ -1,0 +1,3 @@
+Fix regression in Python 3.12 where calling :func:`repr` on a module that
+had been imported using a custom :term:`loader` could fail with
+:exc:`AttributeError`. Patch by Alex Waygood.
