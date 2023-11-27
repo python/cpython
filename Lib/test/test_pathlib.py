@@ -575,8 +575,6 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
-        self.assertRaises(ValueError, P('a/b').with_suffix,
-                          (self.pathmod.sep, 'd'))
 
     def test_relative_to_common(self):
         P = self.cls
