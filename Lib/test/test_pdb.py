@@ -2617,7 +2617,7 @@ def bœr():
             ('bœr', 2),
         )
 
-    def test_find_function_empty_file(self):
+    def test_find_function_first_executable_line(self):
         code = textwrap.dedent("""\
             def foo(): pass
 
@@ -2627,10 +2627,20 @@ def bœr():
             def baz():
                 # comment
                 pass
+
+            def mul():
+                # code on multiple lines
+                code = compile(
+                    'def f()',
+                    '<string>',
+                    'exec',
+                )
         """).encode()
+
         self._assert_find_function(code, 'foo', ('foo', 1))
         self._assert_find_function(code, 'bar', ('bar', 4))
         self._assert_find_function(code, 'baz', ('baz', 8))
+        self._assert_find_function(code, 'mul', ('mul', 12))
 
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
