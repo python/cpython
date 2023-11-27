@@ -824,6 +824,7 @@ extern "C" {
     INIT_ID(call), \
     INIT_ID(call_exception_handler), \
     INIT_ID(call_soon), \
+    INIT_ID(callback), \
     INIT_ID(cancel), \
     INIT_ID(capath), \
     INIT_ID(category), \
@@ -969,6 +970,7 @@ extern "C" {
     INIT_ID(hook), \
     INIT_ID(id), \
     INIT_ID(ident), \
+    INIT_ID(identity_hint), \
     INIT_ID(ignore), \
     INIT_ID(imag), \
     INIT_ID(importlib), \

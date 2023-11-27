@@ -1014,6 +1014,141 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_set_psk_client_callback__doc__,
+"set_psk_client_callback($self, /, callback)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_PSK_CLIENT_CALLBACK_METHODDEF    \
+    {"set_psk_client_callback", _PyCFunction_CAST(_ssl__SSLContext_set_psk_client_callback), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_set_psk_client_callback__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
+                                              PyObject *callback);
+
+static PyObject *
+_ssl__SSLContext_set_psk_client_callback(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"callback", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_psk_client_callback",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *callback;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    callback = args[0];
+    return_value = _ssl__SSLContext_set_psk_client_callback_impl(self, callback);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_set_psk_server_callback__doc__,
+"set_psk_server_callback($self, /, callback, identity_hint=None)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_PSK_SERVER_CALLBACK_METHODDEF    \
+    {"set_psk_server_callback", _PyCFunction_CAST(_ssl__SSLContext_set_psk_server_callback), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_set_psk_server_callback__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
+                                              PyObject *callback,
+                                              const char *identity_hint);
+
+static PyObject *
+_ssl__SSLContext_set_psk_server_callback(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(callback), &_Py_ID(identity_hint), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"callback", "identity_hint", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_psk_server_callback",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *callback;
+    const char *identity_hint = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    callback = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1] == Py_None) {
+        identity_hint = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t identity_hint_length;
+        identity_hint = PyUnicode_AsUTF8AndSize(args[1], &identity_hint_length);
+        if (identity_hint == NULL) {
+            goto exit;
+        }
+        if (strlen(identity_hint) != (size_t)identity_hint_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("set_psk_server_callback", "argument 'identity_hint'", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _ssl__SSLContext_set_psk_server_callback_impl(self, callback, identity_hint);
+
+exit:
+    return return_value;
+}
+
 static PyObject *
 _ssl_MemoryBIO_impl(PyTypeObject *type);
 
@@ -1527,4 +1662,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=aa6b0a898b6077fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6342ea0062ab16c7 input=a9049054013a1b77]*/
