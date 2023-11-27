@@ -7577,6 +7577,21 @@ class NamedTupleTests(BaseTestCase):
             normal_exception.__notes__[0].replace("NormalClass", "NamedTupleClass")
         )
 
+    def test_strange_errors_when_accessing_set_name_itself(self):
+        class Meta(type):
+            def __getattribute__(self, attr):
+                if attr == "__set_name__":
+                    raise TypeError("NO")
+                return object.__getattribute__(self, attr)
+
+        class VeryAnnoying(metaclass=Meta): pass
+
+        annoying = VeryAnnoying()
+
+        with self.assertRaisesRegex(TypeError, "NO"):
+            class Foo(NamedTuple):
+                attr = annoying
+
 
 class TypedDictTests(BaseTestCase):
     def test_basics_functional_syntax(self):
