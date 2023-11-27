@@ -125,7 +125,7 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
             return NULL;                                         \
         }                                                        \
                                                                  \
-        return PyTuple_Pack(2, res, err);                        \
+        return Py_BuildValue("NN", res, err);                    \
     };
 
 _PY_C_FUNC2(sum)
@@ -161,7 +161,7 @@ _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
         return NULL;
     }
 
-    return PyTuple_Pack(2, res, err);
+    return Py_BuildValue("NN", res, err);
 }
 
 
