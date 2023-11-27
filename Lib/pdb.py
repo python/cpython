@@ -591,8 +591,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             self._error_exc()
 
-    def _replace_convenience_variable(self, line):
-        """Replace the convenience variable in line"""
+    def _replace_convenience_variables(self, line):
+        """Replace the convenience variables in line"""
+
+        if "$" not in line:
+            return line
+
         last_token_is_dollar = False
         dollar_start = None
         dollar_end = None
@@ -613,12 +617,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     last_token_is_dollar = False
         except tokenize.TokenError:
             return line
+
+        if not replace_variables:
+            return line
+
         last_end = 0
         new_line = ''
         for start, end, name in replace_variables:
             new_line += line[last_end:start] + f'__pdb_convenience_variables["{name}"]'
             last_end = end
         new_line += line[last_end:]
+
         return new_line
 
     def precmd(self, line):
@@ -655,7 +664,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 line = line[:marker].rstrip()
 
         # Replace all the convenience variables
-        line = self._replace_convenience_variable(line)
+        line = self._replace_convenience_variables(line)
 
         return line
 

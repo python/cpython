@@ -797,6 +797,7 @@ def test_convenience_variables():
     ...     '$ _frame',         # This should be a syntax error
     ...     '$a = 10',          # Set a convenience variable
     ...     '$a',               # Print its value
+    ...     'p "$a"',           # Print the string $a
     ...     'p $a + 2',         # Do some calculation
     ...     'p f"$a = {$a}"',   # Make sure $ in string is not converted and f-string works
     ...     'u',                # Switch frame
@@ -823,6 +824,8 @@ def test_convenience_variables():
     (Pdb) $a = 10
     (Pdb) $a
     10
+    (Pdb) p "$a"
+    '$a'
     (Pdb) p $a + 2
     12
     (Pdb) p f"$a = {$a}"
