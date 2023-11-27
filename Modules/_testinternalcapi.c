@@ -1624,6 +1624,7 @@ get_type_module_name(PyObject *self, PyObject *type)
     return _PyType_GetModuleName((PyTypeObject *)type);
 }
 
+#define _PyHASH_NAN 0
 
 Py_NO_INLINE static Py_hash_t
 hash_api_A(PyObject *inst, double v)
