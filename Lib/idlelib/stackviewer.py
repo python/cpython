@@ -1,3 +1,5 @@
+# Rename to stackbrowser or possibly consolidate with browser.
+
 import linecache
 import os
 
@@ -99,7 +101,7 @@ class VariablesTreeItem(ObjectTreeItem):
 
     def GetSubList(self):
         sublist = []
-        for key in self.object.keys():
+        for key in self.object.keys():  # self.object not necessarily dict.
             try:
                 value = self.object[key]
             except KeyError:

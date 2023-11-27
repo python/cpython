@@ -352,6 +352,11 @@ Constants
    defined then this protocol is unsupported.  More constants may be available
    depending on the system.
 
+.. data:: AF_UNSPEC
+
+   :const:`AF_UNSPEC` means that
+   :func:`getaddrinfo` should return socket addresses for any
+   address family (either IPv4, IPv6, or any other) that can be used.
 
 .. data:: SOCK_STREAM
           SOCK_DGRAM
@@ -379,6 +384,8 @@ Constants
    .. availability:: Linux >= 2.6.27.
 
    .. versionadded:: 3.2
+
+.. _socket-unix-constants:
 
 .. data:: SO_*
           SOMAXCONN
@@ -858,7 +865,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 .. function:: fromfd(fd, family, type, proto=0)
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
-   :meth:`fileno` method) and build a socket object from the result.  Address
+   :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
    family, socket type and protocol number are as for the :func:`.socket` function
    above. The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.

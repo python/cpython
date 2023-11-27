@@ -138,6 +138,9 @@ class _ScriptTarget(str):
         if not os.path.exists(self):
             print('Error:', self.orig, 'does not exist')
             sys.exit(1)
+        if os.path.isdir(self):
+            print('Error:', self.orig, 'is a directory')
+            sys.exit(1)
 
         # Replace pdb's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(self)
@@ -164,6 +167,9 @@ class _ModuleTarget(str):
     def check(self):
         try:
             self._details
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
         except Exception:
             traceback.print_exc()
             sys.exit(1)
@@ -232,7 +238,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             import readline
             # remove some common file name delimiters
-            readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
+            readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
         self.allow_kbdint = False
@@ -591,11 +597,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = line.split()
         while args[0] in self.aliases:
             line = self.aliases[args[0]]
-            ii = 1
-            for tmpArg in args[1:]:
-                line = line.replace("%" + str(ii),
-                                      tmpArg)
-                ii += 1
+            for idx in range(1, 10):
+                if f'%{idx}' in line:
+                    if idx >= len(args):
+                        self.error(f"Not enough arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    line = line.replace(f'%{idx}', args[idx])
+                elif '%*' not in line:
+                    if idx < len(args):
+                        self.error(f"Too many arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    break
+
             line = line.replace("%*", ' '.join(args[1:]))
             args = line.split()
         # split into ';;' separated commands
@@ -610,6 +625,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         # Replace all the convenience variables
         line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
+
         return line
 
     def onecmd(self, line):
@@ -670,6 +686,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
 
+    def completenames(self, text, line, begidx, endidx):
+        # Overwrite completenames() of cmd so for the command completion,
+        # if no current command matches, check for expressions as well
+        commands = super().completenames(text, line, begidx, endidx)
+        for alias in self.aliases:
+            if alias.startswith(text):
+                commands.append(alias)
+        if commands:
+            return commands
+        else:
+            return self._complete_expression(text, line, begidx, endidx)
+
     def _complete_location(self, text, line, begidx, endidx):
         # Complete a file/module/function location for break/tbreak/clear.
         if line.strip().endswith((':', ',')):
@@ -704,6 +732,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
         ns = {**self.curframe.f_globals, **self.curframe_locals}
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
@@ -881,7 +913,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
-                    lineno = code.co_firstlineno
+                    lineno = self._find_first_executable_line(code)
                     filename = code.co_filename
                 except:
                     # last thing to try
@@ -983,6 +1015,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error('Blank or comment')
             return 0
         return lineno
+
+    def _find_first_executable_line(self, code):
+        """ Try to find the first executable line of the code object.
+
+        Equivalently, find the line number of the instruction that's
+        after RESUME
+
+        Return code.co_firstlineno if no executable line is found.
+        """
+        prev = None
+        for instr in dis.get_instructions(code):
+            if prev is not None and prev.opname == 'RESUME':
+                if instr.positions.lineno is not None:
+                    return instr.positions.lineno
+                return code.co_firstlineno
+            prev = instr
+        return code.co_firstlineno
 
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
@@ -1735,7 +1784,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns)
+        code.interact("*interactive*", local=ns, local_exit=True)
 
     def do_alias(self, arg):
         """alias [name [command]]
@@ -1774,7 +1823,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.error(f"Unknown alias '{args[0]}'")
         else:
-            self.aliases[args[0]] = ' '.join(args[1:])
+            # Do a validation check to make sure no replaceable parameters
+            # are skipped if %* is not used.
+            alias = ' '.join(args[1:])
+            if '%*' not in alias:
+                consecutive = True
+                for idx in range(1, 10):
+                    if f'%{idx}' not in alias:
+                        consecutive = False
+                    if f'%{idx}' in alias and not consecutive:
+                        self.error("Replaceable parameters must be consecutive")
+                        return
+            self.aliases[args[0]] = alias
 
     def do_unalias(self, arg):
         """unalias name
@@ -2151,9 +2211,6 @@ def main():
     while True:
         try:
             pdb._run(target)
-            if pdb._user_requested_quit:
-                break
-            print("The program finished and will be restarted")
         except Restart:
             print("Restarting", target, "with arguments:")
             print("\t" + " ".join(sys.argv[1:]))
@@ -2161,9 +2218,6 @@ def main():
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')
             print(e)
-        except SyntaxError:
-            traceback.print_exc()
-            sys.exit(1)
         except BaseException as e:
             traceback.print_exc()
             print("Uncaught exception. Entering post mortem debugging")
@@ -2171,6 +2225,9 @@ def main():
             pdb.interaction(None, e)
             print("Post mortem debugger finished. The " + target +
                   " will be restarted")
+        if pdb._user_requested_quit:
+            break
+        print("The program finished and will be restarted")
 
 
 # When invoked as main program, invoke the debugger on a script

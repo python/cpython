@@ -100,7 +100,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/internal/mimalloc
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -336,6 +336,20 @@ IO_OBJS=	\
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
 
+
+##########################################################################
+# mimalloc
+
+MIMALLOC_HEADERS= \
+	$(srcdir)/Include/internal/pycore_mimalloc.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/atomic.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/internal.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/prim.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/track.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/types.h
+
+
 ##########################################################################
 # Parser
 
@@ -395,9 +409,10 @@ PYTHON_OBJS=	\
 		Python/codecs.o \
 		Python/compile.o \
 		Python/context.o \
+		Python/critical_section.o \
+		Python/crossinterp.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
-		Python/executor.o \
 		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
@@ -1329,6 +1344,14 @@ regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
+# Regenerate Unicode Data
+
+.PHONY: regen-unicodedata
+regen-unicodedata:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
+
+
+############################################################################
 # Regenerate all generated files
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
@@ -1338,8 +1361,8 @@ regen-all: regen-cases regen-typeslots \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi"
-	@echo "and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
+	@echo "make regen-configure and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1538,6 +1561,23 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
+Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
+	$(srcdir)/Objects/mimalloc/alloc-aligned.c \
+		$(srcdir)/Objects/mimalloc/alloc-posix.c \
+		$(srcdir)/Objects/mimalloc/arena.c \
+		$(srcdir)/Objects/mimalloc/bitmap.c \
+		$(srcdir)/Objects/mimalloc/heap.c \
+		$(srcdir)/Objects/mimalloc/init.c \
+		$(srcdir)/Objects/mimalloc/options.c \
+		$(srcdir)/Objects/mimalloc/os.c \
+		$(srcdir)/Objects/mimalloc/page.c \
+		$(srcdir)/Objects/mimalloc/random.c \
+		$(srcdir)/Objects/mimalloc/segment.c \
+		$(srcdir)/Objects/mimalloc/segment-map.c \
+		$(srcdir)/Objects/mimalloc/stats.c \
+		$(srcdir)/Objects/mimalloc/prim/prim.c
+
+Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
 .PHONY: regen-cases
 regen-cases:
@@ -1569,13 +1609,8 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
-
-Python/executor.o: \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
-		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/ceval_macros.h \
-		$(srcdir)/Python/executor_cases.c.h
 
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1720,7 +1755,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
-		$(srcdir)/Include/cpython/modsupport.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -1735,6 +1769,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pyframe.h \
+		$(srcdir)/Include/cpython/pyhash.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
@@ -1750,12 +1785,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/warnings.h \
 		$(srcdir)/Include/cpython/weakrefobject.h \
 		\
+		@MIMALLOC_HEADERS@ \
+		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_asdl.h \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atexit.h \
-		$(srcdir)/Include/internal/pycore_atomic.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
@@ -1769,6 +1805,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_complexobject.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_critical_section.h \
+		$(srcdir)/Include/internal/pycore_crossinterp.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dict_state.h \
 		$(srcdir)/Include/internal/pycore_descrobject.h \
@@ -2143,10 +2181,12 @@ LIBSUBDIRS=	asyncio \
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/audiodata \
+		test/archivetestdata \
 		test/certdata \
 		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
+		test/configdata \
 		test/data \
 		test/decimaltestdata \
 		test/dtracedata \
@@ -2257,8 +2297,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
-		test/xmltestdata/c14n-20 \
-		test/ziptestdata
+		test/xmltestdata/c14n-20
 
 COMPILEALL_OPTS=-j0
 
@@ -2604,15 +2643,9 @@ recheck:
 autoconf:
 	(cd $(srcdir); autoreconf -ivf -Werror)
 
-# See https://github.com/tiran/cpython_autoconf container
 .PHONY: regen-configure
 regen-configure:
-	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
-	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
-	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
-	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:271"; \
-	echo $$CMD; \
-	$$CMD || exit $?
+	$(srcdir)/Tools/build/regen-configure.sh
 
 # Create a tags file for vi
 tags::

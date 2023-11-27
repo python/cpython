@@ -5,34 +5,11 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* Helpers for hash functions */
-extern Py_hash_t _Py_HashDouble(PyObject *, double);
-
-// Export for '_decimal' shared extension
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
-
 // Similar to _Py_HashPointer(), but don't replace -1 with -2
 extern Py_hash_t _Py_HashPointerRaw(const void*);
 
 // Export for '_datetime' shared extension
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
-
-/* Prime multiplier used in string and various other hashes. */
-#define _PyHASH_MULTIPLIER 1000003UL  /* 0xf4243 */
-
-/* Parameters used for the numeric hash implementation.  See notes for
-   _Py_HashDouble in Python/pyhash.c.  Numeric hashes are based on
-   reduction modulo the prime 2**_PyHASH_BITS - 1. */
-
-#if SIZEOF_VOID_P >= 8
-#  define _PyHASH_BITS 61
-#else
-#  define _PyHASH_BITS 31
-#endif
-
-#define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
-#define _PyHASH_INF 314159
-#define _PyHASH_IMAG _PyHASH_MULTIPLIER
 
 /* Hash secret
  *
