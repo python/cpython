@@ -254,6 +254,11 @@ pdb
   identified and executed.
   (Contributed by Tian Gao in :gh:`108464`.)
 
+* ``sys.path[0]`` will not be mangled if ``sys.flags.safe_path`` is set by
+  :option:`-P` command line option or :envvar:`PYTHONSAFEPATH` environment
+  variable.
+  (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
+
 sqlite3
 -------
 
