@@ -161,6 +161,7 @@ typedef struct pyruntimestate {
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
+    struct _Py_cached_objects cached_objects;
 
     /* The ID of the OS thread in which we are finalizing.
        We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
