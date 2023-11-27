@@ -1032,6 +1032,10 @@ Changes in the Python API
   recomended in the documentation.
   (Contributed by Serhiy Storchaka in :gh:`106672`.)
 
+* An :exc:`OSError` is now raised by :func:`getpass.getuser` for any failure to
+  retrieve a username, instead of :exc:`ImportError` on non-Unix platforms or
+  :exc:`KeyError` on Unix platforms where the password database is empty.
+
 
 Build Changes
 =============
