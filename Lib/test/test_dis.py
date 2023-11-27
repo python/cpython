@@ -412,7 +412,7 @@ dis_traceback = """\
 %4d   L2:     LOAD_FAST_CHECK          1 (tb)
                RETURN_VALUE
 
-None   L3:     PUSH_EXC_INFO
+  --   L3:     PUSH_EXC_INFO
 
 %4d           LOAD_GLOBAL              0 (Exception)
                CHECK_EXC_MATCH
@@ -430,14 +430,14 @@ None   L3:     PUSH_EXC_INFO
 %4d           LOAD_FAST                1 (tb)
                RETURN_VALUE
 
-None   L6:     LOAD_CONST               0 (None)
+  --   L6:     LOAD_CONST               0 (None)
                STORE_FAST               0 (e)
                DELETE_FAST              0 (e)
                RERAISE                  1
 
 %4d   L7:     RERAISE                  0
 
-None   L8:     COPY                     3
+  --   L8:     COPY                     3
                POP_EXCEPT
                RERAISE                  1
 ExceptionTable:
@@ -518,7 +518,7 @@ dis_with = """\
                STORE_FAST               2 (y)
                RETURN_CONST             0 (None)
 
-None   L6:     COPY                     3
+  --   L6:     COPY                     3
                POP_EXCEPT
                RERAISE                  1
 ExceptionTable:
@@ -576,11 +576,11 @@ dis_asyncwith = """\
 
 %4d   L12:     CLEANUP_THROW
 
-None   L13:     JUMP_BACKWARD           26 (to L5)
+  --   L13:     JUMP_BACKWARD           26 (to L5)
 
 %4d   L14:     CLEANUP_THROW
 
-None   L15:     JUMP_BACKWARD           11 (to L11)
+  --   L15:     JUMP_BACKWARD           11 (to L11)
 
 %4d   L16:     PUSH_EXC_INFO
                 WITH_EXCEPT_START
@@ -604,7 +604,7 @@ None   L15:     JUMP_BACKWARD           11 (to L11)
                 STORE_FAST               2 (y)
                 RETURN_CONST             0 (None)
 
-None   L24:     COPY                     3
+  --   L24:     COPY                     3
                 POP_EXCEPT
                 RERAISE                  1
        L25:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
@@ -659,7 +659,7 @@ dis_tryfinally = """\
                POP_TOP
                RETURN_VALUE
 
-None   L3:     PUSH_EXC_INFO
+  --   L3:     PUSH_EXC_INFO
 
 %4d           LOAD_FAST                1 (b)
                PUSH_NULL
@@ -667,7 +667,7 @@ None   L3:     PUSH_EXC_INFO
                POP_TOP
                RERAISE                  0
 
-None   L4:     COPY                     3
+  --   L4:     COPY                     3
                POP_EXCEPT
                RERAISE                  1
 ExceptionTable:
@@ -693,7 +693,7 @@ dis_tryfinallyconst = """\
                POP_TOP
                RETURN_CONST             1 (1)
 
-None   L1:     PUSH_EXC_INFO
+  --   L1:     PUSH_EXC_INFO
 
 %4d           LOAD_FAST                0 (b)
                PUSH_NULL
@@ -701,7 +701,7 @@ None   L1:     PUSH_EXC_INFO
                POP_TOP
                RERAISE                  0
 
-None   L2:     COPY                     3
+  --   L2:     COPY                     3
                POP_EXCEPT
                RERAISE                  1
 ExceptionTable:
@@ -730,7 +730,7 @@ def _h(y):
     return foo
 
 dis_nested_0 = """\
-None           MAKE_CELL                0 (y)
+  --           MAKE_CELL                0 (y)
 
 %4d           RESUME                   0
 
@@ -752,7 +752,7 @@ None           MAKE_CELL                0 (y)
 
 dis_nested_1 = """%s
 Disassembly of <code object foo at 0x..., file "%s", line %d>:
-None           COPY_FREE_VARS           1
+  --           COPY_FREE_VARS           1
                MAKE_CELL                0 (x)
 
 %4d           RESUME                   0
@@ -779,7 +779,7 @@ None           COPY_FREE_VARS           1
 
 dis_nested_2 = """%s
 Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
-None           COPY_FREE_VARS           1
+  --           COPY_FREE_VARS           1
 
 %4d           RETURN_GENERATOR
                POP_TOP
@@ -797,7 +797,7 @@ None           COPY_FREE_VARS           1
        L3:     END_FOR
                RETURN_CONST             0 (None)
 
-None   L4:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
+  --   L4:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
                RERAISE                  1
 ExceptionTable:
   L1 to L4 -> L4 [0] lasti
