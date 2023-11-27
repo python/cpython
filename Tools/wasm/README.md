@@ -313,7 +313,15 @@ Developing WASI requires two things to be installed:
 
 Building for WASI requires doing a cross-build where you have a "build" Python and then your WASI build (technically it's a "host x host" cross-build because the build Python is also the target Python while the host build is the WASI build). What this leads to is you building two separate copies of Python. In the end you should have a build Python in `cross-build/build` and `cross-build/wasm32-wasi`.
 
-The easiest way to do a build is to use the `wasi.py` script. You can either have it perform the entire build process from start to finish in one command, or you can do it in discrete steps (which later on are beneficial when you only need to do a specific step).
+The easiest way to do a build is to use the `wasi.py` script. You can either have it perform the entire build process from start to finish in one command, or you can do it in discrete steps (which are beneficial when you only need to do a specific step after getting a complete build).
+
+The discrete steps are:
+```shell
+python Tools/wasm/wasi.py configure-build-python
+python Tools/wasm/wasi.py make-build-python
+python Tools/wasm/wasi.py configure-host
+python Tools/wasm/wasi.py make-host
+```
 
 To do it in a single command, run:
 ```shell
@@ -327,14 +335,23 @@ That will:
 3. Run `configure` for the WASI build (`wasi.py configure-host`)
 4. Run `make` for the WASI build (`wasi.py make-host`)
 
-See the `--help` for the various options available for any of the subcommands. Extra options passed in after `build --` will be given to **both** `configure` commands (e.g., `build -- --with-pydebug` for a pydebug build). This also applies to `configure-build-python` and `configure-host`.
+See the `--help` for the various options available for any of the subcommands which can control things like the location of the WASI SDK, the command to use with the WASI host/runtime, etc. Also note that you can use `--` as a separtor for any of the `configure`-related commands -- including `build` -- to pass arguments to `configure` itself. As an example, if you want a pydebug command that also caches the results from `configure`, you can do:
+```shell
+python Tools/wasm/wasi.py build -- -C --with-pydebug
+```
 
-The output from the script should clearly document what it is going on so that you can replicate any step manually if desired. But there are some included niceties like inferring a pydebug build for the host/WASI build based on the build Python which make using `wasi.py` a bit easier.
+The `wasi.py` script is able to infer details from the build Python, and so you only technically need to specify `--with-pydebug` once for `configure-build-python` and `configure-host` will detect its use:
+```shell
+python Tools/wasm/wasi.py configure-build-python -- -C --with-pydebug
+python Tools/wasm/wasi.py make-build-python
+python Tools/wasm/wasi.py configure-host -- -C
+python Tools/wasm/wasi.py make-host
+```
 
 
 ### Running
 
-If you used `wasi.py` then there will be a `cross-build/wasm32-wasi/python.sh` file which you can use to run the WASI build. While there is a `python.wasm`, various details to run from a checkout need to be set up -- e.g. `PYTHONPATH` for `sysconfig` data -- which are annoying to do manually.
+If you used `wasi.py` then there will be a `cross-build/wasm32-wasi/python.sh` file which you can use to run the WASI build (see the output from the `configure-host` subcommand). While there is a `python.wasm` file, you can't run it naively as there are various things need to be set (e.g. `PYTHONPATH` for `sysconfig` data). As such, the `python.sh` file handles these details for you.
 
 
 ## Detect WebAssembly builds
