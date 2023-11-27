@@ -185,7 +185,7 @@ created.  Socket addresses are represented as follows:
   .. versionadded:: 3.7
 
 - :const:`AF_PACKET` is a low-level interface directly to network devices.
-  The packets are represented by the tuple
+  The addresses are represented by the tuple
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
@@ -193,7 +193,6 @@ created.  Socket addresses are represented as follows:
     May be :data:`ETH_P_ALL` to capture all protocols,
     one of the :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
     or any other Ethernet protocol number.
-    Value must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
