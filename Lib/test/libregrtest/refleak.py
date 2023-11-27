@@ -1,9 +1,14 @@
-import os
-import re
 import sys
 import warnings
 from inspect import isabstract
+from typing import Any
+
 from test import support
+from test.support import os_helper
+
+from .runtests import HuntRefleak
+from .utils import clear_caches
+
 try:
     from _abc import _get_dump
 except ImportError:
@@ -17,7 +22,9 @@ except ImportError:
                 cls._abc_negative_cache, cls._abc_negative_cache_version)
 
 
-def dash_R(ns, test_name, test_func):
+def runtest_refleak(test_name, test_func,
+                    hunt_refleak: HuntRefleak,
+                    quiet: bool):
     """Run a test multiple times, looking for reference leaks.
 
     Returns:
@@ -39,6 +46,7 @@ def dash_R(ns, test_name, test_func):
     fs = warnings.filters[:]
     ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
+    zdc: dict[str, Any] | None
     try:
         import zipimport
     except ImportError:
@@ -60,9 +68,10 @@ def dash_R(ns, test_name, test_func):
     def get_pooled_int(value):
         return int_pool.setdefault(value, value)
 
-    nwarmup, ntracked, fname = ns.huntrleaks
-    fname = os.path.join(support.SAVEDCWD, fname)
-    repcount = nwarmup + ntracked
+    warmups = hunt_refleak.warmups
+    runs = hunt_refleak.runs
+    filename = hunt_refleak.filename
+    repcount = warmups + runs
 
     # Pre-allocate to ensure that the loop doesn't allocate anything new
     rep_range = list(range(repcount))
@@ -71,29 +80,36 @@ def dash_R(ns, test_name, test_func):
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
-    fd_count = support.fd_count
-
+    getunicodeinternedsize = sys.getunicodeinternedsize
+    fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = fd_before = 0
+    rc_before = alloc_before = fd_before = interned_before = 0
 
-    if not ns.quiet:
+    if not quiet:
         print("beginning", repcount, "repetitions", file=sys.stderr)
         print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
               flush=True)
 
+    results = None
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
+    support.gc_collect()
 
     for i in rep_range:
-        test_func()
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        results = test_func()
 
-        # dash_R_cleanup() ends with collecting cyclic trash:
-        # read memory statistics immediately after.
-        alloc_after = getallocatedblocks()
-        rc_after = gettotalrefcount()
+        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        support.gc_collect()
+
+        # Read memory statistics immediately after the garbage collection.
+        # Also, readjust the reference counts and alloc blocks by ignoring
+        # any strings that might have been interned during test_func. These
+        # strings will be deallocated at runtime shutdown
+        interned_after = getunicodeinternedsize()
+        alloc_after = getallocatedblocks() - interned_after
+        rc_after = gettotalrefcount() - interned_after * 2
         fd_after = fd_count()
 
-        if not ns.quiet:
+        if not quiet:
             print('.', end='', file=sys.stderr, flush=True)
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
@@ -103,13 +119,14 @@ def dash_R(ns, test_name, test_func):
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        interned_before = interned_after
 
-    if not ns.quiet:
+    if not quiet:
         print(file=sys.stderr)
 
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
-        # Checker for reference counters and memomry blocks.
+        # Checker for reference counters and memory blocks.
         #
         # bpo-30776: Try to ignore false positives:
         #
@@ -133,16 +150,16 @@ def dash_R(ns, test_name, test_func):
         (fd_deltas, 'file descriptors', check_fd_deltas)
     ]:
         # ignore warmup runs
-        deltas = deltas[nwarmup:]
+        deltas = deltas[warmups:]
         if checker(deltas):
             msg = '%s leaked %s %s, sum=%s' % (
                 test_name, deltas, item_name, sum(deltas))
             print(msg, file=sys.stderr, flush=True)
-            with open(fname, "a") as refrep:
+            with open(filename, "a", encoding="utf-8") as refrep:
                 print(msg, file=refrep)
                 refrep.flush()
             failed = True
-    return failed
+    return (failed, results)
 
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
@@ -163,10 +180,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
         zipimport._zip_directory_cache.clear()
         zipimport._zip_directory_cache.update(zdc)
 
-    # clear type cache
-    sys._clear_type_cache()
-
     # Clear ABC registries, restoring previously saved ABC registries.
+    # ignore deprecation warning for collections.abc.ByteString
     abs_classes = [getattr(collections.abc, a) for a in collections.abc.__all__]
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
@@ -176,103 +191,11 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
                     obj.register(ref())
             obj._abc_caches_clear()
 
+    # Clear caches
     clear_caches()
 
-
-def clear_caches():
-    # Clear the warnings registry, so they can be displayed again
-    for mod in sys.modules.values():
-        if hasattr(mod, '__warningregistry__'):
-            del mod.__warningregistry__
-
-    # Flush standard output, so that buffered data is sent to the OS and
-    # associated Python objects are reclaimed.
-    for stream in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
-        if stream is not None:
-            stream.flush()
-
-    # Clear assorted module caches.
-    # Don't worry about resetting the cache if the module is not loaded
-    try:
-        distutils_dir_util = sys.modules['distutils.dir_util']
-    except KeyError:
-        pass
-    else:
-        distutils_dir_util._path_created.clear()
-    re.purge()
-
-    try:
-        _strptime = sys.modules['_strptime']
-    except KeyError:
-        pass
-    else:
-        _strptime._regex_cache.clear()
-
-    try:
-        urllib_parse = sys.modules['urllib.parse']
-    except KeyError:
-        pass
-    else:
-        urllib_parse.clear_cache()
-
-    try:
-        urllib_request = sys.modules['urllib.request']
-    except KeyError:
-        pass
-    else:
-        urllib_request.urlcleanup()
-
-    try:
-        linecache = sys.modules['linecache']
-    except KeyError:
-        pass
-    else:
-        linecache.clearcache()
-
-    try:
-        mimetypes = sys.modules['mimetypes']
-    except KeyError:
-        pass
-    else:
-        mimetypes._default_mime_types()
-
-    try:
-        filecmp = sys.modules['filecmp']
-    except KeyError:
-        pass
-    else:
-        filecmp._cache.clear()
-
-    try:
-        struct = sys.modules['struct']
-    except KeyError:
-        pass
-    else:
-        struct._clearcache()
-
-    try:
-        doctest = sys.modules['doctest']
-    except KeyError:
-        pass
-    else:
-        doctest.master = None
-
-    try:
-        ctypes = sys.modules['ctypes']
-    except KeyError:
-        pass
-    else:
-        ctypes._reset_cache()
-
-    try:
-        typing = sys.modules['typing']
-    except KeyError:
-        pass
-    else:
-        for f in typing._cleanups:
-            f()
-
-    support.gc_collect()
+    # Clear type cache at the end: previous function calls can modify types
+    sys._clear_type_cache()
 
 
 def warm_caches():

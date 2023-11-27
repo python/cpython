@@ -10,23 +10,25 @@
    pair: HTTP; protocol
    single: HTTP; http.client (standard module)
 
-.. index:: module: urllib.request
+.. index:: pair: module; urllib.request
 
 --------------
 
-This module defines classes which implement the client side of the HTTP and
+This module defines classes that implement the client side of the HTTP and
 HTTPS protocols.  It is normally not used directly --- the module
 :mod:`urllib.request` uses it to handle URLs that use HTTP and HTTPS.
 
 .. seealso::
 
-    The `Requests package <https://requests.readthedocs.io/en/master/>`_
+    The `Requests package <https://requests.readthedocs.io/en/latest/>`_
     is recommended for a higher-level HTTP client interface.
 
 .. note::
 
    HTTPS support is only available if Python was compiled with SSL support
    (through the :mod:`ssl` module).
+
+.. include:: ../includes/wasm-notavail.rst
 
 The module provides the following classes:
 
@@ -35,7 +37,7 @@ The module provides the following classes:
                           blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
-   server.  It should be instantiated passing it a host and optional port
+   server.  It should be instantiated by passing it a host and optional port
    number.  If no port number is passed, the port is extracted from the host
    string if it has the form ``host:port``, else the default HTTP port (80) is
    used.  If the optional *timeout* parameter is given, blocking
@@ -59,16 +61,15 @@ The module provides the following classes:
 
    .. versionchanged:: 3.4
       The  *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
-      not longer supported.
+      no longer supported.
 
    .. versionchanged:: 3.7
       *blocksize* parameter was added.
 
 
-.. class:: HTTPSConnection(host, port=None, key_file=None, \
-                           cert_file=None[, timeout], \
-                           source_address=None, *, context=None, \
-                           check_hostname=None, blocksize=8192)
+.. class:: HTTPSConnection(host, port=None, *[, timeout], \
+                           source_address=None, context=None, \
+                           blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -82,7 +83,7 @@ The module provides the following classes:
 
    .. versionchanged:: 3.2
       This class now supports HTTPS virtual hosts if possible (that is,
-      if :data:`ssl.HAS_SNI` is true).
+      if :const:`ssl.HAS_SNI` is true).
 
    .. versionchanged:: 3.4
       The *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
@@ -99,16 +100,14 @@ The module provides the following classes:
       :attr:`ssl.SSLContext.post_handshake_auth` for the default *context* or
       when *cert_file* is passed with a custom *context*.
 
-   .. deprecated:: 3.6
+   .. versionchanged:: 3.10
+      This class now sends an ALPN extension with protocol indicator
+      ``http/1.1`` when no *context* is given. Custom *context* should set
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
 
-       *key_file* and *cert_file* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
-       The *check_hostname* parameter is also deprecated; the
-       :attr:`ssl.SSLContext.check_hostname` attribute of *context* should
-       be used instead.
+   .. versionchanged:: 3.12
+      The deprecated *key_file*, *cert_file* and *check_hostname* parameters
+      have been removed.
 
 
 .. class:: HTTPResponse(sock, debuglevel=0, method=None, url=None)
@@ -255,7 +254,10 @@ HTTPConnection Objects
             encode_chunked=False)
 
    This will send a request to the server using the HTTP request
-   method *method* and the selector *url*.
+   method *method* and the request URI *url*. The provided *url* must be
+   an absolute path to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *body* is specified, the specified data is sent after the headers are
    finished.  It may be a :class:`str`, a :term:`bytes-like object`, an
@@ -270,7 +272,10 @@ HTTPConnection Objects
    iterable are sent as is until the iterable is exhausted.
 
    The *headers* argument should be a mapping of extra HTTP headers to send
-   with the request.
+   with the request. A :rfc:`Host header <2616#section-14.23>`
+   must be provided to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *headers* contains neither Content-Length nor Transfer-Encoding,
    but there is a request body, one of those
@@ -288,6 +293,16 @@ HTTPConnection Objects
    specified in *headers*.  If *encode_chunked* is ``False``, the
    HTTPConnection object assumes that all encoding is handled by the
    calling code.  If it is ``True``, the body will be chunk-encoded.
+
+   For example, to perform a ``GET`` request to ``https://docs.python.org/3/``::
+
+      >>> import http.client
+      >>> host = "docs.python.org"
+      >>> conn = http.client.HTTPSConnection(host)
+      >>> conn.request("GET", "/3/", headers={"Host": host})
+      >>> response = conn.getresponse()
+      >>> print(response.status, response.reason)
+      200 OK
 
    .. note::
       Chunked transfer encoding has been added to the HTTP protocol
@@ -337,12 +352,19 @@ HTTPConnection Objects
    Set the host and the port for HTTP Connect Tunnelling. This allows running
    the connection through a proxy server.
 
-   The host and port arguments specify the endpoint of the tunneled connection
+   The *host* and *port* arguments specify the endpoint of the tunneled connection
    (i.e. the address included in the CONNECT request, *not* the address of the
    proxy server).
 
-   The headers argument should be a mapping of extra HTTP headers to send with
+   The *headers* argument should be a mapping of extra HTTP headers to send with
    the CONNECT request.
+
+   As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
+   <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
+   header must be provided, matching the authority-form of the request target
+   provided as the destination for the CONNECT request. If a HTTP ``Host:``
+   header is not provided via the headers argument, one is generated and
+   transmitted automatically.
 
    For example, to tunnel through a HTTPS proxy server running locally on port
    8080, we would pass the address of the proxy to the :class:`HTTPSConnection`
@@ -356,12 +378,30 @@ HTTPConnection Objects
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.12
+      HTTP CONNECT tunnelling requests use protocol HTTP/1.1, upgraded from
+      protocol HTTP/1.0. ``Host:`` HTTP headers are mandatory for HTTP/1.1, so
+      one will be automatically generated and transmitted if not provided in
+      the headers argument.
+
+
+.. method:: HTTPConnection.get_proxy_response_headers()
+
+   Returns a dictionary with the headers of the response received from
+   the proxy server to the CONNECT request.
+
+   If the CONNECT request was not sent, the method returns ``None``.
+
+   .. versionadded:: 3.12
+
 
 .. method:: HTTPConnection.connect()
 
    Connect to the server specified when the object was created.  By default,
    this is called automatically when making a request if the client does not
    already have a connection.
+
+   .. audit-event:: http.client.connect self,host,port http.client.HTTPConnection.connect
 
 
 .. method:: HTTPConnection.close()
@@ -432,6 +472,8 @@ also send your request step by step, by using the four functions below.
    :meth:`endheaders` method has been called and before :meth:`getresponse` is
    called.
 
+   .. audit-event:: http.client.send self,data http.client.HTTPConnection.send
+
 
 .. _httpresponse-objects:
 
@@ -463,7 +505,7 @@ statement.
 
    Return the value of the header *name*, or *default* if there is no header
    matching *name*.  If there is more than one  header with the name *name*,
-   return all of the values joined by ', '.  If 'default' is any iterable other
+   return all of the values joined by ', '.  If *default* is any iterable other
    than a single string, its elements are similarly returned joined by commas.
 
 .. method:: HTTPResponse.getheaders()
@@ -519,7 +561,7 @@ statement.
    .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.headers`.
 
-.. method:: HTTPResponse.getstatus()
+.. method:: HTTPResponse.getcode()
 
    .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.status`.
@@ -567,7 +609,7 @@ Here is an example session that uses the ``HEAD`` method.  Note that the
    >>> data == b''
    True
 
-Here is an example session that shows how to ``POST`` requests::
+Here is an example session that uses the ``POST`` method::
 
    >>> import http.client, urllib.parse
    >>> params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
@@ -580,17 +622,16 @@ Here is an example session that shows how to ``POST`` requests::
    302 Found
    >>> data = response.read()
    >>> data
-   b'Redirecting to <a href="http://bugs.python.org/issue12524">http://bugs.python.org/issue12524</a>'
+   b'Redirecting to <a href="https://bugs.python.org/issue12524">https://bugs.python.org/issue12524</a>'
    >>> conn.close()
 
-Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The
-difference lies only the server side where HTTP server will allow resources to
-be created via ``PUT`` request. It should be noted that custom HTTP methods
+Client side HTTP ``PUT`` requests are very similar to ``POST`` requests. The
+difference lies only on the server side where HTTP servers will allow resources to
+be created via ``PUT`` requests. It should be noted that custom HTTP methods
 are also handled in :class:`urllib.request.Request` by setting the appropriate
-method attribute. Here is an example session that shows how to send a ``PUT``
-request using http.client::
+method attribute. Here is an example session that uses the ``PUT`` method::
 
-    >>> # This creates an HTTP message
+    >>> # This creates an HTTP request
     >>> # with the content of BODY as the enclosed representation
     >>> # for the resource http://localhost:8080/file
     ...

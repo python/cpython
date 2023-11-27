@@ -19,7 +19,7 @@ Importing this module will append site-specific paths to the module search path
 and add a few builtins, unless :option:`-S` was used.  In that case, this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
-additions, call the :func:`site.main` function.
+additions, call the :func:`main` function.
 
 .. versionchanged:: 3.3
    Importing the module used to trigger paths manipulation even when using
@@ -32,7 +32,7 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` (on Unix and Macintosh).  For each
+:file:`lib/python{X.Y}/site-packages` (on Unix and macOS).  For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
@@ -51,7 +51,7 @@ searched for site-packages; otherwise they will.
 
 .. index::
    single: # (hash); comment
-   statement: import
+   pair: statement; import
 
 A path configuration file is a file whose name has the form :file:`{name}.pth`
 and exists in one of the four directories mentioned above; its contents are
@@ -109,32 +109,40 @@ directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
 
-.. index:: module: sitecustomize
+:mod:`sitecustomize`
+--------------------
+
+.. module:: sitecustomize
 
 After these path manipulations, an attempt is made to import a module named
 :mod:`sitecustomize`, which can perform arbitrary site-specific customizations.
 It is typically created by a system administrator in the site-packages
 directory.  If this import fails with an :exc:`ImportError` or its subclass
-exception, and the exception's :attr:`name` attribute equals to ``'sitecustomize'``,
+exception, and the exception's :attr:`~ImportError.name`
+attribute equals to ``'sitecustomize'``,
 it is silently ignored.  If Python is started without output streams available, as
 with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
 attempted output from :mod:`sitecustomize` is ignored.  Any other exception
 causes a silent and perhaps mysterious failure of the process.
 
-.. index:: module: usercustomize
+:mod:`usercustomize`
+--------------------
+
+.. module:: usercustomize
 
 After this, an attempt is made to import a module named :mod:`usercustomize`,
 which can perform arbitrary user-specific customizations, if
-:data:`ENABLE_USER_SITE` is true.  This file is intended to be created in the
+:data:`~site.ENABLE_USER_SITE` is true.  This file is intended to be created in the
 user site-packages directory (see below), which is part of ``sys.path`` unless
 disabled by :option:`-s`.  If this import fails with an :exc:`ImportError` or
-its subclass exception, and the exception's :attr:`name` attribute equals to
-``'usercustomize'``, it is silently ignored.
+its subclass exception, and the exception's :attr:`~ImportError.name`
+attribute equals to ``'usercustomize'``, it is silently ignored.
 
 Note that for some non-Unix systems, ``sys.prefix`` and ``sys.exec_prefix`` are
 empty, and the path manipulations are skipped; however the import of
 :mod:`sitecustomize` and :mod:`usercustomize` is still attempted.
 
+.. currentmodule:: site
 
 .. _rlcompleter-config:
 
@@ -176,8 +184,8 @@ Module contents
 
    Path to the user site-packages for the running Python.  Can be ``None`` if
    :func:`getusersitepackages` hasn't been called yet.  Default value is
-   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework Mac
-   OS X builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for Mac
+   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework
+   macOS builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for macOS
    framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
    on Windows.  This directory is a site directory, which means that
    :file:`.pth` files in it will be processed.
@@ -187,11 +195,11 @@ Module contents
 
    Path to the base directory for the user site-packages.  Can be ``None`` if
    :func:`getuserbase` hasn't been called yet.  Default value is
-   :file:`~/.local` for UNIX and Mac OS X non-framework builds,
-   :file:`~/Library/Python/{X.Y}` for Mac framework builds, and
-   :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
+   :file:`~/.local` for UNIX and macOS non-framework builds,
+   :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
+   :file:`{%APPDATA%}\\Python` for Windows.  This value is used to
    compute the installation directories for scripts, data files, Python modules,
-   etc. for the :ref:`user installation scheme <inst-alt-install-user>`.
+   etc. for the :ref:`user installation scheme <sysconfig-user-scheme>`.
    See also :envvar:`PYTHONUSERBASE`.
 
 
@@ -231,7 +239,9 @@ Module contents
 
    Return the path of the user-specific site-packages directory,
    :data:`USER_SITE`.  If it is not initialized yet, this function will also set
-   it, respecting :envvar:`PYTHONNOUSERSITE` and :data:`USER_BASE`.
+   it, respecting :data:`USER_BASE`.  To determine if the user-specific
+   site-packages was added to ``sys.path`` :data:`ENABLE_USER_SITE` should be
+   used.
 
    .. versionadded:: 3.2
 
@@ -248,19 +258,19 @@ command line:
 
 .. code-block:: shell-session
 
-   $ python3 -m site --user-site
-   /home/user/.local/lib/python3.3/site-packages
+   $ python -m site --user-site
+   /home/user/.local/lib/python3.11/site-packages
 
 If it is called without arguments, it will print the contents of
 :data:`sys.path` on the standard output, followed by the value of
 :data:`USER_BASE` and whether the directory exists, then the same thing for
 :data:`USER_SITE`, and finally the value of :data:`ENABLE_USER_SITE`.
 
-.. cmdoption:: --user-base
+.. option:: --user-base
 
    Print the path to the user base directory.
 
-.. cmdoption:: --user-site
+.. option:: --user-site
 
    Print the path to the user site-packages directory.
 
@@ -274,4 +284,6 @@ value greater than 2 if there is an error.
 
 .. seealso::
 
-   :pep:`370` -- Per user site-packages directory
+   * :pep:`370` -- Per user site-packages directory
+   * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
+

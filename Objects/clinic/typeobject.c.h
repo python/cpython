@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
+
 PyDoc_STRVAR(type___instancecheck____doc__,
 "__instancecheck__($self, instance, /)\n"
 "--\n"
@@ -130,6 +132,24 @@ type___sizeof__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
     return type___sizeof___impl(self);
 }
 
+PyDoc_STRVAR(object___getstate____doc__,
+"__getstate__($self, /)\n"
+"--\n"
+"\n"
+"Helper for pickle.");
+
+#define OBJECT___GETSTATE___METHODDEF    \
+    {"__getstate__", (PyCFunction)object___getstate__, METH_NOARGS, object___getstate____doc__},
+
+static PyObject *
+object___getstate___impl(PyObject *self);
+
+static PyObject *
+object___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return object___getstate___impl(self);
+}
+
 PyDoc_STRVAR(object___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -166,7 +186,7 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    protocol = _PyLong_AsInt(arg);
+    protocol = PyLong_AsInt(arg);
     if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -180,7 +200,9 @@ PyDoc_STRVAR(object___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
 "\n"
-"Default object formatter.");
+"Default object formatter.\n"
+"\n"
+"Return str(self) if format_spec is empty. Raise TypeError otherwise.");
 
 #define OBJECT___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)object___format__, METH_O, object___format____doc__},
@@ -196,9 +218,6 @@ object___format__(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("__format__", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     format_spec = arg;
@@ -243,4 +262,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=b4fb62939b08baf9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b56c87f9cace1921 input=a9049054013a1b77]*/

@@ -98,12 +98,6 @@ class _Stop(Exception):
     def __init__(self, value):
         self.value = value
 
-# Jython has PyStringMap; it's a dict subclass with string keys
-try:
-    from org.python.core import PyStringMap
-except ImportError:
-    PyStringMap = None
-
 # Pickle opcodes.  See pickletools.py for extensive docs.  The listing
 # here is in kind-of alphabetical order of 1-character pickle code.
 # pickletools groups them by purpose.
@@ -340,7 +334,9 @@ def whichmodule(obj, name):
     # Protect the iteration by using a list copy of sys.modules against dynamic
     # modules that trigger imports of other modules upon calls to getattr.
     for module_name, module in sys.modules.copy().items():
-        if module_name == '__main__' or module is None:
+        if (module_name == '__main__'
+            or module_name == '__mp_main__'  # bpo-42406
+            or module is None):
             continue
         try:
             if _getattribute(module, name)[0] is obj:
@@ -399,6 +395,8 @@ def decode_long(data):
     """
     return int.from_bytes(data, byteorder='little', signed=True)
 
+
+_NoValue = object()
 
 # Pickling machinery
 
@@ -546,8 +544,8 @@ class _Pickler:
             return
 
         rv = NotImplemented
-        reduce = getattr(self, "reducer_override", None)
-        if reduce is not None:
+        reduce = getattr(self, "reducer_override", _NoValue)
+        if reduce is not _NoValue:
             rv = reduce(obj)
 
         if rv is NotImplemented:
@@ -560,8 +558,8 @@ class _Pickler:
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
-            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
-            if reduce is not None:
+            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t, _NoValue)
+            if reduce is not _NoValue:
                 rv = reduce(obj)
             else:
                 # Check for a class with a custom metaclass; treat as regular
@@ -571,12 +569,12 @@ class _Pickler:
                     return
 
                 # Check for a __reduce_ex__ method, fall back to __reduce__
-                reduce = getattr(obj, "__reduce_ex__", None)
-                if reduce is not None:
+                reduce = getattr(obj, "__reduce_ex__", _NoValue)
+                if reduce is not _NoValue:
                     rv = reduce(self.proto)
                 else:
-                    reduce = getattr(obj, "__reduce__", None)
-                    if reduce is not None:
+                    reduce = getattr(obj, "__reduce__", _NoValue)
+                    if reduce is not _NoValue:
                         rv = reduce()
                     else:
                         raise PicklingError("Can't pickle %r object: %r" %
@@ -617,7 +615,7 @@ class _Pickler:
                     "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
-                    dictitems=None, state_setter=None, obj=None):
+                    dictitems=None, state_setter=None, *, obj=None):
         # This API is called by some subclasses
 
         if not isinstance(args, tuple):
@@ -816,6 +814,7 @@ class _Pickler:
             self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
         else:
             self.write(BYTEARRAY8 + pack("<Q", n) + obj)
+        self.memoize(obj)
     dispatch[bytearray] = save_bytearray
 
     if _HAVE_PICKLE_BUFFER:
@@ -969,8 +968,6 @@ class _Pickler:
         self._batch_setitems(obj.items())
 
     dispatch[dict] = save_dict
-    if PyStringMap is not None:
-        dispatch[PyStringMap] = save_dict
 
     def _batch_setitems(self, items):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
@@ -1170,7 +1167,7 @@ class _Unpickler:
         used in Python 3.  The *encoding* and *errors* tell pickle how
         to decode 8-bit string instances pickled by Python 2; these
         default to 'ASCII' and 'strict', respectively. *encoding* can be
-        'bytes' to read theses 8-bit string instances as bytes objects.
+        'bytes' to read these 8-bit string instances as bytes objects.
         """
         self._buffers = iter(buffers) if buffers is not None else None
         self._file_readline = file.readline
@@ -1486,7 +1483,7 @@ class _Unpickler:
                 value = klass(*args)
             except TypeError as err:
                 raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), sys.exc_info()[2])
+                                (klass.__name__, str(err)), err.__traceback__)
         else:
             value = klass.__new__(klass)
         self.append(value)
@@ -1710,8 +1707,8 @@ class _Unpickler:
         stack = self.stack
         state = stack.pop()
         inst = stack[-1]
-        setstate = getattr(inst, "__setstate__", None)
-        if setstate is not None:
+        setstate = getattr(inst, "__setstate__", _NoValue)
+        if setstate is not _NoValue:
             setstate(state)
             return
         slotstate = None

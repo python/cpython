@@ -28,6 +28,7 @@ from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
 from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
+from tkinter.simpledialog import _setup_dialog
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.
@@ -60,13 +61,8 @@ class Query(Toplevel):
         if not _utest:  # Otherwise fail when directly run unittest.
             self.grab_set()
 
-        windowingsystem = self.tk.call('tk', 'windowingsystem')
-        if windowingsystem == 'aqua':
-            try:
-                self.tk.call('::tk::unsupported::MacWindowStyle', 'style',
-                             self._w, 'moveableModal', '')
-            except:
-                pass
+        _setup_dialog(self)
+        if self._windowingsystem == 'aqua':
             self.bind("<Command-.>", self.cancel)
         self.bind('<Key-Escape>', self.cancel)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
@@ -87,6 +83,7 @@ class Query(Toplevel):
 
         if not _utest:
             self.deiconify()  # Unhide now that geometry set.
+            self.entry.focus_set()
             self.wait_window()
 
     def create_widgets(self, ok_text='OK'):  # Do not replace.
@@ -104,7 +101,6 @@ class Query(Toplevel):
                            text=self.message)
         self.entryvar = StringVar(self, self.text0)
         self.entry = Entry(frame, width=30, textvariable=self.entryvar)
-        self.entry.focus_set()
         self.error_font = Font(name='TkCaptionFont',
                                exists=True, root=self.parent)
         self.entry_error = Label(frame, text=' ', foreground='red',
