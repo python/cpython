@@ -105,7 +105,7 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
     _py_c_##suffix(PyObject *Py_UNUSED(module), PyObject *args)  \
     {                                                            \
         Py_complex num, exp;                                     \
-        PyObject *res, *err;                                     \
+        PyObject *res;                                           \
                                                                  \
         if (!PyArg_ParseTuple(args, "DD", &num, &exp)) {         \
             return NULL;                                         \
@@ -119,13 +119,8 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
         if (!res) {                                              \
             return NULL;                                         \
         }                                                        \
-        err = PyLong_FromLong(errno);                            \
-        if (!err) {                                              \
-            Py_DECREF(res);                                      \
-            return NULL;                                         \
-        }                                                        \
                                                                  \
-        return Py_BuildValue("NN", res, err);                    \
+        return Py_BuildValue("Ni", res, errno);                  \
     };
 
 _PY_C_FUNC2(sum)
@@ -138,8 +133,7 @@ static PyObject*
 _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
 {
     Py_complex complex;
-    PyObject *res, *err;
-    double val;
+    double res;
 
     NULLABLE(obj);
     complex = PyComplex_AsCComplex(obj);
@@ -149,19 +143,8 @@ _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
     }
 
     errno = 0;
-    val = _Py_c_abs(complex);
-
-    res = PyFloat_FromDouble(val);
-    if (!res) {
-        return NULL;
-    }
-    err = PyLong_FromLong(errno);
-    if (!err) {
-        Py_DECREF(res);
-        return NULL;
-    }
-
-    return Py_BuildValue("NN", res, err);
+    res = _Py_c_abs(complex);
+    return Py_BuildValue("di", res, errno);
 }
 
 
