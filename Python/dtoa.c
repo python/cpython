@@ -695,9 +695,9 @@ pow5mult(Bigint *b, int k)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     p5s = interp->dtoa.p5s;
     for(;;) {
+        assert(p5s != interp->dtoa.p5s + Bigint_Pow5size);
         p5 = *p5s;
         p5s++;
-        assert(p5s != interp->dtoa.p5s + Bigint_Pow5size);
         if (k & 1) {
             b1 = mult(b, p5);
             Bfree(b);
