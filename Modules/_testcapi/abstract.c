@@ -1,5 +1,3 @@
-#include <stddef.h>               // ptrdiff_t
-
 #include "parts.h"
 #include "util.h"
 
@@ -182,6 +180,12 @@ object_delattrstring(PyObject *self, PyObject *args)
     RETURN_INT(PyObject_DelAttrString(obj, attr_name));
 }
 
+static PyObject *
+number_check(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyBool_FromLong(PyNumber_Check(obj));
+}
 
 static PyObject *
 mapping_check(PyObject *self, PyObject *obj)
@@ -625,6 +629,7 @@ static PyMethodDef test_methods[] = {
     {"object_delattr", object_delattr, METH_VARARGS},
     {"object_delattrstring", object_delattrstring, METH_VARARGS},
 
+    {"number_check", number_check, METH_O},
     {"mapping_check", mapping_check, METH_O},
     {"mapping_size", mapping_size, METH_O},
     {"mapping_length", mapping_length, METH_O},

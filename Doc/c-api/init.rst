@@ -870,6 +870,19 @@ code, or when embedding the Python interpreter:
    When the current thread state is ``NULL``, this issues a fatal error (so that
    the caller needn't check for ``NULL``).
 
+   See also :c:func:`PyThreadState_GetUnchecked`.
+
+
+.. c:function:: PyThreadState* PyThreadState_GetUnchecked()
+
+   Similar to :c:func:`PyThreadState_Get`, but don't kill the process with a
+   fatal error if it is NULL. The caller is responsible to check if the result
+   is NULL.
+
+   .. versionadded:: 3.13
+      In Python 3.5 to 3.12, the function was private and known as
+      ``_PyThreadState_UncheckedGet()``.
+
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
@@ -1472,7 +1485,7 @@ otherwise immutable (e.g. ``None``, ``(1, 5)``) can't normally be shared
 because of the refcount.  One simple but less-efficient approach around
 this is to use a global lock around all use of some state (or object).
 Alternately, effectively immutable objects (like integers or strings)
-can be made safe in spite of their refcounts by making them "immortal".
+can be made safe in spite of their refcounts by making them :term:`immortal`.
 In fact, this has been done for the builtin singletons, small integers,
 and a number of other builtin objects.
 

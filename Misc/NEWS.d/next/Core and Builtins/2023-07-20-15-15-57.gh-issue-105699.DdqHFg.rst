@@ -1,3 +1,0 @@
-Python no longer crashes due an infrequent race when initialzing
-per-interpreter interned strings.  The crash would manifest when the
-interpreter was finalized.

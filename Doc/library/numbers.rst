@@ -160,23 +160,23 @@ refer to ``MyIntegral`` and ``OtherTypeIKnowAbout`` as
 of :class:`Complex` (``a : A <: Complex``), and ``b : B <:
 Complex``. I'll consider ``a + b``:
 
-    1. If ``A`` defines an :meth:`__add__` which accepts ``b``, all is
-       well.
-    2. If ``A`` falls back to the boilerplate code, and it were to
-       return a value from :meth:`__add__`, we'd miss the possibility
-       that ``B`` defines a more intelligent :meth:`__radd__`, so the
-       boilerplate should return :const:`NotImplemented` from
-       :meth:`__add__`. (Or ``A`` may not implement :meth:`__add__` at
-       all.)
-    3. Then ``B``'s :meth:`__radd__` gets a chance. If it accepts
-       ``a``, all is well.
-    4. If it falls back to the boilerplate, there are no more possible
-       methods to try, so this is where the default implementation
-       should live.
-    5. If ``B <: A``, Python tries ``B.__radd__`` before
-       ``A.__add__``. This is ok, because it was implemented with
-       knowledge of ``A``, so it can handle those instances before
-       delegating to :class:`Complex`.
+1. If ``A`` defines an :meth:`__add__` which accepts ``b``, all is
+   well.
+2. If ``A`` falls back to the boilerplate code, and it were to
+   return a value from :meth:`__add__`, we'd miss the possibility
+   that ``B`` defines a more intelligent :meth:`__radd__`, so the
+   boilerplate should return :const:`NotImplemented` from
+   :meth:`__add__`. (Or ``A`` may not implement :meth:`__add__` at
+   all.)
+3. Then ``B``'s :meth:`__radd__` gets a chance. If it accepts
+   ``a``, all is well.
+4. If it falls back to the boilerplate, there are no more possible
+   methods to try, so this is where the default implementation
+   should live.
+5. If ``B <: A``, Python tries ``B.__radd__`` before
+   ``A.__add__``. This is ok, because it was implemented with
+   knowledge of ``A``, so it can handle those instances before
+   delegating to :class:`Complex`.
 
 If ``A <: Complex`` and ``B <: Real`` without sharing any other knowledge,
 then the appropriate shared operation is the one involving the built
