@@ -25,6 +25,7 @@
         }
 
         case LOAD_FAST_CHECK: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             value = GETLOCAL(oparg);
             if (value == NULL) goto unbound_local_error_tier_two;
@@ -35,6 +36,7 @@
         }
 
         case LOAD_FAST: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             value = GETLOCAL(oparg);
             assert(value != NULL);
@@ -45,6 +47,7 @@
         }
 
         case LOAD_FAST_AND_CLEAR: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
@@ -55,6 +58,7 @@
         }
 
         case LOAD_CONST: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             value = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(value);
@@ -64,6 +68,7 @@
         }
 
         case STORE_FAST: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
@@ -204,7 +209,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            uint32_t version = (uint32_t)next_uop[-1].operand;
+            uint32_t version = (uint32_t)CURRENT_OPERAND();
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
             DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
@@ -512,24 +517,20 @@
             dict = stack_pointer[-2];
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            res = PyDict_GetItemWithError(dict, sub);
-            if (res == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_SetKeyError(sub);
-                }
-                Py_DECREF(dict);
-                Py_DECREF(sub);
-                if (true) goto pop_2_error_tier_two;
+            int rc = PyDict_GetItemRef(dict, sub, &res);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
             }
-            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             Py_DECREF(dict);
             Py_DECREF(sub);
+            if (rc <= 0) goto pop_2_error_tier_two;
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             break;
         }
 
         case LIST_APPEND: {
+            oparg = CURRENT_OPARG();
             PyObject *v;
             PyObject *list;
             v = stack_pointer[-1];
@@ -540,6 +541,7 @@
         }
 
         case SET_ADD: {
+            oparg = CURRENT_OPARG();
             PyObject *v;
             PyObject *set;
             v = stack_pointer[-1];
@@ -626,6 +628,7 @@
         }
 
         case CALL_INTRINSIC_1: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -638,6 +641,7 @@
         }
 
         case CALL_INTRINSIC_2: {
+            oparg = CURRENT_OPARG();
             PyObject *value1;
             PyObject *value2;
             PyObject *res;
@@ -769,6 +773,7 @@
         }
 
         case GET_AWAITABLE: {
+            oparg = CURRENT_OPARG();
             PyObject *iterable;
             PyObject *iter;
             iterable = stack_pointer[-1];
@@ -830,6 +835,7 @@
         }
 
         case STORE_NAME: {
+            oparg = CURRENT_OPARG();
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -852,6 +858,7 @@
         }
 
         case DELETE_NAME: {
+            oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -872,6 +879,7 @@
         }
 
         case _UNPACK_SEQUENCE: {
+            oparg = CURRENT_OPARG();
             PyObject *seq;
             seq = stack_pointer[-1];
             PyObject **top = stack_pointer + oparg - 1;
@@ -884,6 +892,7 @@
         }
 
         case UNPACK_SEQUENCE_TWO_TUPLE: {
+            oparg = CURRENT_OPARG();
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -901,6 +910,7 @@
         }
 
         case UNPACK_SEQUENCE_TUPLE: {
+            oparg = CURRENT_OPARG();
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -919,6 +929,7 @@
         }
 
         case UNPACK_SEQUENCE_LIST: {
+            oparg = CURRENT_OPARG();
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -937,6 +948,7 @@
         }
 
         case UNPACK_EX: {
+            oparg = CURRENT_OPARG();
             PyObject *seq;
             seq = stack_pointer[-1];
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
@@ -949,6 +961,7 @@
         }
 
         case _STORE_ATTR: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *v;
             owner = stack_pointer[-1];
@@ -963,6 +976,7 @@
         }
 
         case DELETE_ATTR: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             owner = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -974,6 +988,7 @@
         }
 
         case STORE_GLOBAL: {
+            oparg = CURRENT_OPARG();
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -985,6 +1000,7 @@
         }
 
         case DELETE_GLOBAL: {
+            oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
@@ -1014,6 +1030,7 @@
         }
 
         case LOAD_FROM_DICT_OR_GLOBALS: {
+            oparg = CURRENT_OPARG();
             PyObject *mod_or_class_dict;
             PyObject *v;
             mod_or_class_dict = stack_pointer[-1];
@@ -1022,14 +1039,10 @@
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
                     GOTO_ERROR(error);
                 }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -1047,6 +1060,7 @@
         }
 
         case LOAD_NAME: {
+            oparg = CURRENT_OPARG();
             PyObject *v;
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
@@ -1059,14 +1073,10 @@
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
                     GOTO_ERROR(error);
                 }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -1084,6 +1094,7 @@
         }
 
         case _LOAD_GLOBAL: {
+            oparg = CURRENT_OPARG();
             PyObject *res;
             PyObject *null = NULL;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -1128,7 +1139,7 @@
         }
 
         case _GUARD_GLOBALS_VERSION: {
-            uint16_t version = (uint16_t)next_uop[-1].operand;
+            uint16_t version = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_GLOBALS_VERSION);
             DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_GLOBALS_VERSION);
@@ -1137,7 +1148,7 @@
         }
 
         case _GUARD_BUILTINS_VERSION: {
-            uint16_t version = (uint16_t)next_uop[-1].operand;
+            uint16_t version = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             DEOPT_IF(!PyDict_CheckExact(dict), _GUARD_BUILTINS_VERSION);
             DEOPT_IF(dict->ma_keys->dk_version != version, _GUARD_BUILTINS_VERSION);
@@ -1146,9 +1157,10 @@
         }
 
         case _LOAD_GLOBAL_MODULE: {
+            oparg = CURRENT_OPARG();
             PyObject *res;
             PyObject *null = NULL;
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             res = entries[index].me_value;
@@ -1164,9 +1176,10 @@
         }
 
         case _LOAD_GLOBAL_BUILTINS: {
+            oparg = CURRENT_OPARG();
             PyObject *res;
             PyObject *null = NULL;
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             res = entries[index].me_value;
@@ -1182,6 +1195,7 @@
         }
 
         case DELETE_FAST: {
+            oparg = CURRENT_OPARG();
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error_tier_two;
             SETLOCAL(oparg, NULL);
@@ -1189,6 +1203,7 @@
         }
 
         case MAKE_CELL: {
+            oparg = CURRENT_OPARG();
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
@@ -1201,6 +1216,7 @@
         }
 
         case DELETE_DEREF: {
+            oparg = CURRENT_OPARG();
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
             // Can't use ERROR_IF here.
@@ -1215,6 +1231,7 @@
         }
 
         case LOAD_FROM_DICT_OR_DEREF: {
+            oparg = CURRENT_OPARG();
             PyObject *class_dict;
             PyObject *value;
             class_dict = stack_pointer[-1];
@@ -1240,6 +1257,7 @@
         }
 
         case LOAD_DEREF: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             PyObject *cell = GETLOCAL(oparg);
             value = PyCell_GET(cell);
@@ -1254,6 +1272,7 @@
         }
 
         case STORE_DEREF: {
+            oparg = CURRENT_OPARG();
             PyObject *v;
             v = stack_pointer[-1];
             PyObject *cell = GETLOCAL(oparg);
@@ -1265,6 +1284,7 @@
         }
 
         case COPY_FREE_VARS: {
+            oparg = CURRENT_OPARG();
             /* Copy closure variables to free variables */
             PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyFunction_Check(frame->f_funcobj));
@@ -1279,6 +1299,7 @@
         }
 
         case BUILD_STRING: {
+            oparg = CURRENT_OPARG();
             PyObject **pieces;
             PyObject *str;
             pieces = stack_pointer - oparg;
@@ -1294,6 +1315,7 @@
         }
 
         case BUILD_TUPLE: {
+            oparg = CURRENT_OPARG();
             PyObject **values;
             PyObject *tup;
             values = stack_pointer - oparg;
@@ -1306,6 +1328,7 @@
         }
 
         case BUILD_LIST: {
+            oparg = CURRENT_OPARG();
             PyObject **values;
             PyObject *list;
             values = stack_pointer - oparg;
@@ -1318,6 +1341,7 @@
         }
 
         case LIST_EXTEND: {
+            oparg = CURRENT_OPARG();
             PyObject *iterable;
             PyObject *list;
             iterable = stack_pointer[-1];
@@ -1342,6 +1366,7 @@
         }
 
         case SET_UPDATE: {
+            oparg = CURRENT_OPARG();
             PyObject *iterable;
             PyObject *set;
             iterable = stack_pointer[-1];
@@ -1354,6 +1379,7 @@
         }
 
         case BUILD_SET: {
+            oparg = CURRENT_OPARG();
             PyObject **values;
             PyObject *set;
             values = stack_pointer - oparg;
@@ -1378,6 +1404,7 @@
         }
 
         case BUILD_MAP: {
+            oparg = CURRENT_OPARG();
             PyObject **values;
             PyObject *map;
             values = stack_pointer - oparg*2;
@@ -1404,39 +1431,23 @@
                 if (true) goto error_tier_two;
             }
             /* check if __annotations__ in locals()... */
-            if (PyDict_CheckExact(LOCALS())) {
-                ann_dict = _PyDict_GetItemWithError(LOCALS(),
-                                                    &_Py_ID(__annotations__));
-                if (ann_dict == NULL) {
-                    if (_PyErr_Occurred(tstate)) goto error_tier_two;
-                    /* ...if not, create a new one */
-                    ann_dict = PyDict_New();
-                    if (ann_dict == NULL) goto error_tier_two;
-                    err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                         ann_dict);
-                    Py_DECREF(ann_dict);
-                    if (err) goto error_tier_two;
-                }
+            if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error_tier_two;
+            if (ann_dict == NULL) {
+                ann_dict = PyDict_New();
+                if (ann_dict == NULL) goto error_tier_two;
+                err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                       ann_dict);
+                Py_DECREF(ann_dict);
+                if (err) goto error_tier_two;
             }
             else {
-                /* do the same if locals() is not a dict */
-                if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) goto error_tier_two;
-                if (ann_dict == NULL) {
-                    ann_dict = PyDict_New();
-                    if (ann_dict == NULL) goto error_tier_two;
-                    err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                           ann_dict);
-                    Py_DECREF(ann_dict);
-                    if (err) goto error_tier_two;
-                }
-                else {
-                    Py_DECREF(ann_dict);
-                }
+                Py_DECREF(ann_dict);
             }
             break;
         }
 
         case BUILD_CONST_KEY_MAP: {
+            oparg = CURRENT_OPARG();
             PyObject *keys;
             PyObject **values;
             PyObject *map;
@@ -1462,6 +1473,7 @@
         }
 
         case DICT_UPDATE: {
+            oparg = CURRENT_OPARG();
             PyObject *update;
             PyObject *dict;
             update = stack_pointer[-1];
@@ -1481,6 +1493,7 @@
         }
 
         case DICT_MERGE: {
+            oparg = CURRENT_OPARG();
             PyObject *update;
             PyObject *dict;
             PyObject *callable;
@@ -1498,6 +1511,7 @@
         }
 
         case MAP_ADD: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             PyObject *key;
             PyObject *dict;
@@ -1513,6 +1527,7 @@
         }
 
         case LOAD_SUPER_ATTR_ATTR: {
+            oparg = CURRENT_OPARG();
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1536,6 +1551,7 @@
         }
 
         case LOAD_SUPER_ATTR_METHOD: {
+            oparg = CURRENT_OPARG();
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -1572,6 +1588,7 @@
         }
 
         case _LOAD_ATTR: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
@@ -1615,7 +1632,7 @@
         case _GUARD_TYPE_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop[-1].operand;
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, _GUARD_TYPE_VERSION);
@@ -1633,11 +1650,12 @@
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(attr == NULL, _LOAD_ATTR_INSTANCE_VALUE);
@@ -1654,7 +1672,7 @@
         case _CHECK_ATTR_MODULE: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop[-1].operand;
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             DEOPT_IF(!PyModule_CheckExact(owner), _CHECK_ATTR_MODULE);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
@@ -1663,11 +1681,12 @@
         }
 
         case _LOAD_ATTR_MODULE: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < dict->ma_keys->dk_nentries);
@@ -1697,11 +1716,12 @@
         }
 
         case _LOAD_ATTR_WITH_HINT: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t hint = (uint16_t)next_uop[-1].operand;
+            uint16_t hint = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, _LOAD_ATTR_WITH_HINT);
@@ -1728,11 +1748,12 @@
         }
 
         case _LOAD_ATTR_SLOT: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
             DEOPT_IF(attr == NULL, _LOAD_ATTR_SLOT);
@@ -1749,7 +1770,7 @@
         case _CHECK_ATTR_CLASS: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)next_uop[-1].operand;
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             DEOPT_IF(!PyType_Check(owner), _CHECK_ATTR_CLASS);
             assert(type_version != 0);
             DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version, _CHECK_ATTR_CLASS);
@@ -1757,11 +1778,12 @@
         }
 
         case _LOAD_ATTR_CLASS: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
@@ -1787,7 +1809,7 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
@@ -1809,7 +1831,7 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = (uint16_t)next_uop[-1].operand;
+            uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
@@ -1821,6 +1843,7 @@
         }
 
         case _COMPARE_OP: {
+            oparg = CURRENT_OPARG();
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1843,6 +1866,7 @@
         }
 
         case COMPARE_OP_FLOAT: {
+            oparg = CURRENT_OPARG();
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1865,6 +1889,7 @@
         }
 
         case COMPARE_OP_INT: {
+            oparg = CURRENT_OPARG();
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1891,6 +1916,7 @@
         }
 
         case COMPARE_OP_STR: {
+            oparg = CURRENT_OPARG();
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1914,6 +1940,7 @@
         }
 
         case IS_OP: {
+            oparg = CURRENT_OPARG();
             PyObject *right;
             PyObject *left;
             PyObject *b;
@@ -1929,6 +1956,7 @@
         }
 
         case CONTAINS_OP: {
+            oparg = CURRENT_OPARG();
             PyObject *right;
             PyObject *left;
             PyObject *b;
@@ -2025,6 +2053,7 @@
         }
 
         case MATCH_CLASS: {
+            oparg = CURRENT_OPARG();
             PyObject *names;
             PyObject *type;
             PyObject *subject;
@@ -2128,6 +2157,31 @@
                 Py_DECREF(iterable);
             }
             stack_pointer[-1] = iter;
+            break;
+        }
+
+        case _FOR_ITER_TIER_TWO: {
+            PyObject *iter;
+            PyObject *next;
+            iter = stack_pointer[-1];
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        GOTO_ERROR(error);
+                    }
+                    _PyErr_Clear(tstate);
+                }
+                /* iterator ended normally */
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                /* The translator sets the deopt target just past END_FOR */
+                DEOPT_IF(true, _FOR_ITER_TIER_TWO);
+            }
+            // Common case: no jump, leave it to the code generator
+            STACK_GROW(1);
+            stack_pointer[-1] = next;
             break;
         }
 
@@ -2383,7 +2437,7 @@
         case _GUARD_KEYS_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t keys_version = (uint32_t)next_uop[-1].operand;
+            uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
             DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version, _GUARD_KEYS_VERSION);
@@ -2391,11 +2445,12 @@
         }
 
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -2410,11 +2465,12 @@
         }
 
         case _LOAD_ATTR_METHOD_NO_DICT: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2429,10 +2485,11 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2443,10 +2500,11 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2469,11 +2527,12 @@
         }
 
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
+            oparg = CURRENT_OPARG();
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)next_uop[-1].operand;
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2487,6 +2546,7 @@
         }
 
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
+            oparg = CURRENT_OPARG();
             PyObject *null;
             PyObject *callable;
             null = stack_pointer[-1 - oparg];
@@ -2497,6 +2557,7 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
+            oparg = CURRENT_OPARG();
             PyObject *callable;
             PyObject *func;
             PyObject *self;
@@ -2518,11 +2579,12 @@
         }
 
         case _CHECK_FUNCTION_EXACT_ARGS: {
+            oparg = CURRENT_OPARG();
             PyObject *self_or_null;
             PyObject *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)next_uop[-1].operand;
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             DEOPT_IF(!PyFunction_Check(callable), _CHECK_FUNCTION_EXACT_ARGS);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, _CHECK_FUNCTION_EXACT_ARGS);
@@ -2532,6 +2594,7 @@
         }
 
         case _CHECK_STACK_SPACE: {
+            oparg = CURRENT_OPARG();
             PyObject *callable;
             callable = stack_pointer[-2 - oparg];
             PyFunctionObject *func = (PyFunctionObject *)callable;
@@ -2542,6 +2605,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2590,6 +2654,7 @@
         }
 
         case CALL_TYPE_1: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2612,6 +2677,7 @@
         }
 
         case CALL_STR_1: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2636,6 +2702,7 @@
         }
 
         case CALL_TUPLE_1: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2674,6 +2741,7 @@
         }
 
         case CALL_BUILTIN_CLASS: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2705,6 +2773,7 @@
         }
 
         case CALL_BUILTIN_O: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2744,6 +2813,7 @@
         }
 
         case CALL_BUILTIN_FAST: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2787,6 +2857,7 @@
         }
 
         case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2824,6 +2895,7 @@
         }
 
         case CALL_LEN: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2859,6 +2931,7 @@
         }
 
         case CALL_ISINSTANCE: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2896,6 +2969,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_O: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2938,6 +3012,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2978,6 +3053,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_NOARGS: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3019,6 +3095,7 @@
         }
 
         case CALL_METHOD_DESCRIPTOR_FAST: {
+            oparg = CURRENT_OPARG();
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -3078,6 +3155,7 @@
         }
 
         case SET_FUNCTION_ATTRIBUTE: {
+            oparg = CURRENT_OPARG();
             PyObject *func;
             PyObject *attr;
             func = stack_pointer[-1];
@@ -3112,6 +3190,7 @@
         }
 
         case BUILD_SLICE: {
+            oparg = CURRENT_OPARG();
             PyObject *step = NULL;
             PyObject *stop;
             PyObject *start;
@@ -3131,6 +3210,7 @@
         }
 
         case CONVERT_VALUE: {
+            oparg = CURRENT_OPARG();
             PyObject *value;
             PyObject *result;
             value = stack_pointer[-1];
@@ -3178,6 +3258,7 @@
         }
 
         case COPY: {
+            oparg = CURRENT_OPARG();
             PyObject *bottom;
             PyObject *top;
             bottom = stack_pointer[-1 - (oparg-1)];
@@ -3189,6 +3270,7 @@
         }
 
         case _BINARY_OP: {
+            oparg = CURRENT_OPARG();
             PyObject *rhs;
             PyObject *lhs;
             PyObject *res;
@@ -3205,6 +3287,7 @@
         }
 
         case SWAP: {
+            oparg = CURRENT_OPARG();
             PyObject *top;
             PyObject *bottom;
             top = stack_pointer[-1];
@@ -3215,22 +3298,37 @@
             break;
         }
 
-        case _POP_JUMP_IF_FALSE: {
+        case _GUARD_IS_TRUE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsFalse(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+            DEOPT_IF(Py_IsFalse(flag), _GUARD_IS_TRUE_POP);
+            assert(Py_IsTrue(flag));
             STACK_SHRINK(1);
             break;
         }
 
-        case _POP_JUMP_IF_TRUE: {
+        case _GUARD_IS_FALSE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsTrue(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+            DEOPT_IF(Py_IsTrue(flag), _GUARD_IS_FALSE_POP);
+            assert(Py_IsFalse(flag));
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case _GUARD_IS_NONE_POP: {
+            PyObject *val;
+            val = stack_pointer[-1];
+            DEOPT_IF(!Py_IsNone(val), _GUARD_IS_NONE_POP);
+            STACK_SHRINK(1);
+            break;
+        }
+
+        case _GUARD_IS_NOT_NONE_POP: {
+            PyObject *val;
+            val = stack_pointer[-1];
+            DEOPT_IF(Py_IsNone(val), _GUARD_IS_NOT_NONE_POP);
+            Py_DECREF(val);
             STACK_SHRINK(1);
             break;
         }
@@ -3242,6 +3340,7 @@
         }
 
         case _SET_IP: {
+            oparg = CURRENT_OPARG();
             TIER_TWO_ONLY
             // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
             frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
@@ -3249,6 +3348,7 @@
         }
 
         case _SAVE_RETURN_OFFSET: {
+            oparg = CURRENT_OPARG();
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             #endif
@@ -3265,11 +3365,18 @@
         }
 
         case _INSERT: {
+            oparg = CURRENT_OPARG();
             PyObject *top;
             top = stack_pointer[-1];
             // Inserts TOS at position specified by oparg;
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
             stack_pointer[-1 - oparg] = top;
+            break;
+        }
+
+        case _CHECK_VALIDITY: {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->base.vm_data.valid, _CHECK_VALIDITY);
             break;
         }
 

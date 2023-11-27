@@ -4733,19 +4733,15 @@ class TestSignatureDefinitions(unittest.TestCase):
         # These have unrepresentable parameter default values of NULL
         needs_null = {"anext"}
         no_signature |= needs_null
-        # These need PEP 457 groups or a signature change to accept None
-        needs_semantic_update = {"round"}
-        no_signature |= needs_semantic_update
         # These need *args support in Argument Clinic
-        needs_varargs = {"breakpoint", "min", "max", "print",
-                         "__build_class__"}
+        needs_varargs = {"min", "max", "__build_class__"}
         no_signature |= needs_varargs
-        # These simply weren't covered in the initial AC conversion
-        # for builtin callables
-        not_converted_yet = {"open", "__import__"}
-        no_signature |= not_converted_yet
         # These builtin types are expected to provide introspection info
-        types_with_signatures = set()
+        types_with_signatures = {
+            'bool', 'classmethod', 'complex', 'enumerate', 'filter', 'float',
+            'frozenset', 'list', 'map', 'memoryview', 'object', 'property',
+            'reversed', 'set', 'staticmethod', 'tuple', 'zip'
+        }
         # Check the signatures we expect to be there
         ns = vars(builtins)
         for name, obj in sorted(ns.items()):
@@ -4758,15 +4754,19 @@ class TestSignatureDefinitions(unittest.TestCase):
             if (name in no_signature):
                 # Not yet converted
                 continue
+            if name in {'classmethod', 'staticmethod'}:
+                # Bug gh-112006: inspect.unwrap() does not work with types
+                # with the __wrapped__ data descriptor.
+                continue
             with self.subTest(builtin=name):
                 self.assertIsNotNone(inspect.signature(obj))
         # Check callables that haven't been converted don't claim a signature
         # This ensures this test will start failing as more signatures are
         # added, so the affected items can be moved into the scope of the
         # regression test above
-        for name in no_signature:
+        for name in no_signature - needs_null:
             with self.subTest(builtin=name):
-                self.assertIsNone(obj.__text_signature__)
+                self.assertIsNone(ns[name].__text_signature__)
 
     def test_python_function_override_signature(self):
         def func(*args, **kwargs):

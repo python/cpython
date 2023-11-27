@@ -1087,19 +1087,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        The cache dict holds one reference to the link.
        We created one other reference when the link was created.
        The linked list only has borrowed references. */
-    popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
-                                      link->hash, Py_None);
-    if (popresult == Py_None) {
-        /* Getting here means that the user function call or another
-           thread has already removed the old key from the dictionary.
-           This link is now an orphan.  Since we don't want to leave the
-           cache in an inconsistent state, we don't restore the link. */
-        Py_DECREF(popresult);
-        Py_DECREF(link);
-        Py_DECREF(key);
-        return result;
-    }
-    if (popresult == NULL) {
+    int res = _PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
+                                    link->hash, &popresult);
+    if (res < 0) {
         /* An error arose while trying to remove the oldest key (the one
            being evicted) from the cache.  We restore the link to its
            original position as the oldest link.  Then we allow the
@@ -1110,10 +1100,22 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(result);
         return NULL;
     }
+    if (res == 0) {
+        /* Getting here means that the user function call or another
+           thread has already removed the old key from the dictionary.
+           This link is now an orphan.  Since we don't want to leave the
+           cache in an inconsistent state, we don't restore the link. */
+        assert(popresult == NULL);
+        Py_DECREF(link);
+        Py_DECREF(key);
+        return result;
+    }
+
     /* Keep a reference to the old key and old result to prevent their
        ref counts from going to zero during the update. That will
        prevent potentially arbitrary object clean-up code (i.e. __del__)
        from running while we're still adjusting the links. */
+    assert(popresult != NULL);
     oldkey = link->key;
     oldresult = link->result;
 
@@ -1272,7 +1274,11 @@ lru_cache_dealloc(lru_cache_object *obj)
 static PyObject *
 lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    return self->wrapper(self, args, kwds);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = self->wrapper(self, args, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
@@ -1285,6 +1291,7 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_info
 
 Report cache statistics
@@ -1292,7 +1299,7 @@ Report cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
-/*[clinic end generated code: output=cc796a0b06dbd717 input=f05e5b6ebfe38645]*/
+/*[clinic end generated code: output=cc796a0b06dbd717 input=00e1acb31aa21ecc]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     if (_self->maxsize == -1) {
@@ -1306,6 +1313,7 @@ _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_clear
 
 Clear the cache and cache statistics
@@ -1313,7 +1321,7 @@ Clear the cache and cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
-/*[clinic end generated code: output=58423b35efc3e381 input=6ca59dba09b12584]*/
+/*[clinic end generated code: output=58423b35efc3e381 input=dfa33acbecf8b4b2]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     lru_list_elem *list = lru_cache_unlink_list(_self);
