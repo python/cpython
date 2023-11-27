@@ -104,19 +104,27 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
     static PyObject *                                            \
     _py_c_##suffix(PyObject *Py_UNUSED(module), PyObject *args)  \
     {                                                            \
-        Py_complex num, exp, res;                                \
+        Py_complex num, exp;                                     \
+        PyObject *res, *err;                                     \
                                                                  \
         if (!PyArg_ParseTuple(args, "DD", &num, &exp)) {         \
             return NULL;                                         \
         }                                                        \
                                                                  \
         errno = 0;                                               \
-        res = _Py_c_##suffix(num, exp);                          \
-        _Py_ADJUST_ERANGE2(res.real, res.imag);                  \
+        num = _Py_c_##suffix(num, exp);                          \
+        _Py_ADJUST_ERANGE2(num.real, num.imag);                  \
                                                                  \
-        return PyTuple_Pack(2,                                   \
-                            PyComplex_FromCComplex(res),         \
-                            PyLong_FromLong(errno));             \
+        res = PyComplex_FromCComplex(num);                       \
+        if (!res) {                                              \
+            return NULL;                                         \
+        }                                                        \
+        err = PyLong_FromLong(errno);                            \
+        if (!err) {                                              \
+            return NULL;                                         \
+        }                                                        \
+                                                                 \
+        return PyTuple_Pack(2, res, err);                        \
     };
 
 _PY_C_FUNC2(sum)
@@ -129,7 +137,8 @@ static PyObject*
 _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
 {
     Py_complex complex;
-    double res;
+    PyObject *res, *err;
+    double val;
 
     NULLABLE(obj);
     complex = PyComplex_AsCComplex(obj);
@@ -139,9 +148,18 @@ _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
     }
 
     errno = 0;
-    res = _Py_c_abs(complex);
-    return PyTuple_Pack(2, PyFloat_FromDouble(res),
-                        PyLong_FromLong(errno));
+    val = _Py_c_abs(complex);
+
+    res = PyFloat_FromDouble(val);
+    if (!res) {
+        return NULL;
+    }
+    err = PyLong_FromLong(errno);
+    if (!err) {
+        return NULL;
+    }
+
+    return PyTuple_Pack(2, res, err);
 }
 
 
