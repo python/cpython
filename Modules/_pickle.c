@@ -4707,6 +4707,14 @@ Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->fast_memo);
     Py_VISIT(self->reducer_override);
     Py_VISIT(self->buffer_callback);
+    PyMemoTable *memo = self->memo;
+    if (memo && memo->mt_table) {
+        Py_ssize_t i = memo->mt_allocated;
+        while (--i >= 0) {
+            Py_VISIT(memo->mt_table[i].me_key);
+        }
+    }
+
     return 0;
 }
 
