@@ -103,7 +103,6 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
     _py_c_##suffix(PyObject *Py_UNUSED(module), PyObject *args)  \
     {                                                            \
         Py_complex num, exp, res;                                \
-        PyObject *res;                                           \
                                                                  \
         if (!PyArg_ParseTuple(args, "DD", &num, &exp)) {         \
             return NULL;                                         \
@@ -111,7 +110,7 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
                                                                  \
         errno = 0;                                               \
         res = _Py_c_##suffix(num, exp);                          \
-        return Py_BuildValue("Di", res, errno);                  \
+        return Py_BuildValue("Di", &res, errno);                 \
     };
 
 _PY_C_FUNC2(sum)
