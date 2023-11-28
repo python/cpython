@@ -1151,11 +1151,13 @@ _io_FileIO_isatty_impl(fileio *self)
     if (self->fd < 0)
         return err_closed();
     if (self->isatty < 0) {
+        int res;
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
-        self->isatty = isatty(self->fd);
+        res = isatty(self->fd);
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
+        self->isatty = res;
     }
     return PyBool_FromLong(self->isatty);
 }
