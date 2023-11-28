@@ -1,0 +1,2 @@
+Add support of the "vsapi" element type in
+:meth:`tkinter.ttk.Style.element_create`.

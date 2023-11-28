@@ -2334,6 +2334,10 @@ func(
 """
         self._check_error(code, "parenthesis '\\)' does not match opening parenthesis '\\['")
 
+        # Examples with dencodings
+        s = b'# coding=latin\n(aaaaaaaaaaaaaaaaa\naaaaaaaaaaa\xb5'
+        self._check_error(s, "'\(' was never closed")
+
     def test_error_string_literal(self):
 
         self._check_error("'blech", r"unterminated string literal \(.*\)$")
@@ -2349,6 +2353,7 @@ func(
 
     def test_invisible_characters(self):
         self._check_error('print\x17("Hello")', "invalid non-printable character")
+        self._check_error(b"with(0,,):\n\x01", "invalid non-printable character")
 
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
