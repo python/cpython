@@ -318,6 +318,12 @@ traceback
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
+* Add the field *exc_type_str* to :class:`~traceback.TracebackException`, which
+  holds a string display of the *exc_type*. Deprecate the field *exc_type*
+  which holds the type object itself. Add parameter *save_exc_type* (default
+  ``True``) to indicate whether ``exc_type`` should be saved.
+  (Contributed by Irit Katriel in :gh:`112332`.)
+
 typing
 ------
 
@@ -376,6 +382,11 @@ Deprecated
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`traceback`:
+
+  * The field *exc_type* of :class:`traceback.TracebackException` is
+    deprecated. Use *exc_type_str* instead.
 
 * :mod:`typing`:
 
