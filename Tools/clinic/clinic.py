@@ -871,7 +871,7 @@ class CLanguage(Language):
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #define {methoddef_name}    \
-            {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, NULL, NULL}},
+            {{"{name}", (getter){c_basename}, NULL, NULL}},
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
         #ifndef {methoddef_name}
@@ -1686,7 +1686,7 @@ class CLanguage(Language):
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
         elif f.kind is GETTER:
-            methoddef_cast = "(getter)"
+            methoddef_cast = "" # This should end up unused
         elif limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
         else:
