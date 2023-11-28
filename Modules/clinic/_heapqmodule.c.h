@@ -160,7 +160,7 @@ PyDoc_STRVAR(_heapq_heapremove__doc__,
 "an item changes by removing and re-inserting the same item, e.g:\n"
 "\n"
 "    item.value=new_value\n"
-"    idx = heap.find(item)\n"
+"    idx = heap.index(item)\n"
 "    heapq.heapremove(heap, idx, item)");
 
 #define _HEAPQ_HEAPREMOVE_METHODDEF    \
@@ -330,4 +330,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a752a0808801ab63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10ce297f0322c817 input=a9049054013a1b77]*/
