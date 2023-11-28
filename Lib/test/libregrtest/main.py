@@ -309,6 +309,8 @@ class Regrtest:
         else:
             tracer = None
 
+        save_modules = set(sys.modules)
+
         jobs = runtests.get_jobs()
         if jobs is not None:
             tests = count(jobs, 'test')
@@ -330,6 +332,19 @@ class Regrtest:
             self.logger.display_progress(test_index, text)
 
             result = self.run_test(test_name, runtests, tracer)
+
+            # Unload the newly imported modules (best effort finalization)
+            new_modules = [module for module in sys.modules
+                           if module not in save_modules and
+                                module.startswith("test.")]
+            for module in new_modules:
+                sys.modules.pop(module, None)
+                # Remove the attribute of the parent module.
+                parent, _, name = module.rpartition('.')
+                try:
+                    delattr(sys.modules[parent], name)
+                except (KeyError, AttributeError):
+                    pass
 
             if result.must_stop(self.fail_fast, self.fail_env_changed):
                 break
