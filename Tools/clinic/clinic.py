@@ -1229,7 +1229,7 @@ class CLanguage(Language):
         if not parameters:
             parser_code: list[str] | None
             if f.kind is GETTER:
-                flags = "NULL"
+                flags = "" # This should end up unused
                 parser_prototype = self.PARSER_PROTOTYPE_GETTER
                 parser_code = []
             elif not requires_defining_class:
