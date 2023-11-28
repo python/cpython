@@ -2,6 +2,14 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(select_select__doc__,
 "select($module, rlist, wlist, xlist, timeout=None, /)\n"
 "--\n"
@@ -30,7 +38,7 @@ PyDoc_STRVAR(select_select__doc__,
 "descriptors can be used.");
 
 #define SELECT_SELECT_METHODDEF    \
-    {"select", (PyCFunction)(void(*)(void))select_select, METH_FASTCALL, select_select__doc__},
+    {"select", _PyCFunction_CAST(select_select), METH_FASTCALL, select_select__doc__},
 
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
@@ -77,7 +85,7 @@ PyDoc_STRVAR(select_poll_register__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_POLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)(void(*)(void))select_poll_register, METH_FASTCALL, select_poll_register__doc__},
+    {"register", _PyCFunction_CAST(select_poll_register), METH_FASTCALL, select_poll_register__doc__},
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask);
@@ -125,7 +133,7 @@ PyDoc_STRVAR(select_poll_modify__doc__,
 "    a bitmask describing the type of events to check for");
 
 #define SELECT_POLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)(void(*)(void))select_poll_modify, METH_FASTCALL, select_poll_modify__doc__},
+    {"modify", _PyCFunction_CAST(select_poll_modify), METH_FASTCALL, select_poll_modify__doc__},
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask);
@@ -193,11 +201,15 @@ PyDoc_STRVAR(select_poll_poll__doc__,
 "\n"
 "Polls the set of registered file descriptors.\n"
 "\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
+"\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_POLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)(void(*)(void))select_poll_poll, METH_FASTCALL, select_poll_poll__doc__},
+    {"poll", _PyCFunction_CAST(select_poll_poll), METH_FASTCALL, select_poll_poll__doc__},
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj);
@@ -240,7 +252,7 @@ PyDoc_STRVAR(select_devpoll_register__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_DEVPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)(void(*)(void))select_devpoll_register, METH_FASTCALL, select_devpoll_register__doc__},
+    {"register", _PyCFunction_CAST(select_devpoll_register), METH_FASTCALL, select_devpoll_register__doc__},
 
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
@@ -290,7 +302,7 @@ PyDoc_STRVAR(select_devpoll_modify__doc__,
 "    an optional bitmask describing the type of events to check for");
 
 #define SELECT_DEVPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)(void(*)(void))select_devpoll_modify, METH_FASTCALL, select_devpoll_modify__doc__},
+    {"modify", _PyCFunction_CAST(select_devpoll_modify), METH_FASTCALL, select_devpoll_modify__doc__},
 
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
@@ -363,11 +375,15 @@ PyDoc_STRVAR(select_devpoll_poll__doc__,
 "\n"
 "Polls the set of registered file descriptors.\n"
 "\n"
+"  timeout\n"
+"    The maximum time to wait in milliseconds, or else None (or a negative\n"
+"    value) to wait indefinitely.\n"
+"\n"
 "Returns a list containing any descriptors that have events or errors to\n"
 "report, as a list of (fd, event) 2-tuples.");
 
 #define SELECT_DEVPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)(void(*)(void))select_devpoll_poll, METH_FASTCALL, select_devpoll_poll__doc__},
+    {"poll", _PyCFunction_CAST(select_devpoll_poll), METH_FASTCALL, select_devpoll_poll__doc__},
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
@@ -514,8 +530,31 @@ static PyObject *
 select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(sizehint), &_Py_ID(flags), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"sizehint", "flags", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "epoll", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "epoll",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -531,7 +570,7 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        sizehint = _PyLong_AsInt(fastargs[0]);
+        sizehint = PyLong_AsInt(fastargs[0]);
         if (sizehint == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -539,7 +578,7 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    flags = _PyLong_AsInt(fastargs[1]);
+    flags = PyLong_AsInt(fastargs[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -618,7 +657,7 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    fd = _PyLong_AsInt(arg);
+    fd = PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -647,7 +686,7 @@ PyDoc_STRVAR(select_epoll_register__doc__,
 "The epoll interface supports all file descriptors that support poll.");
 
 #define SELECT_EPOLL_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)(void(*)(void))select_epoll_register, METH_FASTCALL|METH_KEYWORDS, select_epoll_register__doc__},
+    {"register", _PyCFunction_CAST(select_epoll_register), METH_FASTCALL|METH_KEYWORDS, select_epoll_register__doc__},
 
 static PyObject *
 select_epoll_register_impl(pyEpoll_Object *self, int fd,
@@ -657,8 +696,31 @@ static PyObject *
 select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "register", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "register",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int fd;
@@ -701,7 +763,7 @@ PyDoc_STRVAR(select_epoll_modify__doc__,
 "    a bit set composed of the various EPOLL constants");
 
 #define SELECT_EPOLL_MODIFY_METHODDEF    \
-    {"modify", (PyCFunction)(void(*)(void))select_epoll_modify, METH_FASTCALL|METH_KEYWORDS, select_epoll_modify__doc__},
+    {"modify", _PyCFunction_CAST(select_epoll_modify), METH_FASTCALL|METH_KEYWORDS, select_epoll_modify__doc__},
 
 static PyObject *
 select_epoll_modify_impl(pyEpoll_Object *self, int fd,
@@ -711,8 +773,31 @@ static PyObject *
 select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"fd", "eventmask", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "modify", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "modify",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     int fd;
     unsigned int eventmask;
@@ -748,7 +833,7 @@ PyDoc_STRVAR(select_epoll_unregister__doc__,
 "    the target file descriptor of the operation");
 
 #define SELECT_EPOLL_UNREGISTER_METHODDEF    \
-    {"unregister", (PyCFunction)(void(*)(void))select_epoll_unregister, METH_FASTCALL|METH_KEYWORDS, select_epoll_unregister__doc__},
+    {"unregister", _PyCFunction_CAST(select_epoll_unregister), METH_FASTCALL|METH_KEYWORDS, select_epoll_unregister__doc__},
 
 static PyObject *
 select_epoll_unregister_impl(pyEpoll_Object *self, int fd);
@@ -757,8 +842,31 @@ static PyObject *
 select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(fd), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"fd", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unregister", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unregister",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     int fd;
 
@@ -795,7 +903,7 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "as a list of (fd, events) 2-tuples.");
 
 #define SELECT_EPOLL_POLL_METHODDEF    \
-    {"poll", (PyCFunction)(void(*)(void))select_epoll_poll, METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
+    {"poll", _PyCFunction_CAST(select_epoll_poll), METH_FASTCALL|METH_KEYWORDS, select_epoll_poll__doc__},
 
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
@@ -805,8 +913,31 @@ static PyObject *
 select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(timeout), &_Py_ID(maxevents), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"timeout", "maxevents", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "poll", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "poll",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *timeout_obj = Py_None;
@@ -825,7 +956,7 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
             goto skip_optional_pos;
         }
     }
-    maxevents = _PyLong_AsInt(args[1]);
+    maxevents = PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -867,7 +998,7 @@ PyDoc_STRVAR(select_epoll___exit____doc__,
 "\n");
 
 #define SELECT_EPOLL___EXIT___METHODDEF    \
-    {"__exit__", (PyCFunction)(void(*)(void))select_epoll___exit__, METH_FASTCALL, select_epoll___exit____doc__},
+    {"__exit__", _PyCFunction_CAST(select_epoll___exit__), METH_FASTCALL, select_epoll___exit____doc__},
 
 static PyObject *
 select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
@@ -932,14 +1063,13 @@ static PyObject *
 select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = _selectstate_by_type(type)->kqueue_queue_Type;
 
-    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
-         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == _selectstate_by_type(type)->kqueue_queue_Type ||
-         type->tp_init == _selectstate_by_type(type)->kqueue_queue_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -1017,7 +1147,7 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    fd = _PyLong_AsInt(arg);
+    fd = PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1047,7 +1177,7 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 "    This accepts floats for smaller timeouts, too.");
 
 #define SELECT_KQUEUE_CONTROL_METHODDEF    \
-    {"control", (PyCFunction)(void(*)(void))select_kqueue_control, METH_FASTCALL, select_kqueue_control__doc__},
+    {"control", _PyCFunction_CAST(select_kqueue_control), METH_FASTCALL, select_kqueue_control__doc__},
 
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
@@ -1065,7 +1195,7 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
         goto exit;
     }
     changelist = args[0];
-    maxevents = _PyLong_AsInt(args[1]);
+    maxevents = PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1181,4 +1311,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=ed1e5a658863244c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c2dcb31cb17c2c6 input=a9049054013a1b77]*/

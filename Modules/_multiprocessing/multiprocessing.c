@@ -14,8 +14,17 @@ class HANDLE_converter(CConverter):
     type = "HANDLE"
     format_unit = '"F_HANDLE"'
 
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=9fad6080b79ace91]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3cf0318efc6a8772]*/
 
 /*[clinic input]
 module _multiprocessing
@@ -188,33 +197,39 @@ multiprocessing_exec(PyObject *module)
 {
 #ifdef HAVE_MP_SEMAPHORE
 
-    /* Add _PyMp_SemLock type to module */
-    if (PyModule_AddType(module, &_PyMp_SemLockType) < 0) {
+    PyTypeObject *semlock_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+                module, &_PyMp_SemLockType_spec, NULL);
+
+    if (semlock_type == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddType(module, semlock_type);
+    Py_DECREF(semlock_type);
+    if (rc < 0) {
         return -1;
     }
 
-    {
-        PyObject *py_sem_value_max;
-        /* Some systems define SEM_VALUE_MAX as an unsigned value that
-         * causes it to be negative when used as an int (NetBSD).
-         *
-         * Issue #28152: Use (0) instead of 0 to fix a warning on dead code
-         * when using clang -Wunreachable-code. */
-        if ((int)(SEM_VALUE_MAX) < (0))
-            py_sem_value_max = PyLong_FromLong(INT_MAX);
-        else
-            py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
-
-        if (py_sem_value_max == NULL) {
-            return -1;
-        }
-        if (PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
-                             py_sem_value_max) < 0) {
-            Py_DECREF(py_sem_value_max);
-            return -1;
-        }
-        Py_DECREF(py_sem_value_max);
+    PyObject *py_sem_value_max;
+    /* Some systems define SEM_VALUE_MAX as an unsigned value that
+     * causes it to be negative when used as an int (NetBSD).
+     *
+     * Issue #28152: Use (0) instead of 0 to fix a warning on dead code
+     * when using clang -Wunreachable-code. */
+    if ((int)(SEM_VALUE_MAX) < (0)) {
+        py_sem_value_max = PyLong_FromLong(INT_MAX);
     }
+    else {
+        py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
+    }
+    if (py_sem_value_max == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItemString(semlock_type->tp_dict, "SEM_VALUE_MAX",
+                         py_sem_value_max) < 0) {
+        Py_DECREF(py_sem_value_max);
+        return -1;
+    }
+    Py_DECREF(py_sem_value_max);
 
 #endif
 
@@ -252,8 +267,7 @@ multiprocessing_exec(PyObject *module)
     ADD_FLAG(HAVE_BROKEN_SEM_UNLINK);
 #endif
 
-    if (PyModule_AddObject(module, "flags", flags) < 0) {
-        Py_DECREF(flags);
+    if (PyModule_Add(module, "flags", flags) < 0) {
         return -1;
     }
 
@@ -262,12 +276,14 @@ multiprocessing_exec(PyObject *module)
 
 static PyModuleDef_Slot multiprocessing_slots[] = {
     {Py_mod_exec, multiprocessing_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
 static struct PyModuleDef multiprocessing_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_multiprocessing",
+    .m_size = 0,
     .m_methods = module_methods,
     .m_slots = multiprocessing_slots,
 };

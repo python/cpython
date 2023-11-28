@@ -1,2 +1,0 @@
-Add tests with ``tuple`` type with :func:`functools.lru_cache` to
-``test_functools``.

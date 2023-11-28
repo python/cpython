@@ -1,2 +1,0 @@
-Fix Python.h to build C extensions with Xcode: remove a relative include
-from ``Include/cpython/pystate.h``.

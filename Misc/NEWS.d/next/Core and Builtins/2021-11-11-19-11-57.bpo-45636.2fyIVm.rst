@@ -1,2 +1,0 @@
-Remove an existing "fast path" for old-style string formatting, since
-it no longer appears to have any measurable impact.

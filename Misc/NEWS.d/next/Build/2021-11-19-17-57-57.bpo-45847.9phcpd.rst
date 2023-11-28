@@ -1,1 +1,0 @@
-Port builtin hashlib extensions to ``PY_STDLIB_MOD`` macro and ``addext()``.

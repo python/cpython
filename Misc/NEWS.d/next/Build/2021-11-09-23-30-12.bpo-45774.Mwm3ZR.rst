@@ -1,2 +1,0 @@
-The build dependencies for :mod:`sqlite3` are now detected by ``configure`` and
-``pkg-config``. Patch by Erlend E. Aasland.

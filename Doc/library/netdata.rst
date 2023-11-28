@@ -13,10 +13,8 @@ on the internet.
 
    email.rst
    json.rst
-   mailcap.rst
    mailbox.rst
    mimetypes.rst
    base64.rst
    binascii.rst
    quopri.rst
-   uu.rst

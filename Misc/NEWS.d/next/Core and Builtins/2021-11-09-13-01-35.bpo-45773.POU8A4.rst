@@ -1,1 +1,0 @@
-Fix a compiler hang when attempting to optimize certain jump patterns.
