@@ -1,6 +1,7 @@
 """Subinterpreters High Level Module."""
 
 import time
+import weakref
 import _xxsubinterpreters as _interpreters
 import _xxinterpchannels as _channels
 
@@ -58,14 +59,26 @@ def get_main():
     return Interpreter(id)
 
 
+_known = weakref.WeakValueDictionary()
+
 class Interpreter:
     """A single Python interpreter."""
 
-    def __init__(self, id, *, isolated=None):
-        if not isinstance(id, (int, _interpreters.InterpreterID)):
+    def __new__(cls, id, /, *, isolated=None):
+        # There is only one instance for any given ID.
+        if isinstance(id, int):
+            id = _interpreters.InterpreterID(id, force=False)
+        elif not isinstance(id, _interpreters.InterpreterID):
             raise TypeError(f'id must be an int, got {id!r}')
-        self._id = id
-        self._isolated = isolated
+        key = int(id)
+        try:
+            self = _known[key]
+        except KeyError:
+            self = super().__new__(cls)
+            self._id = id
+            self._isolated = bool(isolated)
+            _known[key] = self
+        return self
 
     def __repr__(self):
         data = dict(id=int(self._id), isolated=self._isolated)
@@ -74,12 +87,6 @@ class Interpreter:
 
     def __hash__(self):
         return hash(self._id)
-
-    def __eq__(self, other):
-        if not isinstance(other, Interpreter):
-            return NotImplemented
-        else:
-            return other._id == self._id
 
     @property
     def id(self):

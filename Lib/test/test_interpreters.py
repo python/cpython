@@ -143,6 +143,23 @@ class CreateTests(TestBase):
         self.assertEqual(set(interpreters.list_all()), before | {interp3, interp})
 
 
+class GetMainTests(TestBase):
+
+    def test_id(self):
+        main = interpreters.get_main()
+        self.assertEqual(main.id, 0)
+
+    def test_current(self):
+        main = interpreters.get_main()
+        current = interpreters.get_current()
+        self.assertIs(main, current)
+
+    def test_idempotent(self):
+        main1 = interpreters.get_main()
+        main2 = interpreters.get_main()
+        self.assertIs(main1, main2)
+
+
 class GetCurrentTests(TestBase):
 
     def test_main(self):
@@ -151,7 +168,7 @@ class GetCurrentTests(TestBase):
         self.assertEqual(current, main)
 
     def test_subinterpreter(self):
-        main = _interpreters.get_main()
+        main = interpreters.get_main()
         interp = interpreters.create()
         out = _run_output(interp, dedent("""
             from test.support import interpreters
@@ -159,7 +176,37 @@ class GetCurrentTests(TestBase):
             print(cur.id)
             """))
         current = interpreters.Interpreter(int(out))
+        self.assertEqual(current, interp)
         self.assertNotEqual(current, main)
+
+    def test_idempotent(self):
+        with self.subTest('main'):
+            cur1 = interpreters.get_current()
+            cur2 = interpreters.get_current()
+            self.assertIs(cur1, cur2)
+
+        with self.subTest('subinterpreter'):
+            interp = interpreters.create()
+            out = _run_output(interp, dedent("""
+                from test.support import interpreters
+                cur = interpreters.get_current()
+                print(id(cur))
+                cur = interpreters.get_current()
+                print(id(cur))
+                """))
+            objid1, objid2 = (int(v) for v in out.splitlines())
+            self.assertEqual(objid1, objid2)
+
+        with self.subTest('per-interpreter'):
+            interp = interpreters.create()
+            out = _run_output(interp, dedent("""
+                from test.support import interpreters
+                cur = interpreters.get_current()
+                print(id(cur))
+                """))
+            id1 = int(out)
+            id2 = int(id(interp))
+            self.assertNotEqual(id1, id2)
 
 
 class ListAllTests(TestBase):
@@ -191,6 +238,57 @@ class ListAllTests(TestBase):
 
         self.assertEqual(ids, [main.id, second.id])
 
+    def test_idempotent(self):
+        main = interpreters.get_current()
+        first = interpreters.create()
+        second = interpreters.create()
+        expected = [main, first, second]
+
+        actual = interpreters.list_all()
+
+        self.assertEqual(actual, expected)
+        for interp1, interp2 in zip(actual, expected):
+            self.assertIs(interp1, interp2)
+
+
+class InterpreterInitTests(TestBase):
+
+    def test_int(self):
+        interpid = int(interpreters.get_current().id)
+        interp = interpreters.Interpreter(interpid)
+        self.assertEqual(int(interp.id), interpid)
+
+    def test_interpreter_id(self):
+        interpid = interpreters.get_current().id
+        interp = interpreters.Interpreter(interpid)
+        self.assertEqual(interp.id, interpid)
+
+    def test_unsupported(self):
+        actualid = int(interpreters.get_current().id)
+        for interpid in [
+            str(actualid),
+            float(actualid),
+            object(),
+            None,
+            '',
+        ]:
+            with self.subTest(repr(interpid)):
+                with self.assertRaises(TypeError):
+                    interpreters.Interpreter(interpid)
+
+    def test_idempotent(self):
+        main = interpreters.get_main()
+        interp = interpreters.Interpreter(int(main.id))
+        self.assertIs(interp, main)
+
+    def test_does_not_exist(self):
+        with self.assertRaises(RuntimeError):
+            interpreters.Interpreter(1_000_000)
+
+    def test_bad_id(self):
+        with self.assertRaises(ValueError):
+            interpreters.Interpreter(-1)
+
 
 class TestInterpreterAttrs(TestBase):
 
@@ -202,19 +300,10 @@ class TestInterpreterAttrs(TestBase):
         self.assertIsInstance(current.id, _interpreters.InterpreterID)
         self.assertIsInstance(interp.id, _interpreters.InterpreterID)
 
-    def test_main_id(self):
-        main = interpreters.get_main()
-        self.assertEqual(main.id, 0)
-
-    def test_custom_id(self):
-        interp = interpreters.Interpreter(1)
-        self.assertEqual(interp.id, 1)
-
-        with self.assertRaises(TypeError):
-            interpreters.Interpreter('1')
-
     def test_id_readonly(self):
-        interp = interpreters.Interpreter(1)
+        actual = interpreters.create()
+        interpid = int(actual.id)
+        interp = interpreters.Interpreter(interpid)
         with self.assertRaises(AttributeError):
             interp.id = 2
 
@@ -236,17 +325,23 @@ class TestInterpreterAttrs(TestBase):
 
     @unittest.skip('not ready yet (see bpo-32604)')
     def test_custom_isolated_default(self):
-        interp = interpreters.Interpreter(1)
+        actual = interpreters.create()
+        interpid = int(actual.id)
+        interp = interpreters.Interpreter(interpid)
         self.assertFalse(interp.isolated)
 
     def test_custom_isolated_explicit(self):
-        interp1 = interpreters.Interpreter(1, isolated=True)
-        interp2 = interpreters.Interpreter(1, isolated=False)
+        actual = interpreters.create()
+        interpid = int(actual.id)
+        interp1 = interpreters.Interpreter(interpid, isolated=True)
+        interp2 = interpreters.Interpreter(interpid, isolated=False)
         self.assertTrue(interp1.isolated)
-        self.assertFalse(interp2.isolated)
+        self.assertTrue(interp2.isolated)
 
     def test_isolated_readonly(self):
-        interp = interpreters.Interpreter(1)
+        actual = interpreters.create()
+        interpid = int(actual.id)
+        interp = interpreters.Interpreter(interpid)
         with self.assertRaises(AttributeError):
             interp.isolated = True
 
@@ -297,16 +392,6 @@ class TestInterpreterIsRunning(TestBase):
         interp = interpreters.create()
         interp.close()
         with self.assertRaises(RuntimeError):
-            interp.is_running()
-
-    def test_does_not_exist(self):
-        interp = interpreters.Interpreter(1_000_000)
-        with self.assertRaises(RuntimeError):
-            interp.is_running()
-
-    def test_bad_id(self):
-        interp = interpreters.Interpreter(-1)
-        with self.assertRaises(ValueError):
             interp.is_running()
 
     def test_with_only_background_threads(self):
@@ -376,16 +461,6 @@ class TestInterpreterClose(TestBase):
         interp = interpreters.create()
         interp.close()
         with self.assertRaises(RuntimeError):
-            interp.close()
-
-    def test_does_not_exist(self):
-        interp = interpreters.Interpreter(1_000_000)
-        with self.assertRaises(RuntimeError):
-            interp.close()
-
-    def test_bad_id(self):
-        interp = interpreters.Interpreter(-1)
-        with self.assertRaises(ValueError):
             interp.close()
 
     def test_from_current(self):
@@ -526,16 +601,6 @@ class TestInterpreterRun(TestBase):
         with _running(interp):
             with self.assertRaises(RuntimeError):
                 interp.run('print("spam")')
-
-    def test_does_not_exist(self):
-        interp = interpreters.Interpreter(1_000_000)
-        with self.assertRaises(RuntimeError):
-            interp.run('print("spam")')
-
-    def test_bad_id(self):
-        interp = interpreters.Interpreter(-1)
-        with self.assertRaises(ValueError):
-            interp.run('print("spam")')
 
     def test_bad_script(self):
         interp = interpreters.create()
