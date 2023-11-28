@@ -413,6 +413,23 @@ Compare `DocTest`:
     False
     >>> test != other_test
     True
+    >>> test < other_test
+    False
+    >>> other_test < test
+    True
+
+Test comparison with lineno None on one side
+
+    >>> no_lineno = parser.get_doctest(docstring, globs, 'some_test',
+    ...                               'some_test', None)
+    >>> test.lineno is None
+    False
+    >>> no_lineno.lineno is None
+    True
+    >>> test < no_lineno
+    False
+    >>> no_lineno < test
+    True
 
 Compare `DocTestCase`:
 
@@ -3307,6 +3324,24 @@ def test_syntax_error_with_note(cls, multiline=False):
     """
     exc = cls("error", ("x.py", 23, None, "bad syntax"))
     exc.add_note('Note\nLine' if multiline else 'Note')
+    raise exc
+
+
+def test_syntax_error_subclass_from_stdlib():
+    """
+    `ParseError` is a subclass of `SyntaxError`, but it is not a builtin:
+
+    >>> test_syntax_error_subclass_from_stdlib()
+    Traceback (most recent call last):
+      ...
+    xml.etree.ElementTree.ParseError: error
+    error
+    Note
+    Line
+    """
+    from xml.etree.ElementTree import ParseError
+    exc = ParseError("error\nerror")
+    exc.add_note('Note\nLine')
     raise exc
 
 
