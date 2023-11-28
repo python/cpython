@@ -144,6 +144,13 @@ class Interpreter:
         if excinfo is not None:
             raise ExecFailure(excinfo)
 
+    def run(self, code, /, channels=None):
+        def task():
+            self.exec_sync(code, channels=channels)
+        t = threading.Thread(target=task)
+        t.start()
+        return t
+
 
 def create_channel():
     """Return (recv, send) for a new cross-interpreter channel.
