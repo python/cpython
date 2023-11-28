@@ -311,6 +311,47 @@ class TestHeap:
         with self.assertRaisesRegex(TypeError, r"not supported.*'str' and 'float'"):
             self.module.heapremove(data, 50, "foo")
 
+    def test_remove_ops(self):
+        # test the efficienty of heapremove as opposed to
+        # a simple remove and heapify
+
+        def dumbremove(heap, index, item=None):
+            if item is None:
+                item = heap.pop()
+                if index == len(heap):
+                    return
+            heap[index] = item
+            self.module.heapify(heap)
+
+        class HC:
+            opcount = 0
+            def __init__(self, val):
+                self.val = val
+            def __lt__(self, other):
+                type(self).opcount += 1
+                return self.val < other.val
+
+        data = [HC(random.random()) for i in range(100)]
+        self.module.heapify(data)
+        heapcopy = data[:]
+        state = random.getstate()
+
+        HC.opcount = 0
+        while data:
+            self.module.heapremove(data, random.randrange(0, len(data)))
+        c1 = HC.opcount
+
+        data = heapcopy
+        random.setstate(state)
+        HC.opcount = 0
+        while data:
+            dumbremove(data, random.randrange(0, len(data)))
+        c2 = HC.opcount
+
+        # we should be at least 10 times more efficient (more like 40)
+        #  print(c1, c2)
+        self.assertTrue(c2 > c1 * 10)
+
 
 class TestHeapPython(TestHeap, TestCase):
     module = py_heapq
