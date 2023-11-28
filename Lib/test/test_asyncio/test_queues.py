@@ -213,6 +213,186 @@ class QueueGetTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(queue._getters), 0)
 
+    async def test_getters_when_put_set_first_future_done(self):
+        # From this point to all next tests named as 'test_get*' or
+        # 'test_order*': see gh-83055
+
+        # Queue empty.
+        queue = asyncio.Queue(maxsize=1)
+
+        # Simulate queue._getters with already `n' futures.
+        loop = asyncio.get_running_loop()
+        n = 2
+        queue._getters.extend((loop.create_future() for _ in range(n)))
+
+        # Get one item from queue.
+        queue.put_nowait(1)
+
+        # After a put() or put_nowait(), no future removed from queue._getters.
+        self.assertEqual(len(queue._getters), n)
+
+        # First future state set to done.
+        self.assertTrue(queue._getters[0].done())
+
+    async def test_getters_not_empty_get_nowait(self):
+        # Full queue.
+        queue = asyncio.Queue(1)
+        queue.put_nowait(1)
+
+        # Simulate queue._getters with already one future.
+        loop = asyncio.get_running_loop()
+        queue._getters.append(loop.create_future())
+
+        # get_nowait() fails.
+        with self.assertRaises(asyncio.QueueEmptyWithPendingGetTasks):
+            queue.get_nowait()
+
+    async def test_getters_with_mix_future_states(self):
+        async def getter():
+            await queue.get()
+
+        # Full Queue.
+        queue = asyncio.Queue(maxsize=4)
+        # 4 tasks waiting for items. Keep last one in g.
+        for i in range(4):
+            g = asyncio.create_task(getter())
+        await asyncio.sleep(0)
+
+        # Queue empty,
+        # 4 tasks waiting for an item.
+        self.assertTrue(queue.empty())
+        self.assertTrue(all(not g.done() for g in queue._getters))
+        self.assertEqual(len(queue._getters), 4)
+
+        # Put 2 items, to check if the 2 first futures in queue._getters are `done`.
+        for i in range(2):
+            await queue.put(i+1)
+
+        l = list(queue._getters)
+        # Futures done, reday to get an available item.
+        self.assertTrue(all(g.done() for g in l[:2]))
+        # Futures not done, still pending.
+        self.assertTrue(all(not g.done() for g in l[2:]))
+        self.assertEqual(len(queue._getters), 4)
+
+    async def test_get_nowait_with_not_empty_getters(self):
+        # Queue not full.
+        queue = asyncio.Queue(maxsize=2)
+        queue.put_nowait(1)
+
+        # Simulate queue._getter with one 'task'.
+        loop = asyncio.get_running_loop()
+        waiter = loop.create_future()
+        queue._getters.append(waiter)
+
+        # Call to get_nowait().
+        with self.assertRaises(asyncio.QueueEmptyWithPendingGetTasks):
+            queue.get_nowait()
+
+    async def test_get_with_not_empty_getters(self):
+        # Queue not full.
+        queue = asyncio.Queue(1)
+
+        # Simulate queue._getter with one 'task'.
+        loop = asyncio.get_running_loop()
+        waiter = loop.create_future()
+        queue._getters.append(waiter)
+
+        asyncio.create_task(queue.get())
+        await asyncio.sleep(0)
+
+        # Check 2 tasks into queue._getters.
+        self.assertEqual(len(queue._getters), 2)
+
+    async def test_order_get_nowait_when_exists_free_slot(self):
+        async def getter(n):
+            res.append((n, await queue.get()))
+
+        res = []
+        # Full queue.
+        queue = asyncio.Queue(1)
+        # 3 tasks waiting for items. Saves last one in g.
+        for i in range(3):
+            g = asyncio.create_task(getter(i+1))
+        await asyncio.sleep(0)
+
+        # Checks queue full and the 2 other items in queue._putters.
+        self.assertTrue(queue.empty())
+        self.assertEqual(len(queue._getters), 3)
+
+        # Put one item, there is now one item available.
+        # Check first future of _getters is done and elected for the free slot.
+        # queue._getters always contains 3 futures: one is done, other are not done.
+        queue.put_nowait(1)
+        self.assertTrue(queue._getters[0].done())
+        self.assertFalse(queue._getters[1].done())
+        self.assertFalse(queue._getters[2].done())
+        self.assertEqual(len(queue._getters), 3)
+        self.assertFalse(queue.empty())
+
+        # Try to stole the item 1 with get_nowait(),
+        # but raises an exception because queue._getters is not empty.
+        with self.assertRaises(asyncio.QueueEmptyWithPendingGetTasks):
+            res.append(queue.get_nowait())
+
+        # Always 3 futures in queue._getters.
+        self.assertEqual(len(queue._getters), 3)
+
+        # Put all items.
+        await queue.put(2)
+        await queue.put(3)
+
+        # wait for last getter().
+        await g
+
+        # Third first items in fifo order,
+        # 4 item was rejected when called put_nowait().
+        self.assertEqual(res, [(1, 1), (2, 2), (3, 3)])
+
+    async def test_order_get_when_exists_free_slot(self):
+        async def getter(n):
+            res.append((n, await queue.get()))
+
+        res = []
+        # Full queue.
+        queue = asyncio.Queue(1)
+        # 3 tasks waiting for items.
+        for i in range(3):
+            asyncio.create_task(getter(i+1))
+        await asyncio.sleep(0)
+
+        # Checks queue full and the 2 other items in queue._putters.
+        self.assertTrue(queue.empty())
+        self.assertEqual(len(queue._getters), 3)
+
+        # Put one item, there is now one item available.
+        # Check first future of _getters is done and elected for the free slot.
+        # _getters always contains 3 futures: one is done, other are not done.
+        queue.put_nowait(1)
+        self.assertTrue(queue._getters[0].done())
+        self.assertFalse(queue._getters[1].done())
+        self.assertFalse(queue._getters[2].done())
+        self.assertEqual(len(queue._getters), 3)
+        self.assertFalse(queue.empty())
+
+        # Try to get the item 1, put into queue with put_nowait(),
+        # task is appended to queue._getters because not empty.
+        g = asyncio.create_task(getter(4))
+
+        # Always 3 futures in queue._getters.
+        self.assertEqual(len(queue._getters), 3)
+
+        # Put all items.
+        await queue.put(2)
+        await queue.put(3)
+        await queue.put(4)
+
+        # wait for last get().
+        await g
+
+        # Third first items in fifo order, 4 was never accepted.
+        self.assertEqual(res, [(1, 1), (2, 2), (3, 3), (4, 4)])
+
 
 class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
@@ -403,7 +583,7 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
 
         # Check that the putter is correctly removed from queue._putters when
-        # the task is canceled.
+        # the task is cancelled.
         self.assertEqual(len(queue._putters), 1)
         put_task.cancel()
         with self.assertRaises(asyncio.CancelledError):
@@ -430,6 +610,178 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
         # If the ValueError is silenced we should catch a CancelledError.
         with self.assertRaises(asyncio.CancelledError):
             await put_task
+
+    async def test_putters_when_get_set_first_future_done(self):
+        # From this point to all next tests named as 'test_put*' or
+        # 'test_order*': see gh-83055
+
+        # Queue full.
+        queue = asyncio.Queue(maxsize=1)
+        queue.put_nowait(1)
+
+        # Simulate queue._putters with already 'n' futures.
+        loop = asyncio.get_running_loop()
+        n = 2
+        queue._putters.extend((loop.create_future() for _ in range(n)))
+
+        # Get one item from queue.
+        queue.get_nowait()
+
+        # After a get() or get_nowait(), no future removed from queue._putters.
+        self.assertEqual(len(queue._putters), n)
+
+        # First future state set to done.
+        self.assertTrue(queue._putters[0].done())
+
+    async def test_putters_not_empty_get_nowait(self):
+        # Queue full.
+        queue = asyncio.Queue(1)
+
+        # Simulate queue._putters with already one future.
+        loop = asyncio.get_running_loop()
+        queue._putters.append(loop.create_future())
+
+        # Put_nowait() fails.
+        with self.assertRaises(asyncio.QueueFullWithPendingPutTasks):
+            queue.put_nowait(1)
+
+    async def test_putters_with_mix_future_states(self):
+        async def putter(item):
+            await queue.put(item)
+
+        # Full queue.
+        queue = asyncio.Queue(maxsize=2)
+        # 4 tasks waiting for items. Keeps last one in g.
+        for i in range(6):
+            g = asyncio.create_task(putter(i+1))
+        await asyncio.sleep(0)
+
+        # 4 tasks waiting for an item.
+        self.assertTrue(queue.full())
+        self.assertTrue(all(not p.done() for p in queue._putters))
+        self.assertEqual(len(queue._putters), 4)
+
+        # Get 2 items, to check if the 2 first futures in queue._getters are `done`.
+        for i in range(2):
+            await queue.get()
+
+        l = list(queue._putters)
+        # 2 futures done, ready to get an available item.
+        self.assertTrue(all(p.done() for p in l[:2]))
+        # 2 futures not done, still pending.
+        self.assertTrue(all(not p.done() for p in l[2:]))
+        self.assertEqual(len(queue._putters), 4)
+
+    async def test_put_nowait_with_not_empty_putters(self):
+        # Queue empty.
+        queue = asyncio.Queue(1)
+
+        # Simulate queue._putters with one 'task'.
+        loop = asyncio.get_running_loop()
+        waiter = loop.create_future()
+        queue._putters.append(waiter)
+
+        # Put an item wit put_nowait(),
+        # then raises an error
+        with self.assertRaises(asyncio.QueueFullWithPendingPutTasks):
+            queue.put_nowait(1)
+
+    async def test_put_with_not_empty_putters(self):
+        # Queue empty.
+        queue = asyncio.Queue(1)
+
+        # Simulate queue._putters with one 'task'.
+        loop = asyncio.get_running_loop()
+        waiter = loop.create_future()
+        queue._putters.append(waiter)
+
+        # Add an item into queue.
+        asyncio.create_task(queue.put(1))
+        await asyncio.sleep(0)
+
+        # Check 2 tasks into queue._putters.
+        self.assertEqual(len(queue._putters), 2)
+
+    async def test_order_put_nowait_when_exists_free_slot(self):
+        async def putter(item):
+            await queue.put(item)
+
+        res = []
+        # Full queue.
+        queue = asyncio.Queue(1)
+        # first item into queue, 2 others items waiting for a free slot.
+        for i in range(3):
+            asyncio.create_task(putter(i+1))
+        await asyncio.sleep(0)
+
+        # Checks queue full and the 2 other items into queue._putters.
+        self.assertTrue(queue.full())
+        self.assertEqual(len(queue._putters), 2)
+
+        # Get one item, there is now one free slot available.
+        # Check first future of putters is done and elected for the free slot.
+        # queue._putters always contains 2 futures: one is done, second is not done
+        res.append(await queue.get())
+        self.assertTrue(queue._putters[0].done())
+        self.assertFalse(queue._putters[1].done())
+        self.assertFalse(queue.full())
+        self.assertEqual(len(queue._putters), 2)
+
+        # Try to stole the free slot with put_nowait(),
+        # but raises an exception because queue._putters is not empty.
+        with self.assertRaises(asyncio.QueueFullWithPendingPutTasks):
+            queue.put_nowait(4)
+
+        # Always 2 futures in queue._putters.
+        self.assertEqual(len(queue._putters), 2)
+        # Get all put items.
+        res.append(await queue.get())
+        res.append(await queue.get())
+
+        # Third first items in fifo order,
+        # 4 item was put when called put_nowait().
+        self.assertEqual(res, [1, 2, 3])
+
+    async def test_order_put_when_exists_free_slot(self):
+        async def putter(item):
+            await queue.put(item)
+
+        res = []
+        # Full queue.
+        queue = asyncio.Queue(1)
+        # first item into queue, 2 others items waiting for a free slot.
+        for i in range(3):
+            asyncio.create_task(putter(i+1))
+        await asyncio.sleep(0)
+
+        # Checks queue full and the 2 other items into queue._putters.
+        self.assertTrue(queue.full())
+        self.assertEqual(len(queue._putters), 2)
+
+        # Get one item, there is now one free slot available.
+        # Check first future of putters is done and elected for the free slot.
+        # queue?-._putters always contains 2 futures: one is done, second is not done
+        res.append(await queue.get())
+        self.assertTrue(queue._putters[0].done())
+        self.assertFalse(queue._putters[1].done())
+        self.assertFalse(queue.full())
+        self.assertEqual(len(queue._putters), 2)
+
+        # Try to stole the free slot with `put`,
+        # but tasks appended to an not empty _putters.
+        asyncio.create_task(putter(4))
+        await asyncio.sleep(0)
+
+        # Always 2 futures in _putters.
+        self.assertEqual(len(queue._putters), 2)
+        self.assertTrue(queue.full())
+
+        # Get all put items.
+        for i in range(3):
+            res.append(await queue.get())
+
+        # Checks all items in fifo order.
+        self.assertEqual(res, [1, 2, 3, 4])
 
 
 class LifoQueueTests(unittest.IsolatedAsyncioTestCase):
