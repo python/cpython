@@ -18,7 +18,7 @@ from _xxinterpchannels import (
 
 __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
-    'InterpreterError', 'InterpreterNotFoundError', 'RunFailedError',
+    'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
     'ChannelError', 'ChannelNotFoundError',
@@ -26,7 +26,7 @@ __all__ = [
     ]
 
 
-class RunFailedError(RuntimeError):
+class ExecFailure(RuntimeError):
 
     def __init__(self, excinfo):
         msg = excinfo.formatted
@@ -131,7 +131,7 @@ class Interpreter:
 
         There is no return value.
 
-        If the code raises an unhandled exception then a RunFailedError
+        If the code raises an unhandled exception then an ExecFailure
         is raised, which summarizes the unhandled exception.  The actual
         exception is discarded because objects cannot be shared between
         interpreters.
@@ -142,7 +142,7 @@ class Interpreter:
         """
         excinfo = _interpreters.exec(self._id, code, channels)
         if excinfo is not None:
-            raise RunFailedError(excinfo)
+            raise ExecFailure(excinfo)
 
 
 def create_channel():

@@ -500,7 +500,7 @@ class TestInterpreterClose(TestBase):
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
 
-class TestInterpreterRun(TestBase):
+class TestInterpreterExecSync(TestBase):
 
     def test_success(self):
         interp = interpreters.create()
@@ -513,7 +513,7 @@ class TestInterpreterRun(TestBase):
 
     def test_failure(self):
         interp = interpreters.create()
-        with self.assertRaises(interpreters.RunFailedError):
+        with self.assertRaises(interpreters.ExecFailure):
             interp.exec_sync('raise Exception')
 
     def test_in_thread(self):
