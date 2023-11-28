@@ -1,2 +1,0 @@
-Fix crash in :meth:`io.BytesIO.getbuffer` called repeatedly for empty
-BytesIO.
