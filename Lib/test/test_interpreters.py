@@ -43,7 +43,7 @@ def clean_up_interpreters():
 def _run_output(interp, request, channels=None):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interp.run(script, channels=channels)
+        interp.exec_sync(script, channels=channels)
         return rpipe.read()
 
 
@@ -51,7 +51,7 @@ def _run_output(interp, request, channels=None):
 def _running(interp):
     r, w = os.pipe()
     def run():
-        interp.run(dedent(f"""
+        interp.exec_sync(dedent(f"""
             # wait for "signal"
             with open({r}) as rpipe:
                 rpipe.read()
@@ -328,7 +328,7 @@ class TestInterpreterIsRunning(TestBase):
     def test_finished(self):
         r, w = self.pipe()
         interp = interpreters.create()
-        interp.run(f"""if True:
+        interp.exec_sync(f"""if True:
             import os
             os.write({w}, b'x')
             """)
@@ -360,7 +360,7 @@ class TestInterpreterIsRunning(TestBase):
         FINISHED = b'F'
 
         interp = interpreters.create()
-        interp.run(f"""if True:
+        interp.exec_sync(f"""if True:
             import os
             import threading
 
@@ -374,7 +374,7 @@ class TestInterpreterIsRunning(TestBase):
         self.assertFalse(interp.is_running())
 
         os.write(w_thread, DONE)
-        interp.run('t.join()')
+        interp.exec_sync('t.join()')
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
 
@@ -441,7 +441,7 @@ class TestInterpreterClose(TestBase):
         interp2 = interpreters.create()
         self.assertEqual(set(interpreters.list_all()),
                          {main, interp1, interp2})
-        interp1.run(dedent(f"""
+        interp1.exec_sync(dedent(f"""
             from test.support import interpreters
             interp2 = interpreters.Interpreter({interp2.id})
             interp2.close()
@@ -475,7 +475,7 @@ class TestInterpreterClose(TestBase):
         FINISHED = b'F'
 
         interp = interpreters.create()
-        interp.run(f"""if True:
+        interp.exec_sync(f"""if True:
             import os
             import threading
             import time
@@ -506,7 +506,7 @@ class TestInterpreterRun(TestBase):
         interp = interpreters.create()
         script, file = _captured_script('print("it worked!", end="")')
         with file:
-            interp.run(script)
+            interp.exec_sync(script)
             out = file.read()
 
         self.assertEqual(out, 'it worked!')
@@ -514,14 +514,14 @@ class TestInterpreterRun(TestBase):
     def test_failure(self):
         interp = interpreters.create()
         with self.assertRaises(interpreters.RunFailedError):
-            interp.run('raise Exception')
+            interp.exec_sync('raise Exception')
 
     def test_in_thread(self):
         interp = interpreters.create()
         script, file = _captured_script('print("it worked!", end="")')
         with file:
             def f():
-                interp.run(script)
+                interp.exec_sync(script)
 
             t = threading.Thread(target=f)
             t.start()
@@ -547,7 +547,7 @@ class TestInterpreterRun(TestBase):
                     with open('{file.name}', 'w', encoding='utf-8') as out:
                         out.write('{expected}')
                 """)
-            interp.run(script)
+            interp.exec_sync(script)
 
             file.seek(0)
             content = file.read()
@@ -558,17 +558,17 @@ class TestInterpreterRun(TestBase):
         interp = interpreters.create()
         with _running(interp):
             with self.assertRaises(RuntimeError):
-                interp.run('print("spam")')
+                interp.exec_sync('print("spam")')
 
     def test_bad_script(self):
         interp = interpreters.create()
         with self.assertRaises(TypeError):
-            interp.run(10)
+            interp.exec_sync(10)
 
     def test_bytes_for_script(self):
         interp = interpreters.create()
         with self.assertRaises(TypeError):
-            interp.run(b'print("spam")')
+            interp.exec_sync(b'print("spam")')
 
     def test_with_background_threads_still_running(self):
         r_interp, w_interp = self.pipe()
@@ -579,7 +579,7 @@ class TestInterpreterRun(TestBase):
         FINISHED = b'F'
 
         interp = interpreters.create()
-        interp.run(f"""if True:
+        interp.exec_sync(f"""if True:
             import os
             import threading
 
@@ -591,17 +591,18 @@ class TestInterpreterRun(TestBase):
             t.start()
             os.write({w_interp}, {RAN!r})
             """)
-        interp.run(f"""if True:
+        interp.exec_sync(f"""if True:
             os.write({w_interp}, {RAN!r})
             """)
 
         os.write(w_thread, DONE)
-        interp.run('t.join()')
+        interp.exec_sync('t.join()')
         self.assertEqual(os.read(r_interp, 1), RAN)
         self.assertEqual(os.read(r_interp, 1), RAN)
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
-    # test_xxsubinterpreters covers the remaining Interpreter.run() behavior.
+    # test_xxsubinterpreters covers the remaining
+    # Interpreter.exec_sync() behavior.
 
 
 class StressTests(TestBase):
@@ -737,7 +738,7 @@ class StartupTests(TestBase):
             orig = sys.path[0]
 
             interp = interpreters.create()
-            interp.run(f"""if True:
+            interp.exec_sync(f"""if True:
                 import json
                 import sys
                 print(json.dumps({{
@@ -958,7 +959,7 @@ class TestSendRecv(TestBase):
 
     def test_send_recv_same_interpreter(self):
         interp = interpreters.create()
-        interp.run(dedent("""
+        interp.exec_sync(dedent("""
             from test.support import interpreters
             r, s = interpreters.create_channel()
             orig = b'spam'
@@ -1031,7 +1032,7 @@ class TestSendRecv(TestBase):
 
     def test_send_recv_nowait_same_interpreter(self):
         interp = interpreters.create()
-        interp.run(dedent("""
+        interp.exec_sync(dedent("""
             from test.support import interpreters
             r, s = interpreters.create_channel()
             orig = b'spam'

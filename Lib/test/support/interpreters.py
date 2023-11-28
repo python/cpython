@@ -122,8 +122,7 @@ class Interpreter:
         """
         return _interpreters.destroy(self._id)
 
-    # XXX Rename "run" to "exec"?
-    def run(self, src_str, /, channels=None):
+    def exec_sync(self, code, /, channels=None):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
@@ -141,7 +140,7 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        excinfo = _interpreters.exec(self._id, src_str, channels)
+        excinfo = _interpreters.exec(self._id, code, channels)
         if excinfo is not None:
             raise RunFailedError(excinfo)
 
