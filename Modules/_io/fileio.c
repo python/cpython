@@ -69,6 +69,7 @@ typedef struct {
     unsigned int writable : 1;
     unsigned int appending : 1;
     signed int seekable : 2; /* -1 means unknown */
+    int isatty : 2; /* -1 means unknown */
     unsigned int closefd : 1;
     char finalizing;
     unsigned int blksize;
@@ -195,6 +196,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->writable = 0;
         self->appending = 0;
         self->seekable = -1;
+        self->isatty = -1;
         self->blksize = 0;
         self->closefd = 1;
         self->weakreflist = NULL;
@@ -475,6 +477,11 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         if (fdfstat.st_blksize > 1)
             self->blksize = fdfstat.st_blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
+#ifdef S_ISCHR
+        if (!S_ISCHR(fdfstat.st_mode)) {
+            self->isatty = 0;
+        }
+#endif /* S_ISCHR */
     }
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -1141,16 +1148,16 @@ static PyObject *
 _io_FileIO_isatty_impl(fileio *self)
 /*[clinic end generated code: output=932c39924e9a8070 input=cd94ca1f5e95e843]*/
 {
-    long res;
-
     if (self->fd < 0)
         return err_closed();
-    Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
-    res = isatty(self->fd);
-    _Py_END_SUPPRESS_IPH
-    Py_END_ALLOW_THREADS
-    return PyBool_FromLong(res);
+    if (self->isatty < 0) {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        self->isatty = isatty(self->fd);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+    }
+    return PyBool_FromLong(self->isatty);
 }
 
 #include "clinic/fileio.c.h"

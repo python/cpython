@@ -1,0 +1,2 @@
+Optimize :meth:`io.FileIO.isatty`. Only invoke the ``isatty()`` system call
+for character devices and cache the result. It also makes :func:`open` a bit faster.
