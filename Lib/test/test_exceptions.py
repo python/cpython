@@ -1785,6 +1785,20 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
+    def test_memory_error_in_subinterp(self):
+        # gh-109894: subinterpreters shouldn't count on last resort memory error
+        # when MemoryError is raised through PyErr_NoMemory() call,
+        # and should preallocate memory errors as does the main interpreter.
+        # interp.static_objects.last_resort_memory_error.args
+        # should be initialized to empty tuple to avoid crash on attempt to print it.
+        code = f"""if 1:
+            import _testcapi
+            _testcapi.run_in_subinterp(\"[0]*{sys.maxsize}\")
+            exit(0)
+        """
+        rc, _, err = script_helper.assert_python_ok("-c", code)
+        self.assertIn(b'MemoryError', err)
+
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):

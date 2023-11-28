@@ -119,6 +119,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
                 .last_resort_memory_error = { \
                     _PyObject_HEAD_INIT(&_PyExc_MemoryError) \
+                    .args = (PyObject*)&_Py_SINGLETON(tuple_empty) \
                 }, \
             }, \
         }, \

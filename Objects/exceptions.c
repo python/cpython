@@ -3701,10 +3701,6 @@ _PyExc_FiniTypes(PyInterpreterState *interp)
 PyStatus
 _PyExc_InitGlobalObjects(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     if (preallocate_memerrors() < 0) {
         return _PyStatus_NO_MEMORY();
     }
