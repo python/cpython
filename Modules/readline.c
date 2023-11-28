@@ -159,20 +159,20 @@ readline_free(void *m)
 static PyModuleDef readlinemodule;
 
 static inline readlinestate*
-get_global_readline_state(bool set_error)
+get_hook_module_state(void)
 {
     PyObject *mod = PyState_FindModule(&readlinemodule);
     if (mod == NULL){
-        if (set_error && !PyErr_Occurred()){
-            PyErr_SetString(PyExc_RuntimeError,
-                            "readline module state not initialized");
-        }
+        /* The hook is always going to fail(?), so remove it (and all others). */
+        readline_cleanup();
+        PyErr_Clear();
         return NULL;
     }
-    return get_readline_state(mod);
+    Py_INCREF(mod);
+    readlinestate *state = get_readline_state(mod);
+    Py_DECREF(mod);
+    return state;
 }
-
-#define get_global_readline_state_with_error() get_global_readline_state(true)
 
 /* Convert to/from multibyte C strings */
 
