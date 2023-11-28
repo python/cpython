@@ -29,14 +29,14 @@ def updated_env(updates={}):
     The changes made to the execution environment are printed out.
     """
     env_defaults = {}
-    if "SOURCE_DATE_EPOCH" not in os.environ:
-        # https://reproducible-builds.org/docs/source-date-epoch/
-        git_epoch_cmd = ["git", "log", "-1", "--pretty=%ct"]
-        try:
-            epoch = subprocess.check_output(git_epoch_cmd, encoding="utf-8").strip()
-            env_defaults["SOURCE_DATE_EPOCH"] = epoch
-        except subprocess.CalledProcessError:
-            pass  # Might be building from a tarball.
+    # https://reproducible-builds.org/docs/source-date-epoch/
+    git_epoch_cmd = ["git", "log", "-1", "--pretty=%ct"]
+    try:
+        epoch = subprocess.check_output(git_epoch_cmd, encoding="utf-8").strip()
+        env_defaults["SOURCE_DATE_EPOCH"] = epoch
+    except subprocess.CalledProcessError:
+        pass  # Might be building from a tarball.
+    # This layering lets SOURCE_DATE_EPOCH from os.environ takes precedence.
     environment = env_defaults | os.environ | updates
 
     env_diff = {}
