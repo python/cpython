@@ -68,6 +68,20 @@ def _running(interp):
 
 class TestBase(unittest.TestCase):
 
+    def os_pipe(self):
+        r, w = os.pipe()
+        def cleanup():
+            try:
+                os.close(w)
+            except Exception:
+                pass
+            try:
+                os.close(r)
+            except Exception:
+                pass
+        self.addCleanup(cleanup)
+        return r, w
+
     def tearDown(self):
         clean_up_interpreters()
 
@@ -262,7 +276,7 @@ class TestInterpreterIsRunning(TestBase):
         self.assertFalse(interp.is_running())
 
     def test_finished(self):
-        r, w = os.pipe()
+        r, w = self.os_pipe()
         interp = interpreters.create()
         interp.run(f"""if True:
             import os
@@ -299,8 +313,8 @@ class TestInterpreterIsRunning(TestBase):
             interp.is_running()
 
     def test_with_only_background_threads(self):
-        r_interp, w_interp = os.pipe()
-        r_thread, w_thread = os.pipe()
+        r_interp, w_interp = self.os_pipe()
+        r_thread, w_thread = self.os_pipe()
 
         DONE = b'D'
         FINISHED = b'F'
@@ -425,8 +439,8 @@ class TestInterpreterClose(TestBase):
             self.assertTrue(interp.is_running())
 
     def test_subthreads_still_running(self):
-        r_interp, w_interp = os.pipe()
-        r_thread, w_thread = os.pipe()
+        r_interp, w_interp = self.os_pipe()
+        r_thread, w_thread = self.os_pipe()
 
         FINISHED = b'F'
 
@@ -532,8 +546,8 @@ class TestInterpreterRun(TestBase):
             interp.run(b'print("spam")')
 
     def test_with_background_threads_still_running(self):
-        r_interp, w_interp = os.pipe()
-        r_thread, w_thread = os.pipe()
+        r_interp, w_interp = self.os_pipe()
+        r_thread, w_thread = self.os_pipe()
 
         RAN = b'R'
         DONE = b'D'
