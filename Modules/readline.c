@@ -126,17 +126,6 @@ readline_clear(PyObject *m)
    return 0;
 }
 
-/* This undoes any readline configuration done in setup_readline(). */
-static void
-readline_cleanup(void)
-{
-    rl_startup_hook = NULL;
-#ifdef HAVE_RL_PRE_INPUT_HOOK
-    rl_pre_input_hook = NULL;
-#endif
-    rl_attempted_completion_function = NULL;
-}
-
 static int
 readline_traverse(PyObject *m, visitproc visit, void *arg)
 {
@@ -1079,18 +1068,12 @@ on_pre_input_hook(void)
 {
     int r;
     PyGILState_STATE gilstate = PyGILState_Ensure();
-    PyObject* mod = PyState_FindModule(&readlinemodule);
-    if (mod == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ImportError, "readline import initialization failure during startup hook");
-        }
-        readline_cleanup();
+    readlinestate *state = get_hook_module_state();
+    if (state == NULL) {
         PyGILState_Release(gilstate);
         return -1;
     }
-    Py_INCREF(mod);
-    r = on_hook(get_readline_state(mod)->pre_input_hook);
-    Py_DECREF(mod);
+    r = on_hook(state->pre_input_hook);
     PyGILState_Release(gilstate);
     return r;
 }
