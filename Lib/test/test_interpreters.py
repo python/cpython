@@ -478,6 +478,11 @@ class TestInterpreterRun(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
+    def test_failure(self):
+        interp = interpreters.create()
+        with self.assertRaises(interpreters.RunFailedError):
+            interp.run('raise Exception')
+
     def test_in_thread(self):
         interp = interpreters.create()
         script, file = _captured_script('print("it worked!", end="")')
@@ -781,6 +786,8 @@ class TestIsShareable(TestBase):
                 True,
                 False,
                 100.0,
+                (),
+                (1, ('spam', 'eggs'), True),
                 ]
         for obj in shareables:
             with self.subTest(obj):
