@@ -312,20 +312,18 @@ _heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index,
     Py_ssize_t n = PyList_GET_SIZE(heap);
     if (index < 0)
         index += n;
-    if (index < 0 || index >= n)
-    {
+    if (index < 0 || index >= n) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
     returnitem = PyList_GET_ITEM(heap, index);
-    if (index < n - 1)
-    {
+    if (index < n - 1) {
         /* common case */
         if (item) {
             PyList_SET_ITEM(heap, index, item);
             Py_INCREF(item);
         } else {
-            /* replace with the popped value */
+            /* replace with the last value */
             item = PyList_GET_ITEM(heap, n-1);
             Py_INCREF(item);
             if (PyList_SetSlice(heap, n-1, n, NULL)) {
@@ -334,14 +332,19 @@ _heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index,
             }
             PyList_SET_ITEM(heap, index, item);
         }
-        siftdown((PyListObject *)heap, 0, &index);
-        siftup((PyListObject *)heap, index);
+        if (siftdown((PyListObject *)heap, 0, &index) || siftup((PyListObject *)heap, index)) {
+            Py_DECREF(returnitem);
+            return NULL;
+        }
     } else {
         /* the tail case */
         if (item) {
             PyList_SET_ITEM(heap, index, item);
             Py_INCREF(item);
-            siftdown((PyListObject *)heap, 0, &index);
+            if (siftdown((PyListObject *)heap, 0, &index)) {
+                Py_DECREF(returnitem);
+                return NULL;
+            }
         } else {
             Py_INCREF(returnitem);
             if (PyList_SetSlice(heap, index, n, NULL)) {
