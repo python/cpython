@@ -8,14 +8,17 @@ from _xxsubinterpreters import (
     InterpreterError, InterpreterNotFoundError,
     is_shareable,
 )
-from .channel import create as create_channel
+from .queue import (
+    create as create_queue,
+    Queue, QueueEmpty, QueueFull,
+)
 
 
 __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
     'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
-    'create_channel',
+    'create_queue', 'QueueEmpty', 'QueueFull',
 ]
 
 
