@@ -870,7 +870,7 @@ class CLanguage(Language):
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
-        #define {methoddef_name}    \
+        #define {getter_name}    \
             {{"{name}", (getter){c_basename}, NULL, NULL}},
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
@@ -1945,7 +1945,7 @@ class CLanguage(Language):
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
         if f.kind is GETTER:
-            template_dict['methoddef_name'] = f.c_basename.upper() + "_GETTERDEF"
+            template_dict['getter_name'] = f.c_basename.upper() + "_GETTERDEF"
             template_dict['c_basename'] = f.c_basename + "_get"
         else:
             template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
