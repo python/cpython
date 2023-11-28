@@ -287,6 +287,14 @@ capture data for later printing in a lightweight fashion.
 
       The class of the original traceback.
 
+      .. deprecated:: 3.13
+
+   .. attribute:: exc_type_str
+
+      String display of the class of the original exception.
+
+      .. versionadded:: 3.13
+
    .. attribute:: filename
 
       For syntax errors - the file name where the error occurred.
