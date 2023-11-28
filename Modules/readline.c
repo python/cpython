@@ -163,8 +163,8 @@ get_hook_module_state(void)
 {
     PyObject *mod = PyState_FindModule(&readlinemodule);
     if (mod == NULL){
-        /* The hook is always going to fail(?), so remove it (and all others). */
-        readline_cleanup();
+        /* We already made sure the module is findable in setup_readline(). */
+        assert(PyErr_Occurred());
         PyErr_Clear();
         return NULL;
     }
