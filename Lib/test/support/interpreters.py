@@ -36,10 +36,10 @@ class RunFailedError(RuntimeError):
         self.snapshot = excinfo
 
 
-def create(*, isolated=True):
+def create():
     """Return a new (idle) Python interpreter."""
-    id = _interpreters.create(isolated=isolated)
-    return Interpreter(id, isolated=isolated)
+    id = _interpreters.create(isolated=True)
+    return Interpreter(id)
 
 
 def list_all():
@@ -64,7 +64,7 @@ _known = weakref.WeakValueDictionary()
 class Interpreter:
     """A single Python interpreter."""
 
-    def __new__(cls, id, /, *, isolated=None):
+    def __new__(cls, id, /):
         # There is only one instance for any given ID.
         if isinstance(id, int):
             id = _interpreters.InterpreterID(id, force=False)
@@ -76,12 +76,11 @@ class Interpreter:
         except KeyError:
             self = super().__new__(cls)
             self._id = id
-            self._isolated = bool(isolated)
             _known[key] = self
         return self
 
     def __repr__(self):
-        data = dict(id=int(self._id), isolated=self._isolated)
+        data = dict(id=int(self._id))
         kwargs = (f'{k}={v!r}' for k, v in data.items())
         return f'{type(self).__name__}({", ".join(kwargs)})'
 
@@ -91,14 +90,6 @@ class Interpreter:
     @property
     def id(self):
         return self._id
-
-    @property
-    def isolated(self):
-        if self._isolated is None:
-            # XXX The low-level function has not been added yet.
-            # See bpo-....
-            self._isolated = _interpreters.is_isolated(self._id)
-        return self._isolated
 
     def is_running(self):
         """Return whether or not the identified interpreter is running."""

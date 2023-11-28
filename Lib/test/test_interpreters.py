@@ -251,19 +251,19 @@ class ListAllTests(TestBase):
             self.assertIs(interp1, interp2)
 
 
-class InterpreterInitTests(TestBase):
+class InterpreterObjectTests(TestBase):
 
-    def test_int(self):
+    def test_init_int(self):
         interpid = int(interpreters.get_current().id)
         interp = interpreters.Interpreter(interpid)
         self.assertEqual(int(interp.id), interpid)
 
-    def test_interpreter_id(self):
+    def test_init_interpreter_id(self):
         interpid = interpreters.get_current().id
         interp = interpreters.Interpreter(interpid)
         self.assertEqual(interp.id, interpid)
 
-    def test_unsupported(self):
+    def test_init_unsupported(self):
         actualid = int(interpreters.get_current().id)
         for interpid in [
             str(actualid),
@@ -281,16 +281,13 @@ class InterpreterInitTests(TestBase):
         interp = interpreters.Interpreter(int(main.id))
         self.assertIs(interp, main)
 
-    def test_does_not_exist(self):
+    def test_init_does_not_exist(self):
         with self.assertRaises(RuntimeError):
             interpreters.Interpreter(1_000_000)
 
-    def test_bad_id(self):
+    def test_init_bad_id(self):
         with self.assertRaises(ValueError):
             interpreters.Interpreter(-1)
-
-
-class TestInterpreterAttrs(TestBase):
 
     def test_id_type(self):
         main = interpreters.get_main()
@@ -306,44 +303,6 @@ class TestInterpreterAttrs(TestBase):
         interp = interpreters.Interpreter(interpid)
         with self.assertRaises(AttributeError):
             interp.id = 2
-
-    @unittest.skip('not ready yet (see bpo-32604)')
-    def test_main_isolated(self):
-        main = interpreters.get_main()
-        self.assertFalse(main.isolated)
-
-    @unittest.skip('not ready yet (see bpo-32604)')
-    def test_subinterpreter_isolated_default(self):
-        interp = interpreters.create()
-        self.assertFalse(interp.isolated)
-
-    def test_subinterpreter_isolated_explicit(self):
-        interp1 = interpreters.create(isolated=True)
-        interp2 = interpreters.create(isolated=False)
-        self.assertTrue(interp1.isolated)
-        self.assertFalse(interp2.isolated)
-
-    @unittest.skip('not ready yet (see bpo-32604)')
-    def test_custom_isolated_default(self):
-        actual = interpreters.create()
-        interpid = int(actual.id)
-        interp = interpreters.Interpreter(interpid)
-        self.assertFalse(interp.isolated)
-
-    def test_custom_isolated_explicit(self):
-        actual = interpreters.create()
-        interpid = int(actual.id)
-        interp1 = interpreters.Interpreter(interpid, isolated=True)
-        interp2 = interpreters.Interpreter(interpid, isolated=False)
-        self.assertTrue(interp1.isolated)
-        self.assertTrue(interp2.isolated)
-
-    def test_isolated_readonly(self):
-        actual = interpreters.create()
-        interpid = int(actual.id)
-        interp = interpreters.Interpreter(interpid)
-        with self.assertRaises(AttributeError):
-            interp.isolated = True
 
     def test_equality(self):
         interp1 = interpreters.create()
