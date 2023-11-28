@@ -1171,7 +1171,7 @@ on_completion(const char *text, int state)
 {
     char *result = NULL;
     PyGILState_STATE gilstate = PyGILState_Ensure();
-    readlinestate *state = get_hook_module_state();
+    readlinestate *module_state = get_hook_module_state();
     if (module_state == NULL) {
         PyGILState_Release(gilstate);
         return NULL;
