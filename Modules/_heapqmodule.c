@@ -299,14 +299,14 @@ to readjust the heap when the comparative "value" of
 an item changes by removing and re-inserting the same item, e.g:
 
     item.value=new_value
-    idx = heap.find(item)
+    idx = heap.index(item)
     heapq.heapremove(heap, idx, item)
 [clinic start generated code]*/
 
 static PyObject *
 _heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index,
                        PyObject *item)
-/*[clinic end generated code: output=2d84b49ff0255276 input=09260f2c67bd4171]*/
+/*[clinic end generated code: output=2d84b49ff0255276 input=13bbd40fb4dee29e]*/
 {
     PyObject *returnitem;
     Py_ssize_t n = PyList_GET_SIZE(heap);

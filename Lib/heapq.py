@@ -177,7 +177,7 @@ def heapremove(heap, index, item=None):
     an item changes by removing and re-inserting the same item, e.g:
 
         item.value=new_value
-        idx = heap.find(item)
+        idx = heap.index(item)
         heapq.heapremove(heap, idx, item)
     """
     result = heap[index]
