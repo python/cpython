@@ -848,7 +848,7 @@ class CLanguage(Language):
     """)
     PARSER_PROTOTYPE_GETTER: Final[str] = normalize_snippet("""
         static PyObject *
-        {c_basename}({self_type}{self_name}, void *context)
+        {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
     """)
     METH_O_PROTOTYPE: Final[str] = normalize_snippet("""
         static PyObject *
