@@ -222,6 +222,11 @@ struct _is {
 
     // XXX Remove this field once we have a tp_* slot.
     struct _xidregistry xidregistry;
+    /* The thread currently executing in the __main__ module, if any. */
+    PyThreadState *threads_main;
+    /* The ID of the OS thread in which we are finalizing.
+       We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
+    _Py_atomic_address _finalizing_id;
 
    /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
@@ -238,9 +243,23 @@ _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
     return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
 }
 
+static inline unsigned long
+_PyInterpreterState_GetFinalizingID(PyInterpreterState *interp) {
+    return (unsigned long)_Py_atomic_load_relaxed(&interp->_finalizing_id);
+}
+
 static inline void
 _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
     _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_relaxed(&interp->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_relaxed(&interp->_finalizing_id,
+                                 (uintptr_t)tstate->thread_id);
+    }
 }
 
 

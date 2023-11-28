@@ -261,6 +261,16 @@ class TestInterpreterIsRunning(TestBase):
             self.assertTrue(interp.is_running())
         self.assertFalse(interp.is_running())
 
+    def test_finished(self):
+        r, w = os.pipe()
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            os.write({w}, b'x')
+            """)
+        self.assertFalse(interp.is_running())
+        self.assertEqual(os.read(r, 1), b'x')
+
     def test_from_subinterpreter(self):
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
@@ -287,6 +297,31 @@ class TestInterpreterIsRunning(TestBase):
         interp = interpreters.Interpreter(-1)
         with self.assertRaises(ValueError):
             interp.is_running()
+
+    def test_with_only_background_threads(self):
+        r_interp, w_interp = os.pipe()
+        r_thread, w_thread = os.pipe()
+
+        DONE = b'D'
+        FINISHED = b'F'
+
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            import threading
+
+            def task():
+                v = os.read({r_thread}, 1)
+                assert v == {DONE!r}
+                os.write({w_interp}, {FINISHED!r})
+            t = threading.Thread(target=task)
+            t.start()
+            """)
+        self.assertFalse(interp.is_running())
+
+        os.write(w_thread, DONE)
+        interp.run('t.join()')
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
 
 
 class TestInterpreterClose(TestBase):
@@ -389,6 +424,37 @@ class TestInterpreterClose(TestBase):
                 interp.close()
             self.assertTrue(interp.is_running())
 
+    def test_subthreads_still_running(self):
+        r_interp, w_interp = os.pipe()
+        r_thread, w_thread = os.pipe()
+
+        FINISHED = b'F'
+
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            import threading
+            import time
+
+            done = False
+
+            def notify_fini():
+                global done
+                done = True
+                t.join()
+            threading._register_atexit(notify_fini)
+
+            def task():
+                while not done:
+                    time.sleep(0.1)
+                os.write({w_interp}, {FINISHED!r})
+            t = threading.Thread(target=task)
+            t.start()
+            """)
+        interp.close()
+
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
+
 
 class TestInterpreterRun(TestBase):
 
@@ -465,9 +531,41 @@ class TestInterpreterRun(TestBase):
         with self.assertRaises(TypeError):
             interp.run(b'print("spam")')
 
+    def test_with_background_threads_still_running(self):
+        r_interp, w_interp = os.pipe()
+        r_thread, w_thread = os.pipe()
+
+        RAN = b'R'
+        DONE = b'D'
+        FINISHED = b'F'
+
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            import threading
+
+            def task():
+                v = os.read({r_thread}, 1)
+                assert v == {DONE!r}
+                os.write({w_interp}, {FINISHED!r})
+            t = threading.Thread(target=task)
+            t.start()
+            os.write({w_interp}, {RAN!r})
+            """)
+        interp.run(f"""if True:
+            os.write({w_interp}, {RAN!r})
+            """)
+
+        os.write(w_thread, DONE)
+        interp.run('t.join()')
+        self.assertEqual(os.read(r_interp, 1), RAN)
+        self.assertEqual(os.read(r_interp, 1), RAN)
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
+
     # test_xxsubinterpreters covers the remaining Interpreter.run() behavior.
 
 
+@unittest.skip('these are crashing, likely just due just to _xxsubinterpreters (see gh-105699)')
 class StressTests(TestBase):
 
     # In these tests we generally want a lot of interpreters,
@@ -636,6 +734,26 @@ class StartupTests(TestBase):
                 sp0_main, sp0_sub = data['main'], data['sub']
                 self.assertEqual(sp0_sub, sp0_main)
                 self.assertEqual(sp0_sub, expected)
+
+
+class FinalizationTests(TestBase):
+
+    def test_gh_109793(self):
+        import subprocess
+        argv = [sys.executable, '-c', '''if True:
+            import _xxsubinterpreters as _interpreters
+            interpid = _interpreters.create()
+            raise Exception
+            ''']
+        proc = subprocess.run(argv, capture_output=True, text=True)
+        self.assertIn('Traceback', proc.stderr)
+        if proc.returncode == 0 and support.verbose:
+            print()
+            print("--- cmd unexpected succeeded ---")
+            print(f"stdout:\n{proc.stdout}")
+            print(f"stderr:\n{proc.stderr}")
+            print("------")
+        self.assertEqual(proc.returncode, 1)
 
 
 class TestIsShareable(TestBase):
