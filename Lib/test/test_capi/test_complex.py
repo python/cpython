@@ -208,7 +208,7 @@ class CAPIComplexTest(unittest.TestCase):
 
         self.assertEqual(_py_c_pow(0j, -1)[1], errno.EDOM)
         self.assertEqual(_py_c_pow(0j, 1j)[1], errno.EDOM)
-        self.assertEqual(_py_c_pow(*[DBL_MAX+1j]*2)[1], errno.ERANGE)
+        self.assertEqual(_py_c_pow(*[DBL_MAX+1j]*2)[0], complex(*[INF]*2))
 
 
     def test_py_c_abs(self):

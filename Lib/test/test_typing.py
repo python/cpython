@@ -7535,6 +7535,83 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CallNamedTuple.__orig_bases__, (NamedTuple,))
 
+    def test_setname_called_on_values_in_class_dictionary(self):
+        class Vanilla:
+            def __set_name__(self, owner, name):
+                self.name = name
+
+        class Foo(NamedTuple):
+            attr = Vanilla()
+
+        foo = Foo()
+        self.assertEqual(len(foo), 0)
+        self.assertNotIn('attr', Foo._fields)
+        self.assertIsInstance(foo.attr, Vanilla)
+        self.assertEqual(foo.attr.name, "attr")
+
+        class Bar(NamedTuple):
+            attr: Vanilla = Vanilla()
+
+        bar = Bar()
+        self.assertEqual(len(bar), 1)
+        self.assertIn('attr', Bar._fields)
+        self.assertIsInstance(bar.attr, Vanilla)
+        self.assertEqual(bar.attr.name, "attr")
+
+    def test_setname_raises_the_same_as_on_other_classes(self):
+        class CustomException(BaseException): pass
+
+        class Annoying:
+            def __set_name__(self, owner, name):
+                raise CustomException
+
+        annoying = Annoying()
+
+        with self.assertRaises(CustomException) as cm:
+            class NormalClass:
+                attr = annoying
+        normal_exception = cm.exception
+
+        with self.assertRaises(CustomException) as cm:
+            class NamedTupleClass(NamedTuple):
+                attr = annoying
+        namedtuple_exception = cm.exception
+
+        self.assertIs(type(namedtuple_exception), CustomException)
+        self.assertIs(type(namedtuple_exception), type(normal_exception))
+
+        self.assertEqual(len(namedtuple_exception.__notes__), 1)
+        self.assertEqual(
+            len(namedtuple_exception.__notes__), len(normal_exception.__notes__)
+        )
+
+        expected_note = (
+            "Error calling __set_name__ on 'Annoying' instance "
+            "'attr' in 'NamedTupleClass'"
+        )
+        self.assertEqual(namedtuple_exception.__notes__[0], expected_note)
+        self.assertEqual(
+            namedtuple_exception.__notes__[0],
+            normal_exception.__notes__[0].replace("NormalClass", "NamedTupleClass")
+        )
+
+    def test_strange_errors_when_accessing_set_name_itself(self):
+        class CustomException(Exception): pass
+
+        class Meta(type):
+            def __getattribute__(self, attr):
+                if attr == "__set_name__":
+                    raise CustomException
+                return object.__getattribute__(self, attr)
+
+        class VeryAnnoying(metaclass=Meta): pass
+
+        very_annoying = VeryAnnoying()
+
+        with self.assertRaises(CustomException):
+            class Foo(NamedTuple):
+                attr = very_annoying
+
 
 class TypedDictTests(BaseTestCase):
     def test_basics_functional_syntax(self):

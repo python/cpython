@@ -1,7 +1,5 @@
 #include "parts.h"
 #include "util.h"
-#define Py_BUILD_CORE
-#include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
 static PyObject *
@@ -104,28 +102,15 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
     static PyObject *                                            \
     _py_c_##suffix(PyObject *Py_UNUSED(module), PyObject *args)  \
     {                                                            \
-        Py_complex num, exp;                                     \
-        PyObject *res, *err;                                     \
+        Py_complex num, exp, res;                                \
                                                                  \
         if (!PyArg_ParseTuple(args, "DD", &num, &exp)) {         \
             return NULL;                                         \
         }                                                        \
                                                                  \
         errno = 0;                                               \
-        num = _Py_c_##suffix(num, exp);                          \
-        _Py_ADJUST_ERANGE2(num.real, num.imag);                  \
-                                                                 \
-        res = PyComplex_FromCComplex(num);                       \
-        if (!res) {                                              \
-            return NULL;                                         \
-        }                                                        \
-        err = PyLong_FromLong(errno);                            \
-        if (!err) {                                              \
-            Py_DECREF(res);                                      \
-            return NULL;                                         \
-        }                                                        \
-                                                                 \
-        return Py_BuildValue("NN", res, err);                    \
+        res = _Py_c_##suffix(num, exp);                          \
+        return Py_BuildValue("Di", &res, errno);                 \
     };
 
 _PY_C_FUNC2(sum)
@@ -138,8 +123,7 @@ static PyObject*
 _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
 {
     Py_complex complex;
-    PyObject *res, *err;
-    double val;
+    double res;
 
     NULLABLE(obj);
     complex = PyComplex_AsCComplex(obj);
@@ -149,19 +133,8 @@ _py_c_abs(PyObject *Py_UNUSED(module), PyObject* obj)
     }
 
     errno = 0;
-    val = _Py_c_abs(complex);
-
-    res = PyFloat_FromDouble(val);
-    if (!res) {
-        return NULL;
-    }
-    err = PyLong_FromLong(errno);
-    if (!err) {
-        Py_DECREF(res);
-        return NULL;
-    }
-
-    return Py_BuildValue("NN", res, err);
+    res = _Py_c_abs(complex);
+    return Py_BuildValue("di", res, errno);
 }
 
 
