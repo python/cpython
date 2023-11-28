@@ -89,9 +89,7 @@ class Interpreter:
         return self
 
     def __repr__(self):
-        data = dict(id=self._id)
-        kwargs = (f'{k}={v!r}' for k, v in data.items())
-        return f'{type(self).__name__}({", ".join(kwargs)})'
+        return f'{type(self).__name__}({self.id})'
 
     def __hash__(self):
         return hash(self._id)
