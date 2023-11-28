@@ -14,14 +14,6 @@ def bin(s):
 # For Structures and Unions, these types are created on demand.
 
 class Test(unittest.TestCase):
-    @unittest.skip('test disabled')
-    def test_X(self):
-        print(sys.byteorder, file=sys.stderr)
-        for i in range(32):
-            bits = BITS()
-            setattr(bits, "i%s" % i, 1)
-            dump(bits)
-
     def test_slots(self):
         class BigPoint(BigEndianStructure):
             __slots__ = ()

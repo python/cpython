@@ -38,7 +38,7 @@ File Operations
    Lock part of a file based on file descriptor *fd* from the C runtime.  Raises
    :exc:`OSError` on failure.  The locked region of the file extends from the
    current file position for *nbytes* bytes, and may continue beyond the end of the
-   file.  *mode* must be one of the :const:`LK_\*` constants listed below. Multiple
+   file.  *mode* must be one of the :const:`!LK_\*` constants listed below. Multiple
    regions in a file may be locked at the same time, but may not overlap.  Adjacent
    regions are not merged; they must be unlocked individually.
 

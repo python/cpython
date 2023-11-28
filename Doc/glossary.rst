@@ -168,8 +168,9 @@ Glossary
       :class:`str` objects.
 
    borrowed reference
-      In Python's C API, a borrowed reference is a reference to an object.
-      It does not modify the object reference count. It becomes a dangling
+      In Python's C API, a borrowed reference is a reference to an object,
+      where the code using the object does not own the reference.
+      It becomes a dangling
       pointer if the object is destroyed. For example, a garbage collection can
       remove the last :term:`strong reference` to the object and so destroy it.
 
@@ -247,7 +248,7 @@ Glossary
 
    context manager
       An object which controls the environment seen in a :keyword:`with`
-      statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
+      statement by defining :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
       See :pep:`343`.
 
    context variable
@@ -644,7 +645,7 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`__iter__` method or with a :meth:`__getitem__` method
+      with an :meth:`__iter__` method or with a :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
       Iterables can be
@@ -1084,17 +1085,17 @@ Glossary
 
    sequence
       An :term:`iterable` which supports efficient element access using integer
-      indices via the :meth:`__getitem__` special method and defines a
+      indices via the :meth:`~object.__getitem__` special method and defines a
       :meth:`__len__` method that returns the length of the sequence.
       Some built-in sequence types are :class:`list`, :class:`str`,
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
-      supports :meth:`__getitem__` and :meth:`__len__`, but is considered a
+      supports :meth:`~object.__getitem__` and :meth:`__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
       :term:`immutable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
-      :meth:`__getitem__` and :meth:`__len__`, adding :meth:`count`,
+      :meth:`~object.__getitem__` and :meth:`__len__`, adding :meth:`count`,
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
@@ -1129,10 +1130,17 @@ Glossary
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
+   static type checker
+      An external tool that reads Python code and analyzes it, looking for
+      issues such as incorrect types. See also :term:`type hints <type hint>`
+      and the :mod:`typing` module.
+
    strong reference
       In Python's C API, a strong reference is a reference to an object
-      which increments the object's reference count when it is created and
-      decrements the object's reference count when it is deleted.
+      which is owned by the code holding the reference.  The strong
+      reference is taken by calling :c:func:`Py_INCREF` when the
+      reference is created and released with :c:func:`Py_DECREF`
+      when the reference is deleted.
 
       The :c:func:`Py_NewRef` function can be used to create a strong reference
       to an object. Usually, the :c:func:`Py_DECREF` function must be called on
@@ -1203,8 +1211,8 @@ Glossary
       attribute, or a function parameter or return value.
 
       Type hints are optional and are not enforced by Python but
-      they are useful to static type analysis tools, and aid IDEs with code
-      completion and refactoring.
+      they are useful to :term:`static type checkers <static type checker>`.
+      They can also aid IDEs with code completion and refactoring.
 
       Type hints of global variables, class attributes, and functions,
       but not local variables, can be accessed using

@@ -516,7 +516,7 @@ encoding.
 .. section: Library
 
 Removed an unnecessary list comprehension before looping from
-:func:`urllib.parse.parse_qsl`.  Patch by Christoph Zwerschke and Dong-hee
+:func:`urllib.parse.parse_qsl`.  Patch by Christoph Zwerschke and Donghee
 Na.
 
 ..
@@ -871,7 +871,7 @@ assert_called_once_with) will unconditionally pass.
 .. nonce: -1XPDH
 .. section: Library
 
-Add :data:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)
+Add :const:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)
 
 ..
 
@@ -1375,8 +1375,8 @@ Add "Annotations Best Practices" document as a new HOWTO.
 .. nonce: K5aSl1
 .. section: Documentation
 
-Document the new :const:`Py_TPFLAGS_MAPPING` and
-:const:`Py_TPFLAGS_SEQUENCE` type flags.
+Document the new :c:macro:`Py_TPFLAGS_MAPPING` and
+:c:macro:`Py_TPFLAGS_SEQUENCE` type flags.
 
 ..
 
@@ -1711,7 +1711,7 @@ IDLE's shell now shows prompts in a separate side-bar.
 .. nonce: wvWt23
 .. section: C API
 
-Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+Add a new :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
 creating type instances. Patch by Victor Stinner.
 
 ..
@@ -1759,7 +1759,7 @@ module.
 .. nonce: Co3YhZ
 .. section: C API
 
-Introduce :const:`Py_TPFLAGS_IMMUTABLETYPE` flag for immutable type objects,
+Introduce :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag for immutable type objects,
 and modify :c:func:`PyType_Ready` to set it for static types. Patch by
 Erlend E. Aasland.
 

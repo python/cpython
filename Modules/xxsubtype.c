@@ -279,14 +279,12 @@ xxsubtype_exec(PyObject* m)
     if (PyType_Ready(&spamdict_type) < 0)
         return -1;
 
-    Py_INCREF(&spamlist_type);
-    if (PyModule_AddObject(m, "spamlist",
-                           (PyObject *) &spamlist_type) < 0)
+    if (PyModule_AddObjectRef(m, "spamlist",
+                              (PyObject *) &spamlist_type) < 0)
         return -1;
 
-    Py_INCREF(&spamdict_type);
-    if (PyModule_AddObject(m, "spamdict",
-                           (PyObject *) &spamdict_type) < 0)
+    if (PyModule_AddObjectRef(m, "spamdict",
+                              (PyObject *) &spamdict_type) < 0)
         return -1;
     return 0;
 }

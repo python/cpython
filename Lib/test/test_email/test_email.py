@@ -39,6 +39,7 @@ from email import iterators
 from email import quoprimime
 from email import utils
 
+from test import support
 from test.support import threading_helper
 from test.support.os_helper import unlink
 from test.test_email import openfile, TestEmailBase
@@ -3342,6 +3343,7 @@ Foo
         self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):
@@ -3695,6 +3697,16 @@ class TestParsers(TestEmailBase):
         self.assertFalse(msg.is_multipart())
         self.assertIsInstance(msg.get_payload(), str)
         self.assertIsInstance(msg.get_payload(decode=True), bytes)
+
+    def test_header_parser_multipart_is_valid(self):
+        # Don't flag valid multipart emails as having defects
+        with openfile('msg_47.txt', encoding="utf-8") as fp:
+            msgdata = fp.read()
+
+        parser = email.parser.Parser(policy=email.policy.default)
+        parsed_msg = parser.parsestr(msgdata, headersonly=True)
+
+        self.assertEqual(parsed_msg.defects, [])
 
     def test_bytes_parser_does_not_close_file(self):
         with openfile('msg_02.txt', 'rb') as fp:

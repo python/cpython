@@ -14,8 +14,8 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
 | |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
 | |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
-| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
+| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
@@ -982,7 +982,7 @@ are always available.  They are listed here in alphabetical order.
    differently depending on the presence of the second argument. Without a
    second argument, *object* must be a collection object which supports the
    :term:`iterable` protocol (the :meth:`__iter__` method), or it must support
-   the sequence protocol (the :meth:`__getitem__` method with integer arguments
+   the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then *object* must be a callable object.  The iterator created in this case
@@ -1157,8 +1157,8 @@ are always available.  They are listed here in alphabetical order.
 
   See also :func:`format` for more information.
 
-   .. index::
-      single: file object; open() built-in function
+.. index::
+   single: file object; open() built-in function
 
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
@@ -1220,7 +1220,7 @@ are always available.  They are listed here in alphabetical order.
 
    *buffering* is an optional integer used to set the buffering policy.  Pass 0
    to switch buffering off (only allowed in binary mode), 1 to select line
-   buffering (only usable in text mode), and an integer > 1 to indicate the size
+   buffering (only usable when writing in text mode), and an integer > 1 to indicate the size
    in bytes of a fixed-size chunk buffer. Note that specifying a buffer size this
    way applies for binary buffered I/O, but ``TextIOWrapper`` (i.e., files opened
    with ``mode='r+'``) would have another buffering. To disable buffering in
@@ -1230,7 +1230,7 @@ are always available.  They are listed here in alphabetical order.
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer is
      chosen using a heuristic trying to determine the underlying device's "block
-     size" and falling back on :attr:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
+     size" and falling back on :const:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
      the buffer will typically be 4096 or 8192 bytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
@@ -1270,7 +1270,7 @@ are always available.  They are listed here in alphabetical order.
 
    * ``'xmlcharrefreplace'`` is only supported when writing to a file.
      Characters not supported by the encoding are replaced with the
-     appropriate XML character reference ``&#nnn;``.
+     appropriate XML character reference :samp:`&#{nnn};`.
 
    * ``'backslashreplace'`` replaces malformed data by Python's backslashed
      escape sequences.
@@ -1359,28 +1359,28 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.3
 
-         * The *opener* parameter was added.
-         * The ``'x'`` mode was added.
-         * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
-         * :exc:`FileExistsError` is now raised if the file opened in exclusive
-           creation mode (``'x'``) already exists.
+      * The *opener* parameter was added.
+      * The ``'x'`` mode was added.
+      * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
+      * :exc:`FileExistsError` is now raised if the file opened in exclusive
+        creation mode (``'x'``) already exists.
 
    .. versionchanged:: 3.4
 
-         * The file is now non-inheritable.
+      * The file is now non-inheritable.
 
    .. versionchanged:: 3.5
 
-         * If the system call is interrupted and the signal handler does not raise an
-           exception, the function now retries the system call instead of raising an
-           :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
-         * The ``'namereplace'`` error handler was added.
+      * If the system call is interrupted and the signal handler does not raise an
+        exception, the function now retries the system call instead of raising an
+        :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      * The ``'namereplace'`` error handler was added.
 
    .. versionchanged:: 3.6
 
-         * Support added to accept objects implementing :class:`os.PathLike`.
-         * On Windows, opening a console buffer may return a subclass of
-           :class:`io.RawIOBase` other than :class:`io.FileIO`.
+      * Support added to accept objects implementing :class:`os.PathLike`.
+      * On Windows, opening a console buffer may return a subclass of
+        :class:`io.RawIOBase` other than :class:`io.FileIO`.
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
@@ -1562,7 +1562,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return a reverse :term:`iterator`.  *seq* must be an object which has
    a :meth:`__reversed__` method or supports the sequence protocol (the
-   :meth:`__len__` method and the :meth:`__getitem__` method with integer
+   :meth:`__len__` method and the :meth:`~object.__getitem__` method with integer
    arguments starting at ``0``).
 
 
@@ -1630,7 +1630,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: slice(stop)
-           slice(start, stop, step=1)
+           slice(start, stop, step=None)
 
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to

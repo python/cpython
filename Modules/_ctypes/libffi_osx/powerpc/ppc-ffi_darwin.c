@@ -891,7 +891,7 @@ ffi_closure_helper_DARWIN(
 					avalue[i] = alloca(arg_types[i]->size);
 					ffi64_struct_to_ram_form(arg_types[i], (const char*)pgr,
 						&gprSize, (const char*)pfr, &fprSize, &nf, avalue[i], NULL);
- 
+
 					ng	+= gprSize / sizeof(long);
 					pgr	+= gprSize / sizeof(long);
 					pfr	+= (fprSize - savedFPRSize) / sizeof(double);
@@ -1479,7 +1479,7 @@ ffi64_struct_to_reg_form(
 								memcpy(&outGPRs[destGMarker],
 									&inStruct[srcMarker], inType->size);
 						}
-						
+
 						srcMarker += inType->size;
 						destGMarker += inType->size;
 						i += inType->size - 1;
@@ -1561,7 +1561,7 @@ ffi64_struct_to_reg_form(
 			case FFI_TYPE_STRUCT:
 				recurseCount++;
 				ffi64_struct_to_reg_form(inType->elements[i],
-					inStruct, &srcMarker, &fprsUsed, outGPRs, 
+					inStruct, &srcMarker, &fprsUsed, outGPRs,
 					&destGMarker, outFPRs, &destFMarker);
 				recurseCount--;
 				break;

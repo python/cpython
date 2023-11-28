@@ -234,20 +234,25 @@ class SizeofTest(unittest.TestCase):
         self.check_sizeof(e, self.elementsize + self.extra +
                              struct.calcsize('8P'))
 
-def test_main():
+
+def install_tests():
+    # Test classes should have __module__ referring to this module.
     from test import test_xml_etree
+    for name, base in vars(test_xml_etree).items():
+        if isinstance(base, type) and issubclass(base, unittest.TestCase):
+            class Temp(base):
+                pass
+            Temp.__name__ = Temp.__qualname__ = name
+            Temp.__module__ = __name__
+            assert name not in globals()
+            globals()[name] = Temp
 
-    # Run the tests specific to the C implementation
-    support.run_unittest(
-        MiscTests,
-        TestAliasWorking,
-        TestAcceleratorImported,
-        SizeofTest,
-        )
+install_tests()
 
-    # Run the same test suite as the Python module
-    test_xml_etree.test_main(module=cET)
+def setUpModule():
+    from test import test_xml_etree
+    test_xml_etree.setUpModule(module=cET)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

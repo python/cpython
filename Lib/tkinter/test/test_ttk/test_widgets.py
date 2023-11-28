@@ -5,7 +5,7 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
-from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
+from tkinter.test.support import (AbstractTkTest, tk_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (add_standard_options,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
@@ -20,7 +20,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget = self.create()
         self.assertEqual(widget['class'], '')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
+        if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'class', 'Foo', errmsg=errmsg)
         widget2 = self.create(class_='Foo')
@@ -562,7 +562,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(str(widget['orient']), 'vertical')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
+        if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
@@ -1528,7 +1528,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
-            if tcl_version >= (8, 6):
+            if tk_version >= (8, 6):
                 self.assertEqual(self.tv.identify_column(x), '#0')
                 self.assertEqual(self.tv.identify_region(x, y), 'heading')
             simulate_mouse_click(self.tv, x, y)

@@ -1,0 +1,3 @@
+"make check-clean-src" now also checks if the "python" program is found in
+the source directory: fail with an error if it does exist. Patch by Victor
+Stinner.

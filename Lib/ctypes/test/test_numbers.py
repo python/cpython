@@ -82,14 +82,6 @@ class NumberTestCase(unittest.TestCase):
             self.assertRaises(TypeError, t, "")
             self.assertRaises(TypeError, t, None)
 
-    @unittest.skip('test disabled')
-    def test_valid_ranges(self):
-        # invalid values of the correct type
-        # raise ValueError (not OverflowError)
-        for t, (l, h) in zip(unsigned_types, unsigned_ranges):
-            self.assertRaises(ValueError, t, l-1)
-            self.assertRaises(ValueError, t, h+1)
-
     def test_from_param(self):
         # the from_param class method attribute always
         # returns PyCArgObject instances
@@ -106,7 +98,7 @@ class NumberTestCase(unittest.TestCase):
     def test_floats(self):
         # c_float and c_double can be created from
         # Python int and float
-        class FloatLike(object):
+        class FloatLike:
             def __float__(self):
                 return 2.0
         f = FloatLike()
@@ -117,15 +109,15 @@ class NumberTestCase(unittest.TestCase):
             self.assertEqual(t(f).value, 2.0)
 
     def test_integers(self):
-        class FloatLike(object):
+        class FloatLike:
             def __float__(self):
                 return 2.0
         f = FloatLike()
-        class IntLike(object):
+        class IntLike:
             def __int__(self):
                 return 2
         d = IntLike()
-        class IndexLike(object):
+        class IndexLike:
             def __index__(self):
                 return 2
         i = IndexLike()
@@ -205,19 +197,6 @@ class NumberTestCase(unittest.TestCase):
         a[0] = ord('?')
         self.assertEqual(v.value, b'?')
 
-    # array does not support c_bool / 't'
-    @unittest.skip('test disabled')
-    def test_bool_from_address(self):
-        from ctypes import c_bool
-        from array import array
-        a = array(c_bool._type_, [True])
-        v = t.from_address(a.buffer_info()[0])
-        self.assertEqual(v.value, a[0])
-        self.assertEqual(type(v) is t)
-        a[0] = False
-        self.assertEqual(v.value, a[0])
-        self.assertEqual(type(v) is t)
-
     def test_init(self):
         # c_int() can be initialized from Python's int, and c_int.
         # Not from c_long or so, which seems strange, abc should
@@ -234,62 +213,6 @@ class NumberTestCase(unittest.TestCase):
             if (hasattr(t, "__ctype_le__")):
                 self.assertRaises(OverflowError, t.__ctype_le__, big_int)
 
-    @unittest.skip('test disabled')
-    def test_perf(self):
-        check_perf()
-
-from ctypes import _SimpleCData
-class c_int_S(_SimpleCData):
-    _type_ = "i"
-    __slots__ = []
-
-def run_test(rep, msg, func, arg=None):
-##    items = [None] * rep
-    items = range(rep)
-    from time import perf_counter as clock
-    if arg is not None:
-        start = clock()
-        for i in items:
-            func(arg); func(arg); func(arg); func(arg); func(arg)
-        stop = clock()
-    else:
-        start = clock()
-        for i in items:
-            func(); func(); func(); func(); func()
-        stop = clock()
-    print("%15s: %.2f us" % (msg, ((stop-start)*1e6/5/rep)))
-
-def check_perf():
-    # Construct 5 objects
-    from ctypes import c_int
-
-    REP = 200000
-
-    run_test(REP, "int()", int)
-    run_test(REP, "int(999)", int)
-    run_test(REP, "c_int()", c_int)
-    run_test(REP, "c_int(999)", c_int)
-    run_test(REP, "c_int_S()", c_int_S)
-    run_test(REP, "c_int_S(999)", c_int_S)
-
-# Python 2.3 -OO, win2k, P4 700 MHz:
-#
-#          int(): 0.87 us
-#       int(999): 0.87 us
-#        c_int(): 3.35 us
-#     c_int(999): 3.34 us
-#      c_int_S(): 3.23 us
-#   c_int_S(999): 3.24 us
-
-# Python 2.2 -OO, win2k, P4 700 MHz:
-#
-#          int(): 0.89 us
-#       int(999): 0.89 us
-#        c_int(): 9.99 us
-#     c_int(999): 10.02 us
-#      c_int_S(): 9.87 us
-#   c_int_S(999): 9.85 us
 
 if __name__ == '__main__':
-##    check_perf()
     unittest.main()

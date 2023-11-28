@@ -745,6 +745,7 @@ class SiginterruptTest(unittest.TestCase):
         interrupted = self.readpipe_interrupted(True)
         self.assertTrue(interrupted)
 
+    @support.requires_resource('walltime')
     def test_siginterrupt_off(self):
         # If a signal handler is installed and siginterrupt is called with
         # a false value for the second argument, when that signal arrives, it
@@ -812,13 +813,14 @@ class ItimerTest(unittest.TestCase):
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
         signal.setitimer(self.itimer, 0.3, 0.2)
 
-        start_time = time.monotonic()
-        while time.monotonic() - start_time < 60.0:
+        for _ in support.busy_retry(60.0, error=False):
             # use up some virtual time by doing real work
             _ = pow(12345, 67890, 10000019)
             if signal.getitimer(self.itimer) == (0.0, 0.0):
-                break # sig_vtalrm handler stopped this itimer
-        else: # Issue 8424
+                # sig_vtalrm handler stopped this itimer
+                break
+        else:
+            # bpo-8424
             self.skipTest("timeout: likely cause: machine too slow or load too "
                           "high")
 
@@ -832,13 +834,14 @@ class ItimerTest(unittest.TestCase):
         signal.signal(signal.SIGPROF, self.sig_prof)
         signal.setitimer(self.itimer, 0.2, 0.2)
 
-        start_time = time.monotonic()
-        while time.monotonic() - start_time < 60.0:
+        for _ in support.busy_retry(60.0, error=False):
             # do some work
             _ = pow(12345, 67890, 10000019)
             if signal.getitimer(self.itimer) == (0.0, 0.0):
-                break # sig_prof handler stopped this itimer
-        else: # Issue 8424
+                # sig_prof handler stopped this itimer
+                break
+        else:
+            # bpo-8424
             self.skipTest("timeout: likely cause: machine too slow or load too "
                           "high")
 
@@ -1307,8 +1310,6 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
             # initial processing of SIGUSR1.
@@ -1317,8 +1318,9 @@ class StressTest(unittest.TestCase):
 
             expected_sigs += 2
             # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.monotonic() < deadline:
-                time.sleep(1e-5)
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+                if len(sigs) >= expected_sigs:
+                    break
 
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
@@ -1345,7 +1347,7 @@ class StressTest(unittest.TestCase):
                 num_sent_signals += 1
 
         def cycle_handlers():
-            while num_sent_signals < 100:
+            while num_sent_signals < 100 or num_received_signals < 1:
                 for i in range(20000):
                     # Cycle between a Python-defined and a non-Python handler
                     for handler in [custom_handler, signal.SIG_IGN]:
@@ -1378,7 +1380,7 @@ class StressTest(unittest.TestCase):
             if not ignored:
                 # Sanity check that some signals were received, but not all
                 self.assertGreater(num_received_signals, 0)
-            self.assertLess(num_received_signals, num_sent_signals)
+            self.assertLessEqual(num_received_signals, num_sent_signals)
         finally:
             do_stop = True
             t.join()

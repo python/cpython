@@ -351,12 +351,17 @@ mmap_gfind(mmap_object *self,
 
         Py_ssize_t res;
         CHECK_VALID_OR_RELEASE(NULL, view);
-        if (reverse) {
+        if (end < start) {
+            res = -1;
+        }
+        else if (reverse) {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_ReverseFind(
                 self->data + start, end - start,
                 view.buf, view.len, start);
         }
         else {
+            assert(0 <= start && start <= end && end <= self->size);
             res = _PyBytes_Find(
                 self->data + start, end - start,
                 view.buf, view.len, start);
@@ -1361,6 +1366,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                        prot, flags,
                        fd, offset);
 
+    int saved_errno = errno;
     if (devzero != -1) {
         close(devzero);
     }
@@ -1368,6 +1374,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (m_obj->data == (char *)-1) {
         m_obj->data = NULL;
         Py_DECREF(m_obj);
+        errno = saved_errno;
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }

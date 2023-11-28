@@ -18,8 +18,8 @@
 .. note::
 
    The Python runtime does not enforce function and variable type annotations.
-   They can be used by third party tools such as type checkers, IDEs, linters,
-   etc.
+   They can be used by third party tools such as :term:`type checkers <static type checker>`,
+   IDEs, linters, etc.
 
 --------------
 
@@ -290,7 +290,7 @@ a callable with any arbitrary parameter list would be acceptable:
    x = concat  # Also OK
 
 ``Callable`` cannot express complex signatures such as functions that take a
-variadic number of arguments, :func:`overloaded functions <overload>`, or
+variadic number of arguments, :ref:`overloaded functions <overload>`, or
 functions that have keyword-only parameters. However, these signatures can be
 expressed by defining a :class:`Protocol` class with a
 :meth:`~object.__call__` method:
@@ -440,7 +440,7 @@ contrast, a variable annotated with ``type[C]`` (or
 themselves -- specifically, it will accept the *class object* of ``C``. For
 example::
 
-   a = 3         # Has type ``int```
+   a = 3         # Has type ``int``
    b = int       # Has type ``type[int]``
    c = type(a)   # Also has type ``type[int]``
 
@@ -801,6 +801,21 @@ using ``[]``.
       concat(b"foo", b"bar")  # OK, output has type 'bytes'
       concat("foo", b"bar")   # Error, cannot mix str and bytes
 
+   Note that, despite its name, ``AnyStr`` has nothing to do with the
+   :class:`Any` type, nor does it mean "any string". In particular, ``AnyStr``
+   and ``str | bytes`` are different from each other and have different use
+   cases::
+
+      # Invalid use of AnyStr:
+      # The type variable is used only once in the function signature,
+      # so cannot be "solved" by the type checker
+      def greet_bad(cond: bool) -> AnyStr:
+          return "hi there!" if cond else b"greetings!"
+
+      # The better way of annotating this function:
+      def greet_proper(cond: bool) -> str | bytes:
+          return "hi there!" if cond else b"greetings!"
+
 .. data:: LiteralString
 
    Special type that includes only literal strings.
@@ -890,13 +905,17 @@ using ``[]``.
 
    For example::
 
-      from typing import Self
+      from typing import Self, reveal_type
 
       class Foo:
           def return_self(self) -> Self:
               ...
               return self
 
+      class SubclassOfFoo(Foo): pass
+
+      reveal_type(Foo().return_self())  # Revealed type is "Foo"
+      reveal_type(SubclassOfFoo().return_self())  # Revealed type is "SubclassOfFoo"
 
    This annotation is semantically equivalent to the following,
    albeit in a more succinct fashion::
@@ -910,21 +929,28 @@ using ``[]``.
               ...
               return self
 
-   In general if something currently follows the pattern of::
-
-      class Foo:
-          def return_self(self) -> "Foo":
-              ...
-              return self
-
-   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
-   ``Foo`` as the return type and not ``SubclassOfFoo``.
+   In general, if something returns ``self``, as in the above examples, you
+   should use ``Self`` as the return annotation. If ``Foo.return_self`` was
+   annotated as returning ``"Foo"``, then the type checker would infer the
+   object returned from ``SubclassOfFoo.return_self`` as being of type ``Foo``
+   rather than ``SubclassOfFoo``.
 
    Other common use cases include:
 
    - :class:`classmethod`\s that are used as alternative constructors and return instances
      of the ``cls`` parameter.
    - Annotating an :meth:`~object.__enter__` method which returns self.
+
+   You should not use ``Self`` as the return annotation if the method is not
+   guaranteed to return an instance of a subclass when the class is
+   subclassed::
+
+      class Eggs:
+          # Self would be an incorrect return annotation here,
+          # as the object returned is always an instance of Eggs,
+          # even in subclasses
+          def returns_eggs(self) -> "Eggs":
+              return Eggs()
 
    See :pep:`673` for more details.
 
@@ -1207,7 +1233,7 @@ These can be used as types in annotations. They all support subscription using
    completely disables typechecking for a function or class.
 
    The responsibility of how to interpret the metadata
-   lies with the the tool or library encountering an
+   lies with the tool or library encountering an
    ``Annotated`` annotation. A tool or library encountering an ``Annotated`` type
    can scan through the metadata elements to determine if they are of interest
    (e.g., using :func:`isinstance`).
@@ -1398,7 +1424,7 @@ These can be used as types in annotations. They all support subscription using
    Typing operator to conceptually mark an object as having been unpacked.
 
    For example, using the unpack operator ``*`` on a
-   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
+   :ref:`type variable tuple <typevartuple>` is equivalent to using ``Unpack``
    to mark the type variable tuple as having been unpacked::
 
       Ts = TypeVarTuple('Ts')
@@ -1452,6 +1478,8 @@ for creating generic types.
               return mapping[key]
           except KeyError:
               return default
+
+.. _typevar:
 
 .. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False)
 
@@ -1547,9 +1575,11 @@ for creating generic types.
 
       A tuple containing the constraints of the type variable, if any.
 
+.. _typevartuple:
+
 .. class:: TypeVarTuple(name)
 
-   Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
+   Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
 
    Usage::
@@ -1660,7 +1690,7 @@ for creating generic types.
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
    Parameter specification variable.  A specialized version of
-   :class:`type variables <TypeVar>`.
+   :ref:`type variables <typevar>`.
 
    Usage::
 
@@ -1755,7 +1785,7 @@ for creating generic types.
 
    .. doctest::
 
-      >>> from typing import ParamSpec
+      >>> from typing import ParamSpec, get_origin
       >>> P = ParamSpec("P")
       >>> get_origin(P.args) is P
       True
@@ -2073,9 +2103,6 @@ types.
 
       class XZ(X, Z): pass  # raises TypeError
 
-      T = TypeVar('T')
-      class XT(X, Generic[T]): pass  # raises TypeError
-
    A ``TypedDict`` can be generic:
 
    .. testcode::
@@ -2107,6 +2134,13 @@ types.
          >>> class Point3D(Point2D): pass
          >>> Point3D.__total__
          True
+
+      This attribute reflects *only* the value of the ``total`` argument
+      to the current ``TypedDict`` class, not whether the class is semantically
+      total. For example, a ``TypedDict`` with ``__total__`` set to True may
+      have keys marked with :data:`NotRequired`, or it may inherit from another
+      ``TypedDict`` with ``total=False``. Therefore, it is generally better to use
+      :attr:`__required_keys__` and :attr:`__optional_keys__` for introspection.
 
    .. attribute:: __required_keys__
 
@@ -2142,6 +2176,14 @@ types.
          True
 
       .. versionadded:: 3.9
+
+      .. note::
+
+         If ``from __future__ import annotations`` is used or if annotations
+         are given as strings, annotations are not evaluated when the
+         ``TypedDict`` is defined. Therefore, the runtime introspection that
+         ``__required_keys__`` and ``__optional_keys__`` rely on may not work
+         properly, and the values of the attributes may be incorrect.
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -2445,6 +2487,8 @@ Functions and decorators
 
    .. versionadded:: 3.11
 
+.. _overload:
+
 .. decorator:: overload
 
    Decorator for creating overloaded functions and methods.
@@ -2745,6 +2789,7 @@ Constant
    .. versionadded:: 3.5.2
 
 .. _generic-concrete-collections:
+.. _deprecated-typing-aliases:
 
 Deprecated aliases
 ------------------
@@ -2753,16 +2798,21 @@ This module defines several deprecated aliases to pre-existing
 standard library classes. These were originally included in the typing
 module in order to support parameterizing these generic classes using ``[]``.
 However, the aliases became redundant in Python 3.9 when the
-corresponding pre-existing classes were enhanced to support ``[]``.
+corresponding pre-existing classes were enhanced to support ``[]`` (see
+:pep:`585`).
 
-The redundant types are deprecated as of Python 3.9 but no
-deprecation warnings are issued by the interpreter.
-It is expected that type checkers will flag the deprecated types
-when the checked program targets Python 3.9 or newer.
+The redundant types are deprecated as of Python 3.9. However, while the aliases
+may be removed at some point, removal of these aliases is not currently
+planned. As such, no deprecation warnings are currently issued by the
+interpreter for these aliases.
 
-The deprecated types will be removed from the :mod:`typing` module
-no sooner than the first Python version released 5 years after the release of Python 3.9.0.
-See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
+If at some point it is decided to remove these deprecated aliases, a
+deprecation warning will be issued by the interpreter for at least two releases
+prior to removal. The aliases are guaranteed to remain in the typing module
+without deprecation warnings until at least Python 3.14.
+
+Type checkers are encouraged to flag uses of the deprecated types if the
+program they are checking targets a minimum Python version of 3.9 or newer.
 
 .. _corresponding-to-built-in-types:
 
@@ -3295,16 +3345,26 @@ Certain features in ``typing`` are deprecated and may be removed in a future
 version of Python. The following table summarizes major deprecations for your
 convenience. This is subject to change, and not all deprecations are listed.
 
-+----------------------------------+---------------+-------------------+----------------+
-|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
-+==================================+===============+===================+================+
-|  ``typing.io`` and ``typing.re`` | 3.8           | 3.13              | :issue:`38291` |
-|  submodules                      |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
-|  collections                     |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
-+----------------------------------+---------------+-------------------+----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Deprecated in
+     - Projected removal
+     - PEP/issue
+   * - ``typing.io`` and ``typing.re`` submodules
+     - 3.8
+     - 3.13
+     - :issue:`38291`
+   * - ``typing`` versions of standard collections
+     - 3.9
+     - Undecided (see :ref:`deprecated-typing-aliases` for more information)
+     - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.14
+     - :gh:`91896`
+   * - :data:`typing.Text`
+     - 3.11
+     - Undecided
+     - :gh:`92332`

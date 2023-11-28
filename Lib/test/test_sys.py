@@ -269,20 +269,29 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setswitchinterval(orig)
 
-    def test_recursionlimit(self):
+    def test_getrecursionlimit(self):
+        limit = sys.getrecursionlimit()
+        self.assertIsInstance(limit, int)
+        self.assertGreater(limit, 1)
+
         self.assertRaises(TypeError, sys.getrecursionlimit, 42)
-        oldlimit = sys.getrecursionlimit()
-        self.assertRaises(TypeError, sys.setrecursionlimit)
-        self.assertRaises(ValueError, sys.setrecursionlimit, -42)
-        sys.setrecursionlimit(10000)
-        self.assertEqual(sys.getrecursionlimit(), 10000)
-        sys.setrecursionlimit(oldlimit)
+
+    def test_setrecursionlimit(self):
+        old_limit = sys.getrecursionlimit()
+        try:
+            sys.setrecursionlimit(10_005)
+            self.assertEqual(sys.getrecursionlimit(), 10_005)
+
+            self.assertRaises(TypeError, sys.setrecursionlimit)
+            self.assertRaises(ValueError, sys.setrecursionlimit, -42)
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     def test_recursionlimit_recovery(self):
         if hasattr(sys, 'gettrace') and sys.gettrace():
             self.skipTest('fatal error if run with a trace function')
 
-        oldlimit = sys.getrecursionlimit()
+        old_limit = sys.getrecursionlimit()
         def f():
             f()
         try:
@@ -301,35 +310,31 @@ class SysModuleTest(unittest.TestCase):
                 with self.assertRaises(RecursionError):
                     f()
         finally:
-            sys.setrecursionlimit(oldlimit)
+            sys.setrecursionlimit(old_limit)
 
     @test.support.cpython_only
-    def test_setrecursionlimit_recursion_depth(self):
+    def test_setrecursionlimit_to_depth(self):
         # Issue #25274: Setting a low recursion limit must be blocked if the
         # current recursion depth is already higher than limit.
 
-        from _testinternalcapi import get_recursion_depth
+        old_limit = sys.getrecursionlimit()
+        try:
+            depth = support.get_recursion_depth()
+            with self.subTest(limit=sys.getrecursionlimit(), depth=depth):
+                # depth + 2 is OK
+                sys.setrecursionlimit(depth + 2)
 
-        def set_recursion_limit_at_depth(depth, limit):
-            recursion_depth = get_recursion_depth()
-            if recursion_depth >= depth:
+                # reset the limit to be able to call self.assertRaises()
+                # context manager
+                sys.setrecursionlimit(old_limit)
                 with self.assertRaises(RecursionError) as cm:
-                    sys.setrecursionlimit(limit)
+                    sys.setrecursionlimit(depth + 1)
                 self.assertRegex(str(cm.exception),
                                  "cannot set the recursion limit to [0-9]+ "
                                  "at the recursion depth [0-9]+: "
                                  "the limit is too low")
-            else:
-                set_recursion_limit_at_depth(depth, limit)
-
-        oldlimit = sys.getrecursionlimit()
-        try:
-            sys.setrecursionlimit(1000)
-
-            for limit in (10, 25, 50, 75, 100, 150, 200):
-                set_recursion_limit_at_depth(limit, limit)
         finally:
-            sys.setrecursionlimit(oldlimit)
+            sys.setrecursionlimit(old_limit)
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute

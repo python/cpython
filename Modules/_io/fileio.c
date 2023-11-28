@@ -389,6 +389,11 @@ _Py_COMP_DIAG_POP
 
             if (async_err)
                 goto error;
+
+            if (self->fd < 0) {
+                PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+                goto error;
+            }
         }
         else {
             PyObject *fdobj;
@@ -420,12 +425,7 @@ _Py_COMP_DIAG_POP
                 goto error;
             }
         }
-
         fd_is_own = 1;
-        if (self->fd < 0) {
-            PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
-            goto error;
-        }
 
 #ifndef MS_WINDOWS
         if (_Py_set_inheritable(self->fd, 0, atomic_flag_works) < 0)
@@ -1044,8 +1044,8 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
     Py_END_ALLOW_THREADS
 
     if (ret != 0) {
-        Py_DECREF(posobj);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(posobj);
         return NULL;
     }
 

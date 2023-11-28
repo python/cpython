@@ -8,7 +8,6 @@ from distutils.core import Distribution
 from distutils import sysconfig
 
 from distutils.tests import support
-from test.support import run_unittest
 
 
 class BuildScriptsTestCase(support.TempdirManager,
@@ -105,8 +104,5 @@ class BuildScriptsTestCase(support.TempdirManager,
         for name in expected:
             self.assertIn(name, built)
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(BuildScriptsTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

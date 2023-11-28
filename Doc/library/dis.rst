@@ -64,6 +64,32 @@ the following command can be used to display the disassembly of
 
 (The "2" is a line number).
 
+.. _dis-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`dis` module can be invoked as a script from the command line:
+
+.. code-block:: sh
+
+   python -m dis [-h] [-C] [infile]
+
+The following options are accepted:
+
+.. program:: dis
+
+.. cmdoption:: -h, --help
+
+   Display usage and exit.
+
+.. cmdoption:: -C, --show-caches
+
+   Show inline caches.
+
+If :file:`infile` is specified, its disassembled code will be written to stdout.
+Otherwise, disassembly is performed on compiled source code recieved from stdin.
+
 Bytecode analysis
 -----------------
 
@@ -747,7 +773,7 @@ iterations of the loop.
 .. opcode:: MATCH_MAPPING
 
    If TOS is an instance of :class:`collections.abc.Mapping` (or, more technically: if
-   it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   it has the :c:macro:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise, push
    ``False``.
 
@@ -758,7 +784,7 @@ iterations of the loop.
 
    If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
-   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   the :c:macro:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10

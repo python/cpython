@@ -1057,6 +1057,10 @@ tok_nextc(struct tok_state *tok)
     int rc;
     for (;;) {
         if (tok->cur != tok->inp) {
+            if (tok->cur - tok->buf >= INT_MAX) {
+                tok->done = E_COLUMNOVERFLOW;
+                return EOF;
+            }
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
         if (tok->done != E_OK) {
@@ -1303,7 +1307,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
         tok_nextc(tok);
     }
     else /* In future releases, only error will remain. */
-    if (is_potential_identifier_char(c)) {
+    if (c < 128 && is_potential_identifier_char(c)) {
         tok_backup(tok, c);
         syntaxerror(tok, "invalid %s literal", kind);
         return 0;

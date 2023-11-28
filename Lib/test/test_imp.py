@@ -78,7 +78,7 @@ class ImportTests(unittest.TestCase):
             with imp.find_module('module_' + mod, self.test_path)[0] as fd:
                 self.assertEqual(fd.encoding, encoding)
 
-        path = [os.path.dirname(__file__)]
+        path = [os.path.join(os.path.dirname(__file__), 'tokenizedata')]
         with self.assertRaises(SyntaxError):
             imp.find_module('badsyntax_pep3120', path)
 
@@ -203,9 +203,11 @@ class ImportTests(unittest.TestCase):
             os_helper.rmtree('__pycache__')
 
     def test_issue9319(self):
-        path = os.path.dirname(__file__)
+        path = os.path.join(os.path.dirname(__file__), "tokenizedata")
         self.assertRaises(SyntaxError,
-                          imp.find_module, "badsyntax_pep3120", [path])
+                          imp.find_module,
+                          "badsyntax_pep3120",
+                          [path])
 
     def test_load_from_source(self):
         # Verify that the imp module can correctly load and find .py files

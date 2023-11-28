@@ -1,0 +1,24 @@
+fix = true
+select = [
+    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
+]
+extend-exclude = [
+    # Excluded (these aren't actually executed, they're just "data files")
+    "tokenizedata/*.py",
+    # Failed to lint
+    "encoded_modules/module_iso_8859_1.py",
+    "encoded_modules/module_koi8_r.py",
+    "test_source_encoding.py",
+    # TODO Fix: F811 Redefinition of unused name
+    "test_buffer.py",
+    "test_dataclasses/__init__.py",
+    "test_descr.py",
+    "test_enum.py",
+    "test_functools.py",
+    "test_grammar.py",
+    "test_import/__init__.py",
+    "test_pkg.py",
+    "test_tokenize.py",
+    "test_yield_from.py",
+    "time_hashlib.py",
+]

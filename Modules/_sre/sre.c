@@ -1437,6 +1437,9 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     for (i = 0; i < n; i++) {
         PyObject *o = PyList_GET_ITEM(code, i);
         unsigned long value = PyLong_AsUnsignedLong(o);
+        if (value == (unsigned long)-1 && PyErr_Occurred()) {
+            break;
+        }
         self->code[i] = (SRE_CODE) value;
         if ((unsigned long) self->code[i] != value) {
             PyErr_SetString(PyExc_OverflowError,
@@ -1936,8 +1939,6 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             GET_SKIP;
             GET_ARG; /* 0 for lookahead, width for lookbehind */
             code--; /* Back up over arg to simplify math below */
-            if (arg & 0x80000000)
-                FAIL; /* Width too large */
             /* Stop 1 before the end; we check the SUCCESS below */
             if (_validate_inner(code+1, code+skip-2, groups))
                 FAIL;

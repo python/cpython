@@ -585,7 +585,7 @@ Expressions
    :class:`Name` or :class:`Attribute` object. Of the arguments:
 
    * ``args`` holds a list of the arguments passed by position.
-   * ``keywords`` holds a list of :class:`keyword` objects representing
+   * ``keywords`` holds a list of :class:`.keyword` objects representing
      arguments passed by keyword.
 
    When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
@@ -1925,7 +1925,7 @@ Function and class definitions
 
    * ``name`` is a raw string for the class name
    * ``bases`` is a list of nodes for explicitly specified base classes.
-   * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
+   * ``keywords`` is a list of :class:`.keyword` nodes, principally for 'metaclass'.
      Other keywords will be passed to the metaclass, as per `PEP-3115
      <https://peps.python.org/pep-3115/>`_.
    * ``body`` is a list of nodes representing the code within the class
@@ -2337,26 +2337,26 @@ The following options are accepted:
 
 .. program:: ast
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message and exit.
 
-.. cmdoption:: -m <mode>
-               --mode <mode>
+.. option:: -m <mode>
+            --mode <mode>
 
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
-.. cmdoption:: --no-type-comments
+.. option:: --no-type-comments
 
    Don't parse type comments.
 
-.. cmdoption:: -a, --include-attributes
+.. option:: -a, --include-attributes
 
    Include attributes such as line numbers and column offsets.
 
-.. cmdoption:: -i <indent>
-               --indent <indent>
+.. option:: -i <indent>
+            --indent <indent>
 
    Indentation of nodes in AST (number of spaces).
 

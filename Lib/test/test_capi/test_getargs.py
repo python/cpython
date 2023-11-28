@@ -152,6 +152,8 @@ class TupleSubclass(tuple):
 class DictSubclass(dict):
     pass
 
+NONCONTIG_WRITABLE = memoryview(bytearray(b'noncontig'))[::-2]
+NONCONTIG_READONLY = memoryview(b'noncontig')[::-2]
 
 class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
@@ -836,6 +838,8 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(getargs_y_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_y_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_y_star, None)
+        self.assertRaises(BufferError, getargs_y_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_y_star, NONCONTIG_READONLY)
 
     def test_y_hash(self):
         from _testcapi import getargs_y_hash
@@ -845,6 +849,9 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_y_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_y_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_y_hash, None)
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_READONLY)
 
     def test_w_star(self):
         # getargs_w_star() modifies first and last byte
@@ -860,6 +867,8 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(getargs_w_star(memoryview(buf)), b'[emoryvie]')
         self.assertEqual(buf, bytearray(b'[emoryvie]'))
         self.assertRaises(TypeError, getargs_w_star, None)
+        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_READONLY)
 
 
 class String_TestCase(unittest.TestCase):
@@ -892,6 +901,8 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_s_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_s_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_s_star, None)
+        self.assertRaises(BufferError, getargs_s_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_s_star, NONCONTIG_READONLY)
 
     def test_s_hash(self):
         from _testcapi import getargs_s_hash
@@ -901,6 +912,9 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_s_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_s_hash, NONCONTIG_READONLY)
 
     def test_s_hash_int(self):
         # "s#" without PY_SSIZE_T_CLEAN defined.
@@ -936,6 +950,8 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_z_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_z_star(memoryview(b'memoryview')), b'memoryview')
         self.assertIsNone(getargs_z_star(None))
+        self.assertRaises(BufferError, getargs_z_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_z_star, NONCONTIG_READONLY)
 
     def test_z_hash(self):
         from _testcapi import getargs_z_hash
@@ -945,6 +961,9 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_z_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_z_hash, memoryview(b'memoryview'))
         self.assertIsNone(getargs_z_hash(None))
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_z_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_z_hash, NONCONTIG_READONLY)
 
     def test_es(self):
         from _testcapi import getargs_es
@@ -1302,6 +1321,33 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
             parse((1,), {}, 'O|$OO', ['', '', 'a'])
         with self.assertRaisesRegex(SystemError, 'Empty keyword'):
             parse((1,), {}, 'O|OO', ['', 'a', ''])
+
+    def test_nested_tuple(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        parse(((1, 2, 3),), {}, '(OOO)', ['a'])
+        parse((1, (2, 3), 4), {}, 'O(OO)O', ['a', 'b', 'c'])
+        parse(((1, 2, 3),), {}, '(iii)', ['a'])
+
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be sequence of length 2, not 3"):
+            parse(((1, 2, 3),), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be sequence of length 2, not 1"):
+            parse(((1,),), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item sequence, not int"):
+            parse((1,), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item sequence, not bytes"):
+            parse((b'ab',), {}, '(ii)', ['a'])
+
+        for f in 'es', 'et', 'es#', 'et#':
+            with self.assertRaises(LookupError):  # empty encoding ""
+                parse((('a',),), {}, '(' + f + ')', ['a'])
+            with self.assertRaisesRegex(TypeError,
+                    "argument 1 must be sequence of length 1, not 0"):
+                parse(((),), {}, '(' + f + ')', ['a'])
 
 
 class Test_testcapi(unittest.TestCase):

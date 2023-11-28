@@ -8,7 +8,7 @@ from distutils.command.install_lib import install_lib
 from distutils.extension import Extension
 from distutils.tests import support
 from distutils.errors import DistutilsOptionError
-from test.support import run_unittest, requires_subprocess
+from test.support import requires_subprocess
 
 
 class InstallLibTestCase(support.TempdirManager,
@@ -110,8 +110,5 @@ class InstallLibTestCase(support.TempdirManager,
                       self.logs[0][1] % self.logs[0][2])
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(InstallLibTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

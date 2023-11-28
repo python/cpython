@@ -812,7 +812,7 @@ The first step in using :mod:`optparse` is to create an OptionParser instance.
       help option.  When :mod:`optparse` prints the usage string, it expands
       ``%prog`` to ``os.path.basename(sys.argv[0])`` (or to ``prog`` if you
       passed that keyword argument).  To suppress a usage message, pass the
-      special value :data:`optparse.SUPPRESS_USAGE`.
+      special value :const:`optparse.SUPPRESS_USAGE`.
 
    ``option_list`` (default: ``[]``)
       A list of Option objects to populate the parser with.  The options in
@@ -1078,7 +1078,7 @@ relevant to a particular option, or fail to pass a required option attribute,
    Help text to print for this option when listing all available options after
    the user supplies a :attr:`~Option.help` option (such as ``--help``).  If
    no help text is supplied, the option will be listed without help text.  To
-   hide this option, use the special value :data:`optparse.SUPPRESS_HELP`.
+   hide this option, use the special value :const:`optparse.SUPPRESS_HELP`.
 
 .. attribute:: Option.metavar
 
@@ -1250,7 +1250,7 @@ must specify for any option using that action.
 
   If no :attr:`~Option.help` string is supplied for an option, it will still be
   listed in the help message.  To omit an option entirely, use the special value
-  :data:`optparse.SUPPRESS_HELP`.
+  :const:`optparse.SUPPRESS_HELP`.
 
   :mod:`optparse` automatically adds a :attr:`~Option.help` option to all
   OptionParsers, so you do not normally need to create one.
@@ -1521,7 +1521,7 @@ OptionParser supports several other public methods:
 
    Set the usage string according to the rules described above for the ``usage``
    constructor keyword argument.  Passing ``None`` sets the default usage
-   string; use :data:`optparse.SUPPRESS_USAGE` to suppress a usage message.
+   string; use :const:`optparse.SUPPRESS_USAGE` to suppress a usage message.
 
 .. method:: OptionParser.print_usage(file=None)
 

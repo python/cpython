@@ -23,11 +23,13 @@ support.requires_working_socket(module=True)
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'
-CERT_localhost = os.path.join(here, 'keycert.pem')
+CERT_localhost = os.path.join(here, 'certdata', 'keycert.pem')
 # Self-signed cert file for 'fakehostname'
-CERT_fakehostname = os.path.join(here, 'keycert2.pem')
+CERT_fakehostname = os.path.join(here, 'certdata', 'keycert2.pem')
 # Self-signed cert file for self-signed.pythontest.net
-CERT_selfsigned_pythontestdotnet = os.path.join(here, 'selfsigned_pythontestdotnet.pem')
+CERT_selfsigned_pythontestdotnet = os.path.join(
+    here, 'certdata', 'selfsigned_pythontestdotnet.pem',
+)
 
 # constants for testing chunked encoding
 chunked_start = (
@@ -278,6 +280,22 @@ class HeaderTests(TestCase):
         expected = b'GET /foo HTTP/1.1\r\nHost: [2001:102A::]\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
         conn = client.HTTPConnection('[2001:102A::]')
+        sock = FakeSocket('')
+        conn.sock = sock
+        conn.request('GET', '/foo')
+        self.assertTrue(sock.data.startswith(expected))
+
+        expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]\r\n' \
+                   b'Accept-Encoding: identity\r\n\r\n'
+        conn = client.HTTPConnection('[fe80::%2]')
+        sock = FakeSocket('')
+        conn.sock = sock
+        conn.request('GET', '/foo')
+        self.assertTrue(sock.data.startswith(expected))
+
+        expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]:81\r\n' \
+                   b'Accept-Encoding: identity\r\n\r\n'
+        conn = client.HTTPConnection('[fe80::%2]:81')
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
@@ -1911,6 +1929,7 @@ class HTTPSTest(TestCase):
             h.close()
             self.assertIn('nginx', server_string)
 
+    @support.requires_resource('walltime')
     def test_networked_bad_cert(self):
         # We feed a "CA" cert that is unrelated to the server's cert
         import ssl

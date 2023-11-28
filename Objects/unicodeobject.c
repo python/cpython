@@ -5120,6 +5120,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     }
     s += ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
     if (s == end) {
+        if (consumed) {
+            *consumed = size;
+        }
         return u;
     }
 
@@ -7553,7 +7556,7 @@ decode_code_page_errors(UINT code_page,
             if (err != ERROR_NO_UNICODE_TRANSLATION
                 && err != ERROR_INSUFFICIENT_BUFFER)
             {
-                PyErr_SetFromWindowsErr(0);
+                PyErr_SetFromWindowsErr(err);
                 goto error;
             }
             insize++;
@@ -13164,7 +13167,7 @@ str.split as unicode_split
         The separator used to split the string.
 
         When set to None (the default value), will split on any whitespace
-        character (including \\n \\r \\t \\f and spaces) and will discard
+        character (including \n \r \t \f and spaces) and will discard
         empty strings from the result.
     maxsplit: Py_ssize_t = -1
         Maximum number of splits (starting from the left).
@@ -13180,7 +13183,7 @@ the regular expression module.
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=906d953b44efc43b]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=07b9040d98c5fe8d]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);

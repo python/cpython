@@ -1,4 +1,4 @@
-# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2023 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -19,7 +19,7 @@ Configuration functions for the logging package for Python. The core package
 is based on PEP 282 and comments thereto in comp.lang.python, and influenced
 by Apache's log4j system.
 
-Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2023 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -477,10 +477,10 @@ class BaseConfigurator(object):
         c = config.pop('()')
         if not callable(c):
             c = self.resolve(c)
-        props = config.pop('.', None)
         # Check for valid identifiers
-        kwargs = {k: config[k] for k in config if valid_ident(k)}
+        kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
         result = c(**kwargs)
+        props = config.pop('.', None)
         if props:
             for name, value in props.items():
                 setattr(result, name, value)
@@ -752,8 +752,7 @@ class DictConfigurator(BaseConfigurator):
                 'address' in config:
                 config['address'] = self.as_tuple(config['address'])
             factory = klass
-        props = config.pop('.', None)
-        kwargs = {k: config[k] for k in config if valid_ident(k)}
+        kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
         try:
             result = factory(**kwargs)
         except TypeError as te:
@@ -771,6 +770,7 @@ class DictConfigurator(BaseConfigurator):
             result.setLevel(logging._checkLevel(level))
         if filters:
             self.add_filters(result, filters)
+        props = config.pop('.', None)
         if props:
             for name, value in props.items():
                 setattr(result, name, value)

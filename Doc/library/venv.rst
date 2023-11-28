@@ -30,6 +30,25 @@ When used from within a virtual environment, common installation tools such as
 `pip`_ will install Python packages into a virtual environment
 without needing to be told to do so explicitly.
 
+A virtual environment is (amongst other things):
+
+* Used to contain a specific Python interpreter and software libraries and
+  binaries which are needed to support a project (library or application). These
+  are by default isolated from software in other virtual environments and Python
+  interpreters and libraries installed in the operating system.
+
+* Contained in a directory, conventionally either named ``venv`` or ``.venv`` in
+  the project directory, or under a container directory for lots of virtual
+  environments, such as ``~/.virtualenvs``.
+
+* Not checked into source control systems such as Git.
+
+* Considered as disposable -- it should be simple to delete and recreate it from
+  scratch. You don't place any project code in the environment
+
+* Not considered as movable or copyable -- you just recreate the same
+  environment in the target location.
+
 See :pep:`405` for more background on Python virtual environments.
 
 .. seealso::
@@ -60,7 +79,7 @@ running from a virtual environment.
 
 A virtual environment may be "activated" using a script in its binary directory
 (``bin`` on POSIX; ``Scripts`` on Windows).
-This will prepend that directory to your :envvar:`!PATH`, so that running
+This will prepend that directory to your :envvar:`PATH`, so that running
 :program:`python` will invoke the environment's Python interpreter
 and you can run installed scripts without having to use their full path.
 The invocation of the activation script is platform-specific
@@ -100,10 +119,10 @@ In order to achieve this, scripts installed into virtual environments have
 a "shebang" line which points to the environment's Python interpreter,
 i.e. :samp:`#!/{<path-to-venv>}/bin/python`.
 This means that the script will run with that interpreter regardless of the
-value of :envvar:`!PATH`. On Windows, "shebang" line processing is supported if
+value of :envvar:`PATH`. On Windows, "shebang" line processing is supported if
 you have the :ref:`launcher` installed. Thus, double-clicking an installed
 script in a Windows Explorer window should run it with the correct interpreter
-without the environment needing to be activated or on the :envvar:`!PATH`.
+without the environment needing to be activated or on the :envvar:`PATH`.
 
 When a virtual environment has been activated, the :envvar:`!VIRTUAL_ENV`
 environment variable is set to the path of the environment.

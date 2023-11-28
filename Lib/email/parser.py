@@ -67,7 +67,6 @@ class Parser:
         return self.parse(StringIO(text), headersonly=headersonly)
 
 
-
 class HeaderParser(Parser):
     def parse(self, fp, headersonly=True):
         return Parser.parse(self, fp, True)
@@ -75,7 +74,7 @@ class HeaderParser(Parser):
     def parsestr(self, text, headersonly=True):
         return Parser.parsestr(self, text, True)
 
-
+
 class BytesParser:
 
     def __init__(self, *args, **kw):

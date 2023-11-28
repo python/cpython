@@ -145,7 +145,10 @@ class _GeneratorContextManager(
             except StopIteration:
                 return False
             else:
-                raise RuntimeError("generator didn't stop")
+                try:
+                    raise RuntimeError("generator didn't stop")
+                finally:
+                    self.gen.close()
         else:
             if value is None:
                 # Need to force instantiation so we can reliably
@@ -187,7 +190,10 @@ class _GeneratorContextManager(
                     raise
                 exc.__traceback__ = traceback
                 return False
-            raise RuntimeError("generator didn't stop after throw()")
+            try:
+                raise RuntimeError("generator didn't stop after throw()")
+            finally:
+                self.gen.close()
 
 class _AsyncGeneratorContextManager(
     _GeneratorContextManagerBase,
@@ -212,7 +218,10 @@ class _AsyncGeneratorContextManager(
             except StopAsyncIteration:
                 return False
             else:
-                raise RuntimeError("generator didn't stop")
+                try:
+                    raise RuntimeError("generator didn't stop")
+                finally:
+                    await self.gen.aclose()
         else:
             if value is None:
                 # Need to force instantiation so we can reliably
@@ -254,7 +263,10 @@ class _AsyncGeneratorContextManager(
                     raise
                 exc.__traceback__ = traceback
                 return False
-            raise RuntimeError("generator didn't stop after athrow()")
+            try:
+                raise RuntimeError("generator didn't stop after athrow()")
+            finally:
+                await self.gen.aclose()
 
 
 def contextmanager(func):

@@ -1,7 +1,7 @@
 import os
 from pickle import dump
 import sys
-from test.support import captured_stdout
+from test.support import captured_stdout, requires_resource
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
@@ -362,13 +362,19 @@ class TestCoverage(unittest.TestCase):
         rmtree(TESTFN)
         unlink(TESTFN)
 
-    def _coverage(self, tracer,
-                  cmd='import test.support, test.test_pprint;'
-                      'test.support.run_unittest(test.test_pprint.QueryTestCase)'):
+    DEFAULT_SCRIPT = '''if True:
+        import unittest
+        from test.test_pprint import QueryTestCase
+        loader = unittest.TestLoader()
+        tests = loader.loadTestsFromTestCase(QueryTestCase)
+        tests(unittest.TestResult())
+        '''
+    def _coverage(self, tracer, cmd=DEFAULT_SCRIPT):
         tracer.run(cmd)
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=TESTFN)
 
+    @requires_resource('cpu')
     def test_coverage(self):
         tracer = trace.Trace(trace=0, count=1)
         with captured_stdout() as stdout:

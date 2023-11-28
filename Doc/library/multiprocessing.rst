@@ -2540,7 +2540,7 @@ multiple connections at the same time.
    **Windows**: An item in *object_list* must either be an integer
    handle which is waitable (according to the definition used by the
    documentation of the Win32 function ``WaitForMultipleObjects()``)
-   or it can be an object with a :meth:`fileno` method which returns a
+   or it can be an object with a :meth:`~io.IOBase.fileno` method which returns a
    socket handle or pipe handle.  (Note that pipe handles and socket
    handles are **not** waitable handles.)
 
@@ -2682,7 +2682,7 @@ handler type) for messages from different processes to get mixed up.
    Returns the logger used by :mod:`multiprocessing`.  If necessary, a new one
    will be created.
 
-   When first created the logger has level :data:`logging.NOTSET` and no
+   When first created the logger has level :const:`logging.NOTSET` and no
    default handler. Messages sent to this logger will not by default propagate
    to the root logger.
 
@@ -2751,20 +2751,20 @@ worker threads rather than worker processes.
 
    Unlike :class:`Pool`, *maxtasksperchild* and *context* cannot be provided.
 
-    .. note::
+   .. note::
 
-        A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
-        is designed around a pool of processes and predates the introduction of
-        the :class:`concurrent.futures` module.  As such, it inherits some
-        operations that don't make sense for a pool backed by threads, and it
-        has its own type for representing the status of asynchronous jobs,
-        :class:`AsyncResult`, that is not understood by any other libraries.
+      A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
+      is designed around a pool of processes and predates the introduction of
+      the :class:`concurrent.futures` module.  As such, it inherits some
+      operations that don't make sense for a pool backed by threads, and it
+      has its own type for representing the status of asynchronous jobs,
+      :class:`AsyncResult`, that is not understood by any other libraries.
 
-        Users should generally prefer to use
-        :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
-        interface that was designed around threads from the start, and which
-        returns :class:`concurrent.futures.Future` instances that are
-        compatible with many other libraries, including :mod:`asyncio`.
+      Users should generally prefer to use
+      :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
+      interface that was designed around threads from the start, and which
+      returns :class:`concurrent.futures.Future` instances that are
+      compatible with many other libraries, including :mod:`asyncio`.
 
 
 .. _multiprocessing-programming:
@@ -2963,7 +2963,7 @@ Global variables
 Safe importing of main module
 
     Make sure that the main module can be safely imported by a new Python
-    interpreter without causing unintended side effects (such a starting a new
+    interpreter without causing unintended side effects (such as starting a new
     process).
 
     For example, using the *spawn* or *forkserver* start method

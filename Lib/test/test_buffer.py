@@ -1019,6 +1019,7 @@ class TestBufferProtocol(unittest.TestCase):
                     ndim=ndim, shape=shape, strides=strides,
                     lst=lst, sliced=sliced)
 
+    @support.requires_resource('cpu')
     def test_ndarray_getbuf(self):
         requests = (
             # distinct flags
@@ -2750,6 +2751,7 @@ class TestBufferProtocol(unittest.TestCase):
             m = memoryview(ex)
             iter_roundtrip(ex, m, items, fmt)
 
+    @support.requires_resource('cpu')
     def test_memoryview_cast_1D_ND(self):
         # Cast between C-contiguous buffers. At least one buffer must
         # be 1D, at least one format must be 'c', 'b' or 'B'.

@@ -128,9 +128,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 static PyObject *
 ste_repr(PySTEntryObject *ste)
 {
-    return PyUnicode_FromFormat("<symtable entry %U(%ld), line %d>",
-                                ste->ste_name,
-                                PyLong_AS_LONG(ste->ste_id), ste->ste_lineno);
+    return PyUnicode_FromFormat("<symtable entry %U(%R), line %d>",
+                                ste->ste_name, ste->ste_id, ste->ste_lineno);
 }
 
 static void
@@ -502,6 +501,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
              PyObject *bound, PyObject *local, PyObject *free,
              PyObject *global)
 {
+    int contains;
     if (flags & DEF_GLOBAL) {
         if (flags & DEF_NONLOCAL) {
             PyErr_Format(PyExc_SyntaxError,
@@ -522,7 +522,11 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
                          "nonlocal declaration not allowed at module level");
             return error_at_directive(ste, name);
         }
-        if (!PySet_Contains(bound, name)) {
+        contains = PySet_Contains(bound, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (!contains) {
             PyErr_Format(PyExc_SyntaxError,
                          "no binding for nonlocal '%U' found",
                          name);
@@ -546,17 +550,29 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
        Note that having a non-NULL bound implies that the block
        is nested.
     */
-    if (bound && PySet_Contains(bound, name)) {
-        SET_SCOPE(scopes, name, FREE);
-        ste->ste_free = 1;
-        return PySet_Add(free, name) >= 0;
+    if (bound) {
+        contains = PySet_Contains(bound, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            SET_SCOPE(scopes, name, FREE);
+            ste->ste_free = 1;
+            return PySet_Add(free, name) >= 0;
+        }
     }
     /* If a parent has a global statement, then call it global
        explicit?  It could also be global implicit.
      */
-    if (global && PySet_Contains(global, name)) {
-        SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
-        return 1;
+    if (global) {
+        contains = PySet_Contains(global, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+            return 1;
+        }
     }
     if (ste->ste_nested)
         ste->ste_free = 1;
@@ -590,8 +606,13 @@ analyze_cells(PyObject *scopes, PyObject *free)
         scope = PyLong_AS_LONG(v);
         if (scope != LOCAL)
             continue;
-        if (!PySet_Contains(free, name))
+        int contains = PySet_Contains(free, name);
+        if (contains < 0) {
+            goto error;
+        }
+        if (!contains) {
             continue;
+        }
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
            in the dict, because it will not cause a resize.
@@ -691,9 +712,15 @@ update_symbols(PyObject *symbols, PyObject *scopes,
             goto error;
         }
         /* Handle global symbol */
-        if (bound && !PySet_Contains(bound, name)) {
-            Py_DECREF(name);
-            continue;       /* it's a global */
+        if (bound) {
+            int contains = PySet_Contains(bound, name);
+            if (contains < 0) {
+                goto error;
+            }
+            if (!contains) {
+                Py_DECREF(name);
+                continue;       /* it's a global */
+            }
         }
         /* Propagate new free symbol up the lexical stack */
         if (PyDict_SetItem(symbols, name, v_free) < 0) {

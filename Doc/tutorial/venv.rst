@@ -207,4 +207,6 @@ necessary packages with ``install -r``:
 ``pip`` has many more options.  Consult the :ref:`installing-index`
 guide for complete documentation for ``pip``.  When you've written
 a package and want to make it available on the Python Package Index,
-consult the :ref:`distributing-index` guide.
+consult the `Python packaging user guide`_.
+
+.. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/packaging-projects/

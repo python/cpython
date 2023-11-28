@@ -1,4 +1,4 @@
-# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2023 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -16,7 +16,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2023 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -74,6 +74,13 @@ try:
     import zlib
 except ImportError:
     pass
+
+
+# gh-89363: Skip fork() test if Python is built with Address Sanitizer (ASAN)
+# to work around a libasan race condition, dead lock in pthread_create().
+skip_if_asan_fork = unittest.skipIf(
+    support.HAVE_ASAN_FORK_BUG,
+    "libasan has a pthread_create() dead lock related to thread+fork")
 
 
 class BaseTest(unittest.TestCase):
@@ -631,6 +638,7 @@ class HandlerTest(BaseTest):
         support.is_emscripten, "Emscripten cannot fstat unlinked files."
     )
     @threading_helper.requires_working_threading()
+    @support.requires_resource('walltime')
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -681,6 +689,7 @@ class HandlerTest(BaseTest):
     # register_at_fork mechanism is also present and used.
     @support.requires_fork()
     @threading_helper.requires_working_threading()
+    @skip_if_asan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -1981,17 +1990,17 @@ class SysLogHandlerTest(BaseTest):
         # The log message sent to the SysLogHandler is properly received.
         logger = logging.getLogger("slh")
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
         self.handled.clear()
         self.sl_hdlr.append_nul = False
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m')
         self.handled.clear()
         self.sl_hdlr.ident = "h\xe4m-"
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
     def test_udp_reconnection(self):
@@ -1999,7 +2008,7 @@ class SysLogHandlerTest(BaseTest):
         self.sl_hdlr.close()
         self.handled.clear()
         logger.error("sp\xe4m")
-        self.handled.wait(0.1)
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
@@ -2074,7 +2083,7 @@ class HTTPHandlerTest(BaseTest):
                     sslctx = None
                 else:
                     here = os.path.dirname(__file__)
-                    localhost_cert = os.path.join(here, "keycert.pem")
+                    localhost_cert = os.path.join(here, "certdata", "keycert.pem")
                     sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                     sslctx.load_cert_chain(localhost_cert)
 
@@ -2872,6 +2881,39 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    class CustomFormatter(logging.Formatter):
+        custom_property = "."
+
+        def format(self, record):
+            return super().format(record)
+
+    config17 = {
+        'version': 1,
+        'formatters': {
+            "custom": {
+                "()": CustomFormatter,
+                "style": "{",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "format": "{message}", # <-- to force an exception when configuring
+                ".": {
+                    "custom_property": "value"
+                }
+            }
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'custom',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     out_of_order = {
         "version": 1,
         "formatters": {
@@ -3285,6 +3327,11 @@ class ConfigDictTest(BaseTest):
 
         handler = logging.root.handlers[0]
         self.addCleanup(cleanup, handler, fn)
+
+    def test_config17_ok(self):
+        self.apply_config(self.config17)
+        h = logging._handlers['hand1']
+        self.assertEqual(h.formatter.custom_property, 'value')
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")

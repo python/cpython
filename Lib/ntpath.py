@@ -695,6 +695,14 @@ else:
         try:
             path = _getfinalpathname(path)
             initial_winerror = 0
+        except ValueError as ex:
+            # gh-106242: Raised for embedded null characters
+            # In strict mode, we convert into an OSError.
+            # Non-strict mode returns the path as-is, since we've already
+            # made it absolute.
+            if strict:
+                raise OSError(str(ex)) from None
+            path = normpath(path)
         except OSError as ex:
             if strict:
                 raise
@@ -714,6 +722,10 @@ else:
             try:
                 if _getfinalpathname(spath) == path:
                     path = spath
+            except ValueError as ex:
+                # Unexpected, as an invalid path should not have gained a prefix
+                # at any point, but we ignore this error just in case.
+                pass
             except OSError as ex:
                 # If the path does not exist and originally did not exist, then
                 # strip the prefix anyway.

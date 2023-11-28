@@ -2576,6 +2576,7 @@ class AbstractPickleTests:
             self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_framing_many_objects(self):
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):

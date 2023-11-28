@@ -3,7 +3,7 @@ import os
 import stat
 import sys
 import unittest.mock
-from test.support import run_unittest, unix_shell, requires_subprocess
+from test.support import unix_shell, requires_subprocess
 from test.support import os_helper
 
 from distutils.spawn import find_executable
@@ -132,8 +132,5 @@ class SpawnTestCase(support.TempdirManager,
         self.assertIn("command 'does-not-exist' failed", str(ctx.exception))
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(SpawnTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

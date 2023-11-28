@@ -49,15 +49,11 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
             async with ctx():
                 yield 11
 
-        ret = []
-        exc = ValueError(22)
-        with self.assertRaises(ValueError):
-            async with ctx():
-                async for val in gen():
-                    ret.append(val)
-                    raise exc
-
-        self.assertEqual(ret, [11])
+        g = gen()
+        async for val in g:
+            self.assertEqual(val, 11)
+            break
+        await g.aclose()
 
     def test_exit_is_abstract(self):
         class MissingAexit(AbstractAsyncContextManager):

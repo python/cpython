@@ -1980,7 +1980,7 @@ order (MRO) for bases """
         ns = {}
         exec(code, ns)
         number_attrs = ns["number_attrs"]
-        # Warm up the the function for quickening (PEP 659)
+        # Warm up the function for quickening (PEP 659)
         for _ in range(30):
             self.assertEqual(number_attrs(Numbers()), list(range(280)))
 
@@ -4453,6 +4453,7 @@ order (MRO) for bases """
         o.whatever = Provoker(o)
         del o
 
+    @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
         f = lambda:None

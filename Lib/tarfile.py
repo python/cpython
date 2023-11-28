@@ -372,8 +372,8 @@ class _Stream:
                 self.zlib = zlib
                 self.crc = zlib.crc32(b"")
                 if mode == "r":
-                    self._init_read_gz()
                     self.exception = zlib.error
+                    self._init_read_gz()
                 else:
                     self._init_write_gz()
 
@@ -741,7 +741,7 @@ class SpecialFileError(FilterError):
 class AbsoluteLinkError(FilterError):
     def __init__(self, tarinfo):
         self.tarinfo = tarinfo
-        super().__init__(f'{tarinfo.name!r} is a symlink to an absolute path')
+        super().__init__(f'{tarinfo.name!r} is a link to an absolute path')
 
 class LinkOutsideDestinationError(FilterError):
     def __init__(self, tarinfo, path):
@@ -801,7 +801,14 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            target_path = os.path.realpath(os.path.join(dest_path, member.linkname))
+            if member.issym():
+                target_path = os.path.join(dest_path,
+                                           os.path.dirname(name),
+                                           member.linkname)
+            else:
+                target_path = os.path.join(dest_path,
+                                           member.linkname)
+            target_path = os.path.realpath(target_path)
             if os.path.commonpath([target_path, dest_path]) != dest_path:
                 raise LinkOutsideDestinationError(member, target_path)
     return new_attrs

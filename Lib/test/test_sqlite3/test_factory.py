@@ -111,6 +111,7 @@ class RowFactoryTestsBackwardsCompat(unittest.TestCase):
 class RowFactoryTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
+        self.con.row_factory = sqlite.Row
 
     def test_custom_factory(self):
         self.con.row_factory = lambda cur, row: list(row)
@@ -118,7 +119,6 @@ class RowFactoryTests(unittest.TestCase):
         self.assertIsInstance(row, list)
 
     def test_sqlite_row_index(self):
-        self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a_1, 2 as b").fetchone()
         self.assertIsInstance(row, sqlite.Row)
 
@@ -149,7 +149,6 @@ class RowFactoryTests(unittest.TestCase):
             row[complex()]  # index must be int or string
 
     def test_sqlite_row_index_unicode(self):
-        self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as \xff").fetchone()
         self.assertEqual(row["\xff"], 1)
         with self.assertRaises(IndexError):
@@ -159,7 +158,6 @@ class RowFactoryTests(unittest.TestCase):
 
     def test_sqlite_row_slice(self):
         # A sqlite.Row can be sliced like a list.
-        self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1, 2, 3, 4").fetchone()
         self.assertEqual(row[0:0], ())
         self.assertEqual(row[0:1], (1,))
@@ -176,8 +174,7 @@ class RowFactoryTests(unittest.TestCase):
         self.assertEqual(row[3:0:-2], (4, 2))
 
     def test_sqlite_row_iter(self):
-        """Checks if the row object is iterable"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object is iterable.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
 
         # Is iterable in correct order and produces valid results:
@@ -189,23 +186,20 @@ class RowFactoryTests(unittest.TestCase):
         self.assertEqual(items, [1, 2])
 
     def test_sqlite_row_as_tuple(self):
-        """Checks if the row object can be converted to a tuple"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object can be converted to a tuple.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         t = tuple(row)
         self.assertEqual(t, (row['a'], row['b']))
 
     def test_sqlite_row_as_dict(self):
-        """Checks if the row object can be correctly converted to a dictionary"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object can be correctly converted to a dictionary.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         d = dict(row)
         self.assertEqual(d["a"], row["a"])
         self.assertEqual(d["b"], row["b"])
 
     def test_sqlite_row_hash_cmp(self):
-        """Checks if the row object compares and hashes correctly"""
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object compares and hashes correctly.
         row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_3 = self.con.execute("select 1 as a, 3 as b").fetchone()
@@ -238,13 +232,17 @@ class RowFactoryTests(unittest.TestCase):
         self.assertEqual(hash(row_1), hash(row_2))
 
     def test_sqlite_row_as_sequence(self):
-        """ Checks if the row object can act like a sequence """
-        self.con.row_factory = sqlite.Row
+        # Checks if the row object can act like a sequence.
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
 
         as_tuple = tuple(row)
         self.assertEqual(list(reversed(row)), list(reversed(as_tuple)))
         self.assertIsInstance(row, Sequence)
+
+    def test_sqlite_row_keys(self):
+        # Checks if the row object can return a list of columns as strings.
+        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+        self.assertEqual(row.keys(), ['a', 'b'])
 
     def test_fake_cursor_class(self):
         # Issue #24257: Incorrect use of PyObject_IsInstance() caused
@@ -252,7 +250,6 @@ class RowFactoryTests(unittest.TestCase):
         # Issue #27861: Also applies for cursor factory.
         class FakeCursor(str):
             __class__ = sqlite.Cursor
-        self.con.row_factory = sqlite.Row
         self.assertRaises(TypeError, self.con.cursor, FakeCursor)
         self.assertRaises(TypeError, sqlite.Row, FakeCursor(), ())
 

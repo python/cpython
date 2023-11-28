@@ -1031,38 +1031,47 @@ class MultiPathServerTestCase(BaseServerTestCase):
         self.assertEqual(p.add(6,8), 6+8)
         self.assertRaises(xmlrpclib.Fault, p.pow, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_path3(self):
         p = xmlrpclib.ServerProxy(URL+"/is/broken")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_invalid_path(self):
         p = xmlrpclib.ServerProxy(URL+"/invalid")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_path_query_fragment(self):
         p = xmlrpclib.ServerProxy(URL+"/foo?k=v#frag")
         self.assertEqual(p.test(), "/foo?k=v#frag")
 
+    @support.requires_resource('walltime')
     def test_path_fragment(self):
         p = xmlrpclib.ServerProxy(URL+"/foo#frag")
         self.assertEqual(p.test(), "/foo#frag")
 
+    @support.requires_resource('walltime')
     def test_path_query(self):
         p = xmlrpclib.ServerProxy(URL+"/foo?k=v")
         self.assertEqual(p.test(), "/foo?k=v")
 
+    @support.requires_resource('walltime')
     def test_empty_path(self):
         p = xmlrpclib.ServerProxy(URL)
         self.assertEqual(p.test(), "/RPC2")
 
+    @support.requires_resource('walltime')
     def test_root_path(self):
         p = xmlrpclib.ServerProxy(URL + "/")
         self.assertEqual(p.test(), "/")
 
+    @support.requires_resource('walltime')
     def test_empty_path_query(self):
         p = xmlrpclib.ServerProxy(URL + "?k=v")
         self.assertEqual(p.test(), "?k=v")
 
+    @support.requires_resource('walltime')
     def test_empty_path_fragment(self):
         p = xmlrpclib.ServerProxy(URL + "#frag")
         self.assertEqual(p.test(), "#frag")

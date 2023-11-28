@@ -521,11 +521,11 @@ everyday Python programs.
 Descriptor protocol
 -------------------
 
-``descr.__get__(self, obj, type=None) -> value``
+``descr.__get__(self, obj, type=None)``
 
-``descr.__set__(self, obj, value) -> None``
+``descr.__set__(self, obj, value)``
 
-``descr.__delete__(self, obj) -> None``
+``descr.__delete__(self, obj)``
 
 That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
@@ -779,8 +779,8 @@ by a search through the class's :term:`method resolution order`.
 
 If a descriptor is found, it is invoked with ``desc.__get__(None, A)``.
 
-The full C implementation can be found in :c:func:`type_getattro()` and
-:c:func:`_PyType_Lookup()` in :source:`Objects/typeobject.c`.
+The full C implementation can be found in :c:func:`!type_getattro` and
+:c:func:`!_PyType_Lookup` in :source:`Objects/typeobject.c`.
 
 
 Invocation from super
@@ -794,7 +794,7 @@ for the base class ``B`` immediately following ``A`` and then returns
 ``B.__dict__['m'].__get__(obj, A)``.  If not a descriptor, ``m`` is returned
 unchanged.
 
-The full C implementation can be found in :c:func:`super_getattro()` in
+The full C implementation can be found in :c:func:`!super_getattro` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
 `Guido's Tutorial
 <https://www.python.org/download/releases/2.2.3/descrintro/#cooperation>`_.
@@ -836,8 +836,8 @@ and if they define :meth:`__set_name__`, that method is called with two
 arguments.  The *owner* is the class where the descriptor is used, and the
 *name* is the class variable the descriptor was assigned to.
 
-The implementation details are in :c:func:`type_new()` and
-:c:func:`set_names()` in :source:`Objects/typeobject.c`.
+The implementation details are in :c:func:`!type_new` and
+:c:func:`!set_names` in :source:`Objects/typeobject.c`.
 
 Since the update logic is in :meth:`type.__new__`, notifications only take
 place at the time of class creation.  If descriptors are added to the class
@@ -942,6 +942,10 @@ it can be updated:
     >>> Movie('Star Wars').director = 'J.J. Abrams'
     >>> Movie('Star Wars').director
     'J.J. Abrams'
+
+.. testcleanup::
+
+   conn.close()
 
 
 Pure Python Equivalents

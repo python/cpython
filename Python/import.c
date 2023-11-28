@@ -951,11 +951,22 @@ PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *path_importer_cache = PySys_GetObject("path_importer_cache");
-    PyObject *path_hooks = PySys_GetObject("path_hooks");
-    if (path_importer_cache == NULL || path_hooks == NULL) {
+    if (path_importer_cache == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_importer_cache");
         return NULL;
     }
-    return get_path_importer(tstate, path_importer_cache, path_hooks, path);
+    Py_INCREF(path_importer_cache);
+    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    if (path_hooks == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_hooks");
+        Py_DECREF(path_importer_cache);
+        return NULL;
+    }
+    Py_INCREF(path_hooks);
+    PyObject *importer = get_path_importer(tstate, path_importer_cache, path_hooks, path);
+    Py_DECREF(path_hooks);
+    Py_DECREF(path_importer_cache);
+    return importer;
 }
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)

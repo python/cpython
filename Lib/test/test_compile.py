@@ -442,6 +442,33 @@ if 1:
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
 
+    def test_compile_invalid_namedexpr(self):
+        # gh-109351
+        m = ast.Module(
+            body=[
+                ast.Expr(
+                    value=ast.ListComp(
+                        elt=ast.NamedExpr(
+                            target=ast.Constant(value=1),
+                            value=ast.Constant(value=3),
+                        ),
+                        generators=[
+                            ast.comprehension(
+                                target=ast.Name(id="x", ctx=ast.Store()),
+                                iter=ast.Name(id="y", ctx=ast.Load()),
+                                ifs=[],
+                                is_async=0,
+                            )
+                        ],
+                    )
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
+
     def test_compile_ast(self):
         fname = __file__
         if fname.lower().endswith('pyc'):
@@ -741,6 +768,7 @@ if 1:
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    @support.requires_resource('cpu')
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of
         # complex statements.

@@ -25,7 +25,7 @@ another rational number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is :const:`0`, it
+   with value ``numerator/denominator``. If *denominator* is ``0``, it
    raises a :exc:`ZeroDivisionError`. The second version requires that
    *other_fraction* is an instance of :class:`numbers.Rational` and returns a
    :class:`Fraction` instance with the same value.  The next two versions accept

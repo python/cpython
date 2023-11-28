@@ -171,7 +171,7 @@ drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
         {
-            assert(is_tstate_valid(tstate));
+            assert(_PyThreadState_CheckConsistency(tstate));
             RESET_GIL_DROP_REQUEST(tstate->interp);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
@@ -182,25 +182,6 @@ drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
         MUTEX_UNLOCK(gil->switch_mutex);
     }
 #endif
-}
-
-
-/* Check if a Python thread must exit immediately, rather than taking the GIL
-   if Py_Finalize() has been called.
-
-   When this function is called by a daemon thread after Py_Finalize() has been
-   called, the GIL does no longer exist.
-
-   tstate must be non-NULL. */
-static inline int
-tstate_must_exit(PyThreadState *tstate)
-{
-    /* bpo-39877: Access _PyRuntime directly rather than using
-       tstate->interp->runtime to support calls from Python daemon threads.
-       After Py_Finalize() has been called, tstate can be a dangling pointer:
-       point to PyThreadState freed memory. */
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
-    return (finalizing != NULL && finalizing != tstate);
 }
 
 
@@ -216,7 +197,7 @@ take_gil(PyThreadState *tstate)
 
     assert(tstate != NULL);
 
-    if (tstate_must_exit(tstate)) {
+    if (_PyThreadState_MustExit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
            thread which called Py_Finalize(), exit immediately the thread.
 
@@ -226,7 +207,7 @@ take_gil(PyThreadState *tstate)
         PyThread_exit_thread();
     }
 
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     PyInterpreterState *interp = tstate->interp;
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
     struct _ceval_state *ceval2 = &interp->ceval;
@@ -255,7 +236,7 @@ take_gil(PyThreadState *tstate)
             _Py_atomic_load_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
-            if (tstate_must_exit(tstate)) {
+            if (_PyThreadState_MustExit(tstate)) {
                 MUTEX_UNLOCK(gil->mutex);
                 // gh-96387: If the loop requested a drop request in a previous
                 // iteration, reset the request. Otherwise, drop_gil() can
@@ -268,7 +249,7 @@ take_gil(PyThreadState *tstate)
                 }
                 PyThread_exit_thread();
             }
-            assert(is_tstate_valid(tstate));
+            assert(_PyThreadState_CheckConsistency(tstate));
 
             SET_GIL_DROP_REQUEST(interp);
             drop_requested = 1;
@@ -295,7 +276,7 @@ _ready:
     MUTEX_UNLOCK(gil->switch_mutex);
 #endif
 
-    if (tstate_must_exit(tstate)) {
+    if (_PyThreadState_MustExit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
            the thread which called Py_Finalize(), exit immediately the
            thread.
@@ -307,7 +288,7 @@ _ready:
         drop_gil(ceval, ceval2, tstate);
         PyThread_exit_thread();
     }
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
         RESET_GIL_DROP_REQUEST(interp);

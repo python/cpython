@@ -4,8 +4,8 @@
            Copyright (c) 2002  Ranjit Mathew
            Copyright (c) 2002  Bo Thorsen
            Copyright (c) 2002  Roger Sayle
-   
-   x86 Foreign Function Interface 
+
+   x86 Foreign Function Interface
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -43,27 +43,27 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
     register void **p_argv;
     register char *argp;
     register ffi_type **p_arg;
-    
+
     argp = stack;
-    
+
     if (ecif->cif->flags == FFI_TYPE_STRUCT)
     {
         *(void **) argp = ecif->rvalue;
         argp += 4;
     }
-    
+
     p_argv = ecif->avalue;
-    
+
     for (i = ecif->cif->nargs, p_arg = ecif->cif->arg_types;
          i != 0;
          i--, p_arg++)
     {
         size_t z;
-        
+
         /* Align if necessary */
         if ((sizeof(int) - 1) & (unsigned) argp)
             argp = (char *) ALIGN(argp, sizeof(int));
-        
+
         z = (*p_arg)->size;
         if (z < sizeof(int))
         {
@@ -73,31 +73,31 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
                 case FFI_TYPE_SINT8:
                     *(signed int *) argp = (signed int)*(SINT8 *)(* p_argv);
                     break;
-                    
+
                 case FFI_TYPE_UINT8:
                     *(unsigned int *) argp = (unsigned int)*(UINT8 *)(* p_argv);
                     break;
-                    
+
                 case FFI_TYPE_SINT16:
                     *(signed int *) argp = (signed int)*(SINT16 *)(* p_argv);
                     break;
-                    
+
                 case FFI_TYPE_UINT16:
                     *(unsigned int *) argp = (unsigned int)*(UINT16 *)(* p_argv);
                     break;
-                    
+
                 case FFI_TYPE_SINT32:
                     *(signed int *) argp = (signed int)*(SINT32 *)(* p_argv);
                     break;
-                    
+
                 case FFI_TYPE_UINT32:
                     *(unsigned int *) argp = (unsigned int)*(UINT32 *)(* p_argv);
                     break;
-                    
+
                 case FFI_TYPE_STRUCT:
                     *(unsigned int *) argp = (unsigned int)*(UINT32 *)(* p_argv);
                     break;
-                    
+
                 default:
                     FFI_ASSERT(0);
             }
@@ -109,7 +109,7 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
         p_argv++;
         argp += z;
     }
-    
+
     return;
 }
 
@@ -127,18 +127,18 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
         case FFI_TYPE_SINT8:
         case FFI_TYPE_SINT16:
 #endif
-            
+
         case FFI_TYPE_SINT64:
         case FFI_TYPE_FLOAT:
         case FFI_TYPE_DOUBLE:
         case FFI_TYPE_LONGDOUBLE:
             cif->flags = (unsigned) cif->rtype->type;
             break;
-            
+
         case FFI_TYPE_UINT64:
             cif->flags = FFI_TYPE_SINT64;
             break;
-            
+
 #ifndef X86
         case FFI_TYPE_STRUCT:
             if (cif->rtype->size == 1)
@@ -163,16 +163,16 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
             }
             break;
 #endif
-            
+
         default:
             cif->flags = FFI_TYPE_INT;
             break;
     }
-    
+
 #ifdef X86_DARWIN
     cif->bytes = (cif->bytes + 15) & ~0xF;
 #endif
-    
+
     return FFI_OK;
 }
 
@@ -188,23 +188,23 @@ extern void ffi_call_STDCALL(void (*)(char *, extended_cif *), extended_cif *,
 void ffi_call(ffi_cif *cif, void (*fn)(), void *rvalue, void **avalue)
 {
     extended_cif ecif;
-    
+
     ecif.cif = cif;
     ecif.avalue = avalue;
-    
+
     /* If the return value is a struct and we don't have a return	*/
     /* value address then we need to make one		        */
-    
-    if ((rvalue == NULL) && 
+
+    if ((rvalue == NULL) &&
         (cif->flags == FFI_TYPE_STRUCT))
     {
         ecif.rvalue = alloca(cif->rtype->size);
     }
     else
         ecif.rvalue = rvalue;
-    
-    
-    switch (cif->abi) 
+
+
+    switch (cif->abi)
     {
         case FFI_SYSV:
             ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, cif->flags, ecif.rvalue,
@@ -245,20 +245,20 @@ void *args;
     // our various things...
     ffi_cif       *cif;
     void         **arg_area;
-    
+
     cif         = closure->cif;
-    arg_area    = (void**) alloca (cif->nargs * sizeof (void*));  
-    
+    arg_area    = (void**) alloca (cif->nargs * sizeof (void*));
+
     /* this call will initialize ARG_AREA, such that each
-     * element in that array points to the corresponding 
+     * element in that array points to the corresponding
      * value on the stack; and if the function returns
      * a structure, it will re-set RESP to point to the
      * structure return address.  */
-    
+
     ffi_prep_incoming_args_SYSV(args, respp, arg_area, cif);
-    
+
     (closure->fun) (cif, *respp, arg_area, closure->user_data);
-    
+
     return cif->flags;
 }
 
@@ -270,35 +270,35 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue, void **avalue,
     register void **p_argv;
     register char *argp;
     register ffi_type **p_arg;
-    
+
     argp = stack;
-    
+
     if ( cif->flags == FFI_TYPE_STRUCT ) {
         *rvalue = *(void **) argp;
         argp += 4;
     }
-    
+
     p_argv = avalue;
-    
+
     for (i = cif->nargs, p_arg = cif->arg_types; (i != 0); i--, p_arg++)
     {
         size_t z;
-        
+
         /* Align if necessary */
         if ((sizeof(int) - 1) & (unsigned) argp) {
             argp = (char *) ALIGN(argp, sizeof(int));
         }
-        
+
         z = (*p_arg)->size;
-        
+
         /* because we're little endian, this is what it turns into.   */
-        
+
         *p_argv = (void*) argp;
-        
+
         p_argv++;
         argp += z;
     }
-    
+
     return;
 }
 
@@ -325,15 +325,15 @@ ffi_prep_closure (ffi_closure* closure,
 {
 	if (cif->abi != FFI_SYSV)
 		return FFI_BAD_ABI;
-    
+
     FFI_INIT_TRAMPOLINE (&closure->tramp[0], \
                          &ffi_closure_SYSV,  \
                          (void*)closure);
-    
+
     closure->cif  = cif;
     closure->user_data = user_data;
     closure->fun  = fun;
-    
+
     return FFI_OK;
 }
 
@@ -349,32 +349,32 @@ ffi_prep_raw_closure_loc (ffi_raw_closure* closure,
                           void *codeloc)
 {
     int i;
-    
+
     FFI_ASSERT (cif->abi == FFI_SYSV);
-    
+
     // we currently don't support certain kinds of arguments for raw
     // closures.  This should be implemented by a separate assembly language
     // routine, since it would require argument processing, something we
     // don't do now for performance.
-    
+
     for (i = cif->nargs-1; i >= 0; i--)
     {
         FFI_ASSERT (cif->arg_types[i]->type != FFI_TYPE_STRUCT);
         FFI_ASSERT (cif->arg_types[i]->type != FFI_TYPE_LONGDOUBLE);
     }
-    
-    
+
+
     FFI_INIT_TRAMPOLINE (&closure->tramp[0], &ffi_closure_raw_SYSV,
                          codeloc);
-    
+
     closure->cif  = cif;
     closure->user_data = user_data;
     closure->fun  = fun;
-    
+
     return FFI_OK;
 }
 
-static void 
+static void
 ffi_prep_args_raw(char *stack, extended_cif *ecif)
 {
     memcpy (stack, ecif->avalue, ecif->cif->bytes);
@@ -386,7 +386,7 @@ ffi_prep_args_raw(char *stack, extended_cif *ecif)
  */
 
 extern void
-ffi_call_SYSV(void (*)(char *, extended_cif *), extended_cif *, unsigned, 
+ffi_call_SYSV(void (*)(char *, extended_cif *), extended_cif *, unsigned,
               unsigned, unsigned *, void (*fn)());
 
 #ifdef X86_WIN32
@@ -400,23 +400,23 @@ ffi_raw_call(ffi_cif *cif, void (*fn)(), void *rvalue, ffi_raw *fake_avalue)
 {
     extended_cif ecif;
     void **avalue = (void **)fake_avalue;
-    
+
     ecif.cif = cif;
     ecif.avalue = avalue;
-    
+
     /* If the return value is a struct and we don't have a return	*/
     /* value address then we need to make one		        */
-    
-    if ((rvalue == NULL) && 
+
+    if ((rvalue == NULL) &&
         (cif->rtype->type == FFI_TYPE_STRUCT))
     {
         ecif.rvalue = alloca(cif->rtype->size);
     }
     else
         ecif.rvalue = rvalue;
-    
-    
-    switch (cif->abi) 
+
+
+    switch (cif->abi)
     {
         case FFI_SYSV:
             ffi_call_SYSV(ffi_prep_args_raw, &ecif, cif->bytes, cif->flags,

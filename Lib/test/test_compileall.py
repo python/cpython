@@ -18,6 +18,7 @@ from unittest import mock, skipUnless
 try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
+    from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
     from concurrent.futures import ProcessPoolExecutor
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
@@ -54,6 +55,8 @@ class CompileallTestsBase:
 
     def setUp(self):
         self.directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.directory)
+
         self.source_path = os.path.join(self.directory, '_test.py')
         self.bc_path = importlib.util.cache_from_source(self.source_path)
         with open(self.source_path, 'w', encoding="utf-8") as file:
@@ -65,9 +68,6 @@ class CompileallTestsBase:
         os.mkdir(self.subdirectory)
         self.source_path3 = os.path.join(self.subdirectory, '_test3.py')
         shutil.copyfile(self.source_path, self.source_path3)
-
-    def tearDown(self):
-        shutil.rmtree(self.directory)
 
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
@@ -307,9 +307,13 @@ class CompileallTestsBase:
             script_helper.make_script(path, "__init__", "")
             mods.append(script_helper.make_script(path, "mod",
                                                   "def fn(): 1/0\nfn()\n"))
+
+        if parallel:
+            self.addCleanup(multiprocessing_cleanup_tests)
         compileall.compile_dir(
                 self.directory, quiet=True, ddir=ddir,
                 workers=2 if parallel else 1)
+
         self.assertTrue(mods)
         for mod in mods:
             self.assertTrue(mod.startswith(self.directory), mod)
@@ -551,6 +555,7 @@ class CommandLineTestsBase:
             self.assertNotCompiled(self.barfn)
 
     @without_source_date_epoch  # timestamp invalidation test
+    @support.requires_resource('cpu')
     def test_no_args_respects_force_flag(self):
         bazfn = script_helper.make_script(self.directory, 'baz', '')
         with self.temporary_pycache_prefix() as env:
@@ -568,6 +573,7 @@ class CommandLineTestsBase:
         mtime2 = os.stat(pycpath).st_mtime
         self.assertNotEqual(mtime, mtime2)
 
+    @support.requires_resource('cpu')
     def test_no_args_respects_quiet_flag(self):
         script_helper.make_script(self.directory, 'baz', '')
         with self.temporary_pycache_prefix() as env:

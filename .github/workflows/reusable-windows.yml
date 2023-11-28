@@ -1,0 +1,53 @@
+on:
+  workflow_call:
+    inputs:
+      free-threaded:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build_win32:
+    name: 'build and test (x86)'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      IncludeUwp: 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -d -p Win32 ${{ inputs.free-threaded && '--disable-gil' || '' }}
+    - name: Display build info
+      run: .\python.bat -m test.pythoninfo
+    - name: Tests
+      run: .\PCbuild\rt.bat -p Win32 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+
+  build_win_amd64:
+    name: 'build and test (x64)'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+       IncludeUwp: 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -d -p x64 ${{ inputs.free-threaded && '--disable-gil' || '' }}
+    - name: Display build info
+      run: .\python.bat -m test.pythoninfo
+    - name: Tests
+      run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+
+  build_win_arm64:
+    name: 'build (arm64)'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      IncludeUwp: 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -d -p arm64 ${{ inputs.free-threaded && '--disable-gil' || '' }}

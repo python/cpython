@@ -23,7 +23,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
-:func:`.socket` function returns a :dfn:`socket object` whose methods implement
+:func:`~socket.socket` function returns a :dfn:`socket object` whose methods implement
 the various socket system calls.  Parameter types are somewhat higher-level than
 in the C interface: as with :meth:`read` and :meth:`write` operations on Python
 files, buffer allocation on receive operations is automatic, and buffer length
@@ -185,12 +185,11 @@ created.  Socket addresses are represented as follows:
   .. versionadded:: 3.7
 
 - :const:`AF_PACKET` is a low-level interface directly to network devices.
-  The packets are represented by the tuple
+  The addresses are represented by the tuple
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - An in network-byte-order integer specifying the Ethernet
-    protocol number.
+  - *proto* - An integer specifying the Ethernet protocol number.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -204,14 +203,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
-   .. availability:: Linux >= 2.2.
+  .. availability:: Linux >= 2.2.
 
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
 
-   .. availability:: Linux >= 4.7.
+  .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -322,10 +321,15 @@ Constants
           AF_INET6
 
    These constants represent the address (and protocol) families, used for the
-   first argument to :func:`.socket`.  If the :const:`AF_UNIX` constant is not
+   first argument to :func:`~socket.socket`.  If the :const:`AF_UNIX` constant is not
    defined then this protocol is unsupported.  More constants may be available
    depending on the system.
 
+.. data:: AF_UNSPEC
+
+   :const:`AF_UNSPEC` means that
+   :func:`getaddrinfo` should return socket addresses for any
+   address family (either IPv4, IPv6, or any other) that can be used.
 
 .. data:: SOCK_STREAM
           SOCK_DGRAM
@@ -334,7 +338,7 @@ Constants
           SOCK_SEQPACKET
 
    These constants represent the socket types, used for the second argument to
-   :func:`.socket`.  More constants may be available depending on the system.
+   :func:`~socket.socket`.  More constants may be available depending on the system.
    (Only :const:`SOCK_STREAM` and :const:`SOCK_DGRAM` appear to be generally
    useful.)
 
@@ -354,6 +358,8 @@ Constants
 
    .. versionadded:: 3.2
 
+.. _socket-unix-constants:
+
 .. data:: SO_*
           SOMAXCONN
           MSG_*
@@ -371,7 +377,7 @@ Constants
 
    Many constants of these forms, documented in the Unix documentation on sockets
    and/or the IP protocol, are also defined in the socket module. They are
-   generally used in arguments to the :meth:`setsockopt` and :meth:`getsockopt`
+   generally used in arguments to the :meth:`~socket.setsockopt` and :meth:`~socket.getsockopt`
    methods of socket objects.  In most cases, only those symbols that are defined
    in the Unix header files are defined; for a few symbols, default values are
    provided.
@@ -664,7 +670,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
-   as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
+   as for the :func:`~socket.socket` function above. The default family is :const:`AF_UNIX`
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
 
    The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
@@ -759,8 +765,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 .. function:: fromfd(fd, family, type, proto=0)
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
-   :meth:`fileno` method) and build a socket object from the result.  Address
-   family, socket type and protocol number are as for the :func:`.socket` function
+   :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
+   family, socket type and protocol number are as for the :func:`~socket.socket` function
    above. The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
    This function is rarely needed, but can be used to get or set socket options on
@@ -825,7 +831,7 @@ The :mod:`socket` module also offers various network-related services:
    ``(family, type, proto, canonname, sockaddr)``
 
    In these tuples, *family*, *type*, *proto* are all integers and are
-   meant to be passed to the :func:`.socket` function.  *canonname* will be
+   meant to be passed to the :func:`~socket.socket` function.  *canonname* will be
    a string representing the canonical name of the *host* if
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
@@ -880,7 +886,7 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: gethostbyname_ex(hostname)
 
    Translate a host name to IPv4 address format, extended interface. Return a
-   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
+   3-tuple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
    primary host name, *aliaslist* is a (possibly
    empty) list of alternative host names for the same address, and *ipaddrlist* is
    a list of IPv4 addresses for the same interface on the same host (often but not
@@ -908,7 +914,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: gethostbyaddr(ip_address)
 
-   Return a triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the
+   Return a 3-tuple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the
    primary host name responding to the given *ip_address*, *aliaslist* is a
    (possibly empty) list of alternative host names for the same address, and
    *ipaddrlist* is a list of IPv4/v6 addresses for the same interface on the same
@@ -941,7 +947,7 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: getprotobyname(protocolname)
 
    Translate an internet protocol name (for example, ``'icmp'``) to a constant
-   suitable for passing as the (optional) third argument to the :func:`.socket`
+   suitable for passing as the (optional) third argument to the :func:`~socket.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
    automatically if the protocol is omitted or zero.
@@ -1225,7 +1231,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket *sock*.
    The *fds* parameter is a sequence of file descriptors.
-   Consult :meth:`sendmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
@@ -1239,7 +1245,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Receive up to *maxfds* file descriptors from an :const:`AF_UNIX` socket *sock*.
    Return ``(msg, list(fds), flags, addr)``.
-   Consult :meth:`recvmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
@@ -1958,10 +1964,10 @@ Example
 
 Here are four minimal example programs using the TCP/IP protocol: a server that
 echoes all data that it receives back (servicing only one client), and a client
-using it.  Note that a server must perform the sequence :func:`.socket`,
+using it.  Note that a server must perform the sequence :func:`~socket.socket`,
 :meth:`~socket.bind`, :meth:`~socket.listen`, :meth:`~socket.accept` (possibly
 repeating the :meth:`~socket.accept` to service more than one client), while a
-client only needs the sequence :func:`.socket`, :meth:`~socket.connect`.  Also
+client only needs the sequence :func:`~socket.socket`, :meth:`~socket.connect`.  Also
 note that the server does not :meth:`~socket.sendall`/:meth:`~socket.recv` on
 the socket it is listening on but on the new socket returned by
 :meth:`~socket.accept`.
@@ -2001,7 +2007,7 @@ The next two examples are identical to the above two, but support both IPv4 and
 IPv6. The server side will listen to the first address family available (it
 should listen to both instead). On most of IPv6-ready systems, IPv6 will take
 precedence and the server may not accept IPv4 traffic. The client side will try
-to connect to the all addresses returned as a result of the name resolution, and
+to connect to all the addresses returned as a result of the name resolution, and
 sends traffic to the first one connected successfully. ::
 
    # Echo server program
@@ -2153,7 +2159,7 @@ This is because the previous execution has left the socket in a ``TIME_WAIT``
 state, and can't be immediately reused.
 
 There is a :mod:`socket` flag to set, in order to prevent this,
-:data:`socket.SO_REUSEADDR`::
+:const:`socket.SO_REUSEADDR`::
 
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

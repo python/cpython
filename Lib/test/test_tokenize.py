@@ -999,7 +999,7 @@ class TestTokenizerAdheresToPep0263(TestCase):
     """
 
     def _testFile(self, filename):
-        path = os.path.join(os.path.dirname(__file__), filename)
+        path = os.path.join(os.path.dirname(__file__), 'tokenizedata', filename)
         TestRoundtrip.check_roundtrip(self, open(path, 'rb'))
 
     def test_utf8_coding_cookie_and_no_utf8_bom(self):
@@ -1560,7 +1560,7 @@ class TestRoundtrip(TestCase):
 
         self.check_roundtrip("if x == 1 : \n"
                              "  print(x)\n")
-        fn = support.findfile("tokenize_tests.txt")
+        fn = support.findfile("tokenize_tests.txt", subdir="tokenizedata")
         with open(fn, 'rb') as f:
             self.check_roundtrip(f)
         self.check_roundtrip("if x == 1:\n"
@@ -1615,8 +1615,7 @@ class TestRoundtrip(TestCase):
         # pass the '-ucpu' option to process the full directory.
 
         import glob, random
-        fn = support.findfile("tokenize_tests.txt")
-        tempdir = os.path.dirname(fn) or os.curdir
+        tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
         # Tokenize is broken on test_pep3131.py because regular expressions are
@@ -1625,7 +1624,7 @@ class TestRoundtrip(TestCase):
         # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
-        for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
+        for f in ('buffer', 'builtin', 'fileio', 'os', 'platform', 'sys'):
             testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
         if not support.is_resource_enabled("cpu"):

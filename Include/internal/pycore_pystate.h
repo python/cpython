@@ -61,6 +61,12 @@ _Py_ThreadCanHandlePendingCalls(void)
 }
 
 
+#ifndef NDEBUG
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
+int _PyThreadState_MustExit(PyThreadState *tstate);
+
 /* Variable and macro for in-line access to current thread
    and interpreter state */
 

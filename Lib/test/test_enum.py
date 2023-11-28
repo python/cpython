@@ -18,7 +18,7 @@ from enum import member, nonmember, _iter_bits_lsb
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, REPO_ROOT
 from test.support import threading_helper
 from textwrap import dedent
 from datetime import timedelta
@@ -27,14 +27,19 @@ python_version = sys.version_info[:2]
 
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
-    if os.path.exists('Doc/library/enum.rst'):
+
+    lib_tests = os.path.join(REPO_ROOT, 'Doc/library/enum.rst')
+    if os.path.exists(lib_tests):
         tests.addTests(doctest.DocFileSuite(
-                '../../Doc/library/enum.rst',
+                lib_tests,
+                module_relative=False,
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
-    if os.path.exists('Doc/howto/enum.rst'):
+    howto_tests = os.path.join(REPO_ROOT, 'Doc/howto/enum.rst')
+    if os.path.exists(howto_tests):
         tests.addTests(doctest.DocFileSuite(
-                '../../Doc/howto/enum.rst',
+                howto_tests,
+                module_relative=False,
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
     return tests
@@ -321,6 +326,17 @@ class _EnumTests:
             del Season.DRY
         with self.assertRaises(AttributeError):
             del Season.SPRING.name
+
+    def test_bad_new_super(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members defined',
+            ):
+            class BadSuper(self.enum_type):
+                def __new__(cls, value):
+                    obj = super().__new__(cls, value)
+                    return obj
+                failed = 1
 
     def test_basics(self):
         TE = self.MainEnum
@@ -4863,7 +4879,7 @@ def member_dir(member):
                     allowed.add(name)
                 else:
                     allowed.discard(name)
-            else:
+            elif name not in member._member_map_:
                 allowed.add(name)
     return sorted(allowed)
 

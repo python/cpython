@@ -1,7 +1,6 @@
 """Tests for distutils.unixccompiler."""
 import sys
 import unittest
-from test.support import run_unittest
 from test.support.os_helper import EnvironmentVarGuard
 
 from distutils import sysconfig
@@ -138,8 +137,5 @@ class UnixCCompilerTestCase(unittest.TestCase):
         self.assertEqual(self.cc.linker_so[0], 'my_ld')
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(UnixCCompilerTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

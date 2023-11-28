@@ -2420,21 +2420,24 @@ class Path:
         encoding, args, kwargs = _extract_text_encoding(*args, **kwargs)
         return io.TextIOWrapper(stream, encoding, *args, **kwargs)
 
+    def _base(self):
+        return pathlib.PurePosixPath(self.at or self.root.filename)
+
     @property
     def name(self):
-        return pathlib.Path(self.at).name or self.filename.name
+        return self._base().name
 
     @property
     def suffix(self):
-        return pathlib.Path(self.at).suffix or self.filename.suffix
+        return self._base().suffix
 
     @property
     def suffixes(self):
-        return pathlib.Path(self.at).suffixes or self.filename.suffixes
+        return self._base().suffixes
 
     @property
     def stem(self):
-        return pathlib.Path(self.at).stem or self.filename.stem
+        return self._base().stem
 
     @property
     def filename(self):

@@ -93,14 +93,6 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_char, b"x")
         self.check_type(c_char, b"a")
 
-    # disabled: would now (correctly) raise a RuntimeWarning about
-    # a memory leak.  A callback function cannot return a non-integral
-    # C type without causing a memory leak.
-    @unittest.skip('test disabled')
-    def test_char_p(self):
-        self.check_type(c_char_p, "abc")
-        self.check_type(c_char_p, "def")
-
     def test_pyobject(self):
         o = ()
         from sys import getrefcount as grc
@@ -130,7 +122,7 @@ class Callbacks(unittest.TestCase):
     def test_issue_7959(self):
         proto = self.functype.__func__(None)
 
-        class X(object):
+        class X:
             def func(self): pass
             def __init__(self):
                 self.v = proto(self.func)

@@ -1290,8 +1290,8 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
         self->epfd = fd;
     }
     if (self->epfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -1973,8 +1973,8 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
         self->kqfd = fd;
     }
     if (self->kqfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 

@@ -658,13 +658,16 @@ PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value)
                      PyModule_GetName(mod));
         return -1;
     }
-
-    if (PyDict_SetItemString(dict, name, value)) {
-        return -1;
-    }
-    return 0;
+    return PyDict_SetItemString(dict, name, value);
 }
 
+int
+_PyModule_Add(PyObject *mod, const char *name, PyObject *value)
+{
+    int res = PyModule_AddObjectRef(mod, name, value);
+    Py_XDECREF(value);
+    return res;
+}
 
 int
 PyModule_AddObject(PyObject *mod, const char *name, PyObject *value)
@@ -679,25 +682,13 @@ PyModule_AddObject(PyObject *mod, const char *name, PyObject *value)
 int
 PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 {
-    PyObject *obj = PyLong_FromLong(value);
-    if (!obj) {
-        return -1;
-    }
-    int res = PyModule_AddObjectRef(m, name, obj);
-    Py_DECREF(obj);
-    return res;
+    return _PyModule_Add(m, name, PyLong_FromLong(value));
 }
 
 int
 PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 {
-    PyObject *obj = PyUnicode_FromString(value);
-    if (!obj) {
-        return -1;
-    }
-    int res = PyModule_AddObjectRef(m, name, obj);
-    Py_DECREF(obj);
-    return res;
+    return _PyModule_Add(m, name, PyUnicode_FromString(value));
 }
 
 int

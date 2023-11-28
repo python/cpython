@@ -5351,8 +5351,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
         if (!support_wsa_no_inherit) {
             if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
                 PyErr_SetFromWindowsErr(0);
+                closesocket(fd);
                 return -1;
             }
         }
@@ -5495,8 +5495,9 @@ socket_gethostname(PyObject *self, PyObject *unused)
                            name,
                            &size))
     {
+        PyErr_SetFromWindowsErr(0);
         PyMem_Free(name);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     result = PyUnicode_FromWideChar(name, size);
@@ -5533,8 +5534,9 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
-#ifdef _AIX
-/* issue #18259, not declared in any useful header file */
+#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
+/* issue #18259, sethostname is not declared in any useful header file on AIX
+ * the same is true for Solaris 10 */
 extern int sethostname(const char *, size_t);
 #endif
 
@@ -5657,9 +5659,15 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     /* SF #1511317: h_aliases can be NULL */
     if (h->h_aliases) {
-        for (pch = h->h_aliases; *pch != NULL; pch++) {
+        for (pch = h->h_aliases; ; pch++) {
             int status;
-            tmp = PyUnicode_FromString(*pch);
+            char *host_alias;
+            // pch can be misaligned
+            memcpy(&host_alias, pch, sizeof(host_alias));
+            if (host_alias == NULL) {
+                break;
+            }
+            tmp = PyUnicode_FromString(host_alias);
             if (tmp == NULL)
                 goto err;
 
@@ -5671,8 +5679,14 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
         }
     }
 
-    for (pch = h->h_addr_list; *pch != NULL; pch++) {
+    for (pch = h->h_addr_list; ; pch++) {
         int status;
+        char *host_address;
+        // pch can be misaligned
+        memcpy(&host_address, pch, sizeof(host_address));
+        if (host_address == NULL) {
+            break;
+        }
 
         switch (af) {
 
@@ -5684,7 +5698,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin.sin_len = sizeof(sin);
 #endif
-            memcpy(&sin.sin_addr, *pch, sizeof(sin.sin_addr));
+            memcpy(&sin.sin_addr, host_address, sizeof(sin.sin_addr));
             tmp = make_ipv4_addr(&sin);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin))
@@ -5701,7 +5715,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin6.sin6_len = sizeof(sin6);
 #endif
-            memcpy(&sin6.sin6_addr, *pch, sizeof(sin6.sin6_addr));
+            memcpy(&sin6.sin6_addr, host_address, sizeof(sin6.sin6_addr));
             tmp = make_ipv6_addr(&sin6);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin6))
@@ -6071,8 +6085,8 @@ socket_dup(PyObject *self, PyObject *fdobj)
         return set_error();
 
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
         PyErr_SetFromWindowsErr(0);
+        closesocket(newfd);
         return NULL;
     }
 #else
@@ -6516,11 +6530,12 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
     /* inet_ntop guarantee NUL-termination of resulting string. */
     retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
-    PyBuffer_Release(&packed_ip);
     if (!retval) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     } else {
+        PyBuffer_Release(&packed_ip);
         return PyUnicode_FromString(retval);
     }
 }
@@ -6850,8 +6865,8 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     ni = if_nameindex();
     if (ni == NULL) {
-        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(list);
         return NULL;
     }
 
