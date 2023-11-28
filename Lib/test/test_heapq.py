@@ -263,6 +263,49 @@ class TestHeap:
         self.assertEqual(hsort(data, LT), target)
         self.assertRaises(TypeError, data, LE)
 
+    def test_remove(self):
+        data = [random.random() for i in range(100)]
+        self.module.heapify(data)
+
+        with self.assertRaises(IndexError) as e:
+            self.module.heapremove(data, len(data))
+        with self.assertRaises(IndexError) as e:
+            self.module.heapremove(data, -len(data) - 1)
+        
+        for i in range(len(data)):
+            i = random.randrange(-len(data), len(data))
+            if random.random() < 0.05:
+                i = 0  # ensure we try 0
+            elif random.random() < 0.05:
+                i = len(data) - 1
+            print(len(data), i)
+            v = data[i]
+            self.assertIs(self.module.heapremove(data, i), v)
+            self.check_invariant(data)
+        self.assertFalse(data)
+
+    def test_remove_replace(self):
+        data = [random.random() for i in range(100)]
+        self.module.heapify(data)
+        with self.assertRaises(IndexError) as e:
+            self.module.heapremove(data, len(data))
+        with self.assertRaises(IndexError) as e:
+            self.module.heapremove(data, -len(data) - 1)
+        
+        for i in range(200):
+            i = random.randrange(-len(data), len(data))
+            if random.random() < 0.05:
+                i = 0  # ensure we try 0
+            elif random.random() < 0.05:
+                i = len(data) - 1
+            replace = random.random()
+            print(len(data), i, replace)
+            v = data[i]
+            assert self.module.heapremove(data, i, replace) is v
+            self.check_invariant(data)
+
+        self.assertEqual(len(data), 100)
+
 
 class TestHeapPython(TestHeap, TestCase):
     module = py_heapq
