@@ -89,7 +89,7 @@ class Interpreter:
 
     @property
     def id(self):
-        return self._id
+        return int(self._id)
 
     def is_running(self):
         """Return whether or not the identified interpreter is running."""

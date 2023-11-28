@@ -205,7 +205,7 @@ class GetCurrentTests(TestBase):
                 print(id(cur))
                 """))
             id1 = int(out)
-            id2 = int(id(interp))
+            id2 = id(interp)
             self.assertNotEqual(id1, id2)
 
 
@@ -254,17 +254,17 @@ class ListAllTests(TestBase):
 class InterpreterObjectTests(TestBase):
 
     def test_init_int(self):
-        interpid = int(interpreters.get_current().id)
-        interp = interpreters.Interpreter(interpid)
-        self.assertEqual(int(interp.id), interpid)
-
-    def test_init_interpreter_id(self):
         interpid = interpreters.get_current().id
         interp = interpreters.Interpreter(interpid)
         self.assertEqual(interp.id, interpid)
 
+    def test_init_interpreter_id(self):
+        interpid = interpreters.get_current()._id
+        interp = interpreters.Interpreter(interpid)
+        self.assertEqual(interp._id, interpid)
+
     def test_init_unsupported(self):
-        actualid = int(interpreters.get_current().id)
+        actualid = interpreters.get_current().id
         for interpid in [
             str(actualid),
             float(actualid),
@@ -278,7 +278,7 @@ class InterpreterObjectTests(TestBase):
 
     def test_idempotent(self):
         main = interpreters.get_main()
-        interp = interpreters.Interpreter(int(main.id))
+        interp = interpreters.Interpreter(main.id)
         self.assertIs(interp, main)
 
     def test_init_does_not_exist(self):
@@ -293,16 +293,14 @@ class InterpreterObjectTests(TestBase):
         main = interpreters.get_main()
         current = interpreters.get_current()
         interp = interpreters.create()
-        self.assertIsInstance(main.id, _interpreters.InterpreterID)
-        self.assertIsInstance(current.id, _interpreters.InterpreterID)
-        self.assertIsInstance(interp.id, _interpreters.InterpreterID)
+        self.assertIsInstance(main.id, int)
+        self.assertIsInstance(current.id, int)
+        self.assertIsInstance(interp.id, int)
 
     def test_id_readonly(self):
-        actual = interpreters.create()
-        interpid = int(actual.id)
-        interp = interpreters.Interpreter(interpid)
+        interp = interpreters.create()
         with self.assertRaises(AttributeError):
-            interp.id = 2
+            interp.id = 1_000_000
 
     def test_equality(self):
         interp1 = interpreters.create()
@@ -427,7 +425,7 @@ class TestInterpreterClose(TestBase):
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
             from test.support import interpreters
-            interp = interpreters.Interpreter({int(interp.id)})
+            interp = interpreters.Interpreter({interp.id})
             try:
                 interp.close()
             except RuntimeError:
@@ -444,7 +442,7 @@ class TestInterpreterClose(TestBase):
                          {main, interp1, interp2})
         interp1.run(dedent(f"""
             from test.support import interpreters
-            interp2 = interpreters.Interpreter(int({interp2.id}))
+            interp2 = interpreters.Interpreter({interp2.id})
             interp2.close()
             interp3 = interpreters.create()
             interp3.close()
