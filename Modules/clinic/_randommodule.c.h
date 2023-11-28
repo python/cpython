@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_random_Random_random__doc__,
@@ -142,4 +143,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0c2f4af29f3e3241 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf49ece1d341b1b6 input=a9049054013a1b77]*/

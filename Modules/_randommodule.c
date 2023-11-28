@@ -71,7 +71,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_critical_section.h"
 #include "pycore_long.h"          // _PyLong_NumBits()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
