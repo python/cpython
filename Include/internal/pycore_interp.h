@@ -194,6 +194,8 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
+    /* The thread currently executing in the __main__ module, if any. */
+    PyThreadState *threads_main;
     /* The ID of the OS thread in which we are finalizing.
        We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
     _Py_atomic_address _finalizing_id;
