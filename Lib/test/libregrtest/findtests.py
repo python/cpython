@@ -85,9 +85,10 @@ def _list_cases(suite):
 
 def list_cases(tests: TestTuple, *,
                match_tests: TestFilter | None = None,
+               match_labels: TestFilter | None = None,
                test_dir: StrPath | None = None):
     support.verbose = False
-    set_match_tests(match_tests)
+    set_match_tests(match_tests, match_labels)
 
     skipped = []
     for test_name in tests:

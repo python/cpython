@@ -297,6 +297,9 @@ def is_resource_enabled(resource):
 
 def requires(resource, msg=None):
     """Raise ResourceDenied if the specified resource is not available."""
+    f = sys._getframe(1)
+    if f.f_globals is f.f_locals:
+        mark(f'requires_{resource}', globals=f.f_globals)
     if not is_resource_enabled(resource):
         if msg is None:
             msg = "Use of the %r resource not enabled" % resource
@@ -476,28 +479,28 @@ def requires_zlib(reason='requires zlib'):
         import zlib
     except ImportError:
         zlib = None
-    return unittest.skipUnless(zlib, reason)
+    return skipUnless(zlib, reason, label='requires_zlib')
 
 def requires_gzip(reason='requires gzip'):
     try:
         import gzip
     except ImportError:
         gzip = None
-    return unittest.skipUnless(gzip, reason)
+    return skipUnless(gzip, reason, label='requires_gzip')
 
 def requires_bz2(reason='requires bz2'):
     try:
         import bz2
     except ImportError:
         bz2 = None
-    return unittest.skipUnless(bz2, reason)
+    return skipUnless(bz2, reason, label='requires_bz2')
 
 def requires_lzma(reason='requires lzma'):
     try:
         import lzma
     except ImportError:
         lzma = None
-    return unittest.skipUnless(lzma, reason)
+    return skipUnless(lzma, reason, label='requires_lzma')
 
 def has_no_debug_ranges():
     try:
@@ -508,7 +511,7 @@ def has_no_debug_ranges():
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
-    return unittest.skipIf(has_no_debug_ranges(), reason)
+    return skipIf(has_no_debug_ranges(), reason, label='requires_debug_ranges')
 
 MS_WINDOWS = (sys.platform == 'win32')
 
@@ -530,28 +533,34 @@ is_wasi = sys.platform == "wasi"
 has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
 
 def requires_fork():
-    return unittest.skipUnless(has_fork_support, "requires working os.fork()")
+    return skipUnless(has_fork_support, "requires working os.fork()",
+                      label='requires_fork')
 
 has_subprocess_support = not is_emscripten and not is_wasi
 
 def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
-    return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
+    return skipUnless(has_subprocess_support, "requires subprocess support",
+                      label='requires_subprocess')
 
 # Emscripten's socket emulation and WASI sockets have limitations.
 has_socket_support = not is_emscripten and not is_wasi
 
-def requires_working_socket(*, module=False):
+def requires_working_socket(*, module=False, globals=None):
     """Skip tests or modules that require working sockets
 
     Can be used as a function/class decorator or to skip an entire module.
     """
+    label = 'requires_socket'
     msg = "requires socket support"
-    if module:
+    if module or globals is not None:
+        if globals is None:
+            globals = sys._getframe(1).f_globals
+        mark(label, globals=globals)
         if not has_socket_support:
             raise unittest.SkipTest(msg)
     else:
-        return unittest.skipUnless(has_socket_support, msg)
+        return skipUnless(has_socket_support, msg, label=label)
 
 # Does strftime() support glibc extension like '%4Y'?
 has_strftime_extensions = False
@@ -977,6 +986,8 @@ def bigmemtest(size, memuse, dry_run=True):
     test doesn't support dummy runs when -M is not specified.
     """
     def decorator(f):
+        @mark('bigmemtest')
+        @functools.wraps(f)
         def wrapper(self):
             size = wrapper.size
             memuse = wrapper.memuse
@@ -1013,6 +1024,8 @@ def bigmemtest(size, memuse, dry_run=True):
 
 def bigaddrspacetest(f):
     """Decorator for tests that fill the address space."""
+    @mark('bigaddrspacetest')
+    @functools.wraps(f)
     def wrapper(self):
         if max_memuse < MAX_Py_ssize_t:
             if MAX_Py_ssize_t >= 2**63 - 1 and max_memuse >= 2**31:
@@ -1029,16 +1042,41 @@ def bigaddrspacetest(f):
 #=======================================================================
 # unittest integration.
 
-def _id(obj):
-    return obj
+def mark(label, *, globals=None):
+    """Add a label to test.
+
+    To add a label to method or class, use it as a decorator.
+
+    To add a label to module, pass the globals() dict as the globals argument.
+    """
+    if globals is not None:
+        globals[f'_label_{label}'] = True
+        return
+    def decorator(test):
+        setattr(test, f'_label_{label}', True)
+        return test
+    return decorator
+
+def combine(*decorators):
+    def decorator(test):
+        for deco in reversed(decorators):
+            test = deco(test)
+        return test
+    return decorator
+
+def skipUnless(condition, reason, *, label):
+    return combine(unittest.skipUnless(condition, reason), mark(label))
+
+def skipIf(condition, reason, *, label):
+    return combine(unittest.skipIf(condition, reason), mark(label))
 
 def requires_resource(resource):
+    label = 'requires_' + resource
     if resource == 'gui' and not _is_gui_available():
-        return unittest.skip(_is_gui_available.reason)
-    if is_resource_enabled(resource):
-        return _id
-    else:
-        return unittest.skip("resource {0!r} is not enabled".format(resource))
+        return skipUnless(False, _is_gui_available.reason, label=label)
+    return skipUnless(is_resource_enabled(resource),
+                      f"resource {resource!r} is not enabled",
+                      label=label)
 
 def cpython_only(test):
     """
@@ -1047,8 +1085,16 @@ def cpython_only(test):
     return impl_detail(cpython=True)(test)
 
 def impl_detail(msg=None, **guards):
+    guards, _ = _parse_guards(guards)
+    decorators = []
+    for name in reversed(guards):
+        if guards[name]:
+            label = f'impl_detail_{name}'
+        else:
+            label = f'impl_detail_no_{name}'
+        decorators.append(mark(label))
     if check_impl_detail(**guards):
-        return _id
+        return combine(*decorators)
     if msg is None:
         guardnames, default = _parse_guards(guards)
         if default:
@@ -1057,7 +1103,7 @@ def impl_detail(msg=None, **guards):
             msg = "implementation detail specific to {0}"
         guardnames = sorted(guardnames.keys())
         msg = msg.format(' or '.join(guardnames))
-    return unittest.skip(msg)
+    return combine(unittest.skip(msg), *decorators)
 
 def _parse_guards(guards):
     # Returns a tuple ({platform_name: run_me}, default_value)

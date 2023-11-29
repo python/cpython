@@ -237,14 +237,18 @@ def _can_start_thread() -> bool:
 
 can_start_thread = _can_start_thread()
 
-def requires_working_threading(*, module=False):
+def requires_working_threading(*, module=False, globals=None):
     """Skip tests or modules that require working threading.
 
     Can be used as a function/class decorator or to skip an entire module.
     """
+    label = 'requires_threading'
     msg = "requires threading support"
-    if module:
+    if module or globals is not None:
+        if globals is None:
+            globals = sys._getframe(1).f_globals
+        support.mark(label, globals=globals)
         if not can_start_thread:
             raise unittest.SkipTest(msg)
     else:
-        return unittest.skipUnless(can_start_thread, msg)
+        return support.skipUnless(can_start_thread, msg, label=label)

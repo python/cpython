@@ -1,20 +1,49 @@
 import itertools
 import operator
 import re
+import sys
 
 
 # By default, don't filter tests
 _test_matchers = ()
 _test_patterns = ()
+_match_labels = ()
 
 
 def match_test(test):
     # Function used by support.run_unittest() and regrtest --list-cases
+    return match_test_id(test) and match_test_label(test)
+
+def match_test_id(test):
     result = False
     for matcher, result in reversed(_test_matchers):
         if matcher(test.id()):
             return result
     return not result
+
+def match_test_label(test):
+    result = False
+    for label, result in reversed(_match_labels):
+        if _has_label(test, label):
+            return result
+    return not result
+
+def _has_label(test, label):
+    attrname = f'_label_{label}'
+    if hasattr(test, attrname):
+        return True
+    testMethod = getattr(test, test._testMethodName)
+    while testMethod is not None:
+        if hasattr(testMethod, attrname):
+            return True
+        testMethod = getattr(testMethod, '__wrapped__', None)
+    try:
+        module = sys.modules[test.__class__.__module__]
+        if hasattr(module, attrname):
+            return True
+    except KeyError:
+        pass
+    return False
 
 
 def _is_full_match_test(pattern):
@@ -27,7 +56,7 @@ def _is_full_match_test(pattern):
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
-def set_match_tests(patterns):
+def set_match_tests(patterns=None, match_labels=None):
     global _test_matchers, _test_patterns
 
     if not patterns:

@@ -73,6 +73,7 @@ class RunTests:
     fail_fast: bool
     fail_env_changed: bool
     match_tests: TestFilter
+    match_labels: TestFilter
     match_tests_dict: FilterDict | None
     rerun: bool
     forever: bool
