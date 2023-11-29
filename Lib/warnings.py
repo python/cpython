@@ -608,7 +608,7 @@ class deprecated:
 
                 arg.__init_subclass__ = classmethod(__init_subclass__)
             # Or otherwise, which likely means it's a builtin such as
-            # type's implementation of __init_subclass__.
+            # object's implementation of __init_subclass__.
             else:
                 @functools.wraps(original_init_subclass)
                 def __init_subclass__(*args, **kwargs):
