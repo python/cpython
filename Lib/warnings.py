@@ -551,24 +551,24 @@ class deprecated:
     """
     def __init__(
         self,
-        msg: str,
+        message: str,
         /,
         *,
         category: type[Warning] | None = DeprecationWarning,
         stacklevel: int = 1,
     ) -> None:
-        if not isinstance(msg, str):
+        if not isinstance(message, str):
             raise TypeError(
-                f"Expected an object of type str for 'msg', not {type(msg).__name__!r}"
+                f"Expected an object of type str for 'msg', not {type(message).__name__!r}"
             )
-        self.msg = msg
+        self.message = message
         self.category = category
         self.stacklevel = stacklevel
 
     def __call__(self, arg, /):
         # Make sure the inner functions created below don't
         # retain a reference to self.
-        msg = self.msg
+        msg = self.message
         category = self.category
         stacklevel = self.stacklevel
         if category is None:
