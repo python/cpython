@@ -15,10 +15,20 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
-from test.support import interpreters
 import textwrap
 import unittest
 import warnings
+
+try:
+    from test.support import interpreters
+except ImportError:
+    interpreters = None
+
+
+def requires_subinterpreters(func):
+    deco = unittest.skipIf(interpreters is None,
+                     'Test requires subinterpreters')
+    return deco(func)
 
 
 DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
@@ -700,6 +710,7 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
+    @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
         s = "never interned before" + str(random.randrange(0, 10**9))
         t = sys.intern(s)
@@ -713,6 +724,7 @@ class SysModuleTest(unittest.TestCase):
             assert id(t) != {id(t)}, (id(t), {id(t)})
             '''))
 
+    @requires_subinterpreters
     def test_subinterp_intern_statically_allocated(self):
         # See Tools/build/generate_global_objects.py for the list
         # of strings that are always statically allocated.
