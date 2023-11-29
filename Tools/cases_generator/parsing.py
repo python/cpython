@@ -387,9 +387,6 @@ class Parser(PLexer):
                         break
                 if not self.expect(lx.RPAREN):
                     raise self.make_syntax_error("Expected comma or right paren")
-                #peek = self.peek()
-                #if not peek or peek.kind != lx.RBRACE:
-                #    raise self.make_syntax_error("Expected comma or right paren")
                 return flags
         self.setpos(here)
         return None
