@@ -7794,7 +7794,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Child.__required_keys__, frozenset(['a']))
         self.assertEqual(Child.__optional_keys__, frozenset(['b']))
 
-    def test_multiple_inheritance(self):
+    def test_multiple_inheritance_with_same_key(self):
         class Base1(TypedDict):
             a: NotRequired[int]
 
