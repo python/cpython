@@ -314,7 +314,7 @@ class _proto_member:
                 # no other instances found, record this member in _member_names_
                 enum_class._member_names_.append(member_name)
 
-        enum_class._add_member_(enum_member, member_name)
+        enum_class._add_member_(member_name, enum_member)
         try:
             # This may fail if value is not hashable. We can't add the value
             # to the map, and by-value lookups for this value will be
@@ -323,6 +323,7 @@ class _proto_member:
         except TypeError:
             # keep track of the value in a list so containment checks are quick
             enum_class._unhashable_values_.append(value)
+            enum_class._unhashable_values_map_.setdefault(member_name, []).append(value)
 
 
 class EnumDict(dict):
@@ -356,6 +357,7 @@ class EnumDict(dict):
                     '_order_',
                     '_generate_next_value_', '_numeric_repr_', '_missing_', '_ignore_',
                     '_iter_member_', '_iter_member_by_value_', '_iter_member_by_def_',
+                    '_add_alias_', '_add_value_alias_',
                     ):
                 raise ValueError(
                         '_sunder_ names, such as %r, are reserved for future Enum use'
@@ -521,6 +523,7 @@ class EnumType(type):
         classdict['_member_map_'] = {}
         classdict['_value2member_map_'] = {}
         classdict['_unhashable_values_'] = []
+        classdict['_unhashable_values_map_'] = {}
         classdict['_member_type_'] = member_type
         # now set the __repr__ for the value
         classdict['_value_repr_'] = metacls._find_data_repr_(cls, bases)
@@ -723,7 +726,10 @@ class EnumType(type):
         """
         if isinstance(value, cls):
             return True
-        return value in cls._value2member_map_ or value in cls._unhashable_values_
+        try:
+            return value in cls._value2member_map_
+        except TypeError:
+            return value in cls._unhashable_values_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -1020,7 +1026,8 @@ class EnumType(type):
             use_args = True
         return __new__, save_new, use_args
 
-    def _add_alias_(cls, member, name):
+    def _add_member_(cls, name, member):
+        # _value_ structures are not updated
         if name in cls._member_map_:
             if cls._member_map_[name] is not member:
                 raise NameError('%r is already bound: %r' % (name, cls._member_map_[name]))
@@ -1067,30 +1074,6 @@ class EnumType(type):
         cls._member_map_[name] = member
         #
         cls._member_map_[name] = member
-    _add_member_ = _add_alias_                  # use _add_member_ internally
-
-    def _add_value_alias_(cls, member, value):
-        try:
-            if value in cls._value2member_map_:
-                if cls._value2member_map_[value] is not member:
-                    raise ValueError('%r is already bound: %r' % (value, cls._value2member_map_[value]))
-                return
-        except TypeError:
-            # unhashable value, do long search
-            for m in cls._member_map_.values():
-                if m._value_ == value:
-                    if m is not member:
-                        raise ValueError('%r is already bound: %r' % (value, cls._value2member_map_[value]))
-                    return
-        try:
-            # This may fail if value is not hashable. We can't add the value
-            # to the map, and by-value lookups for this value will be
-            # linear.
-            cls._value2member_map_.setdefault(value, member)
-        except TypeError:
-            # keep track of the value in a list so containment checks are quick
-            cls._unhashable_values_.append(value)
-
 
 EnumMeta = EnumType         # keep EnumMeta name for backwards compatibility
 
@@ -1158,9 +1141,9 @@ class Enum(metaclass=EnumType):
             pass
         except TypeError:
             # not there, now do long search -- O(n) behavior
-            for member in cls._member_map_.values():
-                if member._value_ is value or member._value_ == value:
-                    return member
+            for name, values in cls._unhashable_values_map_.items():
+                if value in values:
+                    return cls[name]
         # still not found -- verify that members exist, in-case somebody got here mistakenly
         # (such as via super when trying to override __new__)
         if not cls._member_map_:
@@ -1200,6 +1183,33 @@ class Enum(metaclass=EnumType):
 
     def __init__(self, *args, **kwds):
         pass
+
+    def _add_alias_(self, name):
+        self.__class__._add_member_(name, self)
+
+    def _add_value_alias_(self, value):
+        cls = self.__class__
+        try:
+            if value in cls._value2member_map_:
+                if cls._value2member_map_[value] is not self:
+                    raise ValueError('%r is already bound: %r' % (value, cls._value2member_map_[value]))
+                return
+        except TypeError:
+            # unhashable value, do long search
+            for m in cls._member_map_.values():
+                if m._value_ == value:
+                    if m is not self:
+                        raise ValueError('%r is already bound: %r' % (value, cls._value2member_map_[value]))
+                    return
+        try:
+            # This may fail if value is not hashable. We can't add the value
+            # to the map, and by-value lookups for this value will be
+            # linear.
+            cls._value2member_map_.setdefault(value, self)
+        except TypeError:
+            # keep track of the value in a list so containment checks are quick
+            cls._unhashable_values_.append(value)
+            cls._unhashable_values_map_.setdefault(self.name, []).append(value)
 
     @staticmethod
     def _generate_next_value_(name, start, count, last_values):
@@ -1713,7 +1723,8 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         body['_member_names_'] = member_names = []
         body['_member_map_'] = member_map = {}
         body['_value2member_map_'] = value2member_map = {}
-        body['_unhashable_values_'] = []
+        body['_unhashable_values_'] = unhashable_values = []
+        body['_unhashable_values_map_'] = {}
         body['_member_type_'] = member_type = etype._member_type_
         body['_value_repr_'] = etype._value_repr_
         if issubclass(etype, Flag):
@@ -1760,14 +1771,9 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
             for name, value in attrs.items():
                 if isinstance(value, auto) and auto.value is _auto_null:
                     value = gnv(name, 1, len(member_names), gnv_last_values)
-                if value in value2member_map:
+                if value in value2member_map or value in unhashable_values:
                     # an alias to an existing member
-                    member = value2member_map[value]
-                    redirect = property()
-                    redirect.member = member
-                    redirect.__set_name__(enum_class, name)
-                    setattr(enum_class, name, redirect)
-                    member_map[name] = member
+                    enum_class(value)._add_alias_(name)
                 else:
                     # create the member
                     if use_args:
@@ -1782,12 +1788,12 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member._name_ = name
                     member.__objclass__ = enum_class
                     member.__init__(value)
-                    redirect = property()
-                    redirect.member = member
-                    redirect.__set_name__(enum_class, name)
-                    setattr(enum_class, name, redirect)
-                    member_map[name] = member
                     member._sort_order_ = len(member_names)
+                    if name not in ('name', 'value'):
+                        setattr(enum_class, name, member)
+                        member_map[name] = member
+                    else:
+                        enum_class._add_member_(name, member)
                     value2member_map[value] = member
                     if _is_single_bit(value):
                         # not a multi-bit alias, record in _member_names_ and _flag_mask_
@@ -1810,14 +1816,13 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     if value.value is _auto_null:
                         value.value = gnv(name, 1, len(member_names), gnv_last_values)
                     value = value.value
-                if value in value2member_map:
+                try:
+                    contained = value in value2member_map
+                except TypeError:
+                    contained = value in unhashable_values
+                if contained:
                     # an alias to an existing member
-                    member = value2member_map[value]
-                    redirect = property()
-                    redirect.member = member
-                    redirect.__set_name__(enum_class, name)
-                    setattr(enum_class, name, redirect)
-                    member_map[name] = member
+                    enum_class(value)._add_alias_(name)
                 else:
                     # create the member
                     if use_args:
@@ -1833,14 +1838,22 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member.__objclass__ = enum_class
                     member.__init__(value)
                     member._sort_order_ = len(member_names)
-                    redirect = property()
-                    redirect.member = member
-                    redirect.__set_name__(enum_class, name)
-                    setattr(enum_class, name, redirect)
-                    member_map[name] = member
-                    value2member_map[value] = member
+                    if name not in ('name', 'value'):
+                        setattr(enum_class, name, member)
+                        member_map[name] = member
+                    else:
+                        enum_class._add_member_(name, member)
                     member_names.append(name)
                     gnv_last_values.append(value)
+                    try:
+                        # This may fail if value is not hashable. We can't add the value
+                        # to the map, and by-value lookups for this value will be
+                        # linear.
+                        enum_class._value2member_map_.setdefault(value, member)
+                    except TypeError:
+                        # keep track of the value in a list so containment checks are quick
+                        enum_class._unhashable_values_.append(value)
+                        enum_class._unhashable_values_map_.setdefault(name, []).append(value)
         if '__new__' in body:
             enum_class.__new_member__ = enum_class.__new__
         enum_class.__new__ = Enum.__new__

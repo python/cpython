@@ -514,6 +514,7 @@ class _EnumTests:
             self.assertFalse('first' in MainEnum)
         val = MainEnum.dupe
         self.assertIn(val, MainEnum)
+        self.assertNotIn(float('nan'), MainEnum)
         #
         class OtherEnum(Enum):
             one = auto()
@@ -3291,10 +3292,10 @@ class TestSpecial(unittest.TestCase):
             RED = 1
             GREEN = 2
             BLUE = 3
-        Color._add_alias_(Color.RED, 'ROJO')
+        Color.RED._add_alias_('ROJO')
         self.assertIs(Color.RED, Color['ROJO'])
         self.assertIs(Color.RED, Color.ROJO)
-        Color._add_alias_(Color.BLUE, 'ORG')
+        Color.BLUE._add_alias_('ORG')
         self.assertIs(Color.BLUE, Color['ORG'])
         self.assertIs(Color.BLUE, Color.ORG)
         self.assertEqual(Color.RED.ORG, 'huh')
@@ -3307,7 +3308,7 @@ class TestSpecial(unittest.TestCase):
             RED = 1
             GREEN = 2
             BLUE = 3
-        Color._add_value_alias_(Color.RED, 5)
+        Color.RED._add_value_alias_(5)
         self.assertIs(Color.RED, Color(5))
 
     def test_add_value_alias_during_creation(self):
@@ -3319,7 +3320,7 @@ class TestSpecial(unittest.TestCase):
                 member = object.__new__(cls)
                 member._value_ = int_value
                 for alias in value_aliases:
-                    cls._add_value_alias_(member, alias)
+                    member._add_value_alias_(alias)
                 return member
         self.assertIs(Types(0), Types.Unknown)
         self.assertIs(Types(1), Types.Source)
@@ -5000,12 +5001,14 @@ class TestStdLib(unittest.TestCase):
             @bltns.property
             def zeroth(self):
                 return 'zeroed %s' % self.name
-        self.assertTrue(_test_simple_enum(CheckedColor, SimpleColor) is None)
+        _test_simple_enum(CheckedColor, SimpleColor)
         SimpleColor.MAGENTA._value_ = 9
         self.assertRaisesRegex(
                 TypeError, "enum mismatch",
                 _test_simple_enum, CheckedColor, SimpleColor,
                 )
+        #
+        #
         class CheckedMissing(IntFlag, boundary=KEEP):
             SIXTY_FOUR = 64
             ONE_TWENTY_EIGHT = 128
@@ -5022,8 +5025,28 @@ class TestStdLib(unittest.TestCase):
             ALL = 2048 + 128 + 64 + 12
         M = Missing
         self.assertEqual(list(CheckedMissing), [M.SIXTY_FOUR, M.ONE_TWENTY_EIGHT, M.TWENTY_FORTY_EIGHT])
-        #
         _test_simple_enum(CheckedMissing, Missing)
+        #
+        #
+        class CheckedUnhashable(Enum):
+            ONE = dict()
+            TWO = set()
+            name = 'python'
+        self.assertIn(dict(), CheckedUnhashable)
+        self.assertIn('python', CheckedUnhashable)
+        self.assertEqual(CheckedUnhashable.name.value, 'python')
+        self.assertEqual(CheckedUnhashable.name.name, 'name')
+        #
+        @_simple_enum()
+        class Unhashable:
+            ONE = dict()
+            TWO = set()
+            name = 'python'
+        self.assertIn(dict(), Unhashable)
+        self.assertIn('python', Unhashable)
+        self.assertEqual(Unhashable.name.value, 'python')
+        self.assertEqual(Unhashable.name.name, 'name')
+        _test_simple_enum(Unhashable, Unhashable)
 
 
 class MiscTestCase(unittest.TestCase):

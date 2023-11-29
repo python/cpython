@@ -961,10 +961,6 @@ all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
-  member.
-- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
-  existing member.
 - :attr:`~Enum._name_` -- name of the member
 - :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
 - :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
@@ -974,6 +970,10 @@ Supported ``_sunder_`` names
   from the final class
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.  See `MultiValueEnum`_ for an example.
 
   .. note::
 
@@ -1449,6 +1449,29 @@ alias::
     This is a useful example for subclassing Enum to add or change other
     behaviors as well as disallowing aliases.  If the only desired change is
     disallowing aliases, the :func:`unique` decorator can be used instead.
+
+
+MultiValueEnum
+^^^^^^^^^^^^^^^^^
+
+Supports having more than one value per member::
+
+    >>> class MultiValueEnum(Enum):
+    ...     def __new__(cls, value, *values):
+    ...         self = object.__new__(cls)
+    ...         self._value_ = value
+    ...         for v in values:
+    ...             self._add_value_alias_(v)
+    ...         return self
+    ...
+    >>> class DType(MultiValueEnum):
+    ...     float32 = 'f', 8
+    ...     double64 = 'd', 9
+    ...
+    >>> DType('f')
+    <DType.float32: 'f'>
+    >>> DType(9)
+    <DType.double64: 'd'>
 
 
 Planet
