@@ -1571,8 +1571,7 @@ PyInit_readline(void)
         goto error;
     }
 
-    if (PyModule_AddStringConstant(m, "backend", backend) < 0)
-    {
+    if (PyModule_AddStringConstant(m, "backend", backend) < 0) {
         goto error;
     }
 
