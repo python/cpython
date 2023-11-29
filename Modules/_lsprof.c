@@ -4,7 +4,9 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+
 #include "rotatingtree.h"
 
 /************************************************************/
@@ -49,6 +51,8 @@ typedef struct {
     int flags;
     PyObject *externalTimer;
     double externalTimerUnit;
+    int tool_id;
+    PyObject* missing;
 } ProfilerObject;
 
 #define POF_ENABLED     0x001
@@ -348,8 +352,7 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
      * exception, and some of the code under here assumes that
      * PyErr_* is its own to mess around with, so we have to
      * save and restore any current exception. */
-    PyObject *last_type, *last_value, *last_tb;
-    PyErr_Fetch(&last_type, &last_value, &last_tb);
+    PyObject *exc = PyErr_GetRaisedException();
 
     profEntry = getEntry(pObj, key);
     if (profEntry == NULL) {
@@ -374,7 +377,7 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
     initContext(pObj, pContext, profEntry);
 
 restorePyerr:
-    PyErr_Restore(last_type, last_value, last_tb);
+    PyErr_SetRaisedException(exc);
 }
 
 static void
@@ -398,64 +401,6 @@ ptrace_leave_call(PyObject *self, void *key)
     /* put pContext into the free list */
     pContext->previous = pObj->freelistProfilerContext;
     pObj->freelistProfilerContext = pContext;
-}
-
-static int
-profiler_callback(PyObject *self, PyFrameObject *frame, int what,
-                  PyObject *arg)
-{
-    switch (what) {
-
-    /* the 'frame' of a called function is about to start its execution */
-    case PyTrace_CALL:
-    {
-        PyCodeObject *code = PyFrame_GetCode(frame);
-        ptrace_enter_call(self, (void *)code, (PyObject *)code);
-        Py_DECREF(code);
-        break;
-    }
-
-    /* the 'frame' of a called function is about to finish
-       (either normally or with an exception) */
-    case PyTrace_RETURN:
-    {
-        PyCodeObject *code = PyFrame_GetCode(frame);
-        ptrace_leave_call(self, (void *)code);
-        Py_DECREF(code);
-        break;
-    }
-
-    /* case PyTrace_EXCEPTION:
-        If the exception results in the function exiting, a
-        PyTrace_RETURN event will be generated, so we don't need to
-        handle it. */
-
-    /* the Python function 'frame' is issuing a call to the built-in
-       function 'arg' */
-    case PyTrace_C_CALL:
-        if ((((ProfilerObject *)self)->flags & POF_BUILTINS)
-            && PyCFunction_Check(arg)) {
-            ptrace_enter_call(self,
-                              ((PyCFunctionObject *)arg)->m_ml,
-                              arg);
-        }
-        break;
-
-    /* the call to the built-in function 'arg' is returning into its
-       caller 'frame' */
-    case PyTrace_C_RETURN:              /* ...normally */
-    case PyTrace_C_EXCEPTION:           /* ...with an exception set */
-        if ((((ProfilerObject *)self)->flags & POF_BUILTINS)
-            && PyCFunction_Check(arg)) {
-            ptrace_leave_call(self,
-                              ((PyCFunctionObject *)arg)->m_ml);
-        }
-        break;
-
-    default:
-        break;
-    }
-    return 0;
 }
 
 static int
@@ -607,7 +552,7 @@ _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=1806ef720019ee03 input=445e193ef4522902]*/
 {
     statscollector_t collect;
-    collect.state = PyType_GetModuleState(cls);
+    collect.state = _PyType_GetModuleState(cls);
     if (pending_exception(self)) {
         return NULL;
     }
@@ -651,6 +596,100 @@ setBuiltins(ProfilerObject *pObj, int nvalue)
     return 0;
 }
 
+PyObject* pystart_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
+{
+    PyObject* code = args[0];
+    ptrace_enter_call((PyObject*)self, (void *)code, (PyObject *)code);
+
+    Py_RETURN_NONE;
+}
+
+PyObject* pyreturn_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
+{
+    PyObject* code = args[0];
+    ptrace_leave_call((PyObject*)self, (void *)code);
+
+    Py_RETURN_NONE;
+}
+
+PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObject* missing)
+{
+    // return a new reference
+    if (PyCFunction_Check(callable)) {
+        Py_INCREF(callable);
+        return (PyObject*)((PyCFunctionObject *)callable);
+    }
+    if (Py_TYPE(callable) == &PyMethodDescr_Type) {
+        /* For backwards compatibility need to
+         * convert to builtin method */
+
+        /* If no arg, skip */
+        if (self_arg == missing) {
+            return NULL;
+        }
+        PyObject *meth = Py_TYPE(callable)->tp_descr_get(
+            callable, self_arg, (PyObject*)Py_TYPE(self_arg));
+        if (meth == NULL) {
+            return NULL;
+        }
+        if (PyCFunction_Check(meth)) {
+            return (PyObject*)((PyCFunctionObject *)meth);
+        }
+    }
+    return NULL;
+}
+
+PyObject* ccall_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
+{
+    if (self->flags & POF_BUILTINS) {
+        PyObject* callable = args[2];
+        PyObject* self_arg = args[3];
+
+        PyObject* cfunc = get_cfunc_from_callable(callable, self_arg, self->missing);
+
+        if (cfunc) {
+            ptrace_enter_call((PyObject*)self,
+                              ((PyCFunctionObject *)cfunc)->m_ml,
+                              cfunc);
+            Py_DECREF(cfunc);
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+PyObject* creturn_callback(ProfilerObject* self, PyObject *const *args, Py_ssize_t size)
+{
+    if (self->flags & POF_BUILTINS) {
+        PyObject* callable = args[2];
+        PyObject* self_arg = args[3];
+
+        PyObject* cfunc = get_cfunc_from_callable(callable, self_arg, self->missing);
+
+        if (cfunc) {
+            ptrace_leave_call((PyObject*)self,
+                              ((PyCFunctionObject *)cfunc)->m_ml);
+            Py_DECREF(cfunc);
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+static const struct {
+    int event;
+    const char* callback_method;
+} callback_table[] = {
+    {PY_MONITORING_EVENT_PY_START, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_RESUME, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_THROW, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_RETURN, "_pyreturn_callback"},
+    {PY_MONITORING_EVENT_PY_YIELD, "_pyreturn_callback"},
+    {PY_MONITORING_EVENT_PY_UNWIND, "_pyreturn_callback"},
+    {PY_MONITORING_EVENT_CALL, "_ccall_callback"},
+    {PY_MONITORING_EVENT_C_RETURN, "_creturn_callback"},
+    {PY_MONITORING_EVENT_C_RAISE, "_creturn_callback"},
+    {0, NULL}
+};
+
 PyDoc_STRVAR(enable_doc, "\
 enable(subcalls=True, builtins=True)\n\
 \n\
@@ -667,6 +706,8 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     int subcalls = -1;
     int builtins = -1;
     static char *kwlist[] = {"subcalls", "builtins", 0};
+    int all_events = 0;
+
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pp:enable",
                                      kwlist, &subcalls, &builtins))
         return NULL;
@@ -674,10 +715,36 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyEval_SetProfile(tstate, profiler_callback, (PyObject*)self) < 0) {
+    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    if (!monitoring) {
         return NULL;
     }
+
+    if (PyObject_CallMethod(monitoring, "use_tool_id", "is", self->tool_id, "cProfile") == NULL) {
+        PyErr_Format(PyExc_ValueError, "Another profiling tool is already active");
+        Py_DECREF(monitoring);
+        return NULL;
+    }
+
+    for (int i = 0; callback_table[i].callback_method; i++) {
+        PyObject* callback = PyObject_GetAttrString((PyObject*)self, callback_table[i].callback_method);
+        if (!callback) {
+            Py_DECREF(monitoring);
+            return NULL;
+        }
+        Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
+                                       (1 << callback_table[i].event),
+                                       callback));
+        Py_DECREF(callback);
+        all_events |= (1 << callback_table[i].event);
+    }
+
+    if (!PyObject_CallMethod(monitoring, "set_events", "ii", self->tool_id, all_events)) {
+        Py_DECREF(monitoring);
+        return NULL;
+    }
+
+    Py_DECREF(monitoring);
 
     self->flags |= POF_ENABLED;
     Py_RETURN_NONE;
@@ -708,13 +775,44 @@ Stop collecting profiling information.\n\
 static PyObject*
 profiler_disable(ProfilerObject *self, PyObject* noarg)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-        return NULL;
-    }
-    self->flags &= ~POF_ENABLED;
+    if (self->flags & POF_ENABLED) {
+        PyObject* result = NULL;
+        PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
 
-    flush_unmatched(self);
+        if (!monitoring) {
+            return NULL;
+        }
+
+        for (int i = 0; callback_table[i].callback_method; i++) {
+            result = PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
+                                         (1 << callback_table[i].event), Py_None);
+            if (!result) {
+                Py_DECREF(monitoring);
+                return NULL;
+            }
+            Py_DECREF(result);
+        }
+
+        result = PyObject_CallMethod(monitoring, "set_events", "ii", self->tool_id, 0);
+        if (!result) {
+            Py_DECREF(monitoring);
+            return NULL;
+        }
+        Py_DECREF(result);
+
+        result = PyObject_CallMethod(monitoring, "free_tool_id", "i", self->tool_id);
+        if (!result) {
+            Py_DECREF(monitoring);
+            return NULL;
+        }
+        Py_DECREF(result);
+
+        Py_DECREF(monitoring);
+
+        self->flags &= ~POF_ENABLED;
+        flush_unmatched(self);
+    }
+
     if (pending_exception(self)) {
         return NULL;
     }
@@ -748,7 +846,7 @@ profiler_dealloc(ProfilerObject *op)
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            _PyErr_WriteUnraisableMsg("When destroying _lsprof profiler", NULL);
+            PyErr_FormatUnraisable("Exception ignored when destroying _lsprof profiler");
         }
     }
 
@@ -779,17 +877,37 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
         return -1;
     pObj->externalTimerUnit = timeunit;
     Py_XSETREF(pObj->externalTimer, Py_XNewRef(timer));
+    pObj->tool_id = PY_MONITORING_PROFILER_ID;
+
+    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    if (!monitoring) {
+        return -1;
+    }
+    pObj->missing = PyObject_GetAttrString(monitoring, "MISSING");
+    if (!pObj->missing) {
+        Py_DECREF(monitoring);
+        return -1;
+    }
+    Py_DECREF(monitoring);
     return 0;
 }
 
 static PyMethodDef profiler_methods[] = {
     _LSPROF_PROFILER_GETSTATS_METHODDEF
-    {"enable",          _PyCFunction_CAST(profiler_enable),
+    {"enable",             _PyCFunction_CAST(profiler_enable),
                     METH_VARARGS | METH_KEYWORDS,       enable_doc},
-    {"disable",         (PyCFunction)profiler_disable,
+    {"disable",            (PyCFunction)profiler_disable,
                     METH_NOARGS,                        disable_doc},
-    {"clear",           (PyCFunction)profiler_clear,
+    {"clear",              (PyCFunction)profiler_clear,
                     METH_NOARGS,                        clear_doc},
+    {"_pystart_callback",  _PyCFunction_CAST(pystart_callback),
+                    METH_FASTCALL,                       NULL},
+    {"_pyreturn_callback", _PyCFunction_CAST(pyreturn_callback),
+                    METH_FASTCALL,                       NULL},
+    {"_ccall_callback",    _PyCFunction_CAST(ccall_callback),
+                    METH_FASTCALL,                       NULL},
+    {"_creturn_callback", _PyCFunction_CAST(creturn_callback),
+                    METH_FASTCALL,                       NULL},
     {NULL, NULL}
 };
 
@@ -886,6 +1004,9 @@ _lsprof_exec(PyObject *module)
 
 static PyModuleDef_Slot _lsprofslots[] = {
     {Py_mod_exec, _lsprof_exec},
+    // XXX gh-103092: fix isolation.
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -1,10 +1,16 @@
 
 /* UNIX group file access module */
 
+// clinic/grpmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "posixmodule.h"
 
-#include <grp.h>
+#include <grp.h>                  // getgrgid_r()
+#include <unistd.h>               // sysconf()
 
 #include "clinic/grpmodule.c.h"
 /*[clinic input]
@@ -65,8 +71,14 @@ mkgrent(PyObject *module, struct group *p)
         Py_DECREF(v);
         return NULL;
     }
-    for (member = p->gr_mem; *member != NULL; member++) {
-        PyObject *x = PyUnicode_DecodeFSDefault(*member);
+    for (member = p->gr_mem; ; member++) {
+        char *group_member;
+        // member can be misaligned
+        memcpy(&group_member, member, sizeof(group_member));
+        if (group_member == NULL) {
+            break;
+        }
+        PyObject *x = PyUnicode_DecodeFSDefault(group_member);
         if (x == NULL || PyList_Append(w, x) != 0) {
             Py_XDECREF(x);
             Py_DECREF(w);
@@ -327,6 +339,7 @@ grpmodule_exec(PyObject *module)
 
 static PyModuleDef_Slot grpmodule_slots[] = {
     {Py_mod_exec, grpmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

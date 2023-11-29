@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(list_insert__doc__,
 "insert($self, index, object, /)\n"
@@ -49,22 +50,22 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(list_clear__doc__,
+PyDoc_STRVAR(py_list_clear__doc__,
 "clear($self, /)\n"
 "--\n"
 "\n"
 "Remove all items from list.");
 
-#define LIST_CLEAR_METHODDEF    \
-    {"clear", (PyCFunction)list_clear, METH_NOARGS, list_clear__doc__},
+#define PY_LIST_CLEAR_METHODDEF    \
+    {"clear", (PyCFunction)py_list_clear, METH_NOARGS, py_list_clear__doc__},
 
 static PyObject *
-list_clear_impl(PyListObject *self);
+py_list_clear_impl(PyListObject *self);
 
 static PyObject *
-list_clear(PyListObject *self, PyObject *Py_UNUSED(ignored))
+py_list_clear(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return list_clear_impl(self);
+    return py_list_clear_impl(self);
 }
 
 PyDoc_STRVAR(list_copy__doc__,
@@ -94,14 +95,14 @@ PyDoc_STRVAR(list_append__doc__,
 #define LIST_APPEND_METHODDEF    \
     {"append", (PyCFunction)list_append, METH_O, list_append__doc__},
 
-PyDoc_STRVAR(list_extend__doc__,
+PyDoc_STRVAR(py_list_extend__doc__,
 "extend($self, iterable, /)\n"
 "--\n"
 "\n"
 "Extend list by appending elements from the iterable.");
 
-#define LIST_EXTEND_METHODDEF    \
-    {"extend", (PyCFunction)list_extend, METH_O, list_extend__doc__},
+#define PY_LIST_EXTEND_METHODDEF    \
+    {"extend", (PyCFunction)py_list_extend, METH_O, py_list_extend__doc__},
 
 PyDoc_STRVAR(list_pop__doc__,
 "pop($self, index=-1, /)\n"
@@ -326,10 +327,11 @@ static int
 list___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    PyTypeObject *base_tp = &PyList_Type;
     PyObject *iterable = NULL;
 
-    if ((Py_IS_TYPE(self, &PyList_Type) ||
-         Py_TYPE(self)->tp_new == PyList_Type.tp_new) &&
+    if ((Py_IS_TYPE(self, base_tp) ||
+         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
         !_PyArg_NoKeywords("list", kwargs)) {
         goto exit;
     }
@@ -382,4 +384,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=4e6f38b655394564 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2d7b63119464ff4 input=a9049054013a1b77]*/

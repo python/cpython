@@ -164,7 +164,6 @@ _b32tab2 = {}
 _b32rev = {}
 
 def _b32encode(alphabet, s):
-    global _b32tab2
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32tab2:
@@ -200,7 +199,6 @@ def _b32encode(alphabet, s):
     return bytes(encoded)
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
-    global _b32rev
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32rev:
@@ -558,12 +556,12 @@ def decodebytes(s):
 def main():
     """Small main program"""
     import sys, getopt
-    usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u|-t] [file|-]
+    usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u] [file|-]
         -h: print this help message and exit
         -d, -u: decode
         -e: encode (default)"""
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hdeut')
+        opts, args = getopt.getopt(sys.argv[1:], 'hdeu')
     except getopt.error as msg:
         sys.stdout = sys.stderr
         print(msg)

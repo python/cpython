@@ -57,8 +57,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_strhex.h"        // _Py_strhex_bytes_with_sep()
@@ -170,8 +168,6 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
         return 1;
     }
     if (PyUnicode_Check(arg)) {
-        if (PyUnicode_READY(arg) < 0)
-            return 0;
         if (!PyUnicode_IS_ASCII(arg)) {
             PyErr_SetString(PyExc_ValueError,
                             "string argument should contain only ASCII characters");
@@ -189,13 +185,7 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
                      "not '%.100s'", Py_TYPE(arg)->tp_name);
         return 0;
     }
-    if (!PyBuffer_IsContiguous(buf, 'C')) {
-        PyErr_Format(PyExc_TypeError,
-                     "argument should be a contiguous buffer, "
-                     "not '%.100s'", Py_TYPE(arg)->tp_name);
-        PyBuffer_Release(buf);
-        return 0;
-    }
+    assert(PyBuffer_IsContiguous(buf, 'C'));
     return Py_CLEANUP_SUPPORTED;
 }
 
@@ -1257,32 +1247,20 @@ static struct PyMethodDef binascii_module_methods[] = {
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
 static int
-binascii_exec(PyObject *module) {
-    int result;
+binascii_exec(PyObject *module)
+{
     binascii_state *state = PyModule_GetState(module);
     if (state == NULL) {
         return -1;
     }
 
     state->Error = PyErr_NewException("binascii.Error", PyExc_ValueError, NULL);
-    if (state->Error == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->Error);
-    result = PyModule_AddObject(module, "Error", state->Error);
-    if (result == -1) {
-        Py_DECREF(state->Error);
+    if (PyModule_AddObjectRef(module, "Error", state->Error) < 0) {
         return -1;
     }
 
     state->Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
-    if (state->Incomplete == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->Incomplete);
-    result = PyModule_AddObject(module, "Incomplete", state->Incomplete);
-    if (result == -1) {
-        Py_DECREF(state->Incomplete);
+    if (PyModule_AddObjectRef(module, "Incomplete", state->Incomplete) < 0) {
         return -1;
     }
 
@@ -1291,6 +1269,7 @@ binascii_exec(PyObject *module) {
 
 static PyModuleDef_Slot binascii_slots[] = {
     {Py_mod_exec, binascii_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -1,1 +1,0 @@
-Freeze :mod:`zipimport` module into ``_bootstrap_python``.

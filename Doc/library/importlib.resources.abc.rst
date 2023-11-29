@@ -43,8 +43,6 @@
     :const:`None`. An object compatible with this ABC should only be
     returned when the specified module is a package.
 
-    .. versionadded:: 3.7
-
     .. deprecated-removed:: 3.12 3.14
        Use :class:`importlib.resources.abc.TraversableResources` instead.
 
@@ -89,13 +87,11 @@
 
 .. class:: Traversable
 
-    An object with a subset of pathlib.Path methods suitable for
+    An object with a subset of :class:`pathlib.Path` methods suitable for
     traversing directories and opening files.
 
-    .. versionadded:: 3.9
-
-    .. deprecated-removed:: 3.12 3.14
-       Use :class:`importlib.resources.abc.Traversable` instead.
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
 
     .. attribute:: name
 
@@ -127,7 +123,7 @@
        suitable for reading (same as :attr:`pathlib.Path.open`).
 
        When opening as text, accepts encoding parameters such as those
-       accepted by :attr:`io.TextIOWrapper`.
+       accepted by :class:`io.TextIOWrapper`.
 
     .. method:: read_bytes()
 
@@ -142,18 +138,13 @@
 
     An abstract base class for resource readers capable of serving
     the :meth:`importlib.resources.files` interface. Subclasses
-    :class:`importlib.resources.abc.ResourceReader` and provides
-    concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
+    :class:`ResourceReader` and provides
+    concrete implementations of the :class:`!ResourceReader`'s
     abstract methods. Therefore, any loader supplying
-    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
+    :class:`!TraversableResources` also supplies :class:`!ResourceReader`.
 
     Loaders that wish to support resource reading are expected to
     implement this interface.
-
-    .. versionadded:: 3.9
-
-    .. deprecated-removed:: 3.12 3.14
-       Use :class:`importlib.resources.abc.TraversableResources` instead.
 
     .. abstractmethod:: files()
 

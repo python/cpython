@@ -1,1 +1,0 @@
-Make two tests forgiving towards host system libexpat with backported security fixes applied.
