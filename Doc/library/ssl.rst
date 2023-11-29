@@ -908,6 +908,12 @@ Constants
 
    .. versionadded:: 3.7
 
+.. data:: HAS_PSK
+
+   Whether the OpenSSL library has built-in support for TLS-PSK.
+
+   .. versionadded:: 3.13
+
 .. data:: CHANNEL_BINDING_TYPES
 
    List of supported TLS channel binding types.  Strings in this list
@@ -2050,6 +2056,9 @@ to speed up repeated connections from the same clients.
           return 'ClientId_1', psk_table.get(hint, b'')
       context.set_psk_client_callback(callback)
 
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_PSK` is
+   ``False``.
+
    .. versionadded:: 3.13
 
 .. method:: SSLContext.set_psk_server_callback(callback, identity_hint=None)
@@ -2091,6 +2100,9 @@ to speed up repeated connections from the same clients.
       def callback(identity):
           return psk_table.get(identity, b'')
       context.set_psk_server_callback(callback, 'ServerId_1')
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_PSK` is
+   ``False``.
 
    .. versionadded:: 3.13
 
