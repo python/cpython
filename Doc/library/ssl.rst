@@ -151,6 +151,12 @@ purposes.
    variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
    enables key logging.
 
+   The default settings for this context include
+   :data:`VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`.
+   These make the underlying OpenSSL implementation behave more like
+   a conforming implementation of :rfc:`5280`, in exchange for a small
+   amount of incompatibility with older X.509 certificates.
+
    .. note::
       The protocol, options, cipher and other settings may change to more
       restrictive values anytime without prior deprecation.  The values
