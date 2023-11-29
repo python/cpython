@@ -348,6 +348,15 @@ venv
   (using ``--without-scm-ignore-files``). (Contributed by Brett Cannon in
   :gh:`108125`.)
 
+warnings
+--------
+
+* The new :func:`warnings.deprecated` decorator provides a way to communicate
+  deprecations to :term:`static type checkers <static type checker>` and
+  to warn on usage of deprecated classes and functions. A runtime deprecation
+  warning may also be emitted when a decorated function or class is used at runtime.
+  See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
+
 Optimizations
 =============
 
