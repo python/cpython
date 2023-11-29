@@ -557,6 +557,10 @@ class deprecated:
         category: type[Warning] | None = DeprecationWarning,
         stacklevel: int = 1,
     ) -> None:
+        if not isinstance(msg, str):
+            raise TypeError(
+                f"Expected an object of type str for 'msg', not {type(msg).__name__!r}"
+            )
         self.msg = msg
         self.category = category
         self.stacklevel = stacklevel
