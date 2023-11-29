@@ -171,7 +171,7 @@ print("History length:", readline.get_current_history_length())
                 if state == 0 and text == "$":
                     return "$complete"
                 return None
-            if "libedit" in getattr(readline, "__doc__", ""):
+            if readline.backend == "editline":
                 readline.parse_and_bind(r'bind "\\t" rl_complete')
             else:
                 readline.parse_and_bind(r'"\\t": complete')
