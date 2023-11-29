@@ -4,6 +4,34 @@
 
 
 static PyObject *
+object_repr(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyObject_Repr(arg);
+}
+
+static PyObject *
+object_ascii(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyObject_ASCII(arg);
+}
+
+static PyObject *
+object_str(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyObject_Str(arg);
+}
+
+static PyObject *
+object_bytes(PyObject *self, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyObject_Bytes(arg);
+}
+
+static PyObject *
 object_getattr(PyObject *self, PyObject *args)
 {
     PyObject *obj, *attr_name;
@@ -459,6 +487,11 @@ sequence_tuple(PyObject *self, PyObject *obj)
 
 
 static PyMethodDef test_methods[] = {
+    {"object_repr", object_repr, METH_O},
+    {"object_ascii", object_ascii, METH_O},
+    {"object_str", object_str, METH_O},
+    {"object_bytes", object_bytes, METH_O},
+
     {"object_getattr", object_getattr, METH_VARARGS},
     {"object_getattrstring", object_getattrstring, METH_VARARGS},
     {"object_hasattr", object_hasattr, METH_VARARGS},
