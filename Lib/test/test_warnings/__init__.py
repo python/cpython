@@ -1649,6 +1649,13 @@ class DeprecatedTests(unittest.TestCase):
             @deprecated
             def foo(): ...
 
+    def test_no_retained_references_to_wrapper_instance(self):
+        @deprecated('depr')
+        def d(): pass
+
+        self.assertFalse(any(
+            isinstance(cell.cell_contents, deprecated) for cell in d.__closure__
+        ))
 
 def setUpModule():
     py_warnings.onceregistry.clear()
