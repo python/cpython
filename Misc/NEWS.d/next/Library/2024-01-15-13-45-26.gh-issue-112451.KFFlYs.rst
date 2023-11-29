@@ -1,0 +1,1 @@
+Make C-extension ``datetime.timezone`` acceptable as a base class.

@@ -642,6 +642,11 @@ class TypesTests(unittest.TestCase):
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
+    def test_timezone_base_type(self):
+        class MyTimezone(_datetime.timezone):
+            pass
+
+        self.assertIs(issubclass(MyTimezone, _datetime.timezone), True)
 
 class UnionTests(unittest.TestCase):
 
