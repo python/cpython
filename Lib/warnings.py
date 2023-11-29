@@ -561,7 +561,7 @@ class deprecated:
     ) -> None:
         if not isinstance(message, str):
             raise TypeError(
-                f"Expected an object of type str for 'msg', not {type(message).__name__!r}"
+                f"Expected an object of type str for 'message', not {type(message).__name__!r}"
             )
         self.message = message
         self.category = category
