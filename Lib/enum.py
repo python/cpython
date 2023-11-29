@@ -1057,7 +1057,7 @@ class EnumType(type):
             redirect = property()
             redirect.member = member
             redirect.__set_name__(cls, name)
-            if descriptor_type in ('enum','desc'):
+            if descriptor_type in ('enum', 'desc'):
                 # earlier descriptor found; copy fget, fset, fdel to this one.
                 redirect.fget = getattr(found_descriptor, 'fget', None)
                 redirect._get = getattr(found_descriptor, '__get__', None)
