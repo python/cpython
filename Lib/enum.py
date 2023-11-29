@@ -4,7 +4,7 @@ from types import MappingProxyType, DynamicClassAttribute
 
 
 __all__ = [
-        'EnumType', 'EnumMeta',
+        'EnumType', 'EnumMeta', 'EnumDict',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag', 'ReprEnum',
         'auto', 'unique', 'property', 'verify', 'member', 'nonmember',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
@@ -313,45 +313,8 @@ class _proto_member:
                 ):
                 # no other instances found, record this member in _member_names_
                 enum_class._member_names_.append(member_name)
-        # if necessary, get redirect in place and then add it to _member_map_
-        found_descriptor = None
-        descriptor_type = None
-        class_type = None
-        for base in enum_class.__mro__[1:]:
-            attr = base.__dict__.get(member_name)
-            if attr is not None:
-                if isinstance(attr, (property, DynamicClassAttribute)):
-                    found_descriptor = attr
-                    class_type = base
-                    descriptor_type = 'enum'
-                    break
-                elif _is_descriptor(attr):
-                    found_descriptor = attr
-                    descriptor_type = descriptor_type or 'desc'
-                    class_type = class_type or base
-                    continue
-                else:
-                    descriptor_type = 'attr'
-                    class_type = base
-        if found_descriptor:
-            redirect = property()
-            redirect.member = enum_member
-            redirect.__set_name__(enum_class, member_name)
-            if descriptor_type in ('enum','desc'):
-                # earlier descriptor found; copy fget, fset, fdel to this one.
-                redirect.fget = getattr(found_descriptor, 'fget', None)
-                redirect._get = getattr(found_descriptor, '__get__', None)
-                redirect.fset = getattr(found_descriptor, 'fset', None)
-                redirect._set = getattr(found_descriptor, '__set__', None)
-                redirect.fdel = getattr(found_descriptor, 'fdel', None)
-                redirect._del = getattr(found_descriptor, '__delete__', None)
-            redirect._attr_type = descriptor_type
-            redirect._cls_type = class_type
-            setattr(enum_class, member_name, redirect)
-        else:
-            setattr(enum_class, member_name, enum_member)
-        # now add to _member_map_ (even aliases)
-        enum_class._member_map_[member_name] = enum_member
+
+        enum_class._add_member_(enum_member, member_name)
         try:
             # This may fail if value is not hashable. We can't add the value
             # to the map, and by-value lookups for this value will be
@@ -362,7 +325,7 @@ class _proto_member:
             enum_class._unhashable_values_.append(value)
 
 
-class _EnumDict(dict):
+class EnumDict(dict):
     """
     Track enum member order and ensure member names are not reused.
 
@@ -371,7 +334,7 @@ class _EnumDict(dict):
     """
     def __init__(self):
         super().__init__()
-        self._member_names = {} # use a dict to keep insertion order
+        self._member_names = {} # use a dict -- faster look-up than a list, and keeps insertion order since 3.7 (?)
         self._last_values = []
         self._ignore = []
         self._auto_called = False
@@ -468,6 +431,10 @@ class _EnumDict(dict):
                 self._last_values.append(value)
         super().__setitem__(key, value)
 
+    @property
+    def member_names(self):
+        return list(self._member_names)
+
     def update(self, members, **more_members):
         try:
             for name in members.keys():
@@ -477,6 +444,8 @@ class _EnumDict(dict):
                 self[name] = value
         for name, value in more_members.items():
             self[name] = value
+
+_EnumDict = EnumDict        # keep private name for backwards compatibility
 
 
 class EnumType(type):
@@ -489,7 +458,7 @@ class EnumType(type):
         # check that previous enum members do not exist
         metacls._check_for_existing_members_(cls, bases)
         # create the namespace dict
-        enum_dict = _EnumDict()
+        enum_dict = EnumDict()
         enum_dict._cls_name = cls
         # inherit previous flags and _generate_next_value_ function
         member_type, first_enum = metacls._get_mixins_(cls, bases)
@@ -1046,7 +1015,80 @@ class EnumType(type):
         else:
             use_args = True
         return __new__, save_new, use_args
-EnumMeta = EnumType
+
+    def _add_alias_(cls, member, name):
+        if name in cls._member_map_:
+            if cls._member_map_[name] is not member:
+                raise NameError('%r is already bound: %r' % (name, cls._member_map_[name]))
+            return
+        #
+        # if necessary, get redirect in place and then add it to _member_map_
+        found_descriptor = None
+        descriptor_type = None
+        class_type = None
+        for base in cls.__mro__[1:]:
+            attr = base.__dict__.get(name)
+            if attr is not None:
+                if isinstance(attr, (property, DynamicClassAttribute)):
+                    found_descriptor = attr
+                    class_type = base
+                    descriptor_type = 'enum'
+                    break
+                elif _is_descriptor(attr):
+                    found_descriptor = attr
+                    descriptor_type = descriptor_type or 'desc'
+                    class_type = class_type or base
+                    continue
+                else:
+                    descriptor_type = 'attr'
+                    class_type = base
+        if found_descriptor:
+            redirect = property()
+            redirect.member = member
+            redirect.__set_name__(cls, name)
+            if descriptor_type in ('enum','desc'):
+                # earlier descriptor found; copy fget, fset, fdel to this one.
+                redirect.fget = getattr(found_descriptor, 'fget', None)
+                redirect._get = getattr(found_descriptor, '__get__', None)
+                redirect.fset = getattr(found_descriptor, 'fset', None)
+                redirect._set = getattr(found_descriptor, '__set__', None)
+                redirect.fdel = getattr(found_descriptor, 'fdel', None)
+                redirect._del = getattr(found_descriptor, '__delete__', None)
+            redirect._attr_type = descriptor_type
+            redirect._cls_type = class_type
+            setattr(cls, name, redirect)
+        else:
+            setattr(cls, name, member)
+        # now add to _member_map_ (even aliases)
+        cls._member_map_[name] = member
+        #
+        cls._member_map_[name] = member
+    _add_member_ = _add_alias_                  # use _add_member_ internally
+
+    def _add_value_alias_(cls, member, value):
+        try:
+            if value in cls._value2member_map_:
+                if cls._value2member_map_[value] is not member:
+                    raise ValueError('%r is already bound: %r' % (value, cls._value2member_map_[value]))
+                return
+        except TypeError:
+            # unhashable value, do long search
+            for m in cls._member_map_.values():
+                if m._value_ == value:
+                    if m is not member:
+                        raise ValueError('%r is already bound: %r' % (value, cls._value2member_map_[value]))
+                    return
+        try:
+            # This may fail if value is not hashable. We can't add the value
+            # to the map, and by-value lookups for this value will be
+            # linear.
+            cls._value2member_map_.setdefault(value, member)
+        except TypeError:
+            # keep track of the value in a list so containment checks are quick
+            cls._unhashable_values_.append(value)
+
+
+EnumMeta = EnumType         # keep EnumMeta name for backwards compatibility
 
 
 class Enum(metaclass=EnumType):
@@ -1113,7 +1155,7 @@ class Enum(metaclass=EnumType):
         except TypeError:
             # not there, now do long search -- O(n) behavior
             for member in cls._member_map_.values():
-                if member._value_ == value:
+                if member._value_ is value or member._value_ == value:
                     return member
         # still not found -- verify that members exist, in-case somebody got here mistakenly
         # (such as via super when trying to override __new__)
