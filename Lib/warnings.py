@@ -508,7 +508,6 @@ class catch_warnings(object):
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
-
 class deprecated:
     """Indicate that a class, function or overload is deprecated.
 

@@ -1637,14 +1637,14 @@ class DeprecatedTests(unittest.TestCase):
     def test_only_strings_allowed(self):
         with self.assertRaisesRegex(
             TypeError,
-            "Expected an object of type str for 'msg', not 'type'"
+            "Expected an object of type str for 'message', not 'type'"
         ):
             @deprecated
             class Foo: ...
 
         with self.assertRaisesRegex(
             TypeError,
-            "Expected an object of type str for 'msg', not 'function'"
+            "Expected an object of type str for 'message', not 'function'"
         ):
             @deprecated
             def foo(): ...

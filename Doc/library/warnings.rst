@@ -530,6 +530,7 @@ Available Functions
    deprecation warnings may be emitted at runtime when the object is used.
    :term:`static type checkers <static type checker>`
    will also generate a diagnostic on usage of the deprecated object.
+
    Usage::
 
       from warnings import deprecated
