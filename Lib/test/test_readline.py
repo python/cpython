@@ -19,7 +19,7 @@ readline = import_module('readline')
 if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
     is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
 else:
-    is_editline = (readline.__doc__ and "libedit" in readline.__doc__)
+    is_editline = readline.backend == "editline"
 
 
 def setUpModule():
@@ -198,7 +198,7 @@ print("History length:", readline.get_current_history_length())
 
         script = r"""import readline
 
-is_editline = readline.__doc__ and "libedit" in readline.__doc__
+is_editline = readline.backend == "editline"
 inserted = "[\xEFnserted]"
 macro = "|t\xEB[after]"
 set_pre_input_hook = getattr(readline, "set_pre_input_hook", None)
