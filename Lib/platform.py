@@ -1511,7 +1511,7 @@ def python_version_tuple():
         will always include the patchlevel (it defaults to 0).
 
     """
-    return tuple(string.split(_sys_version()[1], '.'))
+    return tuple(string.split(_sys_version()[1], '.', 2))
 
 def python_branch():
 
