@@ -334,7 +334,7 @@ class EnumDict(dict):
     """
     def __init__(self):
         super().__init__()
-        self._member_names = {} # use a dict -- faster look-up than a list, and keeps insertion order since 3.7 (?)
+        self._member_names = {} # use a dict -- faster look-up than a list, and keeps insertion order since 3.7
         self._last_values = []
         self._ignore = []
         self._auto_called = False

@@ -235,7 +235,7 @@ Data Types
         >>> len(Color)
         3
 
-   .. attribute: EnumType.__members__
+   .. attribute:: EnumType.__members__
 
       Returns a mapping of every enum name to its member, including aliases
 
@@ -246,12 +246,12 @@ Data Types
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
-   .. method: EnumType._add_alias_
+   .. method:: EnumType._add_alias_
 
       Adds a new name as an alias to an existing member.  Raises a
       :exc:`NameError` if the name is already assigned to a different member.
 
-   .. method: EnumType._add_value_alias_
+   .. method:: EnumType._add_value_alias_
 
       Adds a new value as an alias to an existing member.  Raises a
       :exc:`ValueError` if the value is already linked with a different member.

@@ -972,8 +972,6 @@ Supported ``_sunder_`` names
 - :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
   :class:`str`, that will not be transformed into members, and will be removed
   from the final class
-- :attr:`~Enum._order_` -- used in Python 2/3 code to ensure member order is
-  consistent (class attribute, removed during class creation)
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
 
