@@ -3312,7 +3312,7 @@ class TestSpecial(unittest.TestCase):
 
     def test_add_value_alias_during_creation(self):
         class Types(Enum):
-            Unknown = 0, 
+            Unknown = 0,
             Source  = 1, 'src'
             NetList = 2, 'nl'
             def __new__(cls, int_value, *value_aliases):
