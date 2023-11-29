@@ -285,6 +285,11 @@ pdb
   identified and executed.
   (Contributed by Tian Gao in :gh:`108464`.)
 
+* ``sys.path[0]`` will no longer be replaced by the directory of the script
+  being debugged when ``sys.flags.safe_path`` is set (via the :option:`-P`
+  command line option or :envvar:`PYTHONSAFEPATH` environment variable).
+  (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
+
 sqlite3
 -------
 
@@ -301,12 +306,23 @@ tkinter
   :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
   (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
 
+* Add support of the "vsapi" element type in
+  the :meth:`~tkinter.ttk.Style.element_create` method of
+  :class:`tkinter.ttk.Style`.
+  (Contributed by Serhiy Storchaka in :gh:`68166`.)
+
 traceback
 ---------
 
 * Add *show_group* parameter to :func:`traceback.TracebackException.format_exception_only`
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
+
+* Add the field *exc_type_str* to :class:`~traceback.TracebackException`, which
+  holds a string display of the *exc_type*. Deprecate the field *exc_type*
+  which holds the type object itself. Add parameter *save_exc_type* (default
+  ``True``) to indicate whether ``exc_type`` should be saved.
+  (Contributed by Irit Katriel in :gh:`112332`.)
 
 typing
 ------
@@ -366,6 +382,11 @@ Deprecated
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`traceback`:
+
+  * The field *exc_type* of :class:`traceback.TracebackException` is
+    deprecated. Use *exc_type_str* instead.
 
 * :mod:`typing`:
 
@@ -1031,6 +1052,10 @@ Changes in the Python API
   You can consider to replace these functions with other functions as
   recomended in the documentation.
   (Contributed by Serhiy Storchaka in :gh:`106672`.)
+
+* An :exc:`OSError` is now raised by :func:`getpass.getuser` for any failure to
+  retrieve a username, instead of :exc:`ImportError` on non-Unix platforms or
+  :exc:`KeyError` on Unix platforms where the password database is empty.
 
 
 Build Changes
