@@ -2357,7 +2357,7 @@ dummy_func(
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
-            if (executor->execute == _PyUopExecute) {
+            if (executor->execute == _PyUOpExecute) {
                 current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
