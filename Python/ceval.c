@@ -647,7 +647,7 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
 
 extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 
-extern const char *_PyUopName(int index);
+extern const char *_PyUOpName(int index);
 
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
@@ -1002,7 +1002,7 @@ enter_tier_two:
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
                 (int)(next_uop - current_executor->trace),
-                _PyUopName(uopcode),
+                _PyUOpName(uopcode),
                 next_uop->oparg,
                 next_uop->operand,
                 next_uop->target,
@@ -1051,8 +1051,8 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
-            uopcode, _PyUopName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
+    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
             (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
@@ -1064,8 +1064,8 @@ error_tier_two:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-    DPRINTF(2, "DEOPT: [Uop %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
-            uopcode, _PyUopName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
+    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
             (int)(next_uop - current_executor->trace - 1));
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
