@@ -62,7 +62,6 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-
 .. PEP-sized items next.
 
 Important deprecations, removals or restrictions:
@@ -124,6 +123,11 @@ Other Language Changes
   determines whether or not frozen modules are ignored by the import machinery,
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
+
+* The :func:`ssl.create_default_context` API now includes
+  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
+  in its default flags.
+  (Contributed by William Woodruff in :gh:`112389`.)
 
 New Modules
 ===========
