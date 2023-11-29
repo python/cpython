@@ -2239,7 +2239,7 @@ convert_pseudo_ops(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
-                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
+                assert(OPCODE_HAS_ARG(instr->i_opcode) || instr->i_opcode == POP_BLOCK);
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
