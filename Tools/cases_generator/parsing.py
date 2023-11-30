@@ -138,8 +138,8 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
-    flags: list[str] | None # instr flags to set on the pseudo instruction
-    targets: list[str]      # opcodes this can be replaced by
+    flags: list[str] | None  # instr flags to set on the pseudo instruction
+    targets: list[str]       # opcodes this can be replaced by
 
 
 class Parser(PLexer):
