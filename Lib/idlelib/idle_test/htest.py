@@ -152,7 +152,7 @@ _editor_window_spec = {
            "Best to close editor first."
     }
 
-GetKeysDialog_spec = {
+GetKeysWindow_spec = {
     'file': 'config_key',
     'kwds': {'title': 'Test keybindings',
              'action': 'find-again',
