@@ -26,9 +26,12 @@ interface.
    key; it defaults to :kbd:`Tab`. If *completekey* is not :const:`None` and
    :mod:`readline` is available, command completion is done automatically.
 
-   The string ``'tab'`` is treated specially: If the :mod:`readline` module
-   detects ``libedit``, it will be handled as ``'^I'`` for ``libedit``.
-
+   The default, ``'tab'``, is treated specially, so that it refers to the
+   :kbd:`Tab` key on every :data:`readline.backend`.
+   Specifically, if :data:`readline.backend` is ``libedit``,
+   ``Cmd`` will use ``'^I'`` instead of ``'tab'``.
+   Note that other values are not treated this way, and might only work
+   with a specific backend.
    The optional arguments *stdin* and *stdout* specify the  input and output file
    objects that the Cmd instance or subclass  instance will use for input and
    output. If not specified, they will default to :data:`sys.stdin` and
