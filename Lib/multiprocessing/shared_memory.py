@@ -73,7 +73,7 @@ class SharedMemory:
     _prepend_leading_slash = True if _USE_POSIX else False
     _track = True
 
-    def __init__(self, name=None, create=False, size=0, track=True):
+    def __init__(self, name=None, create=False, size=0, *, track=True):
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
         if create:
@@ -238,9 +238,15 @@ class SharedMemory:
     def unlink(self):
         """Requests that the underlying shared memory block be destroyed.
 
-        In order to ensure proper cleanup of resources, unlink should be
-        called once (and only once) across all processes which have access
-        to the shared memory block."""
+        Unlink should be called once (and only once) across all handles
+        which have access to the shared memory block, even if these
+        handles belong to different processes. Closing and unlinking may
+        happen in any order, but trying to access data inside a shared
+        memory block after unlinking may result in memory errors,
+        depending on platform.
+
+        This method has no effect on Windows, where the only way to
+        delete a shared memory block is to close all handles."""
 
         if _USE_POSIX and self._name:
             _posixshmem.shm_unlink(self._name)

@@ -4453,19 +4453,19 @@ class _TestSharedMemory(BaseTestCase):
             mem.close()
         '''
         mem = shared_memory.SharedMemory(create=True, size=10)
-        rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
         # The resource tracker shares pipes with the subprocess, and so
         # err existing means that the tracker process has terminated now.
         try:
+            rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
             self.assertEqual(rc, 0)
             mem2 = shared_memory.SharedMemory(create=False, name=mem.name)
             mem2.close()
         finally:
-            mem.close()
             try:
                 mem.unlink()
             except OSError:
                 pass
+            mem.close()
         cmd = '''if 1:
             import sys
             from multiprocessing.shared_memory import SharedMemory
@@ -4473,19 +4473,19 @@ class _TestSharedMemory(BaseTestCase):
             mem.close()
         '''
         mem = shared_memory.SharedMemory(create=True, size=10)
-        rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
         try:
+            rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
             self.assertEqual(rc, 0)
             self.assertIn(
                 b"resource_tracker: There appear to be 1 leaked "
                 b"shared_memory objects to clean up at shutdown", err)
         finally:
-            resource_tracker.unregister(mem._name, "shared_memory")
-            mem.close()
             try:
                 mem.unlink()
             except OSError:
                 pass
+            resource_tracker.unregister(mem._name, "shared_memory")
+            mem.close()
 
 #
 # Test to verify that `Finalize` works.

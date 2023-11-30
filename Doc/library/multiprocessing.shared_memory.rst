@@ -36,7 +36,7 @@ or other communications requiring the serialization/deserialization and
 copying of data.
 
 
-.. class:: SharedMemory(name=None, create=False, size=0, track=True)
+.. class:: SharedMemory(name=None, create=False, size=0, *, track=True)
 
    Creates a new shared memory block or attaches to an existing shared
    memory block.  Each shared memory block is assigned a unique name.
