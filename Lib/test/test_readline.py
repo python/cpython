@@ -145,6 +145,9 @@ class TestReadline(unittest.TestCase):
                                               TERM='xterm-256color')
         self.assertEqual(stdout, b'')
 
+    def test_backend(self):
+        self.assertIn(readline.backend, ("readline", "editline"))
+
     auto_history_script = """\
 import readline
 readline.set_auto_history({})
