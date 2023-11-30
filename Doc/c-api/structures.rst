@@ -399,6 +399,23 @@ definition with the same method name.
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
+.. c:function:: PyObject * PyCFunction_New(PyMethodDef *ml, PyObject *self)
+
+   Turn ``ml`` into a Python callable object.  The ``self`` parameter will be
+   passed as ``self`` parameter to the C function in ``ml->ml_meth`` when
+   invoked, can be ``NULL``.
+
+.. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
+
+   Same as :c:func:``PyCFunction_New``, but also allows setting the function
+   object's ``__module__`` attribute.  ``module`` can be anything.
+
+.. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
+
+   Same as :c:func:``PyCFuntion_NewEx``, but accept a ``cls`` parameter, which
+   will be passed as ``defining_class`` parameter to the C function.  Must be
+   set if :ref:`METH_METHOD` is set in ``ml->ml_flags``.
+
 
 Accessing attributes of extension types
 ---------------------------------------
