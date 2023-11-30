@@ -243,7 +243,7 @@ class WorkerThread(threading.Thread):
 
             json_fd = json_tmpfile.fileno()
             if MS_WINDOWS:
-                # module is only available on Windows;
+                # The msvcrt module is only available on Windows;
                 # we run mypy with `--platform=linux` in CI
                 json_handle: int = msvcrt.get_osfhandle(json_fd)  # type: ignore[attr-defined]
                 json_file = JsonFile(json_handle,
