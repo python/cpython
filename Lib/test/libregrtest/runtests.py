@@ -33,7 +33,8 @@ class JsonFile:
                 popen_kwargs['pass_fds'] = [self.file]
             case JsonFileType.WINDOWS_HANDLE:
                 # Windows handle
-                startupinfo = subprocess.STARTUPINFO()
+                # We run mypy with `--platform=linux` so it complains about this:
+                startupinfo = subprocess.STARTUPINFO()  # type: ignore[attr-defined]
                 startupinfo.lpAttributeList = {"handle_list": [self.file]}
                 popen_kwargs['startupinfo'] = startupinfo
 
