@@ -5,8 +5,12 @@
 Interpreters
 ============
 
-Interpreter ID API
-------------------
+Interpreter ID Objects
+----------------------
+
+A interpreter ID identifies a interpreter and may be used as an int.
+
+.. versionadded:: 3.12
 
 .. c:var:: PyTypeObject PyInterpreterID_Type
 
