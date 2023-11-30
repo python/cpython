@@ -39,6 +39,16 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
+// Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
+// PyThreadState fields are exposed as part of the C API, although most fields
+// are intended to be private. The _PyThreadStateImpl fields not exposed.
+typedef struct _PyThreadStateImpl {
+    // semi-public fields are in PyThreadState.
+    PyThreadState base;
+
+    // TODO: add private fields here
+} _PyThreadStateImpl;
+
 
 /* cross-interpreter data registry */
 
@@ -210,8 +220,8 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-   /* the initial PyInterpreterState.threads.head */
-    PyThreadState _initial_thread;
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
     Py_ssize_t _interactive_src_count;
 };
 

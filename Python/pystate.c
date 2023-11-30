@@ -1353,20 +1353,20 @@ allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
     return res;
 }
 
-static PyThreadState *
+static _PyThreadStateImpl *
 alloc_threadstate(void)
 {
-    return PyMem_RawCalloc(1, sizeof(PyThreadState));
+    return PyMem_RawCalloc(1, sizeof(_PyThreadStateImpl));
 }
 
 static void
-free_threadstate(PyThreadState *tstate)
+free_threadstate(_PyThreadStateImpl *tstate)
 {
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
-    if (tstate == &tstate->interp->_initial_thread) {
+    if (tstate == &tstate->base.interp->_initial_thread) {
         // Restore to _PyThreadState_INIT.
-        tstate = &tstate->interp->_initial_thread;
+        tstate = &tstate->base.interp->_initial_thread;
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
@@ -1444,13 +1444,13 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int whence)
 {
-    PyThreadState *tstate;
+    _PyThreadStateImpl *tstate;
     _PyRuntimeState *runtime = interp->runtime;
     // We don't need to allocate a thread state for the main interpreter
     // (the common case), but doing it later for the other case revealed a
     // reentrancy problem (deadlock).  So for now we always allocate before
     // taking the interpreters lock.  See GH-96071.
-    PyThreadState *new_tstate = alloc_threadstate();
+    _PyThreadStateImpl *new_tstate = alloc_threadstate();
     int used_newtstate;
     if (new_tstate == NULL) {
         return NULL;
@@ -1481,15 +1481,15 @@ new_threadstate(PyInterpreterState *interp, int whence)
                sizeof(*tstate));
     }
 
-    init_threadstate(tstate, interp, id, whence);
-    add_threadstate(interp, tstate, old_head);
+    init_threadstate(&tstate->base, interp, id, whence);
+    add_threadstate(interp, &tstate->base, old_head);
 
     HEAD_UNLOCK(runtime);
     if (!used_newtstate) {
         // Must be called with lock unlocked to avoid re-entrancy deadlock.
         PyMem_RawFree(new_tstate);
     }
-    return tstate;
+    return (PyThreadState *)tstate;
 }
 
 PyThreadState *
@@ -1678,7 +1678,7 @@ zapthreads(PyInterpreterState *interp)
     while ((tstate = interp->threads.head) != NULL) {
         tstate_verify_not_active(tstate);
         tstate_delete_common(tstate);
-        free_threadstate(tstate);
+        free_threadstate((_PyThreadStateImpl *)tstate);
     }
 }
 
@@ -1689,7 +1689,7 @@ PyThreadState_Delete(PyThreadState *tstate)
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
     tstate_delete_common(tstate);
-    free_threadstate(tstate);
+    free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
 
@@ -1701,7 +1701,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
     _PyEval_ReleaseLock(tstate->interp, NULL);
-    free_threadstate(tstate);
+    free_threadstate((_PyThreadStateImpl *)tstate);
 }
 
 void
@@ -1751,7 +1751,7 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     for (p = list; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
-        free_threadstate(p);
+        free_threadstate((_PyThreadStateImpl *)p);
     }
 }
 
