@@ -51,6 +51,8 @@ The following functions are provided:
    invariant.  If the heap is empty, :exc:`IndexError` is raised.  To access the
    smallest item without popping it, use ``heap[0]``.
 
+   This is equivalent to performing ``heapremove(heap, 0)``.
+
 
 .. function:: heappushpop(heap, item)
 
@@ -80,17 +82,18 @@ The following functions are provided:
    on the heap.
 
 
-.. function:: heapremove(heap, index, item=None):
+.. function:: heapremove(heap, index):
 
-   Remove the item at ``heap[index]``, optionally replacing it with *item*,
-   while maintaining the heap invariant.
+   Remove the item at ``heap[index]`` while maintaining the heap invariant.
 
-   This is more efficient than performing ``del heap[index]`` followed
-   by :func:`heapify`.
+   Returns the removed item.
+   
+   .. versionadded:: 3.13
 
-   In case an items *value* has changed and its index is known, this
-   function can be used to restore the heap invariant:
-   ``heapremove(heap, item_index, item)``
+
+.. function:: heapfix(heap, index):
+
+   Restore the heap invariant after the object at ``heap[index]`` has been modified.
 
    .. versionadded:: 3.13
 
