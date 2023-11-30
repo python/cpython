@@ -407,12 +407,12 @@ definition with the same method name.
 
 .. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 
-   Same as :c:func:``PyCFunction_New``, but also allows setting the function
+   Same as :c:func:`PyCFunction_New`, but also allows setting the function
    object's ``__module__`` attribute.  ``module`` can be anything.
 
 .. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
 
-   Same as :c:func:``PyCFuntion_NewEx``, but accept a ``cls`` parameter, which
+   Same as :c:func:`PyCFuntion_NewEx`, but accept a ``cls`` parameter, which
    will be passed as ``defining_class`` parameter to the C function.  Must be
    set if :ref:`METH_METHOD` is set in ``ml->ml_flags``.
 
