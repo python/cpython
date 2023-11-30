@@ -110,13 +110,13 @@ class Cmd:
                 readline.set_completer(self.complete)
                 if 'libedit' in getattr(readline, '__doc__', ''):
                     if self.completekey == 'tab':
-                        # libedit expects "^I" for tab completion instead of "tab"
-                        readline.parse_and_bind("bind ^I rl_complete")
+                        # libedit uses "^I" instead of "tab"
+                        command_string = "bind ^I rl_complete"
                     else:
-                        readline.parse_and_bind("bind "+self.completekey+" rl_complete")
+                        command_string = f"bind {self.completekey} rl_complete"
                 else:
-                    readline.parse_and_bind(self.completekey+": complete")
-
+                    command_string = f"{self.completekey}: complete"
+                readline.parse_and_bind(command_string)
             except ImportError:
                 pass
         try:
