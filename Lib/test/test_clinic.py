@@ -638,7 +638,7 @@ class ClinicWholeFileTest(TestCase):
             C.__init__ = C.meth
             [clinic start generated code]*/
         """
-        err = "'__init__' must be a normal method, not a class or static method"
+        err = "'__init__' must be a normal method; got 'FunctionKind.CLASS_METHOD'!"
         self.expect_failure(block, err, lineno=8)
 
     def test_validate_cloned_new(self):
@@ -2180,14 +2180,22 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
-        err = "'__init__' must be a normal method, not a class or static method!"
-        block = """
-            module foo
-            class Foo "" ""
-            @classmethod
-            Foo.__init__
-        """
-        self.expect_failure(block, err, lineno=3)
+        err_template = "'__init__' must be a normal method; got 'FunctionKind.{}'!"
+        annotations = {
+            "@classmethod": "CLASS_METHOD",
+            "@staticmethod": "STATIC_METHOD",
+            "@getter": "GETTER",
+        }
+        for annotation, invalid_kind in annotations.items():
+            with self.subTest(annotation=annotation, invalid_kind=invalid_kind):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.__init__
+                """
+                expected_error = err_template.format(invalid_kind)
+                self.expect_failure(block, expected_error, lineno=3)
 
     def test_duplicate_coexist(self):
         err = "Called @coexist twice"

@@ -4951,6 +4951,27 @@ static PyObject *
 Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
 
+/*[clinic input]
+@getter
+Test.property
+[clinic start generated code]*/
+
+#define TEST_PROPERTY_GETTERDEF    \
+    {"property", (getter)Test_property_get, NULL, NULL},
+
+static PyObject *
+Test_property_get_impl(TestObj *self);
+
+static PyObject *
+Test_property_get(TestObj *self, void *Py_UNUSED(context))
+{
+    return Test_property_get_impl(self);
+}
+
+static PyObject *
+Test_property_get_impl(TestObj *self)
+/*[clinic end generated code: output=892b6fb351ff85fd input=2d92b3449fbc7d2b]*/
+
 
 /*[clinic input]
 output push
