@@ -1,0 +1,1 @@
+Stopped erroneously deleting a ``LOAD_NULL`` bytecode instruction when optimized twice.
