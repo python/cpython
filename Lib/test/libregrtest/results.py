@@ -34,7 +34,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[str] = []
+        self.testsuite_xml: list = []
         # used by -T with -j
         self.covered_lines: set[Location] = set()
 
