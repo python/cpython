@@ -23,8 +23,8 @@
     #include <sys/mman.h>
 #endif
 
-#define MB (1 << 20)
-#define JIT_POOL_SIZE  (128 * MB)
+// #define MB (1 << 20)
+// #define JIT_POOL_SIZE  (128 * MB)
 
 // This next line looks crazy, but it's actually not *that* bad. Yes, we're
 // statically allocating a huge empty array in our executable, and mapping
@@ -39,9 +39,12 @@
 // much trouble). The OS lazily allocates pages for this array anyways (and it's
 // BSS data that's not included in the interpreter executable itself), so it's
 // not like we're *actually* making the executable huge at runtime (or on disk):
-static unsigned char pool[JIT_POOL_SIZE];
-static size_t pool_head;
+// static unsigned char pool[JIT_POOL_SIZE];
+// static size_t pool_head;
 static size_t page_size;
+static size_t memory_used;
+static size_t memory_reported = 1;
+static unsigned char dummy;
 
 static int needs_initializing = 1;
 
@@ -54,27 +57,44 @@ is_page_aligned(void *p)
 static unsigned char *
 alloc(size_t pages)
 {
+    if (pages == 0) {
+        return &dummy;
+    }
     size_t size = pages * page_size;
-    if (JIT_POOL_SIZE - page_size < pool_head + size) {
-        PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
-        needs_initializing = -1;
+    unsigned char *memory;
+#ifdef MS_WINDOWS
+    memory = VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    if (memory == NULL) {
+        const char *w = "JIT unable to allocate memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, GetLastError());
         return NULL;
     }
-    unsigned char *memory = pool + pool_head;
-    pool_head += size;
-    assert(is_page_aligned(pool + pool_head));
+#else
+    memory = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if (memory == MAP_FAILED) {
+        const char *w = "JIT unable to allocate memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
+        return NULL;
+    }
+#endif
     assert(is_page_aligned(memory));
+    memory_used += size;
+    if ((memory_used >> 20) > memory_reported) {
+        memory_reported = memory_used >> 20;
+        printf("\nJIT: %zu MB\n\n", memory_reported);
+    }
     return memory;
 }
 
 static int
 mark_executable(unsigned char *memory, size_t pages)
 {
-    assert(is_page_aligned(memory));
     size_t size = pages * page_size;
     if (size == 0) {
+        assert(memory == &dummy);
         return 0;
     }
+    assert(is_page_aligned(memory));
 #ifdef MS_WINDOWS
     if (!FlushInstructionCache(GetCurrentProcess(), memory, size)) {
         const char *w = "JIT unable to flush instruction cache (%d)";
@@ -104,11 +124,12 @@ mark_executable(unsigned char *memory, size_t pages)
 static int
 mark_readable(unsigned char *memory, size_t pages)
 {
-    assert(is_page_aligned(memory));
     size_t size = pages * page_size;
     if (size == 0) {
+        assert(memory == &dummy);
         return 0;
     }
+    assert(is_page_aligned(memory));
 #ifdef MS_WINDOWS
     DWORD old;
     if (!VirtualProtect(memory, size, PAGE_READONLY, &old)) {
@@ -134,8 +155,23 @@ size_to_pages(size_t size)
     return (size + page_size - 1) / page_size;
 }
 
+static unsigned char *emit_trampoline(uintptr_t where, unsigned char **trampolines);
+
+static bool
+fits_in_signed_bits(uint64_t value, int bits)
+{
+    int64_t v = (int64_t)value;
+    return (v >= -(1LL << (bits - 1))) && (v < (1LL << (bits - 1)));
+}
+
+static size_t
+potential_trampoline_size(const StencilGroup *stencil_group)
+{
+    return stencil_group->text.holes_size * trampoline_stencil_group.text.body_size;
+}
+
 static void
-patch(unsigned char *base, const Hole *hole, uint64_t *patches)
+patch(unsigned char *base, const Hole *hole, uint64_t *patches, unsigned char **trampolines)
 {
     unsigned char *location = base + hole->offset;
     uint64_t value = patches[hole->value] + hole->addend;
@@ -146,12 +182,16 @@ patch(unsigned char *base, const Hole *hole, uint64_t *patches)
             return;
         case HoleKind_IMAGE_REL_AMD64_REL32:
         case HoleKind_IMAGE_REL_I386_REL32:
-        case HoleKind_R_X86_64_PC32:
+        case HoleKind_R_X86_64_PC32:  // XXX
         case HoleKind_R_X86_64_PLT32:
         case HoleKind_X86_64_RELOC_BRANCH:
         case HoleKind_X86_64_RELOC_GOT:
         case HoleKind_X86_64_RELOC_GOT_LOAD:
+            if (!fits_in_signed_bits(value - (uintptr_t)location, 32)) {
+                value = (uintptr_t)emit_trampoline(value + 4, trampolines) - 4;  // XXX
+            }
             value -= (uintptr_t)location;
+            assert(fits_in_signed_bits(value, 32));
             *addr = (uint32_t)value;
             return;
         case HoleKind_ARM64_RELOC_UNSIGNED:
@@ -171,10 +211,14 @@ patch(unsigned char *base, const Hole *hole, uint64_t *patches)
             return;
         case HoleKind_R_AARCH64_CALL26:
         case HoleKind_R_AARCH64_JUMP26:
+            if (!fits_in_signed_bits(value - (uintptr_t)location, 28)) {
+                value = (uintptr_t)emit_trampoline(value, trampolines);
+            }
             value -= (uintptr_t)location;
             assert(((*addr & 0xFC000000) == 0x14000000) ||
                    ((*addr & 0xFC000000) == 0x94000000));
             assert((value & 0x3) == 0);
+            assert(fits_in_signed_bits(value, 28));
             *addr = (*addr & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
             return;
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
@@ -212,21 +256,37 @@ patch(unsigned char *base, const Hole *hole, uint64_t *patches)
 }
 
 static void
-copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
+copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches, unsigned char **trampolines)
 {
     memcpy(base, stencil->body, stencil->body_size);
     for (size_t i = 0; i < stencil->holes_size; i++) {
-        patch(base, &stencil->holes[i], patches);
+        patch(base, &stencil->holes[i], patches, trampolines);
     }
 }
 
 static void
-emit(const StencilGroup *stencil_group, uint64_t patches[])
+emit(const StencilGroup *stencil_group, uint64_t patches[], unsigned char **trampolines)
 {
     unsigned char *data = (unsigned char *)(uintptr_t)patches[HoleValue_DATA];
-    copy_and_patch(data, &stencil_group->data, patches);
+    copy_and_patch(data, &stencil_group->data, patches, trampolines);
     unsigned char *text = (unsigned char *)(uintptr_t)patches[HoleValue_TEXT];
-    copy_and_patch(text, &stencil_group->text, patches);
+    copy_and_patch(text, &stencil_group->text, patches, trampolines);
+}
+
+static unsigned char *
+emit_trampoline(uintptr_t where, unsigned char **trampolines)
+{
+    assert(trampolines && *trampolines);
+    const StencilGroup *stencil_group = &trampoline_stencil_group;
+    assert(stencil_group->data.body_size == 0);
+    uint64_t patches[] = GET_PATCHES();
+    patches[HoleValue_CONTINUE] = where;
+    patches[HoleValue_TEXT] = (uintptr_t)*trampolines;
+    patches[HoleValue_ZERO] = 0;
+    emit(stencil_group, patches, NULL);
+    unsigned char *trampoline = *trampolines;
+    *trampolines += stencil_group->text.body_size;
+    return trampoline;
 }
 
 static int
@@ -247,22 +307,22 @@ initialize_jit(void)
 #endif
     assert(page_size);
     assert((page_size & (page_size - 1)) == 0);
-    // Adjust the pool_head to the next page boundary:
-    pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
-    assert(is_page_aligned(pool + pool_head));
-    // macOS requires mapping memory before mprotecting it, so map memory fixed
-    // at our pool's valid address range:
-#ifdef __APPLE__
-    void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head - page_size,
-                        PROT_READ | PROT_WRITE,
-                        MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
-    if (mapped == MAP_FAILED) {
-        const char *w = "JIT unable to map fixed memory (%d)";
-        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
-        return needs_initializing;
-    }
-    assert(mapped == pool + pool_head);
-#endif
+//     // Adjust the pool_head to the next page boundary:
+//     pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
+//     assert(is_page_aligned(pool + pool_head));
+//     // macOS requires mapping memory before mprotecting it, so map memory fixed
+//     // at our pool's valid address range:
+// #ifdef __APPLE__
+//     void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head - page_size,
+//                         PROT_READ | PROT_WRITE,
+//                         MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
+//     if (mapped == MAP_FAILED) {
+//         const char *w = "JIT unable to map fixed memory (%d)";
+//         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
+//         return needs_initializing;
+//     }
+//     assert(mapped == pool + pool_head);
+// #endif
     // Done:
     needs_initializing = 0;
     return needs_initializing;
@@ -276,16 +336,18 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         return NULL;
     }
     // First, loop over everything once to find the total compiled size:
+    size_t trampoline_size = potential_trampoline_size(&wrapper_stencil_group);
     size_t text_size = wrapper_stencil_group.text.body_size;
     size_t data_size = wrapper_stencil_group.data.body_size;
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
+        trampoline_size += potential_trampoline_size(stencil_group);
         text_size += stencil_group->text.body_size;
         data_size += stencil_group->data.body_size;
         assert(stencil_group->text.body_size);
     };
-    size_t text_pages = size_to_pages(text_size);
+    size_t text_pages = size_to_pages(text_size + trampoline_size);
     unsigned char *text = alloc(text_pages);
     if (text == NULL) {
         return NULL;
@@ -295,6 +357,7 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     if (data == NULL) {
         return NULL;
     }
+    unsigned char *head_trampolines = text + text_size;
     unsigned char *head_text = text;
     unsigned char *head_data = data;
     // First, the wrapper:
@@ -304,7 +367,7 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     patches[HoleValue_DATA] = (uintptr_t)head_data;
     patches[HoleValue_TEXT] = (uintptr_t)head_text;
     patches[HoleValue_ZERO] = 0;
-    emit(stencil_group, patches);
+    emit(stencil_group, patches, &head_trampolines);
     head_text += stencil_group->text.body_size;
     head_data += stencil_group->data.body_size;
     // Then, all of the stencils:
@@ -321,7 +384,7 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         patches[HoleValue_TEXT] = (uintptr_t)head_text;
         patches[HoleValue_TOP] = (uintptr_t)text + wrapper_stencil_group.text.body_size;
         patches[HoleValue_ZERO] = 0;
-        emit(stencil_group, patches);
+        emit(stencil_group, patches, &head_trampolines);
         head_text += stencil_group->text.body_size;
         head_data += stencil_group->data.body_size;
     };

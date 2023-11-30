@@ -6,7 +6,7 @@
 _PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
 
 _PyInterpreterFrame *
-_JIT_WRAPPER(_PyUOpExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+_JIT_ENTRY(_PyUOpExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     frame = _JIT_CONTINUE(frame, stack_pointer, PyThreadState_Get());
     Py_DECREF(executor);

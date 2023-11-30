@@ -33,7 +33,7 @@ PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-STUBS = ["wrapper"]
+STUBS = ["trampoline", "wrapper"]
 
 LLVM_VERSION = 16
 
@@ -188,10 +188,7 @@ class Parser(typing.Generic[S, R]):
         for wrapped_section in sections:
             section = wrapped_section["Section"]
             self._handle_section(section)
-        if "_JIT_ENTRY" in self.text_symbols:
-            entry = self.text_symbols["_JIT_ENTRY"]
-        else:
-            entry = self.text_symbols["_JIT_WRAPPER"]
+        entry = self.text_symbols["_JIT_ENTRY"]
         assert entry == 0, entry
         holes = []
         holes_data = []
@@ -629,8 +626,7 @@ def get_target(host: str) -> Target:
 
 CFLAGS = [
     "-O3",
-    # Keep library calls from sneaking in:
-    "-ffreestanding",  # XXX
+    "-fno-asynchronous-unwind-tables",
     # Position-independent code adds indirection to every load and jump:
     "-fno-pic",
     "-fno-jump-tables",  # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds

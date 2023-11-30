@@ -16,7 +16,6 @@
             PyObject *exit;
             PyObject *res;
             mgr = stack_pointer[-1];
-            TIER_ONE_ONLY // XXX: Need trampoline for memcpy!
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -60,7 +59,6 @@
             PyObject *exit;
             PyObject *res;
             mgr = stack_pointer[-1];
-            TIER_ONE_ONLY // XXX: Need trampoline for memcpy!
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
              */
