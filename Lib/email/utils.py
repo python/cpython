@@ -104,8 +104,8 @@ def formataddr(pair, charset='utf-8'):
     return address
 
 
-def _strip_quoted_realname(addr):
-    """Remove real name between quotes."""
+def _strip_quoted_realnames(addr):
+    """Strip real names between quotes."""
     if '"' not in addr:
         # Fast path
         return addr
@@ -113,13 +113,18 @@ def _strip_quoted_realname(addr):
     pos = 0
     start = None
     remove = []
+    previous = None
     while pos < len(addr):
-        if addr[pos] == '"':
+        ch = addr[pos]
+        if ch == '"' and previous != '\\':
             if start is None:
                 start = pos
             else:
                 remove.append((start, pos))
                 start = None
+        elif ch == '\\' and previous == '\\':
+            previous = None
+        previous = ch
         pos += 1
 
     result = []
@@ -165,8 +170,8 @@ def getaddresses(fieldvalues, *, strict=True):
     n = 0
     for v in fieldvalues:
         # When a comma is used in the Real Name part it is not a deliminator.
-        # So strip those out before counting the commas
-        v = _strip_quoted_realname(v)
+        # So strip those out before counting the commas.
+        v = _strip_quoted_realnames(v)
         # Expected number of addresses: 1 + number of commas
         n += 1 + v.count(',')
     if len(result) != n:

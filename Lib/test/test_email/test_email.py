@@ -3366,12 +3366,30 @@ Foo
         self.assertEqual(utils.parseaddr([address], strict=False),
                          ('', address))
 
-        # Comma with quotes.
+        # Real name between quotes containing comma.
         address = '"Alice, alice@example.org" <bob@example.com>'
         expected_strict = ('Alice, alice@example.org', 'bob@example.com')
         self.assertEqual(utils.getaddresses([address]), [expected_strict])
         self.assertEqual(utils.getaddresses([address], strict=False), [expected_strict])
         self.assertEqual(utils.parseaddr([address]), expected_strict)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Valid parenthesis in comments.
+        address = 'alice@example.org (Alice)'
+        expected_strict = ('Alice', 'alice@example.org')
+        self.assertEqual(utils.getaddresses([address]), [expected_strict])
+        self.assertEqual(utils.getaddresses([address], strict=False), [expected_strict])
+        self.assertEqual(utils.parseaddr([address]), expected_strict)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Invalid parenthesis in comments.
+        address = 'alice@example.org )Alice('
+        self.assertEqual(utils.getaddresses([address]), [empty])
+        self.assertEqual(utils.getaddresses([address], strict=False),
+                         [('', 'alice@example.org'), ('', ''), ('', 'Alice')])
+        self.assertEqual(utils.parseaddr([address]), empty)
         self.assertEqual(utils.parseaddr([address], strict=False),
                          ('', address))
 
@@ -3619,6 +3637,17 @@ multipart/report
             with self.subTest(cls=cls.__name__, policy='default'):
                 m = cls(*constructor, policy=email.policy.default)
                 self.assertIs(m.policy, email.policy.default)
+
+    def test_strip_quoted_realnames(self):
+        def check(addr, expected):
+            self.assertEqual(utils._strip_quoted_realnames(addr), expected)
+
+        check('Jane Doe <jane@example.net>, John Doe <john@example.net>',
+              'Jane Doe <jane@example.net>, John Doe <john@example.net>')
+        check('"Jane Doe" <jane@example.net>, "John Doe" <john@example.net>',
+              ' <jane@example.net>,  <john@example.net>')
+        check(r'"Jane \"Doe"." <jane@example.net>',
+              ' <jane@example.net>')
 
 
 # Test the iterator/generators
