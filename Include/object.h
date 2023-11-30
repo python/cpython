@@ -261,6 +261,8 @@ _Py_ThreadId(void)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
 #elif defined(__aarch64__)
     __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
+#elif define(HAVE_BUILTIN_THREAD_POINTER)
+    tid = (uintptr_t)__builtin_thread_pointer();
 #else
   # error "define _Py_ThreadId for this platform"
 #endif

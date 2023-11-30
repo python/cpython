@@ -127,6 +127,9 @@
 /* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
+/* Has builtin __builtin_thread_pointer */
+#undef HAVE_BUILTIN_THREAD_POINTER
+
 /* Define to 1 if you have the <bzlib.h> header file. */
 #undef HAVE_BZLIB_H
 

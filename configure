@@ -16866,6 +16866,47 @@ printf "%s\n" "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
 
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for builtin __builtin_thread_pointer" >&5
+printf %s "checking for builtin __builtin_thread_pointer... " >&6; }
+if test ${ac_cv_builtin_thread_pointer+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    void *tp;
+    int main() {
+      tp = __builtin_thread_pointer();
+      return 0;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_builtin_thread_pointer=yes
+else $as_nop
+  ac_cv_builtin_thread_pointer=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_builtin_thread_pointer" >&5
+printf "%s\n" "$ac_cv_builtin_thread_pointer" >&6; }
+
+if test "x$ac_cv_builtin_thread_pointer" = xyes
+then :
+
+
+printf "%s\n" "#define HAVE_BUILTIN_THREAD_POINTER 1" >>confdefs.h
+
+
+fi
+
 # --with-mimalloc
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
 printf %s "checking for --with-mimalloc... " >&6; }

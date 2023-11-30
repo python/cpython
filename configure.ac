@@ -4541,6 +4541,23 @@ AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
     AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 ])
 
+AC_CACHE_CHECK([for builtin __builtin_thread_pointer], [ac_cv_builtin_thread_pointer], [
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    void *tp;
+    int main() {
+      tp = __builtin_thread_pointer();
+      return 0;
+    }
+  ]])
+],[ac_cv_builtin_thread_pointer=yes],[ac_cv_builtin_thread_pointer=no])
+])
+
+AS_VAR_IF([ac_cv_builtin_thread_pointer], [yes], [
+    AC_DEFINE(HAVE_BUILTIN_THREAD_POINTER, 1, [Has builtin __builtin_thread_pointer])
+])
+
 # --with-mimalloc
 AC_MSG_CHECKING([for --with-mimalloc])
 AC_ARG_WITH([mimalloc],
