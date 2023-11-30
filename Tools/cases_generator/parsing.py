@@ -138,8 +138,8 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
-    flags: list[str] | None  # instr flags to set on the pseudo instruction
-    targets: list[str]       # opcodes this can be replaced by
+    flags: list[str]   # instr flags to set on the pseudo instruction
+    targets: list[str] # opcodes this can be replaced by
 
 
 class Parser(PLexer):
@@ -375,7 +375,7 @@ class Parser(PLexer):
                                     )
         return None
 
-    def flags(self) -> list[str] | None:
+    def flags(self) -> list[str]:
         here = self.getpos()
         if self.expect(lx.LPAREN):
             if tkn := self.expect(lx.IDENTIFIER):
@@ -389,7 +389,7 @@ class Parser(PLexer):
                     raise self.make_syntax_error("Expected comma or right paren")
                 return flags
         self.setpos(here)
-        return None
+        return []
 
     @contextual
     def pseudo_def(self) -> Pseudo | None:

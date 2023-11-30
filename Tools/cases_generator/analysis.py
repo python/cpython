@@ -394,7 +394,7 @@ class Analyzer:
                           "HAS_ESCAPES_FLAG"}
         assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
 
-        flags = InstructionFlags(**{f"{f}_FLAG" : True for f in (pseudo.flags or [])})
+        flags = InstructionFlags(**{f"{f}_FLAG" : True for f in pseudo.flags})
         for t in targets:
             flags.add(t.instr_flags)
         return PseudoInstruction(pseudo.name, targets, flags)
