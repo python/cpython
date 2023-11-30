@@ -1,0 +1,1 @@
+Relocate ``smtpd`` deprecation notice to its own section rather than under ``locale`` in What's New in Python 3.12 document

@@ -1640,7 +1640,10 @@ locale
   use :func:`locale.format_string` instead.
   (Contributed by Victor Stinner in :gh:`94226`.)
 
-* ``smtpd``: The module has been removed according to the schedule in :pep:`594`,
+smtpd
+-----
+
+* The ``smtpd`` module has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
   Use aiosmtpd_ PyPI module or any other
   :mod:`asyncio`-based server instead.
