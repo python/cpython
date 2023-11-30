@@ -104,28 +104,37 @@ def formataddr(pair, charset='utf-8'):
     return address
 
 
+def _iter_escaped_chars(addr):
+    pos = 0
+    escape = False
+    for pos, ch in enumerate(addr):
+        if ch == '\\' and not escape:
+            escape = True
+        else:
+            if escape:
+                yield (pos, '\\' + ch)
+            else:
+                yield (pos, ch)
+            escape = False
+    if escape:
+        yield (pos, '\\')
+
+
 def _strip_quoted_realnames(addr):
     """Strip real names between quotes."""
     if '"' not in addr:
         # Fast path
         return addr
 
-    pos = 0
     start = None
     remove = []
-    previous = None
-    while pos < len(addr):
-        ch = addr[pos]
-        if ch == '"' and previous != '\\':
+    for pos, ch in _iter_escaped_chars(addr):
+        if ch == '"':
             if start is None:
                 start = pos
             else:
                 remove.append((start, pos))
                 start = None
-        elif ch == '\\' and previous == '\\':
-            previous = None
-        previous = ch
-        pos += 1
 
     result = []
     pos = 0
@@ -180,11 +189,25 @@ def getaddresses(fieldvalues, *, strict=True):
     return result
 
 
+def _check_parenthesis(addr):
+    # Ignore parenthesis in quoted real names.
+    addr = _strip_quoted_realnames(addr)
+
+    opens = 0
+    for pos, ch in _iter_escaped_chars(addr):
+        if ch == '(':
+            opens += 1
+        elif ch == ')':
+            opens -= 1
+            if opens < 0:
+                return False
+    return (opens == 0)
+
+
 def _pre_parse_validation(email_header_fields):
     accepted_values = []
     for v in email_header_fields:
-        s = v.replace('\\(', '').replace('\\)', '')
-        if s.count('(') != s.count(')'):
+        if not _check_parenthesis(v):
             v = "('', '')"
         accepted_values.append(v)
 

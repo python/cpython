@@ -3638,6 +3638,19 @@ multipart/report
                 m = cls(*constructor, policy=email.policy.default)
                 self.assertIs(m.policy, email.policy.default)
 
+    def test_iter_escaped_chars(self):
+        self.assertEqual(list(utils._iter_escaped_chars(r'a\\b\"c\\"d')),
+                         [(0, 'a'),
+                          (2, '\\\\'),
+                          (3, 'b'),
+                          (5, '\\"'),
+                          (6, 'c'),
+                          (8, '\\\\'),
+                          (9, '"'),
+                          (10, 'd')])
+        self.assertEqual(list(utils._iter_escaped_chars('a\\')),
+                         [(0, 'a'), (1, '\\')])
+
     def test_strip_quoted_realnames(self):
         def check(addr, expected):
             self.assertEqual(utils._strip_quoted_realnames(addr), expected)
@@ -3646,8 +3659,18 @@ multipart/report
               'Jane Doe <jane@example.net>, John Doe <john@example.net>')
         check('"Jane Doe" <jane@example.net>, "John Doe" <john@example.net>',
               ' <jane@example.net>,  <john@example.net>')
-        check(r'"Jane \"Doe"." <jane@example.net>',
+        check(r'"Jane \"Doe\"." <jane@example.net>',
               ' <jane@example.net>')
+
+    def test_check_parenthesis(self):
+        addr = 'alice@example.net'
+        self.assertTrue(utils._check_parenthesis(f'{addr} (Alice)'))
+        self.assertFalse(utils._check_parenthesis(f'{addr} )Alice('))
+        self.assertFalse(utils._check_parenthesis(f'{addr} (Alice))'))
+        self.assertFalse(utils._check_parenthesis(f'{addr} ((Alice)'))
+
+        # Ignore real name between quotes
+        self.assertTrue(utils._check_parenthesis(f'")Alice((" {addr}'))
 
 
 # Test the iterator/generators
