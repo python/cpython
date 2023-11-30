@@ -163,7 +163,7 @@ heapremove_internal(PyObject *heap, Py_ssize_t index, int siftup_func(PyListObje
     }
     if (index == n-1)
         return lastelt;
-    
+
     returnitem = PyList_GET_ITEM(heap, index);
     PyList_SET_ITEM(heap, index, lastelt);
     if (index > 0){

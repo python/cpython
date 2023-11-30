@@ -87,7 +87,7 @@ The following functions are provided:
    Remove the item at ``heap[index]`` while maintaining the heap invariant.
 
    Returns the removed item.
-   
+
    .. versionadded:: 3.13
 
 

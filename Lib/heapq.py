@@ -136,7 +136,7 @@ def heappush(heap, item):
 
 def heappop(heap):
     """Pop the smallest item off the heap, maintaining the heap invariant.
-    
+
     This is equivalent to heapremove(heap, 0)
     """
     lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
@@ -172,7 +172,7 @@ def heappushpop(heap, item):
 
 def heapremove(heap, index, item=None):
     """Remove the element at the given index maintaining the heap invariant.
-    
+
     Returns the removed object.
     """
     if item is not None:
@@ -184,7 +184,7 @@ def heapremove(heap, index, item=None):
         heap[index] = lastelt
     except IndexError:  # if this was the last item
         return result
-    
+
     if index < 0:
         index += len(heap)
     if index > 0:
