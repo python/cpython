@@ -2831,15 +2831,15 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        pseudo(SETUP_FINALLY) = {
+        pseudo(SETUP_FINALLY, (HAS_ARG)) = {
             NOP,
         };
 
-        pseudo(SETUP_CLEANUP) = {
+        pseudo(SETUP_CLEANUP, (HAS_ARG)) = {
             NOP,
         };
 
-        pseudo(SETUP_WITH) = {
+        pseudo(SETUP_WITH, (HAS_ARG)) = {
             NOP,
         };
 
