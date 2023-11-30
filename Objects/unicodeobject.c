@@ -5869,6 +5869,23 @@ PyUnicode_AsUTF16String(PyObject *unicode)
     return _PyUnicode_EncodeUTF16(unicode, NULL, 0);
 }
 
+_PyUnicode_Name_CAPI *
+_PyUnicode_GetNameCAPI(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+
+    ucnhash_capi = _Py_atomic_load_ptr(&interp->unicode.ucnhash_capi);
+    if (ucnhash_capi == NULL) {
+        ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+                PyUnicodeData_CAPSULE_NAME, 1);
+
+        // It's fine if we overwite the value here. It's always the same value.
+        _Py_atomic_store_ptr(&interp->unicode.ucnhash_capi, ucnhash_capi);
+    }
+    return ucnhash_capi;
+}
+
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
 PyObject *
@@ -5884,7 +5901,6 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     _PyUnicode_Name_CAPI *ucnhash_capi;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
@@ -6032,19 +6048,13 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 
             /* \N{name} */
         case 'N':
-            ucnhash_capi = interp->unicode.ucnhash_capi;
+            ucnhash_capi = _PyUnicode_GetNameCAPI();
             if (ucnhash_capi == NULL) {
-                /* load the unicode data module */
-                ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
-                                                PyUnicodeData_CAPSULE_NAME, 1);
-                if (ucnhash_capi == NULL) {
-                    PyErr_SetString(
+                PyErr_SetString(
                         PyExc_UnicodeError,
                         "\\N escapes not supported (can't load unicodedata module)"
-                        );
-                    goto onError;
-                }
-                interp->unicode.ucnhash_capi = ucnhash_capi;
+                );
+                goto onError;
             }
 
             message = "malformed \\N character escape";
