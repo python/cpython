@@ -42,8 +42,8 @@ The :mod:`gc` module provides the following functions:
 
    With no arguments, run a full collection.  The optional argument *generation*
    may be an integer specifying which generation to collect (from 0 to 2).  A
-   :exc:`ValueError` is raised if the generation number  is invalid. The number of
-   unreachable objects found is returned.
+   :exc:`ValueError` is raised if the generation number  is invalid. The sum of
+   collected objects and uncollectable objects is returned.
 
    The free lists maintained for a number of built-in types are cleared
    whenever a full collection or collection of the highest generation (2)
