@@ -23,30 +23,7 @@
     #include <sys/mman.h>
 #endif
 
-// #define MB (1 << 20)
-// #define JIT_POOL_SIZE  (128 * MB)
-
-// This next line looks crazy, but it's actually not *that* bad. Yes, we're
-// statically allocating a huge empty array in our executable, and mapping
-// executable pages inside of it. However, this has a big benefit: we can
-// compile our stencils to use the "small" or "medium" code models, since we
-// know that all calls (for example, to C-API functions like _PyLong_Add) will
-// be less than a relative 32-bit jump away (28 bits on aarch64). If that
-// condition didn't hold (for example, if we mmap some memory far away from the
-// executable), we would need to use trampolines and/or 64-bit indirect branches
-// to extend the range. That's pretty slow and complex, whereas this "just
-// works" (though we could certainly switch to a scheme like that without *too*
-// much trouble). The OS lazily allocates pages for this array anyways (and it's
-// BSS data that's not included in the interpreter executable itself), so it's
-// not like we're *actually* making the executable huge at runtime (or on disk):
-// static unsigned char pool[JIT_POOL_SIZE];
-// static size_t pool_head;
 static size_t page_size;
-// static size_t memory_used;
-// static size_t memory_reported = 1;
-static unsigned char dummy;
-
-static int needs_initializing = 1;
 
 static bool
 is_page_aligned(void *p)
@@ -57,9 +34,7 @@ is_page_aligned(void *p)
 static unsigned char *
 alloc(size_t pages)
 {
-    if (pages == 0) {
-        return &dummy;
-    }
+    assert(pages);
     size_t size = pages * page_size;
     unsigned char *memory;
 #ifdef MS_WINDOWS
@@ -78,35 +53,27 @@ alloc(size_t pages)
     }
 #endif
     assert(is_page_aligned(memory));
-    // memory_used += size;
-    // if ((memory_used >> 20) > memory_reported) {
-    //     memory_reported = memory_used >> 20;
-    //     printf("\nJIT: %zu MB\n\n", memory_reported);
-    // }
     return memory;
 }
 
 static int
 mark_executable(unsigned char *memory, size_t pages)
 {
-    size_t size = pages * page_size;
-    if (size == 0) {
-        assert(memory == &dummy);
+    assert(is_page_aligned(memory));
+    if (pages == 0) {
         return 0;
     }
-    assert(is_page_aligned(memory));
+    size_t size = pages * page_size;
 #ifdef MS_WINDOWS
     if (!FlushInstructionCache(GetCurrentProcess(), memory, size)) {
         const char *w = "JIT unable to flush instruction cache (%d)";
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, GetLastError());
-        needs_initializing = -1;
         return -1;
     }
     DWORD old;
     if (!VirtualProtect(memory, size, PAGE_EXECUTE, &old)) {
         const char *w = "JIT unable to protect executable memory (%d)";
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, GetLastError());
-        needs_initializing = -1;
         return -1;
     }
 #else
@@ -114,7 +81,6 @@ mark_executable(unsigned char *memory, size_t pages)
     if (mprotect(memory, size, PROT_EXEC)) {
         const char *w = "JIT unable to protect executable memory (%d)";
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
-        needs_initializing = -1;
         return -1;
     }
 #endif
@@ -124,25 +90,22 @@ mark_executable(unsigned char *memory, size_t pages)
 static int
 mark_readable(unsigned char *memory, size_t pages)
 {
-    size_t size = pages * page_size;
-    if (size == 0) {
-        assert(memory == &dummy);
+    assert(is_page_aligned(memory));
+    if (pages == 0) {
         return 0;
     }
-    assert(is_page_aligned(memory));
+    size_t size = pages * page_size;
 #ifdef MS_WINDOWS
     DWORD old;
     if (!VirtualProtect(memory, size, PAGE_READONLY, &old)) {
         const char *w = "JIT unable to protect readable memory (%d)";
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, GetLastError());
-        needs_initializing = -1;
         return -1;
     }
 #else
     if (mprotect(memory, size, PROT_READ)) {
         const char *w = "JIT unable to protect readable memory (%d)";
         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
-        needs_initializing = -1;
         return -1;
     }
 #endif
@@ -289,15 +252,12 @@ emit_trampoline(uintptr_t where, unsigned char **trampolines)
     return trampoline;
 }
 
-static int
+static void
 initialize_jit(void)
 {
-    if (needs_initializing <= 0) {
-        return needs_initializing;
+    if (page_size) {
+        return;
     }
-    // Keep us from re-entering:
-    needs_initializing = -1;
-    // Find the page_size:
 #ifdef MS_WINDOWS
     SYSTEM_INFO si;
     GetSystemInfo(&si);
@@ -307,34 +267,13 @@ initialize_jit(void)
 #endif
     assert(page_size);
     assert((page_size & (page_size - 1)) == 0);
-//     // Adjust the pool_head to the next page boundary:
-//     pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
-//     assert(is_page_aligned(pool + pool_head));
-//     // macOS requires mapping memory before mprotecting it, so map memory fixed
-//     // at our pool's valid address range:
-// #ifdef __APPLE__
-//     void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head - page_size,
-//                         PROT_READ | PROT_WRITE,
-//                         MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
-//     if (mapped == MAP_FAILED) {
-//         const char *w = "JIT unable to map fixed memory (%d)";
-//         PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
-//         return needs_initializing;
-//     }
-//     assert(mapped == pool + pool_head);
-// #endif
-    // Done:
-    needs_initializing = 0;
-    return needs_initializing;
 }
 
 // The world's smallest compiler?
 _PyJITFunction
 _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, int size)
 {
-    if (initialize_jit()) {
-        return NULL;
-    }
+    initialize_jit();
     // First, loop over everything once to find the total compiled size:
     size_t trampoline_size = potential_trampoline_size(&wrapper_stencil_group);
     size_t text_size = wrapper_stencil_group.text.body_size;
@@ -348,15 +287,12 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         assert(stencil_group->text.body_size);
     };
     size_t text_pages = size_to_pages(text_size + trampoline_size);
-    unsigned char *text = alloc(text_pages);
+    size_t data_pages = size_to_pages(data_size);
+    unsigned char *text = alloc(text_pages + data_pages);
     if (text == NULL) {
         return NULL;
     }
-    size_t data_pages = size_to_pages(data_size);
-    unsigned char *data = alloc(data_pages);
-    if (data == NULL) {
-        return NULL;
-    }
+    unsigned char *data = text + text_pages * page_size;
     unsigned char *head_trampolines = text + text_size;
     unsigned char *head_text = text;
     unsigned char *head_data = data;
