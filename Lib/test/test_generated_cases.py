@@ -466,6 +466,44 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
+    def test_pseudo_instruction_no_flags(self):
+        input = """
+        pseudo(OP) = {
+            OP1,
+        };
+
+        inst(OP1, (--)) {
+        }
+    """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_pseudo_instruction_with_flags(self):
+        input = """
+        pseudo(OP, (HAS_ARG, HAS_JUMP)) = {
+            OP1,
+        };
+
+        inst(OP1, (--)) {
+        }
+    """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
     def test_array_input(self):
         input = """
         inst(OP, (below, values[oparg*2], above --)) {

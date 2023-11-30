@@ -390,9 +390,14 @@ class Analyzer:
             else:
                 targets.append(self.macro_instrs[target_name])
         assert targets
-        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG", "HAS_ESCAPES_FLAG"}
+        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG",
+                          "HAS_ESCAPES_FLAG"}
         assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
-        return PseudoInstruction(pseudo.name, targets, targets[0].instr_flags)
+
+        flags = InstructionFlags(**{f"{f}_FLAG" : True for f in pseudo.flags})
+        for t in targets:
+            flags.add(t.instr_flags)
+        return PseudoInstruction(pseudo.name, targets, flags)
 
     def analyze_instruction(
         self, instr: Instruction, offset: int
