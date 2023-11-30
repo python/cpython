@@ -10,7 +10,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import Literal, TextIO
+from typing import Any, Literal, TextIO
 
 from test import support
 from test.support import os_helper, MS_WINDOWS
@@ -243,7 +243,9 @@ class WorkerThread(threading.Thread):
 
             json_fd = json_tmpfile.fileno()
             if MS_WINDOWS:
-                json_handle = msvcrt.get_osfhandle(json_fd)
+                # The msvcrt module is only available on Windows;
+                # we run mypy with `--platform=linux` in CI
+                json_handle: int = msvcrt.get_osfhandle(json_fd)  # type: ignore[attr-defined]
                 json_file = JsonFile(json_handle,
                                      JsonFileType.WINDOWS_HANDLE)
             else:
@@ -259,7 +261,7 @@ class WorkerThread(threading.Thread):
         else:
             match_tests = None
 
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if match_tests:
             kwargs['match_tests'] = [(test, True) for test in match_tests]
         if self.runtests.output_on_failure:
@@ -345,6 +347,7 @@ class WorkerThread(threading.Thread):
             json_file, json_tmpfile = self.create_json_file(stack)
             worker_runtests = self.create_worker_runtests(test_name, json_file)
 
+            retcode: str | int | None
             retcode, tmp_files = self.run_tmp_files(worker_runtests,
                                                     stdout_file.fileno())
 
