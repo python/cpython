@@ -726,12 +726,26 @@ PyObject_Str(PyObject *v)
     if (res == NULL) {
         return NULL;
     }
-    if (!PyUnicode_Check(res)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "__str__ returned non-string (type %.200s)",
-                      Py_TYPE(res)->tp_name);
-        Py_DECREF(res);
-        return NULL;
+    if (!PyUnicode_CheckExact(res)) {
+        if (!PyUnicode_Check(res)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "__str__ returned non-string (type %.200s)",
+                          Py_TYPE(res)->tp_name);
+            Py_DECREF(res);
+            return NULL;
+        }
+        /* gh-104231: returning a strict subclass of str can cause
+              unexpected behavior */
+        if (PyErr_WarnFormat(
+                PyExc_DeprecationWarning, 1,
+                "__str__ returned non-string (type %.200s).  "
+                "The ability to return an instance of a strict subclass of str "
+                "is deprecated, and may be removed in a future version of "
+                "Python.",
+                Py_TYPE(res)->tp_name)) {
+            Py_DECREF(res);
+            return NULL;
+        }
     }
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;

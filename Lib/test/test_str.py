@@ -2383,10 +2383,14 @@ class StrTest(string_tests.StringLikeTest,
 
         self.assertEqual(str(ObjectToStr()), "foo")
         self.assertEqual(str(StrSubclassToStr("bar")), "foo")
-        s = str(StrSubclassToStrSubclass("foo"))
+
+        with self.assertWarns(DeprecationWarning):
+            s = str(StrSubclassToStrSubclass("foo"))
         self.assertEqual(s, "foofoo")
         self.assertIs(type(s), StrSubclassToStrSubclass)
-        s = StrSubclass(StrSubclassToStrSubclass("foo"))
+
+        with self.assertWarns(DeprecationWarning):
+            s = StrSubclass(StrSubclassToStrSubclass("foo"))
         self.assertEqual(s, "foofoo")
         self.assertIs(type(s), StrSubclass)
 

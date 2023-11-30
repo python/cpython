@@ -2617,12 +2617,26 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
         Py_DECREF(func);
         if (bytes == NULL)
             return NULL;
-        if (!PyBytes_Check(bytes)) {
-            PyErr_Format(PyExc_TypeError,
-                        "__bytes__ returned non-bytes (type %.200s)",
-                        Py_TYPE(bytes)->tp_name);
-            Py_DECREF(bytes);
-            return NULL;
+        if (!PyBytes_CheckExact(bytes)) {
+            if (!PyBytes_Check(bytes)) {
+                PyErr_Format(PyExc_TypeError,
+                             "__bytes__ returned non-bytes (type %.200s)",
+                             Py_TYPE(bytes)->tp_name);
+                Py_DECREF(bytes);
+                return NULL;
+            }
+            /* gh-104231: returning a strict subclass of bytes can cause
+                unexpected behavior */
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                                 "__bytes__ returned non-bytes (type %.200s).  "
+                                 "The ability to return an instance of a "
+                                 "strict subclass of bytes "
+                                 "is deprecated, and may be removed in a "
+                                 "future version of Python.",
+                                 Py_TYPE(bytes)->tp_name)) {
+                Py_DECREF(bytes);
+                return NULL;
+            }
         }
     }
     else if (PyErr_Occurred())

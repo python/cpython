@@ -1049,10 +1049,16 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         class A:
             def __bytes__(self):
                 return OtherBytesSubclass(b'abc')
-        self.assertEqual(bytes(A()), b'abc')
-        self.assertIs(type(bytes(A())), OtherBytesSubclass)
-        self.assertEqual(BytesSubclass(A()), b'abc')
-        self.assertIs(type(BytesSubclass(A())), BytesSubclass)
+
+        with self.assertWarns(DeprecationWarning):
+            b = bytes(A())
+        self.assertEqual(b, b'abc')
+        self.assertIs(type(b), OtherBytesSubclass)
+
+        with self.assertWarns(DeprecationWarning):
+            b = BytesSubclass(A())
+        self.assertEqual(b, b'abc')
+        self.assertIs(type(b), BytesSubclass)
 
     # Test PyBytes_FromFormat()
     def test_from_format(self):

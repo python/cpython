@@ -1,0 +1,6 @@
+We deprecated the ability to return strict subclasses of :class:`str` / :class:`bytes`
+at :meth:`__str__` / :meth:`__bytes__`, respectively.
+
+Returning strict subclasses of :class:`str` at :meth:`__str__` can cause unexpected
+behavior, and the same applies for returning strict subclasses of :class:`bytes` at
+:meth:`__bytes__`.
