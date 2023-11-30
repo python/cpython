@@ -117,4 +117,3 @@ Other Objects
    contextvars.rst
    datetime.rst
    typehints.rst
-   interpreter.rst
