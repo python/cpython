@@ -42,8 +42,8 @@
 // static unsigned char pool[JIT_POOL_SIZE];
 // static size_t pool_head;
 static size_t page_size;
-static size_t memory_used;
-static size_t memory_reported = 1;
+// static size_t memory_used;
+// static size_t memory_reported = 1;
 static unsigned char dummy;
 
 static int needs_initializing = 1;
@@ -78,11 +78,11 @@ alloc(size_t pages)
     }
 #endif
     assert(is_page_aligned(memory));
-    memory_used += size;
-    if ((memory_used >> 20) > memory_reported) {
-        memory_reported = memory_used >> 20;
-        printf("\nJIT: %zu MB\n\n", memory_reported);
-    }
+    // memory_used += size;
+    // if ((memory_used >> 20) > memory_reported) {
+    //     memory_reported = memory_used >> 20;
+    //     printf("\nJIT: %zu MB\n\n", memory_reported);
+    // }
     return memory;
 }
 
