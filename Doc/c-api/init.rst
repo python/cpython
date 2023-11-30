@@ -1225,6 +1225,12 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    :c:func:`PyEval_SaveThread` is a higher-level function which is always
    available (even when threads have not been initialized).
 
+.. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+
+   Returns a :term:`strong reference` to the ``__main__`` module of the given interpreter *interp*.
+   Fails with a :exc:`RuntimeError` if the interpreter is not initialized.
+
+   .. versionadded:: 3.12
 
 .. _sub-interpreter-support:
 
@@ -1482,7 +1488,7 @@ A interpreter ID identifies a interpreter and may be used as an int.
 .. c:function:: PyInterpreterState* PyInterpreterID_LookUp(PyObject *requested_id)
 
    Returns a :term:`borrowed reference` to the :c:type:`PyInterpreterState` interpreter state for the given interpreter ID object *requested_id*.
-   Fails with :c:data:`PyExc_RuntimeError` if the interpreter is not found.
+   Fails with :exc:`RuntimeError` if the interpreter is not found.
 
 .. c:function:: PyObject* PyInterpreterState_GetIDObject(PyInterpreterState *interp)
 
