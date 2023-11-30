@@ -414,7 +414,7 @@ definition with the same method name.
 
    Same as :c:func:`PyCFuntion_NewEx`, but accept a ``cls`` parameter, which
    will be passed as ``defining_class`` parameter to the C function.  Must be
-   set if :ref:`METH_METHOD` is set in ``ml->ml_flags``.
+   set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
 
 
 Accessing attributes of extension types
