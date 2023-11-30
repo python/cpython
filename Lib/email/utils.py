@@ -106,6 +106,10 @@ def formataddr(pair, charset='utf-8'):
 
 def _strip_quoted_realname(addr):
     """Remove real name between quotes."""
+    if '"' not in addr:
+        # Fast path
+        return addr
+
     pos = 0
     start = None
     remove = []
@@ -117,9 +121,6 @@ def _strip_quoted_realname(addr):
                 remove.append((start, pos))
                 start = None
         pos += 1
-
-    if not remove:
-        return addr
 
     result = []
     pos = 0
