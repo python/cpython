@@ -582,7 +582,7 @@ def display_header(use_resources: tuple[str, ...],
 
     cpu_count: object = os.cpu_count()
     if cpu_count:
-        # The function is new in py313; mypy doesn't know about it yet:
+        # The function is new in Python 3.13; mypy doesn't know about it yet:
         process_cpu_count = os.process_cpu_count()  # type: ignore[attr-defined]
         if process_cpu_count and process_cpu_count != cpu_count:
             cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"

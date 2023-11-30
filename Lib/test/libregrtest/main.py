@@ -373,7 +373,7 @@ class Regrtest:
                 os.unlink(self.next_single_filename)
 
         if coverage is not None:
-            # uses a new-in-py313 keyword argument that mypy doesn't know about yet:
+            # uses a new-in-Python 3.13 keyword argument that mypy doesn't know about yet:
             coverage.write_results(show_missing=True, summary=True,  # type: ignore[call-arg]
                                    coverdir=self.coverage_dir,
                                    ignore_missing_files=True)
