@@ -474,4 +474,58 @@ _io_StringIO___setstate__(stringio *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=5c8d67f4408a1e6e input=a9049054013a1b77]*/
+
+#define _IO_STRINGIO_CLOSED_GETTERDEF    \
+    {"closed", (getter)_io_StringIO_closed_get, NULL, NULL},
+
+static PyObject *
+_io_StringIO_closed_get_impl(stringio *self);
+
+static PyObject *
+_io_StringIO_closed_get(stringio *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_StringIO_closed_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#define _IO_STRINGIO_LINE_BUFFERING_GETTERDEF    \
+    {"line_buffering", (getter)_io_StringIO_line_buffering_get, NULL, NULL},
+
+static PyObject *
+_io_StringIO_line_buffering_get_impl(stringio *self);
+
+static PyObject *
+_io_StringIO_line_buffering_get(stringio *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_StringIO_line_buffering_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#define _IO_STRINGIO_NEWLINES_GETTERDEF    \
+    {"newlines", (getter)_io_StringIO_newlines_get, NULL, NULL},
+
+static PyObject *
+_io_StringIO_newlines_get_impl(stringio *self);
+
+static PyObject *
+_io_StringIO_newlines_get(stringio *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io_StringIO_newlines_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=3a92e8b6c322f61b input=a9049054013a1b77]*/
