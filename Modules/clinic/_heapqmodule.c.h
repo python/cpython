@@ -148,27 +148,18 @@ exit:
 }
 
 PyDoc_STRVAR(_heapq_heapremove__doc__,
-"heapremove($module, heap, index, item=<unrepresentable>, /)\n"
+"heapremove($module, heap, index, /)\n"
 "--\n"
 "\n"
 "Remove the element at the given index maintaining the heap invariant.\n"
 "\n"
-"An optional item can be provided to replace the removed item. The removed\n"
-"item is returned.\n"
-"This can be used to efficiently remove an item from the heap or\n"
-"to readjust the heap when the comparative \"value\" of\n"
-"an item changes by removing and re-inserting the same item, e.g:\n"
-"\n"
-"    item.value=new_value\n"
-"    idx = heap.index(item)\n"
-"    heapq.heapremove(heap, idx, item)");
+"Returns the removed item.");
 
 #define _HEAPQ_HEAPREMOVE_METHODDEF    \
     {"heapremove", _PyCFunction_CAST(_heapq_heapremove), METH_FASTCALL, _heapq_heapremove__doc__},
 
 static PyObject *
-_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index,
-                       PyObject *item);
+_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index);
 
 static PyObject *
 _heapq_heapremove(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -176,9 +167,8 @@ _heapq_heapremove(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *heap;
     Py_ssize_t index;
-    PyObject *item = NULL;
 
-    if (!_PyArg_CheckPositional("heapremove", nargs, 2, 3)) {
+    if (!_PyArg_CheckPositional("heapremove", nargs, 2, 2)) {
         goto exit;
     }
     if (!PyList_Check(args[0])) {
@@ -198,12 +188,52 @@ _heapq_heapremove(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
         index = ival;
     }
-    if (nargs < 3) {
-        goto skip_optional;
+    return_value = _heapq_heapremove_impl(module, heap, index);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_heapq_heapfix__doc__,
+"heapfix($module, heap, index, /)\n"
+"--\n"
+"\n"
+"Restore the heap invariant when the element at the given index has been modified.");
+
+#define _HEAPQ_HEAPFIX_METHODDEF    \
+    {"heapfix", _PyCFunction_CAST(_heapq_heapfix), METH_FASTCALL, _heapq_heapfix__doc__},
+
+static PyObject *
+_heapq_heapfix_impl(PyObject *module, PyObject *heap, Py_ssize_t index);
+
+static PyObject *
+_heapq_heapfix(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *heap;
+    Py_ssize_t index;
+
+    if (!_PyArg_CheckPositional("heapfix", nargs, 2, 2)) {
+        goto exit;
     }
-    item = args[2];
-skip_optional:
-    return_value = _heapq_heapremove_impl(module, heap, index, item);
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heapfix", "argument 1", "list", args[0]);
+        goto exit;
+    }
+    heap = args[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        index = ival;
+    }
+    return_value = _heapq_heapfix_impl(module, heap, index);
 
 exit:
     return return_value;
@@ -330,4 +360,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=10ce297f0322c817 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d721773c4515367 input=a9049054013a1b77]*/

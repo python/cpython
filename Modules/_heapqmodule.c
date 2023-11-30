@@ -141,14 +141,16 @@ _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
 }
 
 static PyObject *
-heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
+heapremove_internal(PyObject *heap, Py_ssize_t index, int siftup_func(PyListObject *, Py_ssize_t))
 {
     PyObject *lastelt, *returnitem;
     Py_ssize_t n;
 
     /* raises IndexError if the heap is empty */
     n = PyList_GET_SIZE(heap);
-    if (n == 0) {
+    if (index < 0)
+        index += n;
+    if (index < 0 || index >= n) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
@@ -159,13 +161,19 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
         Py_DECREF(lastelt);
         return NULL;
     }
-    n--;
-
-    if (!n)
+    if (index == n-1)
         return lastelt;
-    returnitem = PyList_GET_ITEM(heap, 0);
-    PyList_SET_ITEM(heap, 0, lastelt);
-    if (siftup_func((PyListObject *)heap, 0)) {
+    
+    returnitem = PyList_GET_ITEM(heap, index);
+    PyList_SET_ITEM(heap, index, lastelt);
+    if (index > 0){
+        /* there is no max version of heapremove */
+        if (siftdown((PyListObject *)heap, 0, &index)) {
+            Py_DECREF(returnitem);
+            return NULL;
+        }
+    }
+    if (siftup_func((PyListObject *)heap, index)) {
         Py_DECREF(returnitem);
         return NULL;
     }
@@ -185,7 +193,7 @@ static PyObject *
 _heapq_heappop_impl(PyObject *module, PyObject *heap)
 /*[clinic end generated code: output=96dfe82d37d9af76 input=91487987a583c856]*/
 {
-    return heappop_internal(heap, siftup);
+    return heapremove_internal(heap, 0, siftup);
 }
 
 static PyObject *
@@ -287,74 +295,54 @@ _heapq.heapremove
 
     heap: object(subclass_of='&PyList_Type')
     index: Py_ssize_t
-    item: object = NULL
     /
 
 Remove the element at the given index maintaining the heap invariant.
 
-An optional item can be provided to replace the removed item. The removed
-item is returned.
-This can be used to efficiently remove an item from the heap or
-to readjust the heap when the comparative "value" of
-an item changes by removing and re-inserting the same item, e.g:
-
-    item.value=new_value
-    idx = heap.index(item)
-    heapq.heapremove(heap, idx, item)
+Returns the removed item.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index,
-                       PyObject *item)
-/*[clinic end generated code: output=2d84b49ff0255276 input=13bbd40fb4dee29e]*/
+_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index)
+/*[clinic end generated code: output=58466c577a3d8e33 input=b9ab21fc7cfb6e2a]*/
 {
-    PyObject *returnitem;
-    Py_ssize_t n = PyList_GET_SIZE(heap);
+    return heapremove_internal(heap, index, siftup);
+}
+
+/*[clinic input]
+_heapq.heapfix
+
+    heap: object(subclass_of='&PyList_Type')
+    index: Py_ssize_t
+    /
+
+Restore the heap invariant when the element at the given index has been modified.
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heapfix_impl(PyObject *module, PyObject *heap, Py_ssize_t index)
+/*[clinic end generated code: output=c06b38e98a062214 input=2eb44272c71f3106]*/
+{
+    Py_ssize_t n;
+
+    /* raises IndexError if the heap is empty */
+    n = PyList_GET_SIZE(heap);
     if (index < 0)
         index += n;
     if (index < 0 || index >= n) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
-    returnitem = PyList_GET_ITEM(heap, index);
-    if (index < n - 1) {
-        /* common case */
-        if (item) {
-            PyList_SET_ITEM(heap, index, item);
-            Py_INCREF(item);
-        } else {
-            /* replace with the last value */
-            item = PyList_GET_ITEM(heap, n-1);
-            Py_INCREF(item);
-            if (PyList_SetSlice(heap, n-1, n, NULL)) {
-                Py_DECREF(item);
-                return NULL;
-            }
-            PyList_SET_ITEM(heap, index, item);
-        }
-        if (siftdown((PyListObject *)heap, 0, &index) || siftup((PyListObject *)heap, index)) {
-            Py_DECREF(returnitem);
+
+    if (index > 0){
+        if (siftdown((PyListObject *)heap, 0, &index))
             return NULL;
-        }
-    } else {
-        /* the tail case */
-        if (item) {
-            PyList_SET_ITEM(heap, index, item);
-            Py_INCREF(item);
-            if (siftdown((PyListObject *)heap, 0, &index)) {
-                Py_DECREF(returnitem);
-                return NULL;
-            }
-        } else {
-            Py_INCREF(returnitem);
-            if (PyList_SetSlice(heap, index, n, NULL)) {
-                Py_DECREF(returnitem);
-                return NULL;
-            }
-        }
     }
-    return returnitem;
+    if (siftup((PyListObject *)heap, index))
+        return NULL;
+    Py_RETURN_NONE;
 }
+
 
 static Py_ssize_t
 keep_top_bit(Py_ssize_t n)
@@ -571,7 +559,7 @@ static PyObject *
 _heapq__heappop_max_impl(PyObject *module, PyObject *heap)
 /*[clinic end generated code: output=9e77aadd4e6a8760 input=362c06e1c7484793]*/
 {
-    return heappop_internal(heap, siftup_max);
+    return heapremove_internal(heap, 0, siftup_max);
 }
 
 /*[clinic input]
@@ -618,6 +606,7 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ__HEAPIFY_MAX_METHODDEF
     _HEAPQ__HEAPREPLACE_MAX_METHODDEF
     _HEAPQ_HEAPREMOVE_METHODDEF
+    _HEAPQ_HEAPFIX_METHODDEF
     {NULL, NULL}           /* sentinel */
 };
 

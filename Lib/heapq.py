@@ -135,7 +135,10 @@ def heappush(heap, item):
     _siftdown(heap, 0, len(heap)-1)
 
 def heappop(heap):
-    """Pop the smallest item off the heap, maintaining the heap invariant."""
+    """Pop the smallest item off the heap, maintaining the heap invariant.
+    
+    This is equivalent to heapremove(heap, 0)
+    """
     lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
     if heap:
         returnitem = heap[0]
@@ -169,35 +172,34 @@ def heappushpop(heap, item):
 
 def heapremove(heap, index, item=None):
     """Remove the element at the given index maintaining the heap invariant.
-
-    An optional item can be provided to replace the removed item. The removed
-    item is returned.
-    This can be used to efficiently remove an item from the heap or
-    to readjust the heap when the comparative "value" of
-    an item changes by removing and re-inserting the same item, e.g:
-
-        item.value=new_value
-        idx = heap.index(item)
-        heapq.heapremove(heap, idx, item)
+    
+    Returns the removed object.
     """
-    result = heap[index]
+    if item is not None:
+        heap[index] = item
+        return heapfix(heap, index)
+    result = heap[index]  # fails on invalid index
+    lastelt = heap.pop()
+    try:
+        heap[index] = lastelt
+    except IndexError:  # if this was the last item
+        return result
+    
     if index < 0:
         index += len(heap)
-    if index < len(heap) - 1:
-        # common case
-        if item is None:
-            item = heap.pop()
-        heap[index] = item
+    if index > 0:
         index = _siftdown(heap, 0, index)
-        _siftup(heap, index)
-    else:
-        # last item
-        if item is None:
-            heap.pop()
-        else:
-            heap[index] = item
-            _siftdown(heap, 0, index)
+    _siftup(heap, index)
     return result
+
+def heapfix(heap, index):
+    """Restore the heap invariant if element at the given index has changed."""
+    heap[index]  # trigger an index error for invalid indices
+    if index < 0:
+        index += len(heap)
+    if index > 0:
+        index = _siftdown(heap, 0, index)
+    _siftup(heap, index)
 
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(x)) time."""
