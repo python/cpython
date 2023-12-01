@@ -1755,6 +1755,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_ClearFileSystemEncoding();
         _Py_Deepfreeze_Fini();
         _PyPerfTrampoline_Fini();
+        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
@@ -1812,7 +1813,6 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
-    PyUnstable_PerfMapState_Fini();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
