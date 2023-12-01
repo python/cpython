@@ -333,7 +333,7 @@ class Regrtest:
 
             result = self.run_test(test_name, runtests, tracer)
 
-            # Unload the newly imported modules (best effort finalization)
+            # Unload the newly imported test modules (best effort finalization)
             new_modules = [module for module in sys.modules
                            if module not in save_modules and
                                 module.startswith("test.")]
