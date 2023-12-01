@@ -139,7 +139,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    if action not in ("error", "ignore", "always", "default", "module", "once"):
+    if action not in {"error", "ignore", "always", "default", "module", "once"}:
         raise ValueError(f"invalid action: {action!r}")
     if not isinstance(message, str):
         raise TypeError("message must be a string")
@@ -174,7 +174,7 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    if action not in ("error", "ignore", "always", "default", "module", "once"):
+    if action not in {"error", "ignore", "always", "default", "module", "once"}:
         raise ValueError(f"invalid action: {action!r}")
     if not isinstance(lineno, int):
         raise TypeError("lineno must be an int")
