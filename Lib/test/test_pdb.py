@@ -2520,15 +2520,21 @@ class PdbTestCase(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.safe_path,
                      'PYTHONSAFEPATH changes default sys.path')
-    def _run_pdb(self, pdb_args, commands, expected_returncode=0):
+    def _run_pdb(self, pdb_args, commands,
+                 expected_returncode=0,
+                 extra_env=None):
         self.addCleanup(os_helper.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
+        if extra_env is not None:
+            env = os.environ | extra_env
+        else:
+            env = os.environ
         with subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+                env = {**env, 'PYTHONIOENCODING': 'utf-8'}
         ) as proc:
             stdout, stderr = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
@@ -2540,13 +2546,15 @@ class PdbTestCase(unittest.TestCase):
         )
         return stdout, stderr
 
-    def run_pdb_script(self, script, commands, expected_returncode=0):
+    def run_pdb_script(self, script, commands,
+                       expected_returncode=0,
+                       extra_env=None):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(os_helper.unlink, filename)
-        return self._run_pdb([filename], commands, expected_returncode)
+        return self._run_pdb([filename], commands, expected_returncode, extra_env)
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
@@ -3130,6 +3138,23 @@ def bœr():
             stdout, stderr = self._run_pdb([os.path.join('dir_two', 'foo.py')], commands)
 
             self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
+
+    def test_safe_path(self):
+        """ With safe_path set, pdb should not mangle sys.path[0]"""
+
+        script = textwrap.dedent("""
+            import sys
+            import random
+            print('sys.path[0] is', sys.path[0])
+        """)
+        commands = 'c\n'
+
+
+        with os_helper.temp_cwd() as cwd:
+            stdout, _ = self.run_pdb_script(script, commands, extra_env={'PYTHONSAFEPATH': '1'})
+
+            unexpected = f'sys.path[0] is {os.path.realpath(cwd)}'
+            self.assertNotIn(unexpected, stdout)
 
     def test_issue42383(self):
         with os_helper.temp_cwd() as cwd:

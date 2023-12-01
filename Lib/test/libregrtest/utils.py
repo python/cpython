@@ -12,7 +12,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 from test import support
 from test.support import os_helper
@@ -547,7 +547,7 @@ def is_cross_compiled():
     return ('_PYTHON_HOST_PLATFORM' in os.environ)
 
 
-def format_resources(use_resources: tuple[str, ...]):
+def format_resources(use_resources: Iterable[str]):
     use_resources = set(use_resources)
     all_resources = set(ALL_RESOURCES)
 
@@ -580,9 +580,10 @@ def display_header(use_resources: tuple[str, ...],
     print("== Python build:", ' '.join(get_build_info()))
     print("== cwd:", os.getcwd())
 
-    cpu_count = os.cpu_count()
+    cpu_count: object = os.cpu_count()
     if cpu_count:
-        process_cpu_count = os.process_cpu_count()
+        # The function is new in Python 3.13; mypy doesn't know about it yet:
+        process_cpu_count = os.process_cpu_count()  # type: ignore[attr-defined]
         if process_cpu_count and process_cpu_count != cpu_count:
             cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
