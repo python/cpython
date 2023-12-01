@@ -2743,11 +2743,26 @@ class NamedTupleMeta(type):
             class_getitem = _generic_class_getitem
             nm_tpl.__class_getitem__ = classmethod(class_getitem)
         # update from user namespace without overriding special namedtuple attributes
-        for key in ns:
+        for key, val in ns.items():
             if key in _prohibited:
                 raise AttributeError("Cannot overwrite NamedTuple attribute " + key)
-            elif key not in _special and key not in nm_tpl._fields:
-                setattr(nm_tpl, key, ns[key])
+            elif key not in _special:
+                if key not in nm_tpl._fields:
+                    setattr(nm_tpl, key, val)
+                try:
+                    set_name = type(val).__set_name__
+                except AttributeError:
+                    pass
+                else:
+                    try:
+                        set_name(val, nm_tpl, key)
+                    except BaseException as e:
+                        e.add_note(
+                            f"Error calling __set_name__ on {type(val).__name__!r} "
+                            f"instance {key!r} in {typename!r}"
+                        )
+                        raise
+
         if Generic in bases:
             nm_tpl.__init_subclass__()
         return nm_tpl
@@ -2869,8 +2884,14 @@ class _TypedDictMeta(type):
 
         for base in bases:
             annotations.update(base.__dict__.get('__annotations__', {}))
-            required_keys.update(base.__dict__.get('__required_keys__', ()))
-            optional_keys.update(base.__dict__.get('__optional_keys__', ()))
+
+            base_required = base.__dict__.get('__required_keys__', set())
+            required_keys |= base_required
+            optional_keys -= base_required
+
+            base_optional = base.__dict__.get('__optional_keys__', set())
+            required_keys -= base_optional
+            optional_keys |= base_optional
 
         annotations.update(own_annotations)
         for annotation_key, annotation_type in own_annotations.items():
@@ -2882,14 +2903,23 @@ class _TypedDictMeta(type):
                     annotation_origin = get_origin(annotation_type)
 
             if annotation_origin is Required:
-                required_keys.add(annotation_key)
+                is_required = True
             elif annotation_origin is NotRequired:
-                optional_keys.add(annotation_key)
-            elif total:
+                is_required = False
+            else:
+                is_required = total
+
+            if is_required:
                 required_keys.add(annotation_key)
+                optional_keys.discard(annotation_key)
             else:
                 optional_keys.add(annotation_key)
+                required_keys.discard(annotation_key)
 
+        assert required_keys.isdisjoint(optional_keys), (
+            f"Required keys overlap with optional keys in {name}:"
+            f" {required_keys=}, {optional_keys=}"
+        )
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)

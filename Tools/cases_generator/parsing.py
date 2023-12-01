@@ -138,7 +138,8 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
-    targets: list[str]  # opcodes this can be replaced by
+    flags: list[str]   # instr flags to set on the pseudo instruction
+    targets: list[str] # opcodes this can be replaced by
 
 
 class Parser(PLexer):
@@ -374,19 +375,39 @@ class Parser(PLexer):
                                     )
         return None
 
+    def flags(self) -> list[str]:
+        here = self.getpos()
+        if self.expect(lx.LPAREN):
+            if tkn := self.expect(lx.IDENTIFIER):
+                flags = [tkn.text]
+                while self.expect(lx.COMMA):
+                    if tkn := self.expect(lx.IDENTIFIER):
+                        flags.append(tkn.text)
+                    else:
+                        break
+                if not self.expect(lx.RPAREN):
+                    raise self.make_syntax_error("Expected comma or right paren")
+                return flags
+        self.setpos(here)
+        return []
+
     @contextual
     def pseudo_def(self) -> Pseudo | None:
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "pseudo":
             size = None
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.COMMA):
+                        flags = self.flags()
+                    else:
+                        flags = []
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if not self.expect(lx.LBRACE):
                                 raise self.make_syntax_error("Expected {")
                             if members := self.members():
                                 if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
-                                    return Pseudo(tkn.text, members)
+                                    return Pseudo(tkn.text, flags, members)
         return None
 
     def members(self) -> list[str] | None:
