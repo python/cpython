@@ -3483,6 +3483,84 @@ class AbstractPickleModuleTests:
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
 
+    def test_unpickler_bad_file(self):
+        # bpo-38384: Crash in _pickle if the read attribute raises an error.
+        def raises_oserror(self, *args, **kwargs):
+            raise OSError
+        @property
+        def bad_property(self):
+            1/0
+
+        # File without read and readline
+        class F:
+            pass
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File without read
+        class F:
+            readline = raises_oserror
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File without readline
+        class F:
+            read = raises_oserror
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
+        # File with bad read
+        class F:
+            read = bad_property
+            readline = raises_oserror
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad readline
+        class F:
+            readline = bad_property
+            read = raises_oserror
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad readline, no read
+        class F:
+            readline = bad_property
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad read, no readline
+        class F:
+            read = bad_property
+        self.assertRaises((AttributeError, ZeroDivisionError), self.Unpickler, F())
+
+        # File with bad peek
+        class F:
+            peek = bad_property
+            read = raises_oserror
+            readline = raises_oserror
+        try:
+            self.Unpickler(F())
+        except ZeroDivisionError:
+            pass
+
+        # File with bad readinto
+        class F:
+            readinto = bad_property
+            read = raises_oserror
+            readline = raises_oserror
+        try:
+            self.Unpickler(F())
+        except ZeroDivisionError:
+            pass
+
+    def test_pickler_bad_file(self):
+        # File without write
+        class F:
+            pass
+        self.assertRaises(TypeError, self.Pickler, F())
+
+        # File with bad write
+        class F:
+            @property
+            def write(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.Pickler, F())
+
     def check_dumps_loads_oob_buffers(self, dumps, loads):
         # No need to do the full gamut of tests here, just enough to
         # check that dumps() and loads() redirect their arguments
