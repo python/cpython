@@ -5997,8 +5997,6 @@ exit:
 
 #endif /* defined(HAVE_SYMLINK) */
 
-#if defined(HAVE_TIMES)
-
 PyDoc_STRVAR(os_times__doc__,
 "times($module, /)\n"
 "--\n"
@@ -6020,8 +6018,6 @@ os_times(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return os_times_impl(module);
 }
-
-#endif /* defined(HAVE_TIMES) */
 
 #if defined(HAVE_TIMERFD_CREATE)
 
@@ -12116,10 +12112,6 @@ exit:
     #define OS_SYMLINK_METHODDEF
 #endif /* !defined(OS_SYMLINK_METHODDEF) */
 
-#ifndef OS_TIMES_METHODDEF
-    #define OS_TIMES_METHODDEF
-#endif /* !defined(OS_TIMES_METHODDEF) */
-
 #ifndef OS_TIMERFD_CREATE_METHODDEF
     #define OS_TIMERFD_CREATE_METHODDEF
 #endif /* !defined(OS_TIMERFD_CREATE_METHODDEF) */
@@ -12403,4 +12395,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=0f216bf44ea358f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2900675ac5219924 input=a9049054013a1b77]*/
