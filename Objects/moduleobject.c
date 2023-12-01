@@ -799,7 +799,7 @@ PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
     // When suppress=1, this function suppresses AttributeError.
-    PyObject *attr, *mod_name, *getattr;
+    PyObject *attr, *mod_name, *getattr, *origin;
     attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
     if (attr) {
         return attr;
@@ -841,11 +841,22 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         }
         if (suppress != 1) {
             if (_PyModuleSpec_IsInitializing(spec)) {
-                PyErr_Format(PyExc_AttributeError,
+                origin = PyObject_GetAttr(spec, &_Py_ID(origin));
+                if (origin == NULL || origin == Py_None) {
+                    PyErr_Format(PyExc_AttributeError,
                                 "partially initialized "
                                 "module '%U' has no attribute '%U' "
                                 "(most likely due to a circular import)",
                                 mod_name, name);
+                }
+                else {
+                    PyErr_Format(PyExc_AttributeError,
+                                "partially initialized "
+                                "module '%U' from '%U' has no attribute '%U' "
+                                "(most likely due to a circular import)",
+                                mod_name, origin, name);
+                }
+                Py_XDECREF(origin);
             }
             else if (_PyModuleSpec_IsUninitializedSubmodule(spec, name)) {
                 PyErr_Format(PyExc_AttributeError,
