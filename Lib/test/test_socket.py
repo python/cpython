@@ -1092,6 +1092,10 @@ class GeneralModuleTests(unittest.TestCase):
                 if index2 not in indices:
                     with self.assertRaises((OverflowError, OSError)):
                         socket.if_indextoname(index2)
+            for index in 2**32-1, 2**64-1:
+                if index not in indices:
+                    with self.assertRaises((OverflowError, OSError)):
+                        socket.if_indextoname(index)
 
     @unittest.skipUnless(hasattr(socket, 'if_nametoindex'),
                          'socket.if_nametoindex() not available.')
