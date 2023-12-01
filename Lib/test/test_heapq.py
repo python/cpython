@@ -266,11 +266,15 @@ class TestHeap:
     def test_remove(self):
         data = [random.random() for i in range(100)]
         self.module.heapify(data)
+        heapset = set(data)
+        self.assertEqual(len(data), len(heapset))
 
         with self.assertRaises(IndexError) as e:
             self.module.heapremove(data, len(data))
         with self.assertRaises(IndexError) as e:
             self.module.heapremove(data, -len(data) - 1)
+        self.check_invariant(data)
+        self.assertEqual(heapset, set(data))
 
         for i in range(len(data)):
             i = random.randrange(-len(data), len(data))
@@ -278,19 +282,26 @@ class TestHeap:
                 i = 0  # ensure we try 0
             elif random.random() < 0.05:
                 i = len(data) - 1
-            # print(len(data), i)
             v = data[i]
+            # print(len(data), i, v)
+            heapset.remove(v)
             self.assertIs(self.module.heapremove(data, i), v)
+            self.assertEqual(heapset, set(data))
             self.check_invariant(data)
         self.assertFalse(data)
 
     def test_fix(self):
         data = [random.random() for i in range(100)]
         self.module.heapify(data)
+        heapset = set(data)
+        self.assertEqual(len(data), len(heapset))
+
         with self.assertRaises(IndexError) as e:
             self.module.heapfix(data, len(data))
         with self.assertRaises(IndexError) as e:
             self.module.heapfix(data, -len(data) - 1)
+        self.check_invariant(data)
+        self.assertEqual(heapset, set(data))
 
         for i in range(200):
             i = random.randrange(-len(data), len(data))
@@ -299,9 +310,12 @@ class TestHeap:
             elif random.random() < 0.05:
                 i = len(data) - 1
             replace = random.random()
-            # print(len(data), i, replace)
+            # print(len(data), i, data[i], replace)
+            heapset.remove(data[i])
+            heapset.add(replace)
             data[i] = replace
             self.module.heapfix(data, i)
+            self.assertEqual(heapset, set(data))
             self.check_invariant(data)
         self.assertEqual(len(data), 100)
 

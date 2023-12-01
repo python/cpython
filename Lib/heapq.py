@@ -176,14 +176,15 @@ def heapremove(heap, index):
     Returns the removed object.
     """
     result = heap[index]  # fails on invalid index
+    n = len(heap)
+    if index < 0:
+        index += n
     lastelt = heap.pop()
     try:
         heap[index] = lastelt
     except IndexError:  # if this was the last item
         return result
 
-    if index < 0:
-        index += len(heap)
     if index > 0:
         index = _siftdown(heap, 0, index)
     _siftup(heap, index)
