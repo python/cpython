@@ -385,10 +385,10 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
             else:
                 # WASI platform
                 tmp_dir = sysconfig.get_config_var('projectbase')
-                if tmp_dir is None:
+                if not tmp_dir:
                     raise RuntimeError(
                         "sysconfig.get_config_var('projectbase') "
-                        "unexpectedly returned `None` on WASI"
+                        f"unexpectedly returned {tmp_dir!r} on WASI"
                     )
                 tmp_dir = os.path.join(tmp_dir, 'build')
 
