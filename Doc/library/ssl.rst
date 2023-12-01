@@ -178,6 +178,15 @@ purposes.
          ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
          ctx.options &= ~ssl.OP_NO_SSLv3
 
+   .. note::
+      This context enables :data:`VERIFY_X509_STRICT` by default, which
+      may reject older (pre-:rfc:`5280`) or malformed certificates that the
+      underlying OpenSSL implementation otherwise would accept. While disabling
+      this is not recommended, you can do so using::
+
+         ctx = ssl.create_default_context()
+         ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.4.4
