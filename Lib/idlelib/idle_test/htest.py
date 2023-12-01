@@ -1,38 +1,35 @@
-'''Run human tests of Idle's window, dialog, and popup widgets.
+"""Run human tests of Idle's window, dialog, and popup widgets.
 
-run(*tests)
-Create a master Tk window.  Within that, run each callable in tests
-after finding the matching test spec in this file.  If tests is empty,
-run an htest for each spec dict in this file after finding the matching
-callable in the module named in the spec.  Close the window to skip or
-end the test.
+run(*tests) Create a master Tk() htest window.  Within that, run each
+callable in tests after finding the matching test spec in this file.  If
+tests is empty, run an htest for each spec dict in this file after
+finding the matching callable in the module named in the spec.  Close
+the master window to end testing.
 
-In a tested module, let X be a global name bound to a callable (class
-or function) whose .__name__ attribute is also X (the usual situation).
-The first parameter of X must be 'parent'.  When called, the parent
-argument will be the root window.  X must create a child Toplevel
-window (or subclass thereof).  The Toplevel may be a test widget or
-dialog, in which case the callable is the corresponding class.  Or the
-Toplevel may contain the widget to be tested or set up a context in
-which a test widget is invoked.  In this latter case, the callable is a
-wrapper function that sets up the Toplevel and other objects.  Wrapper
-function names, such as _editor_window', should start with '_'.
+In a tested module, let X be a global name bound to a callable (class or
+function) whose .__name__ attribute is also X (the usual situation). The
+first parameter of X must be 'parent'.  When called, the parent argument
+will be the root window.  X must create a child Toplevel(parent) window
+(or subclass thereof).  The Toplevel may be a test widget or dialog, in
+which case the callable is the corresponding class.  Or the Toplevel may
+contain the widget to be tested or set up a context in which a test
+widget is invoked.  In this latter case, the callable is a wrapper
+function that sets up the Toplevel and other objects.  Wrapper function
+names, such as _editor_window', should start with '_' and be lowercase.
 
 
 End the module with
 
 if __name__ == '__main__':
-    <unittest, if there is one>
+    <run unittest.main with 'exit=False'>
     from idlelib.idle_test.htest import run
-    run(X)
+    run(callable)  # There could be multiple comma-separated callables.
 
-To have wrapper functions and test invocation code ignored by coveragepy
-reports, put '# htest #' on the def statement header line.
-
-def _wrapper(parent):  # htest #
-
-Also make sure that the 'if __name__' line matches the above.  Then have
-make sure that .coveragerc includes the following.
+To have wrapper functions ignored by coverage reports, tag the def
+header like so: "def _wrapper(parent):  # htest #".  Use the same tag
+for htest lines in widget code.  Make sure that the 'if __name__' line
+matches the above.  Then have make sure that .coveragerc includes the
+following:
 
 [report]
 exclude_lines =
@@ -46,7 +43,7 @@ To run any X, this file must contain a matching instance of the
 following template, with X.__name__ prepended to '_spec'.
 When all tests are run, the prefix is use to get X.
 
-_spec = {
+callable_spec = {
     'file': '',
     'kwds': {'title': ''},
     'msg': ""
@@ -54,16 +51,16 @@ _spec = {
 
 file (no .py): run() imports file.py.
 kwds: augmented with {'parent':root} and passed to X as **kwds.
-title: an example kwd; some widgets need this, delete if not.
+title: an example kwd; some widgets need this, delete line if not.
 msg: master window hints about testing the widget.
 
 
-Modules and classes not being tested at the moment:
-pyshell.PyShellEditorWindow
-debugger.Debugger
-autocomplete_w.AutoCompleteWindow
-outwin.OutputWindow (indirectly being tested with grep test)
-'''
+TODO test these modules and classes:
+  autocomplete_w.AutoCompleteWindow
+  debugger.Debugger
+  outwin.OutputWindow (indirectly being tested with grep test)
+  pyshell.PyShellEditorWindow
+"""
 
 import idlelib.pyshell  # Set Windows DPI awareness before Tk().
 from importlib import import_module
@@ -91,15 +88,6 @@ _calltip_window_spec = {
            "Force-open-calltip does not work here.\n"
     }
 
-_module_browser_spec = {
-    'file': 'browser',
-    'kwds': {},
-    'msg': "Inspect names of module, class(with superclass if "
-           "applicable), methods and functions.\nToggle nested items.\n"
-           "Double clicking on items prints a traceback for an exception "
-           "that is ignored."
-    }
-
 _color_delegator_spec = {
     'file': 'colorizer',
     'kwds': {},
@@ -107,16 +95,6 @@ _color_delegator_spec = {
            "Ensure components like comments, keywords, builtins,\n"
            "string, definitions, and break are correctly colored.\n"
            "The default color scheme is in idlelib/config-highlight.def"
-    }
-
-CustomRun_spec = {
-    'file': 'query',
-    'kwds': {'title': 'Customize query.py Run',
-             '_htest': True},
-    'msg': "Enter with <Return> or [Run].  Print valid entry to Shell\n"
-           "Arguments are parsed into a list\n"
-           "Mode is currently restart True or False\n"
-           "Close dialog with valid entry, <Escape>, [Cancel], [X]"
     }
 
 ConfigDialog_spec = {
@@ -133,6 +111,16 @@ ConfigDialog_spec = {
            "\n[Ok] to close the dialog.[Apply] to apply the settings and "
            "and [Cancel] to revert all changes.\nRe-run the test to ensure "
            "changes made have persisted."
+    }
+
+CustomRun_spec = {
+    'file': 'query',
+    'kwds': {'title': 'Customize query.py Run',
+             '_htest': True},
+    'msg': "Enter with <Return> or [Run].  Print valid entry to Shell\n"
+           "Arguments are parsed into a list\n"
+           "Mode is currently restart True or False\n"
+           "Close dialog with valid entry, <Escape>, [Cancel], [X]"
     }
 
 # TODO Improve message
@@ -234,6 +222,15 @@ _multi_call_spec = {
            "<Control-Key>,\n<Alt-Key-a>, <Control-Key-a>, "
            "<Alt-Control-Key-a>, \n<Control-Button-1>, <Alt-Button-1> and "
            "focusing out of the window\nare sequences to be tested."
+    }
+
+_module_browser_spec = {
+    'file': 'browser',
+    'kwds': {},
+    'msg': "Inspect names of module, class(with superclass if "
+           "applicable), methods and functions.\nToggle nested items.\n"
+           "Double clicking on items prints a traceback for an exception "
+           "that is ignored."
     }
 
 _multistatus_bar_spec = {
