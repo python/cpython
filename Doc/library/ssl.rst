@@ -203,7 +203,7 @@ purposes.
    .. versionchanged:: 3.13
 
       The context now uses :data:`VERIFY_X509_PARTIAL_CHAIN` and
-      :data:`VERIFY_X509_STRICT` in its default flags.
+      :data:`VERIFY_X509_STRICT` in its default verify flags.
 
 
 Exceptions
