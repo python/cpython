@@ -1538,6 +1538,7 @@ static struct PyModuleDef readlinemodule = {
 PyMODINIT_FUNC
 PyInit_readline(void)
 {
+    const char *backend = "readline";
     PyObject *m;
     readlinestate *mod_state;
 
@@ -1545,8 +1546,10 @@ PyInit_readline(void)
         using_libedit_emulation = 1;
     }
 
-    if (using_libedit_emulation)
+    if (using_libedit_emulation) {
         readlinemodule.m_doc = doc_module_le;
+        backend = "editline";
+    }
 
 
     m = PyModule_Create(&readlinemodule);
@@ -1565,6 +1568,10 @@ PyInit_readline(void)
     if (PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION",
                                    rl_library_version) < 0)
     {
+        goto error;
+    }
+
+    if (PyModule_AddStringConstant(m, "backend", backend) < 0) {
         goto error;
     }
 

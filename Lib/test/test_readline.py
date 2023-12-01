@@ -19,7 +19,7 @@ readline = import_module('readline')
 if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
     is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
 else:
-    is_editline = (readline.__doc__ and "libedit" in readline.__doc__)
+    is_editline = readline.backend == "editline"
 
 
 def setUpModule():
@@ -145,6 +145,9 @@ class TestReadline(unittest.TestCase):
                                               TERM='xterm-256color')
         self.assertEqual(stdout, b'')
 
+    def test_backend(self):
+        self.assertIn(readline.backend, ("readline", "editline"))
+
     auto_history_script = """\
 import readline
 readline.set_auto_history({})
@@ -171,7 +174,7 @@ print("History length:", readline.get_current_history_length())
                 if state == 0 and text == "$":
                     return "$complete"
                 return None
-            if "libedit" in getattr(readline, "__doc__", ""):
+            if readline.backend == "editline":
                 readline.parse_and_bind(r'bind "\\t" rl_complete')
             else:
                 readline.parse_and_bind(r'"\\t": complete')
@@ -198,7 +201,7 @@ print("History length:", readline.get_current_history_length())
 
         script = r"""import readline
 
-is_editline = readline.__doc__ and "libedit" in readline.__doc__
+is_editline = readline.backend == "editline"
 inserted = "[\xEFnserted]"
 macro = "|t\xEB[after]"
 set_pre_input_hook = getattr(readline, "set_pre_input_hook", None)
