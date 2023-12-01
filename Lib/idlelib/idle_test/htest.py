@@ -1,38 +1,35 @@
-'''Run human tests of Idle's window, dialog, and popup widgets.
+"""Run human tests of Idle's window, dialog, and popup widgets.
 
-run(*tests)
-Create a master Tk window.  Within that, run each callable in tests
-after finding the matching test spec in this file.  If tests is empty,
-run an htest for each spec dict in this file after finding the matching
-callable in the module named in the spec.  Close the window to skip or
-end the test.
+run(*tests) Create a master Tk() htest window.  Within that, run each
+callable in tests after finding the matching test spec in this file.  If
+tests is empty, run an htest for each spec dict in this file after
+finding the matching callable in the module named in the spec.  Close
+the master window to end testing.
 
-In a tested module, let X be a global name bound to a callable (class
-or function) whose .__name__ attribute is also X (the usual situation).
-The first parameter of X must be 'parent'.  When called, the parent
-argument will be the root window.  X must create a child Toplevel
-window (or subclass thereof).  The Toplevel may be a test widget or
-dialog, in which case the callable is the corresponding class.  Or the
-Toplevel may contain the widget to be tested or set up a context in
-which a test widget is invoked.  In this latter case, the callable is a
-wrapper function that sets up the Toplevel and other objects.  Wrapper
-function names, such as _editor_window', should start with '_'.
+In a tested module, let X be a global name bound to a callable (class or
+function) whose .__name__ attribute is also X (the usual situation). The
+first parameter of X must be 'parent'.  When called, the parent argument
+will be the root window.  X must create a child Toplevel(parent) window
+(or subclass thereof).  The Toplevel may be a test widget or dialog, in
+which case the callable is the corresponding class.  Or the Toplevel may
+contain the widget to be tested or set up a context in which a test
+widget is invoked.  In this latter case, the callable is a wrapper
+function that sets up the Toplevel and other objects.  Wrapper function
+names, such as _editor_window', should start with '_' and be lowercase.
 
 
 End the module with
 
 if __name__ == '__main__':
-    <unittest, if there is one>
+    <run unittest.main with 'exit=False'>
     from idlelib.idle_test.htest import run
-    run(X)
+    run(callable)  # There could be multiple comma-separated callables.
 
-To have wrapper functions and test invocation code ignored by coveragepy
-reports, put '# htest #' on the def statement header line.
-
-def _wrapper(parent):  # htest #
-
-Also make sure that the 'if __name__' line matches the above.  Then have
-make sure that .coveragerc includes the following.
+To have wrapper functions ignored by coverage reports, tag the def
+header like so: "def _wrapper(parent):  # htest #".  Use the same tag
+for htest lines in widget code.  Make sure that the 'if __name__' line
+matches the above.  Then have make sure that .coveragerc includes the
+following:
 
 [report]
 exclude_lines =
@@ -46,7 +43,7 @@ To run any X, this file must contain a matching instance of the
 following template, with X.__name__ prepended to '_spec'.
 When all tests are run, the prefix is use to get X.
 
-_spec = {
+callable_spec = {
     'file': '',
     'kwds': {'title': ''},
     'msg': ""
@@ -54,19 +51,20 @@ _spec = {
 
 file (no .py): run() imports file.py.
 kwds: augmented with {'parent':root} and passed to X as **kwds.
-title: an example kwd; some widgets need this, delete if not.
+title: an example kwd; some widgets need this, delete line if not.
 msg: master window hints about testing the widget.
 
 
-Modules and classes not being tested at the moment:
-pyshell.PyShellEditorWindow
-debugger.Debugger
-autocomplete_w.AutoCompleteWindow
-outwin.OutputWindow (indirectly being tested with grep test)
-'''
+TODO test these modules and classes:
+  autocomplete_w.AutoCompleteWindow
+  debugger.Debugger
+  outwin.OutputWindow (indirectly being tested with grep test)
+  pyshell.PyShellEditorWindow
+"""
 
 import idlelib.pyshell  # Set Windows DPI awareness before Tk().
 from importlib import import_module
+import textwrap
 import tkinter as tk
 from tkinter.ttk import Scrollbar
 tk.NoDefaultRoot()
@@ -76,8 +74,8 @@ AboutDialog_spec = {
     'kwds': {'title': 'help_about test',
              '_htest': True,
              },
-    'msg': "Test every button. Ensure Python, TK and IDLE versions "
-           "are correctly displayed.\n [Close] to exit.",
+    'msg': "Click on URL to open in default browser.\n"
+           "Verify x.y.z versions and test each button, including Close.\n "
     }
 
 # TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
@@ -88,15 +86,6 @@ _calltip_window_spec = {
            "Typing ') should hide the calltip.\n"
            "So should moving cursor out of argument area.\n"
            "Force-open-calltip does not work here.\n"
-    }
-
-_module_browser_spec = {
-    'file': 'browser',
-    'kwds': {},
-    'msg': "Inspect names of module, class(with superclass if "
-           "applicable), methods and functions.\nToggle nested items.\n"
-           "Double clicking on items prints a traceback for an exception "
-           "that is ignored."
     }
 
 _color_delegator_spec = {
@@ -124,6 +113,16 @@ ConfigDialog_spec = {
            "changes made have persisted."
     }
 
+CustomRun_spec = {
+    'file': 'query',
+    'kwds': {'title': 'Customize query.py Run',
+             '_htest': True},
+    'msg': "Enter with <Return> or [Run].  Print valid entry to Shell\n"
+           "Arguments are parsed into a list\n"
+           "Mode is currently restart True or False\n"
+           "Close dialog with valid entry, <Escape>, [Cancel], [X]"
+    }
+
 # TODO Improve message
 _dyn_option_menu_spec = {
     'file': 'dynoption',
@@ -141,7 +140,7 @@ _editor_window_spec = {
            "Best to close editor first."
     }
 
-GetKeysDialog_spec = {
+GetKeysWindow_spec = {
     'file': 'config_key',
     'kwds': {'title': 'Test keybindings',
              'action': 'find-again',
@@ -195,6 +194,26 @@ _io_binding_spec = {
            "Check that changes were saved by opening the file elsewhere."
     }
 
+_linenumbers_drag_scrolling_spec = {
+    'file': 'sidebar',
+    'kwds': {},
+    'msg': textwrap.dedent("""\
+        1. Click on the line numbers and drag down below the edge of the
+        window, moving the mouse a bit and then leaving it there for a while.
+        The text and line numbers should gradually scroll down, with the
+        selection updated continuously.
+
+        2. With the lines still selected, click on a line number above the
+        selected lines. Only the line whose number was clicked should be
+        selected.
+
+        3. Repeat step #1, dragging to above the window. The text and line
+        numbers should gradually scroll up, with the selection updated
+        continuously.
+
+        4. Repeat step #2, clicking a line number below the selection."""),
+    }
+
 _multi_call_spec = {
     'file': 'multicall',
     'kwds': {},
@@ -203,6 +222,15 @@ _multi_call_spec = {
            "<Control-Key>,\n<Alt-Key-a>, <Control-Key-a>, "
            "<Alt-Control-Key-a>, \n<Control-Button-1>, <Alt-Button-1> and "
            "focusing out of the window\nare sequences to be tested."
+    }
+
+_module_browser_spec = {
+    'file': 'browser',
+    'kwds': {},
+    'msg': "Inspect names of module, class(with superclass if "
+           "applicable), methods and functions.\nToggle nested items.\n"
+           "Double clicking on items prints a traceback for an exception "
+           "that is ignored."
     }
 
 _multistatus_bar_spec = {
@@ -215,7 +243,7 @@ _multistatus_bar_spec = {
 _object_browser_spec = {
     'file': 'debugobj',
     'kwds': {},
-    'msg': "Double click on items upto the lowest level.\n"
+    'msg': "Double click on items up to the lowest level.\n"
            "Attributes of the objects and related information "
            "will be displayed side-by-side at each level."
     }
@@ -224,7 +252,7 @@ _path_browser_spec = {
     'file': 'pathbrowser',
     'kwds': {},
     'msg': "Test for correct display of all paths in sys.path.\n"
-           "Toggle nested items upto the lowest level.\n"
+           "Toggle nested items up to the lowest level.\n"
            "Double clicking on an item prints a traceback\n"
            "for an exception that is ignored."
     }
@@ -310,7 +338,7 @@ _tree_widget_spec = {
     'file': 'tree',
     'kwds': {},
     'msg': "The canvas is scrollable.\n"
-           "Click on folders upto to the lowest level."
+           "Click on folders up to to the lowest level."
     }
 
 _undo_delegator_spec = {
@@ -325,7 +353,7 @@ _undo_delegator_spec = {
 ViewWindow_spec = {
     'file': 'textview',
     'kwds': {'title': 'Test textview',
-             'text': 'The quick brown fox jumps over the lazy dog.\n'*35,
+             'contents': 'The quick brown fox jumps over the lazy dog.\n'*35,
              '_htest': True},
     'msg': "Test for read-only property of text.\n"
            "Select text, scroll window, close"

@@ -506,7 +506,7 @@ Fix handling of long oids in ssl.  Based on patch by Christian Heimes.
 .. section: Library
 
 ftplib.FTP.putline() now throws ValueError on commands that contains CR or
-LF. Patch by Dong-hee Na.
+LF. Patch by Donghee Na.
 
 ..
 
@@ -877,7 +877,7 @@ The affected events are '<<force-open-completions>>', '<<expand-word>>',
 '<<run-module>>', '<<check-module>>', and '<<zoom-height>>'.  Any (global)
 customizations made before 3.6.3 will not affect their keyset-specific
 customization after 3.6.3. and vice versa.
-Inital patch by Charles Wohlganger.
+Initial patch by Charles Wohlganger.
 
 ..
 

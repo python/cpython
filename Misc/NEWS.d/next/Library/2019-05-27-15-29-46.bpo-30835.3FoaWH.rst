@@ -1,3 +1,0 @@
-Fixed a bug in email parsing where a message with invalid bytes in
-content-transfer-encoding of a multipart message can cause an AttributeError.
-Patch by Andrew Donnellan.
