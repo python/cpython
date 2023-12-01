@@ -13,6 +13,7 @@ import time
 import unittest
 import unittest.mock as mock
 import zipfile
+import zipfile.__main__ as zipfile_main
 
 
 from tempfile import TemporaryFile
@@ -3184,16 +3185,16 @@ class EncodedMetadataTests(unittest.TestCase):
         args = ["--metadata-encoding=shift_jis", "-c", "nonesuch", "nonesuch"]
         with captured_stdout() as stdout:
             with captured_stderr() as stderr:
-                self.assertRaises(SystemExit, zipfile.main, args)
+                self.assertRaises(SystemExit, zipfile_main.main, args)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn(errmsg, stderr.getvalue())
 
         with captured_stdout() as stdout:
-            zipfile.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
+            zipfile_main.main(["--metadata-encoding=shift_jis", "-t", TESTFN])
         listing = stdout.getvalue()
 
         with captured_stdout() as stdout:
-            zipfile.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
+            zipfile_main.main(["--metadata-encoding=shift_jis", "-l", TESTFN])
         listing = stdout.getvalue()
         for name in self.file_names:
             self.assertIn(name, listing)
@@ -3211,7 +3212,7 @@ class EncodedMetadataTests(unittest.TestCase):
             except UnicodeEncodeError:
                 self.skipTest(f'cannot encode file name {fn!r}')
 
-        zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
+        zipfile_main.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:
             self.assertIn(name, listing)

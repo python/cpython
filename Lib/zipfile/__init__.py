@@ -2233,6 +2233,3 @@ from ._path import (  # noqa: E402
     # used privately for tests
     CompleteDirs,  # noqa: F401
 )
-
-# used privately for tests
-from .__main__ import main  # noqa: F401, E402
