@@ -17,7 +17,7 @@ If a feature has been imported, the ``__future__ import`` remains valid even
 after the *MandatoryRelease* version. However, it has no behavioural effect.
 code will be compatible with multiple versions during the transition phase of
 a feature. If code only supports versions greater than or equal to the
-*MandatoryRelease* version, then no longer need the `__future__ import` for
+*MandatoryRelease* version, then no longer need the ``__future__ import`` for
 that specific feature.
 
 Once a feature has been imported, :ref:`future<future>` import remains valid
