@@ -1,0 +1,6 @@
+Add functions to get the current Python configuration:
+
+* :c:func:`PyConfig_Get`
+* :c:func:`PyConfig_GetInt`
+
+Patch by Victor Stinner.

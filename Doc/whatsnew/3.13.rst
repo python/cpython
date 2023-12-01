@@ -1230,6 +1230,12 @@ New Features
   :exc:`KeyError` if the key missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
+* Add functions to get the current Python configuration:
+
+  * :c:func:`PyConfig_Get`
+  * :c:func:`PyConfig_GetInt`
+
+  (Contributed by Victor Stinner in :gh:`107954`.)
 
 Porting to Python 3.13
 ----------------------
@@ -1497,6 +1503,9 @@ Pending Removal in Python 3.14
   * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
   * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
   * :c:var:`!Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
+
+  Use :c:func:`PyConfig_GetInt` and :c:func:`PyConfig_Get` functions to get
+  these configuration options.
 
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.

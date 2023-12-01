@@ -40,91 +40,98 @@ typedef struct {
     const char *name;
     size_t offset;
     PyConfigMemberType type;
+    const char *sys_attr;
 } PyConfigSpec;
 
-#define SPEC(MEMBER, TYPE) \
-    {#MEMBER, offsetof(PyConfig, MEMBER), PyConfig_MEMBER_##TYPE}
+#define SPEC(MEMBER, TYPE, SYS_ATTR) \
+    {#MEMBER, offsetof(PyConfig, MEMBER), PyConfig_MEMBER_##TYPE, SYS_ATTR}
 
 static const PyConfigSpec PYCONFIG_SPEC[] = {
-    SPEC(_config_init, UINT),
-    SPEC(isolated, UINT),
-    SPEC(use_environment, UINT),
-    SPEC(dev_mode, UINT),
-    SPEC(install_signal_handlers, UINT),
-    SPEC(use_hash_seed, UINT),
-    SPEC(hash_seed, ULONG),
-    SPEC(faulthandler, UINT),
-    SPEC(tracemalloc, UINT),
-    SPEC(perf_profiling, UINT),
-    SPEC(import_time, UINT),
-    SPEC(code_debug_ranges, UINT),
-    SPEC(show_ref_count, UINT),
-    SPEC(dump_refs, UINT),
-    SPEC(dump_refs_file, WSTR_OPT),
-    SPEC(malloc_stats, UINT),
-    SPEC(filesystem_encoding, WSTR),
-    SPEC(filesystem_errors, WSTR),
-    SPEC(pycache_prefix, WSTR_OPT),
-    SPEC(parse_argv, UINT),
-    SPEC(orig_argv, WSTR_LIST),
-    SPEC(argv, WSTR_LIST),
-    SPEC(xoptions, WSTR_LIST),
-    SPEC(warnoptions, WSTR_LIST),
-    SPEC(site_import, UINT),
-    SPEC(bytes_warning, UINT),
-    SPEC(warn_default_encoding, UINT),
-    SPEC(inspect, UINT),
-    SPEC(interactive, UINT),
-    SPEC(optimization_level, UINT),
-    SPEC(parser_debug, UINT),
-    SPEC(write_bytecode, UINT),
-    SPEC(verbose, UINT),
-    SPEC(quiet, UINT),
-    SPEC(user_site_directory, UINT),
-    SPEC(configure_c_stdio, UINT),
-    SPEC(buffered_stdio, UINT),
-    SPEC(stdio_encoding, WSTR),
-    SPEC(stdio_errors, WSTR),
+    SPEC(_config_init, UINT, NULL),
+    SPEC(isolated, UINT, NULL),
+    SPEC(use_environment, UINT, NULL),
+    SPEC(dev_mode, UINT, NULL),
+    SPEC(install_signal_handlers, UINT, NULL),
+    SPEC(use_hash_seed, UINT, NULL),
+    SPEC(hash_seed, ULONG, NULL),
+    SPEC(faulthandler, UINT, NULL),
+    SPEC(tracemalloc, UINT, NULL),
+    SPEC(perf_profiling, UINT, NULL),
+    SPEC(import_time, UINT, NULL),
+    SPEC(code_debug_ranges, UINT, NULL),
+    SPEC(show_ref_count, UINT, NULL),
+    SPEC(dump_refs, UINT, NULL),
+    SPEC(dump_refs_file, WSTR_OPT, NULL),
+    SPEC(malloc_stats, UINT, NULL),
+    SPEC(filesystem_encoding, WSTR, NULL),
+    SPEC(filesystem_errors, WSTR, NULL),
+    SPEC(pycache_prefix, WSTR_OPT, "pycache_prefix"),
+    SPEC(parse_argv, UINT, NULL),
+    SPEC(orig_argv, WSTR_LIST, "orig_argv"),
+    SPEC(argv, WSTR_LIST, "argv"),
+    SPEC(xoptions, WSTR_LIST, "_xoptions"),
+    SPEC(warnoptions, WSTR_LIST, "warnoptions"),
+    SPEC(site_import, UINT, NULL),
+    SPEC(bytes_warning, UINT, NULL),
+    SPEC(warn_default_encoding, UINT, NULL),
+    SPEC(inspect, UINT, NULL),
+    SPEC(interactive, UINT, NULL),
+    SPEC(optimization_level, UINT, NULL),
+    SPEC(parser_debug, UINT, NULL),
+    SPEC(write_bytecode, UINT, NULL),
+    SPEC(verbose, UINT, NULL),
+    SPEC(quiet, UINT, NULL),
+    SPEC(user_site_directory, UINT, NULL),
+    SPEC(configure_c_stdio, UINT, NULL),
+    SPEC(buffered_stdio, UINT, NULL),
+    SPEC(stdio_encoding, WSTR, NULL),
+    SPEC(stdio_errors, WSTR, NULL),
 #ifdef MS_WINDOWS
-    SPEC(legacy_windows_stdio, UINT),
+    SPEC(legacy_windows_stdio, UINT, NULL),
 #endif
-    SPEC(check_hash_pycs_mode, WSTR),
-    SPEC(use_frozen_modules, UINT),
-    SPEC(safe_path, UINT),
-    SPEC(int_max_str_digits, INT),
-    SPEC(cpu_count, INT),
-    SPEC(pathconfig_warnings, UINT),
-    SPEC(program_name, WSTR),
-    SPEC(pythonpath_env, WSTR_OPT),
-    SPEC(home, WSTR_OPT),
-    SPEC(platlibdir, WSTR),
-    SPEC(sys_path_0, WSTR_OPT),
-    SPEC(module_search_paths_set, UINT),
-    SPEC(module_search_paths, WSTR_LIST),
-    SPEC(stdlib_dir, WSTR_OPT),
-    SPEC(executable, WSTR_OPT),
-    SPEC(base_executable, WSTR_OPT),
-    SPEC(prefix, WSTR_OPT),
-    SPEC(base_prefix, WSTR_OPT),
-    SPEC(exec_prefix, WSTR_OPT),
-    SPEC(base_exec_prefix, WSTR_OPT),
-    SPEC(skip_source_first_line, UINT),
-    SPEC(run_command, WSTR_OPT),
-    SPEC(run_module, WSTR_OPT),
-    SPEC(run_filename, WSTR_OPT),
-    SPEC(_install_importlib, UINT),
-    SPEC(_init_main, UINT),
-    SPEC(_is_python_build, UINT),
+    SPEC(check_hash_pycs_mode, WSTR, NULL),
+    SPEC(use_frozen_modules, UINT, NULL),
+    SPEC(safe_path, UINT, NULL),
+    SPEC(int_max_str_digits, INT, NULL),
+    SPEC(cpu_count, INT, NULL),
+    SPEC(pathconfig_warnings, UINT, NULL),
+    SPEC(program_name, WSTR, NULL),
+    SPEC(pythonpath_env, WSTR_OPT, NULL),
+    SPEC(home, WSTR_OPT, NULL),
+    SPEC(platlibdir, WSTR, "platlibdir"),
+    SPEC(sys_path_0, WSTR_OPT, NULL),
+    SPEC(module_search_paths_set, UINT, NULL),
+    SPEC(module_search_paths, WSTR_LIST, "path"),
+    SPEC(stdlib_dir, WSTR_OPT, "_stdlib_dir"),
+    SPEC(executable, WSTR_OPT, "executable"),
+    SPEC(base_executable, WSTR_OPT, "_base_executable"),
+    SPEC(prefix, WSTR_OPT, "prefix"),
+    SPEC(base_prefix, WSTR_OPT, "base_prefix"),
+    SPEC(exec_prefix, WSTR_OPT, "exec_prefix"),
+    SPEC(base_exec_prefix, WSTR_OPT, "base_exec_prefix"),
+    SPEC(skip_source_first_line, UINT, NULL),
+    SPEC(run_command, WSTR_OPT, NULL),
+    SPEC(run_module, WSTR_OPT, NULL),
+    SPEC(run_filename, WSTR_OPT, NULL),
+    SPEC(_install_importlib, UINT, NULL),
+    SPEC(_init_main, UINT, NULL),
+    SPEC(_is_python_build, UINT, NULL),
 #ifdef Py_STATS
-    SPEC(_pystats, UINT),
+    SPEC(_pystats, UINT, NULL),
 #endif
 #ifdef Py_DEBUG
-    SPEC(run_presite, WSTR_OPT),
+    SPEC(run_presite, WSTR_OPT, NULL),
 #endif
-    {NULL, 0, 0},
+    {NULL, 0, 0, NULL},
 };
 
 #undef SPEC
+
+
+// Forward declarations
+static PyObject*
+config_get(const PyConfig *config, const PyConfigSpec *spec,
+           int use_sys);
 
 
 /* --- Command line options --------------------------------------- */
@@ -1051,48 +1058,12 @@ _PyConfig_AsDict(const PyConfig *config)
 
     const PyConfigSpec *spec = PYCONFIG_SPEC;
     for (; spec->name != NULL; spec++) {
-        char *member = (char *)config + spec->offset;
-        PyObject *obj;
-        switch (spec->type) {
-        case PyConfig_MEMBER_INT:
-        case PyConfig_MEMBER_UINT:
-        {
-            int value = *(int*)member;
-            obj = PyLong_FromLong(value);
-            break;
-        }
-        case PyConfig_MEMBER_ULONG:
-        {
-            unsigned long value = *(unsigned long*)member;
-            obj = PyLong_FromUnsignedLong(value);
-            break;
-        }
-        case PyConfig_MEMBER_WSTR:
-        case PyConfig_MEMBER_WSTR_OPT:
-        {
-            const wchar_t *wstr = *(const wchar_t**)member;
-            if (wstr != NULL) {
-                obj = PyUnicode_FromWideChar(wstr, -1);
-            }
-            else {
-                obj = Py_NewRef(Py_None);
-            }
-            break;
-        }
-        case PyConfig_MEMBER_WSTR_LIST:
-        {
-            const PyWideStringList *list = (const PyWideStringList*)member;
-            obj = _PyWideStringList_AsList(list);
-            break;
-        }
-        default:
-            Py_UNREACHABLE();
-        }
-
+        PyObject *obj = config_get(config, spec, 0);
         if (obj == NULL) {
             Py_DECREF(dict);
             return NULL;
         }
+
         int res = PyDict_SetItemString(dict, spec->name, obj);
         Py_DECREF(obj);
         if (res < 0) {
@@ -1271,6 +1242,66 @@ error:
 }
 
 
+static int
+config_dict_get_xoptions(PyObject *dict, const char *name, PyConfig *config,
+                         PyWideStringList *result)
+{
+    PyObject *xoptions = config_dict_get(dict, name);
+    if (xoptions == NULL) {
+        return -1;
+    }
+
+    if (!PyDict_CheckExact(xoptions)) {
+        Py_DECREF(xoptions);
+        config_dict_invalid_type(name);
+        return -1;
+    }
+
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    PyWideStringList wstrlist = _PyWideStringList_INIT;
+    while (PyDict_Next(xoptions, &pos, &key, &value)) {
+        PyObject *item;
+
+        if (value != Py_True) {
+            item = PyUnicode_FromFormat("%S=%S", key, value);
+            if (item == NULL) {
+                goto error;
+            }
+        }
+        else {
+            item = Py_NewRef(key);
+        }
+
+        wchar_t *wstr = PyUnicode_AsWideCharString(item, NULL);
+        Py_DECREF(item);
+        if (wstr == NULL) {
+            goto error;
+        }
+
+        PyStatus status = PyWideStringList_Append(&wstrlist, wstr);
+        PyMem_Free(wstr);
+        if (_PyStatus_EXCEPTION(status)) {
+            PyErr_NoMemory();
+            goto error;
+        }
+    }
+
+    if (_PyWideStringList_Copy(result, &wstrlist) < 0) {
+        PyErr_NoMemory();
+        goto error;
+    }
+    _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(xoptions);
+    return 0;
+
+error:
+    _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(xoptions);
+    return -1;
+}
+
+
 int
 _PyConfig_FromDict(PyConfig *config, PyObject *dict)
 {
@@ -1331,9 +1362,17 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         }
         case PyConfig_MEMBER_WSTR_LIST:
         {
-            if (config_dict_get_wstrlist(dict, spec->name, config,
-                                         (PyWideStringList*)member) < 0) {
-                return -1;
+            if (strcmp(spec->name, "xoptions") == 0) {
+                if (config_dict_get_xoptions(dict, spec->name, config,
+                                             (PyWideStringList*)member) < 0) {
+                    return -1;
+                }
+            }
+            else {
+                if (config_dict_get_wstrlist(dict, spec->name, config,
+                                             (PyWideStringList*)member) < 0) {
+                    return -1;
+                }
             }
             break;
         }
@@ -3217,4 +3256,244 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     }
 
     _PyErr_SetRaisedException(tstate, exc);
+}
+
+
+// --- PyConfig_Get() -------------------------------------------------------
+
+static void*
+config_spec_get_member(const PyConfigSpec *spec, const PyConfig *config)
+{
+    return (char *)config + spec->offset;
+}
+
+
+static const PyConfigSpec*
+config_find_spec(const char *name)
+{
+    const PyConfigSpec *spec;
+    for (spec = PYCONFIG_SPEC; spec->name != NULL; spec++) {
+        if (strcmp(name, spec->name) == 0) {
+            return spec;
+        }
+    }
+    PyErr_Format(PyExc_ValueError,
+                 "unknown config option name: %s", name);
+    return NULL;
+}
+
+
+static int
+config_add_xoption(PyObject *dict, const wchar_t *str)
+{
+    PyObject *name = NULL, *value = NULL;
+
+    const wchar_t *name_end = wcschr(str, L'=');
+    if (!name_end) {
+        name = PyUnicode_FromWideChar(str, -1);
+        if (name == NULL) {
+            goto error;
+        }
+        value = Py_NewRef(Py_True);
+    }
+    else {
+        name = PyUnicode_FromWideChar(str, name_end - str);
+        if (name == NULL) {
+            goto error;
+        }
+        value = PyUnicode_FromWideChar(name_end + 1, -1);
+        if (value == NULL) {
+            goto error;
+        }
+    }
+    if (PyDict_SetItem(dict, name, value) < 0) {
+        goto error;
+    }
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return 0;
+
+error:
+    Py_XDECREF(name);
+    Py_XDECREF(value);
+    return -1;
+}
+
+
+PyObject*
+_PyConfig_CreateXOptionsDict(const PyConfig *config)
+{
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t nxoption = config->xoptions.length;
+    wchar_t **xoptions = config->xoptions.items;
+    for (Py_ssize_t i=0; i < nxoption; i++) {
+        const wchar_t *option = xoptions[i];
+        if (config_add_xoption(dict, option) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+    return dict;
+}
+
+
+static PyObject*
+config_get_sys(const char *name)
+{
+    PyObject *value = PySys_GetObject(name);
+    if (value == NULL) {
+        PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
+        return NULL;
+    }
+    return Py_NewRef(value);
+}
+
+
+static int
+config_can_use_sys(void)
+{
+    return _PyRuntime.initialized;
+}
+
+
+static int
+config_get_sys_write_bytecode(const PyConfig *config, int *value)
+{
+    PyObject *attr = config_get_sys("dont_write_bytecode");
+    if (attr == NULL) {
+        return -1;
+    }
+
+    int is_true = PyObject_IsTrue(attr);
+    Py_DECREF(attr);
+    if (is_true < 0) {
+        return -1;
+    }
+    *value = (!is_true);
+    return 0;
+}
+
+
+static PyObject*
+config_get(const PyConfig *config, const PyConfigSpec *spec,
+           int use_sys)
+{
+    if (use_sys && config_can_use_sys()) {
+        if (spec->sys_attr != NULL) {
+            return config_get_sys(spec->sys_attr);
+        }
+
+        if (strcmp(spec->name, "write_bytecode") == 0) {
+            int value;
+            if (config_get_sys_write_bytecode(config, &value) < 0) {
+                return NULL;
+            }
+            return PyLong_FromLong(value);
+        }
+    }
+
+    char *member = config_spec_get_member(spec, config);
+    switch (spec->type) {
+    case PyConfig_MEMBER_INT:
+    case PyConfig_MEMBER_UINT:
+    {
+        int value = *(int *)member;
+        return PyLong_FromLong(value);
+    }
+
+    case PyConfig_MEMBER_ULONG:
+    {
+        unsigned long value = *(unsigned long *)member;
+        return PyLong_FromUnsignedLong(value);
+    }
+
+    case PyConfig_MEMBER_WSTR:
+    case PyConfig_MEMBER_WSTR_OPT:
+    {
+        wchar_t *wstr = *(wchar_t **)member;
+        if (wstr != NULL) {
+            return PyUnicode_FromWideChar(wstr, -1);
+        }
+        else {
+            return Py_NewRef(Py_None);
+        }
+    }
+
+    case PyConfig_MEMBER_WSTR_LIST:
+    {
+        if (strcmp(spec->name, "xoptions") == 0) {
+            return _PyConfig_CreateXOptionsDict(config);
+        }
+        else {
+            const PyWideStringList *list = (const PyWideStringList *)member;
+            return _PyWideStringList_AsList(list);
+        }
+    }
+    default:
+        PyErr_Format(PyExc_TypeError,
+                     "config option %s is not a strings list", spec->name);
+        return NULL;
+    }
+}
+
+
+PyObject*
+PyConfig_Get(const char *name)
+{
+    const PyConfigSpec *spec = config_find_spec(name);
+    if (spec == NULL) {
+        return NULL;
+    }
+    const PyConfig *config = _Py_GetConfig();
+    return config_get(config, spec, 1);
+}
+
+
+int
+PyConfig_GetInt(const char *name, int *value)
+{
+    const PyConfigSpec *spec = config_find_spec(name);
+    if (spec == NULL) {
+        return -1;
+    }
+    const PyConfig *config = _Py_GetConfig();
+
+    if (config_can_use_sys() && strcmp(spec->name, "write_bytecode") == 0) {
+        if (config_get_sys_write_bytecode(config, value) < 0) {
+            return -1;
+        }
+        return 0;
+    }
+
+    char *member = config_spec_get_member(spec, config);
+
+    switch (spec->type) {
+    case PyConfig_MEMBER_INT:
+    case PyConfig_MEMBER_UINT:
+        *value = *(int *)member;
+        break;
+
+    case PyConfig_MEMBER_ULONG:
+    {
+        unsigned long ulong_value = *(unsigned long *)member;
+        if (ulong_value > (unsigned long)INT_MAX) {
+            PyErr_Format(PyExc_OverflowError,
+                         "config option %s value doesn't fit into int",
+                         spec->name);
+            return -1;
+        }
+        *value = (int)ulong_value;
+        break;
+    }
+
+    default:
+        PyErr_Format(PyExc_TypeError, "config option %s is not an int",
+                     spec->name);
+        return -1;
+    }
+    return 0;
 }

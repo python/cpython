@@ -127,7 +127,8 @@ class SetConfigTests(unittest.TestCase):
             'warnoptions',
             'module_search_paths',
         ):
-            value_tests.append((key, invalid_wstrlist))
+            if key != 'xoptions':
+                value_tests.append((key, invalid_wstrlist))
             type_tests.append((key, 123))
             type_tests.append((key, "abc"))
             type_tests.append((key, [123]))
@@ -201,9 +202,9 @@ class SetConfigTests(unittest.TestCase):
         self.check(warnoptions=[])
         self.check(warnoptions=["default", "ignore"])
 
-        self.set_config(xoptions=[])
+        self.set_config(xoptions={})
         self.assertEqual(sys._xoptions, {})
-        self.set_config(xoptions=["dev", "tracemalloc=5"])
+        self.set_config(xoptions={"dev": True, "tracemalloc": "5"})
         self.assertEqual(sys._xoptions, {"dev": True, "tracemalloc": "5"})
 
     def test_pathconfig(self):

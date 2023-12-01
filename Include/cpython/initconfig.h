@@ -257,6 +257,24 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     Py_ssize_t length, wchar_t **items);
 
 
+/* --- PyConfig_Get() ----------------------------------------- */
+
+// Get a configuration option as a Python object.
+// Return a new reference on success.
+// Set an exception and return NULL on error.
+//
+// The object type depends on the configuration option. It can be:
+// int, str, list[str] and dict[str, str].
+PyAPI_FUNC(PyObject*) PyConfig_Get(const char *name);
+
+// Get an configuration option as an integer.
+// Return 0 and set '*value' on success.
+// Raise an exception return -1 on error.
+PyAPI_FUNC(int) PyConfig_GetInt(
+    const char *name,
+    int *value);
+
+
 /* --- Helper functions --------------------------------------- */
 
 /* Get the original command line arguments, before Python modified them.

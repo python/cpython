@@ -1602,6 +1602,53 @@ customized Python always running in isolated mode using
 :c:func:`Py_RunMain`.
 
 
+Get the current Python configuration
+====================================
+
+Get a configuration option where *name* is the name of a :c:type:`PyConfig`
+member.
+
+Some options are read from the :mod:`sys` attributes. For example, the option
+``"argv"`` is read from :data:`sys.argv`.
+
+
+.. c:function:: int PyConfig_Get(const char *name, PyObject **value)
+
+   Get a configuration option as a Python object.
+
+   The object type depends on the configuration option. It can be:
+
+   * ``int``
+   * ``str``
+   * ``list[str]``
+   * ``dict[str, str]``
+
+   * Return ``0`` and set *\*value* on success.
+   * Raise an exception and return ``-1`` on error.
+
+
+.. c:function:: int PyConfig_GetInt(const char *name, int *value)
+
+   Similar to :c:func:`PyConfig_Get`, but get the value as a C int.
+
+
+Example
+-------
+
+Code::
+
+    int get_verbose(void)
+    {
+        int verbose;
+        if (PyConfig_GetInt("verbose", &verbose) < 0) {
+            // Silently ignore the error
+            PyErr_Clear();
+            return -1;
+        }
+        return verbose;
+    }
+
+
 Py_GetArgcArgv()
 ================
 

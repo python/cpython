@@ -465,7 +465,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'argv': [""],
         'orig_argv': [],
 
-        'xoptions': [],
+        'xoptions': {},
         'warnoptions': [],
 
         'pythonpath_env': None,
@@ -509,7 +509,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'check_hash_pycs_mode': 'default',
         'pathconfig_warnings': 1,
         '_init_main': 1,
-        'use_frozen_modules': not support.Py_DEBUG,
+        'use_frozen_modules': int(not support.Py_DEBUG),
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
@@ -867,12 +867,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           '-c', 'pass',
                           'arg2'],
             'parse_argv': 2,
-            'xoptions': [
-                'config_xoption1=3',
-                'config_xoption2=',
-                'config_xoption3',
-                'cmdline_xoption',
-            ],
+            'xoptions': {
+                'config_xoption1': '3',
+                'config_xoption2': '',
+                'config_xoption3': True,
+                'cmdline_xoption': True,
+            },
             'warnoptions': [
                 'cmdline_warnoption',
                 'default::BytesWarning',
@@ -1016,7 +1016,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'dev_mode': 1,
             'faulthandler': 1,
             'warnoptions': ['default'],
-            'xoptions': ['dev'],
+            'xoptions': {'dev': True},
             'safe_path': 1,
         }
         self.check_all_configs("test_preinit_parse_argv", config, preconfig,
@@ -1108,12 +1108,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_sys_add(self):
         config = {
             'faulthandler': 1,
-            'xoptions': [
-                'config_xoption',
-                'cmdline_xoption',
-                'sysadd_xoption',
-                'faulthandler',
-            ],
+            'xoptions': {
+                'config_xoption': True,
+                'cmdline_xoption': True,
+                'sysadd_xoption': True,
+                'faulthandler': True,
+            },
             'warnoptions': [
                 'ignore:::cmdline_warnoption',
                 'ignore:::sysadd_warnoption',
@@ -1654,6 +1654,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         for raw, expected in tests:
             optval = f'frozen_modules{raw}'
+            if raw.startswith('='):
+                xoption_value = raw[1:]
+            else:
+                xoption_value = True
             config = {
                 'parse_argv': 2,
                 'argv': ['-c'],
@@ -1661,7 +1665,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'program_name': './argv0',
                 'run_command': 'pass\n',
                 'use_environment': 1,
-                'xoptions': [optval],
+                'xoptions': {'frozen_modules': xoption_value},
                 'use_frozen_modules': expected,
             }
             env = {'TESTFROZEN': raw[1:]} if raw else None
