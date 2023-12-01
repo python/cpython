@@ -3077,9 +3077,9 @@ class Unrepresentable:
 
 class TestTracebackException(unittest.TestCase):
 
-    def test_smoke(self):
+    def do_test_smoke(self, exc, expected_type_str):
         try:
-            1/0
+            raise exc
         except Exception as e:
             exc_obj = e
             exc = traceback.TracebackException.from_exception(e)
@@ -3089,8 +3089,22 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(None, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(type(exc_obj), exc.exc_type)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(expected_type_str, exc.exc_type_str)
         self.assertEqual(str(exc_obj), str(exc))
+
+    def test_smoke_builtin(self):
+        self.do_test_smoke(ValueError(42), 'ValueError')
+
+    def test_smoke_user_exception(self):
+        class MyException(Exception):
+            pass
+
+        self.do_test_smoke(
+            MyException('bad things happened'),
+            ('test.test_traceback.TestTracebackException.'
+             'test_smoke_user_exception.<locals>.MyException'))
 
     def test_from_exception(self):
         # Check all the parameters are accepted.
@@ -3112,7 +3126,9 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(None, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(type(exc_obj), exc.exc_type)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
         self.assertEqual(str(exc_obj), str(exc))
 
     def test_cause(self):
@@ -3134,7 +3150,9 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_context, exc.__context__)
         self.assertEqual(True, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(type(exc_obj), exc.exc_type)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
         self.assertEqual(str(exc_obj), str(exc))
 
     def test_context(self):
@@ -3154,7 +3172,9 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_context, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(type(exc_obj), exc.exc_type)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
         self.assertEqual(str(exc_obj), str(exc))
 
     def test_long_context_chain(self):
@@ -3199,7 +3219,9 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(None, exc.__context__)
         self.assertEqual(True, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(type(exc_obj), exc.exc_type)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
         self.assertEqual(str(exc_obj), str(exc))
 
     def test_compact_no_cause(self):
@@ -3219,8 +3241,21 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_context, exc.__context__)
         self.assertEqual(False, exc.__suppress_context__)
         self.assertEqual(expected_stack, exc.stack)
-        self.assertEqual(type(exc_obj), exc.exc_type)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(type(exc_obj), exc.exc_type)
+        self.assertEqual(type(exc_obj).__name__, exc.exc_type_str)
         self.assertEqual(str(exc_obj), str(exc))
+
+    def test_no_save_exc_type(self):
+        try:
+            1/0
+        except Exception as e:
+            exc = e
+
+        te = traceback.TracebackException.from_exception(
+                 exc, save_exc_type=False)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(te.exc_type)
 
     def test_no_refs_to_exception_and_traceback_objects(self):
         try:
