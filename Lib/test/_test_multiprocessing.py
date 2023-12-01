@@ -4480,7 +4480,6 @@ class _TestSharedMemory(BaseTestCase):
         mem = shared_memory.SharedMemory(create=True, size=10)
         try:
             rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
-            self.assertNotIn(b"resource_tracker", err)
             self.assertEqual(rc, 0)
             self.assertIn(
                 b"resource_tracker: There appear to be 1 leaked "
