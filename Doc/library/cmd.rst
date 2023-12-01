@@ -28,7 +28,7 @@ interface.
 
    The default, ``'tab'``, is treated specially, so that it refers to the
    :kbd:`Tab` key on every :data:`readline.backend`.
-   Specifically, if :data:`readline.backend` is ``libedit``,
+   Specifically, if :data:`readline.backend` is ``editline``,
    ``Cmd`` will use ``'^I'`` instead of ``'tab'``.
    Note that other values are not treated this way, and might only work
    with a specific backend.
