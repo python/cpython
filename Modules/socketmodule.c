@@ -2815,12 +2815,14 @@ For IP sockets, the address info is a pair (hostaddr, port).");
 static PyObject *
 sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
-    long block;
+    long value;
+    int block;
 
-    block = PyLong_AsLong(arg);
-    if (block == -1 && PyErr_Occurred())
+    value = PyLong_AsLong(arg);
+    if (value == -1 && PyErr_Occurred())
         return NULL;
 
+    block = (value != 0);
     s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);
     if (internal_setblocking(s, block) == -1) {
         return NULL;

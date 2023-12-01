@@ -4705,10 +4705,10 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             self.skipTest('needs UINT_MAX < ULONG_MAX')
 
         self.serv.setblocking(False)
-        self.assertEqual(self.serv.gettimeout(), 0.0)
+        self.assert_sock_timeout(self.serv, 0.0)
 
         self.serv.setblocking(_testcapi.UINT_MAX + 1)
-        self.assertIsNone(self.serv.gettimeout())
+        self.assert_sock_timeout(self.serv, None)
 
     _testSetBlocking_overflow = support.cpython_only(_testSetBlocking)
 
