@@ -216,10 +216,24 @@ perf_map_write_entry(void *state, const void *code_addr,
     PyMem_RawFree(perf_map_entry);
 }
 
+static void*
+perf_map_init_state(void)
+{
+    PyUnstable_PerfMapState_Init();
+    return NULL;
+}
+
+static int
+perf_map_free_state(void *state)
+{
+    PyUnstable_PerfMapState_Fini();
+    return 0;
+}
+
 _PyPerf_Callbacks _Py_perfmap_callbacks = {
-    NULL,
+    &perf_map_init_state,
     &perf_map_write_entry,
-    NULL,
+    &perf_map_free_state,
 };
 
 static int
@@ -415,7 +429,6 @@ _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *callbacks)
     trampoline_api.write_state = callbacks->write_state;
     trampoline_api.free_state = callbacks->free_state;
     trampoline_api.state = NULL;
-    perf_status = PERF_STATUS_OK;
 #endif
     return 0;
 }
@@ -434,6 +447,7 @@ _PyPerfTrampoline_Init(int activate)
     }
     if (!activate) {
         tstate->interp->eval_frame = NULL;
+        perf_status = PERF_STATUS_NO_INIT;
     }
     else {
         tstate->interp->eval_frame = py_trampoline_evaluator;
@@ -443,6 +457,9 @@ _PyPerfTrampoline_Init(int activate)
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {
             return -1;
+        }
+        if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
+            trampoline_api.state = trampoline_api.init_state();
         }
         perf_status = PERF_STATUS_OK;
     }
@@ -454,14 +471,27 @@ int
 _PyPerfTrampoline_Fini(void)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
+    if (perf_status != PERF_STATUS_OK) {
+        return 0;
+    }
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame == py_trampoline_evaluator) {
         tstate->interp->eval_frame = NULL;
     }
-    free_code_arenas();
+    if (perf_status == PERF_STATUS_OK) {
+        trampoline_api.free_state(trampoline_api.state);
+    }
     extra_code_index = -1;
+    perf_status = PERF_STATUS_NO_INIT;
 #endif
     return 0;
+}
+
+void _PyPerfTrampoline_FreeArenas(void) {
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+    free_code_arenas();
+#endif
+    return;
 }
 
 int
@@ -477,8 +507,8 @@ PyStatus
 _PyPerfTrampoline_AfterFork_Child(void)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
-    PyUnstable_PerfMapState_Fini();
     if (persist_after_fork) {
+        _PyPerfTrampoline_Fini();
         char filename[256];
         pid_t parent_pid = getppid();
         snprintf(filename, sizeof(filename), "/tmp/perf-%d.map", parent_pid);
