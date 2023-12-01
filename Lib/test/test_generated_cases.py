@@ -405,19 +405,6 @@ class TestGeneratedCases(unittest.TestCase):
         family(OP, INLINE_CACHE_ENTRIES_OP) = { OP3 };
     """
         output = """
-        TARGET(OP1) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(OP1);
-            PyObject *right;
-            PyObject *left;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            uint16_t counter = read_u16(&this_instr[1].cache);
-            op1(left, right);
-            DISPATCH();
-        }
-
         TARGET(OP) {
             frame->instr_ptr = next_instr;
             next_instr += 6;
@@ -447,6 +434,19 @@ class TestGeneratedCases(unittest.TestCase):
             DISPATCH();
         }
 
+        TARGET(OP1) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(OP1);
+            PyObject *right;
+            PyObject *left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            uint16_t counter = read_u16(&this_instr[1].cache);
+            op1(left, right);
+            DISPATCH();
+        }
+
         TARGET(OP3) {
             frame->instr_ptr = next_instr;
             next_instr += 6;
@@ -461,6 +461,44 @@ class TestGeneratedCases(unittest.TestCase):
             res = op3(arg2, left, right);
             STACK_SHRINK(2);
             stack_pointer[-1] = res;
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_pseudo_instruction_no_flags(self):
+        input = """
+        pseudo(OP) = {
+            OP1,
+        };
+
+        inst(OP1, (--)) {
+        }
+    """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_pseudo_instruction_with_flags(self):
+        input = """
+        pseudo(OP, (HAS_ARG, HAS_JUMP)) = {
+            OP1,
+        };
+
+        inst(OP1, (--)) {
+        }
+    """
+        output = """
+        TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
             DISPATCH();
         }
     """

@@ -295,7 +295,9 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
-            result.covered_lines = list(tracer.counts)
+            # Mypy doesn't know about this attribute yet,
+            # but it will do soon: https://github.com/python/typeshed/pull/11091
+            result.covered_lines = list(tracer.counts)  # type: ignore[attr-defined]
         else:
             result = run_single_test(test_name, runtests)
 
@@ -371,7 +373,8 @@ class Regrtest:
                 os.unlink(self.next_single_filename)
 
         if coverage is not None:
-            coverage.write_results(show_missing=True, summary=True,
+            # uses a new-in-Python 3.13 keyword argument that mypy doesn't know about yet:
+            coverage.write_results(show_missing=True, summary=True,  # type: ignore[call-arg]
                                    coverdir=self.coverage_dir,
                                    ignore_missing_files=True)
 
@@ -432,7 +435,10 @@ class Regrtest:
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests
             # that like to sleep
-            self.num_workers = (os.process_cpu_count() or 1) + 2
+            #
+            # os.process.cpu_count() is new in Python 3.13;
+            # mypy doesn't know about it yet
+            self.num_workers = (os.process_cpu_count() or 1) + 2  # type: ignore[attr-defined]
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header

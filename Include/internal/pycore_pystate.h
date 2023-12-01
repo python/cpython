@@ -191,11 +191,6 @@ extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
 
-/* The implementation of sys._current_frames()  Returns a dict mapping
-   thread id to that thread's current frame.
-*/
-extern PyObject* _PyThread_CurrentFrames(void);
-
 /* The implementation of sys._current_exceptions()  Returns a dict mapping
    thread id to that thread's current exception.
 */

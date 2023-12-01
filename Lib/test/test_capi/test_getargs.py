@@ -1314,6 +1314,34 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                             f"'{name2}' is an invalid keyword argument"):
                         parse((), {name2: 1, name3: 2}, '|OO', [name, name3])
 
+    def test_nested_tuple(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        self.assertEqual(parse(((1, 2, 3),), {}, '(OOO)', ['a']), (1, 2, 3))
+        self.assertEqual(parse((1, (2, 3), 4), {}, 'O(OO)O', ['a', 'b', 'c']),
+                         (1, 2, 3, 4))
+        parse(((1, 2, 3),), {}, '(iii)', ['a'])
+
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be sequence of length 2, not 3"):
+            parse(((1, 2, 3),), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be sequence of length 2, not 1"):
+            parse(((1,),), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item sequence, not int"):
+            parse((1,), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item sequence, not bytes"):
+            parse((b'ab',), {}, '(ii)', ['a'])
+
+        for f in 'es', 'et', 'es#', 'et#':
+            with self.assertRaises(LookupError):  # empty encoding ""
+                parse((('a',),), {}, '(' + f + ')', ['a'])
+            with self.assertRaisesRegex(TypeError,
+                    "argument 1 must be sequence of length 1, not 0"):
+                parse(((),), {}, '(' + f + ')', ['a'])
+
 
 if __name__ == "__main__":
     unittest.main()

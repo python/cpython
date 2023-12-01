@@ -5,6 +5,7 @@ import locale
 import os
 import sys
 import tempfile
+import textwrap
 import unittest
 from test.support import verbose
 from test.support.import_helper import import_module
@@ -162,6 +163,25 @@ print("History length:", readline.get_current_history_length())
         # bpo-44949: Sometimes, the newline character is not written at the
         # end, so don't expect it in the output.
         self.assertIn(b"History length: 0", output)
+
+    def test_set_complete_delims(self):
+        script = textwrap.dedent("""
+            import readline
+            def complete(text, state):
+                if state == 0 and text == "$":
+                    return "$complete"
+                return None
+            if "libedit" in getattr(readline, "__doc__", ""):
+                readline.parse_and_bind(r'bind "\\t" rl_complete')
+            else:
+                readline.parse_and_bind(r'"\\t": complete')
+            readline.set_completer_delims(" \\t\\n")
+            readline.set_completer(complete)
+            print(input())
+        """)
+
+        output = run_pty(script, input=b"$\t\n")
+        self.assertIn(b"$complete", output)
 
     def test_nonascii(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
