@@ -74,6 +74,7 @@ extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
 extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
+extern void _PyPerfTrampoline_FreeArenas(void);
 extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
