@@ -4444,8 +4444,7 @@ class _TestSharedMemory(BaseTestCase):
     def test_shared_memory_untracking(self):
         # gh-82300: When a separate Python process accesses shared memory
         # with track=False, it must not cause the memory to be deleted
-        # when terminating. When accessing with track=True, it must be
-        # deleted.
+        # when terminating.
         cmd = '''if 1:
             import sys
             from multiprocessing.shared_memory import SharedMemory
@@ -4457,6 +4456,7 @@ class _TestSharedMemory(BaseTestCase):
         # err existing means that the tracker process has terminated now.
         try:
             rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
+            self.assertNotIn(b"resource_tracker", err)
             self.assertEqual(rc, 0)
             mem2 = shared_memory.SharedMemory(create=False, name=mem.name)
             mem2.close()
@@ -4466,6 +4466,11 @@ class _TestSharedMemory(BaseTestCase):
             except OSError:
                 pass
             mem.close()
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_tracking(self):
+        # gh-82300: When a separate Python process accesses shared memory
+        # with track=True, it must cause the memory to be deleted when
+        # terminating.
         cmd = '''if 1:
             import sys
             from multiprocessing.shared_memory import SharedMemory
@@ -4475,6 +4480,7 @@ class _TestSharedMemory(BaseTestCase):
         mem = shared_memory.SharedMemory(create=True, size=10)
         try:
             rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
+            self.assertNotIn(b"resource_tracker", err)
             self.assertEqual(rc, 0)
             self.assertIn(
                 b"resource_tracker: There appear to be 1 leaked "
