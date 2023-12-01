@@ -33,3 +33,4 @@ The following modules are documented in this chapter:
    pprint.rst
    reprlib.rst
    enum.rst
+   graphlib.rst

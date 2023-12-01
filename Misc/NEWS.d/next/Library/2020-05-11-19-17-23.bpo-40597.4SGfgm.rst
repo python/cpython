@@ -1,1 +1,0 @@
-If text content lines are longer than policy.max_line_length, always use a content-encoding to make sure they are wrapped.

@@ -23,7 +23,7 @@ See also the `Examples`_ section below.
 Queue
 =====
 
-.. class:: Queue(maxsize=0, \*, loop=None)
+.. class:: Queue(maxsize=0)
 
    A first in, first out (FIFO) queue.
 
@@ -36,8 +36,8 @@ Queue
    the queue is always known and can be returned by calling the
    :meth:`qsize` method.
 
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.

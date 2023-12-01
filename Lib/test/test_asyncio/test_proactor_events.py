@@ -12,7 +12,7 @@ from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
 from asyncio.proactor_events import _ProactorDatagramTransport
-from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
@@ -40,6 +40,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.loop._proactor = self.proactor
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
+        self.buffer_size = 65536
 
     def socket_transport(self, waiter=None):
         transport = _ProactorSocketTransport(self.loop, self.sock,
@@ -53,28 +54,36 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsNone(fut.result())
         self.protocol.connection_made(tr)
-        self.proactor.recv.assert_called_with(self.sock, 32768)
+        self.proactor.recv_into.assert_called_with(self.sock, bytearray(self.buffer_size))
 
     def test_loop_reading(self):
         tr = self.socket_transport()
         tr._loop_reading()
-        self.loop._proactor.recv.assert_called_with(self.sock, 32768)
+        self.loop._proactor.recv_into.assert_called_with(self.sock, bytearray(self.buffer_size))
         self.assertFalse(self.protocol.data_received.called)
         self.assertFalse(self.protocol.eof_received.called)
 
     def test_loop_reading_data(self):
+        buf = b'data'
         res = self.loop.create_future()
-        res.set_result(b'data')
+        res.set_result(len(buf))
 
         tr = self.socket_transport()
         tr._read_fut = res
+        tr._data[:len(buf)] = buf
         tr._loop_reading(res)
-        self.loop._proactor.recv.assert_called_with(self.sock, 32768)
-        self.protocol.data_received.assert_called_with(b'data')
+        called_buf = bytearray(self.buffer_size)
+        called_buf[:len(buf)] = buf
+        self.loop._proactor.recv_into.assert_called_with(self.sock, called_buf)
+        self.protocol.data_received.assert_called_with(buf)
+        # assert_called_with maps bytearray and bytes to the same thing so check manually
+        # regression test for https://github.com/python/cpython/issues/99941
+        self.assertIsInstance(self.protocol.data_received.call_args.args[0], bytes)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_loop_reading_no_data(self):
         res = self.loop.create_future()
-        res.set_result(b'')
+        res.set_result(0)
 
         tr = self.socket_transport()
         self.assertRaises(AssertionError, tr._loop_reading, res)
@@ -82,12 +91,12 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr.close = mock.Mock()
         tr._read_fut = res
         tr._loop_reading(res)
-        self.assertFalse(self.loop._proactor.recv.called)
+        self.assertFalse(self.loop._proactor.recv_into.called)
         self.assertTrue(self.protocol.eof_received.called)
         self.assertTrue(tr.close.called)
 
     def test_loop_reading_aborted(self):
-        err = self.loop._proactor.recv.side_effect = ConnectionAbortedError()
+        err = self.loop._proactor.recv_into.side_effect = ConnectionAbortedError()
 
         tr = self.socket_transport()
         tr._fatal_error = mock.Mock()
@@ -97,7 +106,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
                             'Fatal read error on pipe transport')
 
     def test_loop_reading_aborted_closing(self):
-        self.loop._proactor.recv.side_effect = ConnectionAbortedError()
+        self.loop._proactor.recv_into.side_effect = ConnectionAbortedError()
 
         tr = self.socket_transport()
         tr._closing = True
@@ -106,7 +115,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(tr._fatal_error.called)
 
     def test_loop_reading_aborted_is_fatal(self):
-        self.loop._proactor.recv.side_effect = ConnectionAbortedError()
+        self.loop._proactor.recv_into.side_effect = ConnectionAbortedError()
         tr = self.socket_transport()
         tr._closing = False
         tr._fatal_error = mock.Mock()
@@ -114,7 +123,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(tr._fatal_error.called)
 
     def test_loop_reading_conn_reset_lost(self):
-        err = self.loop._proactor.recv.side_effect = ConnectionResetError()
+        err = self.loop._proactor.recv_into.side_effect = ConnectionResetError()
 
         tr = self.socket_transport()
         tr._closing = False
@@ -125,7 +134,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._force_close.assert_called_with(err)
 
     def test_loop_reading_exception(self):
-        err = self.loop._proactor.recv.side_effect = (OSError())
+        err = self.loop._proactor.recv_into.side_effect = (OSError())
 
         tr = self.socket_transport()
         tr._fatal_error = mock.Mock()
@@ -236,6 +245,14 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertFalse(self.protocol.connection_lost.called)
 
+    def test_close_invalid_sockobj(self):
+        tr = self.socket_transport()
+        self.sock.fileno.return_value = -1
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.protocol.connection_lost.assert_called_with(None)
+        self.assertFalse(self.sock.shutdown.called)
+
     @mock.patch('asyncio.base_events.logger')
     def test_fatal_error(self, m_logging):
         tr = self.socket_transport()
@@ -276,7 +293,33 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._closing = True
         tr._force_close(None)
         test_utils.run_briefly(self.loop)
+        # See https://github.com/python/cpython/issues/89237
+        # `protocol.connection_lost` should be called even if
+        # the transport was closed forcefully otherwise
+        # the resources held by protocol will never be freed
+        # and waiters will never be notified leading to hang.
+        self.assertTrue(self.protocol.connection_lost.called)
+
+    def test_force_close_protocol_connection_lost_once(self):
+        tr = self.socket_transport()
         self.assertFalse(self.protocol.connection_lost.called)
+        tr._closing = True
+        # Calling _force_close twice should not call
+        # protocol.connection_lost twice
+        tr._force_close(None)
+        tr._force_close(None)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, self.protocol.connection_lost.call_count)
+
+    def test_close_protocol_connection_lost_once(self):
+        tr = self.socket_transport()
+        self.assertFalse(self.protocol.connection_lost.called)
+        # Calling close twice should not call
+        # protocol.connection_lost twice
+        tr.close()
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(1, self.protocol.connection_lost.call_count)
 
     def test_fatal_error_2(self):
         tr = self.socket_transport()
@@ -351,20 +394,31 @@ class ProactorSocketTransportTests(test_utils.TestCase):
 
     def test_pause_resume_reading(self):
         tr = self.socket_transport()
-        futures = []
-        for msg in [b'data1', b'data2', b'data3', b'data4', b'data5', b'']:
-            f = self.loop.create_future()
-            f.set_result(msg)
-            futures.append(f)
+        index = 0
+        msgs = [b'data1', b'data2', b'data3', b'data4', b'data5', b'']
+        reversed_msgs = list(reversed(msgs))
 
-        self.loop._proactor.recv.side_effect = futures
+        def recv_into(sock, data):
+            f = self.loop.create_future()
+            msg = reversed_msgs.pop()
+
+            result = f.result
+            def monkey():
+                data[:len(msg)] = msg
+                return result()
+            f.result = monkey
+
+            f.set_result(len(msg))
+            return f
+
+        self.loop._proactor.recv_into.side_effect = recv_into
         self.loop._run_once()
         self.assertFalse(tr._paused)
         self.assertTrue(tr.is_reading())
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data1')
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data2')
+
+        for msg in msgs[:2]:
+            self.loop._run_once()
+            self.protocol.data_received.assert_called_with(bytearray(msg))
 
         tr.pause_reading()
         tr.pause_reading()
@@ -372,25 +426,38 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(tr.is_reading())
         for i in range(10):
             self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data2')
+        self.protocol.data_received.assert_called_with(bytearray(msgs[1]))
 
         tr.resume_reading()
         tr.resume_reading()
         self.assertFalse(tr._paused)
         self.assertTrue(tr.is_reading())
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data3')
-        self.loop._run_once()
-        self.protocol.data_received.assert_called_with(b'data4')
+
+        for msg in msgs[2:4]:
+            self.loop._run_once()
+            self.protocol.data_received.assert_called_with(bytearray(msg))
 
         tr.pause_reading()
         tr.resume_reading()
         self.loop.call_exception_handler = mock.Mock()
         self.loop._run_once()
         self.loop.call_exception_handler.assert_not_called()
-        self.protocol.data_received.assert_called_with(b'data5')
+        self.protocol.data_received.assert_called_with(bytearray(msgs[4]))
         tr.close()
 
+        self.assertFalse(tr.is_reading())
+
+    def test_pause_reading_connection_made(self):
+        tr = self.socket_transport()
+        self.protocol.connection_made.side_effect = lambda _: tr.pause_reading()
+        test_utils.run_briefly(self.loop)
+        self.assertFalse(tr.is_reading())
+        self.loop.assert_no_reader(7)
+
+        tr.resume_reading()
+        self.assertTrue(tr.is_reading())
+
+        tr.close()
         self.assertFalse(tr.is_reading())
 
 
@@ -737,6 +804,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def test_loop_self_reading_fut(self):
         fut = mock.Mock()
+        self.loop._self_reading_future = fut
         self.loop._loop_self_reading(fut)
         self.assertTrue(fut.result.called)
         self.proactor.recv.assert_called_with(self.ssock, 4096)
@@ -821,6 +889,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
     def test_make_datagram_transport(self):
         tr = self.datagram_transport()
         self.assertIsInstance(tr, _ProactorDatagramTransport)
+        self.assertIsInstance(tr, asyncio.DatagramTransport)
         close_transport(tr)
 
     def test_datagram_loop_writing(self):
@@ -852,6 +921,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.protocol.datagram_received.assert_called_with(b'data', ('127.0.0.1', 12068))
         close_transport(tr)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_datagram_loop_reading_no_data(self):
         res = self.loop.create_future()
         res.set_result((b'', ('127.0.0.1', 12068)))
@@ -919,20 +989,20 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
         self.loop = asyncio.ProactorEventLoop()
         self.set_event_loop(self.loop)
         self.addCleanup(self.loop.close)
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(os_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         super().setUp()
 

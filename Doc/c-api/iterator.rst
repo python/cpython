@@ -6,7 +6,7 @@ Iterator Objects
 ----------------
 
 Python provides two general-purpose iterator objects.  The first, a sequence
-iterator, works with an arbitrary sequence supporting the :meth:`__getitem__`
+iterator, works with an arbitrary sequence supporting the :meth:`~object.__getitem__`
 method.  The second works with a callable object and a sentinel value, calling
 the callable for each item in the sequence, and ending the iteration when the
 sentinel value is returned.
@@ -19,9 +19,10 @@ sentinel value is returned.
    types.
 
 
-.. c:function:: int PySeqIter_Check(op)
+.. c:function:: int PySeqIter_Check(PyObject *op)
 
-   Return true if the type of *op* is :c:data:`PySeqIter_Type`.
+   Return true if the type of *op* is :c:data:`PySeqIter_Type`.  This function
+   always succeeds.
 
 
 .. c:function:: PyObject* PySeqIter_New(PyObject *seq)
@@ -37,9 +38,10 @@ sentinel value is returned.
    two-argument form of the :func:`iter` built-in function.
 
 
-.. c:function:: int PyCallIter_Check(op)
+.. c:function:: int PyCallIter_Check(PyObject *op)
 
-   Return true if the type of *op* is :c:data:`PyCallIter_Type`.
+   Return true if the type of *op* is :c:data:`PyCallIter_Type`.  This
+   function always succeeds.
 
 
 .. c:function:: PyObject* PyCallIter_New(PyObject *callable, PyObject *sentinel)

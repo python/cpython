@@ -1,3 +1,8 @@
+import sys
+import doctest
+import unittest
+
+
 doctests = """
 
 Test simple loop with conditional
@@ -103,7 +108,7 @@ Verify that parenthesis are required when used as a keyword argument value
     >>> dict(a = i for i in range(10))
     Traceback (most recent call last):
        ...
-    SyntaxError: invalid syntax
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
 
 Verify that parenthesis are required when used as a keyword argument value
 
@@ -274,28 +279,16 @@ Verify that genexps are weakly referencable
 
 """
 
-import sys
-
 # Trace function can throw off the tuple reuse test.
 if hasattr(sys, 'gettrace') and sys.gettrace():
     __test__ = {}
 else:
     __test__ = {'doctests' : doctests}
 
-def test_main(verbose=None):
-    from test import support
-    from test import test_genexps
-    support.run_doctest(test_genexps, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_doctest(test_genexps, verbose)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

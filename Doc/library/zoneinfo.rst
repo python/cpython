@@ -9,6 +9,8 @@
 .. moduleauthor:: Paul Ganssle <paul@ganssle.io>
 .. sectionauthor:: Paul Ganssle <paul@ganssle.io>
 
+**Source code:** :source:`Lib/zoneinfo`
+
 --------------
 
 The :mod:`zoneinfo` module provides a concrete time zone implementation to
@@ -27,6 +29,7 @@ first-party `tzdata`_ package available on PyPI.
         First-party package maintained by the CPython core developers to supply
         time zone data via PyPI.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using ``ZoneInfo``
 ------------------
@@ -124,8 +127,9 @@ time zone database (except on Windows, where there are no "well-known"
 locations for time zone data). On POSIX systems, downstream distributors and
 those building Python from source who know where their system
 time zone data is deployed may change the default time zone path by specifying
-the compile-time option ``TZPATH`` (or, more likely, the ``configure`` flag
-``--with-tzpath``), which should be a string delimited by :data:`os.pathsep`.
+the compile-time option ``TZPATH`` (or, more likely, the :option:`configure
+flag --with-tzpath <--with-tzpath>`), which should be a string delimited by
+:data:`os.pathsep`.
 
 On all platforms, the configured value is available as the ``TZPATH`` key in
 :func:`sysconfig.get_config_var`.
@@ -237,7 +241,7 @@ The following class methods are also available:
     .. warning::
 
         Invoking this function may change the semantics of datetimes using
-        ``ZoneInfo`` in surprising ways; this modifies process-wide global state
+        ``ZoneInfo`` in surprising ways; this modifies module state
         and thus may have wide-ranging effects. Only use it if you know that you
         need to.
 
@@ -300,7 +304,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
    constructed from ``ZoneInfo("Europe/Berlin")``, one would expect the
    following behavior:
 
-   .. code-block::
+   .. code-block:: pycon
 
        >>> a = ZoneInfo("Europe/Berlin")
        >>> b = pickle.loads(europe_berlin_pkl)
@@ -314,7 +318,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
    constructed from ``ZoneInfo.no_cache("Europe/Berlin")``, one would expect
    the following behavior:
 
-   .. code-block::
+   .. code-block:: pycon
 
        >>> a = ZoneInfo("Europe/Berlin")
        >>> b = pickle.loads(europe_berlin_pkl_nc)
@@ -336,6 +340,29 @@ pickled in an environment with a different version of the time zone data.
 
 Functions
 ---------
+
+.. function:: available_timezones()
+
+    Get a set containing all the valid keys for IANA time zones available
+    anywhere on the time zone path. This is recalculated on every call to the
+    function.
+
+    This function only includes canonical zone names and does not include
+    "special" zones such as those under the ``posix/`` and ``right/``
+    directories, or the ``posixrules`` zone.
+
+    .. caution::
+
+        This function may open a large number of files, as the best way to
+        determine if a file on the time zone path is a valid time zone is to
+        read the "magic string" at the beginning.
+
+    .. note::
+
+        These values are not designed to be exposed to end-users; for user
+        facing elements, applications should use something like CLDR (the
+        Unicode Common Locale Data Repository) to get more user-friendly
+        strings. See also the cautionary note on :attr:`ZoneInfo.key`.
 
 .. function:: reset_tzpath(to=None)
 

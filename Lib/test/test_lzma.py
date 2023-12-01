@@ -1,4 +1,5 @@
 import _compression
+import array
 from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pathlib
@@ -8,8 +9,10 @@ import sys
 from test import support
 import unittest
 
-from test.support import (
-    _4G, TESTFN, import_module, bigmemtest, run_unittest, unlink
+from test.support import _4G, bigmemtest
+from test.support.import_helper import import_module
+from test.support.os_helper import (
+    TESTFN, unlink
 )
 
 lzma = import_module("lzma")
@@ -349,10 +352,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     @bigmemtest(size=_4G + 100, memuse=3)
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            input = block * (size // blocksize + 1)
+            input = block * ((size-1) // blocksize + 1)
             cdata = lzma.compress(input)
             ddata = lzd.decompress(cdata)
             self.assertEqual(ddata, input)
@@ -376,6 +379,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         for i in range(100):
             lzd.__init__()
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    def test_uninitialized_LZMADecompressor_crash(self):
+        self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
+                         decompress(bytes()), b'')
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
@@ -822,10 +829,7 @@ class FileTestCase(unittest.TestCase):
     def test_read_10(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             chunks = []
-            while True:
-                result = f.read(10)
-                if not result:
-                    break
+            while result := f.read(10):
                 self.assertLessEqual(len(result), 10)
                 chunks.append(result)
             self.assertEqual(b"".join(chunks), INPUT)
@@ -908,10 +912,7 @@ class FileTestCase(unittest.TestCase):
     def test_read1(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             blocks = []
-            while True:
-                result = f.read1()
-                if not result:
-                    break
+            while result := f.read1():
                 blocks.append(result)
             self.assertEqual(b"".join(blocks), INPUT)
             self.assertEqual(f.read1(), b"")
@@ -923,10 +924,7 @@ class FileTestCase(unittest.TestCase):
     def test_read1_10(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             blocks = []
-            while True:
-                result = f.read1(10)
-                if not result:
-                    break
+            while result := f.read1(10):
                 blocks.append(result)
             self.assertEqual(b"".join(blocks), INPUT)
             self.assertEqual(f.read1(), b"")
@@ -934,10 +932,7 @@ class FileTestCase(unittest.TestCase):
     def test_read1_multistream(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ * 5)) as f:
             blocks = []
-            while True:
-                result = f.read1()
-                if not result:
-                    break
+            while result := f.read1():
                 blocks.append(result)
             self.assertEqual(b"".join(blocks), INPUT * 5)
             self.assertEqual(f.read1(), b"")
@@ -1227,6 +1222,14 @@ class FileTestCase(unittest.TestCase):
         self.assertTrue(d2.eof)
         self.assertEqual(out1 + out2, entire)
 
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
+
+        with LZMAFile(BytesIO(), 'w') as f:
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
+
 
 class OpenTestCase(unittest.TestCase):
 
@@ -1246,14 +1249,14 @@ class OpenTestCase(unittest.TestCase):
     def test_text_modes(self):
         uncompressed = INPUT.decode("ascii")
         uncompressed_raw = uncompressed.replace("\n", os.linesep)
-        with lzma.open(BytesIO(COMPRESSED_XZ), "rt") as f:
+        with lzma.open(BytesIO(COMPRESSED_XZ), "rt", encoding="ascii") as f:
             self.assertEqual(f.read(), uncompressed)
         with BytesIO() as bio:
-            with lzma.open(bio, "wt") as f:
+            with lzma.open(bio, "wt", encoding="ascii") as f:
                 f.write(uncompressed)
             file_data = lzma.decompress(bio.getvalue()).decode("ascii")
             self.assertEqual(file_data, uncompressed_raw)
-            with lzma.open(bio, "at") as f:
+            with lzma.open(bio, "at", encoding="ascii") as f:
                 f.write(uncompressed)
             file_data = lzma.decompress(bio.getvalue()).decode("ascii")
             self.assertEqual(file_data, uncompressed_raw * 2)
@@ -1330,17 +1333,18 @@ class OpenTestCase(unittest.TestCase):
         # Test with explicit newline (universal newline mode disabled).
         text = INPUT.decode("ascii")
         with BytesIO() as bio:
-            with lzma.open(bio, "wt", newline="\n") as f:
+            with lzma.open(bio, "wt", encoding="ascii", newline="\n") as f:
                 f.write(text)
             bio.seek(0)
-            with lzma.open(bio, "rt", newline="\r") as f:
+            with lzma.open(bio, "rt", encoding="ascii", newline="\r") as f:
                 self.assertEqual(f.readlines(), [text])
 
     def test_x_mode(self):
         self.addCleanup(unlink, TESTFN)
         for mode in ("x", "xb", "xt"):
             unlink(TESTFN)
-            with lzma.open(TESTFN, mode):
+            encoding = "ascii" if "t" in mode else None
+            with lzma.open(TESTFN, mode, encoding=encoding):
                 pass
             with self.assertRaises(FileExistsError):
                 with lzma.open(TESTFN, mode):
@@ -1927,14 +1931,5 @@ ISSUE_21872_DAT = (
 )
 
 
-def test_main():
-    run_unittest(
-        CompressorDecompressorTestCase,
-        CompressDecompressFunctionTestCase,
-        FileTestCase,
-        OpenTestCase,
-        MiscellaneousTestCase,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
