@@ -65,9 +65,9 @@ copying of data.
    to an existing shared memory block, the ``size`` parameter is ignored.
 
    *track*, when enabled, registers the shared memory block with a resource
-   tracker process.  This process ensures proper cleanup of shared memory
-   blocks even when all other processes with access to the memory have failed
-   to do so (mainly due to being killed by signals).
+   tracker process on platforms where the OS does not do this automatically.
+   The resource tracker ensures proper cleanup of the shared memory even
+   if all other processes with access to the memory exit without doing so.
    Python processes created from a common ancestor using :mod:`multiprocessing`
    facilities share a single resource tracker process, and the lifetime of
    shared memory segments is handled automatically among these processes.
