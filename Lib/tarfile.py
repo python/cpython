@@ -2309,21 +2309,25 @@ class TarFile(object):
         else:
             tarinfo = member
 
-        filtered = None
+        unfiltered = tarinfo
         try:
-            filtered = filter_function(tarinfo, path)
-        except (OSError, FilterError) as e:
+            tarinfo = filter_function(tarinfo, path)
+        except FilterError as e:
+            tarinfo = None
+            self._handle_fatal_error(e)
+        except OSError as e:
             self._handle_fatal_error(e)
         except ExtractError as e:
             self._handle_nonfatal_error(e)
-        if filtered is None:
-            self._dbg(2, "tarfile: Excluded %r" % tarinfo.name)
+
+        if tarinfo is None:
+            self._dbg(2, "tarfile: Excluded %r" % unfiltered.name)
             return None
         # Prepare the link target for makelink().
-        if filtered.islnk():
-            filtered = copy.copy(filtered)
-            filtered._link_target = os.path.join(path, filtered.linkname)
-        return filtered
+        if tarinfo.islnk():
+            tarinfo = copy.copy(tarinfo)
+            tarinfo._link_target = os.path.join(path, tarinfo.linkname)
+        return tarinfo
 
     def _extract_one(self, tarinfo, path, set_attrs, numeric_owner):
         """Extract from filtered tarinfo to disk"""
