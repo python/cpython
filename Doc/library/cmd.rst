@@ -32,6 +32,7 @@ interface.
    ``Cmd`` will use ``'^I'`` instead of ``'tab'``.
    Note that other values are not treated this way, and might only work
    with a specific backend.
+
    The optional arguments *stdin* and *stdout* specify the  input and output file
    objects that the Cmd instance or subclass  instance will use for input and
    output. If not specified, they will default to :data:`sys.stdin` and
