@@ -52,16 +52,6 @@ extern "C" {
 #endif
 
 
-struct _time_runtime_state {
-#ifdef HAVE_TIMES
-    int ticks_per_second_initialized;
-    long ticks_per_second;
-#else
-    int _not_used;
-#endif
-};
-
-
 #ifdef __clang__
 struct timeval;
 #endif
