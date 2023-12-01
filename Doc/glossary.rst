@@ -502,7 +502,7 @@ Glossary
       .. index:: single: generator expression
 
    generator expression
-      An expression that returns an iterator.  It looks like a normal expression
+      An :term:`expression` that returns an :term:`iterator`.  It looks like a normal expression
       followed by a :keyword:`!for` clause defining a loop variable, range,
       and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
