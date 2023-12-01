@@ -750,7 +750,7 @@ _gen_getframe(PyGenObject *gen, const char *const name)
     if (PySys_Audit("object.__getattr__", "Os", gen, name) < 0) {
         return NULL;
     }
-    if (gen->gi_frame_state == FRAME_CLEARED) {
+    if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
         Py_RETURN_NONE;
     }
     return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject((_PyInterpreterFrame *)gen->gi_iframe));
