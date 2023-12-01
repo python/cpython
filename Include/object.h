@@ -357,9 +357,9 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     if (_Py_IsOwnedByCurrentThread(ob)) {
         if ((size_t)refcnt > (size_t)UINT32_MAX) {
             // On overflow, make the object immortal
-            op->ob_tid = _Py_UNOWNED_TID;
-            op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
-            op->ob_ref_shared = 0;
+            ob->ob_tid = _Py_UNOWNED_TID;
+            ob->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
+            ob->ob_ref_shared = 0;
         }
         else {
             // Set local refcount to desired refcount and shared refcount
