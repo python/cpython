@@ -1,0 +1,3 @@
+Change coro.cr_frame/gen.gi_frame to return ``None`` after the coroutine/generator has been closed.
+This fixes a bug where :func:`~inspect.getcoroutinestate` and :func:`~inspect.getgeneratorstate`
+return the wrong state for a closed coroutine/generator.
