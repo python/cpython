@@ -1,0 +1,2 @@
+Fix an integer overflow in :func:`socket.if_indextoname` on 64-bit
+non-Windows platforms.
