@@ -7071,10 +7071,7 @@ _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
-    unsigned long index_long;
-    char name[IF_NAMESIZE + 1];
-
-    index_long = PyLong_AsUnsignedLong(arg);
+    unsigned long index_long = PyLong_AsUnsignedLong(arg);
     if (index_long == (unsigned long) -1 && PyErr_Occurred()) {
         return NULL;
     }
@@ -7090,6 +7087,7 @@ socket_if_indextoname(PyObject *self, PyObject *arg)
         return NULL;
     }
 
+    char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
