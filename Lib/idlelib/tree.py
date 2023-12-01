@@ -32,13 +32,13 @@ except NameError:
 if os.path.isdir(_icondir):
     ICONDIR = _icondir
 elif not os.path.isdir(ICONDIR):
-    raise RuntimeError("can't find icon directory (%r)" % (ICONDIR,))
+    raise RuntimeError(f"can't find icon directory ({ICONDIR!r})")
 
 def listicons(icondir=ICONDIR):
     """Utility to display the available icons."""
     root = Tk()
     import glob
-    list = glob.glob(os.path.join(icondir, "*.gif"))
+    list = glob.glob(os.path.join(glob.escape(icondir), "*.gif"))
     list.sort()
     images = []
     row = column = 0

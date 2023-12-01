@@ -1,3 +1,0 @@
-setup.py now uses a basic implementation of the :mod:`subprocess` module if
-the :mod:`subprocess` module is not available: before required C extension
-modules are built.

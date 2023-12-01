@@ -1,0 +1,3 @@
+Add :func:`warnings.deprecated`, a decorator to mark deprecated functions to
+static type checkers and to warn on usage of deprecated classes and functions.
+See :pep:`702`. Patch by Jelle Zijlstra.

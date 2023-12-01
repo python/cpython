@@ -1,2 +1,0 @@
-Fix handling of header in :class:`urllib.request.AbstractDigestAuthHandler` when the optional ``qop`` parameter
-is not present.

@@ -1,16 +1,16 @@
 """
 Very minimal unittests for parts of the readline module.
 """
-from contextlib import ExitStack
-from errno import EIO
 import locale
 import os
-import selectors
-import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
-from test.support import import_module, unlink, temp_dir, TESTFN, verbose
+from test.support import verbose
+from test.support.import_helper import import_module
+from test.support.os_helper import unlink, temp_dir, TESTFN
+from test.support.pty_helper import run_pty
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
@@ -100,8 +100,15 @@ class TestHistoryManipulation (unittest.TestCase):
 
         # test 'no such file' behaviour
         os.unlink(hfilename)
-        with self.assertRaises(FileNotFoundError):
+        try:
             readline.append_history_file(1, hfilename)
+        except FileNotFoundError:
+            pass  # Some implementations return this error (libreadline).
+        else:
+            os.unlink(hfilename)  # Some create it anyways (libedit).
+            # If the file wasn't created, unlink will fail.
+        # We're just testing that one of the two expected behaviors happens
+        # instead of an incorrect error.
 
         # write_history_file can create the target
         readline.write_history_file(hfilename)
@@ -147,11 +154,34 @@ print("History length:", readline.get_current_history_length())
 
     def test_auto_history_enabled(self):
         output = run_pty(self.auto_history_script.format(True))
-        self.assertIn(b"History length: 1\r\n", output)
+        # bpo-44949: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"History length: 1", output)
 
     def test_auto_history_disabled(self):
         output = run_pty(self.auto_history_script.format(False))
-        self.assertIn(b"History length: 0\r\n", output)
+        # bpo-44949: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"History length: 0", output)
+
+    def test_set_complete_delims(self):
+        script = textwrap.dedent("""
+            import readline
+            def complete(text, state):
+                if state == 0 and text == "$":
+                    return "$complete"
+                return None
+            if "libedit" in getattr(readline, "__doc__", ""):
+                readline.parse_and_bind(r'bind "\\t" rl_complete')
+            else:
+                readline.parse_and_bind(r'"\\t": complete')
+            readline.set_completer_delims(" \\t\\n")
+            readline.set_completer(complete)
+            print(input())
+        """)
+
+        output = run_pty(script, input=b"$\t\n")
+        self.assertIn(b"$complete", output)
 
     def test_nonascii(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
@@ -226,13 +256,25 @@ print("history", ascii(readline.get_history_item(1)))
         output = run_pty(script, input)
         self.assertIn(b"text 't\\xeb'\r\n", output)
         self.assertIn(b"line '[\\xefnserted]|t\\xeb[after]'\r\n", output)
-        self.assertIn(b"indexes 11 13\r\n", output)
+        if sys.platform == "darwin" or not is_editline:
+            self.assertIn(b"indexes 11 13\r\n", output)
+            # Non-macOS libedit does not handle non-ASCII bytes
+            # the same way and generates character indices
+            # rather than byte indices via get_begidx() and
+            # get_endidx().  Ex: libedit2 3.1-20191231-2 on Debian
+            # winds up with "indexes 10 12".  Stemming from the
+            # start and end values calls back into readline.c's
+            # rl_attempted_completion_function = flex_complete with:
+            # (11, 13) instead of libreadline's (12, 15).
+
         if not is_editline and hasattr(readline, "set_pre_input_hook"):
             self.assertIn(b"substitution 't\\xeb'\r\n", output)
             self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)
         expected = br"'[\xefnserted]|t\xebxt[after]'"
         self.assertIn(b"result " + expected + b"\r\n", output)
-        self.assertIn(b"history " + expected + b"\r\n", output)
+        # bpo-45195: Sometimes, the newline character is not written at the
+        # end, so don't expect it in the output.
+        self.assertIn(b"history " + expected, output)
 
     # We have 2 reasons to skip this test:
     # - readline: history size was added in 6.0
@@ -277,56 +319,6 @@ readline.write_history_file(history_file)
                 lines = f.readlines()
             self.assertEqual(len(lines), history_size)
             self.assertEqual(lines[-1].strip(), b"last input")
-
-
-def run_pty(script, input=b"dummy input\r", env=None):
-    pty = import_module('pty')
-    output = bytearray()
-    [master, slave] = pty.openpty()
-    args = (sys.executable, '-c', script)
-    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
-    os.close(slave)
-    with ExitStack() as cleanup:
-        cleanup.enter_context(proc)
-        def terminate(proc):
-            try:
-                proc.terminate()
-            except ProcessLookupError:
-                # Workaround for Open/Net BSD bug (Issue 16762)
-                pass
-        cleanup.callback(terminate, proc)
-        cleanup.callback(os.close, master)
-        # Avoid using DefaultSelector and PollSelector. Kqueue() does not
-        # work with pseudo-terminals on OS X < 10.9 (Issue 20365) and Open
-        # BSD (Issue 20667). Poll() does not work with OS X 10.6 or 10.4
-        # either (Issue 20472). Hopefully the file descriptor is low enough
-        # to use with select().
-        sel = cleanup.enter_context(selectors.SelectSelector())
-        sel.register(master, selectors.EVENT_READ | selectors.EVENT_WRITE)
-        os.set_blocking(master, False)
-        while True:
-            for [_, events] in sel.select():
-                if events & selectors.EVENT_READ:
-                    try:
-                        chunk = os.read(master, 0x10000)
-                    except OSError as err:
-                        # Linux raises EIO when slave is closed (Issue 5380)
-                        if err.errno != EIO:
-                            raise
-                        chunk = b""
-                    if not chunk:
-                        return output
-                    output.extend(chunk)
-                if events & selectors.EVENT_WRITE:
-                    try:
-                        input = input[os.write(master, input):]
-                    except OSError as err:
-                        # Apparently EIO means the slave was closed
-                        if err.errno != EIO:
-                            raise
-                        input = b""  # Stop writing
-                    if not input:
-                        sel.modify(master, selectors.EVENT_READ)
 
 
 if __name__ == "__main__":
