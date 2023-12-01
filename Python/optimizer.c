@@ -197,9 +197,12 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     return optimizer_wherever(frame, src, dest, stack_pointer);
 }
 
-// Start tracing at src and insert ENTER_EXECUTOR at the same place
+// Start tracing and insert ENTER_EXECUTOR at the same place.
+// Normally src == dest, but when there's an EXTENDED_ARG involved,
+// dest points at the preceding EXTENDED_ARG.
+// Do not use at JUMP_BACKWARD.  Won't replace ENTER_EXECUTOR.
 int
-_PyOptimizer_Anywhere(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, PyObject **stack_pointer)
+_PyOptimizer_Anywhere(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
     if (src->op.code == JUMP_BACKWARD) {
         return 0;
@@ -207,7 +210,7 @@ _PyOptimizer_Anywhere(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, PyObject **
     if (src->op.code == ENTER_EXECUTOR) {
         return 0;
     }
-    return optimizer_wherever(frame, src, src, stack_pointer);
+    return optimizer_wherever(frame, src, dest, stack_pointer);
 }
 
 _PyExecutorObject *

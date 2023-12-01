@@ -1072,16 +1072,26 @@ deoptimize:
             _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    if (frame->instr_ptr->op.code == ENTER_EXECUTOR) {
+    _Py_CODEUNIT *src, *dest;
+    src = dest = frame->instr_ptr;
+    opcode = src->op.code;
+    oparg = src->op.arg;
+    while (opcode == EXTENDED_ARG) {
+        src++;
+        opcode = src->op.code;
+        oparg = (oparg << 8) | src->op.arg;
+    }
+    if (opcode == ENTER_EXECUTOR) {
+        // frame->instr_ptr --> dest --> EXTENDED_ARG
+        //                       src --> ENTER_EXECUTOR
         // Avoid recursing into the same executor over and over
-        next_instr = frame->instr_ptr;
+        next_instr = dest;
         PyCodeObject *code = _PyFrame_GetCode(frame);
-        oparg = next_instr->op.arg;
-        _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg];
+        _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg & 0xff];
         if (executor == (_PyExecutorObject *)current_executor) {
             opcode = _PyOpcode_Deopt[executor->vm_data.opcode];
-            DPRINTF(1, "Avoiding ENTER_EXECUTOR %d in favor of underlying base opcode %s %d\n",
-                    oparg, _PyOpcode_OpName[opcode], executor->vm_data.oparg);
+            DPRINTF(1, "Avoiding ENTER_EXECUTOR %d/%d in favor of underlying base opcode %s %d\n",
+                    oparg, oparg & 0xff, _PyOpcode_OpName[opcode], (oparg & 0xffffff00) | executor->vm_data.oparg);
             DPRINTF(1,
                     " for %s (%s:%d) at byte offset %d\n",
                     PyUnicode_AsUTF8(code->co_qualname),
@@ -1089,7 +1099,7 @@ deoptimize:
                     code->co_firstlineno,
                     2 * (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))));
             Py_DECREF(current_executor);
-            oparg = executor->vm_data.oparg;
+            oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
         }
@@ -1101,23 +1111,23 @@ deoptimize:
     uintptr_t *pcounter = current_executor->extra + pc;
     *pcounter += 1;
     if (*pcounter == 16 &&
-        (frame->instr_ptr->op.code == POP_JUMP_IF_FALSE ||
-         frame->instr_ptr->op.code == POP_JUMP_IF_TRUE ||
-         frame->instr_ptr->op.code == POP_JUMP_IF_NONE ||
-         frame->instr_ptr->op.code == POP_JUMP_IF_NOT_NONE))
+        (opcode == POP_JUMP_IF_FALSE ||
+         opcode == POP_JUMP_IF_TRUE ||
+         opcode == POP_JUMP_IF_NONE ||
+         opcode == POP_JUMP_IF_NOT_NONE))
     {
         DPRINTF(2, "--> %s @ %d in %p has %d side exits\n",
                 _PyUOpName(uopcode), pc, current_executor, (int)(*pcounter));
-        DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[frame->instr_ptr->op.code]);
+        DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[opcode]);
         // The counter will cycle around in 2**64 executions :-)
-        int optimized = _PyOptimizer_Anywhere(frame, frame->instr_ptr, stack_pointer);
+        int optimized = _PyOptimizer_Anywhere(frame, src, dest, stack_pointer);
         if (optimized < 0) {
             goto error_tier_two;
         }
         if (optimized) {
-            DPRINTF(2, "--> Optimized %s @ %d in %p\n",
+            DPRINTF(1, "--> Optimized %s @ %d in %p\n",
                     _PyUOpName(uopcode), pc, current_executor);
-        DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[frame->instr_ptr->op.code]);
+            DPRINTF(1, "    T1: %s\n", _PyOpcode_OpName[src->op.code]);
         }
         else {
             DPRINTF(2, "--> Failed to optimize %s @ %d in %p\n",
@@ -1139,6 +1149,7 @@ exit_trace:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     goto enter_tier_one;
 }
+
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
