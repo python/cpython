@@ -93,7 +93,7 @@ class RunTests:
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
-    json_file: JsonFile | None
+    json_file: JsonFile
 
     def copy(self, **override):
         state = dataclasses.asdict(self)

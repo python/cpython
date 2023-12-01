@@ -31,7 +31,7 @@ class TestResults:
 
         self.interrupted: bool = False
         self.worker_bug: bool = False
-        self.test_times: list[tuple[float, TestName]] = []
+        self.test_times: list[tuple[float | None, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
         self.testsuite_xml: list = []
