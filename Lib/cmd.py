@@ -108,7 +108,7 @@ class Cmd:
                 import readline
                 self.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
-                if 'libedit' in getattr(readline, '__doc__', ''):
+                if readline.backend == "editline":
                     if self.completekey == 'tab':
                         # libedit uses "^I" instead of "tab"
                         command_string = "bind ^I rl_complete"
