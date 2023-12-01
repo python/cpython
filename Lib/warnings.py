@@ -147,8 +147,10 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
         raise TypeError("category must be a Warning subclass")
     if not isinstance(module, str):
         raise TypeError("module must be a string")
-    if not isinstance(lineno, int) or lineno < 0:
-        raise ValueError("lineno must be a non-negative integer")
+    if not isinstance(lineno, int):
+        raise TypeError("lineno must be an int")
+    if lineno < 0:
+        raise ValueError("lineno must be an int >= 0")
 
     if message or module:
         import re
