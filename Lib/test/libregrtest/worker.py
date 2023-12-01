@@ -7,7 +7,7 @@ from test import support
 from test.support import os_helper
 
 from .setup import setup_process, setup_test_dir
-from .runtests import RunTests, JsonFile, JsonFileType
+from .runtests import WorkerRunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, TestFilter,
@@ -17,7 +17,7 @@ from .utils import (
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
-def create_worker_process(runtests: RunTests, output_fd: int,
+def create_worker_process(runtests: WorkerRunTests, output_fd: int,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
@@ -71,7 +71,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
 
 
 def worker_process(worker_json: StrJSON) -> NoReturn:
-    runtests = RunTests.from_json(worker_json)
+    runtests = WorkerRunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: TestFilter = runtests.match_tests
     json_file: JsonFile = runtests.json_file
