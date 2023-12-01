@@ -42,6 +42,9 @@ interface.
    :attr:`use_rawinput` attribute to ``False``, otherwise *stdin* will be
    ignored.
 
+   .. versionchanged:: 3.11
+      ``completekey='tab'`` is replaced by ``'^I'`` for ``editline``.
+
 
 .. _cmd-objects:
 
