@@ -1075,5 +1075,26 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
 
+    def test_only_one_push_null_per_load_global(self):
+        # When optimizing func()(), a second pass shouldn't
+        # let the LOAD_GLOBAL absorb another PUSH_NULL.
+        before = [
+            ('PUSH_NULL', 0, 1),
+            ('PUSH_NULL', 0, 1),
+            ('LOAD_GLOBAL', 0, 1),
+            ('CALL', 0, 1),
+            ('CALL', 0, 1),
+            ('RETURN_VALUE', 0, 1),
+        ]
+        after = [
+            ('PUSH_NULL', 0, 1),
+            ('LOAD_GLOBAL', 1, 1),
+            ('CALL', 0, 1),
+            ('CALL', 0, 1),
+            ('RETURN_VALUE', 0, 1),
+        ]
+        self.cfg_optimization_test(before, expected_insts=after, consts=[])
+        self.cfg_optimization_test(after, expected_insts=after, consts=[])
+
 if __name__ == "__main__":
     unittest.main()
