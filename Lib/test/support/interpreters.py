@@ -6,7 +6,10 @@ import _xxsubinterpreters as _interpreters
 import _xxinterpchannels as _channels
 
 # aliases:
-from _xxsubinterpreters import is_shareable
+from _xxsubinterpreters import (
+    InterpreterError, InterpreterNotFoundError,
+    is_shareable,
+)
 from _xxinterpchannels import (
     ChannelError, ChannelNotFoundError, ChannelClosedError,
     ChannelEmptyError, ChannelNotEmptyError,
@@ -15,7 +18,7 @@ from _xxinterpchannels import (
 
 __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
-    'RunFailedError',
+    'InterpreterError', 'InterpreterNotFoundError', 'RunFailedError',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
     'ChannelError', 'ChannelNotFoundError',

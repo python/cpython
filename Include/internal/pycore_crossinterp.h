@@ -10,6 +10,13 @@ extern "C" {
 
 #include "pycore_pyerrors.h"
 
+/**************/
+/* exceptions */
+/**************/
+
+PyAPI_DATA(PyObject *) PyExc_InterpreterError;
+PyAPI_DATA(PyObject *) PyExc_InterpreterNotFoundError;
+
 
 /***************************/
 /* cross-interpreter calls */
@@ -158,6 +165,9 @@ struct _xi_state {
 
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);
 extern void _PyXI_Fini(PyInterpreterState *interp);
+
+extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
+extern void _PyXI_FiniTypes(PyInterpreterState *interp);
 
 
 /***************************/

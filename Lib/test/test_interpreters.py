@@ -15,6 +15,7 @@ from test.support import os_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 _channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
+from test.support.interpreters import InterpreterNotFoundError
 
 
 def _captured_script(script):
@@ -282,7 +283,7 @@ class InterpreterObjectTests(TestBase):
         self.assertIs(interp, main)
 
     def test_init_does_not_exist(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.Interpreter(1_000_000)
 
     def test_init_bad_id(self):
@@ -348,7 +349,7 @@ class TestInterpreterIsRunning(TestBase):
     def test_already_destroyed(self):
         interp = interpreters.create()
         interp.close()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interp.is_running()
 
     def test_with_only_background_threads(self):
@@ -417,7 +418,7 @@ class TestInterpreterClose(TestBase):
     def test_already_destroyed(self):
         interp = interpreters.create()
         interp.close()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interp.close()
 
     def test_from_current(self):

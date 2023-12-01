@@ -725,6 +725,14 @@ module_exec(PyObject *mod)
         goto error;
     }
 
+    // exceptions
+    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterError) < 0) {
+        goto error;
+    }
+    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
+        goto error;
+    }
+
     return 0;
 
 error:
