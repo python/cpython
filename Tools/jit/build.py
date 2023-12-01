@@ -261,9 +261,10 @@ class Parser(typing.Generic[S, R]):
             if value_part and not symbol and not addend:
                 addend_part = ""
             else:
-                addend_part = format_addend(symbol, addend)
+                addend_part = f"&{symbol} + " if symbol else "",
+                addend_part = format_addend(addend)
                 if value_part:
-                    value_part += "+"
+                    value_part += " + "
             disassembly_data.append(f"{offset_data:x}: {value_part}{addend_part}")
             offset_data += 8
         self.data.extend([0] * 8 * len(self.global_offset_table))
@@ -626,7 +627,7 @@ def get_target(host: str) -> Target:
 
 CFLAGS = [
     "-O3",
-    "-fno-asynchronous-unwind-tables",
+    "-ffreestanding",
     # Position-independent code adds indirection to every load and jump:
     "-fno-pic",
     "-fno-jump-tables",  # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds
@@ -718,6 +719,7 @@ class Compiler:
         yield "    const uint64_t offset;"
         yield "    const HoleKind kind;"
         yield "    const HoleValue value;"
+        yield "    const void *symbol;"
         yield "    const uint64_t addend;"
         yield "} Hole;"
         yield ""
@@ -751,7 +753,8 @@ class Compiler:
                         hex(hole.offset),
                         f"HoleKind_{hole.kind}",
                         f"HoleValue_{hole.value.name}",
-                        format_addend(hole.symbol, hole.addend),
+                        f"&{hole.symbol}" if hole.symbol else "NULL",
+                        format_addend(hole.addend),
                     ]
                     yield f"    {{{', '.join(parts)}}},"
                 yield "};"
@@ -773,7 +776,8 @@ class Compiler:
                         hex(hole.offset),
                         f"HoleKind_{hole.kind}",
                         f"HoleValue_{hole.value.name}",
-                        format_addend(hole.symbol, hole.addend),
+                        f"&{hole.symbol}" if hole.symbol else "NULL",
+                        format_addend(hole.addend),
                     ]
                     yield f"    {{{', '.join(parts)}}},"
                 yield "};"
@@ -807,14 +811,11 @@ class Compiler:
         yield "}"
 
 
-def format_addend(symbol: str | None, addend: int) -> str:
-    symbol_part = f"(uintptr_t)&{symbol}" if symbol else ""
+def format_addend(addend: int) -> str:
     addend %= 1 << 64
-    if symbol_part and not addend:
-        return symbol_part
     if addend & (1 << 63):
-        return f"{symbol_part}{hex(addend - (1 << 64))}"
-    return f"{f'{symbol_part}+' if symbol_part else ''}{hex(addend)}"
+        addend -= 1 << 64
+    return hex(addend)
 
 
 def main(host: str) -> None:
