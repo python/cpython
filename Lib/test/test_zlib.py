@@ -3,11 +3,10 @@ from test import support
 from test.support import import_helper
 import binascii
 import copy
-import os
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G
+from test.support import bigmemtest, _1G, _4G, skip_on_s390x
 
 
 zlib = import_helper.import_module('zlib')
@@ -44,10 +43,7 @@ requires_Decompress_copy = unittest.skipUnless(
 #   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
 #
 # Make the assumption that s390x always has an accelerator to simplify the skip
-# condition. Windows doesn't have os.uname() but it doesn't support s390x.
-skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
-                                'skipped on s390x')
-
+# condition.
 
 class VersionTestCase(unittest.TestCase):
 
@@ -516,18 +512,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
         # Try 17K of data
         # generate random data stream
-        try:
-            # In 2.3 and later, WichmannHill is the RNG of the bug report
-            gen = random.WichmannHill()
-        except AttributeError:
-            try:
-                # 2.2 called it Random
-                gen = random.Random()
-            except AttributeError:
-                # others might simply have a single RNG
-                gen = random
-        gen.seed(1)
-        data = gen.randbytes(17 * 1024)
+        data = random.randbytes(17 * 1024)
 
         # compress, sync-flush, and decompress
         first = co.compress(data)
@@ -992,10 +977,10 @@ class ZlibDecompressorTest(unittest.TestCase):
     @bigmemtest(size=_4G + 100, memuse=3.3)
     def testDecompress4G(self, size):
         # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            data = block * (size // blocksize + 1)
+            data = block * ((size-1) // blocksize + 1)
             compressed = zlib.compress(data)
             zlibd = zlib._ZlibDecompressor()
             decompressed = zlibd.decompress(compressed)

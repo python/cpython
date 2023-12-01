@@ -1,8 +1,8 @@
-import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
-
 import _ctypes_test
+import unittest
+from ctypes import (CDLL, POINTER, sizeof,
+                    c_byte, c_short, c_int, c_long, c_char, c_wchar, c_char_p)
+
 
 class SlicesTestCase(unittest.TestCase):
     def test_getslice_cint(self):
@@ -46,18 +46,21 @@ class SlicesTestCase(unittest.TestCase):
         b[33::-3] = range(12)
         self.assertEqual(a[:], b)
 
-        from operator import setitem
+        # TypeError: int expected instead of str instance
+        with self.assertRaises(TypeError):
+            a[:5] = "abcde"
 
         # TypeError: int expected instead of str instance
-        self.assertRaises(TypeError, setitem, a, slice(0, 5), "abcde")
-        # TypeError: int expected instead of str instance
-        self.assertRaises(TypeError, setitem, a, slice(0, 5),
-                          ["a", "b", "c", "d", "e"])
+        with self.assertRaises(TypeError):
+            a[:5] =  ["a", "b", "c", "d", "e"]
+
         # TypeError: int expected instead of float instance
-        self.assertRaises(TypeError, setitem, a, slice(0, 5),
-                          [1, 2, 3, 4, 3.14])
+        with self.assertRaises(TypeError):
+            a[:5] = [1, 2, 3, 4, 3.14]
+
         # ValueError: Can only assign sequence of same size
-        self.assertRaises(ValueError, setitem, a, slice(0, 5), range(32))
+        with self.assertRaises(ValueError):
+            a[:5] = range(32)
 
     def test_char_ptr(self):
         s = b"abcdefghijklmnopqrstuvwxyz"
@@ -73,18 +76,20 @@ class SlicesTestCase(unittest.TestCase):
         self.assertEqual(res[len(s)-1:5:-7], s[:5:-7])
         self.assertEqual(res[0:-1:-1], s[0::-1])
 
-        import operator
-        self.assertRaises(ValueError, operator.getitem,
-                          res, slice(None, None, None))
-        self.assertRaises(ValueError, operator.getitem,
-                          res, slice(0, None, None))
-        self.assertRaises(ValueError, operator.getitem,
-                          res, slice(None, 5, -1))
-        self.assertRaises(ValueError, operator.getitem,
-                          res, slice(-5, None, None))
+        # get items
+        with self.assertRaises(ValueError):
+            res[:]
+        with self.assertRaises(ValueError):
+            res[0:]
+        with self.assertRaises(ValueError):
+            res[:5:-1]
+        with self.assertRaises(ValueError):
+            res[-5:]
 
-        self.assertRaises(TypeError, operator.setitem,
-                          res, slice(0, 5), "abcde")
+        # set items
+        with self.assertRaises(TypeError):
+            res[:5] = "abcde"
+
         dll.my_free(res)
 
         dll.my_strdup.restype = POINTER(c_byte)
@@ -126,7 +131,6 @@ class SlicesTestCase(unittest.TestCase):
         self.assertEqual(p[2:5:-3], s[2:5:-3])
 
 
-    @need_symbol('c_wchar')
     def test_wchar_ptr(self):
         s = "abcdefghijklmnopqrstuvwxyz\0"
 
@@ -140,9 +144,8 @@ class SlicesTestCase(unittest.TestCase):
         self.assertEqual(res[len(s)-1:-1:-1], s[::-1])
         self.assertEqual(res[len(s)-1:5:-7], s[:5:-7])
 
-        import operator
-        self.assertRaises(TypeError, operator.setitem,
-                          res, slice(0, 5), "abcde")
+        with self.assertRaises(TypeError):
+            res[:5] = "abcde"
         dll.my_free(res)
 
         if sizeof(c_wchar) == sizeof(c_short):
@@ -161,7 +164,6 @@ class SlicesTestCase(unittest.TestCase):
         self.assertEqual(res[len(s)-2:5:-7], tmpl[:5:-7])
         dll.my_free(res)
 
-################################################################
 
 if __name__ == "__main__":
     unittest.main()

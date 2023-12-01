@@ -23,6 +23,10 @@
 *.gc??
 *.profclang?
 *.profraw
+# Copies of binaries before BOLT optimizations.
+*.prebolt
+# BOLT profile data.
+*.fdata
 *.dyn
 .gdb_history
 .purify
@@ -38,6 +42,7 @@ gmon.out
 .coverage
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .DS_Store
 
 *.exe
@@ -57,7 +62,6 @@ Doc/.venv/
 Doc/env/
 Doc/.env/
 Include/pydtrace_probes.h
-Lib/lib2to3/*.pickle
 Lib/site-packages/*
 !Lib/site-packages/README.txt
 Lib/test/data/*
@@ -121,9 +125,11 @@ Tools/unicode/data/
 /config.status.lineno
 # hendrikmuhs/ccache-action@v1
 /.ccache
+/cross-build/
 /platform
 /profile-clean-stamp
 /profile-run-stamp
+/profile-bolt-stamp
 /Python/deepfreeze/*.c
 /pybuilddir.txt
 /pyconfig.h

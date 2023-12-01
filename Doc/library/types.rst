@@ -82,6 +82,46 @@ Dynamic Type Creation
 
    .. versionadded:: 3.7
 
+.. function:: get_original_bases(cls, /)
+
+    Return the tuple of objects originally given as the bases of *cls* before
+    the :meth:`~object.__mro_entries__` method has been called on any bases
+    (following the mechanisms laid out in :pep:`560`). This is useful for
+    introspecting :ref:`Generics <user-defined-generics>`.
+
+    For classes that have an ``__orig_bases__`` attribute, this
+    function returns the value of ``cls.__orig_bases__``.
+    For classes without the ``__orig_bases__`` attribute, ``cls.__bases__`` is
+    returned.
+
+    Examples::
+
+        from typing import TypeVar, Generic, NamedTuple, TypedDict
+
+        T = TypeVar("T")
+        class Foo(Generic[T]): ...
+        class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
+        Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
+        Spam = TypedDict("Spam", {"a": int, "b": str})
+
+        assert Bar.__bases__ == (Foo, float)
+        assert get_original_bases(Bar) == (Foo[int], float)
+
+        assert Baz.__bases__ == (list,)
+        assert get_original_bases(Baz) == (list[str],)
+
+        assert Eggs.__bases__ == (tuple,)
+        assert get_original_bases(Eggs) == (NamedTuple,)
+
+        assert Spam.__bases__ == (dict,)
+        assert get_original_bases(Spam) == (TypedDict,)
+
+        assert int.__bases__ == (object,)
+        assert get_original_bases(int) == (object,)
+
+    .. versionadded:: 3.12
+
 .. seealso::
 
    :pep:`560` - Core support for typing module and generic types
@@ -146,7 +186,7 @@ Standard names are defined for the following types:
 
 .. class:: CodeType(**kwargs)
 
-   .. index:: builtin: compile
+   .. index:: pair: built-in function; compile
 
    The type for code objects such as returned by :func:`compile`.
 
@@ -159,6 +199,8 @@ Standard names are defined for the following types:
    .. method:: CodeType.replace(**kwargs)
 
      Return a copy of the code object with new values for the specified fields.
+
+     Code objects are also supported by generic function :func:`copy.replace`.
 
      .. versionadded:: 3.8
 
@@ -311,6 +353,13 @@ Standard names are defined for the following types:
    .. versionchanged:: 3.9.2
       This type can now be subclassed.
 
+   .. seealso::
+
+      :ref:`Generic Alias Types<types-genericalias>`
+         In-depth documentation on instances of :class:`!types.GenericAlias`
+
+      :pep:`585` - Type Hinting Generics In Standard Collections
+         Introducing the :class:`!types.GenericAlias` class
 
 .. class:: UnionType
 
@@ -423,6 +472,12 @@ Standard names are defined for the following types:
 
       .. versionadded:: 3.12
 
+.. class:: CapsuleType
+
+   The type of :ref:`capsule objects <capsules>`.
+
+   .. versionadded:: 3.13
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -454,6 +509,8 @@ Additional Utility Classes and Functions
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`
    instead.
+
+   :class:`!SimpleNamespace` objects are supported by :func:`copy.replace`.
 
    .. versionadded:: 3.3
 

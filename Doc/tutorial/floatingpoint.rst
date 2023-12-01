@@ -137,7 +137,7 @@ the :func:`math.isclose` function can be useful for comparing inexact values:
    True
 
 Alternatively, the :func:`round` function can be used to compare rough
-approximations::
+approximations:
 
 .. doctest::
 
@@ -148,7 +148,7 @@ Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"
 section.  See `Examples of Floating Point Problems
 <https://jvns.ca/blog/2023/01/13/examples-of-floating-point-problems/>`_ for
-a pleasant summary of how binary floating point works and the kinds of
+a pleasant summary of how binary floating-point works and the kinds of
 problems commonly encountered in practice.  Also see
 `The Perils of Floating Point <https://www.lahey.com/float.htm>`_
 for a more complete account of other common surprises.
@@ -174,7 +174,7 @@ Another form of exact arithmetic is supported by the :mod:`fractions` module
 which implements arithmetic based on rational numbers (so the numbers like
 1/3 can be represented exactly).
 
-If you are a heavy user of floating point operations you should take a look
+If you are a heavy user of floating-point operations you should take a look
 at the NumPy package and many other packages for mathematical and
 statistical operations supplied by the SciPy project. See <https://scipy.org>.
 
@@ -268,12 +268,14 @@ decimal fractions cannot be represented exactly as binary (base 2) fractions.
 This is the chief reason why Python (or Perl, C, C++, Java, Fortran, and many
 others) often won't display the exact decimal number you expect.
 
-Why is that?  1/10 is not exactly representable as a binary fraction. Almost all
-machines today (November 2000) use IEEE-754 floating point arithmetic, and
-almost all platforms map Python floats to IEEE-754 "double precision".  754
-doubles contain 53 bits of precision, so on input the computer strives to
-convert 0.1 to the closest fraction it can of the form *J*/2**\ *N* where *J* is
-an integer containing exactly 53 bits.  Rewriting ::
+Why is that?  1/10 is not exactly representable as a binary fraction.  Since at
+least 2000, almost all machines use IEEE 754 binary floating-point arithmetic,
+and almost all platforms map Python floats to IEEE 754 binary64 "double
+precision" values.  IEEE 754 binary64 values contain 53 bits of precision, so
+on input the computer strives to convert 0.1 to the closest fraction it can of
+the form *J*/2**\ *N* where *J* is an integer containing exactly 53 bits.
+Rewriting
+::
 
    1 / 10 ~= J / (2**N)
 
@@ -308,7 +310,8 @@ by rounding up:
    >>> q+1
    7205759403792794
 
-Therefore the best possible approximation to 1/10 in 754 double precision is::
+Therefore the best possible approximation to 1/10 in IEEE 754 double precision
+is::
 
    7205759403792794 / 2 ** 56
 
@@ -321,7 +324,7 @@ if we had not rounded up, the quotient would have been a little bit smaller than
 1/10.  But in no case can it be *exactly* 1/10!
 
 So the computer never "sees" 1/10:  what it sees is the exact fraction given
-above, the best 754 double approximation it can get:
+above, the best IEEE 754 double approximation it can get:
 
 .. doctest::
 

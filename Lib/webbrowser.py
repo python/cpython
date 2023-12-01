@@ -8,7 +8,6 @@ import shutil
 import sys
 import subprocess
 import threading
-import warnings
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
@@ -391,15 +390,6 @@ class Konqueror(BaseBrowser):
             return (p.poll() is None)
 
 
-    def open(self, url, new=0, autoraise=True):
-        sys.audit("webbrowser.open", url)
-        if new:
-            ok = self._remote("LOADNEW " + url)
-        else:
-            ok = self._remote("LOAD " + url)
-        return ok
-
-
 class Edge(UnixBrowser):
     "Launcher class for Microsoft Edge browser."
 
@@ -570,77 +560,13 @@ if sys.platform[:3] == "win":
                 return True
 
 #
-# Platform support for MacOS
+# Platform support for macOS
 #
 
 if sys.platform == 'darwin':
-    # Adapted from patch submitted to SourceForge by Steven J. Burr
-    class MacOSX(BaseBrowser):
-        """Launcher class for Aqua browsers on Mac OS X
-
-        Optionally specify a browser name on instantiation.  Note that this
-        will not work for Aqua browsers if the user has moved the application
-        package after installation.
-
-        If no browser is specified, the default browser, as specified in the
-        Internet System Preferences panel, will be used.
-        """
-        def __init__(self, name):
-            warnings.warn(f'{self.__class__.__name__} is deprecated in 3.11'
-                          ' use MacOSXOSAScript instead.', DeprecationWarning, stacklevel=2)
-            self.name = name
-
-        def open(self, url, new=0, autoraise=True):
-            sys.audit("webbrowser.open", url)
-            assert "'" not in url
-            # hack for local urls
-            if not ':' in url:
-                url = 'file:'+url
-
-            # new must be 0 or 1
-            new = int(bool(new))
-            if self.name == "default":
-                # User called open, open_new or get without a browser parameter
-                script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
-            else:
-                # User called get and chose a browser
-                if self.name == "OmniWeb":
-                    toWindow = ""
-                else:
-                    # Include toWindow parameter of OpenURL command for browsers
-                    # that support it.  0 == new window; -1 == existing
-                    toWindow = "toWindow %d" % (new - 1)
-                cmd = 'OpenURL "%s"' % url.replace('"', '%22')
-                script = '''tell application "%s"
-                                activate
-                                %s %s
-                            end tell''' % (self.name, cmd, toWindow)
-            # Open pipe to AppleScript through osascript command
-            osapipe = os.popen("osascript", "w")
-            if osapipe is None:
-                return False
-            # Write script to osascript's stdin
-            osapipe.write(script)
-            rc = osapipe.close()
-            return not rc
-
     class MacOSXOSAScript(BaseBrowser):
         def __init__(self, name='default'):
             super().__init__(name)
-
-        @property
-        def _name(self):
-            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
-                          f' use {self.__class__.__name__}.name instead.',
-                          DeprecationWarning, stacklevel=2)
-            return self.name
-
-        @_name.setter
-        def _name(self, val):
-            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
-                          f' use {self.__class__.__name__}.name instead.',
-                          DeprecationWarning, stacklevel=2)
-            self.name = val
 
         def open(self, url, new=0, autoraise=True):
             if self.name == 'default':

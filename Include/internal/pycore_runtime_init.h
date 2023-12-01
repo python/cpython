@@ -8,11 +8,17 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_long.h"
-#include "pycore_object.h"
-#include "pycore_parser.h"
-#include "pycore_pymem_init.h"
-#include "pycore_obmalloc_init.h"
+#include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
+#include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
+#include "pycore_floatobject.h"   // _py_float_format_unknown
+#include "pycore_object.h"        // _PyObject_HEAD_INIT
+#include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
+#include "pycore_parser.h"        // _parser_runtime_state_INIT
+#include "pycore_pyhash.h"        // pyhash_state_INIT
+#include "pycore_pymem_init.h"    // _pymem_allocators_standard_INIT
+#include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
+#include "pycore_signal.h"        // _signals_RUNTIME_INIT
+#include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
 
 
 extern PyTypeObject _PyExc_MemoryError;
@@ -21,15 +27,67 @@ extern PyTypeObject _PyExc_MemoryError;
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
-
 #define _PyRuntimeState_INIT(runtime) \
     { \
-        .allocators = { \
-            _pymem_allocators_standard_INIT(runtime), \
-            _pymem_allocators_debug_INIT, \
-            _pymem_allocators_obj_arena_INIT, \
+        .debug_offsets = { \
+            .cookie = "xdebugpy", \
+            .version = PY_VERSION_HEX, \
+            .runtime_state = { \
+                .finalizing = offsetof(_PyRuntimeState, _finalizing), \
+                .interpreters_head = offsetof(_PyRuntimeState, interpreters.head), \
+            }, \
+            .interpreter_state = { \
+                .next = offsetof(PyInterpreterState, next), \
+                .threads_head = offsetof(PyInterpreterState, threads.head), \
+                .gc = offsetof(PyInterpreterState, gc), \
+                .imports_modules = offsetof(PyInterpreterState, imports.modules), \
+                .sysdict = offsetof(PyInterpreterState, sysdict), \
+                .builtins = offsetof(PyInterpreterState, builtins), \
+                .ceval_gil = offsetof(PyInterpreterState, ceval.gil), \
+                .gil_runtime_state_locked = offsetof(PyInterpreterState, _gil.locked), \
+                .gil_runtime_state_holder = offsetof(PyInterpreterState, _gil.last_holder), \
+            }, \
+            .thread_state = { \
+                .prev = offsetof(PyThreadState, prev), \
+                .next = offsetof(PyThreadState, next), \
+                .interp = offsetof(PyThreadState, interp), \
+                .current_frame = offsetof(PyThreadState, current_frame), \
+                .thread_id = offsetof(PyThreadState, thread_id), \
+                .native_thread_id = offsetof(PyThreadState, native_thread_id), \
+            }, \
+            .interpreter_frame = { \
+                .previous = offsetof(_PyInterpreterFrame, previous), \
+                .executable = offsetof(_PyInterpreterFrame, f_executable), \
+                .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
+                .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
+                .owner = offsetof(_PyInterpreterFrame, owner), \
+            }, \
+            .code_object = { \
+                .filename = offsetof(PyCodeObject, co_filename), \
+                .name = offsetof(PyCodeObject, co_name), \
+                .linetable = offsetof(PyCodeObject, co_linetable), \
+                .firstlineno = offsetof(PyCodeObject, co_firstlineno), \
+                .argcount = offsetof(PyCodeObject, co_argcount), \
+                .localsplusnames = offsetof(PyCodeObject, co_localsplusnames), \
+                .localspluskinds = offsetof(PyCodeObject, co_localspluskinds), \
+                .co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
+            }, \
+            .pyobject = { \
+                .ob_type = offsetof(PyObject, ob_type), \
+            }, \
+            .type_object = { \
+                .tp_name = offsetof(PyTypeObject, tp_name), \
+            }, \
+            .tuple_object = { \
+                .ob_item = offsetof(PyTupleObject, ob_item), \
+            }, \
         }, \
-        .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
+        .allocators = { \
+            .standard = _pymem_allocators_standard_INIT(runtime), \
+            .debug = _pymem_allocators_debug_INIT, \
+            .obj_arena = _pymem_allocators_obj_arena_INIT, \
+        }, \
+        .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
         .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
@@ -37,15 +95,15 @@ extern PyTypeObject _PyExc_MemoryError;
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        .xi = { \
+            .registry = { \
+                .global = 1, \
+            }, \
+        }, \
         /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
            in accordance with the specification. */ \
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
-        .imports = { \
-            .extensions = { \
-                .main_tstate = _PyThreadState_INIT, \
-            }, \
-        }, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
@@ -76,13 +134,13 @@ extern PyTypeObject _PyExc_MemoryError;
                     .latin1 = _Py_str_latin1_INIT, \
                 }, \
                 .tuple_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&PyTuple_Type, 0), \
                 }, \
                 .hamt_bitmap_node_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0), \
                 }, \
                 .context_token_missing = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyContextTokenMissing_Type), \
                 }, \
             }, \
         }, \
@@ -93,6 +151,7 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         .imports = IMPORTS_INIT, \
+        .obmalloc = _obmalloc_state_INIT(INTERP.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
@@ -105,22 +164,25 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 10, }, \
             }, \
         }, \
+        .object_state = _py_object_state_INIT(INTERP), \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
-        .dict_state = { \
-            .next_keys_version = 2, \
-        }, \
+        .dict_state = _dict_state_INIT, \
         .func_state = { \
             .next_version = 1, \
+        }, \
+        .types = { \
+            .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \
         }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyHamt_Type), \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
                 }, \
                 .last_resort_memory_error = { \
-                    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError), \
+                    _PyObject_HEAD_INIT(&_PyExc_MemoryError), \
+                    .args = (PyObject*)&_Py_SINGLETON(tuple_empty) \
                 }, \
             }, \
         }, \
@@ -129,16 +191,27 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyThreadState_INIT \
     { \
+        ._whence = _PyThreadState_WHENCE_NOTSET, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
+
+#ifdef Py_TRACE_REFS
+# define _py_object_state_INIT(INTERP) \
+    { \
+        .refchain = NULL, \
+    }
+#else
+# define _py_object_state_INIT(INTERP) \
+    { 0 }
+#endif
 
 
 // global objects
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, (LEN)), \
+        _PyVarObject_HEAD_INIT(&PyBytes_Type, (LEN)), \
         .ob_shash = -1, \
         .ob_sval = { (CH) }, \
     }
@@ -149,13 +222,14 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyUnicode_ASCII_BASE_INIT(LITERAL, ASCII) \
     { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+        .ob_base = _PyObject_HEAD_INIT(&PyUnicode_Type), \
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
         .state = { \
             .kind = 1, \
             .compact = 1, \
             .ascii = (ASCII), \
+            .statically_allocated = 1, \
         }, \
     }
 #define _PyASCIIObject_INIT(LITERAL) \
