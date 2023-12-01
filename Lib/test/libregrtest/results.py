@@ -118,7 +118,7 @@ class TestResults:
 
         if result.has_meaningful_duration() and not rerun:
             if result.duration is None:
-                raise RuntimeError("result.duration was unexpectedly None!")
+                raise ValueError("result.duration is None")
             self.test_times.append((result.duration, test_name))
         if result.stats is not None:
             self.stats.accumulate(result.stats)
