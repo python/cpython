@@ -1260,8 +1260,8 @@ class EnvironmentVariableTests(BaseTest):
              b"  File \"<string>\", line 1, in <module>",
              b'    import sys, warnings; sys.stdout.write(str(sys.warnoptions)); warnings.w'
              b"arn('Message', DeprecationWarning)",
-             b'                                                                  ^^^^^^^^^^'
-             b'^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
+             b'                                                                  ~~~~~~~~~~'
+             b'~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
              b"DeprecationWarning: Message"])
 
     def test_default_filter_configuration(self):
