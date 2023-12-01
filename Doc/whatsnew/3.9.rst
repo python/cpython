@@ -409,9 +409,6 @@ Added :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 :func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
 (Contributed by Anthony Sottile in :issue:`38312`.)
 
-Add :data:`~curses.NCURSES_EXT_FUNCS` constant.
-(Contributed by Batuhan Taskaya in :issue:`40207`)
-
 datetime
 --------
 The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
