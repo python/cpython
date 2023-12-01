@@ -1321,7 +1321,9 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: NCURSES_EXT_FUNCS
 
-   An integer object representing the current version of the ncurses extensions.
+   An integer representing the current version of the ncurses extensions.
+
+   .. versionadded:: 3.13
 
 
 .. data:: version
