@@ -40,7 +40,6 @@ EXCLUDED_HEADERS = {
     "longintrepr.h",
     "parsetok.h",
     "pyatomic.h",
-    "pytime.h",
     "token.h",
     "ucnhash.h",
 }

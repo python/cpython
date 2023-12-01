@@ -3,6 +3,7 @@ import asyncio
 import contextvars
 import re
 import signal
+import sys
 import threading
 import unittest
 from test.test_asyncio import utils as test_utils
@@ -101,11 +102,14 @@ class RunTests(BaseTest):
             loop = asyncio.get_event_loop()
             self.assertIs(loop.get_debug(), expected)
 
-        asyncio.run(main(False))
+        asyncio.run(main(False), debug=False)
         asyncio.run(main(True), debug=True)
         with mock.patch('asyncio.coroutines._is_debug_mode', lambda: True):
             asyncio.run(main(True))
             asyncio.run(main(False), debug=False)
+        with mock.patch('asyncio.coroutines._is_debug_mode', lambda: False):
+            asyncio.run(main(True), debug=True)
+            asyncio.run(main(False))
 
     def test_asyncio_run_from_running_loop(self):
         async def main():
@@ -268,6 +272,16 @@ class RunTests(BaseTest):
 
         asyncio.run(main(), loop_factory=factory)
         factory.assert_called_once_with()
+
+    def test_loop_factory_default_event_loop(self):
+        async def main():
+            if sys.platform == "win32":
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.ProactorEventLoop)
+            else:
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
+
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
 
 class RunnerTests(BaseTest):

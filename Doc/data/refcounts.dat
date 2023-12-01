@@ -2813,6 +2813,10 @@ PyWeakref_GET_OBJECT:PyObject*:ref:0:
 PyWeakref_GetObject:PyObject*::0:
 PyWeakref_GetObject:PyObject*:ref:0:
 
+PyWeakref_GetRef:int:::
+PyWeakref_GetRef:PyObject*:ref:0:
+PyWeakref_GetRef:PyObject**:pobj:+1:
+
 PyWeakref_NewProxy:PyObject*::+1:
 PyWeakref_NewProxy:PyObject*:ob:0:
 PyWeakref_NewProxy:PyObject*:callback:0:

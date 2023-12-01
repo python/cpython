@@ -1,8 +1,6 @@
 import sys
 import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
-from operator import or_ as _or_
-from functools import reduce
 
 
 __all__ = [
@@ -63,8 +61,8 @@ def _is_sunder(name):
     return (
             len(name) > 2 and
             name[0] == name[-1] == '_' and
-            name[1:2] != '_' and
-            name[-2:-1] != '_'
+            name[1] != '_' and
+            name[-2] != '_'
             )
 
 def _is_internal_class(cls_name, obj):
@@ -83,7 +81,6 @@ def _is_private(cls_name, name):
     if (
             len(name) > pat_len
             and name.startswith(pattern)
-            and name[pat_len:pat_len+1] != ['_']
             and (name[-1] != '_' or name[-2] != '_')
         ):
         return True
@@ -158,7 +155,6 @@ def _dedent(text):
     Like textwrap.dedent.  Rewritten because we cannot import textwrap.
     """
     lines = text.split('\n')
-    blanks = 0
     for i, ch in enumerate(lines[0]):
         if ch != ' ':
             break
@@ -572,12 +568,16 @@ class EnumType(type):
         try:
             exc = None
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
-        except RuntimeError as e:
-            # any exceptions raised by member.__new__ will get converted to a
-            # RuntimeError, so get that original exception back and raise it instead
-            exc = e.__cause__ or e
+        except Exception as e:
+            # since 3.12 the line "Error calling __set_name__ on '_proto_member' instance ..."
+            # is tacked on to the error instead of raising a RuntimeError
+            # recreate the exception to discard
+            exc = type(e)(str(e))
+            exc.__cause__ = e.__cause__
+            exc.__context__ = e.__context__
+            tb = e.__traceback__
         if exc is not None:
-            raise exc
+            raise exc.with_traceback(tb)
         #
         # update classdict with any changes made by __init_subclass__
         classdict.update(enum_class.__dict__)
@@ -730,6 +730,11 @@ class EnumType(type):
                 value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
+        if names is None and type is None:
+            # no body? no data-type? possibly wrong usage
+            raise TypeError(
+                    f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
+                    )
         return cls._create_(
                 class_name=value,
                 names=names,
@@ -856,6 +861,8 @@ class EnumType(type):
                 value = first_enum._generate_next_value_(name, start, count, last_values[:])
                 last_values.append(value)
                 names.append((name, value))
+        if names is None:
+            names = ()
 
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:
@@ -1112,6 +1119,11 @@ class Enum(metaclass=EnumType):
             for member in cls._member_map_.values():
                 if member._value_ == value:
                     return member
+        # still not found -- verify that members exist, in-case somebody got here mistakenly
+        # (such as via super when trying to override __new__)
+        if not cls._member_map_:
+            raise TypeError("%r has no members defined" % cls)
+        #
         # still not found -- try _missing_ hook
         try:
             exc = None
@@ -1181,14 +1193,13 @@ class Enum(metaclass=EnumType):
 
     def __dir__(self):
         """
-        Returns all members and all public methods
+        Returns public methods and other interesting attributes.
         """
-        if self.__class__._member_type_ is object:
-            interesting = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
-        else:
+        interesting = set()
+        if self.__class__._member_type_ is not object:
             interesting = set(object.__dir__(self))
         for name in getattr(self, '__dict__', []):
-            if name[0] != '_':
+            if name[0] != '_' and name not in self._member_map_:
                 interesting.add(name)
         for cls in self.__class__.mro():
             for name, obj in cls.__dict__.items():
@@ -1201,7 +1212,7 @@ class Enum(metaclass=EnumType):
                     else:
                         # in case it was added by `dir(self)`
                         interesting.discard(name)
-                else:
+                elif name not in self._member_map_:
                     interesting.add(name)
         names = sorted(
                 set(['__class__', '__doc__', '__eq__', '__hash__', '__module__'])
@@ -1217,6 +1228,12 @@ class Enum(metaclass=EnumType):
 
     def __reduce_ex__(self, proto):
         return self.__class__, (self._value_, )
+
+    def __deepcopy__(self,memo):
+        return self
+
+    def __copy__(self):
+        return self
 
     # enum.property is used to provide access to the `name` and
     # `value` attributes of enum members while keeping some measure of
@@ -1515,14 +1532,10 @@ class Flag(Enum, boundary=STRICT):
 
     def __invert__(self):
         if self._inverted_ is None:
-            if self._boundary_ is KEEP:
-                # use all bits
+            if self._boundary_ in (EJECT, KEEP):
                 self._inverted_ = self.__class__(~self._value_)
             else:
-                # use canonical bits (i.e. calculate flags not in this member)
-                self._inverted_ = self.__class__(self._singles_mask_ ^ self._value_)
-            if isinstance(self._inverted_, self.__class__):
-                self._inverted_._inverted_ = self
+                self._inverted_ = self.__class__(self._singles_mask_ & ~self._value_)
         return self._inverted_
 
     __rand__ = __and__
@@ -1627,7 +1640,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
     Class decorator that converts a normal class into an :class:`Enum`.  No
     safety checks are done, and some advanced behavior (such as
     :func:`__init_subclass__`) is not available.  Enum creation can be faster
-    using :func:`simple_enum`.
+    using :func:`_simple_enum`.
 
         >>> from enum import Enum, _simple_enum
         >>> @_simple_enum(Enum)
@@ -1870,7 +1883,8 @@ class verify:
                     missed = [v for v in values if v not in member_values]
                     if missed:
                         missing_names.append(name)
-                        missing_value |= reduce(_or_, missed)
+                        for val in missed:
+                            missing_value |= val
                 if missing_names:
                     if len(missing_names) == 1:
                         alias = 'alias %s is missing' % missing_names[0]
