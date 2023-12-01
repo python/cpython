@@ -266,11 +266,15 @@ class TestHeap:
     def test_remove(self):
         data = [random.random() for i in range(100)]
         self.module.heapify(data)
+        heapset = set(data)
+        self.assertEqual(len(data), len(heapset))
 
         with self.assertRaises(IndexError) as e:
             self.module.heapremove(data, len(data))
         with self.assertRaises(IndexError) as e:
             self.module.heapremove(data, -len(data) - 1)
+        self.check_invariant(data)
+        self.assertEqual(heapset, set(data))
 
         for i in range(len(data)):
             i = random.randrange(-len(data), len(data))
@@ -280,17 +284,24 @@ class TestHeap:
                 i = len(data) - 1
             # print(len(data), i)
             v = data[i]
+            heapset.remove(v)
             self.assertIs(self.module.heapremove(data, i), v)
+            self.assertEqual(heapset, set(data))
             self.check_invariant(data)
         self.assertFalse(data)
 
     def test_remove_replace(self):
         data = [random.random() for i in range(100)]
         self.module.heapify(data)
+        heapset = set(data)
+        self.assertEqual(len(data), len(heapset))
+
         with self.assertRaises(IndexError) as e:
             self.module.heapremove(data, len(data))
         with self.assertRaises(IndexError) as e:
             self.module.heapremove(data, -len(data) - 1)
+        self.check_invariant(data)
+        self.assertEqual(heapset, set(data))
 
         for i in range(200):
             i = random.randrange(-len(data), len(data))
@@ -301,7 +312,10 @@ class TestHeap:
             replace = random.random()
             # print(len(data), i, replace)
             v = data[i]
+            heapset.remove(v)
+            heapset.add(replace)
             assert self.module.heapremove(data, i, replace) is v
+            self.assertEqual(heapset, set(data))
             self.check_invariant(data)
         self.assertEqual(len(data), 100)
 
