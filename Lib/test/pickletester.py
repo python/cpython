@@ -3557,7 +3557,7 @@ class AbstractPickleModuleTests:
         # File with bad read, no readline
         class F:
             read = bad_property
-        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+        self.assertRaises((AttributeError, ZeroDivisionError), self.Unpickler, F())
 
         # File with bad peek
         class F:
