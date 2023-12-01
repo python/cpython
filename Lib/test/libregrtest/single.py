@@ -237,11 +237,11 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
     output_on_failure = runtests.output_on_failure
     timeout = runtests.timeout
 
-    use_timeout = (
-        timeout is not None and threading_helper.can_start_thread
-    )
-    if use_timeout:
+    if timeout is not None and threading_helper.can_start_thread:
+        use_timeout = True
         faulthandler.dump_traceback_later(timeout, exit=True)
+    else:
+        use_timeout = False
 
     try:
         setup_tests(runtests)
