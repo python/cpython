@@ -170,14 +170,11 @@ def heappushpop(heap, item):
         _siftup(heap, 0)
     return item
 
-def heapremove(heap, index, item=None):
+def heapremove(heap, index):
     """Remove the element at the given index maintaining the heap invariant.
 
     Returns the removed object.
     """
-    if item is not None:
-        heap[index] = item
-        return heapfix(heap, index)
     result = heap[index]  # fails on invalid index
     lastelt = heap.pop()
     try:
