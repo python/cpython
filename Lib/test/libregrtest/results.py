@@ -31,7 +31,7 @@ class TestResults:
 
         self.interrupted: bool = False
         self.worker_bug: bool = False
-        self.test_times: list[tuple[float | None, TestName]] = []
+        self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
         self.testsuite_xml: list = []
@@ -117,6 +117,8 @@ class TestResults:
             self.worker_bug = True
 
         if result.has_meaningful_duration() and not rerun:
+            if result.duration is None:
+                raise RuntimeError("result.duration was unexpectedly None!")
             self.test_times.append((result.duration, test_name))
         if result.stats is not None:
             self.stats.accumulate(result.stats)
