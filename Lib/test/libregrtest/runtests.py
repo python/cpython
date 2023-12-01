@@ -141,7 +141,7 @@ class WorkerRunTests(RunTests):
         return json.dumps(self, cls=_EncodeRunTests)
 
     @staticmethod
-    def from_json(worker_json: StrJSON) -> 'RunTests':
+    def from_json(worker_json: StrJSON) -> 'WorkerRunTests':
         return json.loads(worker_json, object_hook=_decode_runtests)
 
 
