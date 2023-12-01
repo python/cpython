@@ -769,12 +769,6 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                     exc_info = type(exc), exc, exc.__traceback__
                 return onerror(func, path, exc_info)
 
-    try:
-        if not os.path.exists(path):
-            raise FileNotFoundError(errno.ENOENT, "Cannot call rmtree on a non-existent path", path)
-    except:
-        onexc(os.path.exists, path, sys.exception())
-        return
     if _use_fd_functions:
         # While the unsafe rmtree works fine on bytes, the fd based does not.
         if isinstance(path, bytes):
@@ -820,6 +814,13 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
         except OSError as err:
             onexc(os.path.islink, path, err)
             # can't continue even if onexc hook returns
+            return
+        try:
+            if not os.path.exists(path):
+                raise FileNotFoundError(errno.ENOENT,
+                        "Cannot call rmtree on a non-existent path", path)
+        except OSError as err:
+            onexc(os.path.exists, path, err)
             return
         return _rmtree_unsafe(path, onexc)
 
