@@ -140,7 +140,7 @@ class RunTests:
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class WorkerRunTests(RunTests):
-    json_file: JsonFile | None
+    json_file: JsonFile
 
     def as_json(self) -> StrJSON:
         return json.dumps(self, cls=_EncodeRunTests)
