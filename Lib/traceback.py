@@ -344,10 +344,10 @@ class FrameSummary:
 
     @property
     def _dedented_lines(self):
-        # Returns _original_lines, but dedented (and rstripped)
+        # Returns _original_lines, but dedented
         self._set_lines()
         if self._lines_dedented is None and self._lines is not None:
-            self._lines_dedented = textwrap.dedent(self._lines).rstrip()
+            self._lines_dedented = textwrap.dedent(self._lines)
         return self._lines_dedented
 
     @property
@@ -508,7 +508,7 @@ class StackSummary(list):
             filename = "<stdin>"
         row.append('  File "{}", line {}, in {}\n'.format(
             filename, frame_summary.lineno, frame_summary.name))
-        if frame_summary._dedented_lines:
+        if frame_summary._dedented_lines and frame_summary._dedented_lines.strip():
             if (
                 frame_summary.colno is None or
                 frame_summary.end_colno is None
@@ -519,6 +519,7 @@ class StackSummary(list):
                 # get first and last line
                 all_lines_original = frame_summary._original_lines.splitlines()
                 first_line = all_lines_original[0]
+                # assume all_lines_original has enough lines (since we constructed it)
                 last_line = all_lines_original[frame_summary.end_lineno - frame_summary.lineno]
 
                 # character index of the start/end of the instruction
@@ -722,7 +723,23 @@ def _extract_caret_anchors_from_line_segment(segment):
         # Binary ops, subscripts, and calls are expressions, so
         # we can wrap them with parentheses to parse them as
         # (possibly multi-line) expressions.
-        tree = ast.parse("(\n" + segment + "\n)")
+        # e.g. if we try to highlight the addition in
+        # x = (
+        #     a +
+        #     b
+        # )
+        # then we would ast.parse
+        #     a +
+        #     b
+        # which is not a valid statement because of the newline.
+        # Adding brackets makes it a valid expression.
+        # (
+        #     a +
+        #     b
+        # )
+        # Line locations will be different than the original,
+        # which is taken into account later on.
+        tree = ast.parse(f"(\n{segment}\n)")
     except SyntaxError:
         return None
 
