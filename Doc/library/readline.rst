@@ -47,6 +47,8 @@ Readline library in general.
 
    The name of the underlying Readline library being used, either
    ``"readline"`` or ``"editline"``.
+   
+   .. versionadded:: 3.13
 
 Init file
 ---------
