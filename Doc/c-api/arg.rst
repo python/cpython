@@ -428,9 +428,7 @@ API Functions
 
       The *keywords* parameter declaration is :c:expr:`char * const *` in C and
       :c:expr:`const char * const *` in C++.
-      This can be overridden by defining the macro :c:macro:`PY_CXX_CONST`
-      before including :file:`Python.h` as ``const`` for the latter and as
-      empty value for the former.
+      This can be overridden with the :c:macro:`PY_CXX_CONST` macro.
 
    .. versionchanged:: 3.6
       Added support for :ref:`positional-only parameters
@@ -515,6 +513,19 @@ API Functions
    this call to :c:func:`PyArg_ParseTuple`::
 
       PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
+
+.. c:macro:: PY_CXX_CONST
+
+   The value to be inserted, if any, before :c:expr:`char * const *`
+   in the *keywords* parameter declaration of
+   :c:func:`PyArg_ParseTupleAndKeywords` and
+   :c:func:`PyArg_VaParseTupleAndKeywords`.
+   Default empty for C and ``const`` for C++
+   (:c:expr:`const char * const *`).
+   To override, define it to the desired value before including
+   :file:`Python.h`.
+
+   .. versionadded:: 3.13
 
 
 ---------------
