@@ -778,10 +778,12 @@ class StartupTests(TestBase):
 class FinalizationTests(TestBase):
 
     def test_gh_109793(self):
+        # Make sure finalization finishes and the correct error code
+        # is reported, even when subinterpreters get cleaned up at the end.
         import subprocess
         argv = [sys.executable, '-c', '''if True:
-            import _xxsubinterpreters as _interpreters
-            interpid = _interpreters.create()
+            from test.support import interpreters
+            interp = interpreters.create()
             raise Exception
             ''']
         proc = subprocess.run(argv, capture_output=True, text=True)

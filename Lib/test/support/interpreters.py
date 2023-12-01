@@ -69,30 +69,48 @@ class Interpreter:
 
     def __new__(cls, id, /):
         # There is only one instance for any given ID.
-        if isinstance(id, int):
-            id = _interpreters.InterpreterID(id, force=False)
-        elif not isinstance(id, _interpreters.InterpreterID):
+        if not isinstance(id, int):
             raise TypeError(f'id must be an int, got {id!r}')
-        key = int(id)
+        id = int(id)
         try:
-            self = _known[key]
+            self = _known[id]
+            assert hasattr(self, '_ownsref')
         except KeyError:
-            self = super().__new__(cls)
-            self._id = id
-            _known[key] = self
+            # This may raise InterpreterNotFoundError:
+            _interpreters._incref(id)
+            try:
+                self = super().__new__(cls)
+                self._id = id
+                self._ownsref = True
+            except BaseException:
+                _interpreters._deccref(id)
+                raise
+            _known[id] = self
         return self
 
     def __repr__(self):
-        data = dict(id=int(self._id))
+        data = dict(id=self._id)
         kwargs = (f'{k}={v!r}' for k, v in data.items())
         return f'{type(self).__name__}({", ".join(kwargs)})'
 
     def __hash__(self):
         return hash(self._id)
 
+    def __del__(self):
+        self._decref()
+
+    def _decref(self):
+        if not self._ownsref:
+            return
+        self._ownsref = False
+        try:
+            _interpreters._decref(self.id)
+        except InterpreterNotFoundError:
+            pass
+
     @property
     def id(self):
-        return int(self._id)
+        return self._id
 
     def is_running(self):
         """Return whether or not the identified interpreter is running."""

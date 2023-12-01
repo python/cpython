@@ -6,11 +6,13 @@
 #endif
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_crossinterp.h"   // struct _xid
-#include "pycore_pyerrors.h"      // _Py_excinfo
+#include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
-#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
 
 #include "interpreteridobject.h"
@@ -26,6 +28,97 @@ _get_current_interp(void)
     // PyInterpreterState_Get() aborts if lookup fails, so don't need
     // to check the result for NULL.
     return PyInterpreterState_Get();
+}
+
+static int64_t
+pylong_to_interpid(PyObject *idobj)
+{
+    assert(PyLong_CheckExact(idobj));
+
+    if (_PyLong_IsNegative((PyLongObject *)idobj)) {
+        PyErr_Format(PyExc_ValueError,
+                     "interpreter ID must be a non-negative int, got %R",
+                     idobj);
+        return -1;
+    }
+
+    int overflow;
+    long long id = PyLong_AsLongLongAndOverflow(idobj, &overflow);
+    if (id == -1) {
+        if (!overflow) {
+            assert(PyErr_Occurred());
+            return -1;
+        }
+        assert(!PyErr_Occurred());
+        // For now, we don't worry about if LLONG_MAX < INT64_MAX.
+        goto bad_id;
+    }
+#if LONG_LONG_MAX > INT64_MAX
+    if (id > INT64_MAX) {
+        goto bad_id;
+    }
+#endif
+    return (int64_t)id;
+
+bad_id:
+    PyErr_Format(PyExc_RuntimeError,
+                 "unrecognized interpreter ID %O", idobj);
+    return -1;
+}
+
+static int64_t
+convert_interpid_obj(PyObject *arg)
+{
+    int64_t id = -1;
+    if (_PyIndex_Check(arg)) {
+        PyObject *idobj = PyNumber_Long(arg);
+        if (idobj == NULL) {
+            return -1;
+        }
+        id = pylong_to_interpid(idobj);
+        Py_DECREF(idobj);
+        if (id < 0) {
+            return -1;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "interpreter ID must be an int, got %.100s",
+                     Py_TYPE(arg)->tp_name);
+        return -1;
+    }
+    return id;
+}
+
+static PyInterpreterState *
+look_up_interp(PyObject *arg)
+{
+    int64_t id = convert_interpid_obj(arg);
+    if (id < 0) {
+        return NULL;
+    }
+    return _PyInterpreterState_LookUpID(id);
+}
+
+
+static PyObject *
+interpid_to_pylong(int64_t id)
+{
+    assert(id < LONG_LONG_MAX);
+    return PyLong_FromLongLong(id);
+}
+
+static PyObject *
+get_interpid_obj(PyInterpreterState *interp)
+{
+    if (_PyInterpreterState_IDInitref(interp) != 0) {
+        return NULL;
+    };
+    int64_t id = PyInterpreterState_GetID(interp);
+    if (id < 0) {
+        return NULL;
+    }
+    return interpid_to_pylong(id);
 }
 
 
@@ -254,7 +347,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     assert(tstate != NULL);
 
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    PyObject *idobj = PyInterpreterState_GetIDObject(interp);
+    PyObject *idobj = get_interpid_obj(interp);
     if (idobj == NULL) {
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
@@ -273,7 +366,9 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(create_doc,
 "create() -> ID\n\
 \n\
-Create a new interpreter and return a unique generated ID.");
+Create a new interpreter and return a unique generated ID.\n\
+\n\
+The caller is responsible for destroying the interpreter before exiting.");
 
 
 static PyObject *
@@ -288,7 +383,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -345,7 +440,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = PyInterpreterState_GetIDObject(interp);
+        id = get_interpid_obj(interp);
         if (id == NULL) {
             Py_DECREF(ids);
             return NULL;
@@ -377,7 +472,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return PyInterpreterState_GetIDObject(interp);
+    return get_interpid_obj(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
@@ -391,7 +486,7 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
     int64_t id = 0;
-    return PyInterpreterID_New(id);
+    return PyLong_FromLongLong(id);
 }
 
 PyDoc_STRVAR(get_main_doc,
@@ -481,7 +576,7 @@ _interp_exec(PyObject *self,
              PyObject **p_excinfo)
 {
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id_arg);
+    PyInterpreterState *interp = look_up_interp(id_arg);
     if (interp == NULL) {
         return -1;
     }
@@ -667,7 +762,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -681,6 +776,49 @@ PyDoc_STRVAR(is_running_doc,
 "is_running(id) -> bool\n\
 \n\
 Return whether or not the identified interpreter is running.");
+
+
+static PyObject *
+interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *id;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:_incref", kwlist, &id)) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = look_up_interp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+    if (_PyInterpreterState_IDInitref(interp) < 0) {
+        return NULL;
+    }
+    _PyInterpreterState_IDIncref(interp);
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *id;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:_incref", kwlist, &id)) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = look_up_interp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+    _PyInterpreterState_IDDecref(interp);
+
+    Py_RETURN_NONE;
+}
 
 
 static PyMethodDef module_functions[] = {
@@ -707,6 +845,11 @@ static PyMethodDef module_functions[] = {
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 
+    {"_incref",                   _PyCFunction_CAST(interp_incref),
+     METH_VARARGS | METH_KEYWORDS, NULL},
+    {"_decref",                   _PyCFunction_CAST(interp_decref),
+     METH_VARARGS | METH_KEYWORDS, NULL},
+
     {NULL,                        NULL}           /* sentinel */
 };
 
@@ -720,11 +863,6 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    // PyInterpreterID
-    if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
-        goto error;
-    }
-
     // exceptions
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterError) < 0) {
         goto error;
