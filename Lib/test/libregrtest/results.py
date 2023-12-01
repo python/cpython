@@ -33,7 +33,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[str] = []
+        self.testsuite_xml: list = []
 
     def is_all_good(self):
         return (not self.bad

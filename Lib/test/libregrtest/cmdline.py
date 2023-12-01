@@ -3,7 +3,7 @@ import os.path
 import shlex
 import sys
 from test.support import os_helper
-from .utils import ALL_RESOURCES, RESOURCE_NAMES
+from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 
 USAGE = """\
@@ -161,7 +161,7 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = []
+        self.match_tests: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
