@@ -7,6 +7,8 @@
 .. moduleauthor:: Phillip J. Eby <pje@telecommunity.com>
 .. sectionauthor:: Phillip J. Eby <pje@telecommunity.com>
 
+**Source code:** :source:`Lib/wsgiref`
+
 --------------
 
 The Web Server Gateway Interface (WSGI) is a standard interface between web
@@ -178,7 +180,7 @@ also provides these miscellaneous utilities:
           print(chunk)
 
    .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+      Support for :meth:`~object.__getitem__` method has been removed.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -199,7 +201,7 @@ manipulation of WSGI response headers using a mapping-like interface.
    an empty list.
 
    :class:`Headers` objects support typical mapping operations including
-   :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
+   :meth:`~object.__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
    :meth:`__delitem__` and :meth:`__contains__`.  For each of
    these methods, the key is the header name (treated case-insensitively), and the
    value is the first value associated with that header name.  Setting a header
@@ -333,7 +335,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
    .. method:: WSGIServer.get_app()
 
-      Returns the currently-set application callable.
+      Returns the currently set application callable.
 
    Normally, however, you do not need to use these additional methods, as
    :meth:`set_app` is normally called by :func:`make_server`, and the
@@ -642,7 +644,7 @@ input, output, and error streams.
 
    .. method:: BaseHandler.setup_environ()
 
-      Set the :attr:`environ` attribute to a fully-populated WSGI environment.  The
+      Set the :attr:`environ` attribute to a fully populated WSGI environment.  The
       default implementation uses all of the above methods and attributes, plus the
       :meth:`get_stdin`, :meth:`get_stderr`, and :meth:`add_cgi_vars` methods and the
       :attr:`wsgi_file_wrapper` attribute.  It also inserts a ``SERVER_SOFTWARE`` key
@@ -672,7 +674,7 @@ input, output, and error streams.
       This method is a WSGI application to generate an error page for the user.  It is
       only invoked if an error occurs before headers are sent to the client.
 
-      This method can access the current error information using ``sys.exc_info()``,
+      This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
       described in the "Error Handling" section of :pep:`3333`).
 

@@ -20,7 +20,9 @@ This module defines classes for implementing HTTP servers.
 .. warning::
 
     :mod:`http.server` is not recommended for production. It only implements
-    basic security checks.
+    :ref:`basic security checks <http.server-security>`.
+
+.. include:: ../includes/wasm-notavail.rst
 
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
@@ -215,7 +217,7 @@ provides three different variants:
       attribute holds the default values for *message* and *explain* that
       will be used if no value is provided; for unknown codes the default value
       for both is the string ``???``. The body will be empty if the method is
-      HEAD or the response code is one of the following: ``1xx``,
+      HEAD or the response code is one of the following: :samp:`1{xx}`,
       ``204 No Content``, ``205 Reset Content``, ``304 Not Modified``.
 
       .. versionchanged:: 3.4
@@ -390,8 +392,8 @@ provides three different variants:
       contents of the file are output. If the file's MIME type starts with
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
-      For example usage, see the implementation of the :func:`test` function
-      invocation in the :mod:`http.server` module.
+      For example usage, see the implementation of the ``test`` function
+      in :source:`Lib/http/server.py`.
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
@@ -410,6 +412,11 @@ the current directory::
    with socketserver.TCPServer(("", PORT), Handler) as httpd:
        print("serving at port", PORT)
        httpd.serve_forever()
+
+
+:class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
+such as using different index file names by overriding the class attribute
+:attr:`index_pages`.
 
 .. _http-server-cli:
 
@@ -495,7 +502,40 @@ following command runs an HTTP/1.1 conformant server::
    Note that CGI scripts will be run with UID of user nobody, for security
    reasons.  Problems with the CGI script will be translated to error 403.
 
+   .. deprecated-removed:: 3.13 3.15
+
+      :class:`CGIHTTPRequestHandler` is being removed in 3.15.  CGI has not
+      been considered a good way to do things for well over a decade. This code
+      has been unmaintained for a while now and sees very little practical use.
+      Retaining it could lead to further :ref:`security considerations
+      <http.server-security>`.
+
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
 the ``--cgi`` option::
 
         python -m http.server --cgi
+
+.. deprecated-removed:: 3.13 3.15
+
+   :mod:`http.server` command line ``--cgi`` support is being removed
+   because :class:`CGIHTTPRequestHandler` is being removed.
+
+.. _http.server-security:
+
+Security Considerations
+-----------------------
+
+.. index:: pair: http.server; security
+
+:class:`SimpleHTTPRequestHandler` will follow symbolic links when handling
+requests, this makes it possible for files outside of the specified directory
+to be served.
+
+Earlier versions of Python did not scrub control characters from the
+log messages emitted to stderr from ``python -m http.server`` or the
+default :class:`BaseHTTPRequestHandler` ``.log_message``
+implementation. This could allow remote clients connecting to your
+server to send nefarious control codes to your terminal.
+
+.. versionadded:: 3.12
+   Control characters are scrubbed in stderr logs.

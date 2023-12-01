@@ -35,15 +35,11 @@ class StdinBuffer {
     }
 }
 
-const stdoutBufSize = 128;
-const stdoutBuf = new Int32Array()
-let index = 0;
-
 const stdout = (charCode) => {
     if (charCode) {
         postMessage({
             type: 'stdout',
-            stdout: String.fromCharCode(charCode),
+            stdout: charCode,
         })
     } else {
         console.log(typeof charCode, charCode)
@@ -54,7 +50,7 @@ const stderr = (charCode) => {
     if (charCode) {
         postMessage({
             type: 'stderr',
-            stderr: String.fromCharCode(charCode),
+            stderr: charCode,
         })
     } else {
         console.log(typeof charCode, charCode)

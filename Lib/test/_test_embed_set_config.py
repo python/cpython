@@ -9,9 +9,9 @@ import _testinternalcapi
 import os
 import sys
 import unittest
+from test.support import MS_WINDOWS
 
 
-MS_WINDOWS = (os.name == 'nt')
 MAX_HASH_SEED = 4294967295
 
 class SetConfigTests(unittest.TestCase):
@@ -84,7 +84,6 @@ class SetConfigTests(unittest.TestCase):
             'skip_source_first_line',
             '_install_importlib',
             '_init_main',
-            '_isolated_interpreter',
         ]
         if MS_WINDOWS:
             options.append('legacy_windows_stdio')
