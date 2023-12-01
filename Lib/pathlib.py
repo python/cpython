@@ -216,7 +216,7 @@ class PurePath:
         # `os.path.splitroot()`, except that the tail is further split on path
         # separators (i.e. it is a list of strings), and that the root and
         # tail are normalized.
-        '_drv', '_root', '_tail_cached',
+        '_drv', '_root', '_tail_cached', '_has_trailing_sep',
 
         # The `_str` slot stores the string representation of the path,
         # computed from the drive, root and tail when `__str__()` is called
@@ -256,7 +256,7 @@ class PurePath:
     @classmethod
     def _parse_path(cls, path):
         if not path:
-            return '', '', []
+            return '', '', [], False
         sep = cls.pathmod.sep
         altsep = cls.pathmod.altsep
         if altsep:
@@ -271,10 +271,8 @@ class PurePath:
                 # e.g. //?/unc/server/share
                 root = sep
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        if parsed and not rel.endswith(parsed[-1]):
-            # Preserve trailing slash
-            parsed.append('')
-        return drv, root, parsed
+        has_trailing_sep = parsed and not rel.endswith(parsed[-1])
+        return drv, root, parsed, has_trailing_sep
 
     def _load_parts(self):
         paths = self._raw_paths
@@ -284,22 +282,26 @@ class PurePath:
             path = paths[0]
         else:
             path = self.pathmod.join(*paths)
-        drv, root, tail = self._parse_path(path)
+        drv, root, tail, has_trailing_sep = self._parse_path(path)
         self._drv = drv
         self._root = root
         self._tail_cached = tail
+        self._has_trailing_sep = has_trailing_sep
 
-    def _from_parsed_parts(self, drv, root, tail):
-        path_str = self._format_parsed_parts(drv, root, tail)
+    def _from_parsed_parts(self, drv, root, tail, has_trailing_sep=False):
+        path_str = self._format_parsed_parts(drv, root, tail, has_trailing_sep)
         path = self.with_segments(path_str)
         path._str = path_str or '.'
         path._drv = drv
         path._root = root
         path._tail_cached = tail
+        path._has_trailing_sep = has_trailing_sep
         return path
 
     @classmethod
-    def _format_parsed_parts(cls, drv, root, tail):
+    def _format_parsed_parts(cls, drv, root, tail, has_trailing_sep):
+        if has_trailing_sep:
+            tail = tail + ['']
         if drv or root:
             return drv + root + cls.pathmod.sep.join(tail)
         elif tail and cls.pathmod.splitdrive(tail[0])[0]:
@@ -313,7 +315,7 @@ class PurePath:
             return self._str
         except AttributeError:
             self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._tail) or '.'
+                                                  self._tail, self.has_trailing_sep) or '.'
             return self._str
 
     def as_posix(self):
@@ -351,6 +353,14 @@ class PurePath:
             return self._tail_cached
 
     @property
+    def has_trailing_sep(self):
+        try:
+            return self._has_trailing_sep
+        except AttributeError:
+            self._load_parts()
+            return self._has_trailing_sep
+
+    @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
         anchor = self.drive + self.root
@@ -362,7 +372,7 @@ class PurePath:
         tail = self._tail
         if not tail:
             return ''
-        return tail[-1] or tail[-2]
+        return tail[-1]
 
     @property
     def suffix(self):
@@ -401,27 +411,6 @@ class PurePath:
         else:
             return name
 
-    @property
-    def has_trailing_sep(self):
-        tail = self._tail
-        return tail and not tail[-1]
-
-    def without_trailing_sep(self):
-        tail = self._tail
-        if tail and not tail[-1]:
-            return self._from_parsed_parts(self.drive, self.root, tail[:-1])
-        else:
-            return self
-
-    def with_trailing_sep(self):
-        tail = self._tail
-        if not tail:
-            raise ValueError('empty name')
-        elif tail[-1]:
-            return self._from_parsed_parts(self.drive, self.root, tail + [''])
-        else:
-            return self
-
     def with_name(self, name):
         """Return a new path with the file name changed."""
         m = self.pathmod
@@ -430,9 +419,8 @@ class PurePath:
         tail = self._tail.copy()
         if not tail:
             raise ValueError(f"{self!r} has an empty name")
-        idx = -1 if tail[-1] else -2
-        tail[idx] = name
-        return self._from_parsed_parts(self.drive, self.root, tail)
+        tail[-1] = name
+        return self._from_parsed_parts(self.drive, self.root, tail, self.has_trailing_sep)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -449,6 +437,19 @@ class PurePath:
             return self.with_name(self.stem + suffix)
         else:
             raise ValueError(f"Invalid suffix {suffix!r}")
+
+    def without_trailing_sep(self):
+        if not self.has_trailing_sep:
+            return self
+        return self._from_parsed_parts(self.drive, self.root, self._tail, False)
+
+    def with_trailing_sep(self):
+        if self.has_trailing_sep:
+            return self
+        tail = self._tail
+        if not tail:
+            raise ValueError('empty name')
+        return self._from_parsed_parts(self.drive, self.root, tail, True)
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -478,7 +479,8 @@ class PurePath:
         else:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         parts = ['..'] * step + self._tail[len(path._tail):]
-        return self._from_parsed_parts('', '', parts)
+        has_trailing_sep = self.has_trailing_sep and bool(parts)
+        return self._from_parsed_parts('', '', parts, has_trailing_sep)
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
@@ -499,10 +501,12 @@ class PurePath:
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
+        result = tuple(self._tail)
         if self.drive or self.root:
-            return (self.drive + self.root,) + tuple(self._tail)
-        else:
-            return tuple(self._tail)
+            result = (self.drive + self.root,) + result
+        if self.has_trailing_sep:
+            result = result + ('',)
+        return result
 
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
@@ -532,8 +536,7 @@ class PurePath:
         tail = self._tail
         if not tail:
             return self
-        idx = -1 if tail[-1] else -2
-        path = self._from_parsed_parts(drv, root, tail[:idx])
+        path = self._from_parsed_parts(drv, root, tail[:-1])
         path._resolving = self._resolving
         return path
 
@@ -542,7 +545,7 @@ class PurePath:
         """A sequence of this path's logical parents."""
         # The value of this property should not be cached on the path object,
         # as doing so would introduce a reference cycle.
-        return _PathParents(self.without_trailing_sep())
+        return _PathParents(self)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
@@ -1012,30 +1015,24 @@ class _PathBase(PurePath):
         # context manager. This method is called by walk() and glob().
         return contextlib.nullcontext(self.iterdir())
 
-    def _make_child_relpath(self, name, trailing_slash=False):
-        drive = self.drive
-        root = self.root
-        tail = self._tail.copy()
-        parts = []
-        if tail:
-            parts.append(str(self))
-            if tail[-1]:
-                parts.append(self.pathmod.sep)
-            else:
-                tail.pop(-1)
-        elif root or drive:
-            parts.append(str(self))
-        parts.append(name)
-        tail.append(name)
-        if trailing_slash:
-            parts.append(self.pathmod.sep)
-            tail.append('')
-        path_str = ''.join(parts)
+    def _make_child_relpath(self, name, has_trailing_sep=False):
+        path_str = str(self)
+        tail = self._tail
+        sep = self.pathmod.sep
+        if tail and not self.has_trailing_sep:
+            path_str = f'{path_str}{sep}{name}'
+        elif path_str != '.':
+            path_str = f'{path_str}{name}'
+        else:
+            path_str = name
+        if has_trailing_sep:
+            path_str = f'{path_str}{sep}'
         path = self.with_segments(path_str)
         path._str = path_str
-        path._drv = drive
-        path._root = root
-        path._tail_cached = tail
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = tail + [name]
+        path._has_trailing_sep = has_trailing_sep
         return path
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
@@ -1060,7 +1057,7 @@ class _PathBase(PurePath):
         elif not path_pattern._tail:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
-        pattern_parts = list(path_pattern._tail)
+        pattern_parts = list(path_pattern.parts)
         if pattern_parts[-1] == '**':
             # GH-70303: '**' only matches directories. Add trailing slash.
             warnings.warn(
@@ -1084,7 +1081,12 @@ class _PathBase(PurePath):
         filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
         sep = self.pathmod.sep
-        paths = iter([self.with_trailing_sep()] if self.is_dir() else [])
+        if not self.is_dir():
+            paths = iter([])
+        elif not self._tail:
+            paths = iter([self])
+        else:
+            paths = iter([self.with_trailing_sep()])
         part_idx = 0
         while part_idx < len(pattern_parts):
             part = pattern_parts[part_idx]
@@ -1243,8 +1245,6 @@ class _PathBase(PurePath):
                     # Delete '..' segment and its predecessor
                     path = path.parent
                     continue
-            elif not part:
-                continue
             next_path = path._make_child_relpath(part)
             if querying and part != '..':
                 next_path._resolving = True
@@ -1452,8 +1452,6 @@ class Path(_PathBase):
         elif self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = os.path.abspath(self.drive)
-            if not self._tail:
-                return self.with_segments(cwd)
         else:
             cwd = os.getcwd()
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
@@ -1610,8 +1608,10 @@ class Path(_PathBase):
             homedir = os.path.expanduser(self._tail[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            drv, root, tail = self._parse_path(homedir)
-            return self._from_parsed_parts(drv, root, tail + self._tail[1:])
+            drv, root, tail, _ = self._parse_path(homedir)
+            tail.extend(self._tail[1:])
+            has_trailing_sep = self.has_trailing_sep and bool(tail)
+            return self._from_parsed_parts(drv, root, tail, has_trailing_sep)
 
         return self
 
