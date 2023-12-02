@@ -4466,6 +4466,7 @@ class _TestSharedMemory(BaseTestCase):
             except OSError:
                 pass
             mem.close()
+
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
     def test_shared_memory_tracking(self):
         # gh-82300: When a separate Python process accesses shared memory
