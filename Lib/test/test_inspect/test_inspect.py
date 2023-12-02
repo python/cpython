@@ -3882,6 +3882,32 @@ class TestSignatureObject(unittest.TestCase):
             expected_multiline,
         )
 
+    def test_signature_format_all_arg_types(self):
+        from typing import Annotated, Literal
+
+        def func(
+            x: Annotated[int, 'meta'],
+            /,
+            y: Literal['a', 'b'],
+            *,
+            z: 'LiteralString',
+            **kwargs: object,
+        ) -> None:
+            pass
+
+        expected_multiline = """(
+    x: Annotated[int, 'meta'],
+    /,
+    y: Literal['a', 'b'],
+    *,
+    z: 'LiteralString',
+    **kwargs: object
+) -> None"""
+        self.assertEqual(
+            inspect.signature(func).format(max_width=-1),
+            expected_multiline,
+        )
+
     def test_signature_replace_parameters(self):
         def test(a, b) -> 42:
             pass
