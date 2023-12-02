@@ -10,7 +10,6 @@
 #include "Python.h"
 #include "pycore_bytesobject.h"         // _PyBytes_Join()
 #include "pycore_call.h"                // _PyObject_CallNoArgs()
-#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
@@ -518,23 +517,18 @@ buffered_closed(buffered *self)
     return closed;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io._Buffered.closed
+[clinic start generated code]*/
+
 static PyObject *
-buffered_closed_get_impl(buffered *self, void *context)
+_io__Buffered_closed_get_impl(buffered *self)
+/*[clinic end generated code: output=f08ce57290703a1a input=18eddefdfe4a3d2f]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_GetAttr(self->raw, &_Py_ID(closed));
-}
-
-static PyObject *
-buffered_closed_get(buffered *self, void *context)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = buffered_closed_get_impl(self, context);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
 }
 
 /*[clinic input]
@@ -662,42 +656,33 @@ _io__Buffered_writable_impl(buffered *self)
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(writable));
 }
 
+
+/*[clinic input]
+@critical_section
+@getter
+_io._Buffered.name
+[clinic start generated code]*/
+
 static PyObject *
-buffered_name_get_impl(buffered *self, void *context)
+_io__Buffered_name_get_impl(buffered *self)
+/*[clinic end generated code: output=d2adf384051d3d10 input=6b84a0e6126f545e]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_GetAttr(self->raw, &_Py_ID(name));
 }
 
-static PyObject *
-buffered_name_get(buffered *self, void *context)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = buffered_name_get_impl(self, context);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
+/*[clinic input]
+@critical_section
+@getter
+_io._Buffered.mode
+[clinic start generated code]*/
 
 static PyObject *
-buffered_mode_get_impl(buffered *self, void *context)
+_io__Buffered_mode_get_impl(buffered *self)
+/*[clinic end generated code: output=0feb205748892fa4 input=0762d5e28542fd8c]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_GetAttr(self->raw, &_Py_ID(mode));
-}
-
-static PyObject *
-buffered_mode_get(buffered *self, void *context)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = buffered_mode_get_impl(self, context);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
 }
 
 /* Lower-level APIs */
@@ -2541,9 +2526,9 @@ static PyMemberDef bufferedreader_members[] = {
 };
 
 static PyGetSetDef bufferedreader_getset[] = {
-    {"closed", (getter)buffered_closed_get, NULL, NULL},
-    {"name", (getter)buffered_name_get, NULL, NULL},
-    {"mode", (getter)buffered_mode_get, NULL, NULL},
+    _IO__BUFFERED_CLOSED_GETTERDEF
+    _IO__BUFFERED_NAME_GETTERDEF
+    _IO__BUFFERED_MODE_GETTERDEF
     {NULL}
 };
 
@@ -2601,9 +2586,9 @@ static PyMemberDef bufferedwriter_members[] = {
 };
 
 static PyGetSetDef bufferedwriter_getset[] = {
-    {"closed", (getter)buffered_closed_get, NULL, NULL},
-    {"name", (getter)buffered_name_get, NULL, NULL},
-    {"mode", (getter)buffered_mode_get, NULL, NULL},
+    _IO__BUFFERED_CLOSED_GETTERDEF
+    _IO__BUFFERED_NAME_GETTERDEF
+    _IO__BUFFERED_MODE_GETTERDEF
     {NULL}
 };
 
@@ -2719,9 +2704,9 @@ static PyMemberDef bufferedrandom_members[] = {
 };
 
 static PyGetSetDef bufferedrandom_getset[] = {
-    {"closed", (getter)buffered_closed_get, NULL, NULL},
-    {"name", (getter)buffered_name_get, NULL, NULL},
-    {"mode", (getter)buffered_mode_get, NULL, NULL},
+    _IO__BUFFERED_CLOSED_GETTERDEF
+    _IO__BUFFERED_NAME_GETTERDEF
+    _IO__BUFFERED_MODE_GETTERDEF
     {NULL}
 };
 

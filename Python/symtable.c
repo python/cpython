@@ -497,18 +497,14 @@ _PySymtable_Lookup(struct symtable *st, void *key)
     k = PyLong_FromVoidPtr(key);
     if (k == NULL)
         return NULL;
-    v = PyDict_GetItemWithError(st->st_blocks, k);
-    Py_DECREF(k);
-
-    if (v) {
-        assert(PySTEntry_Check(v));
-    }
-    else if (!PyErr_Occurred()) {
+    if (PyDict_GetItemRef(st->st_blocks, k, &v) == 0) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
+    Py_DECREF(k);
 
-    return (PySTEntryObject *)Py_XNewRef(v);
+    assert(v == NULL || PySTEntry_Check(v));
+    return (PySTEntryObject *)v;
 }
 
 long
