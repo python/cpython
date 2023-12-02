@@ -756,9 +756,9 @@ function.
 
       Convert signature object to string.
 
-      If *max_width* integer is passed,
-      signature will try to fit into the *max_width*.
-      If signature is longer than *max_width*,
+      If *max_width* is passed, the method will attempt to fit
+      the signature into lines of at most *max_width* characters.
+      If the signature is longer than *max_width*,
       all parameters will be on separate lines.
 
       .. versionadded:: 3.13
