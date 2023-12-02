@@ -408,6 +408,14 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             import RAnDoM
 
+    def test_double_const(self):
+        # Importing double_const checks that float constants
+        # serialiazed by marshal as PYC files don't lose precision
+        # (SF bug 422177).
+        from test.test_import.data import double_const
+        unload('test.test_import.data.double_const')
+        from test.test_import.data import double_const
+
     def test_import(self):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
@@ -871,14 +879,6 @@ class FilePermissionTests(unittest.TestCase):
             os.rename(importlib.util.cache_from_source(path), bytecode_only)
             m = __import__(name)
             self.assertEqual(m.x, 'rewritten')
-
-    def test_double_const(self):
-        # Importing double_const checks that float constants
-        # serialiazed by marshal as PYC files don't lose precision
-        # (SF bug 422177).
-        from test.test_import.data import double_const
-        unload('test.test_import.data.double_const')
-        from test.test_import.data import double_const
 
 
 class PycRewritingTests(unittest.TestCase):
