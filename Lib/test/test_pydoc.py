@@ -907,10 +907,10 @@ class A(builtins.object)
  |  Data descriptors defined here:
  |
  |  __dict__
- |      dictionary for instance variables (if defined)
+ |      dictionary for instance variables
  |
  |  __weakref__
- |      list of weak references to the object (if defined)
+ |      list of weak references to the object
 ''' % __name__)
 
         def func(
