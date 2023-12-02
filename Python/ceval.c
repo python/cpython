@@ -1085,7 +1085,7 @@ deoptimize:
         // frame->instr_ptr --> dest --> EXTENDED_ARG
         //                       src --> ENTER_EXECUTOR
         // Avoid recursing into the same executor over and over
-        next_instr = dest;
+        next_instr = src;
         PyCodeObject *code = _PyFrame_GetCode(frame);
         _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg & 0xff];
         if (executor == (_PyExecutorObject *)current_executor) {
