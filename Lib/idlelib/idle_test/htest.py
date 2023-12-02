@@ -117,7 +117,7 @@ CustomRun_spec = {
     'file': 'query',
     'kwds': {'title': 'Customize query.py Run',
              '_htest': True},
-    'msg': "Enter with <Return> or [Run].  Print valid entry to Shell\n"
+    'msg': "Enter with <Return> or [OK].  Print valid entry to Shell\n"
            "Arguments are parsed into a list\n"
            "Mode is currently restart True or False\n"
            "Close dialog with valid entry, <Escape>, [Cancel], [X]"
@@ -178,7 +178,7 @@ HelpSource_spec = {
            "Any url ('www...', 'http...') is accepted.\n"
            "Test Browse with and without path, as cannot unittest.\n"
            "[Ok] or <Return> prints valid entry to shell\n"
-           "[Cancel] or <Escape> prints None to shell"
+           "<Escape>, [Cancel], or [X] prints None to shell"
     }
 
 _io_binding_spec = {
@@ -367,11 +367,12 @@ _widget_redirector_spec = {
     }
 
 def run(*tests):
+    "Run callables in tests."
     root = tk.Tk()
     root.title('IDLE htest')
     root.resizable(0, 0)
 
-    # a scrollable Label like constant width text widget.
+    # A scrollable Label-like constant width text widget.
     frameLabel = tk.Frame(root, padx=10)
     frameLabel.pack()
     text = tk.Text(frameLabel, wrap='word')
@@ -381,28 +382,28 @@ def run(*tests):
     scrollbar.pack(side='right', fill='y', expand=False)
     text.pack(side='left', fill='both', expand=True)
 
-    test_list = [] # List of tuples of the form (spec, callable widget)
+    test_list = [] # Make list of (spec, callable) tuples. 
     if tests:
         for test in tests:
             test_spec = globals()[test.__name__ + '_spec']
             test_spec['name'] = test.__name__
             test_list.append((test_spec,  test))
     else:
-        for k, d in globals().items():
-            if k.endswith('_spec'):
-                test_name = k[:-5]
-                test_spec = d
+        for key, dic in globals().items():
+            if key.endswith('_spec'):
+                test_name = key[:-5]
+                test_spec = dic
                 test_spec['name'] = test_name
                 mod = import_module('idlelib.' + test_spec['file'])
                 test = getattr(mod, test_name)
                 test_list.append((test_spec, test))
+    test_list.reverse()  # So can pop in proper order in next_test.
 
     test_name = tk.StringVar(root)
     callable_object = None
     test_kwds = None
 
     def next_test():
-
         nonlocal test_name, callable_object, test_kwds
         if len(test_list) == 1:
             next_button.pack_forget()
@@ -411,15 +412,15 @@ def run(*tests):
         test_kwds['parent'] = root
         test_name.set('Test ' + test_spec['name'])
 
-        text.configure(state='normal') # enable text editing
-        text.delete('1.0','end')
-        text.insert("1.0",test_spec['msg'])
-        text.configure(state='disabled') # preserve read-only property
+        text['state'] = 'normal'  # Enable text replacement.
+        text.delete('1.0', 'end')
+        text.insert("1.0", test_spec['msg'])
+        text['state'] = 'disabled'  # Restore read-only property.
 
     def run_test(_=None):
         widget = callable_object(**test_kwds)
         try:
-            print(widget.result)
+            print(widget.result)  # Only true for query classes(?).
         except AttributeError:
             pass
 
