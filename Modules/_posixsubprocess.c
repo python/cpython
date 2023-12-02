@@ -768,7 +768,7 @@ child_exec(char *const exec_array[],
 
 #ifdef HAVE_SETGROUPS
     if (extra_group_size >= 0) {
-        assert(extra_group_size == 0 && extra_groups == NULL || extra_group_size);
+        assert((extra_group_size == 0 && extra_groups == NULL) || extra_group_size);
         POSIX_CALL(setgroups(extra_group_size, extra_groups));
     }
 #endif /* HAVE_SETGROUPS */
