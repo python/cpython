@@ -1,1 +1,0 @@
-Add ``__reduce__`` method to :class:`IPv6Address` in order to keep ``scope_id``

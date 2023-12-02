@@ -21,13 +21,11 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
-#include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
 struct _getargs_runtime_state {
-    PyThread_type_lock mutex;
     struct _PyArg_Parser *static_parsers;
 };
 
@@ -206,7 +204,6 @@ typedef struct pyruntimestate {
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
-    struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
