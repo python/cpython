@@ -8682,26 +8682,26 @@ class AnnotatedTests(BaseTestCase):
         field_a1 = Annotated[str, A("X")]
         field_a2 = Annotated[str, B("X")]
 
-        self.assertEqual(type(field_a1.__metadata__[0]), A)
+        self.assertIs(type(field_a1.__metadata__[0]), A)
         self.assertEqual(field_a1.__metadata__[0], A("X"))
-        self.assertEqual(type(field_a2.__metadata__[0]), B)
+        self.assertIs(type(field_a2.__metadata__[0]), B)
         self.assertEqual(field_a2.__metadata__[0], B("X"))
 
         field_b1 = Annotated[str, A("Y")]
         field_b2 = Annotated[str, B("Y")]
 
-        self.assertEqual(type(field_b1.__metadata__[0]), A)
+        self.assertIs(type(field_b1.__metadata__[0]), A)
         self.assertEqual(field_b1.__metadata__[0], A("Y"))
-        self.assertEqual(type(field_b2.__metadata__[0]), B)
+        self.assertIs(type(field_b2.__metadata__[0]), B)
         self.assertEqual(field_b2.__metadata__[0], B("Y"))
 
         field_c1 = Annotated[int, 1]
         field_c2 = Annotated[int, 1.0]
         field_c3 = Annotated[int, True]
 
-        self.assertEqual(type(field_c1.__metadata__[0]), int)
-        self.assertEqual(type(field_c2.__metadata__[0]), float)
-        self.assertEqual(type(field_c3.__metadata__[0]), bool)
+        self.assertIs(type(field_c1.__metadata__[0]), int)
+        self.assertIs(type(field_c2.__metadata__[0]), float)
+        self.assertIs(type(field_c3.__metadata__[0]), bool)
 
 
 class TypeAliasTests(BaseTestCase):
