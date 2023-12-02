@@ -8329,11 +8329,11 @@ class AnnotatedTests(BaseTestCase):
             hi: int
         v = ValueRange(1, 2)
         self.assertEqual(get_args(Annotated[int, v] | None),
-                         (Annotated[int, v], type(None)))
+                         (Annotated[int, v], types.NoneType))
         self.assertEqual(get_args(Union[Annotated[int, v], None]),
-                         (Annotated[int, v], type(None)))
+                         (Annotated[int, v], types.NoneType))
         self.assertEqual(get_args(Optional[Annotated[int, v]]),
-                         (Annotated[int, v], type(None)))
+                         (Annotated[int, v], types.NoneType))
 
         # Unhashable metadata duplicated:
         self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
