@@ -308,26 +308,16 @@ def _unpack_args(args):
             newargs.append(arg)
     return newargs
 
-def _deduplicate(params, *, unhashable_fallback=True):
+def _deduplicate(params, *, unhashable_fallback=False):
     # Weed out strict duplicates, preserving the first of each occurrence.
     try:
-        all_params = set(params)
+        deduped = dict.fromkeys(params)
     except TypeError:
         if not unhashable_fallback:
             raise
-
         # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
         return _deduplicate_unhashable(params)
-
-    if len(all_params) == len(params):  # fast case
-        return params
-    new_params = []
-    for t in params:
-        if t in all_params:
-            new_params.append(t)
-            all_params.remove(t)
-    assert not all_params, all_params
-    return new_params
+    return deduped
 
 def _deduplicate_unhashable(unhashable_params):
     new_unhashable = []
@@ -360,7 +350,7 @@ def _remove_dups_flatten(parameters):
         else:
             params.append(p)
 
-    return tuple(_deduplicate(params))
+    return tuple(_deduplicate(params, unhashable_fallback=True))
 
 
 def _flatten_literal_params(parameters):
@@ -777,10 +767,7 @@ def Literal(self, *parameters):
 
     try:
         parameters = tuple(
-            p for p, _ in _deduplicate(
-                list(_value_and_type_iter(parameters)),
-                unhashable_fallback=False,
-            )
+            p for p, _ in _deduplicate(list(_value_and_type_iter(parameters)))
         )
     except TypeError:  # unhashable parameters
         pass
