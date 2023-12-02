@@ -317,8 +317,7 @@ def _deduplicate(params, *, unhashable_fallback=True):
             raise
 
         # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
-        hasable, unhashable = _deduplicate_unhashable(params)
-        return hasable + unhashable
+        return _deduplicate_unhashable(params)
 
     if len(all_params) == len(params):  # fast case
         return params
@@ -330,38 +329,16 @@ def _deduplicate(params, *, unhashable_fallback=True):
     assert not all_params, all_params
     return new_params
 
-def _deduplicate_unhashable(params):
-    regular_params = []
-    unhashable_params = []
-    for param in params:
-        try:
-            hash(param)
-        except TypeError:
-            unhashable_params.append(param)
-        else:
-            regular_params.append(param)
-
-    unique_params = set(regular_params)
-    new_hashable = []
-    for t in regular_params:
-        if t in unique_params:
-            new_hashable.append(t)
-            unique_params.remove(t)
-    assert not unique_params, unique_params
-
+def _deduplicate_unhashable(unhashable_params):
     new_unhashable = []
     for t in unhashable_params:
-        # This is slow, but this is the only safe way to compare
-        # two `Annotated[]` instances, since `metadata` might be unhashable.
         if t not in new_unhashable:
             new_unhashable.append(t)
-    return new_hashable, new_unhashable
+    return new_unhashable
 
 def _compare_args_orderless(first_args, second_args):
-    first_hashable, first_unhashable = _deduplicate_unhashable(first_args)
-    second_hashable, second_unhashable = _deduplicate_unhashable(second_args)
-    if set(first_hashable) != set(second_hashable):
-        return False
+    first_unhashable = _deduplicate_unhashable(first_args)
+    second_unhashable = _deduplicate_unhashable(second_args)
     t = list(second_unhashable)
     try:
         for elem in first_unhashable:

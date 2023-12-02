@@ -1,2 +1,2 @@
 Allow creating :ref:`union of types<types-union>` for
-:class:`typing.Annotated` with unhashable / mutable metadata.
+:class:`typing.Annotated` with unhashable metadata.

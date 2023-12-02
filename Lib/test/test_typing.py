@@ -2,10 +2,11 @@ import contextlib
 import collections
 import collections.abc
 from collections import defaultdict
-from functools import lru_cache, wraps
+from functools import lru_cache, wraps, reduce
 import gc
 import inspect
 import itertools
+import operator
 import pickle
 import re
 import sys
@@ -5376,10 +5377,8 @@ class OverrideDecoratorTests(BaseTestCase):
         self.assertFalse(hasattr(WithOverride.some, "__override__"))
 
     def test_multiple_decorators(self):
-        import functools
-
         def with_wraps(f):  # similar to `lru_cache` definition
-            @functools.wraps(f)
+            @wraps(f)
             def wrapper(*args, **kwargs):
                 return f(*args, **kwargs)
             return wrapper
@@ -8302,18 +8301,18 @@ class AnnotatedTests(BaseTestCase):
 
         # Unhashable metadata:
         self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[int, set()] | int),
-                         (str, int, Annotated[int, {}], Annotated[int, set()]))
+                         (str, Annotated[int, {}], Annotated[int, set()], int))
         self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[int, set()], int]),
-                         (str, int, Annotated[int, {}], Annotated[int, set()]))
+                         (str, Annotated[int, {}], Annotated[int, set()], int))
         self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[str, {}] | int),
-                         (str, int, Annotated[int, {}], Annotated[str, {}]))
+                         (str, Annotated[int, {}], Annotated[str, {}], int))
         self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[str, {}], int]),
-                         (str, int, Annotated[int, {}], Annotated[str, {}]))
+                         (str, Annotated[int, {}], Annotated[str, {}], int))
 
         self.assertEqual(get_args(Annotated[int, 1] | str | Annotated[str, {}] | int),
-                         (Annotated[int, 1], str, int, Annotated[str, {}]))
+                         (Annotated[int, 1], str, Annotated[str, {}], int))
         self.assertEqual(get_args(Union[Annotated[int, 1], str, Annotated[str, {}], int]),
-                         (Annotated[int, 1], str, int, Annotated[str, {}]))
+                         (Annotated[int, 1], str, Annotated[str, {}], int))
 
         import dataclasses
         @dataclasses.dataclass
@@ -8322,11 +8321,11 @@ class AnnotatedTests(BaseTestCase):
             hi: int
         v = ValueRange(1, 2)
         self.assertEqual(get_args(Annotated[int, v] | None),
-                         (type(None), Annotated[int, v]))
+                         (Annotated[int, v], type(None)))
         self.assertEqual(get_args(Union[Annotated[int, v], None]),
-                         (type(None), Annotated[int, v]))
+                         (Annotated[int, v], type(None)))
         self.assertEqual(get_args(Optional[Annotated[int, v]]),
-                         (type(None), Annotated[int, v]))
+                         (Annotated[int, v], type(None)))
 
         # Unhashable metadata duplicated:
         self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
@@ -8339,12 +8338,10 @@ class AnnotatedTests(BaseTestCase):
                          Union[int, Annotated[int, {}]])
 
     def test_order_in_union(self):
-        import operator, functools
-
         expr1 = Annotated[int, 1] | str | Annotated[str, {}] | int
         for args in itertools.permutations(get_args(expr1)):
             with self.subTest(args=args):
-                self.assertEqual(expr1, functools.reduce(operator.or_, args))
+                self.assertEqual(expr1, reduce(operator.or_, args))
 
         expr2 = Union[Annotated[int, 1], str, Annotated[str, {}], int]
         for args in itertools.permutations(get_args(expr2)):
