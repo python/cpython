@@ -8686,7 +8686,7 @@ class AnnotatedTests(BaseTestCase):
 
         self.assertIs(type(a1_metadata), A)
         self.assertEqual(a1_metadata, A("X"))
-        self.assertIs(type(a2_metadata, B)
+        self.assertIs(type(a2_metadata), B)
         self.assertEqual(a2_metadata, B("X"))
         self.assertIsNot(type(a1_metadata), type(a2_metadata))
 
