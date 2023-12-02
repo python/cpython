@@ -7883,7 +7883,7 @@ printf "%s\n" "$disable_gil" >&6; }
 if test "$disable_gil" = "yes"
 then
 
-printf "%s\n" "#define Py_NOGIL 1" >>confdefs.h
+printf "%s\n" "#define Py_GIL_DISABLED 1" >>confdefs.h
 
   # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
