@@ -2065,9 +2065,14 @@ class Annotated:
     def __new__(cls, *args, **kwargs):
         raise TypeError("Type Annotated cannot be instantiated.")
 
-    @_tp_cache
     def __class_getitem__(cls, params):
-        if not isinstance(params, tuple) or len(params) < 2:
+        if not isinstance(params, tuple):
+            params = (params,)
+        return cls._class_getitem_inner(cls, *params)
+
+    @_tp_cache(typed=True)
+    def _class_getitem_inner(cls, *params):
+        if len(params) < 2:
             raise TypeError("Annotated[...] should be used "
                             "with at least two arguments (a type and an "
                             "annotation).")
