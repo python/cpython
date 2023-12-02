@@ -8369,10 +8369,13 @@ class AnnotatedTests(BaseTestCase):
             {Annotated[int, 4, 5], Annotated[T, 4, 5]}
         )
         # Unhashable `metadata` raises `TypeError`:
-        self.assertRaises(TypeError, hash, Annotated[int, []])
+        with self.assertRaises(TypeError):
+            hash(Annotated[int, []])
+
         class A:
             __hash__ = None
-        self.assertRaises(TypeError, hash, Annotated[int, A()])
+        with self.assertRaises(TypeError):
+            hash(Annotated[int, A()]))
 
     def test_instantiate(self):
         class C:

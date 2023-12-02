@@ -719,9 +719,17 @@ class UnionTests(unittest.TestCase):
         class B(metaclass=UnhashableMeta): ...
 
         self.assertEqual((A | B).__args__, (A, B))
-        self.assertRaises(TypeError, hash, A | B)
-        self.assertRaises(TypeError, hash, int | B)
-        self.assertRaises(TypeError, hash, A | int)
+        union1 = A | B
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = int | B
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = A | int
+        with self.assertRaises(TypeError):
+            hash(union3)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
