@@ -490,14 +490,7 @@ class _SpecialForm(_Final, _NotIterable, _root=True):
         return self._getitem(self, parameters)
 
 
-class _LiteralSpecialForm(_SpecialForm, _root=True):
-    def __getitem__(self, parameters):
-        if not isinstance(parameters, tuple):
-            parameters = (parameters,)
-        return self._getitem(self, *parameters)
-
-
-class _AnnotatedSpecialForm(_SpecialForm, _root=True):
+class _TypedCacheSpecialForm(_SpecialForm, _root=True):
     def __getitem__(self, parameters):
         if not isinstance(parameters, tuple):
             parameters = (parameters,)
@@ -730,7 +723,7 @@ def Optional(self, parameters):
     arg = _type_check(parameters, f"{self} requires a single type.")
     return Union[arg, type(None)]
 
-@_LiteralSpecialForm
+@_TypedCacheSpecialForm
 @_tp_cache(typed=True)
 def Literal(self, *parameters):
     """Special typing form to define literal types (a.k.a. value types).
@@ -2012,7 +2005,7 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         return (self.__origin__,)
 
 
-@_AnnotatedSpecialForm
+@_TypedCacheSpecialForm
 @_tp_cache(typed=True)
 def Annotated(self, *params):
     """Add context-specific metadata to a type.
