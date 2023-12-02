@@ -2311,8 +2311,7 @@ dummy_func(
             uint16_t ucounter = this_instr[1].cache + (1 << 15);
             uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
             // Double-check that the opcode isn't instrumented or something:
-                // Also bail if extended oparg (>= 256)
-            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD && oparg < 256) {
+            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
