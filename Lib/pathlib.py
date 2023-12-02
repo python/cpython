@@ -1319,13 +1319,13 @@ class _PathBase(PurePath):
         """
         self._unsupported("rmdir")
 
-    def owner(self):
+    def owner(self, *, follow_symlinks=True):
         """
         Return the login name of the file owner.
         """
         self._unsupported("owner")
 
-    def group(self):
+    def group(self, *, follow_symlinks=True):
         """
         Return the group name of the file gid.
         """
