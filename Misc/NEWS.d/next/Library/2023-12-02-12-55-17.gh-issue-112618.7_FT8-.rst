@@ -1,2 +1,2 @@
-Make ``typing.Annotated`` cache work different for different types. Now
-``Annotated[int, 1]`` and ``Annotated[int, 1.0]`` will be different.
+Fix a caching bug relating to :data:`typing.Annotated`.
+``Annotated[str, True]`` is no longer equal to ``Annotated[str, 1]``.
