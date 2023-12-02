@@ -49,6 +49,20 @@ static Bucket buckets[NUM_BUCKETS] = {
     BUCKET_INIT(buckets, 256),
 };
 
+// macOS supports CLOCK_MONOTONIC, but not pthread_condattr_setclock
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(CLOCK_MONOTONIC) \
+    && !defined(_Py_USE_SEMAPHORES)
+    #define CONDATTR_MONOTONIC
+#endif
+
+// Condattr for monotonic clock types
+static pthread_condattr_t *condattr;
+// NULL if monotonic clock is not supported
+#if defined(CONDATTR_MONOTONIC)
+    pthread_condattr_init(condattr);
+    pthread_condattr_setclock(condattr, CLOCK_MONOTONIC);
+#endif
+
 void
 _PySemaphore_Init(_PySemaphore *sema)
 {
@@ -70,7 +84,7 @@ _PySemaphore_Init(_PySemaphore *sema)
     if (pthread_mutex_init(&sema->mutex, NULL) != 0) {
         Py_FatalError("parking_lot: pthread_mutex_init failed");
     }
-    if (pthread_cond_init(&sema->cond, NULL)) {
+    if (pthread_cond_init(&sema->cond, condattr)) {
         Py_FatalError("parking_lot: pthread_cond_init failed");
     }
     sema->counter = 0;
@@ -118,10 +132,18 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     if (timeout >= 0) {
         struct timespec ts;
 
+        #if defined(CLOCK_MONOTONIC)
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        _PyTime_AsTimespec_clamp(deadline, &ts);
+
+        err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
+        #else
+        // does not support CLOCK_MONOTONIC, use system clock
         _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
-        _PyTime_AsTimespec(deadline, &ts);
+        _PyTime_AsTimespec_clamp(deadline, &ts);
 
         err = sem_timedwait(&sema->platform_sem, &ts);
+        #endif
     }
     else {
         err = sem_wait(&sema->platform_sem);
@@ -150,8 +172,13 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
         if (timeout >= 0) {
             struct timespec ts;
 
+            #if defined(CONDATTR_MONOTONIC)
+            _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
+            #else
             _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
-            _PyTime_AsTimespec(deadline, &ts);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
+            #endif
 
             err = pthread_cond_timedwait(&sema->cond, &sema->mutex, &ts);
         }
