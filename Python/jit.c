@@ -23,20 +23,20 @@
     #include <sys/mman.h>
 #endif
 
-static size_t page_size;
+static uint64_t page_size;
 
 static bool
 is_page_aligned(void *p)
 {
-    return (((uintptr_t)p & (page_size - 1)) == 0);
+    return ((uint64_t)p & (page_size - 1)) == 0;
 }
 
-static unsigned char *
-alloc(size_t pages)
+static char *
+alloc(uint64_t pages)
 {
     assert(pages);
-    size_t size = pages * page_size;
-    unsigned char *memory;
+    uint64_t size = pages * page_size;
+    char *memory;
 #ifdef MS_WINDOWS
     memory = VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (memory == NULL) {
@@ -57,13 +57,13 @@ alloc(size_t pages)
 }
 
 static int
-mark_executable(unsigned char *memory, size_t pages)
+mark_executable(char *memory, uint64_t pages)
 {
     assert(is_page_aligned(memory));
     if (pages == 0) {
         return 0;
     }
-    size_t size = pages * page_size;
+    uint64_t size = pages * page_size;
 #ifdef MS_WINDOWS
     if (!FlushInstructionCache(GetCurrentProcess(), memory, size)) {
         const char *w = "JIT unable to flush instruction cache (%d)";
@@ -88,13 +88,13 @@ mark_executable(unsigned char *memory, size_t pages)
 }
 
 static int
-mark_readable(unsigned char *memory, size_t pages)
+mark_readable(char *memory, uint64_t pages)
 {
     assert(is_page_aligned(memory));
     if (pages == 0) {
         return 0;
     }
-    size_t size = pages * page_size;
+    uint64_t size = pages * page_size;
 #ifdef MS_WINDOWS
     DWORD old;
     if (!VirtualProtect(memory, size, PAGE_READONLY, &old)) {
@@ -112,13 +112,13 @@ mark_readable(unsigned char *memory, size_t pages)
     return 0;
 }
 
-static size_t
-size_to_pages(size_t size)
+static uint64_t
+size_to_pages(uint64_t size)
 {
     return (size + page_size - 1) / page_size;
 }
 
-static unsigned char *emit_trampoline(uint64_t where, unsigned char **trampolines);
+static char *emit_trampoline(uint64_t where, char **trampolines);
 
 static bool
 fits_in_signed_bits(uint64_t value, int bits)
@@ -127,16 +127,16 @@ fits_in_signed_bits(uint64_t value, int bits)
     return (v >= -(1LL << (bits - 1))) && (v < (1LL << (bits - 1)));
 }
 
-static size_t
+static uint64_t
 potential_trampoline_size(const StencilGroup *stencil_group)
 {
     return stencil_group->text.holes_size * trampoline_stencil_group.text.body_size;
 }
 
 static void
-patch(unsigned char *base, const Hole *hole, uint64_t *patches, unsigned char **trampolines)
+patch(char *base, const Hole *hole, uint64_t *patches, char **trampolines)
 {
-    unsigned char *location = base + hole->offset;
+    char *location = base + hole->offset;
     uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
     uint32_t *addr = (uint32_t *)location;
     switch (hole->kind) {
@@ -219,25 +219,25 @@ patch(unsigned char *base, const Hole *hole, uint64_t *patches, unsigned char **
 }
 
 static void
-copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches, unsigned char **trampolines)
+copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches, char **trampolines)
 {
     memcpy(base, stencil->body, stencil->body_size);
-    for (size_t i = 0; i < stencil->holes_size; i++) {
+    for (uint64_t i = 0; i < stencil->holes_size; i++) {
         patch(base, &stencil->holes[i], patches, trampolines);
     }
 }
 
 static void
-emit(const StencilGroup *stencil_group, uint64_t patches[], unsigned char **trampolines)
+emit(const StencilGroup *stencil_group, uint64_t patches[], char **trampolines)
 {
-    unsigned char *data = (unsigned char *)patches[HoleValue_DATA];
+    char *data = (char *)patches[HoleValue_DATA];
     copy_and_patch(data, &stencil_group->data, patches, trampolines);
-    unsigned char *text = (unsigned char *)patches[HoleValue_TEXT];
+    char *text = (char *)patches[HoleValue_TEXT];
     copy_and_patch(text, &stencil_group->text, patches, trampolines);
 }
 
-static unsigned char *
-emit_trampoline(uint64_t where, unsigned char **trampolines)
+static char *
+emit_trampoline(uint64_t where, char **trampolines)
 {
     assert(trampolines && *trampolines);
     const StencilGroup *stencil_group = &trampoline_stencil_group;
@@ -247,7 +247,7 @@ emit_trampoline(uint64_t where, unsigned char **trampolines)
     patches[HoleValue_TEXT] = (uint64_t)*trampolines;
     patches[HoleValue_ZERO] = 0;
     emit(stencil_group, patches, NULL);
-    unsigned char *trampoline = *trampolines;
+    char *trampoline = *trampolines;
     *trampolines += stencil_group->text.body_size;
     return trampoline;
 }
@@ -275,9 +275,9 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
 {
     initialize_jit();
     // First, loop over everything once to find the total compiled size:
-    size_t trampoline_size = potential_trampoline_size(&wrapper_stencil_group);
-    size_t text_size = wrapper_stencil_group.text.body_size;
-    size_t data_size = wrapper_stencil_group.data.body_size;
+    uint64_t trampoline_size = potential_trampoline_size(&wrapper_stencil_group);
+    uint64_t text_size = wrapper_stencil_group.text.body_size;
+    uint64_t data_size = wrapper_stencil_group.data.body_size;
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
@@ -286,16 +286,16 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         data_size += stencil_group->data.body_size;
         assert(stencil_group->text.body_size);
     };
-    size_t text_pages = size_to_pages(text_size + trampoline_size);
-    size_t data_pages = size_to_pages(data_size);
-    unsigned char *text = alloc(text_pages + data_pages);
+    uint64_t text_pages = size_to_pages(text_size + trampoline_size);
+    uint64_t data_pages = size_to_pages(data_size);
+    char *text = alloc(text_pages + data_pages);
     if (text == NULL) {
         return NULL;
     }
-    unsigned char *data = text + text_pages * page_size;
-    unsigned char *head_trampolines = text + text_size;
-    unsigned char *head_text = text;
-    unsigned char *head_data = data;
+    char *data = text + text_pages * page_size;
+    char *head_trampolines = text + text_size;
+    char *head_text = text;
+    char *head_data = data;
     // First, the wrapper:
     const StencilGroup *stencil_group = &wrapper_stencil_group;
     uint64_t patches[] = GET_PATCHES();
