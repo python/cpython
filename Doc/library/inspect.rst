@@ -1,6 +1,11 @@
 :mod:`inspect` --- Inspect live objects
 =======================================
 
+.. testsetup:: *
+
+   import inspect
+   from inspect import *
+
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
@@ -632,10 +637,10 @@ function.
       >>> sig = signature(foo)
 
       >>> str(sig)
-      '(a, *, b:int, **kwargs)'
+      '(a, *, b: int, **kwargs)'
 
       >>> str(sig.parameters['b'])
-      'b:int'
+      'b: int'
 
       >>> sig.parameters['b'].annotation
       <class 'int'>
@@ -910,7 +915,7 @@ function.
          'foo=42'
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
-         "foo:'spam'"
+         "foo: 'spam'"
 
       :class:`Parameter` objects are also supported by the generic function
       :func:`copy.replace`.
