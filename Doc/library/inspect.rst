@@ -620,7 +620,7 @@ function.
 
 .. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
-   Return a :class:`Signature` object for the given ``callable``::
+   Return a :class:`Signature` object for the given *callable*::
 
       >>> from inspect import signature
       >>> def foo(a, *, b:int, **kwargs):
@@ -646,29 +646,30 @@ function.
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
-   :func:`inspect.get_annotations()`.  The
-   ``global``, ``locals``, and ``eval_str`` parameters are passed
-   into :func:`inspect.get_annotations()` when resolving the
-   annotations; see the documentation for :func:`inspect.get_annotations()`
+   :func:`get_annotations`.  The
+   *global*, *locals*, and *eval_str* parameters are passed
+   into :func:`get_annotations` when resolving the
+   annotations; see the documentation for :func:`get_annotations`
    for instructions on how to use these parameters.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.  Also,
-   if the annotations are stringized, and ``eval_str`` is not false,
-   the ``eval()`` call(s) to un-stringize the annotations could
-   potentially raise any kind of exception.
+   if the annotations are stringized, and *eval_str* is not false,
+   the ``eval()`` call(s) to un-stringize the annotations in :func:`get_annotations`
+   could potentially raise any kind of exception.
 
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
-   .. versionadded:: 3.5
-      ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
-      ``callable`` specifically (``callable.__wrapped__`` will not be used to
+   .. versionchanged:: 3.5
+      The *follow_wrapped* parameter was added.
+      Pass ``False`` to get a signature of
+      *callable* specifically (``callable.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
-   .. versionadded:: 3.10
-      ``globals``, ``locals``, and ``eval_str`` parameters.
+   .. versionchanged:: 3.10
+      The *globals*, *locals*, and *eval_str* parameters were added.
 
    .. note::
 
@@ -749,12 +750,10 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
-       ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
-       without unwrapping its ``__wrapped__`` chain. ``globalns`` and
-       ``localns`` will be used as the namespaces when resolving annotations.
+       *obj*.
 
        This method simplifies subclassing of :class:`Signature`::
 
@@ -767,8 +766,8 @@ function.
 
        .. versionadded:: 3.5
 
-       .. versionadded:: 3.10
-          ``globalns`` and ``localns`` parameters.
+       .. versionchanged:: 3.10
+         The *globals*, *locals*, and *eval_str* parameters were added.
 
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
