@@ -1,3 +1,4 @@
 Workaround a bug in Apple's macOS platform zlib library where
-:mod:`zlib.crc32` and :mod:`binascii.crc32` could produce incorrect results
-on multi-gigabyte inputs.
+:func:`zlib.crc32` and :func:`binascii.crc32` could produce incorrect results
+on multi-gigabyte inputs. Including when using :mod:`zipfile` on zips
+containing large data.
