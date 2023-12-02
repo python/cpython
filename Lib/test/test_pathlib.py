@@ -30,20 +30,6 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
 
 
-try:
-    import pwd
-    all_users = [u.pw_uid for u in pwd.getpwall()]
-except (ImportError, AttributeError):
-    all_users = []
-
-
-try:
-    import grp
-    all_groups = [g.gr_gid for g in grp.getgrall()]
-except (ImportError, AttributeError):
-    all_groups = []
-
-
 # Make sure any symbolic links in the base test path are resolved.
 BASE = os.path.realpath(TESTFN)
 join = lambda *x: os.path.join(BASE, *x)
@@ -2601,8 +2587,11 @@ class PathTest(unittest.TestCase):
 
     @unittest.skipUnless(pwd, "the pwd module is needed for this test")
     @unittest.skipUnless(root_in_posix, "test needs root privilege")
-    @unittest.skipUnless(len(all_users) > 1, "test needs more than one user")
     def test_owner_no_follow_symlinks(self):
+        all_users = [u.pw_uid for u in pwd.getpwall()]
+        if len(all_users) < 2:
+            self.skipTest("test needs more than one user")
+
         target = self.cls(BASE) / 'fileA'
         link = self.cls(BASE) / 'linkA'
 
@@ -2633,8 +2622,11 @@ class PathTest(unittest.TestCase):
 
     @unittest.skipUnless(grp, "the grp module is needed for this test")
     @unittest.skipUnless(root_in_posix, "test needs root privilege")
-    @unittest.skipUnless(len(all_groups) > 1, "test needs more than one group")
     def test_group_no_follow_symlinks(self):
+        all_groups = [g.gr_gid for g in grp.getgrall()]
+        if len(all_groups) < 2:
+            self.skipTest("test needs more than one group")
+
         target = self.cls(BASE) / 'fileA'
         link = self.cls(BASE) / 'linkA'
 
