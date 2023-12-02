@@ -1,2 +1,2 @@
 Make ``typing.Annotated`` cache work different for different types. Now
-``Annoated[int, 1]`` and ``Annotated[int, 1.0]`` will be different.
+``Annotated[int, 1]`` and ``Annotated[int, 1.0]`` will be different.
