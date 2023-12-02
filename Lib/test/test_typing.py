@@ -1778,9 +1778,17 @@ class UnionTests(BaseTestCase):
         class B(metaclass=UnhashableMeta): ...
 
         self.assertEqual(Union[A, B].__args__, (A, B))
-        self.assertRaises(TypeError, hash, Union[A, B])
-        self.assertRaises(TypeError, hash, Union[int, B])
-        self.assertRaises(TypeError, hash, Union[A, int])
+        union1 = Union[A, B]
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = Union[int, B]
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = Union[A, int]
+        with self.assertRaises(TypeError):
+            hash(union3)
 
     def test_repr(self):
         self.assertEqual(repr(Union), 'typing.Union')
@@ -8369,13 +8377,15 @@ class AnnotatedTests(BaseTestCase):
             {Annotated[int, 4, 5], Annotated[T, 4, 5]}
         )
         # Unhashable `metadata` raises `TypeError`:
+        a1 = Annotated[int, []]
         with self.assertRaises(TypeError):
-            hash(Annotated[int, []])
+            hash(a1)
 
         class A:
             __hash__ = None
+        a2 = Annotated[int, A()]
         with self.assertRaises(TypeError):
-            hash(Annotated[int, A()]))
+            hash(a2)
 
     def test_instantiate(self):
         class C:
