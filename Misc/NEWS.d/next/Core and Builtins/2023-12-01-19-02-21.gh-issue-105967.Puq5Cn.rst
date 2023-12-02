@@ -1,0 +1,3 @@
+Workaround a bug in Apple's macOS platform zlib library where
+:mod:`zlib.crc32` and :mod:`binascii.crc32` could produce incorrect results
+on multi-gigabyte inputs.
