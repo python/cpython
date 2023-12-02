@@ -311,13 +311,12 @@ def _unpack_args(args):
 def _deduplicate(params, *, unhashable_fallback=False):
     # Weed out strict duplicates, preserving the first of each occurrence.
     try:
-        deduped = dict.fromkeys(params)
+        return dict.fromkeys(params)
     except TypeError:
         if not unhashable_fallback:
             raise
         # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
         return _deduplicate_unhashable(params)
-    return deduped
 
 def _deduplicate_unhashable(unhashable_params):
     new_unhashable = []
