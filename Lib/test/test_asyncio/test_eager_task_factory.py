@@ -7,7 +7,6 @@ import unittest
 from unittest import mock
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
-import test.support
 from test.support.script_helper import assert_python_ok
 
 MOCK_ANY = mock.ANY

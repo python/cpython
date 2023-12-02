@@ -100,13 +100,6 @@ def _compile(code, pattern, flags):
                 emit(ANY_ALL)
             else:
                 emit(ANY)
-        elif op is POSSESSIVE_REPEAT:
-            # gh-106052: Possessive quantifiers do not work when the
-            # subpattern contains backtracking, i.e. "(?:ab?c)*+".
-            # Implement it as equivalent greedy qualifier in atomic group.
-            p = [(MAX_REPEAT, av)]
-            p = [(ATOMIC_GROUP, p)]
-            _compile(code, p, flags)
         elif op in REPEATING_CODES:
             if _simple(av[2]):
                 emit(REPEATING_CODES[op][2])
@@ -154,6 +147,8 @@ def _compile(code, pattern, flags):
                 emit(0) # look ahead
             else:
                 lo, hi = av[1].getwidth()
+                if lo > MAXCODE:
+                    raise error("looks too much behind")
                 if lo != hi:
                     raise error("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
@@ -554,7 +549,7 @@ def _compile_info(code, pattern, flags):
     else:
         emit(MAXCODE)
         prefix = prefix[:MAXCODE]
-    emit(min(hi, MAXCODE))
+    emit(hi)
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length

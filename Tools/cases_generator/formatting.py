@@ -1,6 +1,7 @@
 import contextlib
 import re
 import typing
+from collections.abc import Iterator
 
 from parsing import StackEffect, Family
 
@@ -58,13 +59,13 @@ class Formatter:
             self.set_lineno(self.lineno + 1, self.filename)
 
     @contextlib.contextmanager
-    def indent(self):
+    def indent(self) -> Iterator[None]:
         self.prefix += "    "
         yield
         self.prefix = self.prefix[:-4]
 
     @contextlib.contextmanager
-    def block(self, head: str, tail: str = ""):
+    def block(self, head: str, tail: str = "") -> Iterator[None]:
         if head:
             self.emit(head + " {")
         else:
@@ -77,7 +78,7 @@ class Formatter:
         self,
         input_effects: list[StackEffect],
         output_effects: list[StackEffect],
-    ):
+    ) -> None:
         shrink, isym = list_effect_size(input_effects)
         grow, osym = list_effect_size(output_effects)
         diff = grow - shrink
@@ -90,7 +91,7 @@ class Formatter:
         if osym and osym != isym:
             self.emit(f"STACK_GROW({osym});")
 
-    def declare(self, dst: StackEffect, src: StackEffect | None):
+    def declare(self, dst: StackEffect, src: StackEffect | None) -> None:
         if dst.name == UNUSED or dst.cond == "0":
             return
         typ = f"{dst.type}" if dst.type else "PyObject *"
@@ -107,7 +108,7 @@ class Formatter:
         sepa = "" if typ.endswith("*") else " "
         self.emit(f"{typ}{sepa}{dst.name}{init};")
 
-    def assign(self, dst: StackEffect, src: StackEffect):
+    def assign(self, dst: StackEffect, src: StackEffect) -> None:
         if src.name == UNUSED or dst.name == UNUSED:
             return
         cast = self.cast(dst, src)

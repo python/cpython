@@ -106,12 +106,12 @@ Local naming conventions:
 #endif
 
 #include "Python.h"
+#include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
-
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 /* Socket object documentation */
@@ -263,7 +263,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_NETDB_H
 #  include <netdb.h>
 #endif
-# include <unistd.h>
+#include <unistd.h>               // close()
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #   include <arpa/inet.h>
@@ -392,16 +392,10 @@ remove_unusable_flags(PyObject *m)
             break;
         }
         else {
-            PyObject *flag_name = PyUnicode_FromString(win_runtime_flags[i].flag_name);
-            if (flag_name == NULL) {
+            if (PyDict_PopString(dict, win_runtime_flags[i].flag_name,
+                                 NULL) < 0) {
                 return -1;
             }
-            PyObject *v = _PyDict_Pop(dict, flag_name, Py_None);
-            Py_DECREF(flag_name);
-            if (v == NULL) {
-                return -1;
-            }
-            Py_DECREF(v);
         }
     }
     return 0;
@@ -4878,17 +4872,17 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
 
     /* op is a required, keyword-only argument >= 0 */
     if (opobj != NULL) {
-        op = _PyLong_AsInt(opobj);
+        op = PyLong_AsInt(opobj);
     }
     if (op < 0) {
-        /* override exception from _PyLong_AsInt() */
+        /* override exception from PyLong_AsInt() */
         PyErr_SetString(PyExc_TypeError,
                         "Invalid or missing argument 'op'");
         goto finally;
     }
     /* assoclen is optional but must be >= 0 */
     if (assoclenobj != NULL) {
-        assoclen = _PyLong_AsInt(assoclenobj);
+        assoclen = PyLong_AsInt(assoclenobj);
         if (assoclen == -1 && PyErr_Occurred()) {
             goto finally;
         }
@@ -5006,7 +5000,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
     int how;
     int res;
 
-    how = _PyLong_AsInt(arg);
+    how = PyLong_AsInt(arg);
     if (how == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
@@ -5397,8 +5391,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             }
 
             if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
                 PyErr_SetFromWindowsErr(0);
+                closesocket(fd);
                 return -1;
             }
 
@@ -5612,8 +5606,9 @@ socket_gethostname(PyObject *self, PyObject *unused)
                            name,
                            &size))
     {
+        PyErr_SetFromWindowsErr(0);
         PyMem_Free(name);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     result = PyUnicode_FromWideChar(name, size);
@@ -5650,8 +5645,9 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
-#ifdef _AIX
-/* issue #18259, not declared in any useful header file */
+#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
+/* issue #18259, sethostname is not declared in any useful header file on AIX
+ * the same is true for Solaris 10 */
 extern int sethostname(const char *, size_t);
 #endif
 
@@ -6211,8 +6207,8 @@ socket_dup(PyObject *self, PyObject *fdobj)
     }
 
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
         PyErr_SetFromWindowsErr(0);
+        closesocket(newfd);
         return NULL;
     }
 #else
@@ -6330,14 +6326,18 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 #endif /* HAVE_SOCKETPAIR */
 
 
-static PyObject *
-socket_ntohs(PyObject *self, PyObject *args)
-{
-    int x;
+/*[clinic input]
+_socket.socket.ntohs
+    x: int
+    /
 
-    if (!PyArg_ParseTuple(args, "i:ntohs", &x)) {
-        return NULL;
-    }
+Convert a 16-bit unsigned integer from network to host byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_ntohs_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=a828a61a9fb205b2 input=9a79cb3a71652147]*/
+{
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "ntohs: can't convert negative Python int to C "
@@ -6352,11 +6352,6 @@ socket_ntohs(PyObject *self, PyObject *args)
     }
     return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
-
-PyDoc_STRVAR(ntohs_doc,
-"ntohs(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from network to host byte order.");
 
 
 static PyObject *
@@ -6393,14 +6388,18 @@ PyDoc_STRVAR(ntohl_doc,
 Convert a 32-bit integer from network to host byte order.");
 
 
-static PyObject *
-socket_htons(PyObject *self, PyObject *args)
-{
-    int x;
+/*[clinic input]
+_socket.socket.htons
+    x: int
+    /
 
-    if (!PyArg_ParseTuple(args, "i:htons", &x)) {
-        return NULL;
-    }
+Convert a 16-bit unsigned integer from host to network byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_htons_impl(PySocketSockObject *self, int x)
+/*[clinic end generated code: output=d785ee692312da47 input=053252d8416f4337]*/
+{
     if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "htons: can't convert negative Python int to C "
@@ -6415,11 +6414,6 @@ socket_htons(PyObject *self, PyObject *args)
     }
     return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
-
-PyDoc_STRVAR(htons_doc,
-"htons(integer) -> integer\n\
-\n\
-Convert a 16-bit unsigned integer from host to network byte order.");
 
 
 static PyObject *
@@ -6457,14 +6451,17 @@ Convert a 32-bit integer from host to network byte order.");
 
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
-PyDoc_STRVAR(inet_aton_doc,
-"inet_aton(string) -> bytes giving packed 32-bit IP representation\n\
-\n\
-Convert an IP address in string format (123.45.67.89) to the 32-bit packed\n\
-binary format used in low-level network functions.");
+/*[clinic input]
+_socket.socket.inet_aton
+    ip_addr: str
+    /
 
-static PyObject*
-socket_inet_aton(PyObject *self, PyObject *args)
+Convert an IP address in string format (123.45.67.89) to the 32-bit packed binary format used in low-level network functions.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
+/*[clinic end generated code: output=5bfe11a255423d8c input=a120e20cb52b9488]*/
 {
 #ifdef HAVE_INET_ATON
     struct in_addr buf;
@@ -6477,11 +6474,6 @@ socket_inet_aton(PyObject *self, PyObject *args)
     /* Have to use inet_addr() instead */
     unsigned int packed_addr;
 #endif
-    const char *ip_addr;
-
-    if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr))
-        return NULL;
-
 
 #ifdef HAVE_INET_ATON
 
@@ -6530,30 +6522,29 @@ socket_inet_aton(PyObject *self, PyObject *args)
 }
 
 #ifdef HAVE_INET_NTOA
-PyDoc_STRVAR(inet_ntoa_doc,
-"inet_ntoa(packed_ip) -> ip_address_string\n\
-\n\
-Convert an IP address from 32-bit packed binary format to string format");
+/*[clinic input]
+_socket.socket.inet_ntoa
+    packed_ip: Py_buffer
+    /
 
-static PyObject*
-socket_inet_ntoa(PyObject *self, PyObject *args)
+Convert an IP address from 32-bit packed binary format to string format.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip)
+/*[clinic end generated code: output=b671880a3f62461b input=95c2c4a1b2ee957c]*/
 {
-    Py_buffer packed_ip;
     struct in_addr packed_addr;
 
-    if (!PyArg_ParseTuple(args, "y*:inet_ntoa", &packed_ip)) {
-        return NULL;
-    }
-
-    if (packed_ip.len != sizeof(packed_addr)) {
+    if (packed_ip->len != sizeof(packed_addr)) {
         PyErr_SetString(PyExc_OSError,
             "packed IP wrong length for inet_ntoa");
-        PyBuffer_Release(&packed_ip);
+        PyBuffer_Release(packed_ip);
         return NULL;
     }
 
-    memcpy(&packed_addr, packed_ip.buf, packed_ip.len);
-    PyBuffer_Release(&packed_ip);
+    memcpy(&packed_addr, packed_ip->buf, packed_ip->len);
+    PyBuffer_Release(packed_ip);
 
     SUPPRESS_DEPRECATED_CALL
     return PyUnicode_FromString(inet_ntoa(packed_addr));
@@ -6659,11 +6650,12 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
     /* inet_ntop guarantee NUL-termination of resulting string. */
     retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
-    PyBuffer_Release(&packed_ip);
     if (!retval) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     } else {
+        PyBuffer_Release(&packed_ip);
         return PyUnicode_FromString(retval);
     }
 }
@@ -7002,8 +6994,8 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     ni = if_nameindex();
     if (ni == NULL) {
-        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(list);
         return NULL;
     }
 
@@ -7046,18 +7038,23 @@ PyDoc_STRVAR(if_nameindex_doc,
 \n\
 Returns a list of network interface information (index, name) tuples.");
 
+/*[clinic input]
+_socket.socket.if_nametoindex
+    oname: object(converter="PyUnicode_FSConverter")
+    /
+
+Returns the interface index corresponding to the interface name if_name.
+[clinic start generated code]*/
+
 static PyObject *
-socket_if_nametoindex(PyObject *self, PyObject *args)
+_socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
+/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
 {
-    PyObject *oname;
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
 #else
     unsigned long index;
 #endif
-    if (!PyArg_ParseTuple(args, "O&:if_nametoindex",
-                          PyUnicode_FSConverter, &oname))
-        return NULL;
 
     index = if_nametoindex(PyBytes_AS_STRING(oname));
     Py_DECREF(oname);
@@ -7070,25 +7067,27 @@ socket_if_nametoindex(PyObject *self, PyObject *args)
     return PyLong_FromUnsignedLong(index);
 }
 
-PyDoc_STRVAR(if_nametoindex_doc,
-"if_nametoindex(if_name)\n\
-\n\
-Returns the interface index corresponding to the interface name if_name.");
 
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
-#ifdef MS_WINDOWS
-    NET_IFINDEX index;
-#else
-    unsigned long index;
-#endif
-    char name[IF_NAMESIZE + 1];
-
-    index = PyLong_AsUnsignedLong(arg);
-    if (index == (unsigned long) -1)
+    unsigned long index_long = PyLong_AsUnsignedLong(arg);
+    if (index_long == (unsigned long) -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
+#ifdef MS_WINDOWS
+    NET_IFINDEX index = (NET_IFINDEX)index_long;
+#else
+    unsigned int index = (unsigned int)index_long;
+#endif
+
+    if ((unsigned long)index != index_long) {
+        PyErr_SetString(PyExc_OverflowError, "index is too large");
+        return NULL;
+    }
+
+    char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -7212,19 +7211,15 @@ static PyMethodDef socket_methods[] = {
     {"socketpair",              socket_socketpair,
      METH_VARARGS, socketpair_doc},
 #endif
-    {"ntohs",                   socket_ntohs,
-     METH_VARARGS, ntohs_doc},
+    _SOCKET_SOCKET_NTOHS_METHODDEF
     {"ntohl",                   socket_ntohl,
      METH_O, ntohl_doc},
-    {"htons",                   socket_htons,
-     METH_VARARGS, htons_doc},
+    _SOCKET_SOCKET_HTONS_METHODDEF
     {"htonl",                   socket_htonl,
      METH_O, htonl_doc},
-    {"inet_aton",               socket_inet_aton,
-     METH_VARARGS, inet_aton_doc},
+    _SOCKET_SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
-    {"inet_ntoa",               socket_inet_ntoa,
-     METH_VARARGS, inet_ntoa_doc},
+    _SOCKET_SOCKET_INET_NTOA_METHODDEF
 #endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
@@ -7247,8 +7242,7 @@ static PyMethodDef socket_methods[] = {
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
-    {"if_nametoindex", socket_if_nametoindex,
-     METH_VARARGS, if_nametoindex_doc},
+    _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     {"if_indextoname", socket_if_indextoname,
      METH_O, if_indextoname_doc},
 #endif
@@ -7314,20 +7308,39 @@ os_init(void)
 }
 #endif
 
-static void
-sock_free_api(PySocketModule_APIObject *capi)
+static int
+sock_capi_traverse(PyObject *capsule, visitproc visit, void *arg)
 {
-    Py_DECREF(capi->Sock_Type);
+    PySocketModule_APIObject *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
+    assert(capi != NULL);
+    Py_VISIT(capi->Sock_Type);
+    return 0;
+}
+
+static int
+sock_capi_clear(PyObject *capsule)
+{
+    PySocketModule_APIObject *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
+    assert(capi != NULL);
+    Py_CLEAR(capi->Sock_Type);
+    return 0;
+}
+
+static void
+sock_capi_free(PySocketModule_APIObject *capi)
+{
+    Py_XDECREF(capi->Sock_Type);  // sock_capi_free() can clear it
     Py_DECREF(capi->error);
     Py_DECREF(capi->timeout_error);
     PyMem_Free(capi);
 }
 
 static void
-sock_destroy_api(PyObject *capsule)
+sock_capi_destroy(PyObject *capsule)
 {
     void *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
-    sock_free_api(capi);
+    assert(capi != NULL);
+    sock_capi_free(capi);
 }
 
 static PySocketModule_APIObject *
@@ -7432,11 +7445,17 @@ socket_exec(PyObject *m)
     }
     PyObject *capsule = PyCapsule_New(capi,
                                       PySocket_CAPSULE_NAME,
-                                      sock_destroy_api);
+                                      sock_capi_destroy);
     if (capsule == NULL) {
-        sock_free_api(capi);
+        sock_capi_free(capi);
         goto error;
     }
+    if (_PyCapsule_SetTraverse(capsule,
+                               sock_capi_traverse, sock_capi_clear) < 0) {
+        sock_capi_free(capi);
+        goto error;
+    }
+
     if (PyModule_Add(m, PySocket_CAPI_NAME, capsule) < 0) {
         goto error;
     }
@@ -7694,10 +7713,10 @@ socket_exec(PyObject *m)
 
 /* FreeBSD divert(4) */
 #ifdef PF_DIVERT
-    PyModule_AddIntMacro(m, PF_DIVERT);
+    ADD_INT_MACRO(m, PF_DIVERT);
 #endif
 #ifdef AF_DIVERT
-    PyModule_AddIntMacro(m, AF_DIVERT);
+    ADD_INT_MACRO(m, AF_DIVERT);
 #endif
 
 #ifdef AF_PACKET
@@ -8789,6 +8808,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef NI_DGRAM
     ADD_INT_MACRO(m, NI_DGRAM);
+#endif
+#ifdef NI_IDN
+    ADD_INT_MACRO(m, NI_IDN);
 #endif
 
     /* shutdown() parameters */

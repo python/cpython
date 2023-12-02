@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_bz2_BZ2Compressor_compress__doc__,
 "compress($self, data, /)\n"
@@ -32,10 +33,6 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
     Py_buffer data = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
@@ -102,7 +99,7 @@ _bz2_BZ2Compressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (PyTuple_GET_SIZE(args) < 1) {
         goto skip_optional;
     }
-    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    compresslevel = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
     if (compresslevel == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -180,10 +177,6 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -241,4 +234,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=805400e4805098ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8daa62f47cc4853d input=a9049054013a1b77]*/

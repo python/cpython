@@ -4,8 +4,25 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper
+from test.support import threading_helper, check_impl_detail
+
+# Skip this module on other interpreters, it is cpython specific:
+if check_impl_detail(cpython=False):
+    raise unittest.SkipTest('implementation detail specific to cpython')
+
 import _testinternalcapi
+
+
+def disabling_optimizer(func):
+    def wrapper(*args, **kwargs):
+        old_opt = _testinternalcapi.get_optimizer()
+        _testinternalcapi.set_optimizer(None)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            _testinternalcapi.set_optimizer(old_opt)
+
+    return wrapper
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):
@@ -502,6 +519,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
         opnames = {instruction.opname for instruction in instructions}
         self.assertIn(opname, opnames)
 
+    @disabling_optimizer
     def assert_races_do_not_crash(
         self, opname, get_items, read, write, *, check_items=False
     ):

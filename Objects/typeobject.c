@@ -19,8 +19,6 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "opcode.h"               // MAKE_CELL
 
-
-#include <ctype.h>
 #include <stddef.h>               // ptrdiff_t
 
 /*[clinic input]
@@ -830,7 +828,9 @@ PyType_Modified(PyTypeObject *type)
             if (bits & 1) {
                 PyType_WatchCallback cb = interp->type_watchers[i];
                 if (cb && (cb(type) < 0)) {
-                    PyErr_WriteUnraisable((PyObject *)type);
+                    PyErr_FormatUnraisable(
+                        "Exception ignored in type watcher callback #%d for %R",
+                        i, type);
                 }
             }
             i++;
@@ -1092,14 +1092,9 @@ type_module(PyTypeObject *type, void *context)
 
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyObject *dict = lookup_tp_dict(type);
-        mod = PyDict_GetItemWithError(dict, &_Py_ID(__module__));
-        if (mod == NULL) {
-            if (!PyErr_Occurred()) {
-                PyErr_Format(PyExc_AttributeError, "__module__");
-            }
-            return NULL;
+        if (PyDict_GetItemRef(dict, &_Py_ID(__module__), &mod) == 0) {
+            PyErr_Format(PyExc_AttributeError, "__module__");
         }
-        Py_INCREF(mod);
     }
     else {
         const char *s = strrchr(type->tp_name, '.');
@@ -1134,17 +1129,16 @@ type_abstractmethods(PyTypeObject *type, void *context)
     PyObject *mod = NULL;
     /* type itself has an __abstractmethods__ descriptor (this). Don't return
        that. */
-    if (type != &PyType_Type) {
-        PyObject *dict = lookup_tp_dict(type);
-        mod = PyDict_GetItemWithError(dict, &_Py_ID(__abstractmethods__));
+    if (type == &PyType_Type) {
+        PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__abstractmethods__));
     }
-    if (!mod) {
-        if (!PyErr_Occurred()) {
+    else {
+        PyObject *dict = lookup_tp_dict(type);
+        if (PyDict_GetItemRef(dict, &_Py_ID(__abstractmethods__), &mod) == 0) {
             PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__abstractmethods__));
         }
-        return NULL;
     }
-    return Py_NewRef(mod);
+    return mod;
 }
 
 static int
@@ -1435,18 +1429,14 @@ type_get_doc(PyTypeObject *type, void *context)
         return _PyType_GetDocFromInternalDoc(type->tp_name, type->tp_doc);
     }
     PyObject *dict = lookup_tp_dict(type);
-    result = PyDict_GetItemWithError(dict, &_Py_ID(__doc__));
-    if (result == NULL) {
-        if (!PyErr_Occurred()) {
-            result = Py_NewRef(Py_None);
+    if (PyDict_GetItemRef(dict, &_Py_ID(__doc__), &result) == 0) {
+        result = Py_NewRef(Py_None);
+    }
+    else if (result) {
+        descrgetfunc descr_get = Py_TYPE(result)->tp_descr_get;
+        if (descr_get) {
+            Py_SETREF(result, descr_get(result, NULL, (PyObject *)type));
         }
-    }
-    else if (Py_TYPE(result)->tp_descr_get) {
-        result = Py_TYPE(result)->tp_descr_get(result, NULL,
-                                               (PyObject *)type);
-    }
-    else {
-        Py_INCREF(result);
     }
     return result;
 }
@@ -1477,16 +1467,16 @@ type_get_annotations(PyTypeObject *type, void *context)
 
     PyObject *annotations;
     PyObject *dict = lookup_tp_dict(type);
-    annotations = PyDict_GetItemWithError(dict, &_Py_ID(__annotations__));
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
+        return NULL;
+    }
     if (annotations) {
-        if (Py_TYPE(annotations)->tp_descr_get) {
-            annotations = Py_TYPE(annotations)->tp_descr_get(
-                    annotations, NULL, (PyObject *)type);
-        } else {
-            Py_INCREF(annotations);
+        descrgetfunc get = Py_TYPE(annotations)->tp_descr_get;
+        if (get) {
+            Py_SETREF(annotations, get(annotations, NULL, (PyObject *)type));
         }
     }
-    else if (!PyErr_Occurred()) {
+    else {
         annotations = PyDict_New();
         if (annotations) {
             int result = PyDict_SetItem(
@@ -1533,16 +1523,11 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_get_type_params(PyTypeObject *type, void *context)
 {
-    PyObject *params = PyDict_GetItemWithError(lookup_tp_dict(type), &_Py_ID(__type_params__));
-
-    if (params) {
-        return Py_NewRef(params);
+    PyObject *params;
+    if (PyDict_GetItemRef(lookup_tp_dict(type), &_Py_ID(__type_params__), &params) == 0) {
+        return PyTuple_New(0);
     }
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
-    return PyTuple_New(0);
+    return params;
 }
 
 static int
@@ -1837,7 +1822,7 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         assert(base->tp_dictoffset == 0);
         if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
             assert(type->tp_dictoffset == -1);
-            int err = _PyObject_VisitManagedDict(self, visit, arg);
+            int err = PyObject_VisitManagedDict(self, visit, arg);
             if (err) {
                 return err;
             }
@@ -1907,7 +1892,7 @@ subtype_clear(PyObject *self)
        __dict__ slots (as in the case 'self.__dict__ is self'). */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-            _PyObject_ClearManagedDict(self);
+            PyObject_ClearManagedDict(self);
         }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
@@ -2444,7 +2429,7 @@ set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, int *remain)
     n = PyDict_GET_SIZE(set);
 
     off = PyOS_snprintf(buf, sizeof(buf), "Cannot create a \
-consistent method resolution\norder (MRO) for bases");
+consistent method resolution order (MRO) for bases");
     i = 0;
     while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
         PyObject *name = class_name(k);
@@ -3021,21 +3006,21 @@ subtype_getweakref(PyObject *obj, void *context)
 
 static PyGetSetDef subtype_getsets_full[] = {
     {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables (if defined)")},
+     PyDoc_STR("dictionary for instance variables")},
     {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object (if defined)")},
+     PyDoc_STR("list of weak references to the object")},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_dict_only[] = {
     {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables (if defined)")},
+     PyDoc_STR("dictionary for instance variables")},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_weakref_only[] = {
     {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object (if defined)")},
+     PyDoc_STR("list of weak references to the object")},
     {0}
 };
 
@@ -3436,18 +3421,13 @@ type_new_set_module(PyTypeObject *type)
         return 0;
     }
 
-    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
-    if (module == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
-        return 0;
+    PyObject *module;
+    r = PyDict_GetItemRef(globals, &_Py_ID(__name__), &module);
+    if (module) {
+        r = PyDict_SetItem(dict, &_Py_ID(__module__), module);
+        Py_DECREF(module);
     }
-
-    if (PyDict_SetItem(dict, &_Py_ID(__module__), module) < 0) {
-        return -1;
-    }
-    return 0;
+    return r;
 }
 
 
@@ -3458,23 +3438,24 @@ type_new_set_ht_name(PyTypeObject *type)
 {
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     PyObject *dict = lookup_tp_dict(type);
-    PyObject *qualname = PyDict_GetItemWithError(dict, &_Py_ID(__qualname__));
+    PyObject *qualname;
+    if (PyDict_GetItemRef(dict, &_Py_ID(__qualname__), &qualname) < 0) {
+        return -1;
+    }
     if (qualname != NULL) {
         if (!PyUnicode_Check(qualname)) {
             PyErr_Format(PyExc_TypeError,
                     "type __qualname__ must be a str, not %s",
                     Py_TYPE(qualname)->tp_name);
+            Py_DECREF(qualname);
             return -1;
         }
-        et->ht_qualname = Py_NewRef(qualname);
+        et->ht_qualname = qualname;
         if (PyDict_DelItem(dict, &_Py_ID(__qualname__)) < 0) {
             return -1;
         }
     }
     else {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
         et->ht_qualname = Py_NewRef(et->ht_name);
     }
     return 0;
@@ -3881,16 +3862,14 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
         if (PyType_Check(base)) {
             continue;
         }
-        PyObject *mro_entries;
-        if (PyObject_GetOptionalAttr(base, &_Py_ID(__mro_entries__),
-                                 &mro_entries) < 0) {
+        int rc = PyObject_HasAttrWithError(base, &_Py_ID(__mro_entries__));
+        if (rc < 0) {
             return -1;
         }
-        if (mro_entries != NULL) {
+        if (rc) {
             PyErr_SetString(PyExc_TypeError,
                             "type() doesn't support MRO entry resolution; "
                             "use types.new_class()");
-            Py_DECREF(mro_entries);
             return -1;
         }
     }
@@ -4559,6 +4538,12 @@ PyObject *
 PyType_GetQualName(PyTypeObject *type)
 {
     return type_qualname(type, NULL);
+}
+
+PyObject *
+_PyType_GetModuleName(PyTypeObject *type)
+{
+    return type_module(type, NULL);
 }
 
 void *
@@ -5256,8 +5241,10 @@ static PyMethodDef type_methods[] = {
     TYPE___SUBCLASSES___METHODDEF
     {"__prepare__", _PyCFunction_CAST(type_prepare),
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("__prepare__() -> dict\n"
-               "used to create the namespace for the class statement")},
+     PyDoc_STR("__prepare__($cls, name, bases, /, **kwds)\n"
+               "--\n"
+               "\n"
+               "Create the namespace for the class statement")},
     TYPE___INSTANCECHECK___METHODDEF
     TYPE___SUBCLASSCHECK___METHODDEF
     TYPE___DIR___METHODDEF
@@ -5888,24 +5875,22 @@ _PyType_GetSlotNames(PyTypeObject *cls)
 
     /* Get the slot names from the cache in the class if possible. */
     PyObject *dict = lookup_tp_dict(cls);
-    slotnames = PyDict_GetItemWithError(dict, &_Py_ID(__slotnames__));
+    if (PyDict_GetItemRef(dict, &_Py_ID(__slotnames__), &slotnames) < 0) {
+        return NULL;
+    }
     if (slotnames != NULL) {
         if (slotnames != Py_None && !PyList_Check(slotnames)) {
             PyErr_Format(PyExc_TypeError,
                          "%.200s.__slotnames__ should be a list or None, "
                          "not %.200s",
                          cls->tp_name, Py_TYPE(slotnames)->tp_name);
+            Py_DECREF(slotnames);
             return NULL;
         }
-        return Py_NewRef(slotnames);
-    }
-    else {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        /* The class does not have the slot names cached yet. */
+        return slotnames;
     }
 
+    /* The class does not have the slot names cached yet. */
     copyreg = import_copyreg();
     if (copyreg == NULL)
         return NULL;
@@ -7508,7 +7493,7 @@ type_ready(PyTypeObject *type, int rerunbuiltin)
      * to get type objects into the doubly-linked list of all objects.
      * Still, not all type objects go through PyType_Ready.
      */
-    _Py_AddToAllObjects((PyObject *)type, 0);
+    _Py_AddToAllObjects((PyObject *)type);
 #endif
 
     /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
@@ -9294,7 +9279,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
         // from a Python __buffer__ function.
         mv = PyMemoryView_FromBuffer(buffer);
         if (mv == NULL) {
-            PyErr_WriteUnraisable(self);
+            PyErr_FormatUnraisable("Exception ignored in bf_releasebuffer of %s", Py_TYPE(self)->tp_name);
             goto end;
         }
         // Set the memoryview to restricted mode, which forbids
@@ -9307,7 +9292,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
     if (ret == NULL) {
-        PyErr_WriteUnraisable(self);
+        PyErr_FormatUnraisable("Exception ignored in __release_buffer__ of %s", Py_TYPE(self)->tp_name);
     }
     else {
         Py_DECREF(ret);
@@ -9315,7 +9300,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
     if (!is_buffer_wrapper) {
         PyObject *res = PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
         if (res == NULL) {
-            PyErr_WriteUnraisable(self);
+            PyErr_FormatUnraisable("Exception ignored in bf_releasebuffer of %s", Py_TYPE(self)->tp_name);
         }
         else {
             Py_DECREF(res);
@@ -10264,22 +10249,17 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
         return NULL;
 
     /* keep a strong reference to mro because su_obj_type->tp_mro can be
-       replaced during PyDict_GetItemWithError(dict, name)  */
+       replaced during PyDict_GetItemRef(dict, name, &res)  */
     Py_INCREF(mro);
     do {
         PyObject *obj = PyTuple_GET_ITEM(mro, i);
         PyObject *dict = lookup_tp_dict(_PyType_CAST(obj));
         assert(dict != NULL && PyDict_Check(dict));
 
-        res = PyDict_GetItemWithError(dict, name);
-        if (res != NULL) {
-            Py_INCREF(res);
+        if (PyDict_GetItemRef(dict, name, &res) != 0) {
+            // found or error
             Py_DECREF(mro);
             return res;
-        }
-        else if (PyErr_Occurred()) {
-            Py_DECREF(mro);
-            return NULL;
         }
 
         i++;

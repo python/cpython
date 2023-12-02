@@ -9,6 +9,7 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_SizeOf()
 #include <ffi.h>
 #ifdef MS_WIN32
 #  include <malloc.h>
@@ -385,11 +386,11 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (fields == NULL)
         return 0;
 
-    if (PyObject_GetOptionalAttr(type, &_Py_ID(_swappedbytes_), &tmp) < 0) {
+    int rc = PyObject_HasAttrWithError(type, &_Py_ID(_swappedbytes_));
+    if (rc < 0) {
         return -1;
     }
-    if (tmp) {
-        Py_DECREF(tmp);
+    if (rc) {
         big_endian = !PY_BIG_ENDIAN;
     }
     else {
@@ -400,7 +401,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
     if (tmp) {
-        pack = _PyLong_AsInt(tmp);
+        pack = PyLong_AsInt(tmp);
         Py_DECREF(tmp);
         if (pack < 0) {
             if (!PyErr_Occurred() ||

@@ -4,7 +4,9 @@
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_call.h"          // _PyStack_AsDict()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_emscripten_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
+#include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -15,25 +17,6 @@ class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
-
-// see pycore_object.h
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-EM_JS(int, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
-    return wasmTable.get(set)(obj, value, closure);
-});
-
-EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
-    return wasmTable.get(get)(obj, closure);
-});
-#else
-#define descr_set_trampoline_call(set, obj, value, closure) \
-    (set)((obj), (value), (closure))
-
-#define descr_get_trampoline_call(get, obj, closure) \
-    (get)((obj), (closure))
-
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 static void
 descr_dealloc(PyDescrObject *descr)
@@ -1558,6 +1541,9 @@ property_deleter(PyObject *self, PyObject *deleter)
 
 
 PyDoc_STRVAR(set_name_doc,
+             "__set_name__($self, owner, name, /)\n"
+             "--\n"
+             "\n"
              "Method to set name of a property.");
 
 static PyObject *

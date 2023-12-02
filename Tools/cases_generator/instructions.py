@@ -25,18 +25,11 @@ class ActiveCacheEffect:
 
 
 FORBIDDEN_NAMES_IN_UOPS = (
-    "resume_with_error",
-    "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "JUMPBY",
     "DISPATCH",
-    "INSTRUMENTED_JUMP",
-    "throwflag",
-    "exception_unwind",
-    "import_from",
-    "import_name",
-    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
+    "TIER_ONE_ONLY",
 )
 
 
@@ -52,15 +45,16 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
-    kind: typing.Literal["inst", "op"]
     name: str
+    annotations: list[str]
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
     block_line: int  # First line of block in original code
 
     # Computed by constructor
-    always_exits: bool
+    always_exits: str  # If the block always exits, its last line; else ""
     has_deopt: bool
+    needs_this_instr: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -76,8 +70,8 @@ class Instruction:
 
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
-        self.kind = inst.kind
         self.name = inst.name
+        self.annotations = inst.annotations
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
             self.block
@@ -88,6 +82,7 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
+        self.needs_this_instr = variable_used(self.inst, "this_instr") or any(c.name != UNUSED for c in self.cache_effects)
         self.input_effects = [
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
@@ -120,13 +115,15 @@ class Instruction:
     def is_viable_uop(self) -> bool:
         """Whether this instruction is viable as a uop."""
         dprint: typing.Callable[..., None] = lambda *args, **kwargs: None
-        # if self.name.startswith("CALL"):
-        #     dprint = print
+        if "FRAME" in self.name:
+            dprint = print
 
-        if self.name == "EXIT_TRACE":
+        if self.name == "_EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
+        if self.name == "_SAVE_RETURN_OFFSET":
+            return True  # Adjusts next_instr, but only in tier 1 code
         if self.always_exits:
-            dprint(f"Skipping {self.name} because it always exits")
+            dprint(f"Skipping {self.name} because it always exits: {self.always_exits}")
             return False
         if len(self.active_caches) > 1:
             # print(f"Skipping {self.name} because it has >1 cache entries")
@@ -140,29 +137,13 @@ class Instruction:
                 res = False
         return res
 
-    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
-        """Write one instruction, sans prologue and epilogue."""
-
-        # Write a static assertion that a family's cache size is correct
-        out.static_assert_family_size(self.name, self.family, self.cache_offset)
-
-        # Write input stack effect variable declarations and initializations
-        stacking.write_single_instr(self, out, tier)
-
-        # Skip the rest if the block always exits
-        if self.always_exits:
-            return
-
-        # Write cache effect
-        if tier == TIER_ONE and self.cache_offset:
-            out.emit(f"next_instr += {self.cache_offset};")
-
     def write_body(
         self,
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
@@ -181,10 +162,11 @@ class Instruction:
                 func = f"read_u{bits}"
             if tier == TIER_ONE:
                 out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
+                    f"{typ}{ceffect.name} = "
+                    f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
-                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
+                out.emit(f"{typ}{ceffect.name} = ({typ.strip()})CURRENT_OPERAND();")
 
         # Write the body, substituting a goto for ERROR_IF() and other stuff
         assert dedent <= 0
@@ -219,12 +201,24 @@ class Instruction:
                 ninputs, symbolic = list_effect_size(ieffs)
                 if ninputs:
                     label = f"pop_{ninputs}_{label}"
+                if tier == TIER_TWO:
+                    label = label + "_tier_two"
                 if symbolic:
                     out.write_raw(
                         f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
                     )
                 else:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
+            elif m := re.match(r"(\s*)DEOPT_IF\((.+)\);\s*(?://.*)?$", line):
+                space, cond = m.groups()
+                space = extra + space
+                target = family.name if family else self.name
+                out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
+            elif "DEOPT" in line:
+                filename = context.owner.filename
+                lineno = context.owner.tokens[context.begin].line
+                print(f"{filename}:{lineno}: ERROR: DEOPT_IF() must be all on one line")
+                out.write_raw(extra + line)
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 out.reset_lineno()
                 space = extra + m.group(1)
@@ -248,6 +242,26 @@ class Instruction:
 InstructionOrCacheEffect = Instruction | parsing.CacheEffect
 
 
+# Instruction used for abstract interpretation.
+class AbstractInstruction(Instruction):
+    def __init__(self, inst: parsing.InstDef):
+        super().__init__(inst)
+
+    def write(self, out: Formatter, tier: Tiers = TIER_ONE) -> None:
+        """Write one abstract instruction, sans prologue and epilogue."""
+        stacking.write_single_instr_for_abstract_interp(self, out)
+
+    def write_body(
+        self,
+        out: Formatter,
+        dedent: int,
+        active_caches: list[ActiveCacheEffect],
+        tier: Tiers,
+        family: parsing.Family | None,
+    ) -> None:
+        pass
+
+
 @dataclasses.dataclass
 class Component:
     instr: Instruction
@@ -267,7 +281,9 @@ class MacroInstruction:
     macro: parsing.Macro
     parts: MacroParts
     cache_offset: int
+    # Set later
     predicted: bool = False
+    family: parsing.Family | None = None
 
 
 @dataclasses.dataclass
@@ -275,14 +291,8 @@ class PseudoInstruction:
     """A pseudo instruction."""
 
     name: str
-    targets: list[Instruction]
-    instr_fmt: str
+    targets: list[Instruction | MacroInstruction]
     instr_flags: InstructionFlags
-
-
-@dataclasses.dataclass
-class OverriddenInstructionPlaceHolder:
-    name: str
 
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction
@@ -322,16 +332,16 @@ def extract_block_text(block: parsing.Block) -> tuple[list[str], bool, int]:
     return blocklines, check_eval_breaker, block_line
 
 
-def always_exits(lines: list[str]) -> bool:
+def always_exits(lines: list[str]) -> str:
     """Determine whether a block always ends in a return/goto/etc."""
     if not lines:
-        return False
+        return ""
     line = lines[-1].rstrip()
     # Indent must match exactly (TODO: Do something better)
     if line[:12] != " " * 12:
-        return False
+        return ""
     line = line[12:]
-    return line.startswith(
+    if line.startswith(
         (
             "goto ",
             "return ",
@@ -340,4 +350,6 @@ def always_exits(lines: list[str]) -> bool:
             "Py_UNREACHABLE()",
             "ERROR_IF(true, ",
         )
-    )
+    ):
+        return line
+    return ""

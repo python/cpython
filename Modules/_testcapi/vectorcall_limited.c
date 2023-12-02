@@ -1,12 +1,15 @@
+/* Test Vectorcall in the limited API */
+
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#endif
+
+#ifndef Py_GIL_DISABLED
 #define Py_LIMITED_API 0x030c0000 // 3.12
+#endif
+
 #include "parts.h"
 #include "clinic/vectorcall_limited.c.h"
-
-#ifdef LIMITED_API_AVAILABLE
-
-
-
-/* Test Vectorcall in the limited API */
 
 /*[clinic input]
 module _testcapi
@@ -197,5 +200,3 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
 
     return 0;
 }
-
-#endif // LIMITED_API_AVAILABLE

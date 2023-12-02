@@ -163,13 +163,6 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       and :c:member:`~Py_buffer.suboffsets` MUST be ``NULL``.
       The maximum number of dimensions is given by :c:macro:`PyBUF_MAX_NDIM`.
 
-   .. :c:macro:: PyBUF_MAX_NDIM
-
-      The maximum number of dimensions the memory represents.
-      Exporters MUST respect this limit, consumers of multi-dimensional
-      buffers SHOULD be able to handle up to :c:macro:`!PyBUF_MAX_NDIM` dimensions.
-      Currently set to 64.
-
    .. c:member:: Py_ssize_t *shape
 
       An array of :c:type:`Py_ssize_t` of length :c:member:`~Py_buffer.ndim`
@@ -220,6 +213,17 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       about whether or not the shape, strides, and suboffsets arrays must be
       freed when the buffer is released. The consumer MUST NOT alter this
       value.
+
+
+Constants:
+
+.. c:macro:: PyBUF_MAX_NDIM
+
+   The maximum number of dimensions the memory represents.
+   Exporters MUST respect this limit, consumers of multi-dimensional
+   buffers SHOULD be able to handle up to :c:macro:`!PyBUF_MAX_NDIM` dimensions.
+   Currently set to 64.
+
 
 .. _buffer-request-types:
 
@@ -444,7 +448,7 @@ Buffer-related functions
 
    Send a request to *exporter* to fill in *view* as specified by  *flags*.
    If the exporter cannot provide a buffer of the exact type, it MUST raise
-   :c:data:`PyExc_BufferError`, set ``view->obj`` to ``NULL`` and
+   :exc:`BufferError`, set ``view->obj`` to ``NULL`` and
    return ``-1``.
 
    On success, fill in *view*, set ``view->obj`` to a new reference
@@ -531,7 +535,7 @@ Buffer-related functions
    and :c:macro:`PyBUF_WRITABLE` is set in *flags*.
 
    On success, set ``view->obj`` to a new reference to *exporter* and
-   return 0. Otherwise, raise :c:data:`PyExc_BufferError`, set
+   return 0. Otherwise, raise :exc:`BufferError`, set
    ``view->obj`` to ``NULL`` and return ``-1``;
 
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,

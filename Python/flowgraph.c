@@ -97,6 +97,7 @@ static const jump_target_label NO_LABEL = {-1};
 static inline int
 is_block_push(cfg_instr *i)
 {
+    assert(OPCODE_HAS_ARG(i->i_opcode) || !IS_BLOCK_PUSH_OPCODE(i->i_opcode));
     return IS_BLOCK_PUSH_OPCODE(i->i_opcode);
 }
 
@@ -261,8 +262,8 @@ dump_instr(cfg_instr *i)
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, opcode: %d %s%s\n",
-                    i->i_loc.lineno, i->i_opcode, arg, jump);
+    fprintf(stderr, "line: %d, %s (%d)  %s%s\n",
+                    i->i_loc.lineno, _PyOpcode_OpName[i->i_opcode], i->i_opcode, arg, jump);
 }
 
 static inline int
@@ -531,7 +532,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
-    basicblock_addop(backwards_jump, JUMP, target->b_label.id, NO_LOCATION);
+    basicblock_addop(backwards_jump, JUMP, target->b_label.id, last->i_loc);
     backwards_jump->b_instr[0].i_target = target;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -575,16 +576,23 @@ check_cfg(cfg_builder *g) {
     return SUCCESS;
 }
 
+static int
+get_max_label(basicblock *entryblock)
+{
+    int lbl = -1;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_label.id > lbl) {
+            lbl = b->b_label.id;
+        }
+    }
+    return lbl;
+}
+
 /* Calculate the actual jump target from the target_label */
 static int
 translate_jump_labels_to_targets(basicblock *entryblock)
 {
-    int max_label = -1;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_label.id > max_label) {
-            max_label = b->b_label.id;
-        }
-    }
+    int max_label = get_max_label(entryblock);
     size_t mapsize = sizeof(basicblock *) * (max_label + 1);
     basicblock **label2block = (basicblock **)PyMem_Malloc(mapsize);
     if (!label2block) {
@@ -833,6 +841,7 @@ label_exception_targets(basicblock *entryblock) {
         assert(except_stack != NULL);
         b->b_exceptstack = NULL;
         handler = except_stack_top(except_stack);
+        int last_yield_except_depth = -1;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr)) {
@@ -871,10 +880,21 @@ label_exception_targets(basicblock *entryblock) {
                     todo++;
                 }
             }
-            else {
-                if (instr->i_opcode == YIELD_VALUE) {
-                    instr->i_oparg = except_stack->depth;
+            else if (instr->i_opcode == YIELD_VALUE) {
+                instr->i_except = handler;
+                last_yield_except_depth = except_stack->depth;
+            }
+            else if (instr->i_opcode == RESUME) {
+                instr->i_except = handler;
+                if (instr->i_oparg != RESUME_AT_FUNC_START) {
+                    assert(last_yield_except_depth >= 0);
+                    if (last_yield_except_depth == 1) {
+                        instr->i_oparg |= RESUME_OPARG_DEPTH1_MASK;
+                    }
+                    last_yield_except_depth = -1;
                 }
+            }
+            else {
                 instr->i_except = handler;
             }
         }
@@ -953,6 +973,7 @@ eliminate_empty_basic_blocks(cfg_builder *g) {
     while(g->g_entryblock && g->g_entryblock->b_iused == 0) {
         g->g_entryblock = g->g_entryblock->b_next;
     }
+    int next_lbl = get_max_label(g->g_entryblock) + 1;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         assert(b->b_iused > 0);
         for (int i = 0; i < b->b_iused; i++) {
@@ -962,7 +983,13 @@ eliminate_empty_basic_blocks(cfg_builder *g) {
                 while (target->b_iused == 0) {
                     target = target->b_next;
                 }
-                instr->i_target = target;
+                if (instr->i_target != target) {
+                    if (!IS_LABEL(target->b_label)) {
+                        target->b_label.id = next_lbl++;
+                    }
+                    instr->i_target = target;
+                    instr->i_oparg = target->b_label.id;
+                }
                 assert(instr->i_target && instr->i_target->b_iused > 0);
             }
         }
@@ -1003,7 +1030,17 @@ remove_redundant_nops(basicblock *bb) {
                 }
                 /* or if last instruction in BB and next BB has same line number */
                 if (next) {
-                    if (lineno == next->b_instr[0].i_loc.lineno) {
+                    location next_loc = NO_LOCATION;
+                    for (int next_i=0; next_i < next->b_iused; next_i++) {
+                        cfg_instr *instr = &next->b_instr[next_i];
+                        if (instr->i_opcode == NOP && instr->i_loc.lineno == NO_LOCATION.lineno) {
+                            /* Skip over NOPs without location, they will be removed */
+                            continue;
+                        }
+                        next_loc = instr->i_loc;
+                        break;
+                    }
+                    if (lineno == next_loc.lineno) {
                         continue;
                     }
                 }
@@ -1624,8 +1661,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                 }
                 break;
-            case KW_NAMES:
-                break;
             case LOAD_GLOBAL:
                 if (nextop == PUSH_NULL && (oparg & 1) == 0) {
                     INSTR_SET_OP1(inst, LOAD_GLOBAL, oparg | 1);
@@ -2128,6 +2163,8 @@ push_cold_blocks_to_end(cfg_builder *g) {
     }
     RETURN_IF_ERROR(mark_cold(entryblock));
 
+    int next_lbl = get_max_label(g->g_entryblock) + 1;
+
     /* If we have a cold block with fallthrough to a warm block, add */
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -2135,6 +2172,9 @@ push_cold_blocks_to_end(cfg_builder *g) {
             basicblock *explicit_jump = cfg_builder_new_block(g);
             if (explicit_jump == NULL) {
                 return ERROR;
+            }
+            if (!IS_LABEL(b->b_next->b_label)) {
+                b->b_next->b_label.id = next_lbl++;
             }
             basicblock_addop(explicit_jump, JUMP, b->b_next->b_label.id, NO_LOCATION);
             explicit_jump->b_cold = 1;
@@ -2200,7 +2240,6 @@ convert_pseudo_ops(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
-                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
@@ -2231,6 +2270,7 @@ is_exit_without_lineno(basicblock *b) {
     return true;
 }
 
+
 /* PEP 626 mandates that the f_lineno of a frame is correct
  * after a frame terminates. It would be prohibitively expensive
  * to continuously update the f_lineno field at runtime,
@@ -2244,6 +2284,9 @@ static int
 duplicate_exits_without_lineno(cfg_builder *g)
 {
     assert(no_empty_basic_blocks(g));
+
+    int next_lbl = get_max_label(g->g_entryblock) + 1;
+
     /* Copy all exit blocks without line number that are targets of a jump.
      */
     basicblock *entryblock = g->g_entryblock;
@@ -2262,6 +2305,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
                 target->b_predecessors--;
                 new_target->b_predecessors = 1;
                 new_target->b_next = target->b_next;
+                new_target->b_label.id = next_lbl++;
                 target->b_next = new_target;
             }
         }
@@ -2404,17 +2448,31 @@ build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
     PyObject *varname, *cellindex;
     Py_ssize_t pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(umd->u_varnames, varname);
-        if (varindex != NULL) {
-            assert(PyLong_AS_LONG(cellindex) < INT_MAX);
-            assert(PyLong_AS_LONG(varindex) < INT_MAX);
-            int oldindex = (int)PyLong_AS_LONG(cellindex);
-            int argoffset = (int)PyLong_AS_LONG(varindex);
-            fixed[oldindex] = argoffset;
+        PyObject *varindex;
+        if (PyDict_GetItemRef(umd->u_varnames, varname, &varindex) < 0) {
+            goto error;
         }
-    }
+        if (varindex == NULL) {
+            continue;
+        }
 
+        int argoffset = PyLong_AsInt(varindex);
+        Py_DECREF(varindex);
+        if (argoffset == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+
+        int oldindex = PyLong_AsInt(cellindex);
+        if (oldindex == -1 && PyErr_Occurred()) {
+            goto error;
+        }
+        fixed[oldindex] = argoffset;
+    }
     return fixed;
+
+error:
+    PyMem_Free(fixed);
+    return NULL;
 }
 
 #define IS_GENERATOR(CF) \
@@ -2432,17 +2490,19 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
          * of 0. This is because RETURN_GENERATOR pushes an element
          * with _PyFrame_StackPush before switching stacks.
          */
+
+        location loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1);
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
-            .i_loc = NO_LOCATION,
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
@@ -2649,4 +2709,3 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
 
     return SUCCESS;
 }
-
