@@ -753,6 +753,17 @@ function.
       Signature objects are also supported by generic function
       :func:`copy.replace`.
 
+   .. method:: format(*, max_width=None)
+
+      Convert signature object to string.
+
+      If *max_width* is passed, the method will attempt to fit
+      the signature into lines of at most *max_width* characters.
+      If the signature is longer than *max_width*,
+      all parameters will be on separate lines.
+
+      .. versionadded:: 3.13
+
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
