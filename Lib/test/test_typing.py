@@ -8675,6 +8675,33 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(X.__mro__, (X, int, object),
                          "Annotated should be transparent.")
 
+    def test_annotated_cached_with_types(self):
+        class A(str): ...
+        class B(str): ...
+
+        class Message:
+            field_a: Annotated[str, A("X")]
+            field_b: Annotated[str, A("Y")]
+            field_c: Annotated[int, 1]
+        class Form:
+            box_a: Annotated[str, B("X")]
+            box_b: Annotated[str, B("Y")]
+            box_c: Annotated[int, 1.0]
+
+        hints = get_type_hints(Message, include_extras=True)
+        self.assertEqual(type(hints["field_a"].__metadata__[0]), A)
+        self.assertEqual(hints["field_a"].__metadata__[0], A("X"))
+        self.assertEqual(type(hints["field_b"].__metadata__[0]), A)
+        self.assertEqual(hints["field_b"].__metadata__[0], A("Y"))
+        self.assertEqual(type(hints["field_c"].__metadata__[0]), int)
+
+        hints = get_type_hints(Form, include_extras=True)
+        self.assertEqual(type(hints["box_a"].__metadata__[0]), B)
+        self.assertEqual(hints["box_a"].__metadata__[0], B("X"))
+        self.assertEqual(type(hints["box_b"].__metadata__[0]), B)
+        self.assertEqual(hints["box_b"].__metadata__[0], B("Y"))
+        self.assertEqual(type(hints["box_c"].__metadata__[0]), float)
+
 
 class TypeAliasTests(BaseTestCase):
     def test_canonical_usage_with_variable_annotation(self):
