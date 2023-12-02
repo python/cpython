@@ -34,7 +34,6 @@
 #include "pycore_flowgraph.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
@@ -884,49 +883,49 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 int
-PyUnstable_OpcodeIsValid(int opcode)
+_PyCompile_OpcodeIsValid(int opcode)
 {
     return IS_VALID_OPCODE(opcode);
 }
 
 int
-PyUnstable_OpcodeHasArg(int opcode)
+_PyCompile_OpcodeHasArg(int opcode)
 {
     return OPCODE_HAS_ARG(opcode);
 }
 
 int
-PyUnstable_OpcodeHasConst(int opcode)
+_PyCompile_OpcodeHasConst(int opcode)
 {
     return OPCODE_HAS_CONST(opcode);
 }
 
 int
-PyUnstable_OpcodeHasName(int opcode)
+_PyCompile_OpcodeHasName(int opcode)
 {
     return OPCODE_HAS_NAME(opcode);
 }
 
 int
-PyUnstable_OpcodeHasJump(int opcode)
+_PyCompile_OpcodeHasJump(int opcode)
 {
     return OPCODE_HAS_JUMP(opcode);
 }
 
 int
-PyUnstable_OpcodeHasFree(int opcode)
+_PyCompile_OpcodeHasFree(int opcode)
 {
     return OPCODE_HAS_FREE(opcode);
 }
 
 int
-PyUnstable_OpcodeHasLocal(int opcode)
+_PyCompile_OpcodeHasLocal(int opcode)
 {
     return OPCODE_HAS_LOCAL(opcode);
 }
 
 int
-PyUnstable_OpcodeHasExc(int opcode)
+_PyCompile_OpcodeHasExc(int opcode)
 {
     return IS_BLOCK_PUSH_OPCODE(opcode);
 }
@@ -1383,7 +1382,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     else {
         RETURN_IF_ERROR(compiler_set_qualname(c));
     }
-    ADDOP_I(c, loc, RESUME, 0);
+    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = -1;
@@ -1407,8 +1406,8 @@ compiler_exit_scope(struct compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            _PyErr_WriteUnraisableMsg("on removing the last compiler "
-                                      "stack item", NULL);
+            PyErr_FormatUnraisable("Exception ignored on removing "
+                                   "the last compiler stack item");
         }
     }
     else {
@@ -1550,9 +1549,9 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     // Set up a virtual try/except to handle when StopIteration is raised during
     // a close or throw call. The only way YIELD_VALUE raises if they do!
     ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
-    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP_I(c, loc, YIELD_VALUE, 1);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-    ADDOP_I(c, loc, RESUME, await ? 3 : 2);
+    ADDOP_I(c, loc, RESUME, await ? RESUME_AFTER_AWAIT : RESUME_AFTER_YIELD_FROM);
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, fail);
@@ -4161,7 +4160,7 @@ addop_yield(struct compiler *c, location loc) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
-    ADDOP_I(c, loc, RESUME, 1);
+    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
     return SUCCESS;
 }
 
@@ -5043,8 +5042,12 @@ compiler_joined_str(struct compiler *c, expr_ty e)
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
-        if (asdl_seq_LEN(e->v.JoinedStr.values) != 1) {
-            ADDOP_I(c, loc, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+        if (value_count > 1) {
+            ADDOP_I(c, loc, BUILD_STRING, value_count);
+        }
+        else if (value_count == 0) {
+            _Py_DECLARE_STR(empty, "");
+            ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
         }
     }
     return SUCCESS;

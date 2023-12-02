@@ -1,1 +1,0 @@
-Micro-optimization: Avoid calling ``min()``, ``max()`` in :meth:`BaseEventLoop._run_once`.

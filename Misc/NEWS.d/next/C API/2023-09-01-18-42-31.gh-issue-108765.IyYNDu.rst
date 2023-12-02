@@ -1,6 +1,0 @@
-``Python.h`` no longer includes these standard header files: ``<time.h>``,
-``<sys/select.h>`` and ``<sys/time.h>``. If needed, they should now be included
-explicitly. For example, ``<time.h>`` provides the ``clock()`` and ``gmtime()``
-functions, ``<sys/select.h>`` provides the ``select()`` function, and
-``<sys/time.h>`` provides the ``futimes()``, ``gettimeofday()`` and
-``setitimer()`` functions. Patch by Victor Stinner.

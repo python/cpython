@@ -1,1 +1,0 @@
-:mod:`dis` module command-line interface is now mentioned in documentation.

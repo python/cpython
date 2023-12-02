@@ -1,2 +1,0 @@
-Use the :mod:`traceback` implementation for the default
-:c:func:`PyErr_Display` functionality. Patch by Pablo Galindo

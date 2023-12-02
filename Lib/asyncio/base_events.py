@@ -305,7 +305,7 @@ class Server(events.AbstractServer):
         self._waiters = None
         for waiter in waiters:
             if not waiter.done():
-                waiter.set_result(waiter)
+                waiter.set_result(None)
 
     def _start_serving(self):
         if self._serving:
@@ -377,7 +377,27 @@ class Server(events.AbstractServer):
             self._serving_forever_fut = None
 
     async def wait_closed(self):
-        if self._waiters is None or self._active_count == 0:
+        """Wait until server is closed and all connections are dropped.
+
+        - If the server is not closed, wait.
+        - If it is closed, but there are still active connections, wait.
+
+        Anyone waiting here will be unblocked once both conditions
+        (server is closed and all connections have been dropped)
+        have become true, in either order.
+
+        Historical note: In 3.11 and before, this was broken, returning
+        immediately if the server was already closed, even if there
+        were still active connections. An attempted fix in 3.12.0 was
+        still broken, returning immediately if the server was still
+        open and there were no active connections. Hopefully in 3.12.1
+        we have it right.
+        """
+        # Waiters are unblocked by self._wakeup(), which is called
+        # from two places: self.close() and self._detach(), but only
+        # when both conditions have become true. To signal that this
+        # has happened, self._wakeup() sets self._waiters to None.
+        if self._waiters is None:
             return
         waiter = self._loop.create_future()
         self._waiters.append(waiter)
@@ -400,6 +420,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
+        # The preserved state of async generator hooks.
+        self._old_agen_hooks = None
         # In debug mode, if the execution of a callback or a step of a task
         # exceed this duration in seconds, the slow callback/task is logged.
         self.slow_callback_duration = 0.1
@@ -601,29 +623,52 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise RuntimeError(
                 'Cannot run the event loop while another loop is running')
 
-    def run_forever(self):
-        """Run until stop() is called."""
+    def _run_forever_setup(self):
+        """Prepare the run loop to process events.
+
+        This method exists so that custom custom event loop subclasses (e.g., event loops
+        that integrate a GUI event loop with Python's event loop) have access to all the
+        loop setup logic.
+        """
         self._check_closed()
         self._check_running()
         self._set_coroutine_origin_tracking(self._debug)
 
-        old_agen_hooks = sys.get_asyncgen_hooks()
-        try:
-            self._thread_id = threading.get_ident()
-            sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
-                                   finalizer=self._asyncgen_finalizer_hook)
+        self._old_agen_hooks = sys.get_asyncgen_hooks()
+        self._thread_id = threading.get_ident()
+        sys.set_asyncgen_hooks(
+            firstiter=self._asyncgen_firstiter_hook,
+            finalizer=self._asyncgen_finalizer_hook
+        )
 
-            events._set_running_loop(self)
+        events._set_running_loop(self)
+
+    def _run_forever_cleanup(self):
+        """Clean up after an event loop finishes the looping over events.
+
+        This method exists so that custom custom event loop subclasses (e.g., event loops
+        that integrate a GUI event loop with Python's event loop) have access to all the
+        loop cleanup logic.
+        """
+        self._stopping = False
+        self._thread_id = None
+        events._set_running_loop(None)
+        self._set_coroutine_origin_tracking(False)
+        # Restore any pre-existing async generator hooks.
+        if self._old_agen_hooks is not None:
+            sys.set_asyncgen_hooks(*self._old_agen_hooks)
+            self._old_agen_hooks = None
+
+    def run_forever(self):
+        """Run until stop() is called."""
+        try:
+            self._run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
                     break
         finally:
-            self._stopping = False
-            self._thread_id = None
-            events._set_running_loop(None)
-            self._set_coroutine_origin_tracking(False)
-            sys.set_asyncgen_hooks(*old_agen_hooks)
+            self._run_forever_cleanup()
 
     def run_until_complete(self, future):
         """Run until the Future is done.

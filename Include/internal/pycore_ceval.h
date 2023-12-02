@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "dynamic_annotations.h" // _Py_ANNOTATE_RWLOCK_CREATE
+
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -19,6 +21,8 @@ struct _ceval_runtime_state;
 PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 
 // Helper to look up a builtin object
 // Export for 'array' shared extension
@@ -51,16 +55,6 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     _Py_pending_call_func func,
     void *arg,
     int flags);
-
-typedef int (*_Py_simple_func)(void *);
-extern int _Py_CallInInterpreter(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
-extern int _Py_CallInInterpreterAndRawFree(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
 
 extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
@@ -107,6 +101,7 @@ extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
 extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
+extern void _PyPerfTrampoline_FreeArenas(void);
 extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE

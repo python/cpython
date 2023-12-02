@@ -103,7 +103,7 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the current directory nor the user's
-   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   site-packages directory. All ``PYTHON*`` environment variables are
    ignored, too.
 
    Many standard library modules contain code that is invoked on their execution
@@ -161,7 +161,7 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the script's directory nor the user's
-   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   site-packages directory. All ``PYTHON*`` environment variables are
    ignored, too.
 
    .. audit-event:: cpython.run_file filename
@@ -280,7 +280,7 @@ Miscellaneous options
 
 .. option:: -E
 
-   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   Ignore all ``PYTHON*`` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    See also the :option:`-P` and :option:`-I` (isolated) options.
@@ -303,7 +303,7 @@ Miscellaneous options
    and :option:`-s` options.
 
    In isolated mode :data:`sys.path` contains neither the script's directory nor
-   the user's site-packages directory. All :envvar:`PYTHON*` environment
+   the user's site-packages directory. All ``PYTHON*`` environment
    variables are ignored, too. Further restrictions may be imposed to prevent
    the user from injecting malicious code.
 
@@ -362,7 +362,7 @@ Miscellaneous options
    randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
-   so that the :meth:`__hash__` values of str and bytes objects
+   so that the :meth:`~object.__hash__` values of str and bytes objects
    are "salted" with an unpredictable random value.  Although they remain
    constant within an individual Python process, they are not predictable
    between repeated invocations of Python.
@@ -535,12 +535,13 @@ Miscellaneous options
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
    * ``-X frozen_modules`` determines whether or not frozen modules are
-     ignored by the import machinery.  A value of "on" means they get
-     imported and "off" means they are ignored.  The default is "on"
+     ignored by the import machinery.  A value of ``on`` means they get
+     imported and ``off`` means they are ignored.  The default is ``on``
      if this is an installed Python (the normal case).  If it's under
-     development (running from the source tree) then the default is "off".
-     Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
-     frozen modules are always used, even if this flag is set to "off".
+     development (running from the source tree) then the default is ``off``.
+     Note that the :mod:`!importlib_bootstrap` and
+     :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+     if this flag is set to ``off``. See also :envvar:`PYTHON_FROZEN_MODULES`.
    * ``-X perf`` enables support for the Linux ``perf`` profiler.
      When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
@@ -552,6 +553,12 @@ Miscellaneous options
      This option may be useful for users who need to limit CPU resources of a
      container system. See also :envvar:`PYTHON_CPU_COUNT`.
      If *n* is ``default``, nothing is overridden.
+   * :samp:`-X presite={package.module}` specifies a module that should be
+     imported before the :mod:`site` module is executed and before the
+     :mod:`__main__` module exists.  Therefore, the imported module isn't
+     :mod:`__main__`. This can be used to execute code early during Python
+     initialization. Python needs to be :ref:`built in debug mode <debug-build>`
+     for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -601,6 +608,9 @@ Miscellaneous options
 
    .. versionadded:: 3.13
       The ``-X cpu_count`` option.
+
+   .. versionadded:: 3.13
+      The ``-X presite`` option.
 
 
 Options you shouldn't use
@@ -860,9 +870,10 @@ conflict.
 
    If this environment variable is set to a non-empty string,
    :func:`faulthandler.enable` is called at startup: install a handler for
-   :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and
-   :const:`SIGILL` signals to dump the Python traceback.  This is equivalent to
-   :option:`-X` ``faulthandler`` option.
+   :const:`~signal.SIGSEGV`, :const:`~signal.SIGFPE`,
+   :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS` and
+   :const:`~signal.SIGILL` signals to dump the Python traceback.
+   This is equivalent to :option:`-X` ``faulthandler`` option.
 
    .. versionadded:: 3.3
 
@@ -911,6 +922,9 @@ conflict.
    * ``pymalloc``: use the :ref:`pymalloc allocator <pymalloc>` for
      :c:macro:`PYMEM_DOMAIN_MEM` and :c:macro:`PYMEM_DOMAIN_OBJ` domains and use
      the :c:func:`malloc` function for the :c:macro:`PYMEM_DOMAIN_RAW` domain.
+   * ``mimalloc``: use the :ref:`mimalloc allocator <mimalloc>` for
+     :c:macro:`PYMEM_DOMAIN_MEM` and :c:macro:`PYMEM_DOMAIN_OBJ` domains and use
+     the :c:func:`malloc` function for the :c:macro:`PYMEM_DOMAIN_RAW` domain.
 
    Install :ref:`debug hooks <pymem-debug-hooks>`:
 
@@ -918,6 +932,7 @@ conflict.
      allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
+   * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
@@ -1081,6 +1096,20 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_FROZEN_MODULES
+
+   If this variable is set to ``on`` or ``off``, it determines whether or not
+   frozen modules are ignored by the import machinery.  A value of ``on`` means
+   they get imported and ``off`` means they are ignored.  The default is ``on``
+   for non-debug builds (the normal case) and ``off`` for debug builds.
+   Note that the :mod:`!importlib_bootstrap` and
+   :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+   if this flag is set to ``off``.
+
+   See also the :option:`-X frozen_modules <-X>` command-line option.
+
+   .. versionadded:: 3.13
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
@@ -1090,13 +1119,33 @@ Debug-mode variables
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
 
-   Need Python configured with the :option:`--with-trace-refs` build option.
+   Needs Python configured with the :option:`--with-trace-refs` build option.
 
-.. envvar:: PYTHONDUMPREFSFILE=FILENAME
+.. envvar:: PYTHONDUMPREFSFILE
 
    If set, Python will dump objects and reference counts still alive
-   after shutting down the interpreter into a file called *FILENAME*.
+   after shutting down the interpreter into a file under the path given
+   as the value to this environment variable.
 
-   Need Python configured with the :option:`--with-trace-refs` build option.
+   Needs Python configured with the :option:`--with-trace-refs` build option.
 
    .. versionadded:: 3.11
+
+.. envvar:: PYTHON_PRESITE
+
+   If this variable is set to a module, that module will be imported
+   early in the interpreter lifecycle, before the :mod:`site` module is
+   executed, and before the :mod:`__main__` module is created.
+   Therefore, the imported module is not treated as :mod:`__main__`.
+
+   This can be used to execute code early during Python initialization.
+
+   To import a submodule, use ``package.module`` as the value, like in
+   an import statement.
+
+   See also the :option:`-X presite <-X>` command-line option,
+   which takes precedence over this variable.
+
+   Needs Python configured with the :option:`--with-pydebug` build option.
+
+   .. versionadded:: 3.13
