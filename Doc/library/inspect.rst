@@ -766,7 +766,7 @@ function.
 
    .. method:: format(*, max_width=None)
 
-      Convert signature object to string.
+      Create a string representation of the :class:`Signature` object.
 
       If *max_width* is passed, the method will attempt to fit
       the signature into lines of at most *max_width* characters.
