@@ -663,12 +663,13 @@ function.
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
    .. versionchanged:: 3.5
-      Added ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
-      ``callable`` specifically (``callable.__wrapped__`` will not be used to
+      The *follow_wrapped* parameter was added.
+      Pass ``False`` to get a signature of
+      *callable* specifically (``callable.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
    .. versionchanged:: 3.10
-      The ``globals``, ``locals``, and ``eval_str`` parameters were added.
+      The *globals*, *locals*, and *eval_str* parameters were added.
 
    .. note::
 
@@ -769,7 +770,7 @@ function.
        .. versionadded:: 3.5
 
        .. versionchanged:: 3.10
-         The ``globals``, ``locals``, and ``eval_str`` parameters were added.
+         The *globals*, *locals*, and *eval_str* parameters were added.
 
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
