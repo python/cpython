@@ -775,7 +775,7 @@ function.
 
           class MySignature(Signature):
               pass
-          sig = MySignature.from_callable(min)
+          sig = MySignature.from_callable(sum)
           assert isinstance(sig, MySignature)
 
        Its behavior is otherwise identical to that of :func:`signature`.
