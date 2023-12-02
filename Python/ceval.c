@@ -1110,7 +1110,8 @@ deoptimize:
     int pc = next_uop - 1 - current_executor->trace;
     uintptr_t *pcounter = current_executor->extra + pc;
     *pcounter += 1;
-    if (*pcounter == 16 &&
+    if (*pcounter == 16 &&  // TODO: use resume_threshold
+        tstate->interp->optimizer != &_PyOptimizer_Default &&
         (opcode == POP_JUMP_IF_FALSE ||
          opcode == POP_JUMP_IF_TRUE ||
          opcode == POP_JUMP_IF_NONE ||
