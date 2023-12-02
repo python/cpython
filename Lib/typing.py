@@ -766,9 +766,7 @@ def Literal(self, *parameters):
     parameters = _flatten_literal_params(parameters)
 
     try:
-        parameters = tuple(
-            p for p, _ in _deduplicate(list(_value_and_type_iter(parameters)))
-        )
+        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
     except TypeError:  # unhashable parameters
         pass
 
