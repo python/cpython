@@ -1579,6 +1579,13 @@ def getcallargs(func, /, *positional, **named):
     A dict is returned, with keys the function argument names (including the
     names of the * and ** arguments, if any), and values the respective bound
     values from 'positional' and 'named'."""
+    import warnings
+    warnings._deprecated(
+        "getcallargs",
+        '{name!r} is deprecated since Python 3.5 and slated for removal in Python {remove}; '
+        'use `inspect.Singature.bind` instead',
+        remove=(3, 15),
+    )
     spec = getfullargspec(func)
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = spec
     f_name = func.__name__

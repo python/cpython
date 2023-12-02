@@ -1810,12 +1810,20 @@ class TestGetClosureVars(unittest.TestCase):
 
 
 class TestGetcallargsFunctions(unittest.TestCase):
+    def assertDeprecated(self):
+        import re
+        return self.assertWarnsRegex(
+            DeprecationWarning,
+            re.escape("'getcallargs' is deprecated since Python 3.5 "
+                      "and slated for removal in Python 3.15"),
+        )
 
     def assertEqualCallArgs(self, func, call_params_string, locs=None):
         locs = dict(locs or {}, func=func)
         r1 = eval('func(%s)' % call_params_string, None, locs)
-        r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
-                  locs)
+        with self.assertDeprecated():
+            r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
+                      locs)
         self.assertEqual(r1, r2)
 
     def assertEqualException(self, func, call_param_string, locs=None):
@@ -1827,8 +1835,9 @@ class TestGetcallargsFunctions(unittest.TestCase):
         else:
             self.fail('Exception not raised')
         try:
-            eval('inspect.getcallargs(func, %s)' % call_param_string, None,
-                 locs)
+            with self.assertDeprecated():
+                eval('inspect.getcallargs(func, %s)' % call_param_string, None,
+                     locs)
         except Exception as e:
             ex2 = e
         else:
@@ -1987,14 +1996,16 @@ class TestGetcallargsFunctions(unittest.TestCase):
         def f5(*, a): pass
         with self.assertRaisesRegex(TypeError,
                                     'missing 1 required keyword-only'):
-            inspect.getcallargs(f5)
+            with self.assertDeprecated():
+                inspect.getcallargs(f5)
 
 
         # issue20817:
         def f6(a, b, c):
             pass
         with self.assertRaisesRegex(TypeError, "'a', 'b' and 'c'"):
-            inspect.getcallargs(f6)
+            with self.assertDeprecated():
+                inspect.getcallargs(f6)
 
         # bpo-33197
         with self.assertRaisesRegex(ValueError,
