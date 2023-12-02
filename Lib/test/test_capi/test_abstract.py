@@ -8,6 +8,30 @@ from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
 
+class StrSubclass(str):
+    pass
+
+class BytesSubclass(bytes):
+    pass
+
+class WithStr:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return self.value
+
+class WithRepr:
+    def __init__(self, value):
+        self.value = value
+    def __repr__(self):
+        return self.value
+
+class WithBytes:
+    def __init__(self, value):
+        self.value = value
+    def __bytes__(self):
+        return self.value
+
 class TestObject:
     @property
     def evil(self):
@@ -44,6 +68,68 @@ def gen():
 
 
 class CAPITest(unittest.TestCase):
+    def assertTypedEqual(self, actual, expected):
+        self.assertIs(type(actual), type(expected))
+        self.assertEqual(actual, expected)
+
+    def test_object_str(self):
+        # Test PyObject_Str()
+        object_str = _testcapi.object_str
+        self.assertTypedEqual(object_str(''), '')
+        self.assertTypedEqual(object_str('abc'), 'abc')
+        self.assertTypedEqual(object_str('\U0001f40d'), '\U0001f40d')
+        self.assertTypedEqual(object_str(StrSubclass('abc')), 'abc')
+        self.assertTypedEqual(object_str(WithStr('abc')), 'abc')
+        self.assertTypedEqual(object_str(WithStr(StrSubclass('abc'))), StrSubclass('abc'))
+        self.assertTypedEqual(object_str(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(object_str(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_str(NULL), '<NULL>')
+
+    def test_object_repr(self):
+        # Test PyObject_Repr()
+        object_repr = _testcapi.object_repr
+        self.assertTypedEqual(object_repr(''), "''")
+        self.assertTypedEqual(object_repr('abc'), "'abc'")
+        self.assertTypedEqual(object_repr('\U0001f40d'), "'\U0001f40d'")
+        self.assertTypedEqual(object_repr(StrSubclass('abc')), "'abc'")
+        self.assertTypedEqual(object_repr(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_repr(WithRepr('<\U0001f40d>')), '<\U0001f40d>')
+        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<\U0001f40d>'))), StrSubclass('<\U0001f40d>'))
+        self.assertTypedEqual(object_repr(NULL), '<NULL>')
+
+    def test_object_ascii(self):
+        # Test PyObject_ASCII()
+        object_ascii = _testcapi.object_ascii
+        self.assertTypedEqual(object_ascii(''), "''")
+        self.assertTypedEqual(object_ascii('abc'), "'abc'")
+        self.assertTypedEqual(object_ascii('\U0001f40d'), r"'\U0001f40d'")
+        self.assertTypedEqual(object_ascii(StrSubclass('abc')), "'abc'")
+        self.assertTypedEqual(object_ascii(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_ascii(WithRepr('<\U0001f40d>')), r'<\U0001f40d>')
+        self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<\U0001f40d>'))), r'<\U0001f40d>')
+        self.assertTypedEqual(object_ascii(NULL), '<NULL>')
+
+    def test_object_bytes(self):
+        # Test PyObject_Bytes()
+        object_bytes = _testcapi.object_bytes
+        self.assertTypedEqual(object_bytes(b''), b'')
+        self.assertTypedEqual(object_bytes(b'abc'), b'abc')
+        self.assertTypedEqual(object_bytes(BytesSubclass(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes(WithBytes(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes(WithBytes(BytesSubclass(b'abc'))), BytesSubclass(b'abc'))
+        self.assertTypedEqual(object_bytes(bytearray(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes(memoryview(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes([97, 98, 99]), b'abc')
+        self.assertTypedEqual(object_bytes((97, 98, 99)), b'abc')
+        self.assertTypedEqual(object_bytes(iter([97, 98, 99])), b'abc')
+        self.assertRaises(TypeError, object_bytes, WithBytes(bytearray(b'abc')))
+        self.assertRaises(TypeError, object_bytes, WithBytes([97, 98, 99]))
+        self.assertRaises(TypeError, object_bytes, 3)
+        self.assertRaises(TypeError, object_bytes, 'abc')
+        self.assertRaises(TypeError, object_bytes, object())
+        self.assertTypedEqual(object_bytes(NULL), b'<NULL>')
 
     def test_object_getattr(self):
         xgetattr = _testcapi.object_getattr

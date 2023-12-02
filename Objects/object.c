@@ -296,7 +296,7 @@ _Py_DecRef(PyObject *o)
     Py_DECREF(o);
 }
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 # ifdef Py_REF_DEBUG
 static inline int
 is_shared_refcnt_dead(Py_ssize_t shared)
@@ -414,7 +414,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     return refcnt;
 }
-#endif  /* Py_NOGIL */
+#endif  /* Py_GIL_DISABLED */
 
 
 /**************************************/
@@ -2359,7 +2359,7 @@ new_reference(PyObject *op)
         _PyTraceMalloc_NewReference(op);
     }
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
     op->ob_refcnt = 1;
 #else
     op->ob_tid = _Py_ThreadId();

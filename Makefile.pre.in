@@ -1609,6 +1609,7 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
 
 Python/flowgraph.o: \
@@ -2731,6 +2732,7 @@ clobber: clean
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -f python-config.py python-config
+	-rm -rf cross-build
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]

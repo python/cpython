@@ -502,7 +502,7 @@ Glossary
       .. index:: single: generator expression
 
    generator expression
-      An expression that returns an iterator.  It looks like a normal expression
+      An :term:`expression` that returns an :term:`iterator`.  It looks like a normal expression
       followed by a :keyword:`!for` clause defining a loop variable, range,
       and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
@@ -578,6 +578,16 @@ Glossary
       An Integrated Development and Learning Environment for Python.
       :ref:`idle` is a basic editor and interpreter environment
       which ships with the standard distribution of Python.
+
+   immortal
+      If an object is immortal, its reference count is never modified, and
+      therefore it is never deallocated.
+
+      Built-in strings and singletons are immortal objects. For example,
+      :const:`True` and :const:`None` singletons are immmortal.
+
+      See `PEP 683 – Immortal Objects, Using a Fixed Refcount
+      <https://peps.python.org/pep-0683/>`_ for more information.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -1056,7 +1066,7 @@ Glossary
    reference count
       The number of references to an object.  When the reference count of an
       object drops to zero, it is deallocated.  Some objects are
-      "immortal" and have reference counts that are never modified, and
+      :term:`immortal` and have reference counts that are never modified, and
       therefore the objects are never deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
       :term:`CPython` implementation.  Programmers can call the

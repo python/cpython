@@ -1098,6 +1098,21 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
+    def test_get_type_module_name(self):
+        from collections import OrderedDict
+        ht = _testcapi.get_heaptype_for_name()
+        for cls, expected in {
+            int: 'builtins',
+            OrderedDict: 'collections',
+            ht: '_testcapi',
+        }.items():
+            with self.subTest(repr(cls)):
+                modname = _testinternalcapi.get_type_module_name(cls)
+                self.assertEqual(modname, expected)
+
+        ht.__module__ = 'test_module'
+        modname = _testinternalcapi.get_type_module_name(ht)
+        self.assertEqual(modname, 'test_module')
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
@@ -2807,6 +2822,36 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_GUARD_IS_FALSE_POP", uops)
+
+    def test_for_iter_tier_two(self):
+        class MyIter:
+            def __init__(self, n):
+                self.n = n
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.n -= 1
+                if self.n < 0:
+                    raise StopIteration
+                return self.n
+
+        def testfunc(n, m):
+            x = 0
+            for i in range(m):
+                for j in MyIter(n):
+                    x += 1000*i + j
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            x = testfunc(10, 10)
+
+        self.assertEqual(x, sum(range(10)) * 10010)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
 
 if __name__ == "__main__":
