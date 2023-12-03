@@ -262,7 +262,7 @@ _Py_ThreadId(void)
 #elif defined(__aarch64__)
     __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
 #elif defined(__powerpc64__)
-    #if defined(__clang__) && __has_builtin(__builtin_thread_pointer)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
     tid = __builtin_thread_pointer();
     #else
     register uintptr_t tp __asm__ ("r13");
@@ -270,7 +270,7 @@ _Py_ThreadId(void)
     tid = tp;
     #endif
 #elif defined(__powerpc__)
-    #if defined(__clang__) && __has_builtin(__builtin_thread_pointer)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
     tid = __builtin_thread_pointer();
     #else
     register uintptr_t tp __asm__ ("r2");
