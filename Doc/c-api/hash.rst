@@ -45,4 +45,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member.
 
    Get the hash function definition.
 
+   .. seealso::
+      :pep:`456` "Secure and interchangeable hash algorithm".
+
    .. versionadded:: 3.4
