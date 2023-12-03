@@ -722,10 +722,6 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     If both onerror and onexc are set, onerror is ignored and onexc is used.
     """
 
-    if onerror is not None:
-        warnings.warn("onerror argument is deprecated, use onexc instead",
-                      DeprecationWarning, stacklevel=2)
-
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
         def onexc(*args):

@@ -209,8 +209,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onerror(*args):
             errors.append(args)
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(link, onerror=onerror)
+        shutil.rmtree(link, onerror=onerror)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -271,8 +270,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onerror(*args):
             errors.append(args)
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(link, onerror=onerror)
+        shutil.rmtree(link, onerror=onerror)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -341,8 +339,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onerror(*args):
             errors.append(args)
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(filename, onerror=onerror)
+        shutil.rmtree(filename, onerror=onerror)
         self.assertEqual(len(errors), 2)
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
@@ -411,8 +408,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.addCleanup(os.chmod, self.child_file_path, old_child_file_mode)
         self.addCleanup(os.chmod, self.child_dir_path, old_child_dir_mode)
 
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
+        shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
         # Test whether onerror has actually been called.
         self.assertEqual(self.errorState, 3,
                          "Expected call to onerror function did not happen.")
@@ -538,8 +534,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.addCleanup(os.chmod, self.child_file_path, old_child_file_mode)
         self.addCleanup(os.chmod, self.child_dir_path, old_child_dir_mode)
 
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(TESTFN, onerror=onerror, onexc=onexc)
+        shutil.rmtree(TESTFN, onerror=onerror, onexc=onexc)
         self.assertTrue(onexc_called)
         self.assertFalse(onerror_called)
 
