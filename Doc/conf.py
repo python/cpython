@@ -24,7 +24,13 @@ extensions = [
     'sphinx.ext.doctest',
 ]
 
-# Skip if downstream redistributors haven't installed it
+# Skip if downstream redistributors haven't installed them
+try:
+    import notfound.extension
+except ImportError:
+    pass
+else:
+    extensions.append('notfound.extension')
 try:
     import sphinxext.opengraph
 except ImportError:
@@ -66,7 +72,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '3.2'
+needs_sphinx = '4.2'
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
@@ -288,9 +294,8 @@ html_context = {
     "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
 
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
+# This 'Last updated on:' timestamp is inserted at the bottom of every page.
+html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime())
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']

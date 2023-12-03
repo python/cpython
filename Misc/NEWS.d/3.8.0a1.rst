@@ -380,7 +380,7 @@ Implement :pep:`572` (assignment expressions). Patch by Emily Morehouse.
 .. nonce: voIdcp
 .. section: Core and Builtins
 
-Speed up :class:`namedtuple` attribute access by 1.6x using a C fast-path
+Speed up :func:`namedtuple` attribute access by 1.6x using a C fast-path
 for the name descriptors. Patch by Pablo Galindo.
 
 ..
@@ -1965,7 +1965,7 @@ result of an internal future if it's already done.
 .. section: Library
 
 Add a deprecated warning for the :meth:`threading.Thread.isAlive` method.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -3592,7 +3592,7 @@ Python 3.5.
 .. nonce: V8Ou3K
 .. section: Library
 
-Deprecate :meth:`__getitem__` methods of
+Deprecate :meth:`~object.__getitem__` methods of
 :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
 and :class:`fileinput.FileInput`.
 
@@ -4974,7 +4974,7 @@ Enum members.
 .. section: Library
 
 Update error message when constructing invalid inspect.Parameters Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -8253,7 +8253,7 @@ Explain how IDLE's Shell displays output.
 
 Improve the doc about IDLE running user code.   The section is renamed from
 "IDLE -- console differences" is renamed "Running user code". It mostly
-covers the implications of using custom sys.stdxxx objects.
+covers the implications of using custom :samp:`sys.std{xxx}` objects.
 
 ..
 

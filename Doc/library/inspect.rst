@@ -620,7 +620,7 @@ function.
 
 .. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
-   Return a :class:`Signature` object for the given ``callable``::
+   Return a :class:`Signature` object for the given *callable*::
 
       >>> from inspect import signature
       >>> def foo(a, *, b:int, **kwargs):
@@ -640,32 +640,36 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   If the passed object has a ``__signature__`` attribute, this function
+   returns it without further computations.
+
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
-   :func:`inspect.get_annotations()`.  The
-   ``global``, ``locals``, and ``eval_str`` parameters are passed
-   into :func:`inspect.get_annotations()` when resolving the
-   annotations; see the documentation for :func:`inspect.get_annotations()`
+   :func:`get_annotations`.  The
+   *global*, *locals*, and *eval_str* parameters are passed
+   into :func:`get_annotations` when resolving the
+   annotations; see the documentation for :func:`get_annotations`
    for instructions on how to use these parameters.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.  Also,
-   if the annotations are stringized, and ``eval_str`` is not false,
-   the ``eval()`` call(s) to un-stringize the annotations could
-   potentially raise any kind of exception.
+   if the annotations are stringized, and *eval_str* is not false,
+   the ``eval()`` call(s) to un-stringize the annotations in :func:`get_annotations`
+   could potentially raise any kind of exception.
 
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
    :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
-   .. versionadded:: 3.5
-      ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
-      ``callable`` specifically (``callable.__wrapped__`` will not be used to
+   .. versionchanged:: 3.5
+      The *follow_wrapped* parameter was added.
+      Pass ``False`` to get a signature of
+      *callable* specifically (``callable.__wrapped__`` will not be used to
       unwrap decorated callables.)
 
-   .. versionadded:: 3.10
-      ``globals``, ``locals``, and ``eval_str`` parameters.
+   .. versionchanged:: 3.10
+      The *globals*, *locals*, and *eval_str* parameters were added.
 
    .. note::
 
@@ -689,8 +693,8 @@ function.
    The optional *return_annotation* argument, can be an arbitrary Python object,
    is the "return" annotation of the callable.
 
-   Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
-   modified copy.
+   Signature objects are *immutable*.  Use :meth:`Signature.replace` or
+   :func:`copy.replace` to make a modified copy.
 
    .. versionchanged:: 3.5
       Signature objects are picklable and :term:`hashable`.
@@ -730,7 +734,7 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance replace was invoked
+      Create a new Signature instance based on the instance :meth:`replace` was invoked
       on.  It is possible to pass different ``parameters`` and/or
       ``return_annotation`` to override the corresponding properties of the base
       signature.  To remove return_annotation from the copied Signature, pass in
@@ -746,12 +750,24 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
+      Signature objects are also supported by generic function
+      :func:`copy.replace`.
+
+   .. method:: format(*, max_width=None)
+
+      Convert signature object to string.
+
+      If *max_width* is passed, the method will attempt to fit
+      the signature into lines of at most *max_width* characters.
+      If the signature is longer than *max_width*,
+      all parameters will be on separate lines.
+
+      .. versionadded:: 3.13
+
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
-       ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
-       without unwrapping its ``__wrapped__`` chain. ``globalns`` and
-       ``localns`` will be used as the namespaces when resolving annotations.
+       *obj*.
 
        This method simplifies subclassing of :class:`Signature`::
 
@@ -760,16 +776,18 @@ function.
          sig = MySignature.from_callable(min)
          assert isinstance(sig, MySignature)
 
+       Its behavior is otherwise identical to that of :func:`signature`.
+
        .. versionadded:: 3.5
 
-       .. versionadded:: 3.10
-          ``globalns`` and ``localns`` parameters.
+       .. versionchanged:: 3.10
+         The *globals*, *locals*, and *eval_str* parameters were added.
 
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
-   you can use :meth:`Parameter.replace` to create a modified copy.
+   you can use :meth:`Parameter.replace` or :func:`copy.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
       Parameter objects are picklable and :term:`hashable`.
@@ -891,6 +909,8 @@ function.
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
          "foo:'spam'"
+
+      Parameter objects are also supported by generic function :func:`copy.replace`.
 
    .. versionchanged:: 3.4
       In Python 3.3 Parameter objects were allowed to have ``name`` set
@@ -1458,10 +1478,11 @@ generator to be determined easily.
    Get current state of a generator-iterator.
 
    Possible states are:
-    * GEN_CREATED: Waiting to start execution.
-    * GEN_RUNNING: Currently being executed by the interpreter.
-    * GEN_SUSPENDED: Currently suspended at a yield expression.
-    * GEN_CLOSED: Execution has completed.
+
+   * GEN_CREATED: Waiting to start execution.
+   * GEN_RUNNING: Currently being executed by the interpreter.
+   * GEN_SUSPENDED: Currently suspended at a yield expression.
+   * GEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.2
 
@@ -1473,10 +1494,11 @@ generator to be determined easily.
    ``cr_frame`` attributes.
 
    Possible states are:
-    * CORO_CREATED: Waiting to start execution.
-    * CORO_RUNNING: Currently being executed by the interpreter.
-    * CORO_SUSPENDED: Currently suspended at an await expression.
-    * CORO_CLOSED: Execution has completed.
+
+   * CORO_CREATED: Waiting to start execution.
+   * CORO_RUNNING: Currently being executed by the interpreter.
+   * CORO_SUSPENDED: Currently suspended at an await expression.
+   * CORO_CLOSED: Execution has completed.
 
    .. versionadded:: 3.5
 
@@ -1489,10 +1511,11 @@ generator to be determined easily.
    ``ag_running`` and ``ag_frame`` attributes.
 
    Possible states are:
-    * AGEN_CREATED: Waiting to start execution.
-    * AGEN_RUNNING: Currently being executed by the interpreter.
-    * AGEN_SUSPENDED: Currently suspended at a yield expression.
-    * AGEN_CLOSED: Execution has completed.
+
+   * AGEN_CREATED: Waiting to start execution.
+   * AGEN_RUNNING: Currently being executed by the interpreter.
+   * AGEN_SUSPENDED: Currently suspended at a yield expression.
+   * AGEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.12
 
@@ -1650,6 +1673,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

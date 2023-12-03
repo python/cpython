@@ -93,6 +93,18 @@ _cache_format = {
         "counter": 1,
         "version": 2,
     },
+    "POP_JUMP_IF_TRUE": {
+        "counter": 1,
+    },
+    "POP_JUMP_IF_FALSE": {
+        "counter": 1,
+    },
+    "POP_JUMP_IF_NONE": {
+        "counter": 1,
+    },
+    "POP_JUMP_IF_NOT_NONE": {
+        "counter": 1,
+    },
 }
 
 _inline_cache_entries = {

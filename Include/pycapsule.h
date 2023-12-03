@@ -48,14 +48,9 @@ PyAPI_FUNC(int) PyCapsule_SetName(PyObject *capsule, const char *name);
 
 PyAPI_FUNC(int) PyCapsule_SetContext(PyObject *capsule, void *context);
 
-#ifdef Py_BUILD_CORE
-PyAPI_FUNC(int) _PyCapsule_SetTraverse(PyObject *op, traverseproc traverse_func, inquiry clear_func);
-#endif
-
 PyAPI_FUNC(void *) PyCapsule_Import(
     const char *name,           /* UTF-8 encoded string */
     int no_block);
-
 
 #ifdef __cplusplus
 }

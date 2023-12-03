@@ -2452,3 +2452,32 @@
     added = '3.13'
 [function.PyLong_AsInt]
     added = '3.13'
+[function.PyObject_HasAttrWithError]
+    added = '3.13'
+[function.PyObject_HasAttrStringWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyStringWithError]
+    added = '3.13'
+[function.Py_IsFinalizing]
+    added = '3.13'
+[function.PyUnicode_EqualToUTF8]
+    added = '3.13'
+[function.PyUnicode_EqualToUTF8AndSize]
+    added = '3.13'
+[function.PyMem_RawMalloc]
+    added = '3.13'
+[function.PyMem_RawCalloc]
+    added = '3.13'
+[function.PyMem_RawRealloc]
+    added = '3.13'
+[function.PyMem_RawFree]
+    added = '3.13'
+[function.PySys_Audit]
+    added = '3.13'
+[function.PySys_AuditTuple]
+    added = '3.13'
+[function._Py_SetRefcnt]
+    added = '3.13'
+    abi_only = true

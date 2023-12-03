@@ -176,7 +176,7 @@ The special characters are:
   ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
   and ``(?>x?)`` correspondingly.
 
-   .. versionadded:: 3.11
+  .. versionadded:: 3.11
 
 .. index::
    single: {} (curly brackets); in regular expressions
@@ -660,7 +660,7 @@ three digits in length.
    Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
 
 .. versionchanged:: 3.8
-   The ``'\N{name}'`` escape sequence has been added. As in string literals,
+   The :samp:`'\\N\\{{name}\\}'` escape sequence has been added. As in string literals,
    it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
 
 
