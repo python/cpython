@@ -443,6 +443,16 @@ class TestInterpreterStack(IsTestBase):
 
         git.abuse(7, 8, 9)
 
+    def assertDeprecated(self, name):
+        import re
+        return self.assertWarnsRegex(
+            DeprecationWarning,
+            re.escape(
+                f"{name!r} is deprecated and slated "
+                "for removal in Python 3.15",
+            ),
+        )
+
     def test_abuse_done(self):
         self.istest(inspect.istraceback, 'git.ex.__traceback__')
         self.istest(inspect.isframe, 'mod.fr')
@@ -489,21 +499,26 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(frame3.positions, dis.Positions(18, 18, 8, 13))
 
     def test_frame(self):
-        args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
+        with self.assertDeprecated('getargvalues'):
+            args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
         self.assertEqual(args, ['x', 'y'])
         self.assertEqual(varargs, None)
         self.assertEqual(varkw, None)
         self.assertEqual(locals, {'x': 11, 'p': 11, 'y': 14})
-        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
-                         '(x=11, y=14)')
+        with self.assertDeprecated('formatargvalues'):
+            format = inspect.formatargvalues(args, varargs, varkw, locals)
+        self.assertEqual(format, '(x=11, y=14)')
 
     def test_previous_frame(self):
-        args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
+        with self.assertDeprecated('getargvalues'):
+            args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
         self.assertEqual(args, ['a', 'b', 'c', 'd', 'e', 'f'])
         self.assertEqual(varargs, 'g')
         self.assertEqual(varkw, 'h')
-        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
-             '(a=7, b=8, c=9, d=3, e=4, f=5, *g=(), **h={})')
+        with self.assertDeprecated('formatargvalues'):
+            format = inspect.formatargvalues(args, varargs, varkw, locals)
+        self.assertEqual(format,
+            '(a=7, b=8, c=9, d=3, e=4, f=5, *g=(), **h={})')
 
     def test_frame_with_argument_override(self):
         # This tests shows that the current implementation of `getargvalues`:
@@ -516,8 +531,11 @@ class TestInterpreterStack(IsTestBase):
             b = 4
 
         inner()
-        args, varargs, varkw, locals = inspect.getargvalues(fr)
-        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
+        with self.assertDeprecated('getargvalues'):
+            args, varargs, varkw, locals = inspect.getargvalues(fr)
+        with self.assertDeprecated('formatargvalues'):
+            format = inspect.formatargvalues(args, varargs, varkw, locals)
+        self.assertEqual(format,
                          '(a=3, c=5, b=4)')
 
 

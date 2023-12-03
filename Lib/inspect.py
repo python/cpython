@@ -2433,53 +2433,20 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     s = getattr(func, "__text_signature__", None)
     if s:
         return _signature_fromstr(cls, func, s, skip_bound_arg)
-    return _signature_from_code(cls,
-                                func.__code__,
-                                globals=globals,
-                                locals=locals,
-                                eval_str=eval_str,
-                                is_duck_function=is_duck_function,
-                                func=func)
 
-def _signature_from_code(cls,
-                         func_code,
-                         *,
-                         globals=None,
-                         locals=None,
-                         eval_str=False,
-                         is_duck_function=False,
-                         func=None,
-                         compute_defaults=False):
-    """Private helper: function to get signature from code objects."""
     Parameter = cls._parameter_cls
 
     # Parameter information.
+    func_code = func.__code__
     pos_count = func_code.co_argcount
     arg_names = func_code.co_varnames
     posonly_count = func_code.co_posonlyargcount
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    if func is not None:
-        annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
-        defaults = func.__defaults__
-        kwdefaults = func.__kwdefaults__
-    else:
-        annotations = {}
-        if compute_defaults:
-            defaults = []
-            for name in positional:
-                if name in locals:
-                    defaults.append(locals[name])
-            defaults = tuple(defaults)
-
-            kwdefaults = {}
-            for name in keyword_only:
-                if name in locals:
-                    kwdefaults.update({name: locals[name]})
-        else:
-            defaults = None
-            kwdefaults = None
+    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
+    defaults = func.__defaults__
+    kwdefaults = func.__kwdefaults__
 
     if defaults:
         pos_default_count = len(defaults)
@@ -3161,11 +3128,26 @@ class Signature:
 
     @classmethod
     def from_frame(cls, frame):
-        """Constructs Signature from the given frame object."""
-        return _signature_from_code(cls, frame.f_code,
-                                    locals=frame.f_locals,
-                                    compute_defaults=True,
-                                    is_duck_function=True)
+        """Constructs Signature from a given frame object."""
+        func_code = frame.f_code
+        pos_count = func_code.co_argcount
+        arg_names = func_code.co_varnames
+        keyword_only_count = func_code.co_kwonlyargcount
+
+        defaults = []
+        for name in arg_names[:pos_count]:
+            if frame.f_locals and name in frame.f_locals:
+                defaults.append(frame.f_locals[name])
+
+        kwdefaults = {}
+        for name in arg_names[pos_count : pos_count + keyword_only_count]:
+            if frame.f_locals and name in frame.f_locals:
+                kwdefaults.update({name: frame.f_locals[name]})
+
+        func = types.FunctionType(func_code, {})
+        func.__defaults__ = tuple(defaults)
+        func.__kwdefaults__ = kwdefaults
+        return cls.from_callable(func)
 
     @property
     def parameters(self):
