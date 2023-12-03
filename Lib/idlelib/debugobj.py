@@ -120,7 +120,7 @@ def make_objecttreeitem(labeltext, object, setfunction=None):
     return c(labeltext, object, setfunction)
 
 
-def _object_browser(parent):  # htest #
+def _debug_object_browser(parent):  # htest #
     import sys
     from tkinter import Toplevel
     top = Toplevel(parent)
@@ -140,4 +140,4 @@ if __name__ == '__main__':
     main('idlelib.idle_test.test_debugobj', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(_object_browser)
+    run(_debug_object_browser)

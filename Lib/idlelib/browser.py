@@ -254,5 +254,6 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:  # If pass file on command line, unittest fails.
         from unittest import main
         main('idlelib.idle_test.test_browser', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_module_browser)

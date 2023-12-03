@@ -396,10 +396,11 @@ class IOBinding:
 def _io_binding(parent):  # htest #
     from tkinter import Toplevel, Text
 
-    root = Toplevel(parent)
-    root.title("Test IOBinding")
+    top = Toplevel(parent)
+    top.title("Test IOBinding")
     x, y = map(int, parent.geometry().split('+')[1:])
-    root.geometry("+%d+%d" % (x, y + 175))
+    top.geometry("+%d+%d" % (x, y + 175))
+
     class MyEditWin:
         def __init__(self, text):
             self.text = text
@@ -423,7 +424,7 @@ def _io_binding(parent):  # htest #
         def savecopy(self, event):
             self.text.event_generate("<<save-copy-of-window-as-file>>")
 
-    text = Text(root)
+    text = Text(top)
     text.pack()
     text.focus_set()
     editwin = MyEditWin(text)
