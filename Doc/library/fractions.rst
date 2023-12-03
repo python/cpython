@@ -214,8 +214,8 @@ another rational number, or from a string.
       ``'G'`` or ``'%'`` then formatting follows the general rules for fill,
       alignment, sign handling, minimum width, and grouping as described in the
       :ref:`format specification mini-language <formatspec>`. The "alternate
-      form" flag ``'#'`` is supported: if present, it forces the output string to
-      always include an explicit denominator, even when the value being
+      form" flag ``'#'`` is supported: if present, it forces the output string
+      to always include an explicit denominator, even when the value being
       formatted is an exact integer. The zero-fill flag ``'0'`` is not
       supported.
 
