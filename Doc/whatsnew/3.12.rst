@@ -1260,7 +1260,7 @@ Deprecated
   :mod:`concurrent.futures` the fix is to use a different
   :mod:`multiprocessing` start method such as ``"spawn"`` or ``"forkserver"``.
 
-* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated,
+* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated;
   use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
 * :mod:`sqlite3`:
