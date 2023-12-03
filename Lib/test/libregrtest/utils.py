@@ -637,7 +637,7 @@ def display_header(use_resources: tuple[str, ...],
     asan = support.check_sanitizer(address=True)
     msan = support.check_sanitizer(memory=True)
     ubsan = support.check_sanitizer(ub=True)
-    thread = support.check_sanitizer(thread=True)
+    tsan = support.check_sanitizer(thread=True)
     sanitizers = []
     if asan:
         sanitizers.append("address")
@@ -645,7 +645,7 @@ def display_header(use_resources: tuple[str, ...],
         sanitizers.append("memory")
     if ubsan:
         sanitizers.append("undefined behavior")
-    if thread:
+    if tsan:
         sanitizers.append("thread")
     if sanitizers:
         print(f"== sanitizers: {', '.join(sanitizers)}")
@@ -653,7 +653,7 @@ def display_header(use_resources: tuple[str, ...],
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
             (ubsan, "UBSAN_OPTIONS"),
-            (thread, "TSAN_OPTIONS"),
+            (tsan, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)
             if sanitizer and options is not None:
