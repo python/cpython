@@ -287,6 +287,8 @@ General Options
 
    .. versionadded:: 3.11
 
+.. _free-threading-build:
+
 .. option:: --disable-gil
 
    Enables **experimental** support for running Python without the

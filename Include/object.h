@@ -88,7 +88,7 @@ having all the lower 32 bits set, which will avoid the reference count to go
 beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 */
-#define _Py_IMMORTAL_REFCNT UINT_MAX
+#define _Py_IMMORTAL_REFCNT _Py_CAST(Py_ssize_t, UINT_MAX)
 
 #else
 /*
@@ -103,7 +103,7 @@ immortality, but the execution would still be correct.
 Reference count increases and decreases will first go through an immortality
 check by comparing the reference count field to the immortality reference count.
 */
-#define _Py_IMMORTAL_REFCNT (UINT_MAX >> 2)
+#define _Py_IMMORTAL_REFCNT _Py_CAST(Py_ssize_t, UINT_MAX >> 2)
 #endif
 
 // Py_GIL_DISABLED builds indicate immortal objects using `ob_ref_local`, which is
@@ -317,11 +317,11 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
 #if defined(Py_GIL_DISABLED)
-    return op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL;
+    return (op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
-    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
+    return (_Py_CAST(PY_INT32_T, op->ob_refcnt) < 0);
 #else
-    return op->ob_refcnt == _Py_IMMORTAL_REFCNT;
+    return (op->ob_refcnt == _Py_IMMORTAL_REFCNT);
 #endif
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
@@ -350,15 +350,23 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     if (_Py_IsImmortal(ob)) {
         return;
     }
+
 #ifndef Py_GIL_DISABLED
     ob->ob_refcnt = refcnt;
 #else
     if (_Py_IsOwnedByCurrentThread(ob)) {
-        // Set local refcount to desired refcount and shared refcount to zero,
-        // but preserve the shared refcount flags.
-        assert(refcnt < UINT32_MAX);
-        ob->ob_ref_local = _Py_STATIC_CAST(uint32_t, refcnt);
-        ob->ob_ref_shared &= _Py_REF_SHARED_FLAG_MASK;
+        if ((size_t)refcnt > (size_t)UINT32_MAX) {
+            // On overflow, make the object immortal
+            ob->ob_tid = _Py_UNOWNED_TID;
+            ob->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
+            ob->ob_ref_shared = 0;
+        }
+        else {
+            // Set local refcount to desired refcount and shared refcount
+            // to zero, but preserve the shared refcount flags.
+            ob->ob_ref_local = _Py_STATIC_CAST(uint32_t, refcnt);
+            ob->ob_ref_shared &= _Py_REF_SHARED_FLAG_MASK;
+        }
     }
     else {
         // Set local refcount to zero and shared refcount to desired refcount.
@@ -750,6 +758,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     uint32_t new_local = local + 1;
     if (new_local == 0) {
+        // local is equal to _Py_IMMORTAL_REFCNT: do nothing
         return;
     }
     if (_Py_IsOwnedByCurrentThread(op)) {
@@ -763,6 +772,8 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
     PY_UINT32_T new_refcnt = cur_refcnt + 1;
     if (new_refcnt == 0) {
+        // cur_refcnt is equal to _Py_IMMORTAL_REFCNT: the object is immortal,
+        // do nothing
         return;
     }
     op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
