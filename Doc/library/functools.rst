@@ -110,18 +110,10 @@ The :mod:`functools` module defines the following functions:
    ``__slots__`` without including ``__dict__`` as one of the defined slots
    (as such classes don't provide a ``__dict__`` attribute at all).
 
-   If a mutable mapping is not available or if space-efficient key sharing
-   is desired, an effect similar to :func:`cached_property` can be achieved
-   by a stacking :func:`property` on top of :func:`cache`::
-
-       class DataSet:
-           def __init__(self, sequence_of_numbers):
-               self._data = sequence_of_numbers
-
-           @property
-           @cache
-           def stdev(self):
-               return statistics.stdev(self._data)
+   If a mutable mapping is not available or if space-efficient key sharing is
+   desired, an effect similar to :func:`cached_property` can also be achieved by
+   stacking :func:`property` on top of :func:`lru_cache`. See
+   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
 
    .. versionadded:: 3.8
 
@@ -234,8 +226,9 @@ The :mod:`functools` module defines the following functions:
 
    In general, the LRU cache should only be used when you want to reuse
    previously computed values.  Accordingly, it doesn't make sense to cache
-   functions with side-effects, functions that need to create distinct mutable
-   objects on each call, or impure functions such as time() or random().
+   functions with side-effects, functions that need to create
+   distinct mutable objects on each call (such as generators and async functions),
+   or impure functions such as time() or random().
 
    Example of an LRU cache for static web content::
 
@@ -410,25 +403,27 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initializer])
+.. function:: reduce(function, iterable[, initial], /)
 
    Apply *function* of two arguments cumulatively to the items of *iterable*, from
    left to right, so as to reduce the iterable to a single value.  For example,
    ``reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])`` calculates ``((((1+2)+3)+4)+5)``.
    The left argument, *x*, is the accumulated value and the right argument, *y*, is
-   the update value from the *iterable*.  If the optional *initializer* is present,
+   the update value from the *iterable*.  If the optional *initial* is present,
    it is placed before the items of the iterable in the calculation, and serves as
-   a default when the iterable is empty.  If *initializer* is not given and
+   a default when the iterable is empty.  If *initial* is not given and
    *iterable* contains only one item, the first item is returned.
 
    Roughly equivalent to::
 
-      def reduce(function, iterable, initializer=None):
+      initial_missing = object()
+
+      def reduce(function, iterable, initial=initial_missing, /):
           it = iter(iterable)
-          if initializer is None:
+          if initial is initial_missing:
               value = next(it)
           else:
-              value = initializer
+              value = initial
           for element in it:
               value = function(value, element)
           return value

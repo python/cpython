@@ -28,6 +28,7 @@ simple statements is:
               : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
+              : | `type_stmt`
 
 
 .. _exprstmts:
@@ -53,8 +54,8 @@ An expression statement evaluates the expression list (which may be a single
 expression).
 
 .. index::
-   builtin: repr
-   object: None
+   pair: built-in function; repr
+   pair: object; None
    pair: string; conversion
    single: output
    pair: standard; output
@@ -76,7 +77,7 @@ Assignment statements
    pair: assignment; statement
    pair: binding; name
    pair: rebinding; name
-   object: mutable
+   pair: object; mutable
    pair: attribute; assignment
 
 Assignment statements are used to (re)bind names to values and to modify
@@ -185,7 +186,7 @@ Assignment of an object to a single target is recursively defined as follows.
 
   .. index::
      pair: subscription; assignment
-     object: mutable
+     pair: object; mutable
 
 * If the target is a subscription: The primary expression in the reference is
   evaluated.  It should yield either a mutable sequence object (such as a list)
@@ -193,8 +194,8 @@ Assignment of an object to a single target is recursively defined as follows.
   evaluated.
 
   .. index::
-     object: sequence
-     object: list
+     pair: object; sequence
+     pair: object; list
 
   If the primary is a mutable sequence object (such as a list), the subscript
   must yield an integer.  If it is negative, the sequence's length is added to
@@ -204,12 +205,12 @@ Assignment of an object to a single target is recursively defined as follows.
   raised (assignment to a subscripted sequence cannot add new items to a list).
 
   .. index::
-     object: mapping
-     object: dictionary
+     pair: object; mapping
+     pair: object; dictionary
 
   If the primary is a mapping object (such as a dictionary), the subscript must
   have a type compatible with the mapping's key type, and the mapping is then
-  asked to create a key/datum pair which maps the subscript to the assigned
+  asked to create a key/value pair which maps the subscript to the assigned
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
@@ -376,7 +377,7 @@ The :keyword:`!assert` statement
 ================================
 
 .. index::
-   ! statement: assert
+   ! pair: statement; assert
    pair: debugging; assertions
    single: , (comma); expression list
 
@@ -398,7 +399,7 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 
 .. index::
    single: __debug__
-   exception: AssertionError
+   pair: exception; AssertionError
 
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
@@ -419,7 +420,7 @@ The :keyword:`!pass` statement
 ==============================
 
 .. index::
-   statement: pass
+   pair: statement; pass
    pair: null; operation
            pair: null; operation
 
@@ -441,7 +442,7 @@ The :keyword:`!del` statement
 =============================
 
 .. index::
-   ! statement: del
+   ! pair: statement; del
    pair: deletion; target
    triple: deletion; target; list
 
@@ -454,7 +455,7 @@ Rather than spelling it out in full details, here are some hints.
 Deletion of a target list recursively deletes each target, from left to right.
 
 .. index::
-   statement: global
+   pair: statement; global
    pair: unbinding; name
 
 Deletion of a name removes the binding of that name from the local or global
@@ -480,7 +481,7 @@ The :keyword:`!return` statement
 ================================
 
 .. index::
-   ! statement: return
+   ! pair: statement; return
    pair: function; definition
    pair: class; definition
 
@@ -495,7 +496,7 @@ If an expression list is present, it is evaluated, else ``None`` is substituted.
 :keyword:`return` leaves the current function call with the expression list (or
 ``None``) as return value.
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 When :keyword:`return` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`!finally` clause is executed before
@@ -517,11 +518,11 @@ The :keyword:`!yield` statement
 ===============================
 
 .. index::
-   statement: yield
+   pair: statement; yield
    single: generator; function
    single: generator; iterator
    single: function; generator
-   exception: StopIteration
+   pair: exception; StopIteration
 
 .. productionlist:: python-grammar
    yield_stmt: `yield_expression`
@@ -553,7 +554,7 @@ The :keyword:`!raise` statement
 ===============================
 
 .. index::
-   ! statement: raise
+   ! pair: statement; raise
    single: exception
    pair: raising; exception
    single: __traceback__ (exception attribute)
@@ -574,7 +575,7 @@ instantiating the class with no arguments.
 The :dfn:`type` of the exception is the exception instance's class, the
 :dfn:`value` is the instance itself.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
 A traceback object is normally created automatically when an exception is raised
 and attached to it as the :attr:`__traceback__` attribute, which is writable.
@@ -667,9 +668,9 @@ The :keyword:`!break` statement
 ===============================
 
 .. index::
-   ! statement: break
-   statement: for
-   statement: while
+   ! pair: statement; break
+   pair: statement; for
+   pair: statement; while
    pair: loop; statement
 
 .. productionlist:: python-grammar
@@ -679,7 +680,7 @@ The :keyword:`!break` statement
 :keyword:`while` loop, but not nested in a function or class definition within
 that loop.
 
-.. index:: keyword: else
+.. index:: pair: keyword; else
            pair: loop control; target
 
 It terminates the nearest enclosing loop, skipping the optional :keyword:`!else`
@@ -688,7 +689,7 @@ clause if the loop has one.
 If a :keyword:`for` loop is terminated by :keyword:`break`, the loop control
 target keeps its current value.
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 When :keyword:`break` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`!finally` clause is executed before
@@ -701,11 +702,11 @@ The :keyword:`!continue` statement
 ==================================
 
 .. index::
-   ! statement: continue
-   statement: for
-   statement: while
+   ! pair: statement; continue
+   pair: statement; for
+   pair: statement; while
    pair: loop; statement
-   keyword: finally
+   pair: keyword; finally
 
 .. productionlist:: python-grammar
    continue_stmt: "continue"
@@ -726,12 +727,12 @@ The :keyword:`!import` statement
 ================================
 
 .. index::
-   ! statement: import
+   ! pair: statement; import
    single: module; importing
    pair: name; binding
-   keyword: from
-   keyword: as
-   exception: ImportError
+   pair: keyword; from
+   pair: keyword; as
+   pair: exception; ImportError
    single: , (comma); import statement
 
 .. productionlist:: python-grammar
@@ -942,7 +943,7 @@ The :keyword:`!global` statement
 ================================
 
 .. index::
-   ! statement: global
+   ! pair: statement; global
    triple: global; name; binding
    single: , (comma); identifier list
 
@@ -970,9 +971,9 @@ annotation.
    them or silently change the meaning of the program.
 
 .. index::
-   builtin: exec
-   builtin: eval
-   builtin: compile
+   pair: built-in function; exec
+   pair: built-in function; eval
+   pair: built-in function; compile
 
 **Programmer's note:** :keyword:`global` is a directive to the parser.  It
 applies only to code parsed at the same time as the :keyword:`!global` statement.
@@ -988,7 +989,7 @@ call.  The same applies to the :func:`eval` and :func:`compile` functions.
 The :keyword:`!nonlocal` statement
 ==================================
 
-.. index:: statement: nonlocal
+.. index:: pair: statement; nonlocal
    single: , (comma); identifier list
 
 .. productionlist:: python-grammar
@@ -1012,3 +1013,48 @@ pre-existing bindings in the local scope.
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+.. _type:
+
+The :keyword:`!type` statement
+==============================
+
+.. index:: pair: statement; type
+
+.. productionlist:: python-grammar
+   type_stmt: 'type' `identifier` [`type_params`] "=" `expression`
+
+The :keyword:`!type` statement declares a type alias, which is an instance
+of :class:`typing.TypeAliasType`.
+
+For example, the following statement creates a type alias::
+
+   type Point = tuple[float, float]
+
+This code is roughly equivalent to::
+
+   annotation-def VALUE_OF_Point():
+       return tuple[float, float]
+   Point = typing.TypeAliasType("Point", VALUE_OF_Point())
+
+``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`, which behaves
+mostly like a function, but with several small differences.
+
+The value of the
+type alias is evaluated in the annotation scope. It is not evaluated when the
+type alias is created, but only when the value is accessed through the type alias's
+:attr:`!__value__` attribute (see :ref:`lazy-evaluation`).
+This allows the type alias to refer to names that are not yet defined.
+
+Type aliases may be made generic by adding a :ref:`type parameter list <type-params>`
+after the name. See :ref:`generic-type-aliases` for more.
+
+:keyword:`!type` is a :ref:`soft keyword <soft-keywords>`.
+
+.. versionadded:: 3.12
+
+.. seealso::
+
+   :pep:`695` - Type Parameter Syntax
+      Introduced the :keyword:`!type` statement and syntax for
+      generic classes and functions.

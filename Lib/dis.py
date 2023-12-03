@@ -11,8 +11,10 @@ from opcode import (
     _cache_format,
     _inline_cache_entries,
     _nb_ops,
+    _intrinsic_1_descs,
+    _intrinsic_2_descs,
     _specializations,
-    _specialized_instructions,
+    _specialized_opmap,
 )
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
@@ -23,16 +25,12 @@ del _opcodes_all
 _have_code = (types.MethodType, types.FunctionType, types.CodeType,
               classmethod, staticmethod, type)
 
-FORMAT_VALUE = opmap['FORMAT_VALUE']
-FORMAT_VALUE_CONVERTERS = (
-    (None, ''),
-    (str, 'str'),
-    (repr, 'repr'),
-    (ascii, 'ascii'),
-)
-MAKE_FUNCTION = opmap['MAKE_FUNCTION']
-MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
+CONVERT_VALUE = opmap['CONVERT_VALUE']
 
+SET_FUNCTION_ATTRIBUTE = opmap['SET_FUNCTION_ATTRIBUTE']
+FUNCTION_ATTR_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
+
+ENTER_EXECUTOR = opmap['ENTER_EXECUTOR']
 LOAD_CONST = opmap['LOAD_CONST']
 RETURN_CONST = opmap['RETURN_CONST']
 LOAD_GLOBAL = opmap['LOAD_GLOBAL']
@@ -42,16 +40,21 @@ FOR_ITER = opmap['FOR_ITER']
 SEND = opmap['SEND']
 LOAD_ATTR = opmap['LOAD_ATTR']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
+CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
+CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
+LOAD_FAST_LOAD_FAST = opmap['LOAD_FAST_LOAD_FAST']
+STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
+STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
 
 CACHE = opmap["CACHE"]
 
 _all_opname = list(opname)
 _all_opmap = dict(opmap)
-_empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith("<")]
-for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
+for name, op in _specialized_opmap.items():
     # fill opname and opmap
-    _all_opname[spec_op] = specialized
-    _all_opmap[specialized] = spec_op
+    assert op < len(_all_opname)
+    _all_opname[op] = name
+    _all_opmap[name] = op
 
 deoptmap = {
     specialized: base for base, family in _specializations.items() for specialized in family
@@ -70,7 +73,8 @@ def _try_compile(source, name):
         pass
     return compile(source, name, 'exec')
 
-def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False):
+def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
+        show_offsets=False):
     """Disassemble classes, methods, functions, and other compiled objects.
 
     With no argument, disassemble the last traceback.
@@ -80,7 +84,8 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False):
     in a special attribute.
     """
     if x is None:
-        distb(file=file, show_caches=show_caches, adaptive=adaptive)
+        distb(file=file, show_caches=show_caches, adaptive=adaptive,
+              show_offsets=show_offsets)
         return
     # Extract functions from methods.
     if hasattr(x, '__func__'):
@@ -101,21 +106,21 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False):
             if isinstance(x1, _have_code):
                 print("Disassembly of %s:" % name, file=file)
                 try:
-                    dis(x1, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive)
+                    dis(x1, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
                 except TypeError as msg:
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        _disassemble_recursive(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive)
+        _disassemble_recursive(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
-        _disassemble_bytes(x, file=file, show_caches=show_caches)
+        _disassemble_bytes(x, file=file, show_caches=show_caches, show_offsets=show_offsets)
     elif isinstance(x, str):    # Source code
-        _disassemble_str(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive)
+        _disassemble_str(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
     else:
         raise TypeError("don't know how to disassemble %s objects" %
                         type(x).__name__)
 
-def distb(tb=None, *, file=None, show_caches=False, adaptive=False):
+def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets=False):
     """Disassemble a traceback (default: last traceback)."""
     if tb is None:
         try:
@@ -126,7 +131,7 @@ def distb(tb=None, *, file=None, show_caches=False, adaptive=False):
         except AttributeError:
             raise RuntimeError("no last traceback to disassemble") from None
         while tb.tb_next: tb = tb.tb_next
-    disassemble(tb.tb_frame.f_code, tb.tb_lasti, file=file, show_caches=show_caches, adaptive=adaptive)
+    disassemble(tb.tb_frame.f_code, tb.tb_lasti, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
 
 # The inspect module interrogates this dictionary to build its
 # list of CO_* constants. It is also used by pretty_flags to
@@ -258,11 +263,13 @@ _Instruction = collections.namedtuple(
         'argval',
         'argrepr',
         'offset',
+        'start_offset',
         'starts_line',
-        'is_jump_target',
+        'line_number',
+        'label',
         'positions'
     ],
-    defaults=[None]
+    defaults=[None, None]
 )
 
 _Instruction.opname.__doc__ = "Human readable name for operation"
@@ -271,18 +278,47 @@ _Instruction.arg.__doc__ = "Numeric argument to operation (if any), otherwise No
 _Instruction.argval.__doc__ = "Resolved arg value (if known), otherwise same as arg"
 _Instruction.argrepr.__doc__ = "Human readable description of operation argument"
 _Instruction.offset.__doc__ = "Start index of operation within bytecode sequence"
-_Instruction.starts_line.__doc__ = "Line started by this opcode (if any), otherwise None"
-_Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
+_Instruction.start_offset.__doc__ = (
+    "Start index of operation within bytecode sequence, including extended args if present; "
+    "otherwise equal to Instruction.offset"
+)
+_Instruction.starts_line.__doc__ = "True if this opcode starts a source line, otherwise False"
+_Instruction.line_number.__doc__ = "source line number associated with this opcode (if any), otherwise None"
+_Instruction.label.__doc__ = "A label (int > 0) if this instruction is a jump target, otherwise None"
 _Instruction.positions.__doc__ = "dis.Positions object holding the span of source code covered by this instruction"
 
-_ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
+_ExceptionTableEntryBase = collections.namedtuple("_ExceptionTableEntryBase",
     "start end target depth lasti")
+
+class _ExceptionTableEntry(_ExceptionTableEntryBase):
+    pass
 
 _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
 
+def _get_cache_size(opname):
+    return _inline_cache_entries.get(opname, 0)
+
+def _get_jump_target(op, arg, offset):
+    """Gets the bytecode offset of the jump target if this is a jump instruction.
+
+    Otherwise return None.
+    """
+    deop = _deoptop(op)
+    caches = _get_cache_size(_all_opname[deop])
+    if deop in hasjrel:
+        if _is_backward_jump(deop):
+            arg = -arg
+        target = offset + 2 + arg*2
+        target += 2 * caches
+    elif deop in hasjabs:
+        target = arg*2
+    else:
+        target = None
+    return target
+
 class Instruction(_Instruction):
-    """Details for a bytecode operation
+    """Details for a bytecode operation.
 
        Defined fields:
          opname - human readable name for operation
@@ -291,14 +327,149 @@ class Instruction(_Instruction):
          argval - resolved arg value (if known), otherwise same as arg
          argrepr - human readable description of operation argument
          offset - start index of operation within bytecode sequence
-         starts_line - line started by this opcode (if any), otherwise None
-         is_jump_target - True if other code jumps to here, otherwise False
+         start_offset - start index of operation within bytecode sequence including extended args if present;
+                        otherwise equal to Instruction.offset
+         starts_line - True if this opcode starts a source line, otherwise False
+         line_number - source line number associated with this opcode (if any), otherwise None
+         label - A label if this instruction is a jump target, otherwise None
          positions - Optional dis.Positions object holding the span of source code
                      covered by this instruction
     """
 
-    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=4):
-        """Format instruction details for inclusion in disassembly output
+    @staticmethod
+    def _get_argval_argrepr(op, arg, offset, co_consts, names, varname_from_oparg,
+                            labels_map):
+        get_name = None if names is None else names.__getitem__
+        argval = None
+        argrepr = ''
+        deop = _deoptop(op)
+        if arg is not None:
+            #  Set argval to the dereferenced value of the argument when
+            #  available, and argrepr to the string representation of argval.
+            #    _disassemble_bytes needs the string repr of the
+            #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
+            argval = arg
+            if deop in hasconst:
+                argval, argrepr = _get_const_info(deop, arg, co_consts)
+            elif deop in hasname:
+                if deop == LOAD_GLOBAL:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL"
+                elif deop == LOAD_ATTR:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL|self"
+                elif deop == LOAD_SUPER_ATTR:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL|self"
+                else:
+                    argval, argrepr = _get_name_info(arg, get_name)
+            elif deop in hasjabs:
+                argval = arg*2
+                argrepr = f"to L{labels_map[argval]}"
+            elif deop in hasjrel:
+                signed_arg = -arg if _is_backward_jump(deop) else arg
+                argval = offset + 2 + signed_arg*2
+                caches = _get_cache_size(_all_opname[deop])
+                argval += 2 * caches
+                if deop == ENTER_EXECUTOR:
+                    argval += 2
+                argrepr = f"to L{labels_map[argval]}"
+            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
+                arg1 = arg >> 4
+                arg2 = arg & 15
+                val1, argrepr1 = _get_name_info(arg1, varname_from_oparg)
+                val2, argrepr2 = _get_name_info(arg2, varname_from_oparg)
+                argrepr = argrepr1 + ", " + argrepr2
+                argval = val1, val2
+            elif deop in haslocal or deop in hasfree:
+                argval, argrepr = _get_name_info(arg, varname_from_oparg)
+            elif deop in hascompare:
+                argval = cmp_op[arg >> 5]
+                argrepr = argval
+                if arg & 16:
+                    argrepr = f"bool({argrepr})"
+            elif deop == CONVERT_VALUE:
+                argval = (None, str, repr, ascii)[arg]
+                argrepr = ('', 'str', 'repr', 'ascii')[arg]
+            elif deop == SET_FUNCTION_ATTRIBUTE:
+                argrepr = ', '.join(s for i, s in enumerate(FUNCTION_ATTR_FLAGS)
+                                    if arg & (1<<i))
+            elif deop == BINARY_OP:
+                _, argrepr = _nb_ops[arg]
+            elif deop == CALL_INTRINSIC_1:
+                argrepr = _intrinsic_1_descs[arg]
+            elif deop == CALL_INTRINSIC_2:
+                argrepr = _intrinsic_2_descs[arg]
+        return argval, argrepr
+
+
+    @classmethod
+    def _create(cls, op, arg, offset, start_offset, starts_line, line_number,
+               positions,
+               co_consts=None, varname_from_oparg=None, names=None,
+               labels_map=None, exceptions_map=None):
+
+        label_width = 4 + len(str(len(labels_map)))
+        argval, argrepr = cls._get_argval_argrepr(
+                               op, arg, offset,
+                               co_consts, names, varname_from_oparg, labels_map)
+        label = labels_map.get(offset, None)
+        instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
+                            offset, start_offset, starts_line, line_number,
+                            label, positions)
+        instr.label_width = label_width
+        instr.exc_handler = exceptions_map.get(offset, None)
+        return instr
+
+    @property
+    def oparg(self):
+        """Alias for Instruction.arg."""
+        return self.arg
+
+    @property
+    def baseopcode(self):
+        """Numeric code for the base operation if operation is specialized.
+
+        Otherwise equal to Instruction.opcode.
+        """
+        return _deoptop(self.opcode)
+
+    @property
+    def baseopname(self):
+        """Human readable name for the base operation if operation is specialized.
+
+        Otherwise equal to Instruction.opname.
+        """
+        return opname[self.baseopcode]
+
+    @property
+    def cache_offset(self):
+        """Start index of the cache entries following the operation."""
+        return self.offset + 2
+
+    @property
+    def end_offset(self):
+        """End index of the cache entries following the operation."""
+        return self.cache_offset + _get_cache_size(_all_opname[self.opcode])*2
+
+    @property
+    def jump_target(self):
+        """Bytecode index of the jump target if this is a jump operation.
+
+        Otherwise return None.
+        """
+        return _get_jump_target(self.opcode, self.arg, self.offset)
+
+    @property
+    def is_jump_target(self):
+        """True if other code jumps to here, otherwise False"""
+        return self.label is not None
+
+    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=0):
+        """Format instruction details for inclusion in disassembly output.
 
         *lineno_width* sets the width of the line number field (0 omits it)
         *mark_as_current* inserts a '-->' marker arrow as part of the line
@@ -307,33 +478,44 @@ class Instruction(_Instruction):
         fields = []
         # Column: Source code line number
         if lineno_width:
-            if self.starts_line is not None:
-                lineno_fmt = "%%%dd" % lineno_width
-                fields.append(lineno_fmt % self.starts_line)
+            if self.starts_line:
+                lineno_fmt = "%%%dd" if self.line_number is not None else "%%%ds"
+                lineno_fmt = lineno_fmt % lineno_width
+                lineno = self.line_number if self.line_number is not None else '--'
+                fields.append(lineno_fmt % lineno)
             else:
                 fields.append(' ' * lineno_width)
+        # Column: Label
+        if self.label is not None:
+            lbl = f"L{self.label}:"
+            fields.append(f"{lbl:>{self.label_width}}")
+        else:
+            fields.append(' ' * self.label_width)
+        # Column: Instruction offset from start of code sequence
+        if offset_width > 0:
+            fields.append(f"{repr(self.offset):>{offset_width}}  ")
         # Column: Current instruction indicator
         if mark_as_current:
             fields.append('-->')
         else:
             fields.append('   ')
-        # Column: Jump target marker
-        if self.is_jump_target:
-            fields.append('>>')
-        else:
-            fields.append('  ')
-        # Column: Instruction offset from start of code sequence
-        fields.append(repr(self.offset).rjust(offset_width))
         # Column: Opcode name
         fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
         if self.arg is not None:
-            fields.append(repr(self.arg).rjust(_OPARG_WIDTH))
+            arg = repr(self.arg)
+            # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
+            # the space reserved for oparg. This results in fewer misaligned opargs
+            # in the disassembly output.
+            opname_excess = max(0, len(self.opname) - _OPNAME_WIDTH)
+            fields.append(repr(self.arg).rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
             if self.argrepr:
                 fields.append('(' + self.argrepr + ')')
         return ' '.join(fields).rstrip()
 
+    def __str__(self):
+        return self._disassemble()
 
 def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
     """Iterator for the opcodes in methods, functions or code
@@ -357,7 +539,8 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset,
                                    co_positions=co.co_positions(),
-                                   show_caches=show_caches)
+                                   show_caches=show_caches,
+                                   original_code=co.co_code)
 
 def _get_const_value(op, arg, co_consts):
     """Helper to get the value of the const in a hasconst op.
@@ -425,13 +608,15 @@ def _parse_exception_table(code):
         return entries
 
 def _is_backward_jump(op):
-    return 'JUMP_BACKWARD' in opname[op]
+    return opname[op] in ('JUMP_BACKWARD',
+                          'JUMP_BACKWARD_NO_INTERRUPT',
+                          'ENTER_EXECUTOR')
 
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
                             linestarts=None, line_offset=0,
                             exception_entries=(), co_positions=None,
-                            show_caches=False):
+                            show_caches=False, original_code=None):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
@@ -440,76 +625,57 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     arguments.
 
     """
+    # Use the basic, unadaptive code for finding labels and actually walking the
+    # bytecode, since replacements like ENTER_EXECUTOR and INSTRUMENTED_* can
+    # mess that logic up pretty badly:
+    original_code = original_code or code
     co_positions = co_positions or iter(())
     get_name = None if names is None else names.__getitem__
-    labels = set(findlabels(code))
-    for start, end, target, _, _ in exception_entries:
-        for i in range(start, end):
+
+    def make_labels_map(original_code, exception_entries):
+        jump_targets = set(findlabels(original_code))
+        labels = set(jump_targets)
+        for start, end, target, _, _ in exception_entries:
+            labels.add(start)
+            labels.add(end)
             labels.add(target)
-    starts_line = None
-    for offset, op, arg in _unpack_opargs(code):
+        labels = sorted(labels)
+        labels_map = {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
+        for e in exception_entries:
+            e.start_label = labels_map[e.start]
+            e.end_label = labels_map[e.end]
+            e.target_label = labels_map[e.target]
+        return labels_map
+
+    labels_map = make_labels_map(original_code, exception_entries)
+
+    exceptions_map = {}
+    for start, end, target, _, _ in exception_entries:
+        exceptions_map[start] = labels_map[target]
+        exceptions_map[end] = -1
+
+    starts_line = False
+    local_line_number = None
+    line_number = None
+    for offset, start_offset, op, arg in _unpack_opargs(original_code):
         if linestarts is not None:
-            starts_line = linestarts.get(offset, None)
-            if starts_line is not None:
-                starts_line += line_offset
-        is_jump_target = offset in labels
-        argval = None
-        argrepr = ''
+            starts_line = offset in linestarts
+            if starts_line:
+                local_line_number = linestarts[offset]
+            if local_line_number is not None:
+                line_number = local_line_number + line_offset
+            else:
+                line_number = None
         positions = Positions(*next(co_positions, ()))
         deop = _deoptop(op)
-        caches = _inline_cache_entries[deop]
-        if arg is not None:
-            #  Set argval to the dereferenced value of the argument when
-            #  available, and argrepr to the string representation of argval.
-            #    _disassemble_bytes needs the string repr of the
-            #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
-            argval = arg
-            if deop in hasconst:
-                argval, argrepr = _get_const_info(deop, arg, co_consts)
-            elif deop in hasname:
-                if deop == LOAD_GLOBAL:
-                    argval, argrepr = _get_name_info(arg//2, get_name)
-                    if (arg & 1) and argrepr:
-                        argrepr = "NULL + " + argrepr
-                elif deop == LOAD_ATTR:
-                    argval, argrepr = _get_name_info(arg//2, get_name)
-                    if (arg & 1) and argrepr:
-                        argrepr = "NULL|self + " + argrepr
-                elif deop == LOAD_SUPER_ATTR:
-                    argval, argrepr = _get_name_info(arg//4, get_name)
-                    if (arg & 1) and argrepr:
-                        argrepr = "NULL|self + " + argrepr
-                else:
-                    argval, argrepr = _get_name_info(arg, get_name)
-            elif deop in hasjabs:
-                argval = arg*2
-                argrepr = "to " + repr(argval)
-            elif deop in hasjrel:
-                signed_arg = -arg if _is_backward_jump(deop) else arg
-                argval = offset + 2 + signed_arg*2
-                argval += 2 * caches
-                argrepr = "to " + repr(argval)
-            elif deop in haslocal or deop in hasfree:
-                argval, argrepr = _get_name_info(arg, varname_from_oparg)
-            elif deop in hascompare:
-                argval = cmp_op[arg>>4]
-                argrepr = argval
-            elif deop == FORMAT_VALUE:
-                argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
-                argval = (argval, bool(arg & 0x4))
-                if argval[1]:
-                    if argrepr:
-                        argrepr += ', '
-                    argrepr += 'with format'
-            elif deop == MAKE_FUNCTION:
-                argrepr = ', '.join(s for i, s in enumerate(MAKE_FUNCTION_FLAGS)
-                                    if arg & (1<<i))
-            elif deop == BINARY_OP:
-                _, argrepr = _nb_ops[arg]
-        yield Instruction(_all_opname[op], op,
-                          arg, argval, argrepr,
-                          offset, starts_line, is_jump_target, positions)
-        caches = _inline_cache_entries[deop]
+        op = code[offset]
+
+        yield Instruction._create(op, arg, offset, start_offset, starts_line, line_number,
+                                  positions, co_consts=co_consts,
+                                  varname_from_oparg=varname_from_oparg, names=names,
+                                  labels_map=labels_map, exceptions_map=exceptions_map)
+
+        caches = _get_cache_size(_all_opname[deop])
         if not caches:
             continue
         if not show_caches:
@@ -528,11 +694,12 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 else:
                     argrepr = ""
                 yield Instruction(
-                    "CACHE", CACHE, 0, None, argrepr, offset, None, False,
+                    "CACHE", CACHE, 0, None, argrepr, offset, offset, False, None, None,
                     Positions(*next(co_positions, ()))
                 )
 
-def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
+def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
+                show_offsets=False):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = _parse_exception_table(co)
@@ -540,10 +707,11 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
                        lasti, co._varname_from_oparg,
                        co.co_names, co.co_consts, linestarts, file=file,
                        exception_entries=exception_entries,
-                       co_positions=co.co_positions(), show_caches=show_caches)
+                       co_positions=co.co_positions(), show_caches=show_caches,
+                       original_code=co.co_code, show_offsets=show_offsets)
 
-def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False):
-    disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive)
+def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False, show_offsets=False):
+    disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
@@ -552,36 +720,51 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
                 print(file=file)
                 print("Disassembly of %r:" % (x,), file=file)
                 _disassemble_recursive(
-                    x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive
+                    x, file=file, depth=depth, show_caches=show_caches,
+                    adaptive=adaptive, show_offsets=show_offsets
                 )
 
 def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        names=None, co_consts=None, linestarts=None,
                        *, file=None, line_offset=0, exception_entries=(),
-                       co_positions=None, show_caches=False):
+                       co_positions=None, show_caches=False, original_code=None,
+                       show_offsets=False):
     # Omit the line number column entirely if we have no line number info
-    show_lineno = bool(linestarts)
+    if bool(linestarts):
+        linestarts_ints = [line for line in linestarts.values() if line is not None]
+        show_lineno = len(linestarts_ints) > 0
+    else:
+        show_lineno = False
+
     if show_lineno:
-        maxlineno = max(linestarts.values()) + line_offset
+        maxlineno = max(linestarts_ints) + line_offset
         if maxlineno >= 1000:
             lineno_width = len(str(maxlineno))
         else:
             lineno_width = 3
+
+        if lineno_width < len(str(None)) and None in linestarts.values():
+            lineno_width = len(str(None))
     else:
         lineno_width = 0
-    maxoffset = len(code) - 2
-    if maxoffset >= 10000:
-        offset_width = len(str(maxoffset))
+    if show_offsets:
+        maxoffset = len(code) - 2
+        if maxoffset >= 10000:
+            offset_width = len(str(maxoffset))
+        else:
+            offset_width = 4
     else:
-        offset_width = 4
+        offset_width = 0
+
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          co_consts, linestarts,
                                          line_offset=line_offset,
                                          exception_entries=exception_entries,
                                          co_positions=co_positions,
-                                         show_caches=show_caches):
+                                         show_caches=show_caches,
+                                         original_code=original_code):
         new_source_line = (show_lineno and
-                           instr.starts_line is not None and
+                           instr.starts_line and
                            instr.offset > 0)
         if new_source_line:
             print(file=file)
@@ -590,15 +773,17 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
         else:
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
-                <= instr.offset + 2 * _inline_cache_entries[_deoptop(instr.opcode)]
+                <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:
         print("ExceptionTable:", file=file)
         for entry in exception_entries:
             lasti = " lasti" if entry.lasti else ""
-            end = entry.end-2
-            print(f"  {entry.start} to {end} -> {entry.target} [{entry.depth}]{lasti}", file=file)
+            start = entry.start_label
+            end = entry.end_label
+            target = entry.target_label
+            print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
@@ -614,6 +799,7 @@ _INT_OVERFLOW = 2 ** (_INT_BITS - 1)
 
 def _unpack_opargs(code):
     extended_arg = 0
+    extended_args_offset = 0  # Number of EXTENDED_ARG instructions preceding the current instruction
     caches = 0
     for i in range(0, len(code), 2):
         # Skip inline CACHE entries:
@@ -622,7 +808,7 @@ def _unpack_opargs(code):
             continue
         op = code[i]
         deop = _deoptop(op)
-        caches = _inline_cache_entries[deop]
+        caches = _get_cache_size(_all_opname[deop])
         if deop in hasarg:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0
@@ -634,7 +820,13 @@ def _unpack_opargs(code):
         else:
             arg = None
             extended_arg = 0
-        yield (i, op, arg)
+        if deop == EXTENDED_ARG:
+            extended_args_offset += 1
+            yield (i, i, op, arg)
+        else:
+            start_offset = i - extended_args_offset*2
+            yield (i, start_offset, op, arg)
+            extended_args_offset = 0
 
 def findlabels(code):
     """Detect all offsets in a byte code which are jump targets.
@@ -643,18 +835,10 @@ def findlabels(code):
 
     """
     labels = []
-    for offset, op, arg in _unpack_opargs(code):
+    for offset, _, op, arg in _unpack_opargs(code):
         if arg is not None:
-            deop = _deoptop(op)
-            caches = _inline_cache_entries[deop]
-            if deop in hasjrel:
-                if _is_backward_jump(deop):
-                    arg = -arg
-                label = offset + 2 + arg*2
-                label += 2 * caches
-            elif deop in hasjabs:
-                label = arg*2
-            else:
+            label = _get_jump_target(op, arg, offset)
+            if label is None:
                 continue
             if label not in labels:
                 labels.append(label)
@@ -664,10 +848,12 @@ def findlinestarts(code):
     """Find the offsets in a byte code which are start of lines in the source.
 
     Generate pairs (offset, lineno)
+    lineno will be an integer or None the offset does not have a source line.
     """
-    lastline = None
+
+    lastline = False # None is a valid line number
     for start, end, line in code.co_lines():
-        if line is not None and line != lastline:
+        if line is not lastline:
             lastline = line
             yield start, line
     return
@@ -683,7 +869,7 @@ def _find_imports(co):
 
     consts = co.co_consts
     names = co.co_names
-    opargs = [(op, arg) for _, op, arg in _unpack_opargs(co.co_code)
+    opargs = [(op, arg) for _, _, op, arg in _unpack_opargs(co.co_code)
                   if op != EXTENDED_ARG]
     for i, (op, oparg) in enumerate(opargs):
         if op == IMPORT_NAME and i >= 2:
@@ -705,7 +891,7 @@ def _find_store_names(co):
     }
 
     names = co.co_names
-    for _, op, arg in _unpack_opargs(co.co_code):
+    for _, _, op, arg in _unpack_opargs(co.co_code):
         if op in STORE_OPS:
             yield names[arg]
 
@@ -718,7 +904,7 @@ class Bytecode:
 
     Iterating over this yields the bytecode operations as Instruction instances.
     """
-    def __init__(self, x, *, first_line=None, current_offset=None, show_caches=False, adaptive=False):
+    def __init__(self, x, *, first_line=None, current_offset=None, show_caches=False, adaptive=False, show_offsets=False):
         self.codeobj = co = _get_code_object(x)
         if first_line is None:
             self.first_line = co.co_firstlineno
@@ -732,6 +918,7 @@ class Bytecode:
         self.exception_entries = _parse_exception_table(co)
         self.show_caches = show_caches
         self.adaptive = adaptive
+        self.show_offsets = show_offsets
 
     def __iter__(self):
         co = self.codeobj
@@ -742,7 +929,8 @@ class Bytecode:
                                        line_offset=self._line_offset,
                                        exception_entries=self.exception_entries,
                                        co_positions=co.co_positions(),
-                                       show_caches=self.show_caches)
+                                       show_caches=self.show_caches,
+                                       original_code=co.co_code)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,
@@ -778,21 +966,26 @@ class Bytecode:
                                lasti=offset,
                                exception_entries=self.exception_entries,
                                co_positions=co.co_positions(),
-                               show_caches=self.show_caches)
+                               show_caches=self.show_caches,
+                               original_code=co.co_code,
+                               show_offsets=self.show_offsets)
             return output.getvalue()
 
 
-def _test():
-    """Simple test program to disassemble a file."""
+def main():
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-C', '--show-caches', action='store_true',
+                        help='show inline caches')
+    parser.add_argument('-O', '--show-offsets', action='store_true',
+                        help='show instruction offsets')
     parser.add_argument('infile', type=argparse.FileType('rb'), nargs='?', default='-')
     args = parser.parse_args()
     with args.infile as infile:
         source = infile.read()
     code = compile(source, args.infile.name, "exec")
-    dis(code)
+    dis(code, show_caches=args.show_caches, show_offsets=args.show_offsets)
 
 if __name__ == "__main__":
-    _test()
+    main()

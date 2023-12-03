@@ -42,13 +42,16 @@ The :mod:`gc` module provides the following functions:
 
    With no arguments, run a full collection.  The optional argument *generation*
    may be an integer specifying which generation to collect (from 0 to 2).  A
-   :exc:`ValueError` is raised if the generation number  is invalid. The number of
-   unreachable objects found is returned.
+   :exc:`ValueError` is raised if the generation number  is invalid. The sum of
+   collected objects and uncollectable objects is returned.
 
    The free lists maintained for a number of built-in types are cleared
    whenever a full collection or collection of the highest generation (2)
    is run.  Not all items in some free lists may be freed due to the
    particular implementation, in particular :class:`float`.
+
+   The effect of calling ``gc.collect()`` while the interpreter is already
+   performing a collection is undefined.
 
 
 .. function:: set_debug(flags)
@@ -257,7 +260,7 @@ values but should not rebind them):
 
    .. versionchanged:: 3.4
       Following :pep:`442`, objects with a :meth:`~object.__del__` method don't end
-      up in :attr:`gc.garbage` anymore.
+      up in :data:`gc.garbage` anymore.
 
 .. data:: callbacks
 

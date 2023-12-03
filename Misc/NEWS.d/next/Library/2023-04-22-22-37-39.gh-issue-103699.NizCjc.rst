@@ -1,2 +1,0 @@
-Add ``__orig_bases__`` to non-generic TypedDicts, call-based TypedDicts, and
-call-based NamedTuples. Other TypedDicts and NamedTuples already had the attribute.

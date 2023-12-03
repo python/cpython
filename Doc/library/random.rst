@@ -334,8 +334,10 @@ be found in any statistics text.
 
 .. function:: gammavariate(alpha, beta)
 
-   Gamma distribution.  (*Not* the gamma function!)  Conditions on the
-   parameters are ``alpha > 0`` and ``beta > 0``.
+   Gamma distribution.  (*Not* the gamma function!)  The shape and
+   scale parameters, *alpha* and *beta*, must have positive values.
+   (Calling conventions vary and some sources define 'beta'
+   as the inverse of the scale).
 
    The probability distribution function is::
 
@@ -346,7 +348,8 @@ be found in any statistics text.
 
 .. function:: gauss(mu=0.0, sigma=1.0)
 
-   Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
+   Normal distribution, also called the Gaussian distribution.
+   *mu* is the mean,
    and *sigma* is the standard deviation.  This is slightly faster than
    the :func:`normalvariate` function defined below.
 

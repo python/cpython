@@ -105,13 +105,7 @@ The module defines the following items:
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
-
-   .. deprecated:: 3.6
-       *keyfile* and *certfile* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
+      :const:`ssl.HAS_SNI`).
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
@@ -120,7 +114,7 @@ The module defines the following items:
       Latin-1 to UTF-8 to follow :rfc:`2640`.
 
    .. versionchanged:: 3.12
-       The deprecated *keyfile* and *certfile* parameters have been removed.
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
    Here's a sample session using the :class:`FTP_TLS` class::
 
@@ -437,7 +431,7 @@ FTP_TLS Objects
 
 .. attribute:: FTP_TLS.ssl_version
 
-   The SSL version to use (defaults to :attr:`ssl.PROTOCOL_SSLv23`).
+   The SSL version to use (defaults to :data:`ssl.PROTOCOL_SSLv23`).
 
 .. method:: FTP_TLS.auth()
 
@@ -447,7 +441,7 @@ FTP_TLS Objects
    .. versionchanged:: 3.4
       The method now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
 .. method:: FTP_TLS.ccc()
 

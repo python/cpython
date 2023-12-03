@@ -18,6 +18,7 @@ import re
 import sys
 import traceback
 import types
+import typing
 import unittest
 import warnings
 from contextlib import ExitStack
@@ -368,16 +369,17 @@ class BuiltinTest(unittest.TestCase):
                   (1, False, 'doc', False, False),
                   (2, False, None, False, False)]
         for optval, *expected in values:
+            with self.subTest(optval=optval):
             # test both direct compilation and compilation via AST
-            codeobjs = []
-            codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-            tree = ast.parse(codestr)
-            codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
-            for code in codeobjs:
-                ns = {}
-                exec(code, ns)
-                rv = ns['f']()
-                self.assertEqual(rv, tuple(expected))
+                codeobjs = []
+                codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
+                tree = ast.parse(codestr)
+                codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
+                for code in codeobjs:
+                    ns = {}
+                    exec(code, ns)
+                    rv = ns['f']()
+                    self.assertEqual(rv, tuple(expected))
 
     def test_compile_top_level_await_no_coro(self):
         """Make sure top level non-await codes get the correct coroutine flags"""
@@ -515,6 +517,30 @@ class BuiltinTest(unittest.TestCase):
         glob = {}
         exec(co, glob)
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
+
+    def test_compile_ast(self):
+        args = ("a*(1+2)", "f.py", "exec")
+        raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
+        opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
+        opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
+
+        for tree in (raw, opt1, opt2):
+            self.assertIsInstance(tree.value, ast.BinOp)
+            self.assertIsInstance(tree.value.op, ast.Mult)
+            self.assertIsInstance(tree.value.left, ast.Name)
+            self.assertEqual(tree.value.left.id, 'a')
+
+        raw_right = raw.value.right  # expect BinOp(1, '+', 2)
+        self.assertIsInstance(raw_right, ast.BinOp)
+        self.assertIsInstance(raw_right.left, ast.Constant)
+        self.assertEqual(raw_right.left.value, 1)
+        self.assertIsInstance(raw_right.right, ast.Constant)
+        self.assertEqual(raw_right.right.value, 2)
+
+        for opt in [opt1, opt2]:
+            opt_right = opt.value.right  # expect Constant(3)
+            self.assertIsInstance(opt_right, ast.Constant)
+            self.assertEqual(opt_right.value, 3)
 
     def test_delattr(self):
         sys.spam = 1
@@ -926,6 +952,7 @@ class BuiltinTest(unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
         # thrashcan mechanism. See gh-102356 for more details.
@@ -1613,7 +1640,7 @@ class BuiltinTest(unittest.TestCase):
         msg = r"^attribute name must be string, not 'int'$"
         self.assertRaisesRegex(TypeError, msg, setattr, sys, 1, 'spam')
 
-    # test_str(): see test_unicode.py and test_bytes.py for str() tests.
+    # test_str(): see test_str.py and test_bytes.py for str() tests.
 
     def test_sum(self):
         self.assertEqual(sum([]), 0)
@@ -2176,8 +2203,6 @@ class PtyTests(unittest.TestCase):
         if pid == 0:
             # Child
             try:
-                # Make sure we don't get stuck if there's a problem
-                signal.alarm(2)
                 os.close(r)
                 with open(w, "w") as wpipe:
                     child(wpipe)
@@ -2372,24 +2397,31 @@ class ShutdownTest(unittest.TestCase):
 
 @cpython_only
 class ImmortalTests(unittest.TestCase):
-    def test_immortal(self):
-        none_refcount = sys.getrefcount(None)
-        true_refcount = sys.getrefcount(True)
-        false_refcount = sys.getrefcount(False)
-        smallint_refcount = sys.getrefcount(100)
 
-        # Assert that all of these immortal instances have large ref counts.
-        self.assertGreater(none_refcount, 2 ** 15)
-        self.assertGreater(true_refcount, 2 ** 15)
-        self.assertGreater(false_refcount, 2 ** 15)
-        self.assertGreater(smallint_refcount, 2 ** 15)
+    if sys.maxsize < (1 << 32):
+        IMMORTAL_REFCOUNT = (1 << 30) - 1
+    else:
+        IMMORTAL_REFCOUNT = (1 << 32) - 1
 
-        # Confirm that the refcount doesn't change even with a new ref to them.
-        l = [None, True, False, 100]
-        self.assertEqual(sys.getrefcount(None), none_refcount)
-        self.assertEqual(sys.getrefcount(True), true_refcount)
-        self.assertEqual(sys.getrefcount(False), false_refcount)
-        self.assertEqual(sys.getrefcount(100), smallint_refcount)
+    IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
+
+    def assert_immortal(self, immortal):
+        with self.subTest(immortal):
+            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+
+    def test_immortals(self):
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_list_repeat_respect_immortality(self):
+        refs = list(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_tuple_repeat_respect_immortality(self):
+        refs = tuple(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
 
 
 class TestType(unittest.TestCase):
@@ -2477,6 +2509,17 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')
+
+    def test_type_typeparams(self):
+        class A[T]:
+            pass
+        T, = A.__type_params__
+        self.assertIsInstance(T, typing.TypeVar)
+        A.__type_params__ = "whatever"
+        self.assertEqual(A.__type_params__, "whatever")
+        with self.assertRaises(TypeError):
+            del A.__type_params__
+        self.assertEqual(A.__type_params__, "whatever")
 
     def test_type_doc(self):
         for doc in 'x', '\xc4', '\U0001f40d', 'x\x00y', b'x', 42, None:
