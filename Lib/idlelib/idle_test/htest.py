@@ -409,7 +409,6 @@ def run(*tests):
             next_button.pack_forget()
         test_spec, callable_object = test_list.pop()
         test_kwds = test_spec['kwds']
-        #test_kwds['parent'] = root
         test_name.set('Test ' + test_spec['name'])
 
         text['state'] = 'normal'  # Enable text replacement.
