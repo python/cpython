@@ -412,7 +412,6 @@ class Instruction(_Instruction):
                co_consts=None, varname_from_oparg=None, names=None,
                labels_map=None, exceptions_map=None):
 
-        label_width = 4 + len(str(len(labels_map)))
         argval, argrepr = cls._get_argval_argrepr(
                                op, arg, offset,
                                co_consts, names, varname_from_oparg, labels_map)
@@ -420,7 +419,7 @@ class Instruction(_Instruction):
         instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
                             offset, start_offset, starts_line, line_number,
                             label, positions)
-        instr.label_width = label_width
+        instr.label_width = 4 + len(str(len(labels_map)))
         instr.exc_handler = exceptions_map.get(offset, None)
         return instr
 
@@ -468,12 +467,14 @@ class Instruction(_Instruction):
         """True if other code jumps to here, otherwise False"""
         return self.label is not None
 
-    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=0):
+    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=0,
+                           label_width=0):
         """Format instruction details for inclusion in disassembly output.
 
         *lineno_width* sets the width of the line number field (0 omits it)
         *mark_as_current* inserts a '-->' marker arrow as part of the line
         *offset_width* sets the width of the instruction offset field
+        *label_width* sets the width of the label field
         """
         fields = []
         # Column: Source code line number
@@ -488,9 +489,9 @@ class Instruction(_Instruction):
         # Column: Label
         if self.label is not None:
             lbl = f"L{self.label}:"
-            fields.append(f"{lbl:>{self.label_width}}")
+            fields.append(f"{lbl:>{label_width}}")
         else:
-            fields.append(' ' * self.label_width)
+            fields.append(' ' * label_width)
         # Column: Instruction offset from start of code sequence
         if offset_width > 0:
             fields.append(f"{repr(self.offset):>{offset_width}}  ")
@@ -648,6 +649,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         return labels_map
 
     labels_map = make_labels_map(original_code, exception_entries)
+    label_width = 4 + len(str(len(labels_map)))
 
     exceptions_map = {}
     for start, end, target, _, _ in exception_entries:
@@ -756,6 +758,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     else:
         offset_width = 0
 
+    label_width = -1
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          co_consts, linestarts,
                                          line_offset=line_offset,
@@ -774,7 +777,9 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
-        print(instr._disassemble(lineno_width, is_current_instr, offset_width),
+        label_width = getattr(instr, 'label_width', label_width)
+        assert label_width >= 0
+        print(instr._disassemble(lineno_width, is_current_instr, offset_width, label_width),
               file=file)
     if exception_entries:
         print("ExceptionTable:", file=file)

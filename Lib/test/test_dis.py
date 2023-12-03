@@ -1896,6 +1896,18 @@ class InstructionTests(InstructionTestCase):
                                   positions=None)
         self.assertEqual(instruction.arg, instruction.oparg)
 
+    def test_show_caches_with_label(self):
+        def f(x, y, z):
+            if x:
+                res = y
+            else:
+                res = z
+            return res
+
+        output = io.StringIO()
+        dis.dis(f.__code__, file=output, show_caches=True)
+        self.assertIn("L1:", output.getvalue())
+
     def test_baseopname_and_baseopcode(self):
         # Standard instructions
         for name, code in dis.opmap.items():
