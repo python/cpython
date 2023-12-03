@@ -34,6 +34,9 @@ of Python objects.
 
    Set the object *o* reference counter to *refcnt*.
 
+   On :ref:`Python build with Free Threading <free-threading-build>`, if
+   *refcnt* is larger than ``UINT32_MAX``, the object is made :term:`immortal`.
+
    This function has no effect on :term:`immortal` objects.
 
    .. versionadded:: 3.9
