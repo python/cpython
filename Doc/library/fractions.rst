@@ -107,8 +107,8 @@ another rational number, or from a string.
       and ``"%""``.
 
    .. versionchanged:: 3.13
-      :class:`Fraction` instances now support integer-style formatting, with
-      presentation type ``"d"`` or missing presentation type.
+      Formatting of :class:`Fraction` instances without a presentation type
+      now supports fill, alignment, sign handling, minimum width and grouping.
 
    .. attribute:: numerator
 
@@ -207,18 +207,33 @@ another rational number, or from a string.
 
       Provides support for formatting of :class:`Fraction` instances via the
       :meth:`str.format` method, the :func:`format` built-in function, or
-      :ref:`Formatted string literals <f-strings>`. The presentation types
-      ``"d"``, ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"`` and ``"%"``
-      are supported. For presentation types other than ``"d"``, formatting for
-      :class:`Fraction` follows the rules outlined for the :class:`float` type
-      in the :ref:`formatspec` section. For presentation type ``"d"``,
-      formatting follows the rules for the :class:`int` type, except that the
-      zero-fill flag is not supported. If no presentation type is given, the
-      rules are identical to those for presentation type ``"d"``.
+      :ref:`Formatted string literals <f-strings>`.
+
+      If the ``format_spec`` format specification string does not end with one
+      of the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+      ``'G'`` and ``'%'`` then formatting follows the general rules for fill,
+      alignment, sign handling, minimum width, and grouping as described in the
+      :ref:`format specification mini-language <formatspec>`. The "alternate
+      form" flag ``'#'`` is supported: if present, it forces the output string to
+      always include an explicit denominator, even when the value being
+      formatted is an exact integer. The zero-fill flag `'0'` is not supported.
+
+      If the ``format_spec`` format specification string does end with one of
+      the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+      ``'G'`` and ``'%'`` then formatting follows the rules outlined for the
+      :class:`float` type in the :ref:`formatspec` section.
 
       Here are some examples::
 
          >>> from fractions import Fraction
+         >>> format(Fraction(103993, 33102), '_')
+         '103_993/33_102'
+         >>> format(Fraction(1, 7), '.^+10')
+         '...+1/7...'
+         >>> format(Fraction(3, 1), '')
+         '3'
+         >>> format(Fraction(3, 1), '#')
+         '3/1'
          >>> format(Fraction(1, 7), '.40g')
          '0.1428571428571428571428571428571428571429'
          >>> format(Fraction('1234567.855'), '_.2f')
@@ -228,10 +243,6 @@ another rational number, or from a string.
          >>> old_price, new_price = 499, 672
          >>> "{:.2%} price increase".format(Fraction(new_price, old_price) - 1)
          '34.67% price increase'
-         >>> format(Fraction(103993, 33102), '_d')
-         '103_993/33_102'
-         >>> format(Fraction(1, 7), '.^+10')
-         '...+1/7...'
 
 
 .. seealso::

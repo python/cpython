@@ -848,9 +848,8 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(type(f.numerator), myint)
         self.assertEqual(type(f.denominator), myint)
 
-    def test_format_d_presentation_type(self):
-        # Triples (fraction, specification, expected_result). We test both
-        # with and without a trailing 'd' on the specification.
+    def test_format_no_presentation_type(self):
+        # Triples (fraction, specification, expected_result).
         testcases = [
             # Explicit sign handling
             (F(2, 3), '+', '+2/3'),
@@ -898,7 +897,6 @@ class FractionTest(unittest.TestCase):
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
                 self.assertEqual(format(fraction, spec), expected)
-                self.assertEqual(format(fraction, spec + 'd'), expected)
 
     def test_format_e_presentation_type(self):
         # Triples (fraction, specification, expected_result)

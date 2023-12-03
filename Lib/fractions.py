@@ -139,10 +139,8 @@ def _round_to_figures(n, d, figures):
     return sign, significand, exponent
 
 
-# Pattern for matching int-style format specifications;
-# supports 'd' presentation type (and missing presentation type, interpreted
-# as equivalent to 'd').
-_INT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
+# Pattern for matching non-float-style format specifications.
+_GENERAL_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?:
         (?P<fill>.)?
         (?P<align>[<>=^])
@@ -155,7 +153,6 @@ _INT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     # to interpret it.
     (?P<minimumwidth>0|[1-9][0-9]*)?
     (?P<thousands_sep>[,_])?
-    (?P<presentation_type>d?)
 """, re.DOTALL | re.VERBOSE).fullmatch
 
 
@@ -434,9 +431,12 @@ class Fraction(numbers.Rational):
         else:
             return '%s/%s' % (self._numerator, self._denominator)
 
-    def _format_int_style(self, match):
-        """Helper method for __format__; handles 'd' presentation type."""
+    def _format_general(self, match):
+        """Helper method for __format__.
 
+        Handles fill, alignment, signs, and thousands separators in the
+        case of no presentation type.
+        """
         # Validate and parse the format specifier.
         fill = match["fill"] or " "
         align = match["align"] or ">"
@@ -565,8 +565,8 @@ class Fraction(numbers.Rational):
     def __format__(self, format_spec, /):
         """Format this fraction according to the given format specification."""
 
-        if match := _INT_FORMAT_SPECIFICATION_MATCHER(format_spec):
-            return self._format_int_style(match)
+        if match := _GENERAL_FORMAT_SPECIFICATION_MATCHER(format_spec):
+            return self._format_general(match)
 
         if match := _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec):
             # Refuse the temptation to guess if both alignment _and_
