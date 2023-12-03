@@ -472,9 +472,8 @@ class PurePath:
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePath):
             other = self.with_segments(other)
-        other = other.without_trailing_sep()
-        for step, path in enumerate(chain([other], other.parents)):
-            if path == self or path in self.parents:
+        for step, path in enumerate(other._ancestors):
+            if path in self._ancestors:
                 break
             elif not walk_up:
                 raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
@@ -498,8 +497,7 @@ class PurePath:
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePath):
             other = self.with_segments(other)
-        other = other.without_trailing_sep()
-        return other == self or other in self.parents
+        return other.without_trailing_sep() in self._ancestors
 
     @property
     def parts(self):
@@ -550,6 +548,11 @@ class PurePath:
         # The value of this property should not be cached on the path object,
         # as doing so would introduce a reference cycle.
         return _PathParents(self)
+
+    @property
+    def _ancestors(self):
+        yield self.without_trailing_sep()
+        yield from _PathParents(self)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
