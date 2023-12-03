@@ -257,7 +257,7 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: info()
 
-      Return the "protected" :attr:`!_info` variable, a dictionary containing
+      Return a dictionary containing
       the metadata found in the message catalog file.
 
 
