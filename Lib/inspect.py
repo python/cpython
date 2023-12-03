@@ -3319,7 +3319,7 @@ class Signature:
         return self.format()
 
     def format(self, *, max_width=None):
-        """Convert signature object to string.
+        """Create a string representation of the Signature object.
 
         If *max_width* integer is passed,
         signature will try to fit into the *max_width*.
