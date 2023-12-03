@@ -1968,9 +1968,9 @@ class DummyPathTest(unittest.TestCase):
             _check(p.glob("brokenLink"), ['brokenLink'])
 
         if not self.can_symlink:
-            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
+            _check(p.glob("*/"), ["dirA/", "dirB/", "dirC/", "dirE/"])
         else:
-            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
+            _check(p.glob("*/"), ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
 
     def test_glob_empty_pattern(self):
         p = self.cls()
@@ -2003,17 +2003,17 @@ class DummyPathTest(unittest.TestCase):
         _check(p, "*A", ["dirA", "fileA", "linkA"])
         _check(p, "*B/*", ["dirB/fileB", "dirB/linkD", "linkB/fileB", "linkB/linkD"])
         _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
-        _check(p, "*/", ["dirA", "dirB", "dirC", "dirE", "linkB"])
+        _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
         _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/.."])
-        _check(p, "dir*/**/", ["dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
-                                 "dirC", "dirC/dirD", "dirE"])
+        _check(p, "dir*/**/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
+                               "dirC/", "dirC/dirD/", "dirE/"])
         _check(p, "dir*/**/..", ["dirA/..", "dirA/linkC/..", "dirB/..",
                                  "dirC/..", "dirC/dirD/..", "dirE/.."])
-        _check(p, "dir*/*/**/", ["dirA/linkC", "dirA/linkC/linkD", "dirB/linkD", "dirC/dirD"])
+        _check(p, "dir*/*/**/", ["dirA/linkC/", "dirA/linkC/linkD/", "dirB/linkD/", "dirC/dirD/"])
         _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
-        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
-        _check(p, "*/dirD/**/", ["dirC/dirD"])
+        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
+        _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
     def test_glob_no_follow_symlinks_common(self):
         if not self.can_symlink:
@@ -2028,15 +2028,15 @@ class DummyPathTest(unittest.TestCase):
         _check(p, "*A", ["dirA", "fileA", "linkA"])
         _check(p, "*B/*", ["dirB/fileB", "dirB/linkD"])
         _check(p, "*/fileB", ["dirB/fileB"])
-        _check(p, "*/", ["dirA", "dirB", "dirC", "dirE"])
+        _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/"])
         _check(p, "dir*/*/..", ["dirC/dirD/.."])
-        _check(p, "dir*/**/", ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
+        _check(p, "dir*/**/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
         _check(p, "dir*/**/..", ["dirA/..", "dirB/..", "dirC/..", "dirC/dirD/..", "dirE/.."])
-        _check(p, "dir*/*/**/", ["dirC/dirD"])
+        _check(p, "dir*/*/**/", ["dirC/dirD/"])
         _check(p, "dir*/*/**/..", ["dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
-        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD"])
-        _check(p, "*/dirD/**/", ["dirC/dirD"])
+        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
+        _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
     def test_rglob_common(self):
         def _check(glob, expected):
@@ -2058,25 +2058,25 @@ class DummyPathTest(unittest.TestCase):
                                   "dirC/fileC", "dirC/dirD/fileD"])
         if not self.can_symlink:
             _check(p.rglob("*/"), [
-                "dirA", "dirB", "dirC", "dirC/dirD", "dirE",
+                "dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/",
             ])
         else:
             _check(p.rglob("*/"), [
-                "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
-                "dirC/dirD", "dirE", "linkB",
+                "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
+                "dirC/dirD/", "dirE/", "linkB/",
             ])
-        _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
+        _check(p.rglob(""), ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(BASE, "dirC")
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p.rglob("dir*/**/"), ["dirC/dirD"])
+        _check(p.rglob("dir*/**/"), ["dirC/dirD/"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
-        _check(p.rglob("*/"), ["dirC/dirD"])
-        _check(p.rglob(""), ["dirC", "dirC/dirD"])
-        _check(p.rglob("**/"), ["dirC", "dirC/dirD"])
+        _check(p.rglob("*/"), ["dirC/dirD/"])
+        _check(p.rglob(""), ["dirC/", "dirC/dirD/"])
+        _check(p.rglob("**/"), ["dirC/", "dirC/dirD/"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
@@ -2095,18 +2095,18 @@ class DummyPathTest(unittest.TestCase):
         _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
         _check(p, "file*", ["fileA", "dirA/linkC/fileB", "dirB/fileB",
                             "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
-        _check(p, "*/", ["dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
-                         "dirC", "dirC/dirD", "dirE", "linkB", "linkB/linkD"])
-        _check(p, "", ["", "dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
-                       "dirC", "dirE", "dirC/dirD", "linkB", "linkB/linkD"])
+        _check(p, "*/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
+                         "dirC/", "dirC/dirD/", "dirE/", "linkB/", "linkB/linkD/"])
+        _check(p, "", ["./", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
+                       "dirC/", "dirE/", "dirC/dirD/", "linkB/", "linkB/linkD/"])
 
         p = P(BASE, "dirC")
         _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
                         "dirC/dirD", "dirC/dirD/fileD"])
         _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p, "*/*", ["dirC/dirD/fileD"])
-        _check(p, "*/", ["dirC/dirD"])
-        _check(p, "", ["dirC", "dirC/dirD"])
+        _check(p, "*/", ["dirC/dirD/"])
+        _check(p, "", ["dirC/", "dirC/dirD/"])
         # gh-91616, a re module regression
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
@@ -2123,16 +2123,16 @@ class DummyPathTest(unittest.TestCase):
         _check(p, "*/fileA", [])
         _check(p, "*/fileB", ["dirB/fileB"])
         _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
-        _check(p, "*/", ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
-        _check(p, "", ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
+        _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
+        _check(p, "", ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(BASE, "dirC")
         _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
                         "dirC/dirD", "dirC/dirD/fileD"])
         _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p, "*/*", ["dirC/dirD/fileD"])
-        _check(p, "*/", ["dirC/dirD"])
-        _check(p, "", ["dirC", "dirC/dirD"])
+        _check(p, "*/", ["dirC/dirD/"])
+        _check(p, "", ["dirC/", "dirC/dirD/"])
         # gh-91616, a re module regression
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
@@ -3642,7 +3642,7 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
-        self.assertEqual(set(p.glob("*a\\")), { P(BASE, "dirA") })
+        self.assertEqual(set(p.glob("*a\\")), { P(BASE, "dirA/") })
         self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
         self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\fileA"})
         self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
@@ -3651,7 +3651,7 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
         P = self.cls
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
-        self.assertEqual(set(p.rglob("*\\")), { P(BASE, "dirC/dirD") })
+        self.assertEqual(set(p.rglob("*\\")), { P(BASE, "dirC/dirD/") })
         self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
 
     def test_expanduser(self):
