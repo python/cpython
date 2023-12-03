@@ -634,6 +634,8 @@ code object; see the description of internal types below. The
 module.
 
 
+.. _instance-methods:
+
 Instance methods
 ^^^^^^^^^^^^^^^^
 

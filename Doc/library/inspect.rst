@@ -273,7 +273,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
       :func:`getmembers` will only return class attributes defined in the
       metaclass when the argument is a class and those attributes have been
-      listed in the metaclass' custom :meth:`__dir__`.
+      listed in the metaclass' custom :meth:`~object.__dir__`.
 
 
 .. function:: getmembers_static(object[, predicate])
@@ -487,12 +487,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    has a :meth:`~object.__get__` method but not a :meth:`~object.__set__`
    method, but beyond that the set of attributes varies.  A
    :attr:`~definition.__name__` attribute is usually
-   sensible, and :attr:`__doc__` often is.
+   sensible, and :attr:`!__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
-   :attr:`__func__` attribute (etc) when an object passes :func:`ismethod`.
+   :ref:`__func__ <instance-methods>` attribute (etc) when an object passes
+   :func:`ismethod`.
 
 
 .. function:: isdatadescriptor(object)
@@ -503,7 +504,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Examples are properties (defined in Python), getsets, and members.  The
    latter two are defined in C and there are more specific tests available for
    those types, which is robust across Python implementations.  Typically, data
-   descriptors will also have :attr:`~definition.__name__` and :attr:`__doc__` attributes
+   descriptors will also have :attr:`~definition.__name__` and :attr:`!__doc__` attributes
    (properties, getsets, and members have both of these attributes), but this is
    not guaranteed.
 
@@ -1440,7 +1441,8 @@ Fetching attributes statically
 
 Both :func:`getattr` and :func:`hasattr` can trigger code execution when
 fetching or checking for the existence of attributes. Descriptors, like
-properties, will be invoked and :meth:`__getattr__` and :meth:`__getattribute__`
+properties, will be invoked and :meth:`~object.__getattr__` and
+:meth:`~object.__getattribute__`
 may be called.
 
 For cases where you want passive introspection, like documentation tools, this
@@ -1450,7 +1452,8 @@ but avoids executing code when it fetches attributes.
 .. function:: getattr_static(obj, attr, default=None)
 
    Retrieve attributes without triggering dynamic lookup via the
-   descriptor protocol, :meth:`__getattr__` or :meth:`__getattribute__`.
+   descriptor protocol, :meth:`~object.__getattr__`
+   or :meth:`~object.__getattribute__`.
 
    Note: this function may not be able to retrieve all attributes
    that getattr can fetch (like dynamically created attributes)
