@@ -130,8 +130,8 @@ class CAPITest(unittest.TestCase):
                    '__divmod__': _testcapi.number_divmod,  # PyNumber_Divmod()
                    '__lshift__': _testcapi.number_lshift,  # PyNumber_Lshift()
                    '__rshift__': _testcapi.number_rshift,  # PyNumber_Rshift()
-                   '__and__': _testcapi.number_and,  # Test PyNumber_And()
-                   '__xor__': _testcapi.number_xor,  # Test PyNumber_Xor()
+                   '__and__': _testcapi.number_and,  # PyNumber_And()
+                   '__xor__': _testcapi.number_xor,  # PyNumber_Xor()
                    '__or__': _testcapi.number_or,  # PyNumber_Or()
                    '__pow__': _testcapi.number_power,  # PyNumber_Power()
                    }
@@ -257,8 +257,8 @@ class CAPITest(unittest.TestCase):
                    '__imod__': _testcapi.number_inplaceremainder,  # PyNumber_InPlaceRemainder()
                    '__ilshift__': _testcapi.number_inplacelshift,  # PyNumber_InPlaceLshift()
                    '__irshift__': _testcapi.number_inplacershift,  # PyNumber_InPlaceRshift()
-                   '__iand__': _testcapi.number_inplaceand,  # Test PyNumber_InPlaceAnd()
-                   '__ixor__': _testcapi.number_inplacexor,  # Test PyNumber_InPlaceXor()
+                   '__iand__': _testcapi.number_inplaceand,  # PyNumber_InPlaceAnd()
+                   '__ixor__': _testcapi.number_inplacexor,  # PyNumber_InPlaceXor()
                    '__ior__': _testcapi.number_inplaceor,  # PyNumber_InPlaceOr()
                    '__ipow__': _testcapi.number_inplacepower,  # PyNumber_InPlacePower()
                    }
@@ -463,9 +463,13 @@ class CAPITest(unittest.TestCase):
         # PyNumber_Power()
         power = _testcapi.number_power
 
+        class HasPow(WithDunder):
+            methname = '__pow__'
+
         # ternary op
         self.assertEqual(power(4, 11, 5), pow(4, 11, 5))
         self.assertRaises(TypeError, power, 4, 11, 1.25)
+        self.assertRaises(TypeError, power, 4, 11, HasPow.with_val(NotImplemented))
         self.assertRaises(TypeError, power, 4, 11, object())
 
     @cpython_only
