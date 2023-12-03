@@ -382,7 +382,7 @@ def run(*tests):
     scrollbar.pack(side='right', fill='y', expand=False)
     text.pack(side='left', fill='both', expand=True)
 
-    test_list = [] # Make list of (spec, callable) tuples. 
+    test_list = [] # Make list of (spec, callable) tuples.
     if tests:
         for test in tests:
             test_spec = globals()[test.__name__ + '_spec']
