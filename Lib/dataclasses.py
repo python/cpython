@@ -490,7 +490,7 @@ def _field_init(f, frozen, globals, self_name, slots):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
-    default_name = sys.intern(f'__dataclass_dflt_{f.name}__')
+    default_name = f'__dataclass_dflt_{f.name}__'
     if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
