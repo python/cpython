@@ -233,7 +233,16 @@ class Symbol:
         self.__module_scope = module_scope
 
     def __repr__(self):
-        return "<symbol {0!r}>".format(self.__name)
+        flags_str = '|'.join(self._flags_str())
+        return f'<symbol {self.__name!r}: {self._scope_str()}, {flags_str}>'
+
+    def _scope_str(self):
+        return _scopes_value_to_name.get(self.__scope) or str(self.__scope)
+
+    def _flags_str(self):
+        for flagname, flagvalue in _flags:
+            if self.__flags & flagvalue == flagvalue:
+                yield flagname
 
     def get_name(self):
         """Return a name of a symbol.
@@ -323,11 +332,43 @@ class Symbol:
         else:
             return self.__namespaces[0]
 
+
+_flags = [('USE', USE)]
+_flags.extend(kv for kv in globals().items() if kv[0].startswith('DEF_'))
+_scopes_names = ('FREE', 'LOCAL', 'GLOBAL_IMPLICIT', 'GLOBAL_EXPLICIT', 'CELL')
+_scopes_value_to_name = {globals()[n]: n for n in _scopes_names}
+
+
+def main(args):
+    import sys
+    def print_symbols(table, level=0):
+        indent = '    ' * level
+        nested = "nested " if table.is_nested() else ""
+        if table.get_type() == 'module':
+            what = f'from file {table._filename!r}'
+        else:
+            what = f'{table.get_name()!r}'
+        print(f'{indent}symbol table for {nested}{table.get_type()} {what}:')
+        for ident in table.get_identifiers():
+            symbol = table.lookup(ident)
+            flags = ', '.join(symbol._flags_str()).lower()
+            print(f'    {indent}{symbol._scope_str().lower()} symbol {symbol.get_name()!r}: {flags}')
+        print()
+
+        for table2 in table.get_children():
+            print_symbols(table2, level + 1)
+
+    for filename in args or ['-']:
+        if filename == '-':
+            src = sys.stdin.read()
+            filename = '<stdin>'
+        else:
+            with open(filename, 'rb') as f:
+                src = f.read()
+        mod = symtable(src, filename, 'exec')
+        print_symbols(mod)
+
+
 if __name__ == "__main__":
-    import os, sys
-    with open(sys.argv[0]) as f:
-        src = f.read()
-    mod = symtable(src, os.path.split(sys.argv[0])[1], "exec")
-    for ident in mod.get_identifiers():
-        info = mod.lookup(ident)
-        print(info, info.is_local(), info.is_namespace())
+    import sys
+    main(sys.argv[1:])

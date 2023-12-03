@@ -54,16 +54,24 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
    Furthermore, we can't use designated initializers in Extensions since these
    are not supported pre-C++20. Thus, keeping an internal copy here is the most
    backwards compatible solution */
+#if defined(Py_GIL_DISABLED)
+#define _PyObject_HEAD_INIT(type)                   \
+    {                                               \
+        .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
+        .ob_type = (type)                           \
+    }
+#else
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
         .ob_refcnt = _Py_IMMORTAL_REFCNT, \
         .ob_type = (type)                 \
-    },
+    }
+#endif
 #define _PyVarObject_HEAD_INIT(type, size)    \
     {                                         \
-        .ob_base = _PyObject_HEAD_INIT(type)  \
+        .ob_base = _PyObject_HEAD_INIT(type), \
         .ob_size = size                       \
-    },
+    }
 
 extern void _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
@@ -95,24 +103,63 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
+#if !defined(Py_GIL_DISABLED)
     op->ob_refcnt += n;
+#else
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        uint32_t local = op->ob_ref_local;
+        Py_ssize_t refcnt = (Py_ssize_t)local + n;
+#  if PY_SSIZE_T_MAX > UINT32_MAX
+        if (refcnt > (Py_ssize_t)UINT32_MAX) {
+            // Make the object immortal if the 32-bit local reference count
+            // would overflow.
+            refcnt = _Py_IMMORTAL_REFCNT_LOCAL;
+        }
+#  endif
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, (uint32_t)refcnt);
+    }
+    else {
+        _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
+    }
+#endif
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
 static inline void _Py_SetImmortal(PyObject *op)
 {
     if (op) {
+#ifdef Py_GIL_DISABLED
+        op->ob_tid = _Py_UNOWNED_TID;
+        op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
+        op->ob_ref_shared = 0;
+#else
         op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+#endif
     }
 }
 #define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+
+// Makes an immortal object mortal again with the specified refcnt. Should only
+// be used during runtime finalization.
+static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
+{
+    if (op) {
+        assert(_Py_IsImmortal(op));
+#ifdef Py_GIL_DISABLED
+        op->ob_tid = _Py_UNOWNED_TID;
+        op->ob_ref_local = 0;
+        op->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
+#else
+        op->ob_refcnt = refcnt;
+#endif
+    }
+}
 
 /* _Py_ClearImmortal() should only be used during runtime finalization. */
 static inline void _Py_ClearImmortal(PyObject *op)
 {
     if (op) {
-        assert(op->ob_refcnt == _Py_IMMORTAL_REFCNT);
-        op->ob_refcnt = 1;
+        _Py_SetMortal(op, 1);
         Py_DECREF(op);
     }
 }
@@ -122,6 +169,7 @@ static inline void _Py_ClearImmortal(PyObject *op)
         op = NULL; \
     } while (0)
 
+#if !defined(Py_GIL_DISABLED)
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
@@ -160,6 +208,37 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
 #endif
 }
+
+#else
+// TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
+static inline void
+_Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
+{
+    Py_DECREF(op);
+}
+
+static inline void
+_Py_DECREF_NO_DEALLOC(PyObject *op)
+{
+    Py_DECREF(op);
+}
+
+static inline int
+_Py_REF_IS_MERGED(Py_ssize_t ob_ref_shared)
+{
+    return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_MERGED;
+}
+
+static inline int
+_Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
+{
+    return (ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) == _Py_REF_QUEUED;
+}
+
+// Merge the local and shared reference count fields and add `extra` to the
+// refcount when merging.
+Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
+#endif // !defined(Py_GIL_DISABLED)
 
 #ifdef Py_REF_DEBUG
 #  undef _Py_DEC_REFTOTAL

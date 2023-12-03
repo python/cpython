@@ -304,15 +304,15 @@ Functions and classes provided:
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
-   If the code within the :keyword:`!with` block raises an
-   :exc:`ExceptionGroup`, suppressed exceptions are removed from the
+   If the code within the :keyword:`!with` block raises a
+   :exc:`BaseExceptionGroup`, suppressed exceptions are removed from the
    group.  If any exceptions in the group are not suppressed, a group containing them is re-raised.
 
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.12
       ``suppress`` now supports suppressing exceptions raised as
-      part of an :exc:`ExceptionGroup`.
+      part of an :exc:`BaseExceptionGroup`.
 
 .. function:: redirect_stdout(new_target)
 
