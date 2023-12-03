@@ -8,14 +8,15 @@ the master window to end testing.
 
 In a tested module, let X be a global name bound to a callable (class or
 function) whose .__name__ attribute is also X (the usual situation). The
-first parameter of X must be 'parent'.  When called, the parent argument
-will be the root window.  X must create a child Toplevel(parent) window
-(or subclass thereof).  The Toplevel may be a test widget or dialog, in
-which case the callable is the corresponding class.  Or the Toplevel may
-contain the widget to be tested or set up a context in which a test
-widget is invoked.  In this latter case, the callable is a wrapper
-function that sets up the Toplevel and other objects.  Wrapper function
-names, such as _editor_window', should start with '_' and be lowercase.
+first parameter of X must be 'parent' or 'master'.  When called, the
+first argument will be the root window.  X must create a child
+Toplevel(parent/master) (or subclass thereof).  The Toplevel may be a
+test widget or dialog, in which case the callable is the corresponding
+class.  Or the Toplevel may contain the widget to be tested or set up a
+context in which a test widget is invoked.  In this latter case, the
+callable is a wrapper function that sets up the Toplevel and other
+objects.  Wrapper function names, such as _editor_window', should start
+with '_' and be lowercase.
 
 
 End the module with
@@ -123,6 +124,14 @@ CustomRun_spec = {
            "Close dialog with valid entry, <Escape>, [Cancel], [X]"
     }
 
+_debug_object_browser_spec = {
+    'file': 'debugobj',
+    'kwds': {},
+    'msg': "Double click on items up to the lowest level.\n"
+           "Attributes of the objects and related information "
+           "will be displayed side-by-side at each level."
+    }
+
 # TODO Improve message
 _dyn_option_menu_spec = {
     'file': 'dynoption',
@@ -199,17 +208,17 @@ _linenumbers_drag_scrolling_spec = {
     'kwds': {},
     'msg': textwrap.dedent("""\
         1. Click on the line numbers and drag down below the edge of the
-        window, moving the mouse a bit and then leaving it there for a while.
-        The text and line numbers should gradually scroll down, with the
-        selection updated continuously.
+        window, moving the mouse a bit and then leaving it there for a
+        while. The text and line numbers should gradually scroll down,
+        with the selection updated continuously.
 
-        2. With the lines still selected, click on a line number above the
-        selected lines. Only the line whose number was clicked should be
-        selected.
+        2. With the lines still selected, click on a line number above
+        or below the selected lines. Only the line whose number was
+        clicked should be selected.
 
-        3. Repeat step #1, dragging to above the window. The text and line
-        numbers should gradually scroll up, with the selection updated
-        continuously.
+        3. Repeat step #1, dragging to above the window. The text and
+        line numbers should gradually scroll up, with the selection
+        updated continuously.
 
         4. Repeat step #2, clicking a line number below the selection."""),
     }
@@ -217,42 +226,33 @@ _linenumbers_drag_scrolling_spec = {
 _multi_call_spec = {
     'file': 'multicall',
     'kwds': {},
-    'msg': "The following actions should trigger a print to console or IDLE"
-           " Shell.\nEntering and leaving the text area, key entry, "
-           "<Control-Key>,\n<Alt-Key-a>, <Control-Key-a>, "
-           "<Alt-Control-Key-a>, \n<Control-Button-1>, <Alt-Button-1> and "
-           "focusing out of the window\nare sequences to be tested."
+    'msg': "The following should trigger a print to console or IDLE Shell.\n"
+           "Entering and leaving the text area, key entry, <Control-Key>,\n"
+           "<Alt-Key-a>, <Control-Key-a>, <Alt-Control-Key-a>, \n"
+           "<Control-Button-1>, <Alt-Button-1> and focusing elsewhere."
     }
 
 _module_browser_spec = {
     'file': 'browser',
     'kwds': {},
-    'msg': "Inspect names of module, class(with superclass if "
-           "applicable), methods and functions.\nToggle nested items.\n"
-           "Double clicking on items prints a traceback for an exception "
-           "that is ignored."
+    'msg': textwrap.dedent("""
+        "Inspect names of module, class(with superclass if applicable),
+        "methods and functions.  Toggle nested items.  Double clicking
+        "on items prints a traceback for an exception that is ignored.""")
     }
 
 _multistatus_bar_spec = {
     'file': 'statusbar',
     'kwds': {},
     'msg': "Ensure presence of multi-status bar below text area.\n"
-           "Click 'Update Status' to change the multi-status text"
+           "Click 'Update Status' to change the status text"
     }
 
-_object_browser_spec = {
-    'file': 'debugobj',
-    'kwds': {},
-    'msg': "Double click on items up to the lowest level.\n"
-           "Attributes of the objects and related information "
-           "will be displayed side-by-side at each level."
-    }
-
-_path_browser_spec = {
+PathBrowser_spec = {
     'file': 'pathbrowser',
-    'kwds': {},
+    'kwds': {'_htest': True},
     'msg': "Test for correct display of all paths in sys.path.\n"
-           "Toggle nested items up to the lowest level.\n"
+           "Toggle nested items out to the lowest level.\n"
            "Double clicking on an item prints a traceback\n"
            "for an exception that is ignored."
     }
@@ -409,7 +409,7 @@ def run(*tests):
             next_button.pack_forget()
         test_spec, callable_object = test_list.pop()
         test_kwds = test_spec['kwds']
-        test_kwds['parent'] = root
+        #test_kwds['parent'] = root
         test_name.set('Test ' + test_spec['name'])
 
         text['state'] = 'normal'  # Enable text replacement.
@@ -418,7 +418,7 @@ def run(*tests):
         text['state'] = 'disabled'  # Restore read-only property.
 
     def run_test(_=None):
-        widget = callable_object(**test_kwds)
+        widget = callable_object(root, **test_kwds)
         try:
             print(widget.result)  # Only true for query classes(?).
         except AttributeError:
