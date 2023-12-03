@@ -1,0 +1,1 @@
+Intern field names of ``dataclass`` to improve performance. Patch by Xuehai Pan.
