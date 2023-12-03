@@ -1,0 +1,1 @@
+Remove deprecation error on passing ``onerror`` to :func:`shutil.rmtree`.
