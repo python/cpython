@@ -257,7 +257,7 @@ are the methods of :class:`!NullTranslations`:
 
    .. method:: info()
 
-      Return the "protected" :attr:`_info` variable, a dictionary containing
+      Return a dictionary containing
       the metadata found in the message catalog file.
 
 
@@ -296,9 +296,9 @@ are the methods of :class:`!NullTranslations`:
 The :class:`GNUTranslations` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`gettext` module provides one additional class derived from
+The :mod:`!gettext` module provides one additional class derived from
 :class:`NullTranslations`: :class:`GNUTranslations`.  This class overrides
-:meth:`_parse` to enable reading GNU :program:`gettext` format :file:`.mo` files
+:meth:`!_parse` to enable reading GNU :program:`gettext` format :file:`.mo` files
 in both big-endian and little-endian format.
 
 :class:`GNUTranslations` parses optional metadata out of the translation
@@ -306,7 +306,7 @@ catalog. It is convention with GNU :program:`gettext` to include metadata as
 the translation for the empty string. This metadata is in :rfc:`822`\ -style
 ``key: value`` pairs, and should contain the ``Project-Id-Version`` key.  If the
 key ``Content-Type`` is found, then the ``charset`` property is used to
-initialize the "protected" :attr:`_charset` instance variable, defaulting to
+initialize the "protected" :attr:`!_charset` instance variable, defaulting to
 ``None`` if not found.  If the charset encoding is specified, then all message
 ids and message strings read from the catalog are converted to Unicode using
 this encoding, else ASCII is assumed.
@@ -315,7 +315,7 @@ Since message ids are read as Unicode strings too, all ``*gettext()`` methods
 will assume message ids as Unicode strings, not byte strings.
 
 The entire set of key/value pairs are placed into a dictionary and set as the
-"protected" :attr:`_info` instance variable.
+"protected" :attr:`!_info` instance variable.
 
 If the :file:`.mo` file's magic number is invalid, the major version number is
 unexpected, or if other problems occur while reading the file, instantiating a
@@ -636,9 +636,9 @@ implementations, and valuable experience to the creation of this module:
 
 .. rubric:: Footnotes
 
-.. [#] The default locale directory is system dependent; for example, on RedHat Linux
+.. [#] The default locale directory is system dependent; for example, on Red Hat Linux
    it is :file:`/usr/share/locale`, but on Solaris it is :file:`/usr/lib/locale`.
-   The :mod:`gettext` module does not try to support these system dependent
+   The :mod:`!gettext` module does not try to support these system dependent
    defaults; instead its default is :file:`{sys.base_prefix}/share/locale` (see
    :data:`sys.base_prefix`). For this reason, it is always best to call
    :func:`bindtextdomain` with an explicit absolute path at the start of your
