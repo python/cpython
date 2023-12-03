@@ -1677,8 +1677,9 @@ Some smaller changes made to the core Python language are:
   (:issue:`1591665`)
 
 * Instance method objects have new attributes for the object and function
-  comprising the method; the new synonym for :attr:`im_self` is
-  :attr:`__self__`, and :attr:`im_func` is also available as :attr:`__func__`.
+  comprising the method; the new synonym for :attr:`!im_self` is
+  :ref:`__self__ <instance-methods>`, and :attr:`!im_func` is also available as
+  :ref:`__func__ <instance-methods>`.
   The old names are still supported in Python 2.6, but are gone in 3.0.
 
 * An obscure change: when you use the :func:`locals` function inside a
