@@ -219,7 +219,7 @@ another rational number, or from a string.
       formatted is an exact integer. The zero-fill flag ``'0'`` is not
       supported.
 
-      If the ``format_spec`` format specification string does end with one of
+      If the ``format_spec`` format specification string ends with one of
       the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
       ``'G'`` or ``'%'`` then formatting follows the rules outlined for the
       :class:`float` type in the :ref:`formatspec` section.
