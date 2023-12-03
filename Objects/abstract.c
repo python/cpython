@@ -1472,7 +1472,11 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
     if (!runerr) {
         goto finish;
     }
-    assert(PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError));
+
+    /* Error handling code -- only manage OverflowError differently */
+    if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
+        goto finish;
+    }
     _PyErr_Clear(tstate);
 
     /* If no error-handling desired then the default clipping
@@ -1666,6 +1670,11 @@ PyNumber_Float(PyObject *o)
             return NULL;
         }
         return PyFloat_FromDouble(val);
+    }
+
+    /* A float subclass with nb_float == NULL */
+    if (PyFloat_Check(o)) {
+        return PyFloat_FromDouble(PyFloat_AS_DOUBLE(o));
     }
     return PyFloat_FromString(o);
 }
