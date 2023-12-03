@@ -164,6 +164,7 @@ nitpick_ignore = [
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
     # Deprecated function that was never documented:
+    ('py:func', 'getargspec'),
     ('py:func', 'inspect.getargspec'),
 ]
 
