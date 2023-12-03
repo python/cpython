@@ -653,7 +653,7 @@ def display_header(use_resources: tuple[str, ...],
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
             (ubsan, "UBSAN_OPTIONS"),
-            (tsan, "TSAN_OPTIONS"),
+            (thread, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)
             if sanitizer and options is not None:
