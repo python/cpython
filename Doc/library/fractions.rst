@@ -211,7 +211,7 @@ another rational number, or from a string.
 
       If the ``format_spec`` format specification string does not end with one
       of the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
-      ``'G'`` and ``'%'`` then formatting follows the general rules for fill,
+      ``'G'`` or ``'%'`` then formatting follows the general rules for fill,
       alignment, sign handling, minimum width, and grouping as described in the
       :ref:`format specification mini-language <formatspec>`. The "alternate
       form" flag ``'#'`` is supported: if present, it forces the output string to
@@ -221,7 +221,7 @@ another rational number, or from a string.
 
       If the ``format_spec`` format specification string does end with one of
       the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
-      ``'G'`` and ``'%'`` then formatting follows the rules outlined for the
+      ``'G'`` or ``'%'`` then formatting follows the rules outlined for the
       :class:`float` type in the :ref:`formatspec` section.
 
       Here are some examples::
