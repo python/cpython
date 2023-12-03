@@ -838,8 +838,7 @@ shutil
 
 * :func:`shutil.rmtree` now accepts a new argument *onexc* which is an
   error handler like *onerror* but which expects an exception instance
-  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated and
-  will be removed in Python 3.14.
+  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated.
   (Contributed by Irit Katriel in :gh:`102828`.)
 
 * :func:`shutil.which` now consults the *PATHEXT* environment variable to
@@ -1261,8 +1260,8 @@ Deprecated
   :mod:`concurrent.futures` the fix is to use a different
   :mod:`multiprocessing` start method such as ``"spawn"`` or ``"forkserver"``.
 
-* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated and will be removed
-  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
+* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated;
+  use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
 * :mod:`sqlite3`:
 
