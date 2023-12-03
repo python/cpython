@@ -1,0 +1,1 @@
+Fixes a bug where bytearrays could be cleared while being handled by stringlib join that could result in reading memory after it was freed.
