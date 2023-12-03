@@ -392,7 +392,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Return ``True`` if the object can be used in :keyword:`await` expression.
 
    Can also be used to distinguish generator-based coroutines from regular
-   generators::
+   generators:
+
+   .. testcode::
+
+      import types
 
       def gen():
           yield
@@ -409,13 +413,15 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. function:: isasyncgenfunction(object)
 
    Return ``True`` if the object is an :term:`asynchronous generator` function,
-   for example::
+   for example:
 
-    >>> async def agen():
-    ...     yield 1
-    ...
-    >>> inspect.isasyncgenfunction(agen)
-    True
+   .. doctest::
+
+      >>> async def agen():
+      ...     yield 1
+      ...
+      >>> inspect.isasyncgenfunction(agen)
+      True
 
    .. versionadded:: 3.6
 
@@ -985,18 +991,20 @@ function.
       For variable-keyword arguments (``**kwargs``) the default is an
       empty dict.
 
-      ::
+      .. doctest::
 
-        >>> def foo(a, b='ham', *args): pass
-        >>> ba = inspect.signature(foo).bind('spam')
-        >>> ba.apply_defaults()
-        >>> ba.arguments
-        {'a': 'spam', 'b': 'ham', 'args': ()}
+         >>> def foo(a, b='ham', *args): pass
+         >>> ba = inspect.signature(foo).bind('spam')
+         >>> ba.apply_defaults()
+         >>> ba.arguments
+         {'a': 'spam', 'b': 'ham', 'args': ()}
 
       .. versionadded:: 3.5
 
    The :attr:`args` and :attr:`kwargs` properties can be used to invoke
-   functions::
+   functions:
+
+   .. testcode::
 
       def test(a, *, b):
           ...
@@ -1115,20 +1123,22 @@ Classes and functions
    ``**`` arguments, if any) to their values from *args* and *kwds*. In case of
    invoking *func* incorrectly, i.e. whenever ``func(*args, **kwds)`` would raise
    an exception because of incompatible signature, an exception of the same type
-   and the same or similar message is raised. For example::
+   and the same or similar message is raised. For example:
 
-    >>> from inspect import getcallargs
-    >>> def f(a, b=1, *pos, **named):
-    ...     pass
-    ...
-    >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
-    True
-    >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
-    True
-    >>> getcallargs(f)
-    Traceback (most recent call last):
-    ...
-    TypeError: f() missing 1 required positional argument: 'a'
+   .. doctest::
+
+      >>> from inspect import getcallargs
+      >>> def f(a, b=1, *pos, **named):
+      ...     pass
+      ...
+      >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
+      True
+      >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
+      True
+      >>> getcallargs(f)
+      Traceback (most recent call last):
+      ...
+      TypeError: f() missing 1 required positional argument: 'a'
 
    .. versionadded:: 3.2
 
