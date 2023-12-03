@@ -685,7 +685,6 @@ class TracebackErrorLocationCaretTestBase:
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
             '    return compile(code, "?", "exec")\n'
-            '           ~~~~~~~^^^^^^^^^^^^^^^^^^^\n'
             '  File "?", line 7\n'
             '    foo(a, z\n'
             '           ^'
@@ -775,8 +774,8 @@ class TracebackErrorLocationCaretTestBase:
     def test_caret_for_binary_operators_with_spaces_and_parenthesis(self):
         def f_with_binary_operator():
             a = 1
-            b = ""
-            return ( a   )   +b
+            b = c = ""
+            return ( a   )   +b + c
 
         lineno_f = f_with_binary_operator.__code__.co_firstlineno
         expected_error = (
@@ -785,7 +784,7 @@ class TracebackErrorLocationCaretTestBase:
             '    callable()\n'
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
-            '    return ( a   )   +b\n'
+            '    return ( a   )   +b + c\n'
             '           ~~~~~~~~~~^~\n'
         )
         result_lines = self.get_exception(f_with_binary_operator)
@@ -973,7 +972,7 @@ class TracebackErrorLocationCaretTestBase:
                 def f2(b):
                     raise RuntimeError("fail")
                 return f2
-            return f1("x")("y")
+            return f1("x")("y")("z")
 
         lineno_f = f_with_call.__code__.co_firstlineno
         expected_error = (
@@ -982,7 +981,7 @@ class TracebackErrorLocationCaretTestBase:
             '    callable()\n'
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+5}, in f_with_call\n'
-            '    return f1("x")("y")\n'
+            '    return f1("x")("y")("z")\n'
             '           ~~~~~~~^^^^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f2\n'
             '    raise RuntimeError("fail")\n'
@@ -1497,6 +1496,184 @@ class TracebackErrorLocationCaretTestBase:
             '    raise MemoryError()']
         self.assertEqual(actual, expected)
 
+    def test_anchors_for_simple_return_statements_are_elided(self):
+        def g():
+            1/0
+
+        def f():
+            return g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g()",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g():
+            1/0
+
+        def f():
+            return g() + 1
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g() + 1",
+            "           ~^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            return g(1,
+                     2, 4,
+                     5)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g(1,",
+            "             2, 4,",
+            "             5)",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            return g(1,
+                     2, 4,
+                     5) + 1
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    return g(1,",
+            "           ~^^^",
+            "             2, 4,",
+            "             ^^^^^",
+            "             5) + 1",
+            "             ^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+    def test_anchors_for_simple_assign_statements_are_elided(self):
+        def g():
+            1/0
+
+        def f():
+            x = g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = g()",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            x = g(1,
+                  2, 3,
+                  4)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = g(1,",
+            "          2, 3,",
+            "          4)",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g():
+            1/0
+
+        def f():
+            x = y = g()
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = y = g()",
+            "            ~^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
+        def g(*args):
+            1/0
+
+        def f():
+            x = y = g(1,
+                      2, 3,
+                      4)
+
+        result_lines = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            "    callable()",
+            "    ~~~~~~~~^^",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            "    x = y = g(1,",
+            "            ~^^^",
+            "              2, 3,",
+            "              ^^^^^",
+            "              4)",
+            "              ^^",
+            f"  File \"{__file__}\", line {g.__code__.co_firstlineno + 1}, in g",
+            "    1/0",
+            "    ~^~"
+        ]
+        self.assertEqual(result_lines, expected)
+
 
 @requires_debug_ranges()
 class PurePythonTracebackErrorCaretTests(
@@ -1691,7 +1868,7 @@ class TracebackFormatMixin:
         # Check a known (limited) number of recursive invocations
         def g(count=10):
             if count:
-                return g(count-1)
+                return g(count-1) + 1
             raise ValueError
 
         with captured_output("stderr") as stderr_g:
@@ -1705,13 +1882,13 @@ class TracebackFormatMixin:
         lineno_g = g.__code__.co_firstlineno
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
@@ -1750,13 +1927,10 @@ class TracebackFormatMixin:
             '    ~^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '           ~^^^^^^^^^\n'
             '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_h+3}, in h\n'
             '    g()\n'
@@ -1776,13 +1950,13 @@ class TracebackFormatMixin:
                 self.fail("no error raised")
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
@@ -1790,7 +1964,7 @@ class TracebackFormatMixin:
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+80}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+77}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF)\n'
             '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
@@ -1808,13 +1982,13 @@ class TracebackFormatMixin:
                 self.fail("no error raised")
         result_g = (
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
-            '    return g(count-1)\n'
+            '    return g(count-1) + 1\n'
             '           ~^^^^^^^^^\n'
             '  [Previous line repeated 1 more time]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
@@ -1823,7 +1997,7 @@ class TracebackFormatMixin:
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+112}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+109}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
             '    ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
         )
@@ -4260,11 +4434,14 @@ class TestColorizedTraceback(unittest.TestCase):
             x = {'a':{'b': None}}
             y = x['a']['b']['c']
 
-        def baz(*args):
-            return foo(1,2,3,4)
+        def baz2(*args):
+            return (lambda *args: foo(*args))(1,2,3,4)
+
+        def baz1(*args):
+            return baz2(1,2,3,4)
 
         def bar():
-            return baz(1,
+            return baz1(1,
                     2,3
                     ,4)
         try:
@@ -4278,10 +4455,10 @@ class TestColorizedTraceback(unittest.TestCase):
         boldr = traceback._ANSIColors.BOLD_RED
         reset = traceback._ANSIColors.RESET
         self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
-        self.assertIn("return " + red + "foo" + reset + boldr + "(1,2,3,4)" + reset, lines)
-        self.assertIn("return " + red + "baz" + reset + boldr + "(1," + reset, lines)
-        self.assertIn(boldr + "2,3" + reset, lines)
-        self.assertIn(boldr + ",4)" + reset, lines)
+        self.assertIn("return " + red + "(lambda *args: foo(*args))" + reset + boldr + "(1,2,3,4)" + reset, lines)
+        self.assertIn("return (lambda *args: " + red + "foo" + reset + boldr + "(*args)" + reset + ")(1,2,3,4)", lines)
+        self.assertIn("return baz2(1,2,3,4)", lines)
+        self.assertIn("return baz1(1,\n            2,3\n            ,4)", lines)
         self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
 
     def test_colorized_syntax_error(self):
