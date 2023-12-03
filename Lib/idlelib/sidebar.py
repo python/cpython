@@ -517,13 +517,13 @@ class ShellSidebar(BaseSideBar):
 def _linenumbers_drag_scrolling(parent):  # htest #
     from idlelib.idle_test.test_sidebar import Dummy_editwin
 
-    toplevel = tk.Toplevel(parent)
-    text_frame = tk.Frame(toplevel)
+    top = tk.Toplevel(parent)
+    text_frame = tk.Frame(top)
     text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     text_frame.rowconfigure(1, weight=1)
     text_frame.columnconfigure(1, weight=1)
 
-    font = idleConf.GetFont(toplevel, 'main', 'EditorWindow')
+    font = idleConf.GetFont(top, 'main', 'EditorWindow')
     text = tk.Text(text_frame, width=80, height=24, wrap=tk.NONE, font=font)
     text.grid(row=1, column=1, sticky=tk.NSEW)
 

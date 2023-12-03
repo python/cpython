@@ -26,6 +26,7 @@ def _multistatus_bar(parent):  # htest #
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry("+%d+%d" %(x, y + 175))
     top.title("Test multistatus bar")
+
     frame = Frame(top)
     text = Text(frame, height=5, width=40)
     text.pack()
