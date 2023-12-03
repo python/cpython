@@ -1256,12 +1256,10 @@ class FractionTest(unittest.TestCase):
             '.%',
             # Z instead of z for negative zero suppression
             'Z.2f'
-            # D instead of d for integer-style formatting
-            '10D',
-            # z flag not supported for integer-style formatting
-            'zd',
-            # zero padding not supported for integer-style formatting
-            '05d',
+            # z flag not supported for general formatting
+            'z',
+            # zero padding not supported for general formatting
+            '05',
         ]
         for spec in invalid_specs:
             with self.subTest(spec=spec):
