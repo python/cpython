@@ -1,0 +1,2 @@
+Add ``kwdefaults`` parameter to :data:`types.FunctionType` to accept kwonly
+defaults.
