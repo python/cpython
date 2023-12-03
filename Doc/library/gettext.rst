@@ -296,7 +296,7 @@ are the methods of :class:`!NullTranslations`:
 The :class:`GNUTranslations` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`gettext` module provides one additional class derived from
+The :mod:`!gettext` module provides one additional class derived from
 :class:`NullTranslations`: :class:`GNUTranslations`.  This class overrides
 :meth:`!_parse` to enable reading GNU :program:`gettext` format :file:`.mo` files
 in both big-endian and little-endian format.
@@ -638,7 +638,7 @@ implementations, and valuable experience to the creation of this module:
 
 .. [#] The default locale directory is system dependent; for example, on Red Hat Linux
    it is :file:`/usr/share/locale`, but on Solaris it is :file:`/usr/lib/locale`.
-   The :mod:`gettext` module does not try to support these system dependent
+   The :mod:`!gettext` module does not try to support these system dependent
    defaults; instead its default is :file:`{sys.base_prefix}/share/locale` (see
    :data:`sys.base_prefix`). For this reason, it is always best to call
    :func:`bindtextdomain` with an explicit absolute path at the start of your
