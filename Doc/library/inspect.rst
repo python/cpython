@@ -1,6 +1,11 @@
 :mod:`inspect` --- Inspect live objects
 =======================================
 
+.. testsetup:: *
+
+   import inspect
+   from inspect import *
+
 .. module:: inspect
    :synopsis: Extract information and source code from live objects.
 
@@ -614,13 +619,16 @@ Introspecting callables with the Signature object
 
 .. versionadded:: 3.3
 
-The Signature object represents the call signature of a callable object and its
-return annotation.  To retrieve a Signature object, use the :func:`signature`
+The :class:`Signature` object represents the call signature of a callable object
+and its return annotation. To retrieve a :class:`!Signature` object,
+use the :func:`!signature`
 function.
 
 .. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
-   Return a :class:`Signature` object for the given *callable*::
+   Return a :class:`Signature` object for the given *callable*:
+
+   .. doctest::
 
       >>> from inspect import signature
       >>> def foo(a, *, b:int, **kwargs):
@@ -629,10 +637,10 @@ function.
       >>> sig = signature(foo)
 
       >>> str(sig)
-      '(a, *, b:int, **kwargs)'
+      '(a, *, b: int, **kwargs)'
 
       >>> str(sig.parameters['b'])
-      'b:int'
+      'b: int'
 
       >>> sig.parameters['b'].annotation
       <class 'int'>
@@ -647,7 +655,7 @@ function.
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
    :func:`get_annotations`.  The
-   *global*, *locals*, and *eval_str* parameters are passed
+   *globals*, *locals*, and *eval_str* parameters are passed
    into :func:`get_annotations` when resolving the
    annotations; see the documentation for :func:`get_annotations`
    for instructions on how to use these parameters.
@@ -680,7 +688,8 @@ function.
 
 .. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
 
-   A Signature object represents the call signature of a function and its return
+   A :class:`!Signature` object represents the call signature of a function
+   and its return
    annotation.  For each parameter accepted by the function it stores a
    :class:`Parameter` object in its :attr:`parameters` collection.
 
@@ -690,14 +699,14 @@ function.
    positional-only first, then positional-or-keyword, and that parameters with
    defaults follow parameters without defaults.
 
-   The optional *return_annotation* argument, can be an arbitrary Python object,
-   is the "return" annotation of the callable.
+   The optional *return_annotation* argument can be an arbitrary Python object.
+   It represents the "return" annotation of the callable.
 
-   Signature objects are *immutable*.  Use :meth:`Signature.replace` or
+   :class:`!Signature` objects are *immutable*.  Use :meth:`Signature.replace` or
    :func:`copy.replace` to make a modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable and :term:`hashable`.
+      :class:`!Signature` objects are now picklable and :term:`hashable`.
 
    .. attribute:: Signature.empty
 
@@ -734,13 +743,15 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance :meth:`replace` was invoked
-      on.  It is possible to pass different ``parameters`` and/or
-      ``return_annotation`` to override the corresponding properties of the base
-      signature.  To remove return_annotation from the copied Signature, pass in
+      Create a new :class:`Signature` instance based on the instance
+      :meth:`replace` was invoked on.
+      It is possible to pass different *parameters* and/or
+      *return_annotation* to override the corresponding properties of the base
+      signature.  To remove ``return_annotation`` from the copied
+      :class:`!Signature`, pass in
       :attr:`Signature.empty`.
 
-      ::
+      .. doctest::
 
          >>> def test(a, b):
          ...     pass
@@ -750,12 +761,12 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-      Signature objects are also supported by generic function
+      :class:`Signature` objects are also supported by the generic function
       :func:`copy.replace`.
 
    .. method:: format(*, max_width=None)
 
-      Convert signature object to string.
+      Create a string representation of the :class:`Signature` object.
 
       If *max_width* is passed, the method will attempt to fit
       the signature into lines of at most *max_width* characters.
@@ -769,12 +780,14 @@ function.
        Return a :class:`Signature` (or its subclass) object for a given callable
        *obj*.
 
-       This method simplifies subclassing of :class:`Signature`::
+       This method simplifies subclassing of :class:`Signature`:
 
-         class MySignature(Signature):
-             pass
-         sig = MySignature.from_callable(min)
-         assert isinstance(sig, MySignature)
+       .. testcode::
+
+          class MySignature(Signature):
+              pass
+          sig = MySignature.from_callable(sum)
+          assert isinstance(sig, MySignature)
 
        Its behavior is otherwise identical to that of :func:`signature`.
 
@@ -786,11 +799,12 @@ function.
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
-   Parameter objects are *immutable*.  Instead of modifying a Parameter object,
+   :class:`!Parameter` objects are *immutable*.
+   Instead of modifying a :class:`!Parameter` object,
    you can use :meth:`Parameter.replace` or :func:`copy.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable and :term:`hashable`.
+      Parameter objects are now picklable and :term:`hashable`.
 
    .. attribute:: Parameter.empty
 
@@ -809,7 +823,7 @@ function.
          expressions.
 
          .. versionchanged:: 3.6
-            These parameter names are exposed by this module as names like
+            These parameter names are now exposed by this module as names like
             ``implicit0``.
 
    .. attribute:: Parameter.default
@@ -859,7 +873,9 @@ function.
       |                        | definition.                                  |
       +------------------------+----------------------------------------------+
 
-      Example: print all keyword-only arguments without default values::
+      Example: print all keyword-only arguments without default values:
+
+      .. doctest::
 
          >>> def foo(a, b, *, c, d=10):
          ...     pass
@@ -873,11 +889,13 @@ function.
 
    .. attribute:: Parameter.kind.description
 
-      Describes a enum value of Parameter.kind.
+      Describes a enum value of :attr:`Parameter.kind`.
 
       .. versionadded:: 3.8
 
-      Example: print all descriptions of arguments::
+      Example: print all descriptions of arguments:
+
+      .. doctest::
 
          >>> def foo(a, b, *, c, d=10):
          ...     pass
@@ -892,12 +910,12 @@ function.
 
    .. method:: Parameter.replace(*[, name][, kind][, default][, annotation])
 
-      Create a new Parameter instance based on the instance replaced was invoked
-      on.  To override a :class:`Parameter` attribute, pass the corresponding
+      Create a new :class:`Parameter` instance based on the instance replaced was invoked
+      on.  To override a :class:`!Parameter` attribute, pass the corresponding
       argument.  To remove a default value or/and an annotation from a
-      Parameter, pass :attr:`Parameter.empty`.
+      :class:`!Parameter`, pass :attr:`Parameter.empty`.
 
-      ::
+      .. doctest::
 
          >>> from inspect import Parameter
          >>> param = Parameter('foo', Parameter.KEYWORD_ONLY, default=42)
@@ -908,12 +926,13 @@ function.
          'foo=42'
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
-         "foo:'spam'"
+         "foo: 'spam'"
 
-      Parameter objects are also supported by generic function :func:`copy.replace`.
+      :class:`Parameter` objects are also supported by the generic function
+      :func:`copy.replace`.
 
    .. versionchanged:: 3.4
-      In Python 3.3 Parameter objects were allowed to have ``name`` set
+      In Python 3.3 :class:`Parameter` objects were allowed to have ``name`` set
       to ``None`` if their ``kind`` was set to ``POSITIONAL_ONLY``.
       This is no longer permitted.
 
