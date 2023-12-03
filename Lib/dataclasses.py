@@ -490,7 +490,7 @@ def _field_init(f, frozen, globals, self_name, slots):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
-    default_name = f'__dataclass_dflt_{f.name}__'
+    default_name = sys.intern(f'__dataclass_dflt_{f.name}__')
     if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
@@ -775,7 +775,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         f = field(default=default)
 
     # Only at this point do we know the name and the type.  Set them.
-    f.name = a_name
+    f.name = sys.intern(a_name)
     f.type = a_type
 
     # Assume it's a normal field until proven otherwise.  We're next
