@@ -691,11 +691,23 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
+        has_is_interned = (test.support.check_impl_detail(cpython=True)
+                           or hasattr(sys, '_is_interned'))
         self.assertRaises(TypeError, sys.intern)
+        self.assertRaises(TypeError, sys.intern, b'abc')
+        if has_is_interned:
+            self.assertRaises(TypeError, sys._is_interned)
+            self.assertRaises(TypeError, sys._is_interned, b'abc')
         s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s), True)
         s2 = s.swapcase().swapcase()
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
         self.assertTrue(sys.intern(s2) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.
@@ -707,6 +719,8 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
+        if has_is_interned:
+            self.assertIs(sys._is_interned(S("abc")), False)
 
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):

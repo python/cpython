@@ -297,6 +297,13 @@ sqlite3
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
+sys
+---
+
+* Add the :func:`sys._is_interned` function to test if the string was interned.
+  This function is not guaranteed to exist in all implementations of Python.
+  (Contributed by Serhiy Storchaka in :gh:`78573`.)
+
 tkinter
 -------
 
