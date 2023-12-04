@@ -1464,6 +1464,8 @@ class Path(_PathBase):
         elif self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = os.path.abspath(self.drive)
+            if not self._tail:
+                return self.with_segments(cwd)
         else:
             cwd = os.getcwd()
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
