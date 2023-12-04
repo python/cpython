@@ -1785,6 +1785,12 @@ class InstructionTests(InstructionTestCase):
         super().__init__(*args)
         self.maxDiff = None
 
+    def test_instruction_str(self):
+        # smoke test for __str__
+        instrs = dis.get_instructions(simple)
+        for instr in instrs:
+            str(instr)
+
     def test_default_first_line(self):
         actual = dis.get_instructions(simple)
         self.assertInstructionsEqual(list(actual), expected_opinfo_simple)

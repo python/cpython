@@ -474,8 +474,13 @@ class Instruction(_Instruction):
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
         """
-        return Formatter(offset_width=offset_width,
-                         label_width=label_width).format(self, mark_as_current)
+        output = io.StringIO()
+        formatter = Formatter(file=output,
+                              lineno_width=lineno_width,
+                              offset_width=offset_width,
+                              label_width=label_width)
+        formatter.print_instruction(self, mark_as_current)
+        return output.getvalue()
 
     def __str__(self):
         return self._disassemble()
