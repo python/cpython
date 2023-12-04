@@ -708,6 +708,13 @@ class PurePathTest(unittest.TestCase):
         p = P('a/b')
         self._check_str(p.__fspath__(), ('a/b',))
         self._check_str(os.fspath(p), ('a/b',))
+        self.assertEqual('.', P().__fspath__())
+        self.assertEqual('.', P('').__fspath__())
+        self.assertEqual('.', P('.').__fspath__())
+        self.assertEqual('.', P('', '').__fspath__())
+        self.assertEqual('.', P('.', '').__fspath__())
+        self.assertEqual('.', P('', '.').__fspath__())
+        self.assertEqual(f'.{self.sep}.', P('.', '.').__fspath__())
 
     def test_bytes(self):
         P = self.cls

@@ -261,8 +261,6 @@ class PurePath:
 
     @classmethod
     def _parse_path(cls, path):
-        if not path:
-            return '', '', []
         sep = cls.pathmod.sep
         altsep = cls.pathmod.altsep
         if altsep:
@@ -605,12 +603,13 @@ class PurePath:
                         "argument should be a str or an os.PathLike "
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
-                paths.append(path)
+                if path:
+                    paths.append(path)
         self._raw_paths = paths
         if len(paths) == 1:
             self._raw_path_cached = paths[0]
         elif len(paths) == 0:
-            self._raw_path_cached = ''
+            self._raw_path_cached = '.'
         self._resolving = False
 
     def __reduce__(self):
