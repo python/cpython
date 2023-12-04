@@ -653,6 +653,51 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
 
+    def test_has_trailing_sep(self):
+        P = self.cls
+        self.assertFalse(P().has_trailing_sep)
+        self.assertFalse(P('').has_trailing_sep)
+        self.assertFalse(P('.').has_trailing_sep)
+        self.assertFalse(P('a').has_trailing_sep)
+        self.assertTrue(P('a/').has_trailing_sep)
+        self.assertFalse(P('a/b').has_trailing_sep)
+        self.assertTrue(P('a/b/').has_trailing_sep)
+        self.assertFalse(P('/').has_trailing_sep)
+        self.assertFalse(P('/a').has_trailing_sep)
+        self.assertTrue(P('/a/').has_trailing_sep)
+        self.assertFalse(P('/a/b').has_trailing_sep)
+        self.assertTrue(P('/a/b/').has_trailing_sep)
+
+    def test_with_trailing_sep(self):
+        P = self.cls
+        self.assertRaises(ValueError, P().with_trailing_sep)
+        self.assertRaises(ValueError, P('').with_trailing_sep)
+        self.assertRaises(ValueError, P('.').with_trailing_sep)
+        self.assertEqual(P('a/'), P('a').with_trailing_sep())
+        self.assertEqual(P('a/'), P('a/').with_trailing_sep())
+        self.assertEqual(P('a/b/'), P('a/b').with_trailing_sep())
+        self.assertEqual(P('a/b/'), P('a/b/').with_trailing_sep())
+        self.assertRaises(ValueError, P('/').with_trailing_sep)
+        self.assertEqual(P('/a/'), P('/a').with_trailing_sep())
+        self.assertEqual(P('/a/'), P('/a/').with_trailing_sep())
+        self.assertEqual(P('/a/b/'), P('/a/b').with_trailing_sep())
+        self.assertEqual(P('/a/b/'), P('/a/b/').with_trailing_sep())
+
+    def test_without_trailing_sep(self):
+        P = self.cls
+        self.assertEqual(P(), P().without_trailing_sep())
+        self.assertEqual(P(), P('').without_trailing_sep())
+        self.assertEqual(P(), P('.').without_trailing_sep())
+        self.assertEqual(P('a'), P('a').without_trailing_sep())
+        self.assertEqual(P('a'), P('a/').without_trailing_sep())
+        self.assertEqual(P('a/b'), P('a/b').without_trailing_sep())
+        self.assertEqual(P('a/b'), P('a/b/').without_trailing_sep())
+        self.assertEqual(P('/'), P('/').without_trailing_sep())
+        self.assertEqual(P('/a'), P('/a').without_trailing_sep())
+        self.assertEqual(P('/a'), P('/a/').without_trailing_sep())
+        self.assertEqual(P('/a/b'), P('/a/b').without_trailing_sep())
+        self.assertEqual(P('/a/b'), P('/a/b/').without_trailing_sep())
+
     def test_relative_to_common(self):
         P = self.cls
         p = P('a/b')

@@ -443,12 +443,6 @@ class PurePath:
         else:
             raise ValueError(f"Invalid suffix {suffix!r}")
 
-    def without_trailing_sep(self):
-        """Return a new path without a trailing slash after its name."""
-        if not self.has_trailing_sep:
-            return self
-        return self._from_parsed_parts(self.drive, self.root, self._tail, False)
-
     def with_trailing_sep(self):
         """Return a new path with a trailing slash after its name. If the
         path has no name, ValueError is raised."""
@@ -458,6 +452,12 @@ class PurePath:
         if not tail:
             raise ValueError(f"{self!r} has an empty name")
         return self._from_parsed_parts(self.drive, self.root, tail, True)
+
+    def without_trailing_sep(self):
+        """Return a new path without a trailing slash after its name."""
+        if not self.has_trailing_sep:
+            return self
+        return self._from_parsed_parts(self.drive, self.root, self._tail, False)
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
