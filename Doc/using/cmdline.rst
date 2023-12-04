@@ -1110,6 +1110,12 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PY_COLORS
+
+   If this variable is set to ``1``, the interpreter will colorize different kinds
+   of output. Setting it to ``0`` deactivates this behavior.
+
+   .. versionadded:: 3.13
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

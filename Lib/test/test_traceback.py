@@ -8,6 +8,7 @@ import types
 import inspect
 import builtins
 import unittest
+import unittest.mock
 import re
 import tempfile
 import random
@@ -41,6 +42,14 @@ LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
+    def setUp(self):
+        super().setUp()
+        self.colorize = traceback._COLORIZE
+        traceback._COLORIZE = False
+
+    def tearDown(self):
+        super().tearDown()
+        traceback._COLORIZE = self.colorize
 
     def get_exception_format(self, func, exc):
         try:
@@ -521,7 +530,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(
             str(inspect.signature(traceback.print_exception)),
             ('(exc, /, value=<implicit>, tb=<implicit>, '
-             'limit=None, file=None, chain=True)'))
+             'limit=None, file=None, chain=True, **kwargs)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
@@ -3031,7 +3040,7 @@ class TestStack(unittest.TestCase):
 
     def test_custom_format_frame(self):
         class CustomStackSummary(traceback.StackSummary):
-            def format_frame_summary(self, frame_summary):
+            def format_frame_summary(self, frame_summary, colorize=False):
                 return f'{frame_summary.filename}:{frame_summary.lineno}'
 
         def some_inner():
@@ -3056,7 +3065,7 @@ class TestStack(unittest.TestCase):
         tb = g()
 
         class Skip_G(traceback.StackSummary):
-            def format_frame_summary(self, frame_summary):
+            def format_frame_summary(self, frame_summary, colorize=False):
                 if frame_summary.name == 'g':
                     return None
                 return super().format_frame_summary(frame_summary)
@@ -3076,7 +3085,6 @@ class Unrepresentable:
         raise Exception("Unrepresentable")
 
 class TestTracebackException(unittest.TestCase):
-
     def do_test_smoke(self, exc, expected_type_str):
         try:
             raise exc
@@ -4245,6 +4253,85 @@ class MiscTest(unittest.TestCase):
                 res3 = traceback._levenshtein_distance(a, b, threshold)
                 self.assertGreater(res3, threshold, msg=(a, b, threshold))
 
+class TestColorizedTraceback(unittest.TestCase):
+    def test_colorized_traceback(self):
+        def foo(*args):
+            x = {'a':{'b': None}}
+            y = x['a']['b']['c']
+
+        def baz(*args):
+            return foo(1,2,3,4)
+
+        def bar():
+            return baz(1,
+                    2,3
+                    ,4)
+        try:
+            bar()
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+        lines = "".join(exc.format(colorize=True))
+        red = traceback._ANSIColors.RED
+        boldr = traceback._ANSIColors.BOLD_RED
+        reset = traceback._ANSIColors.RESET
+        self.assertIn("y = " + red + "x['a']['b']" + reset + boldr + "['c']" + reset, lines)
+        self.assertIn("return " + red + "foo" + reset + boldr + "(1,2,3,4)" + reset, lines)
+        self.assertIn("return " + red + "baz" + reset + boldr + "(1," + reset, lines)
+        self.assertIn(boldr + "2,3" + reset, lines)
+        self.assertIn(boldr + ",4)" + reset, lines)
+        self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
+
+    def test_colorized_traceback_is_the_default(self):
+        def foo():
+            1/0
+
+        from _testcapi import exception_print
+        try:
+            foo()
+            self.fail("No exception thrown.")
+        except Exception as e:
+            with captured_output("stderr") as tbstderr:
+                with unittest.mock.patch('traceback._can_colorize', return_value=True):
+                    exception_print(e)
+            actual = tbstderr.getvalue().splitlines()
+
+        red = traceback._ANSIColors.RED
+        boldr = traceback._ANSIColors.BOLD_RED
+        reset = traceback._ANSIColors.RESET
+        lno_foo = foo.__code__.co_firstlineno
+        expected = ['Traceback (most recent call last):',
+            f'  File "{__file__}", '
+            f'line {lno_foo+5}, in test_colorized_traceback_is_the_default',
+            f'    {red}foo{reset+boldr}(){reset}',
+            f'    {red}~~~{reset+boldr}^^{reset}',
+            f'  File "{__file__}", '
+            f'line {lno_foo+1}, in foo',
+            f'    {red}1{reset+boldr}/{reset+red}0{reset}',
+            f'    {red}~{reset+boldr}^{reset+red}~{reset}',
+            'ZeroDivisionError: division by zero']
+        self.assertEqual(actual, expected)
+
+    def test_colorized_detection_checks_for_environment_variables(self):
+        with unittest.mock.patch("sys.stderr") as stderr_mock:
+            stderr_mock.isatty.return_value = True
+            with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
+                self.assertEqual(traceback._can_colorize(), False)
+            with unittest.mock.patch("os.environ", {'PY_COLORS': '1'}):
+                self.assertEqual(traceback._can_colorize(), True)
+            with unittest.mock.patch("os.environ", {'PY_COLORS': '0'}):
+                self.assertEqual(traceback._can_colorize(), False)
+            with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
+                self.assertEqual(traceback._can_colorize(), False)
+            with unittest.mock.patch("os.environ", {'NO_COLOR': '1', "PY_COLORS": '1'}):
+                self.assertEqual(traceback._can_colorize(), True)
+            with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
+                self.assertEqual(traceback._can_colorize(), True)
+            with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
+                self.assertEqual(traceback._can_colorize(), False)
+            stderr_mock.isatty.return_value = False
+            self.assertEqual(traceback._can_colorize(), False)
 
 if __name__ == "__main__":
     unittest.main()
