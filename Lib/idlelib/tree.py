@@ -492,6 +492,7 @@ def _tree_widget(parent):  # htest #
     node = TreeNode(sc.canvas, None, item)
     node.expand()
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_tree', verbosity=2, exit=False)
