@@ -1782,6 +1782,31 @@ copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
 del _pickle_psargs, _pickle_pskwargs
 
 
+# Preload these once, as globals, as a micro-optimisation.
+# This makes a significant difference to the time it takes
+# to do `isinstance()`/`issubclass()` checks
+# against runtime-checkable protocols with only one callable member.
+_abc_instancecheck = ABCMeta.__instancecheck__
+_abc_subclasscheck = ABCMeta.__subclasscheck__
+
+
+def _type_check_issubclass_arg_1(arg):
+    """Raise TypeError if `arg` is not an instance of `type`
+    in `issubclass(arg, <protocol>)`.
+
+    In most cases, this is verified by type.__subclasscheck__.
+    Checking it again unnecessarily would slow down issubclass() checks,
+    so, we don't perform this check unless we absolutely have to.
+
+    For various error paths, however,
+    we want to ensure that *this* error message is shown to the user
+    where relevant, rather than a typing.py-specific error message.
+    """
+    if not isinstance(arg, type):
+        # Same error message as for issubclass(1, int).
+        raise TypeError('issubclass() arg 1 must be a class')
+
+
 class _ProtocolMeta(ABCMeta):
     # This metaclass is somewhat unfortunate,
     # but is necessary for several reasons...
@@ -1821,13 +1846,11 @@ class _ProtocolMeta(ABCMeta):
             getattr(cls, '_is_protocol', False)
             and not _allow_reckless_class_checks()
         ):
-            if not isinstance(other, type):
-                # Same error message as for issubclass(1, int).
-                raise TypeError('issubclass() arg 1 must be a class')
             if (
                 not cls.__callable_proto_members_only__
                 and cls.__dict__.get("__subclasshook__") is _proto_hook
             ):
+                _type_check_issubclass_arg_1(other)
                 non_method_attrs = sorted(
                     attr for attr in cls.__protocol_attrs__
                     if not callable(getattr(cls, attr, None))
@@ -1837,11 +1860,12 @@ class _ProtocolMeta(ABCMeta):
                     f" Non-method members: {str(non_method_attrs)[1:-1]}."
                 )
             if not getattr(cls, '_is_runtime_protocol', False):
+                _type_check_issubclass_arg_1(other)
                 raise TypeError(
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
                 )
-        return super().__subclasscheck__(other)
+        return _abc_subclasscheck(cls, other)
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
@@ -1850,7 +1874,7 @@ class _ProtocolMeta(ABCMeta):
             return type.__instancecheck__(cls, instance)
         if not getattr(cls, "_is_protocol", False):
             # i.e., it's a concrete subclass of a protocol
-            return super().__instancecheck__(instance)
+            return _abc_instancecheck(cls, instance)
 
         if (
             not getattr(cls, '_is_runtime_protocol', False) and
@@ -1859,7 +1883,7 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if super().__instancecheck__(instance):
+        if _abc_instancecheck(cls, instance):
             return True
 
         getattr_static = _lazy_load_getattr_static()
