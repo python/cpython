@@ -441,8 +441,9 @@ PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
 }
 
 static PyObject *
-tupleconcat(PyTupleObject *a, PyObject *bb)
+tupleconcat(PyObject *aa, PyObject *bb)
 {
+    PyTupleObject *a = (PyTupleObject *)aa;
     Py_ssize_t size;
     Py_ssize_t i;
     PyObject **src, **dest;
@@ -754,7 +755,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
 
 static PySequenceMethods tuple_as_sequence = {
     (lenfunc)tuplelength,                       /* sq_length */
-    (binaryfunc)tupleconcat,                    /* sq_concat */
+    tupleconcat,                                /* sq_concat */
     (ssizeargfunc)tuplerepeat,                  /* sq_repeat */
     (ssizeargfunc)tupleitem,                    /* sq_item */
     0,                                          /* sq_slice */
