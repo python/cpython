@@ -183,8 +183,9 @@ PyTuple_Pack(Py_ssize_t n, ...)
 /* Methods */
 
 static void
-tupledealloc(PyTupleObject *op)
+tupledealloc(PyObject *obj)
 {
+    PyTupleObject *op = (PyTupleObject *)obj;
     if (Py_SIZE(op) == 0) {
         /* The empty tuple is statically allocated. */
         if (op == &_Py_SINGLETON(tuple_empty)) {
@@ -848,7 +849,7 @@ PyTypeObject PyTuple_Type = {
     "tuple",
     sizeof(PyTupleObject) - sizeof(PyObject *),
     sizeof(PyObject *),
-    (destructor)tupledealloc,                   /* tp_dealloc */
+    tupledealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
