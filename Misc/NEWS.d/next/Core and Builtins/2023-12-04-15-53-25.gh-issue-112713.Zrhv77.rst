@@ -1,0 +1,1 @@
+Added support for the ``Partitioned`` cookie flag to the ``http.cookies`` module.
