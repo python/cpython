@@ -288,9 +288,9 @@ The :mod:`csv` module defines the following classes:
       Inspecting each column, one of two key criteria will be considered to
       estimate if the sample contains a header:
 
-        - the second through n-th rows contain numeric values
-        - the second through n-th rows contain strings where at least one value's
-          length differs from that of the putative header of that column.
+      - the second through n-th rows contain numeric values
+      - the second through n-th rows contain strings where at least one value's
+        length differs from that of the putative header of that column.
 
       Twenty rows after the first row are sampled; if more than half of columns +
       rows meet the criteria, :const:`True` is returned.
@@ -327,7 +327,7 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`writer` objects to quote all non-numeric fields.
 
-   Instructs the reader to convert all non-quoted fields to type *float*.
+   Instructs :class:`reader` objects to convert all non-quoted fields to type *float*.
 
 
 .. data:: QUOTE_NONE
@@ -337,7 +337,25 @@ The :mod:`csv` module defines the following constants:
    character.  If *escapechar* is not set, the writer will raise :exc:`Error` if
    any characters that require escaping are encountered.
 
-   Instructs :class:`reader` to perform no special processing of quote characters.
+   Instructs :class:`reader` objects to perform no special processing of quote characters.
+
+.. data:: QUOTE_NOTNULL
+
+   Instructs :class:`writer` objects to quote all fields which are not
+   ``None``.  This is similar to :data:`QUOTE_ALL`, except that if a
+   field value is ``None`` an empty (unquoted) string is written.
+
+   Instructs :class:`reader` objects to interpret an empty (unquoted) field as None and
+   to otherwise behave as :data:`QUOTE_ALL`.
+
+.. data:: QUOTE_STRINGS
+
+   Instructs :class:`writer` objects to always place quotes around fields
+   which are strings.  This is similar to :data:`QUOTE_NONNUMERIC`, except that if a
+   field value is ``None`` an empty (unquoted) string is written.
+
+   Instructs :class:`reader` objects to interpret an empty (unquoted) string as ``None`` and
+   to otherwise behave as :data:`QUOTE_NONNUMERIC`.
 
 The :mod:`csv` module defines the following exception:
 

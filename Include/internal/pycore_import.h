@@ -5,6 +5,37 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
+#include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_time.h"          // _PyTime_t
+
+extern int _PyImport_IsInitialized(PyInterpreterState *);
+
+// Export for 'pyexpat' shared extension
+PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
+
+extern int _PyImport_SetModuleString(const char *name, PyObject* module);
+
+extern void _PyImport_AcquireLock(PyInterpreterState *interp);
+extern int _PyImport_ReleaseLock(PyInterpreterState *interp);
+
+extern int _PyImport_FixupBuiltin(
+    PyObject *mod,
+    const char *name,            /* UTF-8 encoded string */
+    PyObject *modules
+    );
+extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
+                                          PyObject *, PyObject *);
+
+// Export for many shared extensions, like '_json'
+PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
+
+// Export for many shared extensions, like '_datetime'
+PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttrString(const char *, const char *);
+
 
 struct _import_runtime_state {
     /* The builtin modules (defined in config.c). */
@@ -15,17 +46,15 @@ struct _import_runtime_state {
        See PyInterpreterState.modules_by_index for more info. */
     Py_ssize_t last_module_index;
     struct {
-        /* A thread state tied to the main interpreter,
-           used exclusively for when the extensions dict is access/modified
-           from an arbitrary thread. */
-        PyThreadState main_tstate;
-        /* A dict mapping (filename, name) to PyModuleDef for modules.
+        /* A lock to guard the cache. */
+        PyThread_type_lock mutex;
+        /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)
            or are imported in the main interpreter.
            This is initialized lazily in _PyImport_FixupExtensionObject().
            Modules are added there and looked up in _imp.find_extension(). */
-        PyObject *dict;
+        _Py_hashtable_t *hashtable;
     } extensions;
     /* Package context -- the full module name for package imports */
     const char * pkgcontext;
@@ -79,7 +108,7 @@ struct _import_state {
 };
 
 #ifdef HAVE_DLOPEN
-#  include <dlfcn.h>
+#  include <dlfcn.h>              // RTLD_NOW, RTLD_LAZY
 #  if HAVE_DECL_RTLD_NOW
 #    define _Py_DLOPEN_FLAGS RTLD_NOW
 #  else
@@ -163,16 +192,18 @@ struct _module_alias {
     const char *orig;                 /* ASCII encoded string */
 };
 
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenBootstrap;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenStdlib;
-PyAPI_DATA(const struct _frozen *) _PyImport_FrozenTest;
+// Export these 3 symbols for test_ctypes
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenBootstrap;
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenStdlib;
+PyAPI_DATA(const struct _frozen*) _PyImport_FrozenTest;
+
 extern const struct _module_alias * _PyImport_FrozenAliases;
 
-PyAPI_FUNC(int) _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
+extern int _PyImport_CheckSubinterpIncompatibleExtensionAllowed(
     const char *name);
 
 
-// for testing
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyImport_ClearExtension(PyObject *name, PyObject *filename);
 
 #ifdef __cplusplus

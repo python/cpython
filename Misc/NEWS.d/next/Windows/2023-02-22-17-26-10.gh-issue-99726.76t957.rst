@@ -1,2 +1,0 @@
-Improves correctness of stat results for Windows, and uses faster API when
-available

@@ -1,1 +1,0 @@
-Fix ``-Wstrict-prototypes`` compiler warnings.
