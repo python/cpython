@@ -1782,6 +1782,14 @@ copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
 del _pickle_psargs, _pickle_pskwargs
 
 
+# Preload these once, as globals, as a micro-optimisation.
+# This makes a significant difference to the time it takes
+# to do `isinstance()`/`issubclass()` checks
+# against runtime-checkable protocols with only one callable member.
+_abc_instancecheck = ABCMeta.__instancecheck__
+_abc_subclasscheck = ABCMeta.__subclasscheck__
+
+
 class _ProtocolMeta(ABCMeta):
     # This metaclass is somewhat unfortunate,
     # but is necessary for several reasons...
@@ -1841,7 +1849,7 @@ class _ProtocolMeta(ABCMeta):
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
                 )
-        return super().__subclasscheck__(other)
+        return _abc_subclasscheck(cls, other)
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
@@ -1850,7 +1858,7 @@ class _ProtocolMeta(ABCMeta):
             return type.__instancecheck__(cls, instance)
         if not getattr(cls, "_is_protocol", False):
             # i.e., it's a concrete subclass of a protocol
-            return super().__instancecheck__(instance)
+            return _abc_instancecheck(cls, instance)
 
         if (
             not getattr(cls, '_is_runtime_protocol', False) and
@@ -1859,7 +1867,7 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if super().__instancecheck__(instance):
+        if _abc_instancecheck(cls, instance):
             return True
 
         getattr_static = _lazy_load_getattr_static()
