@@ -71,7 +71,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 // As suggested by https://core.tcl-lang.org/tcl/wiki?name=Migrating+C+extensions+to+Tcl+9
 #ifndef TCL_SIZE_MAX
-typedef Tcl_Size int;
+typedef int Tcl_Size;
 #define TCL_SIZE_MAX INT_MAX
 #endif
 
