@@ -336,21 +336,6 @@ class Instruction(_Instruction):
                      covered by this instruction
     """
 
-    @classmethod
-    def _create(cls, op, arg, offset, start_offset, starts_line, line_number,
-               positions,
-               co_consts=None, varname_from_oparg=None, names=None,
-               labels_map=None):
-
-        argval, argrepr = _get_argval_argrepr(
-                               op, arg, offset,
-                               co_consts, names, varname_from_oparg, labels_map)
-        label = labels_map.get(offset, None)
-        instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
-                            offset, start_offset, starts_line, line_number,
-                            label, positions)
-        return instr
-
     @property
     def oparg(self):
         """Alias for Instruction.arg."""
@@ -715,10 +700,13 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         deop = _deoptop(op)
         op = code[offset]
 
-        yield Instruction._create(op, arg, offset, start_offset, starts_line, line_number,
-                                  positions, co_consts=co_consts,
-                                  varname_from_oparg=varname_from_oparg, names=names,
-                                  labels_map=labels_map)
+        argval, argrepr = _get_argval_argrepr(
+                               op, arg, offset,
+                               co_consts, names, varname_from_oparg, labels_map)
+
+        yield Instruction(_all_opname[op], op, arg, argval, argrepr,
+                          offset, start_offset, starts_line, line_number,
+                          labels_map.get(offset, None), positions)
 
         caches = _get_cache_size(_all_opname[deop])
         if not caches:
