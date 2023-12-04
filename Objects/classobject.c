@@ -232,8 +232,9 @@ method_new_impl(PyTypeObject *type, PyObject *function, PyObject *instance)
 }
 
 static void
-method_dealloc(PyMethodObject *im)
+method_dealloc(PyObject *obj)
 {
+    PyMethodObject *im = (PyMethodObject *)obj;
     _PyObject_GC_UNTRACK(im);
     if (im->im_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)im);
@@ -323,7 +324,7 @@ PyTypeObject PyMethod_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "method",
     .tp_basicsize = sizeof(PyMethodObject),
-    .tp_dealloc = (destructor)method_dealloc,
+    .tp_dealloc = method_dealloc,
     .tp_vectorcall_offset = offsetof(PyMethodObject, vectorcall),
     .tp_repr = (reprfunc)method_repr,
     .tp_hash = (hashfunc)method_hash,
