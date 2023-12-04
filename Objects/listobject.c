@@ -2758,8 +2758,9 @@ list_remove(PyListObject *self, PyObject *value)
 }
 
 static int
-list_traverse(PyListObject *o, visitproc visit, void *arg)
+list_traverse(PyObject *obj, visitproc visit, void *arg)
 {
+    PyListObject *o = (PyListObject *)obj;
     Py_ssize_t i;
 
     for (i = Py_SIZE(o); --i >= 0; )
@@ -3180,7 +3181,7 @@ PyTypeObject PyList_Type = {
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_LIST_SUBCLASS |
         _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
     list___init____doc__,                       /* tp_doc */
-    (traverseproc)list_traverse,                /* tp_traverse */
+    list_traverse,                              /* tp_traverse */
     (inquiry)list_clear_slot,                   /* tp_clear */
     list_richcompare,                           /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
