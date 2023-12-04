@@ -989,6 +989,23 @@ sys_intern_impl(PyObject *module, PyObject *s)
 }
 
 
+/*[clinic input]
+sys._is_interned -> bool
+
+  string: unicode
+  /
+
+Return True if the given string is "interned".
+[clinic start generated code]*/
+
+static int
+sys__is_interned_impl(PyObject *module, PyObject *string)
+/*[clinic end generated code: output=c3678267b4e9d7ed input=039843e17883b606]*/
+{
+    return PyUnicode_CHECK_INTERNED(string);
+}
+
+
 /*
  * Cached interned string objects used for calling the profile and
  * trace functions.
@@ -2462,6 +2479,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS_INTERN_METHODDEF
+    SYS__IS_INTERNED_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF
