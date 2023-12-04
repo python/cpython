@@ -4849,8 +4849,9 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 }
 
 static PyObject *
-long_invert(PyLongObject *v)
+long_invert(PyObject *obj)
 {
+    PyLongObject *v = (PyLongObject *)obj;
     /* Implement ~x as -(x+1) */
     PyLongObject *x;
     if (_PyLong_IsCompact(v))
@@ -6246,7 +6247,7 @@ static PyNumberMethods long_as_number = {
     long_long,                  /*tp_positive*/
     long_abs,                   /*tp_absolute*/
     (inquiry)long_bool,         /*tp_bool*/
-    (unaryfunc)long_invert,     /*nb_invert*/
+    long_invert,                /*nb_invert*/
     long_lshift,                /*nb_lshift*/
     long_rshift,                /*nb_rshift*/
     long_and,                   /*nb_and*/
