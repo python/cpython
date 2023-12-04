@@ -476,20 +476,20 @@ class Instruction(_Instruction):
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
         """
-        return InstructionFormatter(offset_width=offset_width,
-                                    label_width=label_width).format(self, mark_as_current)
+        return Formatter(offset_width=offset_width,
+                         label_width=label_width).format(self, mark_as_current)
 
     def __str__(self):
         return self._disassemble()
 
 
-class InstructionFormatter:
+class Formatter:
 
     NO_LINENO = '  --'
 
     def __init__(self, file=None, lineno_width=3, offset_width=0, label_width=0,
-                       linestarts=None, line_offset=0):
-        """Create and InstructionFormatter
+                       linestarts=None, exception_entries=None, line_offset=0):
+        """Create a Formatter
 
         *file* where to write the output
         *lineno_width* sets the width of the line number field (0 omits it)
@@ -504,6 +504,7 @@ class InstructionFormatter:
         self.offset_width = offset_width
         self.label_width = label_width
         self.linestarts = linestarts
+        self.exception_entries = exception_entries
 
         # Omit the line number column entirely if we have no line number info
         if bool(linestarts):
@@ -527,7 +528,7 @@ class InstructionFormatter:
         self.lineno_width = lineno_width
 
 
-    def format(self, instr, mark_as_current=False):
+    def print_instruction(self, instr, mark_as_current=False):
         """Format instruction details for inclusion in disassembly output."""
         lineno_width = self.lineno_width
         offset_width = self.offset_width
@@ -576,7 +577,18 @@ class InstructionFormatter:
             # Column: Opcode argument details
             if instr.argrepr:
                 fields.append('(' + instr.argrepr + ')')
-        return ' '.join(fields).rstrip()
+        print(' '.join(fields).rstrip(), file=self.file)
+
+    def print_exception_table(self):
+        file = self.file
+        if self.exception_entries:
+            print("ExceptionTable:", file=file)
+            for entry in self.exception_entries:
+                lasti = " lasti" if entry.lasti else ""
+                start = entry.start_label
+                end = entry.end_label
+                target = entry.target_label
+                print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
 
 
 def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
@@ -807,11 +819,12 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     labels_map = _make_labels_map(original_code or code, exception_entries)
     label_width = 4 + len(str(len(labels_map)))
 
-    instr_formatter = InstructionFormatter(file=file,
-                                           offset_width=offset_width,
-                                           label_width=label_width,
-                                           linestarts=linestarts,
-                                           line_offset=line_offset)
+    formatter = Formatter(file=file,
+                          offset_width=offset_width,
+                          label_width=label_width,
+                          linestarts=linestarts,
+                          line_offset=line_offset,
+                          exception_entries=exception_entries)
 
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          co_consts, linestarts,
@@ -827,15 +840,9 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
-        print(instr_formatter.format(instr, is_current_instr), file=file)
-    if exception_entries:
-        print("ExceptionTable:", file=file)
-        for entry in exception_entries:
-            lasti = " lasti" if entry.lasti else ""
-            start = entry.start_label
-            end = entry.end_label
-            target = entry.target_label
-            print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
+        formatter.print_instruction(instr, is_current_instr)
+
+    formatter.print_exception_table()
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
