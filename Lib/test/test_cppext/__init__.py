@@ -2,7 +2,6 @@
 # compatible with C++ and does not emit C++ compiler warnings.
 import os.path
 import shutil
-import sys
 import unittest
 import subprocess
 import sysconfig

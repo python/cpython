@@ -4,8 +4,8 @@ machinery = test_util.import_importlib('importlib.machinery')
 import os
 import re
 import sys
-import sysconfig
 import unittest
+from test import support
 from test.support import import_helper
 from contextlib import contextmanager
 from test.test_importlib.util import temp_module
