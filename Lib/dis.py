@@ -584,13 +584,16 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
         line_offset = first_line - co.co_firstlineno
     else:
         line_offset = 0
+
+    original_code = co.co_code
+    labels_map = _make_labels_map(original_code)
     return _get_instructions_bytes(_get_code_array(co, adaptive),
                                    co._varname_from_oparg,
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset,
                                    co_positions=co.co_positions(),
                                    show_caches=show_caches,
-                                   original_code=co.co_code)
+                                   original_code=original_code)
 
 def _get_const_value(op, arg, co_consts):
     """Helper to get the value of the const in a hasconst op.
@@ -665,7 +668,7 @@ def _is_backward_jump(op):
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
                             linestarts=None, line_offset=0,
-                            exception_entries=(), co_positions=None,
+                            co_positions=None,
                             show_caches=False, original_code=None, labels_map=None):
     """Iterate over the instructions in a bytecode string.
 
@@ -682,7 +685,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     co_positions = co_positions or iter(())
     get_name = None if names is None else names.__getitem__
 
-    labels_map = labels_map or _make_labels_map(original_code, exception_entries)
+    labels_map = labels_map or _make_labels_map(original_code)
 
     starts_line = False
     local_line_number = None
@@ -758,7 +761,7 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
                 )
 
 
-def _make_labels_map(original_code, exception_entries):
+def _make_labels_map(original_code, exception_entries=()):
     jump_targets = set(findlabels(original_code))
     labels = set(jump_targets)
     for start, end, target, _, _ in exception_entries:
@@ -803,7 +806,6 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     instrs = _get_instructions_bytes(code, varname_from_oparg, names,
                                            co_consts, linestarts,
                                            line_offset=line_offset,
-                                           exception_entries=exception_entries,
                                            co_positions=co_positions,
                                            show_caches=show_caches,
                                            original_code=original_code,
@@ -960,15 +962,17 @@ class Bytecode:
 
     def __iter__(self):
         co = self.codeobj
+        original_code = co.co_code
+        labels_map = _make_labels_map(original_code, self.exception_entries)
         return _get_instructions_bytes(_get_code_array(co, self.adaptive),
                                        co._varname_from_oparg,
                                        co.co_names, co.co_consts,
                                        self._linestarts,
                                        line_offset=self._line_offset,
-                                       exception_entries=self.exception_entries,
                                        co_positions=co.co_positions(),
                                        show_caches=self.show_caches,
-                                       original_code=co.co_code)
+                                       original_code=original_code,
+                                       labels_map=labels_map)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,
