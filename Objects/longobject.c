@@ -4889,8 +4889,9 @@ long_abs(PyObject *obj)
 }
 
 static int
-long_bool(PyLongObject *v)
+long_bool(PyObject *obj)
 {
+    PyLongObject *v = (PyLongObject *)obj;
     return !_PyLong_IsZero(v);
 }
 
@@ -6246,7 +6247,7 @@ static PyNumberMethods long_as_number = {
     long_neg,                   /*nb_negative*/
     long_long,                  /*tp_positive*/
     long_abs,                   /*tp_absolute*/
-    (inquiry)long_bool,         /*tp_bool*/
+    long_bool,                  /*tp_bool*/
     long_invert,                /*nb_invert*/
     long_lshift,                /*nb_lshift*/
     long_rshift,                /*nb_rshift*/
