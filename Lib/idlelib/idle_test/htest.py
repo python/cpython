@@ -437,5 +437,6 @@ def run(*tests):
     next_test()
     root.mainloop()
 
+
 if __name__ == '__main__':
     run()
