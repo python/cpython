@@ -338,7 +338,7 @@ class Regrtest:
             # Unload the newly imported modules (best effort finalization)
             new_modules = [module for module in sys.modules
                            if module not in save_modules and
-                                module.startswith("test.")]
+                                module.startswith(("test.", "test_"))]
             for module in new_modules:
                 sys.modules.pop(module, None)
                 # Remove the attribute of the parent module.
