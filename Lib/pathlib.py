@@ -1319,13 +1319,13 @@ class _PathBase(PurePath):
         """
         self._unsupported("rmdir")
 
-    def owner(self):
+    def owner(self, *, follow_symlinks=True):
         """
         Return the login name of the file owner.
         """
         self._unsupported("owner")
 
-    def group(self):
+    def group(self, *, follow_symlinks=True):
         """
         Return the group name of the file gid.
         """
@@ -1440,18 +1440,20 @@ class Path(_PathBase):
         return self.with_segments(os.path.realpath(self, strict=strict))
 
     if pwd:
-        def owner(self):
+        def owner(self, *, follow_symlinks=True):
             """
             Return the login name of the file owner.
             """
-            return pwd.getpwuid(self.stat().st_uid).pw_name
+            uid = self.stat(follow_symlinks=follow_symlinks).st_uid
+            return pwd.getpwuid(uid).pw_name
 
     if grp:
-        def group(self):
+        def group(self, *, follow_symlinks=True):
             """
             Return the group name of the file gid.
             """
-            return grp.getgrgid(self.stat().st_gid).gr_name
+            gid = self.stat(follow_symlinks=follow_symlinks).st_gid
+            return grp.getgrgid(gid).gr_name
 
     if hasattr(os, "readlink"):
         def readlink(self):

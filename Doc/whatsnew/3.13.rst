@@ -270,9 +270,11 @@ pathlib
   (Contributed by Barney Gale in :gh:`73435`.)
 
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
-  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
-  :meth:`~pathlib.Path.is_dir`.
-  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
+  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
+  :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
+  :meth:`~pathlib.Path.group`.
+  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
+  Kamil Turek in :gh:`107962`).
 
 pdb
 ---
