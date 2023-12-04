@@ -14,11 +14,25 @@ from _xxinterpchannels import (
 
 __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
+    'RunFailedError',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
     'ChannelError', 'ChannelNotFoundError',
     'ChannelEmptyError',
     ]
+
+
+class RunFailedError(RuntimeError):
+
+    def __init__(self, excinfo):
+        msg = excinfo.formatted
+        if not msg:
+            if excinfo.type and snapshot.msg:
+                msg = f'{snapshot.type.__name__}: {snapshot.msg}'
+            else:
+                msg = snapshot.type.__name__ or snapshot.msg
+        super().__init__(msg)
+        self.snapshot = excinfo
 
 
 def create(*, isolated=True):
@@ -92,7 +106,7 @@ class Interpreter:
         return _interpreters.destroy(self._id)
 
     # XXX Rename "run" to "exec"?
-    def run(self, src_str, /, *, channels=None):
+    def run(self, src_str, /, channels=None):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
@@ -110,7 +124,9 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        _interpreters.exec(self._id, src_str, channels)
+        excinfo = _interpreters.exec(self._id, src_str, channels)
+        if excinfo is not None:
+            raise RunFailedError(excinfo)
 
 
 def create_channel():
@@ -160,6 +176,14 @@ class _ChannelEnd:
     @property
     def id(self):
         return self._id
+
+    @property
+    def _info(self):
+        return _channels.get_info(self._id)
+
+    @property
+    def is_closed(self):
+        return self._info.closed
 
 
 _NOT_SET = object()
@@ -213,6 +237,11 @@ class SendChannel(_ChannelEnd):
 
     _end = 'send'
 
+    @property
+    def is_closed(self):
+        info = self._info
+        return info.closed or info.closing
+
     def send(self, obj, timeout=None):
         """Send the object (i.e. its data) to the channel's receiving end.
 
@@ -251,4 +280,4 @@ class SendChannel(_ChannelEnd):
 
 
 # XXX This is causing leaks (gh-110318):
-#_channels._register_end_types(SendChannel, RecvChannel)
+_channels._register_end_types(SendChannel, RecvChannel)
