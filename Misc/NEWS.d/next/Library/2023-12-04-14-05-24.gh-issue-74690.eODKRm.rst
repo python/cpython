@@ -1,4 +1,5 @@
-Speedup `isinstance()` checks by roughly 20% for :func:`runtime-checkable
-protocols <typing.runtime_checkable>` that only have one callable member.
-Speedup `issubclass()` checks for these protocols by roughly 10%. Patch by
-Alex Waygood.
+Speedup :func:`isinstance` checks by roughly 20% for
+:func:`runtime-checkable protocols <typing.runtime_checkable>`
+that only have one callable member.
+Speedup `issubclass()` checks for these protocols by roughly 10%.
+Patch by Alex Waygood.
