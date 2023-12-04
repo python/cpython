@@ -1627,7 +1627,7 @@ get_type_module_name(PyObject *self, PyObject *type)
 
 #ifdef Py_GIL_DISABLED
 static PyObject *
-get_py_thread_id(PyObject *self, PyObject *type)
+get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     uintptr_t tid = _Py_ThreadId();
     Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(tid));
