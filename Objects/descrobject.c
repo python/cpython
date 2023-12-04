@@ -91,8 +91,9 @@ descr_check(PyDescrObject *descr, PyObject *obj)
 }
 
 static PyObject *
-classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
+classmethod_get(PyObject *self, PyObject *obj, PyObject *type)
 {
+    PyMethodDescrObject *descr = (PyMethodDescrObject *)self;
     /* Ensure a valid type.  Class methods ignore obj. */
     if (type == NULL) {
         if (obj != NULL)
@@ -495,7 +496,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
         return NULL;
     }
     PyObject *self = PyTuple_GET_ITEM(args, 0);
-    PyObject *bound = classmethod_get(descr, NULL, self);
+    PyObject *bound = classmethod_get((PyObject *)descr, NULL, self);
     if (bound == NULL) {
         return NULL;
     }
@@ -771,7 +772,7 @@ PyTypeObject PyClassMethodDescr_Type = {
     method_getset,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    (descrgetfunc)classmethod_get,              /* tp_descr_get */
+    classmethod_get,                            /* tp_descr_get */
     0,                                          /* tp_descr_set */
 };
 
