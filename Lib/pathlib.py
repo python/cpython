@@ -1416,10 +1416,8 @@ class Path(_PathBase):
         if self.is_absolute():
             return self
         elif self.root:
-            cwd = os.getcwd()
-            if self._tail:
-                cwd_drv = os.path.splitroot(cwd)[0]
-                return self._from_parsed_parts(cwd_drv, self.root, self._tail)
+            cwd_drv = os.path.splitroot(os.getcwd())[0]
+            return self._from_parsed_parts(cwd_drv, self.root, self._tail)
         else:
             cwd = os.path.abspath(self.drive) if self.drive else os.getcwd()
             if self._tail:
@@ -1432,11 +1430,12 @@ class Path(_PathBase):
                 else:
                     cwd_tail = self._tail
                 return self._from_parsed_parts(cwd_drv, cwd_root, cwd_tail)
-        # Optimization: store the result of os.getcwd() as the normalized
-        # string representation of the path.
-        result = self.with_segments(cwd)
-        result._str = cwd
-        return result
+            else:
+                # Optimization: store the result of os.getcwd() as the normalized
+                # string representation of the path.
+                result = self.with_segments(cwd)
+                result._str = cwd
+                return result
 
     def resolve(self, strict=False):
         """
