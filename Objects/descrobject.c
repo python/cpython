@@ -19,8 +19,9 @@ class property "propertyobject *" "&PyProperty_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
 
 static void
-descr_dealloc(PyDescrObject *descr)
+descr_dealloc(PyObject *obj)
 {
+    PyDescrObject *descr = (PyDescrObject *)obj;
     _PyObject_GC_UNTRACK(descr);
     Py_XDECREF(descr->d_type);
     Py_XDECREF(descr->d_name);
@@ -702,7 +703,7 @@ PyTypeObject PyMethodDescr_Type = {
     "method_descriptor",
     sizeof(PyMethodDescrObject),
     0,
-    (destructor)descr_dealloc,                  /* tp_dealloc */
+    descr_dealloc,                              /* tp_dealloc */
     offsetof(PyMethodDescrObject, vectorcall),  /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -742,7 +743,7 @@ PyTypeObject PyClassMethodDescr_Type = {
     "classmethod_descriptor",
     sizeof(PyMethodDescrObject),
     0,
-    (destructor)descr_dealloc,                  /* tp_dealloc */
+    descr_dealloc,                              /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -779,7 +780,7 @@ PyTypeObject PyMemberDescr_Type = {
     "member_descriptor",
     sizeof(PyMemberDescrObject),
     0,
-    (destructor)descr_dealloc,                  /* tp_dealloc */
+    descr_dealloc,                              /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -816,7 +817,7 @@ PyTypeObject PyGetSetDescr_Type = {
     "getset_descriptor",
     sizeof(PyGetSetDescrObject),
     0,
-    (destructor)descr_dealloc,                  /* tp_dealloc */
+    descr_dealloc,                              /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -853,7 +854,7 @@ PyTypeObject PyWrapperDescr_Type = {
     "wrapper_descriptor",
     sizeof(PyWrapperDescrObject),
     0,
-    (destructor)descr_dealloc,                  /* tp_dealloc */
+    descr_dealloc,                              /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
