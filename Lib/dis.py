@@ -498,73 +498,80 @@ class Formatter:
                 target = entry.target_label
                 print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
 
-def _get_argval_argrepr(op, arg, offset, co_consts, names, varname_from_oparg,
-                        labels_map):
-    get_name = None if names is None else names.__getitem__
-    argval = None
-    argrepr = ''
-    deop = _deoptop(op)
-    if arg is not None:
-        #  Set argval to the dereferenced value of the argument when
-        #  available, and argrepr to the string representation of argval.
-        #    _disassemble_bytes needs the string repr of the
-        #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
-        argval = arg
-        if deop in hasconst:
-            argval, argrepr = _get_const_info(deop, arg, co_consts)
-        elif deop in hasname:
-            if deop == LOAD_GLOBAL:
-                argval, argrepr = _get_name_info(arg//2, get_name)
-                if (arg & 1) and argrepr:
-                    argrepr = f"{argrepr} + NULL"
-            elif deop == LOAD_ATTR:
-                argval, argrepr = _get_name_info(arg//2, get_name)
-                if (arg & 1) and argrepr:
-                    argrepr = f"{argrepr} + NULL|self"
-            elif deop == LOAD_SUPER_ATTR:
-                argval, argrepr = _get_name_info(arg//4, get_name)
-                if (arg & 1) and argrepr:
-                    argrepr = f"{argrepr} + NULL|self"
-            else:
-                argval, argrepr = _get_name_info(arg, get_name)
-        elif deop in hasjabs:
-            argval = arg*2
-            argrepr = f"to L{labels_map[argval]}"
-        elif deop in hasjrel:
-            signed_arg = -arg if _is_backward_jump(deop) else arg
-            argval = offset + 2 + signed_arg*2
-            caches = _get_cache_size(_all_opname[deop])
-            argval += 2 * caches
-            if deop == ENTER_EXECUTOR:
-                argval += 2
-            argrepr = f"to L{labels_map[argval]}"
-        elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
-            arg1 = arg >> 4
-            arg2 = arg & 15
-            val1, argrepr1 = _get_name_info(arg1, varname_from_oparg)
-            val2, argrepr2 = _get_name_info(arg2, varname_from_oparg)
-            argrepr = argrepr1 + ", " + argrepr2
-            argval = val1, val2
-        elif deop in haslocal or deop in hasfree:
-            argval, argrepr = _get_name_info(arg, varname_from_oparg)
-        elif deop in hascompare:
-            argval = cmp_op[arg >> 5]
-            argrepr = argval
-            if arg & 16:
-                argrepr = f"bool({argrepr})"
-        elif deop == CONVERT_VALUE:
-            argval = (None, str, repr, ascii)[arg]
-            argrepr = ('', 'str', 'repr', 'ascii')[arg]
-        elif deop == SET_FUNCTION_ATTRIBUTE:
-            argrepr = ', '.join(s for i, s in enumerate(FUNCTION_ATTR_FLAGS)
-                                if arg & (1<<i))
-        elif deop == BINARY_OP:
-            _, argrepr = _nb_ops[arg]
-        elif deop == CALL_INTRINSIC_1:
-            argrepr = _intrinsic_1_descs[arg]
-        elif deop == CALL_INTRINSIC_2:
-            argrepr = _intrinsic_2_descs[arg]
-    return argval, argrepr
+
+class ArgResolver:
+    def __init__(self, co_consts, names, varname_from_oparg, labels_map):
+        self.co_consts = co_consts
+        self.names = names
+        self.varname_from_oparg = varname_from_oparg
+        self.labels_map = labels_map
+
+    def get_argval_argrepr(self, op, arg, offset):
+        get_name = None if self.names is None else self.names.__getitem__
+        argval = None
+        argrepr = ''
+        deop = _deoptop(op)
+        if arg is not None:
+            #  Set argval to the dereferenced value of the argument when
+            #  available, and argrepr to the string representation of argval.
+            #    _disassemble_bytes needs the string repr of the
+            #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
+            argval = arg
+            if deop in hasconst:
+                argval, argrepr = _get_const_info(deop, arg, self.co_consts)
+            elif deop in hasname:
+                if deop == LOAD_GLOBAL:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL"
+                elif deop == LOAD_ATTR:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL|self"
+                elif deop == LOAD_SUPER_ATTR:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL|self"
+                else:
+                    argval, argrepr = _get_name_info(arg, get_name)
+            elif deop in hasjabs:
+                argval = arg*2
+                argrepr = f"to L{self.labels_map[argval]}"
+            elif deop in hasjrel:
+                signed_arg = -arg if _is_backward_jump(deop) else arg
+                argval = offset + 2 + signed_arg*2
+                caches = _get_cache_size(_all_opname[deop])
+                argval += 2 * caches
+                if deop == ENTER_EXECUTOR:
+                    argval += 2
+                argrepr = f"to L{self.labels_map[argval]}"
+            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
+                arg1 = arg >> 4
+                arg2 = arg & 15
+                val1, argrepr1 = _get_name_info(arg1, self.varname_from_oparg)
+                val2, argrepr2 = _get_name_info(arg2, self.varname_from_oparg)
+                argrepr = argrepr1 + ", " + argrepr2
+                argval = val1, val2
+            elif deop in haslocal or deop in hasfree:
+                argval, argrepr = _get_name_info(arg, self.varname_from_oparg)
+            elif deop in hascompare:
+                argval = cmp_op[arg >> 5]
+                argrepr = argval
+                if arg & 16:
+                    argrepr = f"bool({argrepr})"
+            elif deop == CONVERT_VALUE:
+                argval = (None, str, repr, ascii)[arg]
+                argrepr = ('', 'str', 'repr', 'ascii')[arg]
+            elif deop == SET_FUNCTION_ATTRIBUTE:
+                argrepr = ', '.join(s for i, s in enumerate(FUNCTION_ATTR_FLAGS)
+                                    if arg & (1<<i))
+            elif deop == BINARY_OP:
+                _, argrepr = _nb_ops[arg]
+            elif deop == CALL_INTRINSIC_1:
+                argrepr = _intrinsic_1_descs[arg]
+            elif deop == CALL_INTRINSIC_2:
+                argrepr = _intrinsic_2_descs[arg]
+        return argval, argrepr
 
 
 def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
@@ -587,13 +594,15 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
 
     original_code = co.co_code
     labels_map = _make_labels_map(original_code)
+    arg_resolver = ArgResolver(co.co_consts, co.co_names, co._varname_from_oparg,
+                               labels_map)
     return _get_instructions_bytes(_get_code_array(co, adaptive),
-                                   co._varname_from_oparg,
-                                   co.co_names, co.co_consts,
-                                   linestarts, line_offset,
+                                   linestarts=linestarts,
+                                   line_offset=line_offset,
                                    co_positions=co.co_positions(),
                                    show_caches=show_caches,
-                                   original_code=original_code)
+                                   original_code=original_code,
+                                   arg_resolver=arg_resolver)
 
 def _get_const_value(op, arg, co_consts):
     """Helper to get the value of the const in a hasconst op.
@@ -665,17 +674,13 @@ def _is_backward_jump(op):
                           'JUMP_BACKWARD_NO_INTERRUPT',
                           'ENTER_EXECUTOR')
 
-def _get_instructions_bytes(code, varname_from_oparg=None,
-                            names=None, co_consts=None,
-                            linestarts=None, line_offset=0,
-                            co_positions=None,
-                            show_caches=False, original_code=None, labels_map=None):
+def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
+                            show_caches=False, original_code=None, labels_map=None,
+                            arg_resolver=None):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
-    opcode.  Additional information about the code's runtime environment
-    (e.g. variable names, co_consts) can be specified using optional
-    arguments.
+    opcode.
 
     """
     # Use the basic, unadaptive code for finding labels and actually walking the
@@ -683,7 +688,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     # mess that logic up pretty badly:
     original_code = original_code or code
     co_positions = co_positions or iter(())
-    get_name = None if names is None else names.__getitem__
 
     labels_map = labels_map or _make_labels_map(original_code)
 
@@ -703,9 +707,10 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         deop = _deoptop(op)
         op = code[offset]
 
-        argval, argrepr = _get_argval_argrepr(
-                               op, arg, offset,
-                               co_consts, names, varname_from_oparg, labels_map)
+        if arg_resolver:
+            argval, argrepr = arg_resolver.get_argval_argrepr(op, arg, offset)
+        else:
+            argval, argrepr = arg, repr(arg)
 
         yield Instruction(_all_opname[op], op, arg, argval, argrepr,
                           offset, start_offset, starts_line, line_number,
@@ -803,13 +808,14 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                           line_offset=line_offset,
                           exception_entries=exception_entries)
 
-    instrs = _get_instructions_bytes(code, varname_from_oparg, names,
-                                           co_consts, linestarts,
+    arg_resolver = ArgResolver(co_consts, names, varname_from_oparg, labels_map)
+    instrs = _get_instructions_bytes(code, linestarts=linestarts,
                                            line_offset=line_offset,
                                            co_positions=co_positions,
                                            show_caches=show_caches,
                                            original_code=original_code,
-                                           labels_map=labels_map)
+                                           labels_map=labels_map,
+                                           arg_resolver=arg_resolver)
 
     print_instructions(instrs, formatter, show_caches=show_caches, lasti=lasti)
 
@@ -964,15 +970,16 @@ class Bytecode:
         co = self.codeobj
         original_code = co.co_code
         labels_map = _make_labels_map(original_code, self.exception_entries)
+        arg_resolver = ArgResolver(co.co_consts, co.co_names, co._varname_from_oparg,
+                                   labels_map)
         return _get_instructions_bytes(_get_code_array(co, self.adaptive),
-                                       co._varname_from_oparg,
-                                       co.co_names, co.co_consts,
-                                       self._linestarts,
+                                       linestarts=self._linestarts,
                                        line_offset=self._line_offset,
                                        co_positions=co.co_positions(),
                                        show_caches=self.show_caches,
                                        original_code=original_code,
-                                       labels_map=labels_map)
+                                       labels_map=labels_map,
+                                       arg_resolver=arg_resolver)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,
