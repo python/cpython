@@ -393,6 +393,7 @@ class IOBinding:
         if self.editwin.flist:
             self.editwin.update_recent_files_list(filename)
 
+
 def _io_binding(parent):  # htest #
     from tkinter import Toplevel, Text
 
@@ -429,6 +430,7 @@ def _io_binding(parent):  # htest #
     text.focus_set()
     editwin = MyEditWin(text)
     IOBinding(editwin)
+
 
 if __name__ == "__main__":
     from unittest import main
