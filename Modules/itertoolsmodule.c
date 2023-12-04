@@ -330,21 +330,30 @@ pairwise_next(pairwiseobject *po)
         return NULL;
     }
     if (old == NULL) {
-        po->old = old = (*Py_TYPE(it)->tp_iternext)(it);
+        old = (*Py_TYPE(it)->tp_iternext)(it);
+        Py_XSETREF(po->old, old);
         if (old == NULL) {
             Py_CLEAR(po->it);
             return NULL;
         }
+        it = po->it;
+        if (it == NULL) {
+            Py_CLEAR(po->old);
+            return NULL;
+        }
     }
+    Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
         Py_CLEAR(po->old);
+        Py_DECREF(old);
         return NULL;
     }
     /* Future optimization: Reuse the result tuple as we do in enumerate() */
     result = PyTuple_Pack(2, old, new);
-    Py_SETREF(po->old, new);
+    Py_XSETREF(po->old, new);
+    Py_DECREF(old);
     return result;
 }
 
