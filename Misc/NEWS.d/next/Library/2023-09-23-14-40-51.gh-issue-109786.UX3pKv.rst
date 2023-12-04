@@ -1,2 +1,0 @@
-Fix possible reference leaks and crash when re-enter the ``__next__()`` method of
-:class:`itertools.pairwise`.

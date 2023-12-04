@@ -1,2 +1,0 @@
-Fix incorrect error message for invalid argument unpacking. Patch by Pablo
-Galindo

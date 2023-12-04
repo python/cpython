@@ -1,1 +1,0 @@
-Prevent :mod:`pdb` from crashing when trying to display undisplayable objects

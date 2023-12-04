@@ -1,2 +1,0 @@
-Fix unexpected integer truncation in :meth:`socket.setblocking` which caused
-it to interpret multiples of ``2**32`` as ``False``.

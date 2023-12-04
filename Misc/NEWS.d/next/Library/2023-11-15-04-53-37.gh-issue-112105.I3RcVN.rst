@@ -1,1 +1,0 @@
-Make :func:`readline.set_completer_delims` work with libedit
