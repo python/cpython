@@ -2066,8 +2066,14 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_extra_groups(self):
         gid = os.getegid()
         group_list = [65534 if gid != 65534 else 65533]
+        self._test_extra_groups_impl(gid=gid, group_list=group_list)
+
+    @unittest.skipUnless(hasattr(os, 'setgroups'), 'no setgroups() on platform')
+    def test_extra_groups_empty_list(self):
+        self._test_extra_groups_impl(gid=os.getegid(), group_list=[])
+
+    def _test_extra_groups_impl(self, *, gid, group_list):
         name_group = _get_test_grp_name()
-        perm_error = False
 
         if grp is not None:
             group_list.append(name_group)
@@ -2077,11 +2083,8 @@ class POSIXProcessTestCase(BaseTestCase):
                     [sys.executable, "-c",
                      "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
                     extra_groups=group_list)
-        except OSError as ex:
-            if ex.errno != errno.EPERM:
-                raise
-            perm_error = True
-
+        except PermissionError:
+            self.skipTest("setgroup() EPERM; this test may require root.")
         else:
             parent_groups = os.getgroups()
             child_groups = json.loads(output)
@@ -2092,12 +2095,15 @@ class POSIXProcessTestCase(BaseTestCase):
             else:
                 desired_gids = group_list
 
-            if perm_error:
-                self.assertEqual(set(child_groups), set(parent_groups))
-            else:
-                self.assertEqual(set(desired_gids), set(child_groups))
+            self.assertEqual(set(desired_gids), set(child_groups))
 
-        # make sure we bomb on negative values
+        if grp is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call(ZERO_RETURN_CMD,
+                                      extra_groups=[name_group])
+
+    # No skip necessary, this test won't make it to a setgroup() call.
+    def test_extra_groups_invalid_gid_t_values(self):
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[-1])
 
@@ -2105,16 +2111,6 @@ class POSIXProcessTestCase(BaseTestCase):
             subprocess.check_call(ZERO_RETURN_CMD,
                                   cwd=os.curdir, env=os.environ,
                                   extra_groups=[2**64])
-
-        if grp is None:
-            with self.assertRaises(ValueError):
-                subprocess.check_call(ZERO_RETURN_CMD,
-                                      extra_groups=[name_group])
-
-    @unittest.skipIf(hasattr(os, 'setgroups'), 'setgroups() available on platform')
-    def test_extra_groups_error(self):
-        with self.assertRaises(ValueError):
-            subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[])
 
     @unittest.skipIf(mswindows or not hasattr(os, 'umask'),
                      'POSIX umask() is not available.')
