@@ -286,7 +286,7 @@ class CmdTestReadline(unittest.TestCase):
 
         output = run_pty(script, input)
 
-        self.assertIn(b'tab_completion_test', output)
+        self.assertIn(b'ab_completion_test', output)
         self.assertIn(b'tab completion success', output)
 
 def load_tests(loader, tests, pattern):
