@@ -99,8 +99,7 @@ Embedded Python
 
 If Python is embedded within another application :c:func:`Py_InitializeFromConfig` and
 the :c:type:`PyConfig` structure can be used to initialize Python. The path specific
-details are described at :ref:`init-path-config`. Alternatively the older :c:func:`Py_SetPath`
-can be used to bypass the initialization of the module search path.
+details are described at :ref:`init-path-config`.
 
 .. seealso::
 

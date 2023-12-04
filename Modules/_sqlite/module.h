@@ -23,7 +23,6 @@
 
 #ifndef PYSQLITE_MODULE_H
 #define PYSQLITE_MODULE_H
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #define LEGACY_TRANSACTION_CONTROL -1

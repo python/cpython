@@ -1,2 +1,0 @@
-Fix :exc:`IndexError` when initializing the config variables on Windows if
-``HAVE_DYNAMIC_LOADING`` is not set.

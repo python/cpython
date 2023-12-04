@@ -81,6 +81,17 @@ class MultiplexedPathTest(unittest.TestCase):
         path = MultiplexedPath(self.folder)
         assert not path.joinpath('imaginary/foo.py').exists()
 
+    def test_join_path_common_subdir(self):
+        prefix = os.path.abspath(os.path.join(__file__, '..'))
+        data01 = os.path.join(prefix, 'data01')
+        data02 = os.path.join(prefix, 'data02')
+        path = MultiplexedPath(data01, data02)
+        self.assertIsInstance(path.joinpath('subdirectory'), MultiplexedPath)
+        self.assertEqual(
+            str(path.joinpath('subdirectory', 'subsubdir'))[len(prefix) + 1 :],
+            os.path.join('data02', 'subdirectory', 'subsubdir'),
+        )
+
     def test_repr(self):
         self.assertEqual(
             repr(MultiplexedPath(self.folder)),
