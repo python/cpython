@@ -1583,8 +1583,9 @@ bytes_richcompare(PyObject *o1, PyObject *o2, int op)
 }
 
 static Py_hash_t
-bytes_hash(PyBytesObject *a)
+bytes_hash(PyObject *obj)
 {
+    PyBytesObject *a = (PyBytesObject *)obj;
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     if (a->ob_shash == -1) {
@@ -2940,7 +2941,7 @@ PyTypeObject PyBytes_Type = {
     &bytes_as_number,                           /* tp_as_number */
     &bytes_as_sequence,                         /* tp_as_sequence */
     &bytes_as_mapping,                          /* tp_as_mapping */
-    (hashfunc)bytes_hash,                       /* tp_hash */
+    bytes_hash,                                 /* tp_hash */
     0,                                          /* tp_call */
     bytes_str,                                  /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
