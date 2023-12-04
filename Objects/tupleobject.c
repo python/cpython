@@ -981,8 +981,9 @@ _PyTuple_ClearFreeList(PyInterpreterState *interp)
 
 
 static void
-tupleiter_dealloc(_PyTupleIterObject *it)
+tupleiter_dealloc(PyObject *obj)
 {
+    _PyTupleIterObject *it = (_PyTupleIterObject *)obj;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
@@ -1076,7 +1077,7 @@ PyTypeObject PyTupleIter_Type = {
     sizeof(_PyTupleIterObject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)tupleiter_dealloc,              /* tp_dealloc */
+    tupleiter_dealloc,                          /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
