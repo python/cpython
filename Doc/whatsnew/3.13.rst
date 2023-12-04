@@ -1111,6 +1111,16 @@ New Features
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
 
+* The *keywords* parameter of :c:func:`PyArg_ParseTupleAndKeywords` and
+  :c:func:`PyArg_VaParseTupleAndKeywords` has now type :c:expr:`char * const *`
+  in C and :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
+  It makes these functions compatible with arguments of type
+  :c:expr:`const char * const *`, :c:expr:`const char **` or
+  :c:expr:`char * const *` in C++ and :c:expr:`char * const *` in C
+  without an explicit type cast.
+  This can be overridden with the :c:macro:`PY_CXX_CONST` macro.
+  (Contributed by Serhiy Storchaka in :gh:`65210`.)
+
 * Add :c:func:`PyImport_AddModuleRef`: similar to
   :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
   of a :term:`borrowed reference`.
