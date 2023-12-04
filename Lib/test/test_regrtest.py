@@ -2031,7 +2031,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests,
                                   stats=len(tests), parallel=True)
 
-    def test_import_from_tests(self):
+    def test_unload_tests(self):
         # Test that unloading test modules does not break tests
         # that import from other tests.
         # The test execution order matters for this test.
