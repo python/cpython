@@ -2860,6 +2860,7 @@ class TestPyThreadId(unittest.TestCase):
         # gh-112535: Test _Py_ThreadId(): make sure that thread identifiers
         # in a few threads are unique
         py_thread_id = _testinternalcapi.py_thread_id
+        short_sleep = 0.010
 
         class GetThreadId(threading.Thread):
             def __init__(self):
@@ -2873,6 +2874,8 @@ class TestPyThreadId(unittest.TestCase):
                 self.started_lock.set()
                 self.get_lock.acquire()
                 self.py_tid = py_thread_id()
+                time.sleep(short_sleep)
+                self.py_tid2 = py_thread_id()
 
         nthread = 5
         threads = [GetThreadId() for _ in range(nthread)]
@@ -2894,10 +2897,14 @@ class TestPyThreadId(unittest.TestCase):
         for thread in threads:
             thread.join()
             py_thread_ids.append(thread.py_tid)
-        for tid in py_thread_ids:
-            self.assertIsInstance(tid, int)
+            # _PyThread_Id() should not change for a given thread.
+            # For example, it should remain the same after a short sleep.
+            self.assertEqual(thread.py_tid2, thread.py_tid)
 
         # make sure that all _Py_ThreadId() are unique
+        for tid in py_thread_ids:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
         self.assertEqual(len(set(py_thread_ids)), len(py_thread_ids),
                          py_thread_ids)
 
