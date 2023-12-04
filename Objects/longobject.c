@@ -2299,8 +2299,6 @@ long_from_binary_base(const char *start, const char *end, Py_ssize_t digits, int
     return 0;
 }
 
-static PyObject *long_neg(PyLongObject *v);
-
 #ifdef WITH_PYLONG_MODULE
 /* asymptotically faster str-to-long conversion for base 10, using _pylong.py */
 static int
@@ -4867,8 +4865,9 @@ long_invert(PyLongObject *v)
 }
 
 static PyObject *
-long_neg(PyLongObject *v)
+long_neg(PyObject *obj)
 {
+    PyLongObject *v = (PyLongObject *)obj;
     PyLongObject *z;
     if (_PyLong_IsCompact(v))
         return _PyLong_FromSTwoDigits(-medium_value(v));
@@ -4883,7 +4882,7 @@ long_abs(PyObject *obj)
 {
     PyLongObject *v = (PyLongObject *)obj;
     if (_PyLong_IsNegative(v))
-        return long_neg(v);
+        return long_neg((PyObject *)v);
     else
         return long_long((PyObject *)v);
 }
@@ -5725,7 +5724,7 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     if (twice_rem == NULL)
         goto error;
     if (quo_is_neg) {
-        temp = long_neg((PyLongObject*)twice_rem);
+        temp = long_neg(twice_rem);
         Py_SETREF(twice_rem, temp);
         if (twice_rem == NULL)
             goto error;
@@ -5813,7 +5812,7 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
     }
 
     /* result = self - divmod_near(self, 10 ** -ndigits)[1] */
-    temp = long_neg((PyLongObject*)ndigits);
+    temp = long_neg(ndigits);
     Py_SETREF(ndigits, temp);
     if (ndigits == NULL)
         return NULL;
@@ -6243,7 +6242,7 @@ static PyNumberMethods long_as_number = {
     long_mod,                   /*nb_remainder*/
     long_divmod,                /*nb_divmod*/
     long_pow,                   /*nb_power*/
-    (unaryfunc)long_neg,        /*nb_negative*/
+    long_neg,                   /*nb_negative*/
     long_long,                  /*tp_positive*/
     long_abs,                   /*tp_absolute*/
     (inquiry)long_bool,         /*tp_bool*/
