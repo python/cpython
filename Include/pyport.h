@@ -586,6 +586,14 @@ extern "C" {
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
 #endif
 
+#ifndef PY_CXX_CONST
+#  ifdef __cplusplus
+#    define PY_CXX_CONST const
+#  else
+#    define PY_CXX_CONST
+#  endif
+#endif
+
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)
 #  define _SGI_MP_SOURCE
 #endif

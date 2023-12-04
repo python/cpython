@@ -735,7 +735,7 @@ Keyword Parameters for Extension Functions
 The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
 
    int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
-                                   const char *format, char *kwlist[], ...);
+                                   const char *format, char * const *kwlist, ...);
 
 The *arg* and *format* parameters are identical to those of the
 :c:func:`PyArg_ParseTuple` function.  The *kwdict* parameter is the dictionary of
