@@ -319,8 +319,9 @@ error:
 /* Tests have shown that it's not worth to cache the hash value, see
    https://bugs.python.org/issue9685 */
 static Py_hash_t
-tuplehash(PyTupleObject *v)
+tuplehash(PyObject *obj)
 {
+    PyTupleObject *v = (PyTupleObject *)obj;
     Py_ssize_t i, len = Py_SIZE(v);
     PyObject **item = v->ob_item;
 
@@ -858,7 +859,7 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_as_number */
     &tuple_as_sequence,                         /* tp_as_sequence */
     &tuple_as_mapping,                          /* tp_as_mapping */
-    (hashfunc)tuplehash,                        /* tp_hash */
+    tuplehash,                                  /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
