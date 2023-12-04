@@ -42,7 +42,7 @@ interface.
    :attr:`use_rawinput` attribute to ``False``, otherwise *stdin* will be
    ignored.
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.13
       ``completekey='tab'`` is replaced by ``'^I'`` for ``editline``.
 
 
