@@ -1661,8 +1661,9 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
 }
 
 static int
-bytes_buffer_getbuffer(PyBytesObject *self, Py_buffer *view, int flags)
+bytes_buffer_getbuffer(PyObject *obj, Py_buffer *view, int flags)
 {
+    PyBytesObject *self = (PyBytesObject *)obj;
     return PyBuffer_FillInfo(view, (PyObject*)self, (void *)self->ob_sval, Py_SIZE(self),
                              1, flags);
 }
@@ -1685,7 +1686,7 @@ static PyMappingMethods bytes_as_mapping = {
 };
 
 static PyBufferProcs bytes_as_buffer = {
-    (getbufferproc)bytes_buffer_getbuffer,
+    bytes_buffer_getbuffer,
     NULL,
 };
 
