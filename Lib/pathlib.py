@@ -213,13 +213,13 @@ class PurePath:
         # in the `__init__()` method.
         '_raw_paths',
 
-        # The `_drv`, `_root` and `_tail_cached` slots store parsed and
-        # normalized parts of the path. They are set when any of the `drive`,
-        # `root` or `_tail` properties are accessed for the first time. The
-        # three-part division corresponds to the result of
-        # `os.path.splitroot()`, except that the tail is further split on path
-        # separators (i.e. it is a list of strings), and that the root and
-        # tail are normalized.
+        # The `_drv`, `_root`, `_tail_cached` and `_has_trailing_sep` slots
+        # store parsed and normalized parts of the path. They are set when any
+        # of the `drive`, `root`, `_tail` or `has_trailing_sep` properties are
+        # accessed for the first time. The three-part division corresponds to
+        # the result of `os.path.splitroot()`, except that the tail is further
+        # split on path separators (i.e. it is a list of strings), and that
+        # the root and tail are normalized.
         '_drv', '_root', '_tail_cached', '_has_trailing_sep',
 
         # The `_str` slot stores the string representation of the path,
@@ -358,6 +358,7 @@ class PurePath:
 
     @property
     def has_trailing_sep(self):
+        """True if the path has a trailing slash after its name."""
         try:
             return self._has_trailing_sep
         except AttributeError:
@@ -443,16 +444,19 @@ class PurePath:
             raise ValueError(f"Invalid suffix {suffix!r}")
 
     def without_trailing_sep(self):
+        """Return a new path without a trailing slash after its name."""
         if not self.has_trailing_sep:
             return self
         return self._from_parsed_parts(self.drive, self.root, self._tail, False)
 
     def with_trailing_sep(self):
+        """Return a new path with a trailing slash after its name. If the
+        path has no name, ValueError is raised."""
         if self.has_trailing_sep:
             return self
         tail = self._tail
         if not tail:
-            raise ValueError('empty name')
+            raise ValueError(f"{self!r} has an empty name")
         return self._from_parsed_parts(self.drive, self.root, tail, True)
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
