@@ -682,8 +682,10 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETGROUPS
-    if (extra_group_size > 0)
+    if (extra_group_size >= 0) {
+        assert((extra_group_size == 0) == (extra_groups == NULL));
         POSIX_CALL(setgroups(extra_group_size, extra_groups));
+    }
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
@@ -937,7 +939,6 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t extra_group_size = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
     int *c_fds_to_keep = NULL;
@@ -1017,6 +1018,13 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
             goto cleanup;
         cwd = PyBytes_AsString(cwd_obj2);
     }
+
+    // Special initial value meaning that subprocess API was called with
+    // extra_groups=None leading to _posixsubprocess.fork_exec(gids=None).
+    // We use this to differentiate between code desiring a setgroups(0, NULL)
+    // call vs no call at all.  The fast vfork() code path could be used when
+    // there is no setgroups call.
+    Py_ssize_t extra_group_size = -2;
 
     if (extra_groups_packed != Py_None) {
 #ifdef HAVE_SETGROUPS
