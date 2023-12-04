@@ -378,8 +378,9 @@ list_dealloc(PyListObject *op)
 }
 
 static PyObject *
-list_repr(PyListObject *v)
+list_repr(PyObject *obj)
 {
+    PyListObject *v = (PyListObject *)obj;
     Py_ssize_t i;
     PyObject *s;
     _PyUnicodeWriter writer;
@@ -3164,7 +3165,7 @@ PyTypeObject PyList_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)list_repr,                        /* tp_repr */
+    list_repr,                                  /* tp_repr */
     0,                                          /* tp_as_number */
     &list_as_sequence,                          /* tp_as_sequence */
     &list_as_mapping,                           /* tp_as_mapping */
