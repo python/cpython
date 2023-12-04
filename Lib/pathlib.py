@@ -1415,21 +1415,29 @@ class Path(_PathBase):
         """
         if self.is_absolute():
             return self
-        elif self.drive:
+        if self.root:
+            drive = os.path.splitroot(os.getcwd())[0]
+            return self._from_parsed_parts(drive, self.root, self._tail)
+        if self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = os.path.abspath(self.drive)
         else:
             cwd = os.getcwd()
+        if not self._tail:
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
             # We pass only one argument to with_segments() to avoid the cost
             # of joining, and we exploit the fact that getcwd() returns a
             # fully-normalized string by storing it in _str. This is used to
             # implement Path.cwd().
-            if not self.root and not self._tail:
-                result = self.with_segments(cwd)
-                result._str = cwd
-                return result
-        return self.with_segments(cwd, self)
+            result = self.with_segments(cwd)
+            result._str = cwd
+            return result
+        drive, root, rel = os.path.splitroot(cwd)
+        if not rel:
+            return self._from_parsed_parts(drive, root, self._tail)
+        tail = rel.split(self.pathmod.sep)
+        tail.extend(self._tail)
+        return self._from_parsed_parts(drive, root, tail)
 
     def resolve(self, strict=False):
         """
