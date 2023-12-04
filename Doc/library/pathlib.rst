@@ -145,6 +145,15 @@ we also call *flavours*:
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
 
+   At most one trailing slash is kept::
+
+      >>> PurePath('foo//')
+      PurePosixPath('foo/')
+
+   .. versionchanged:: 3.13
+      A trailing slash is now retained, as it is meaningful to path
+      resolution.
+
    Spurious slashes and single dots are collapsed, but double dots (``'..'``)
    and leading double slashes (``'//'``) are not, since this would change the
    meaning of a path for various reasons (e.g. symbolic links, UNC paths)::
@@ -153,8 +162,8 @@ we also call *flavours*:
       PurePosixPath('foo/bar')
       >>> PurePath('//foo/bar')
       PurePosixPath('//foo/bar')
-      >>> PurePath('foo/./bar')
-      PurePosixPath('foo/bar')
+      >>> PurePath('foo/./bar/.')
+      PurePosixPath('foo/bar/')
       >>> PurePath('foo/../bar')
       PurePosixPath('foo/../bar')
 
@@ -184,7 +193,7 @@ we also call *flavours*:
    filesystem paths, including `UNC paths`_::
 
       >>> PureWindowsPath('c:/Program Files/')
-      PureWindowsPath('c:/Program Files')
+      PureWindowsPath('c:/Program Files/')
       >>> PureWindowsPath('//server/share/file')
       PureWindowsPath('//server/share/file')
 
@@ -374,6 +383,21 @@ Pure paths provide the following methods and properties:
       '/'
       >>> PureWindowsPath('//host/share').anchor
       '\\\\host\\share\\'
+
+
+.. attribute:: PurePath.has_trailing_sep
+
+   Whether the path has a trailing slash after its :attr:`name`::
+
+      >>> PurePosixPath('foo/bar/').has_trailing_sep
+      True
+
+   If the path has no name, this property is false::
+
+      >>> PureWindowsPath('c:/').has_trailing_sep
+      False
+
+   .. versionadded:: 3.13
 
 
 .. attribute:: PurePath.parents
@@ -714,6 +738,41 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README.txt')
       >>> p.with_suffix('')
       PureWindowsPath('README')
+
+
+.. method:: PurePath.with_trailing_sep()
+
+   Return a new path with a trailing slash after its :attr:`name`. If the
+   original path doesn't have a name, :exc:`ValueError` is raised::
+
+      >>> p = PureWindowsPath('c:/windows')
+      >>> p.with_trailing_sep()
+      PureWindowsPath('c:/windows/')
+      >>> p = PureWindowsPath('c:/')
+      >>> p.with_trailing_sep()
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+          p.with_trailing_sep()
+          ~~~~~~~~~~~~~~~~~~~^^
+        File "/home/barney/projects/cpython/Lib/pathlib.py", line 459, in with_trailing_sep
+          raise ValueError(f"{self!r} has an empty name")
+      ValueError: PureWindowsPath('c:/') has an empty name
+
+   .. versionadded:: 3.13
+
+
+.. method:: PurePath.without_trailing_sep()
+
+   Return a new path without a slash after its :attr:`name`, if any::
+
+      >>> p = PureWindowsPath('c:/windows/')
+      >>> p.without_trailing_sep()
+      PureWindowsPath('c:/windows')
+      >>> p = PureWindowsPath('c:/')
+      >>> p.without_trailing_sep()
+      PureWindowsPath('c:/')
+
+   .. versionadded:: 3.13
 
 
 .. method:: PurePath.with_segments(*pathsegments)
