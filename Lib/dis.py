@@ -410,7 +410,7 @@ class Instruction(_Instruction):
     def _create(cls, op, arg, offset, start_offset, starts_line, line_number,
                positions,
                co_consts=None, varname_from_oparg=None, names=None,
-               labels_map=None, exceptions_map=None):
+               labels_map=None):
 
         argval, argrepr = cls._get_argval_argrepr(
                                op, arg, offset,
@@ -419,8 +419,6 @@ class Instruction(_Instruction):
         instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
                             offset, start_offset, starts_line, line_number,
                             label, positions)
-        instr.label_width = 4 + len(str(len(labels_map)))
-        instr.exc_handler = exceptions_map.get(offset, None)
         return instr
 
     @property
@@ -498,6 +496,7 @@ class Formatter:
 
         *linestarts* dictionary mapping offset to lineno, for offsets that
                      start a new line
+        *exception_entries* the exception table (list of ExceptionEntry)
         *line_offset* the line number (within the code unit)
         """
         self.file = file
@@ -708,11 +707,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
 
     labels_map = labels_map or _make_labels_map(original_code, exception_entries)
 
-    exceptions_map = {}
-    for start, end, target, _, _ in exception_entries:
-        exceptions_map[start] = labels_map[target]
-        exceptions_map[end] = -1
-
     starts_line = False
     local_line_number = None
     line_number = None
@@ -732,7 +726,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         yield Instruction._create(op, arg, offset, start_offset, starts_line, line_number,
                                   positions, co_consts=co_consts,
                                   varname_from_oparg=varname_from_oparg, names=names,
-                                  labels_map=labels_map, exceptions_map=exceptions_map)
+                                  labels_map=labels_map)
 
         caches = _get_cache_size(_all_opname[deop])
         if not caches:
