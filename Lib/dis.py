@@ -800,14 +800,20 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                           line_offset=line_offset,
                           exception_entries=exception_entries)
 
-    for instr in _get_instructions_bytes(code, varname_from_oparg, names,
-                                         co_consts, linestarts,
-                                         line_offset=line_offset,
-                                         exception_entries=exception_entries,
-                                         co_positions=co_positions,
-                                         show_caches=show_caches,
-                                         original_code=original_code,
-                                         labels_map=labels_map):
+    instrs = _get_instructions_bytes(code, varname_from_oparg, names,
+                                           co_consts, linestarts,
+                                           line_offset=line_offset,
+                                           exception_entries=exception_entries,
+                                           co_positions=co_positions,
+                                           show_caches=show_caches,
+                                           original_code=original_code,
+                                           labels_map=labels_map)
+
+    print_instructions(instrs, formatter, show_caches=show_caches, lasti=lasti)
+
+
+def print_instructions(instrs, formatter, show_caches=False, lasti=-1):
+    for instr in instrs:
         if show_caches:
             is_current_instr = instr.offset == lasti
         else:
@@ -815,7 +821,6 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         formatter.print_instruction(instr, is_current_instr)
-
     formatter.print_exception_table()
 
 def _disassemble_str(source, **kwargs):
