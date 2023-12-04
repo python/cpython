@@ -2032,6 +2032,17 @@ class ArgsTestCase(BaseTestCase):
                                   stats=len(tests), parallel=True)
 
     def test_import_from_tests(self):
+        # Test that unloading test modules does not break tests
+        # that import from other tests.
+        # The test execution order matters for this test.
+        # Both test_regrtest_a and test_regrtest_c which are executed before
+        # and after test_regrtest_b import a submodule from the test_regrtest_b
+        # package and use it in testing. test_regrtest_b itself does not import
+        # that submodule.
+        # Previously test_regrtest_c failed because test_regrtest_b.util in
+        # sys.modules was left after test_regrtest_a (making the import
+        # statement no-op), but new test_regrtest_b without the util attribute
+        # was imported for test_regrtest_b.
         testdir = os.path.join(os.path.dirname(__file__),
                                'regrtestdata', 'import_from_tests')
         tests = [f'test_regrtest_{name}' for name in ('a', 'b', 'c')]
