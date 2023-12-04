@@ -6237,10 +6237,32 @@ Base 0 means to interpret the base from the string as an integer literal.\n\
 >>> int('0b100', base=0)\n\
 4");
 
+static PyObject *
+long_add_wrap(PyObject *o1, PyObject *o2)
+{
+    PyLongObject *a = (PyLongObject *)o1;
+    PyLongObject *b = (PyLongObject *)o2;
+    return long_add(a, b);
+}
+static PyObject *
+long_sub_wrap(PyObject *o1, PyObject *o2)
+{
+    PyLongObject *a = (PyLongObject *)o1;
+    PyLongObject *b = (PyLongObject *)o2;
+    return long_sub(a, b);
+}
+static PyObject *
+long_mul_wrap(PyObject *o1, PyObject *o2)
+{
+    PyLongObject *a = (PyLongObject *)o1;
+    PyLongObject *b = (PyLongObject *)o2;
+    return long_mul(a, b);
+}
+
 static PyNumberMethods long_as_number = {
-    (binaryfunc)long_add,       /*nb_add*/
-    (binaryfunc)long_sub,       /*nb_subtract*/
-    (binaryfunc)long_mul,       /*nb_multiply*/
+    long_add_wrap,              /*nb_add*/
+    long_sub_wrap,              /*nb_subtract*/
+    long_mul_wrap,              /*nb_multiply*/
     long_mod,                   /*nb_remainder*/
     long_divmod,                /*nb_divmod*/
     long_pow,                   /*nb_power*/
