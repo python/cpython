@@ -436,7 +436,7 @@ error:
 }
 
 static Py_ssize_t
-list_length(PyListObject *a)
+list_length(PyObject *a)
 {
     return Py_SIZE(a);
 }
@@ -2925,7 +2925,7 @@ static PyMethodDef list_methods[] = {
 };
 
 static PySequenceMethods list_as_sequence = {
-    (lenfunc)list_length,                       /* sq_length */
+    list_length,                                /* sq_length */
     (binaryfunc)list_concat,                    /* sq_concat */
     (ssizeargfunc)list_repeat,                  /* sq_repeat */
     (ssizeargfunc)list_item,                    /* sq_item */
@@ -3154,7 +3154,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 }
 
 static PyMappingMethods list_as_mapping = {
-    (lenfunc)list_length,
+    list_length,
     (binaryfunc)list_subscript,
     (objobjargproc)list_ass_subscript
 };
