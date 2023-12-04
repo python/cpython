@@ -609,7 +609,9 @@ class PurePath:
         if len(paths) == 1:
             self._raw_path_cached = paths[0]
         elif len(paths) == 0:
-            self._raw_path_cached = '.'
+            self._str = self._raw_path_cached = '.'
+            self._drv = self._root = ''
+            self._tail_cached = []
         self._resolving = False
 
     def __reduce__(self):
