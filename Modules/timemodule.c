@@ -69,25 +69,6 @@ module time
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a668a08771581f36]*/
 
 
-#if defined(HAVE_TIMES) || defined(HAVE_CLOCK)
-static int
-check_ticks_per_second(long tps, const char *context)
-{
-    /* Effectively, check that _PyTime_MulDiv(t, SEC_TO_NS, tps)
-       cannot overflow. */
-    if (tps >= 0 && (_PyTime_t)tps > _PyTime_MAX / SEC_TO_NS) {
-        PyErr_Format(PyExc_OverflowError, "%s is too large", context);
-        return -1;
-    }
-    if (tps < 1) {
-        PyErr_Format(PyExc_RuntimeError, "invalid %s", context);
-        return -1;
-    }
-    return 0;
-}
-#endif  /* HAVE_TIMES || HAVE_CLOCK */
-
-
 /* Forward declarations */
 static int pysleep(_PyTime_t timeout);
 
@@ -96,11 +77,11 @@ typedef struct {
     PyTypeObject *struct_time_type;
 #ifdef HAVE_TIMES
     // times() clock frequency in hertz
-    long ticks_per_second;
+    _PyTimeFraction times_base;
 #endif
 #ifdef HAVE_CLOCK
     // clock() frequency in hertz
-    long clocks_per_second;
+    _PyTimeFraction clock_base;
 #endif
 } time_module_state;
 
@@ -174,10 +155,11 @@ Return the current time in nanoseconds since the Epoch.");
 static int
 py_clock(time_module_state *state, _PyTime_t *tp, _Py_clock_info_t *info)
 {
-    long clocks_per_second = state->clocks_per_second;
+    _PyTimeFraction *base = &state->clock_base;
+
     if (info) {
         info->implementation = "clock()";
-        info->resolution = 1.0 / (double)clocks_per_second;
+        info->resolution = _PyTimeFraction_Resolution(base);
         info->monotonic = 1;
         info->adjustable = 0;
     }
@@ -189,7 +171,7 @@ py_clock(time_module_state *state, _PyTime_t *tp, _Py_clock_info_t *info)
                         "or its value cannot be represented");
         return -1;
     }
-    _PyTime_t ns = _PyTime_MulDiv(ticks, SEC_TO_NS, clocks_per_second);
+    _PyTime_t ns = _PyTimeFraction_Mul(ticks, base);
     *tp = _PyTime_FromNanoseconds(ns);
     return 0;
 }
@@ -1257,7 +1239,7 @@ static int
 process_time_times(time_module_state *state, _PyTime_t *tp,
                    _Py_clock_info_t *info)
 {
-    long ticks_per_second = state->ticks_per_second;
+    _PyTimeFraction *base = &state->times_base;
 
     struct tms process;
     if (times(&process) == (clock_t)-1) {
@@ -1266,14 +1248,14 @@ process_time_times(time_module_state *state, _PyTime_t *tp,
 
     if (info) {
         info->implementation = "times()";
+        info->resolution = _PyTimeFraction_Resolution(base);
         info->monotonic = 1;
         info->adjustable = 0;
-        info->resolution = 1.0 / (double)ticks_per_second;
     }
 
     _PyTime_t ns;
-    ns = _PyTime_MulDiv(process.tms_utime, SEC_TO_NS, ticks_per_second);
-    ns += _PyTime_MulDiv(process.tms_stime, SEC_TO_NS, ticks_per_second);
+    ns = _PyTimeFraction_Mul(process.tms_utime, base);
+    ns += _PyTimeFraction_Mul(process.tms_stime, base);
     *tp = _PyTime_FromNanoseconds(ns);
     return 1;
 }
@@ -1395,8 +1377,7 @@ py_process_time(time_module_state *state, _PyTime_t *tp,
     // times() failed, ignore failure
 #endif
 
-    /* clock */
-    /* Currently, Python 3 requires clock() to build: see issue #22624 */
+    /* clock(). Python 3 requires clock() to build (see gh-66814) */
     return py_clock(state, tp, info);
 #endif
 }
@@ -2110,20 +2091,23 @@ time_exec(PyObject *module)
 #endif
 
 #ifdef HAVE_TIMES
-    if (_Py_GetTicksPerSecond(&state->ticks_per_second) < 0) {
+    long ticks_per_second;
+    if (_Py_GetTicksPerSecond(&ticks_per_second) < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot read ticks_per_second");
         return -1;
     }
-
-    if (check_ticks_per_second(state->ticks_per_second, "_SC_CLK_TCK") < 0) {
+    if (_PyTimeFraction_Set(&state->times_base, SEC_TO_NS,
+                            ticks_per_second) < 0) {
+        PyErr_Format(PyExc_OverflowError, "ticks_per_second is too large");
         return -1;
     }
 #endif
 
 #ifdef HAVE_CLOCK
-    state->clocks_per_second = CLOCKS_PER_SEC;
-    if (check_ticks_per_second(state->clocks_per_second, "CLOCKS_PER_SEC") < 0) {
+    if (_PyTimeFraction_Set(&state->clock_base, SEC_TO_NS,
+                            CLOCKS_PER_SEC) < 0) {
+        PyErr_Format(PyExc_OverflowError, "CLOCKS_PER_SEC is too large");
         return -1;
     }
 #endif

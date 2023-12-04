@@ -58,7 +58,6 @@ Doc/library/fcntl.rst
 Doc/library/ftplib.rst
 Doc/library/functions.rst
 Doc/library/functools.rst
-Doc/library/gettext.rst
 Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.cookies.rst
