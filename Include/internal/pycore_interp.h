@@ -15,6 +15,7 @@ extern "C" {
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
+#include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -40,28 +41,6 @@ struct _Py_long_state {
 
 
 /* cross-interpreter data registry */
-
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-struct _xidregitem;
-
-struct _xidregitem {
-    struct _xidregitem *prev;
-    struct _xidregitem *next;
-    /* This can be a dangling pointer, but only if weakref is set. */
-    PyTypeObject *cls;
-    /* This is NULL for builtin types. */
-    PyObject *weakref;
-    size_t refcount;
-    crossinterpdatafunc getdata;
-};
-
-struct _xidregistry {
-    PyThread_type_lock mutex;
-    struct _xidregitem *head;
-};
 
 
 /* interpreter state */
@@ -174,8 +153,8 @@ struct _is {
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry xidregistry;
+    /* cross-interpreter data and utils */
+    struct _xi_state xi;
 
 #ifdef HAVE_FORK
     PyObject *before_forkers;
@@ -221,7 +200,6 @@ struct _is {
     uint32_t next_func_version;
 
     _Py_GlobalMonitors monitors;
-    bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */

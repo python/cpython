@@ -992,18 +992,10 @@ These are the UTF-8 codec APIs:
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
-   Raise an exception if the *unicode* string contains embedded null
-   characters. To accept embedded null characters and truncate on purpose
-   at the first null byte, ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be
-   used instead.
-
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
       The return type is now ``const char *`` rather of ``char *``.
-
-   .. versionchanged:: 3.13
-      Raise an exception if the string contains embedded null characters.
 
 
 UTF-32 Codecs

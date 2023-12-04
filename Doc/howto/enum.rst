@@ -483,6 +483,7 @@ Dataclass support
 When inheriting from a :class:`~dataclasses.dataclass`,
 the :meth:`~Enum.__repr__` omits the inherited class' name.  For example::
 
+    >>> from dataclasses import dataclass, field
     >>> @dataclass
     ... class CreatureDataMixin:
     ...     size: str
@@ -527,7 +528,8 @@ It is possible to modify how enum members are pickled/unpickled by defining
 :meth:`__reduce_ex__` in the enumeration class.  The default method is by-value,
 but enums with complicated values may want to use by-name::
 
-    >>> class MyEnum(Enum):
+    >>> import enum
+    >>> class MyEnum(enum.Enum):
     ...     __reduce_ex__ = enum.pickle_by_enum_name
 
 .. note::
@@ -605,9 +607,9 @@ The complete signature is::
         start=1,
         )
 
-:value: What the new enum class will record as its name.
+* *value*: What the new enum class will record as its name.
 
-:names: The enum members.  This can be a whitespace- or comma-separated string
+* *names*: The enum members.  This can be a whitespace- or comma-separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
@@ -624,13 +626,13 @@ The complete signature is::
 
     {'CHARTREUSE': 7, 'SEA_GREEN': 11, 'ROSEMARY': 42}
 
-:module: name of module where new enum class can be found.
+* *module*: name of module where new enum class can be found.
 
-:qualname: where in module new enum class can be found.
+* *qualname*: where in module new enum class can be found.
 
-:type: type to mix in to new enum class.
+* *type*: type to mix in to new enum class.
 
-:start: number to start counting at if only names are passed in.
+* *start*: number to start counting at if only names are passed in.
 
 .. versionchanged:: 3.5
    The *start* parameter was added.
@@ -770,7 +772,7 @@ be combined with them (but may lose :class:`IntFlag` membership::
     >>> Perm.X | 4
     <Perm.R|X: 5>
 
-    >>> Perm.X | 8
+    >>> Perm.X + 8
     9
 
 .. note::
@@ -1435,7 +1437,7 @@ alias::
     ...     GRENE = 2
     ...
     Traceback (most recent call last):
-    ...
+      ...
     ValueError: aliases not allowed in DuplicateFreeEnum:  'GRENE' --> 'GREEN'
 
 .. note::

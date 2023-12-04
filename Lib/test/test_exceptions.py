@@ -1844,6 +1844,13 @@ class NameErrorTests(unittest.TestCase):
         self.assertIn("nonsense", err.getvalue())
         self.assertIn("ZeroDivisionError", err.getvalue())
 
+    def test_gh_111654(self):
+        def f():
+            class TestClass:
+                TestClass
+
+        self.assertRaises(NameError, f)
+
     # Note: name suggestion tests live in `test_traceback`.
 
 
@@ -2073,6 +2080,7 @@ class AssertionErrorTests(unittest.TestCase):
              """,
                 [
                     '    1 < 2 and',
+                    '    3 > 4',
                     'AssertionError',
                 ],
             ),
@@ -2080,7 +2088,7 @@ class AssertionErrorTests(unittest.TestCase):
         for source, expected in cases:
             with self.subTest(source):
                 result = self.write_source(source)
-                self.assertEqual(result[-2:], expected)
+                self.assertEqual(result[-len(expected):], expected)
 
 
 class SyntaxErrorTests(unittest.TestCase):

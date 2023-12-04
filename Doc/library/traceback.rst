@@ -135,7 +135,7 @@ The module defines the following functions:
    text line is not ``None``.
 
 
-.. function:: format_exception_only(exc, /[, value])
+.. function:: format_exception_only(exc, /[, value], *, show_group=False)
 
    Format the exception part of a traceback using an exception value such as
    given by ``sys.last_value``.  The return value is a list of strings, each
@@ -149,12 +149,19 @@ The module defines the following functions:
    can be passed as the first argument.  If *value* is provided, the first
    argument is ignored in order to provide backwards compatibility.
 
+   When *show_group* is ``True``, and the exception is an instance of
+   :exc:`BaseExceptionGroup`, the nested exceptions are included as
+   well, recursively, with indentation relative to their nesting depth.
+
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
 
    .. versionchanged:: 3.11
       The returned list now includes any notes attached to the exception.
+
+   .. versionchanged:: 3.13
+      *show_group* parameter was added.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
@@ -279,6 +286,14 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: exc_type
 
       The class of the original traceback.
+
+      .. deprecated:: 3.13
+
+   .. attribute:: exc_type_str
+
+      String display of the class of the original exception.
+
+      .. versionadded:: 3.13
 
    .. attribute:: filename
 
@@ -508,27 +523,32 @@ The output for the example would look similar to this:
    *** print_tb:
      File "<doctest...>", line 10, in <module>
        lumberjack()
+       ~~~~~~~~~~^^
    *** print_exception:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
+       ~~~~~~~~~~^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
+       ~~~~~~~~~~^^
      File "<doctest...>", line 4, in lumberjack
        bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
    IndexError: tuple index out of range
    *** format_exc, first and last line:
    Traceback (most recent call last):
    IndexError: tuple index out of range
    *** format_exception:
    ['Traceback (most recent call last):\n',
-    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n',
+    '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ~~~~~~~~~~^^\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n    ~~~~~~~~~~~~~~~~~~~^^\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
@@ -536,8 +556,8 @@ The output for the example would look similar to this:
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
     <FrameSummary file <doctest...>, line 7 in bright_side_of_life>]
    *** format_tb:
-   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n',
+   ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n    ~~~~~~~~~~^^\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n    ~~~~~~~~~~~~~~~~~~~^^\n',
     '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n']
    *** tb_lineno: 10
 

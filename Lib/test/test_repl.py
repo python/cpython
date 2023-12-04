@@ -161,10 +161,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
-        traceback_lines = output.splitlines()[-7:-1]
+        traceback_lines = output.splitlines()[-8:-1]
         expected_lines = [
             '  File "<stdin>", line 1, in <module>',
             '    foo(0)',
+            '    ~~~^^^',
             '  File "<stdin>", line 2, in foo',
             '    1 / x',
             '    ~~^~~',
@@ -184,7 +185,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache.cache['<python-input-1>'])
+        print(linecache.cache['<stdin>-1'])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)
