@@ -618,8 +618,9 @@ list_clear(PyListObject *a)
 }
 
 static int
-list_clear_slot(PyListObject *self)
+list_clear_slot(PyObject *obj)
 {
+    PyListObject *self = (PyListObject *)obj;
     list_clear(self);
     return 0;
 }
@@ -3182,7 +3183,7 @@ PyTypeObject PyList_Type = {
         _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
     list___init____doc__,                       /* tp_doc */
     list_traverse,                              /* tp_traverse */
-    (inquiry)list_clear_slot,                   /* tp_clear */
+    list_clear_slot,                            /* tp_clear */
     list_richcompare,                           /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     list_iter,                                  /* tp_iter */
