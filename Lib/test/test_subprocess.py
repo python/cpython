@@ -2073,8 +2073,6 @@ class POSIXProcessTestCase(BaseTestCase):
         self._test_extra_groups_impl(gid=os.getegid(), group_list=[])
 
     def _test_extra_groups_impl(self, *, gid, group_list):
-        gid = os.getegid()
-        group_list = [65534 if gid != 65534 else 65533]
         name_group = _get_test_grp_name()
 
         if grp is not None:
