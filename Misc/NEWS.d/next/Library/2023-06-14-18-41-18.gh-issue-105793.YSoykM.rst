@@ -1,2 +1,0 @@
-Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.is_dir` and
-:meth:`~pathlib.Path.is_file`, defaulting to ``True``.

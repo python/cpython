@@ -288,9 +288,9 @@ The :mod:`csv` module defines the following classes:
       Inspecting each column, one of two key criteria will be considered to
       estimate if the sample contains a header:
 
-        - the second through n-th rows contain numeric values
-        - the second through n-th rows contain strings where at least one value's
-          length differs from that of the putative header of that column.
+      - the second through n-th rows contain numeric values
+      - the second through n-th rows contain strings where at least one value's
+        length differs from that of the putative header of that column.
 
       Twenty rows after the first row are sampled; if more than half of columns +
       rows meet the criteria, :const:`True` is returned.

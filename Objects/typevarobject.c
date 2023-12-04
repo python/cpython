@@ -327,7 +327,6 @@ typevar.__new__ as typevar_new
 
     name: object(subclass_of="&PyUnicode_Type")
     *constraints: object
-    *
     bound: object = None
     covariant: bool = False
     contravariant: bool = False
@@ -340,7 +339,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, int covariant, int contravariant,
                  int infer_variance)
-/*[clinic end generated code: output=1d200450ee99226d input=2c07ab87c94f462b]*/
+/*[clinic end generated code: output=1d200450ee99226d input=41ae33a916bfe76f]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -364,11 +363,7 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
         }
     }
 
-    if (!PyTuple_CheckExact(constraints)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "constraints must be a tuple");
-        return NULL;
-    }
+    assert(PyTuple_CheckExact(constraints));
     Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
     if (n_constraints == 1) {
         PyErr_SetString(PyExc_TypeError,

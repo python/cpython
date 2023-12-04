@@ -716,6 +716,9 @@ importlib.resources
 * :func:`importlib.resources.as_file` now supports resource directories.
   (Contributed by Jason R. Coombs in :gh:`97930`.)
 
+* Rename first parameter of :func:`importlib.resources.files` to *anchor*.
+  (Contributed by Jason R. Coombs in :gh:`100598`.)
+
 inspect
 -------
 
@@ -835,8 +838,7 @@ shutil
 
 * :func:`shutil.rmtree` now accepts a new argument *onexc* which is an
   error handler like *onerror* but which expects an exception instance
-  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated and
-  will be removed in Python 3.14.
+  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated.
   (Contributed by Irit Katriel in :gh:`102828`.)
 
 * :func:`shutil.which` now consults the *PATHEXT* environment variable to
@@ -1258,8 +1260,8 @@ Deprecated
   :mod:`concurrent.futures` the fix is to use a different
   :mod:`multiprocessing` start method such as ``"spawn"`` or ``"forkserver"``.
 
-* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated and will be removed
-  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
+* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated;
+  use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
 * :mod:`sqlite3`:
 
@@ -1286,8 +1288,9 @@ Deprecated
 
 * :mod:`typing`:
 
-  * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
-    and :class:`collections.abc.Sized`. (:gh:`94309`.)
+  * :class:`typing.Hashable` and :class:`typing.Sized`, aliases for
+    :class:`collections.abc.Hashable` and :class:`collections.abc.Sized` respectively, are
+    deprecated. (:gh:`94309`.)
 
   * :class:`typing.ByteString`, deprecated since Python 3.9, now causes a
     :exc:`DeprecationWarning` to be emitted when it is used.
@@ -1360,7 +1363,6 @@ Other modules:
 APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
-* :func:`locale.getdefaultlocale` (:gh:`90817`)
 * ``locale.resetlocale()`` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
@@ -1429,6 +1431,17 @@ and will be removed in Python 3.14.
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
 * The ``co_lnotab`` attribute of code objects.
+
+Pending Removal in Python 3.15
+------------------------------
+
+The following APIs have been deprecated
+and will be removed in Python 3.15.
+
+APIs:
+
+* :func:`locale.getdefaultlocale` (:gh:`90817`)
+
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -1626,7 +1639,10 @@ locale
   use :func:`locale.format_string` instead.
   (Contributed by Victor Stinner in :gh:`94226`.)
 
-* ``smtpd``: The module has been removed according to the schedule in :pep:`594`,
+smtpd
+-----
+
+* The ``smtpd`` module has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
   Use aiosmtpd_ PyPI module or any other
   :mod:`asyncio`-based server instead.
@@ -1758,6 +1774,14 @@ Others
   all deprecated since Python 3.6. Use the *context* parameter
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
+
+* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
+  (Contributed by Nikita Sobolev in :gh:`99482`.)
+
+* Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
+  from :mod:`ctypes` module.
+  (Contributed by Nikita Sobolev in :gh:`99285`.)
+
 
 .. _whatsnew312-porting-to-python312:
 
@@ -2398,22 +2422,15 @@ Removed
 
 * Legacy Unicode APIs have been removed. See :pep:`623` for detail.
 
-   * :c:macro:`!PyUnicode_WCHAR_KIND`
-   * :c:func:`!PyUnicode_AS_UNICODE`
-   * :c:func:`!PyUnicode_AsUnicode`
-   * :c:func:`!PyUnicode_AsUnicodeAndSize`
-   * :c:func:`!PyUnicode_AS_DATA`
-   * :c:func:`!PyUnicode_FromUnicode`
-   * :c:func:`!PyUnicode_GET_SIZE`
-   * :c:func:`!PyUnicode_GetSize`
-   * :c:func:`!PyUnicode_GET_DATA_SIZE`
+  * :c:macro:`!PyUnicode_WCHAR_KIND`
+  * :c:func:`!PyUnicode_AS_UNICODE`
+  * :c:func:`!PyUnicode_AsUnicode`
+  * :c:func:`!PyUnicode_AsUnicodeAndSize`
+  * :c:func:`!PyUnicode_AS_DATA`
+  * :c:func:`!PyUnicode_FromUnicode`
+  * :c:func:`!PyUnicode_GET_SIZE`
+  * :c:func:`!PyUnicode_GetSize`
+  * :c:func:`!PyUnicode_GET_DATA_SIZE`
 
 * Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
-
-* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
-  (Contributed by Nikita Sobolev in :gh:`99482`.)
-
-* Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
-  from :mod:`ctypes` module.
-  (Contributed by Nikita Sobolev in :gh:`99285`.)

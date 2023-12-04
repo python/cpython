@@ -221,116 +221,116 @@ have been incorporated. Some of the most notable ones are as follows:
 
 * Missing ``:`` before blocks:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> if rocket.position > event_horizon
-          File "<stdin>", line 1
-            if rocket.position > event_horizon
-                                              ^
-        SyntaxError: expected ':'
+      >>> if rocket.position > event_horizon
+        File "<stdin>", line 1
+          if rocket.position > event_horizon
+                                            ^
+      SyntaxError: expected ':'
 
-    (Contributed by Pablo Galindo in :issue:`42997`.)
+  (Contributed by Pablo Galindo in :issue:`42997`.)
 
 * Unparenthesised tuples in comprehensions targets:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> {x,y for x,y in zip('abcd', '1234')}
-          File "<stdin>", line 1
-            {x,y for x,y in zip('abcd', '1234')}
-             ^
-        SyntaxError: did you forget parentheses around the comprehension target?
+      >>> {x,y for x,y in zip('abcd', '1234')}
+        File "<stdin>", line 1
+          {x,y for x,y in zip('abcd', '1234')}
+           ^
+      SyntaxError: did you forget parentheses around the comprehension target?
 
-    (Contributed by Pablo Galindo in :issue:`43017`.)
+  (Contributed by Pablo Galindo in :issue:`43017`.)
 
 * Missing commas in collection literals and between expressions:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> items = {
-        ... x: 1,
-        ... y: 2
-        ... z: 3,
-          File "<stdin>", line 3
-            y: 2
-               ^
-        SyntaxError: invalid syntax. Perhaps you forgot a comma?
+      >>> items = {
+      ... x: 1,
+      ... y: 2
+      ... z: 3,
+        File "<stdin>", line 3
+          y: 2
+             ^
+      SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
-    (Contributed by Pablo Galindo in :issue:`43822`.)
+  (Contributed by Pablo Galindo in :issue:`43822`.)
 
 * Multiple Exception types without parentheses:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> try:
-        ...     build_dyson_sphere()
-        ... except NotEnoughScienceError, NotEnoughResourcesError:
-          File "<stdin>", line 3
-            except NotEnoughScienceError, NotEnoughResourcesError:
-                   ^
-        SyntaxError: multiple exception types must be parenthesized
+      >>> try:
+      ...     build_dyson_sphere()
+      ... except NotEnoughScienceError, NotEnoughResourcesError:
+        File "<stdin>", line 3
+          except NotEnoughScienceError, NotEnoughResourcesError:
+                 ^
+      SyntaxError: multiple exception types must be parenthesized
 
-    (Contributed by Pablo Galindo in :issue:`43149`.)
+  (Contributed by Pablo Galindo in :issue:`43149`.)
 
 * Missing ``:`` and values in dictionary literals:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> values = {
-        ... x: 1,
-        ... y: 2,
-        ... z:
-        ... }
-          File "<stdin>", line 4
-            z:
-             ^
-        SyntaxError: expression expected after dictionary key and ':'
+      >>> values = {
+      ... x: 1,
+      ... y: 2,
+      ... z:
+      ... }
+        File "<stdin>", line 4
+          z:
+           ^
+      SyntaxError: expression expected after dictionary key and ':'
 
-        >>> values = {x:1, y:2, z w:3}
-          File "<stdin>", line 1
-            values = {x:1, y:2, z w:3}
-                                ^
-        SyntaxError: ':' expected after dictionary key
+      >>> values = {x:1, y:2, z w:3}
+        File "<stdin>", line 1
+          values = {x:1, y:2, z w:3}
+                              ^
+      SyntaxError: ':' expected after dictionary key
 
-    (Contributed by Pablo Galindo in :issue:`43823`.)
+  (Contributed by Pablo Galindo in :issue:`43823`.)
 
 * ``try`` blocks without ``except`` or ``finally`` blocks:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> try:
-        ...     x = 2
-        ... something = 3
-          File "<stdin>", line 3
-            something  = 3
-            ^^^^^^^^^
-        SyntaxError: expected 'except' or 'finally' block
+      >>> try:
+      ...     x = 2
+      ... something = 3
+        File "<stdin>", line 3
+          something  = 3
+          ^^^^^^^^^
+      SyntaxError: expected 'except' or 'finally' block
 
-    (Contributed by Pablo Galindo in :issue:`44305`.)
+  (Contributed by Pablo Galindo in :issue:`44305`.)
 
 * Usage of ``=`` instead of ``==`` in comparisons:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> if rocket.position = event_horizon:
-          File "<stdin>", line 1
-            if rocket.position = event_horizon:
-                               ^
-        SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+      >>> if rocket.position = event_horizon:
+        File "<stdin>", line 1
+          if rocket.position = event_horizon:
+                             ^
+      SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
-    (Contributed by Pablo Galindo in :issue:`43797`.)
+  (Contributed by Pablo Galindo in :issue:`43797`.)
 
 * Usage of ``*`` in f-strings:
 
-    .. code-block:: python
+  .. code-block:: python
 
-        >>> f"Black holes {*all_black_holes} and revelations"
-          File "<stdin>", line 1
-            (*all_black_holes)
-             ^
-        SyntaxError: f-string: cannot use starred expression here
+      >>> f"Black holes {*all_black_holes} and revelations"
+        File "<stdin>", line 1
+          (*all_black_holes)
+           ^
+      SyntaxError: f-string: cannot use starred expression here
 
-    (Contributed by Pablo Galindo in :issue:`41064`.)
+  (Contributed by Pablo Galindo in :issue:`41064`.)
 
 IndentationErrors
 ~~~~~~~~~~~~~~~~~
@@ -365,10 +365,10 @@ raised from:
 
 (Contributed by Pablo Galindo in :issue:`38530`.)
 
-   .. warning::
-      Notice this won't work if :c:func:`PyErr_Display` is not called to display the error
-      which can happen if some other custom error display function is used. This is a common
-      scenario in some REPLs like IPython.
+.. warning::
+   Notice this won't work if :c:func:`PyErr_Display` is not called to display the error
+   which can happen if some other custom error display function is used. This is a common
+   scenario in some REPLs like IPython.
 
 NameErrors
 ~~~~~~~~~~
@@ -387,10 +387,10 @@ was raised from:
 
 (Contributed by Pablo Galindo in :issue:`38530`.)
 
-   .. warning::
-      Notice this won't work if :c:func:`PyErr_Display` is not called to display the error,
-      which can happen if some other custom error display function is used. This is a common
-      scenario in some REPLs like IPython.
+.. warning::
+   Notice this won't work if :c:func:`PyErr_Display` is not called to display the error,
+   which can happen if some other custom error display function is used. This is a common
+   scenario in some REPLs like IPython.
 
 
 PEP 626: Precise line numbers for debugging and other tools
@@ -433,16 +433,16 @@ A match statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  Specifically, pattern matching
 operates by:
 
-    1. using data with type and shape (the ``subject``)
-    2. evaluating the ``subject`` in the ``match`` statement
-    3. comparing the subject with each pattern in a ``case`` statement
-       from top to bottom until a match is confirmed.
-    4. executing the action associated with the pattern of the confirmed
-       match
-    5. If an exact match is not confirmed, the last case, a wildcard ``_``,
-       if provided, will be used as the matching case. If an exact match is
-       not confirmed and a wildcard case does not exist, the entire match
-       block is a no-op.
+1. using data with type and shape (the ``subject``)
+2. evaluating the ``subject`` in the ``match`` statement
+3. comparing the subject with each pattern in a ``case`` statement
+   from top to bottom until a match is confirmed.
+4. executing the action associated with the pattern of the confirmed
+   match
+5. If an exact match is not confirmed, the last case, a wildcard ``_``,
+   if provided, will be used as the matching case. If an exact match is
+   not confirmed and a wildcard case does not exist, the entire match
+   block is a no-op.
 
 Declarative approach
 ~~~~~~~~~~~~~~~~~~~~
@@ -2211,16 +2211,16 @@ Removed
 * Removed ``Py_UNICODE_str*`` functions manipulating ``Py_UNICODE*`` strings.
   (Contributed by Inada Naoki in :issue:`41123`.)
 
-   * ``Py_UNICODE_strlen``: use :c:func:`PyUnicode_GetLength` or
-     :c:macro:`PyUnicode_GET_LENGTH`
-   * ``Py_UNICODE_strcat``: use :c:func:`PyUnicode_CopyCharacters` or
-     :c:func:`PyUnicode_FromFormat`
-   * ``Py_UNICODE_strcpy``, ``Py_UNICODE_strncpy``: use
-     :c:func:`PyUnicode_CopyCharacters` or :c:func:`PyUnicode_Substring`
-   * ``Py_UNICODE_strcmp``: use :c:func:`PyUnicode_Compare`
-   * ``Py_UNICODE_strncmp``: use :c:func:`PyUnicode_Tailmatch`
-   * ``Py_UNICODE_strchr``, ``Py_UNICODE_strrchr``: use
-     :c:func:`PyUnicode_FindChar`
+  * ``Py_UNICODE_strlen``: use :c:func:`PyUnicode_GetLength` or
+    :c:macro:`PyUnicode_GET_LENGTH`
+  * ``Py_UNICODE_strcat``: use :c:func:`PyUnicode_CopyCharacters` or
+    :c:func:`PyUnicode_FromFormat`
+  * ``Py_UNICODE_strcpy``, ``Py_UNICODE_strncpy``: use
+    :c:func:`PyUnicode_CopyCharacters` or :c:func:`PyUnicode_Substring`
+  * ``Py_UNICODE_strcmp``: use :c:func:`PyUnicode_Compare`
+  * ``Py_UNICODE_strncmp``: use :c:func:`PyUnicode_Tailmatch`
+  * ``Py_UNICODE_strchr``, ``Py_UNICODE_strrchr``: use
+    :c:func:`PyUnicode_FindChar`
 
 * Removed ``PyUnicode_GetMax()``. Please migrate to new (:pep:`393`) APIs.
   (Contributed by Inada Naoki in :issue:`41103`.)

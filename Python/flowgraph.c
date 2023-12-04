@@ -97,6 +97,7 @@ static const jump_target_label NO_LABEL = {-1};
 static inline int
 is_block_push(cfg_instr *i)
 {
+    assert(OPCODE_HAS_ARG(i->i_opcode) || !IS_BLOCK_PUSH_OPCODE(i->i_opcode));
     return IS_BLOCK_PUSH_OPCODE(i->i_opcode);
 }
 
@@ -840,6 +841,7 @@ label_exception_targets(basicblock *entryblock) {
         assert(except_stack != NULL);
         b->b_exceptstack = NULL;
         handler = except_stack_top(except_stack);
+        int last_yield_except_depth = -1;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr)) {
@@ -878,10 +880,21 @@ label_exception_targets(basicblock *entryblock) {
                     todo++;
                 }
             }
-            else {
-                if (instr->i_opcode == YIELD_VALUE) {
-                    instr->i_oparg = except_stack->depth;
+            else if (instr->i_opcode == YIELD_VALUE) {
+                instr->i_except = handler;
+                last_yield_except_depth = except_stack->depth;
+            }
+            else if (instr->i_opcode == RESUME) {
+                instr->i_except = handler;
+                if (instr->i_oparg != RESUME_AT_FUNC_START) {
+                    assert(last_yield_except_depth >= 0);
+                    if (last_yield_except_depth == 1) {
+                        instr->i_oparg |= RESUME_OPARG_DEPTH1_MASK;
+                    }
+                    last_yield_except_depth = -1;
                 }
+            }
+            else {
                 instr->i_except = handler;
             }
         }
@@ -2227,7 +2240,6 @@ convert_pseudo_ops(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
-                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
