@@ -1795,7 +1795,8 @@ def _type_check_issubclass_arg_1(arg):
     in `issubclass(arg, <protocol>)`.
 
     In most cases, this is verified by type.__subclasscheck__.
-    As such, we don't perform this check unless we absolutely have to.
+    Checking it again unnecessarily would slow down issubclass() checks,
+    so, we don't perform this check unless we absolutely have to.
 
     For various error paths, however,
     we want to ensure that *this* error message is shown to the user
