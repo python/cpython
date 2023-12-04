@@ -1790,7 +1790,17 @@ _abc_instancecheck = ABCMeta.__instancecheck__
 _abc_subclasscheck = ABCMeta.__subclasscheck__
 
 
-def _type_check_subclasscheck_second_arg(arg):
+def _type_check_issubclass_arg_1(arg):
+    """Raise TypeError if `arg` is not an instance of `type`
+    in `issubclass(arg, <protocol>)`.
+
+    In most cases, this is verified by type.__subclasscheck__.
+    As such, we don't perform this check unless we absolutely have to.
+
+    For various error paths, however,
+    we want to ensure that *this* error message is shown to the user
+    where relevant, rather than a typing.py-specific error message.
+    """
     if not isinstance(arg, type):
         # Same error message as for issubclass(1, int).
         raise TypeError('issubclass() arg 1 must be a class')
@@ -1839,7 +1849,7 @@ class _ProtocolMeta(ABCMeta):
                 not cls.__callable_proto_members_only__
                 and cls.__dict__.get("__subclasshook__") is _proto_hook
             ):
-                _type_check_subclasscheck_second_arg(other)
+                _type_check_issubclass_arg_1(other)
                 non_method_attrs = sorted(
                     attr for attr in cls.__protocol_attrs__
                     if not callable(getattr(cls, attr, None))
@@ -1849,7 +1859,7 @@ class _ProtocolMeta(ABCMeta):
                     f" Non-method members: {str(non_method_attrs)[1:-1]}."
                 )
             if not getattr(cls, '_is_runtime_protocol', False):
-                _type_check_subclasscheck_second_arg(other)
+                _type_check_issubclass_arg_1(other)
                 raise TypeError(
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
