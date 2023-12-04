@@ -159,7 +159,7 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(),
             'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Secure')
 
-    def test_set_secure_httponly_attrs(self):
+    def test_set_secure_httponly_partitioned_attrs(self):
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
         C['Customer']['secure'] = True
         C['Customer']['httponly'] = True
