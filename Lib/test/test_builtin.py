@@ -2014,6 +2014,23 @@ class BuiltinTest(unittest.TestCase):
         bad_iter = map(int, "X")
         self.assertRaises(ValueError, array.extend, bad_iter)
 
+    def test_bytearray_join_with_misbehaving_iterator(self):
+        # Issue #112625
+        array = bytearray(b',')
+        def iterator():
+            array.clear()
+            yield b'A'
+            yield b'B'
+        self.assertRaises(BufferError, array.join, iterator())
+
+    def test_bytearray_join_with_custom_iterator(self):
+        # Issue #112625
+        array = bytearray(b',')
+        def iterator():
+            yield b'A'
+            yield b'B'
+        self.assertEqual(bytearray(b'A,B'), array.join(iterator()))
+
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
             tp = type(const)
