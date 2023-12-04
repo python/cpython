@@ -1520,8 +1520,10 @@ bytes_compare_eq(PyBytesObject *a, PyBytesObject *b)
 }
 
 static PyObject*
-bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
+bytes_richcompare(PyObject *o1, PyObject *o2, int op)
 {
+    PyBytesObject *a = (PyBytesObject *)o1;
+    PyBytesObject *b = (PyBytesObject *)o2;
     int c;
     Py_ssize_t len_a, len_b;
     Py_ssize_t min_len;
@@ -2949,7 +2951,7 @@ PyTypeObject PyBytes_Type = {
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
-    (richcmpfunc)bytes_richcompare,             /* tp_richcompare */
+    bytes_richcompare,                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     bytes_iter,                                 /* tp_iter */
     0,                                          /* tp_iternext */
