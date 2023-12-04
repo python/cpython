@@ -1962,7 +1962,7 @@ class InstructionTests(InstructionTestCase):
 
     def test_argval_argrepr(self):
         def f(*args):
-            return dis.Instruction._get_argval_argrepr(
+            return dis._get_argval_argrepr(
                 *args, labels_map={24: 1})
 
         offset = 42
