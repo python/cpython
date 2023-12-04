@@ -275,7 +275,7 @@ class PurePath:
                 # e.g. //?/unc/server/share
                 root = sep
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        has_trailing_sep = parsed and not rel.endswith(parsed[-1])
+        has_trailing_sep = bool(parsed) and not rel.endswith(parsed[-1])
         return drv, root, parsed, has_trailing_sep
 
     def _load_parts(self):
