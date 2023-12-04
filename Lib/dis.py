@@ -465,25 +465,14 @@ class Instruction(_Instruction):
         """True if other code jumps to here, otherwise False"""
         return self.label is not None
 
-    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=0,
-                           label_width=0):
-        """Format instruction details for inclusion in disassembly output.
-
-        *lineno_width* sets the width of the line number field (0 omits it)
-        *mark_as_current* inserts a '-->' marker arrow as part of the line
-        *offset_width* sets the width of the instruction offset field
-        *label_width* sets the width of the label field
-        """
+    def __str__(self):
         output = io.StringIO()
         formatter = Formatter(file=output,
-                              lineno_width=lineno_width,
-                              offset_width=offset_width,
-                              label_width=label_width)
-        formatter.print_instruction(self, mark_as_current)
+                              lineno_width=3,
+                              offset_width=0,
+                              label_width=0)
+        formatter.print_instruction(self, False)
         return output.getvalue()
-
-    def __str__(self):
-        return self._disassemble()
 
 
 class Formatter:
