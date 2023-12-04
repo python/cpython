@@ -142,6 +142,7 @@ Morsel Objects
                     version
                     httponly
                     samesite
+                    partitioned
 
    The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
@@ -150,6 +151,13 @@ Morsel Objects
    The attribute :attr:`samesite` specifies that the browser is not allowed to
    send the cookie along with cross-site requests. This helps to mitigate CSRF
    attacks. Valid values for this attribute are "Strict" and "Lax".
+
+   The attribute :attr:`partitioned` indicates to user agents that these
+   cross-site cookies should only be available in the same top-level context
+   that the cookie was first set in. Must also set ``Secure`` and ``Path=/``.
+   In addition, it is recommended to use the ``__Host`` prefix when setting
+   partitioned cookies to make them bound to the hostname and not the
+   registrable domain.
 
    The keys are case-insensitive and their default value is ``''``.
 
@@ -164,6 +172,9 @@ Morsel Objects
 
    .. versionchanged:: 3.8
       Added support for the :attr:`samesite` attribute.
+
+   .. versionchanged:: 3.13
+      Added support for the :attr:`partitioned` attribute.
 
 
 .. attribute:: Morsel.value
