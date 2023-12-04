@@ -86,11 +86,11 @@ def _percolator(parent):  # htest #
             print(self.name, ": delete", args)
             self.delegate.delete(*args)
 
-    box = tk.Toplevel(parent)
-    box.title("Test Percolator")
+    top = tk.Toplevel(parent)
+    top.title("Test Percolator")
     x, y = map(int, parent.geometry().split('+')[1:])
-    box.geometry("+%d+%d" % (x, y + 175))
-    text = tk.Text(box)
+    top.geometry("+%d+%d" % (x, y + 175))
+    text = tk.Text(top)
     p = Percolator(text)
     pin = p.insertfilter
     pout = p.removefilter
@@ -104,10 +104,10 @@ def _percolator(parent):  # htest #
 
     text.pack()
     var1 = tk.IntVar(parent)
-    cb1 = tk.Checkbutton(box, text="Tracer1", command=toggle1, variable=var1)
+    cb1 = tk.Checkbutton(top, text="Tracer1", command=toggle1, variable=var1)
     cb1.pack()
     var2 = tk.IntVar(parent)
-    cb2 = tk.Checkbutton(box, text="Tracer2", command=toggle2, variable=var2)
+    cb2 = tk.Checkbutton(top, text="Tracer2", command=toggle2, variable=var2)
     cb2.pack()
 
 if __name__ == "__main__":
