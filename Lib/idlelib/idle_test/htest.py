@@ -170,8 +170,8 @@ _grep_dialog_spec = {
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
            "The results should be displayed in a new '*Output*' window.\n"
-           "'Right-click'->'Go to file/line' anywhere in the search results "
-           "should open that file \nin a new EditorWindow."
+           "'Right-click'->'Go to file/line' in the search results\n "
+           "should open that file in a new EditorWindow."
     }
 
 HelpSource_spec = {
@@ -208,26 +208,6 @@ _io_binding_spec = {
            "<Alt-s> to save-as another file.\n"
            "<Control-c> to save-copy-as another file.\n"
            "Check that changes were saved by opening the file elsewhere."
-    }
-
-_linenumbers_drag_scrolling_spec = {
-    'file': 'sidebar',
-    'kwds': {},
-    'msg': textwrap.dedent("""\
-        1. Click on the line numbers and drag down below the edge of the
-        window, moving the mouse a bit and then leaving it there for a
-        while. The text and line numbers should gradually scroll down,
-        with the selection updated continuously.
-
-        2. With the lines still selected, click on a line number above
-        or below the selected lines. Only the line whose number was
-        clicked should be selected.
-
-        3. Repeat step #1, dragging to above the window. The text and
-        line numbers should gradually scroll up, with the selection
-        updated continuously.
-
-        4. Repeat step #2, clicking a line number below the selection."""),
     }
 
 _multi_call_spec = {
@@ -295,6 +275,15 @@ _replace_dialog_spec = {
            "Click [Close] or [X] to close the 'Replace Dialog'."
     }
 
+_scrolled_list_spec = {
+    'file': 'scrolledlist',
+    'kwds': {},
+    'msg': "You should see a scrollable list of items\n"
+           "Selecting (clicking) or double clicking an item "
+           "prints the name to the console or Idle shell.\n"
+           "Right clicking an item will display a popup."
+    }
+
 _search_dialog_spec = {
     'file': 'search',
     'kwds': {},
@@ -310,21 +299,31 @@ _searchbase_spec = {
            "Its only action is to close."
     }
 
-_scrolled_list_spec = {
-    'file': 'scrolledlist',
+_sidebar_number_scrolling_spec = {
+    'file': 'sidebar',
     'kwds': {},
-    'msg': "You should see a scrollable list of items\n"
-           "Selecting (clicking) or double clicking an item "
-           "prints the name to the console or Idle shell.\n"
-           "Right clicking an item will display a popup."
+    'msg': textwrap.dedent("""\
+        1. Click on the line numbers and drag down below the edge of the
+        window, moving the mouse a bit and then leaving it there for a
+        while. The text and line numbers should gradually scroll down,
+        with the selection updated continuously.
+
+        2. With the lines still selected, click on a line number above
+        or below the selected lines. Only the line whose number was
+        clicked should be selected.
+
+        3. Repeat step #1, dragging to above the window. The text and
+        line numbers should gradually scroll up, with the selection
+        updated continuously.
+
+        4. Repeat step #2, clicking a line number below the selection."""),
     }
 
 _stackbrowser_spec = {
     'file': 'stackviewer',
     'kwds': {},
     'msg': "A stacktrace for a NameError exception.\n"
-           "Expand 'idlelib ...' and '<locals>'.\n"
-           "Check that exc_value, exc_tb, and exc_type are correct.\n"
+           "Should have NameError and 1 traceback line."
     }
 
 _tooltip_spec = {
@@ -437,6 +436,7 @@ def run(*tests):
 
     next_test()
     root.mainloop()
+
 
 if __name__ == '__main__':
     run()
