@@ -1416,26 +1416,28 @@ class Path(_PathBase):
         if self.is_absolute():
             return self
         elif self.root:
-            cwd_drv = os.path.splitroot(os.getcwd())[0]
-            return self._from_parsed_parts(cwd_drv, self.root, self._tail)
+            drive = os.path.splitroot(os.getcwd())[0]
+            return self._from_parsed_parts(drive, self.root, self._tail)
+        elif self.drive:
+            # There is a CWD on each drive-letter drive.
+            cwd = os.path.abspath(self.drive)
         else:
-            cwd = os.path.abspath(self.drive) if self.drive else os.getcwd()
-            if self._tail:
-                # Optimization: use os.path.splitroot() rather than _parse_path().
-                # This is possible because os.getcwd() returns a normalized path.
-                cwd_drv, cwd_root, cwd_tail = os.path.splitroot(cwd)
-                if cwd_tail:
-                    cwd_tail = cwd_tail.split(self.pathmod.sep)
-                    cwd_tail.extend(self._tail)
-                else:
-                    cwd_tail = self._tail
-                return self._from_parsed_parts(cwd_drv, cwd_root, cwd_tail)
-            else:
-                # Optimization: store the result of os.getcwd() as the normalized
-                # string representation of the path.
-                result = self.with_segments(cwd)
-                result._str = cwd
-                return result
+            cwd = os.getcwd()
+        if not self._tail:
+            # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
+            # We pass only one argument to with_segments() to avoid the cost
+            # of joining, and we exploit the fact that getcwd() returns a
+            # fully-normalized string by storing it in _str. This is used to
+            # implement Path.cwd().
+            result = self.with_segments(cwd)
+            result._str = cwd
+            return result
+        drive, root, rel = os.path.splitroot(cwd)
+        if not rel:
+            return self._from_parsed_parts(drive, root, self._tail)
+        tail = rel.split(self.pathmod.sep)
+        tail.extend(self._tail)
+        return self._from_parsed_parts(drive, root, tail)
 
     def resolve(self, strict=False):
         """
