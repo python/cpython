@@ -156,8 +156,9 @@ method_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 }
 
 static PyObject *
-member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
+member_get(PyObject *self, PyObject *obj, PyObject *type)
 {
+    PyMemberDescrObject *descr = (PyMemberDescrObject *)self;
     if (obj == NULL) {
         return Py_NewRef(descr);
     }
@@ -223,8 +224,9 @@ descr_setcheck(PyDescrObject *descr, PyObject *obj, PyObject *value)
 }
 
 static int
-member_set(PyMemberDescrObject *descr, PyObject *obj, PyObject *value)
+member_set(PyObject *self, PyObject *obj, PyObject *value)
 {
+    PyMemberDescrObject *descr = (PyMemberDescrObject *)self;
     if (descr_setcheck((PyDescrObject *)descr, obj, value) < 0) {
         return -1;
     }
@@ -805,8 +807,8 @@ PyTypeObject PyMemberDescr_Type = {
     member_getset,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    (descrgetfunc)member_get,                   /* tp_descr_get */
-    (descrsetfunc)member_set,                   /* tp_descr_set */
+    member_get,                                 /* tp_descr_get */
+    member_set,                                 /* tp_descr_set */
 };
 
 PyTypeObject PyGetSetDescr_Type = {
