@@ -990,8 +990,9 @@ tupleiter_dealloc(PyObject *obj)
 }
 
 static int
-tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
+tupleiter_traverse(PyObject *obj, visitproc visit, void *arg)
 {
+    _PyTupleIterObject *it = (_PyTupleIterObject *)obj;
     Py_VISIT(it->it_seq);
     return 0;
 }
@@ -1094,7 +1095,7 @@ PyTypeObject PyTupleIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)tupleiter_traverse,           /* tp_traverse */
+    tupleiter_traverse,                         /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
