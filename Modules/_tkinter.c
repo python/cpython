@@ -1208,7 +1208,7 @@ typedef struct Tkapp_CallEvent {
     Tcl_Condition *done;
 } Tkapp_CallEvent;
 
-void
+static void
 Tkapp_CallDeallocArgs(Tcl_Obj** objv, Tcl_Obj** objStore, Tcl_Size objc)
 {
     Tcl_Size i;
