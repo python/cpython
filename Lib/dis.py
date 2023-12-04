@@ -476,47 +476,72 @@ class Instruction(_Instruction):
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
         """
+        return InstructionFormatter(lineno_width=lineno_width,
+                                    offset_width=offset_width,
+                                    label_width=label_width).format(self, mark_as_current)
+
+    def __str__(self):
+        return self._disassemble()
+
+
+class InstructionFormatter:
+    def __init__(self, lineno_width=3, offset_width=0, label_width=0):
+        """Create and InstructionFormatter
+
+        *lineno_width* sets the width of the line number field (0 omits it)
+        *mark_as_current* inserts a '-->' marker arrow as part of the line
+        *offset_width* sets the width of the instruction offset field
+        *label_width* sets the width of the label field
+        """
+        self.lineno_width = lineno_width
+        self.offset_width = offset_width
+        self.label_width = label_width
+
+    def format(self, instr, mark_as_current=False):
+        """Format instruction details for inclusion in disassembly output."""
+        lineno_width = self.lineno_width
+        offset_width = self.offset_width
+        label_width = self.label_width
+
         fields = []
         # Column: Source code line number
         if lineno_width:
-            if self.starts_line:
-                lineno_fmt = "%%%dd" if self.line_number is not None else "%%%ds"
+            if instr.starts_line:
+                lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
                 lineno_fmt = lineno_fmt % lineno_width
-                lineno = self.line_number if self.line_number is not None else '--'
+                lineno = instr.line_number if instr.line_number is not None else '--'
                 fields.append(lineno_fmt % lineno)
             else:
                 fields.append(' ' * lineno_width)
         # Column: Label
-        if self.label is not None:
-            lbl = f"L{self.label}:"
+        if instr.label is not None:
+            lbl = f"L{instr.label}:"
             fields.append(f"{lbl:>{label_width}}")
         else:
             fields.append(' ' * label_width)
         # Column: Instruction offset from start of code sequence
         if offset_width > 0:
-            fields.append(f"{repr(self.offset):>{offset_width}}  ")
+            fields.append(f"{repr(instr.offset):>{offset_width}}  ")
         # Column: Current instruction indicator
         if mark_as_current:
             fields.append('-->')
         else:
             fields.append('   ')
         # Column: Opcode name
-        fields.append(self.opname.ljust(_OPNAME_WIDTH))
+        fields.append(instr.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
-        if self.arg is not None:
-            arg = repr(self.arg)
+        if instr.arg is not None:
+            arg = repr(instr.arg)
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
-            opname_excess = max(0, len(self.opname) - _OPNAME_WIDTH)
-            fields.append(repr(self.arg).rjust(_OPARG_WIDTH - opname_excess))
+            opname_excess = max(0, len(instr.opname) - _OPNAME_WIDTH)
+            fields.append(repr(instr.arg).rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
-            if self.argrepr:
-                fields.append('(' + self.argrepr + ')')
+            if instr.argrepr:
+                fields.append('(' + instr.argrepr + ')')
         return ' '.join(fields).rstrip()
 
-    def __str__(self):
-        return self._disassemble()
 
 def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
     """Iterator for the opcodes in methods, functions or code
@@ -617,7 +642,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
                             linestarts=None, line_offset=0,
                             exception_entries=(), co_positions=None,
-                            show_caches=False, original_code=None):
+                            show_caches=False, original_code=None, labels_map=None):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
@@ -633,23 +658,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     co_positions = co_positions or iter(())
     get_name = None if names is None else names.__getitem__
 
-    def make_labels_map(original_code, exception_entries):
-        jump_targets = set(findlabels(original_code))
-        labels = set(jump_targets)
-        for start, end, target, _, _ in exception_entries:
-            labels.add(start)
-            labels.add(end)
-            labels.add(target)
-        labels = sorted(labels)
-        labels_map = {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
-        for e in exception_entries:
-            e.start_label = labels_map[e.start]
-            e.end_label = labels_map[e.end]
-            e.target_label = labels_map[e.target]
-        return labels_map
-
-    labels_map = make_labels_map(original_code, exception_entries)
-    label_width = 4 + len(str(len(labels_map)))
+    labels_map = labels_map or _make_labels_map(original_code, exception_entries)
 
     exceptions_map = {}
     for start, end, target, _, _ in exception_entries:
@@ -726,6 +735,23 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
                     adaptive=adaptive, show_offsets=show_offsets
                 )
 
+
+def _make_labels_map(original_code, exception_entries):
+    jump_targets = set(findlabels(original_code))
+    labels = set(jump_targets)
+    for start, end, target, _, _ in exception_entries:
+        labels.add(start)
+        labels.add(end)
+        labels.add(target)
+    labels = sorted(labels)
+    labels_map = {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
+    for e in exception_entries:
+        e.start_label = labels_map[e.start]
+        e.end_label = labels_map[e.end]
+        e.target_label = labels_map[e.target]
+    return labels_map
+
+
 def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        names=None, co_consts=None, linestarts=None,
                        *, file=None, line_offset=0, exception_entries=(),
@@ -758,6 +784,13 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     else:
         offset_width = 0
 
+    labels_map = _make_labels_map(original_code or code, exception_entries)
+    label_width = 4 + len(str(len(labels_map)))
+
+    instr_formatter = InstructionFormatter(lineno_width=lineno_width,
+                                           offset_width=offset_width,
+                                           label_width=label_width)
+
     label_width = -1
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          co_consts, linestarts,
@@ -765,7 +798,8 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                                          exception_entries=exception_entries,
                                          co_positions=co_positions,
                                          show_caches=show_caches,
-                                         original_code=original_code):
+                                         original_code=original_code,
+                                         labels_map=labels_map):
         new_source_line = (show_lineno and
                            instr.starts_line and
                            instr.offset > 0)
@@ -779,8 +813,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         label_width = getattr(instr, 'label_width', label_width)
         assert label_width >= 0
-        print(instr._disassemble(lineno_width, is_current_instr, offset_width, label_width),
-              file=file)
+        print(instr_formatter.format(instr, is_current_instr), file=file)
     if exception_entries:
         print("ExceptionTable:", file=file)
         for entry in exception_entries:
