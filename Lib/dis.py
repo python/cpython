@@ -476,8 +476,7 @@ class Instruction(_Instruction):
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
         """
-        return InstructionFormatter(lineno_width=lineno_width,
-                                    offset_width=offset_width,
+        return InstructionFormatter(offset_width=offset_width,
                                     label_width=label_width).format(self, mark_as_current)
 
     def __str__(self):
@@ -485,17 +484,47 @@ class Instruction(_Instruction):
 
 
 class InstructionFormatter:
-    def __init__(self, lineno_width=3, offset_width=0, label_width=0):
+
+    NO_LINENO = '  --'
+
+    def __init__(self, file=None, lineno_width=3, offset_width=0, label_width=0,
+                       linestarts=None, line_offset=0):
         """Create and InstructionFormatter
 
         *lineno_width* sets the width of the line number field (0 omits it)
         *mark_as_current* inserts a '-->' marker arrow as part of the line
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
+
+        *linestarts* dictionary mapping offset to lineno, for offsets that
+                     start a new line
         """
-        self.lineno_width = lineno_width
+        self.file = file
         self.offset_width = offset_width
         self.label_width = label_width
+        self.linestarts = linestarts
+
+        # Omit the line number column entirely if we have no line number info
+        if bool(linestarts):
+            linestarts_ints = [line for line in linestarts.values() if line is not None]
+            show_lineno = len(linestarts_ints) > 0
+        else:
+            show_lineno = False
+
+        if show_lineno:
+            maxlineno = max(linestarts_ints) + line_offset
+            if maxlineno >= 1000:
+                lineno_width = len(str(maxlineno))
+            else:
+                lineno_width = 3
+
+            if lineno_width < len(self.NO_LINENO) and None in linestarts.values():
+                lineno_width = len(self.NO_LINENO)
+        else:
+            lineno_width = 0
+
+        self.lineno_width = lineno_width
+
 
     def format(self, instr, mark_as_current=False):
         """Format instruction details for inclusion in disassembly output."""
@@ -503,13 +532,19 @@ class InstructionFormatter:
         offset_width = self.offset_width
         label_width = self.label_width
 
+        new_source_line = (lineno_width > 0 and
+                           instr.starts_line and
+                           instr.offset > 0)
+        if new_source_line:
+            print(file=self.file)
+
         fields = []
         # Column: Source code line number
         if lineno_width:
             if instr.starts_line:
                 lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
                 lineno_fmt = lineno_fmt % lineno_width
-                lineno = instr.line_number if instr.line_number is not None else '--'
+                lineno = self.NO_LINENO if instr.line_number is None else instr.line_number
                 fields.append(lineno_fmt % lineno)
             else:
                 fields.append(' ' * lineno_width)
@@ -758,23 +793,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        co_positions=None, show_caches=False, original_code=None,
                        show_offsets=False):
     # Omit the line number column entirely if we have no line number info
-    if bool(linestarts):
-        linestarts_ints = [line for line in linestarts.values() if line is not None]
-        show_lineno = len(linestarts_ints) > 0
-    else:
-        show_lineno = False
 
-    if show_lineno:
-        maxlineno = max(linestarts_ints) + line_offset
-        if maxlineno >= 1000:
-            lineno_width = len(str(maxlineno))
-        else:
-            lineno_width = 3
-
-        if lineno_width < len(str(None)) and None in linestarts.values():
-            lineno_width = len(str(None))
-    else:
-        lineno_width = 0
     if show_offsets:
         maxoffset = len(code) - 2
         if maxoffset >= 10000:
@@ -787,11 +806,12 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     labels_map = _make_labels_map(original_code or code, exception_entries)
     label_width = 4 + len(str(len(labels_map)))
 
-    instr_formatter = InstructionFormatter(lineno_width=lineno_width,
+    instr_formatter = InstructionFormatter(file=file,
                                            offset_width=offset_width,
-                                           label_width=label_width)
+                                           label_width=label_width,
+                                           linestarts=linestarts,
+                                           line_offset=line_offset)
 
-    label_width = -1
     for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          co_consts, linestarts,
                                          line_offset=line_offset,
@@ -800,19 +820,12 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                                          show_caches=show_caches,
                                          original_code=original_code,
                                          labels_map=labels_map):
-        new_source_line = (show_lineno and
-                           instr.starts_line and
-                           instr.offset > 0)
-        if new_source_line:
-            print(file=file)
         if show_caches:
             is_current_instr = instr.offset == lasti
         else:
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
-        label_width = getattr(instr, 'label_width', label_width)
-        assert label_width >= 0
         print(instr_formatter.format(instr, is_current_instr), file=file)
     if exception_entries:
         print("ExceptionTable:", file=file)
