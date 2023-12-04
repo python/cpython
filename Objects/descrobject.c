@@ -1156,8 +1156,9 @@ static PyMethodDef mappingproxy_methods[] = {
 };
 
 static void
-mappingproxy_dealloc(mappingproxyobject *pp)
+mappingproxy_dealloc(PyObject *obj)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)obj;
     _PyObject_GC_UNTRACK(pp);
     Py_DECREF(pp->mapping);
     PyObject_GC_Del(pp);
@@ -1910,7 +1911,7 @@ PyTypeObject PyDictProxy_Type = {
     sizeof(mappingproxyobject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)mappingproxy_dealloc,           /* tp_dealloc */
+    mappingproxy_dealloc,                       /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
