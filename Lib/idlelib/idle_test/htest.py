@@ -190,6 +190,13 @@ HelpSource_spec = {
            "<Escape>, [Cancel], or [X] prints None to shell"
     }
 
+_helpwindow_spec = {
+    'file': 'help',
+    'kwds': {},
+    'msg': "If the help text displays, this works.\n"
+           "Text is selectable. Window is scrollable."
+    }
+
 _io_binding_spec = {
     'file': 'iomenu',
     'kwds': {},
@@ -312,14 +319,7 @@ _scrolled_list_spec = {
            "Right clicking an item will display a popup."
     }
 
-show_idlehelp_spec = {
-    'file': 'help',
-    'kwds': {},
-    'msg': "If the help text displays, this works.\n"
-           "Text is selectable. Window is scrollable."
-    }
-
-_stack_viewer_spec = {
+_stackbrowser_spec = {
     'file': 'stackviewer',
     'kwds': {},
     'msg': "A stacktrace for a NameError exception.\n"
