@@ -1415,10 +1415,10 @@ class Path(_PathBase):
         """
         if self.is_absolute():
             return self
-        elif self.root:
+        if self.root:
             drive = os.path.splitroot(os.getcwd())[0]
             return self._from_parsed_parts(drive, self.root, self._tail)
-        elif self.drive:
+        if self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = os.path.abspath(self.drive)
         else:
