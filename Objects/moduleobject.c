@@ -842,7 +842,11 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         if (suppress != 1) {
             if (_PyModuleSpec_IsInitializing(spec)) {
                 int valid_spec = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
-                // check if origin is a str object
+                if (valid_spec == -1) {
+                    Py_XDECREF(spec);
+                    Py_DECREF(mod_name);
+                    return NULL;
+                }
                 if (valid_spec == 1 && !PyUnicode_Check(origin)) {
                     valid_spec = 0;
                     Py_DECREF(origin);
