@@ -671,9 +671,9 @@ errors.  If you absolutely must use 2.0 but can't fix your code, you can edit
 ``NO_STRICT_LIST_APPEND`` to preserve the old behaviour; this isn't recommended.
 
 Some of the functions in the :mod:`socket` module are still forgiving in this
-way.  For example, :func:`socket.connect( ('hostname', 25) )` is the correct
-form, passing a tuple representing an IP address, but :func:`socket.connect(
-'hostname', 25 )` also works. :func:`socket.connect_ex` and :func:`socket.bind`
+way.  For example, ``socket.connect( ('hostname', 25) )`` is the correct
+form, passing a tuple representing an IP address, but ``socket.connect('hostname', 25)``
+also works. :meth:`socket.connect_ex <socket.socket.connect_ex>` and :meth:`socket.bind <socket.socket.bind>`
 are similarly easy-going.  2.0alpha1 tightened these functions up, but because
 the documentation actually used the erroneous multiple argument form, many
 people wrote code which would break with the stricter checking.  GvR backed out

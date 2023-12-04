@@ -98,10 +98,7 @@ PyTypeObject PyEllipsis_Type = {
     ellipsis_new,                       /* tp_new */
 };
 
-PyObject _Py_EllipsisObject = {
-    { _Py_IMMORTAL_REFCNT },
-    &PyEllipsis_Type
-};
+PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 
 /* Slice object implementation */

@@ -522,6 +522,7 @@ PyModule_GetNameObject(PyObject *mod)
     }
     PyObject *name;
     if (PyDict_GetItemRef(dict, &_Py_ID(__name__), &name) <= 0) {
+        // error or not found
         goto error;
     }
     if (!PyUnicode_Check(name)) {
@@ -562,6 +563,7 @@ PyModule_GetFilenameObject(PyObject *mod)
     }
     PyObject *fileobj;
     if (PyDict_GetItemRef(dict, &_Py_ID(__file__), &fileobj) <= 0) {
+        // error or not found
         goto error;
     }
     if (!PyUnicode_Check(fileobj)) {
@@ -647,7 +649,7 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_WriteUnraisable(NULL);
+                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
                 }
             }
         }
@@ -668,7 +670,7 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_WriteUnraisable(NULL);
+                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
                 }
             }
         }
@@ -816,28 +818,28 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         PyErr_Clear();
     }
     assert(m->md_dict != NULL);
-    getattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__getattr__));
+    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__getattr__), &getattr) < 0) {
+        return NULL;
+    }
     if (getattr) {
         PyObject *result = PyObject_CallOneArg(getattr, name);
         if (result == NULL && suppress == 1 && PyErr_ExceptionMatches(PyExc_AttributeError)) {
             // suppress AttributeError
             PyErr_Clear();
         }
+        Py_DECREF(getattr);
         return result;
     }
-    if (PyErr_Occurred()) {
+    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name) < 0) {
         return NULL;
     }
-    mod_name = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__name__));
     if (mod_name && PyUnicode_Check(mod_name)) {
-        Py_INCREF(mod_name);
-        PyObject *spec = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__spec__));
-        if (spec == NULL && PyErr_Occurred()) {
+        PyObject *spec;
+        if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
             Py_DECREF(mod_name);
             return NULL;
         }
         if (suppress != 1) {
-            Py_XINCREF(spec);
             if (_PyModuleSpec_IsInitializing(spec)) {
                 PyErr_Format(PyExc_AttributeError,
                                 "partially initialized "
@@ -856,14 +858,12 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                                 "module '%U' has no attribute '%U'",
                                 mod_name, name);
             }
-            Py_XDECREF(spec);
         }
+        Py_XDECREF(spec);
         Py_DECREF(mod_name);
         return NULL;
     }
-    else if (PyErr_Occurred()) {
-        return NULL;
-    }
+    Py_XDECREF(mod_name);
     if (suppress != 1) {
         PyErr_Format(PyExc_AttributeError,
                     "module has no attribute '%U'", name);
@@ -902,10 +902,9 @@ module_clear(PyModuleObject *m)
     {
         int res = m->md_def->m_clear((PyObject*)m);
         if (PyErr_Occurred()) {
-            PySys_FormatStderr("Exception ignored in m_clear of module%s%V\n",
-                               m->md_name ? " " : "",
-                               m->md_name, "");
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored in m_clear of module%s%V",
+                                   m->md_name ? " " : "",
+                                   m->md_name, "");
         }
         if (res)
             return res;
@@ -958,11 +957,8 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
         return NULL;
     }
 
-    PyObject *annotations = PyDict_GetItemWithError(dict, &_Py_ID(__annotations__));
-    if (annotations) {
-        Py_INCREF(annotations);
-    }
-    else if (!PyErr_Occurred()) {
+    PyObject *annotations;
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) == 0) {
         annotations = PyDict_New();
         if (annotations) {
             int result = PyDict_SetItem(
