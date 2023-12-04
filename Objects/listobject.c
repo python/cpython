@@ -779,8 +779,9 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 }
 
 static int
-list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
+list_ass_item(PyObject *obj, Py_ssize_t i, PyObject *v)
 {
+    PyListObject *a = (PyListObject *)obj;
     if (!valid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
@@ -2929,7 +2930,7 @@ static PySequenceMethods list_as_sequence = {
     (ssizeargfunc)list_repeat,                  /* sq_repeat */
     (ssizeargfunc)list_item,                    /* sq_item */
     0,                                          /* sq_slice */
-    (ssizeobjargproc)list_ass_item,             /* sq_ass_item */
+    list_ass_item,                              /* sq_ass_item */
     0,                                          /* sq_ass_slice */
     (objobjproc)list_contains,                  /* sq_contains */
     (binaryfunc)list_inplace_concat,            /* sq_inplace_concat */
@@ -2999,7 +3000,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             return -1;
         if (i < 0)
             i += PyList_GET_SIZE(self);
-        return list_ass_item(self, i, value);
+        return list_ass_item((PyObject *)self, i, value);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength;
