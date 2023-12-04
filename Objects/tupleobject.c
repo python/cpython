@@ -998,8 +998,9 @@ tupleiter_traverse(PyObject *obj, visitproc visit, void *arg)
 }
 
 static PyObject *
-tupleiter_next(_PyTupleIterObject *it)
+tupleiter_next(PyObject *obj)
 {
+    _PyTupleIterObject *it = (_PyTupleIterObject *)obj;
     PyTupleObject *seq;
     PyObject *item;
 
@@ -1100,7 +1101,7 @@ PyTypeObject PyTupleIter_Type = {
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)tupleiter_next,               /* tp_iternext */
+    tupleiter_next,                             /* tp_iternext */
     tupleiter_methods,                          /* tp_methods */
     0,
 };
