@@ -568,12 +568,16 @@ class EnumType(type):
         try:
             exc = None
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
-        except RuntimeError as e:
-            # any exceptions raised by member.__new__ will get converted to a
-            # RuntimeError, so get that original exception back and raise it instead
-            exc = e.__cause__ or e
+        except Exception as e:
+            # since 3.12 the line "Error calling __set_name__ on '_proto_member' instance ..."
+            # is tacked on to the error instead of raising a RuntimeError
+            # recreate the exception to discard
+            exc = type(e)(str(e))
+            exc.__cause__ = e.__cause__
+            exc.__context__ = e.__context__
+            tb = e.__traceback__
         if exc is not None:
-            raise exc
+            raise exc.with_traceback(tb)
         #
         # update classdict with any changes made by __init_subclass__
         classdict.update(enum_class.__dict__)
@@ -1189,14 +1193,13 @@ class Enum(metaclass=EnumType):
 
     def __dir__(self):
         """
-        Returns all members and all public methods
+        Returns public methods and other interesting attributes.
         """
-        if self.__class__._member_type_ is object:
-            interesting = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
-        else:
+        interesting = set()
+        if self.__class__._member_type_ is not object:
             interesting = set(object.__dir__(self))
         for name in getattr(self, '__dict__', []):
-            if name[0] != '_':
+            if name[0] != '_' and name not in self._member_map_:
                 interesting.add(name)
         for cls in self.__class__.mro():
             for name, obj in cls.__dict__.items():
@@ -1209,7 +1212,7 @@ class Enum(metaclass=EnumType):
                     else:
                         # in case it was added by `dir(self)`
                         interesting.discard(name)
-                else:
+                elif name not in self._member_map_:
                     interesting.add(name)
         names = sorted(
                 set(['__class__', '__doc__', '__eq__', '__hash__', '__module__'])

@@ -942,7 +942,10 @@ set_update(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(update_doc,
-"Update a set with the union of itself and others.");
+"update($self, /, *others)\n\
+--\n\
+\n\
+Update the set, adding elements from all others.");
 
 /* XXX Todo:
    If aligned memory allocations become available, make the
@@ -1141,9 +1144,10 @@ set_union(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(union_doc,
- "Return the union of sets as a new set.\n\
+"union($self, /, *others)\n\
+--\n\
 \n\
-(i.e. all elements that are in either set.)");
+Return a new set with elements from the set and all others.");
 
 static PyObject *
 set_or(PySetObject *so, PyObject *other)
@@ -1281,9 +1285,10 @@ set_intersection_multi(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(intersection_doc,
-"Return the intersection of two sets as a new set.\n\
+"intersection($self, /, *others)\n\
+--\n\
 \n\
-(i.e. all elements that are in both sets.)");
+Return a new set with elements common to the set and all others.");
 
 static PyObject *
 set_intersection_update(PySetObject *so, PyObject *other)
@@ -1312,7 +1317,10 @@ set_intersection_update_multi(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(intersection_update_doc,
-"Update a set with the intersection of itself and another.");
+"intersection_update($self, /, *others)\n\
+--\n\
+\n\
+Update the set, keeping only elements found in it and all others.");
 
 static PyObject *
 set_and(PySetObject *so, PyObject *other)
@@ -1470,7 +1478,10 @@ set_difference_update(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(difference_update_doc,
-"Remove all elements of another set from this set.");
+"difference_update($self, /, *others)\n\
+--\n\
+\n\
+Update the set, removing elements found in others.");
 
 static PyObject *
 set_copy_and_difference(PySetObject *so, PyObject *other)
@@ -1587,9 +1598,10 @@ set_difference_multi(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(difference_doc,
-"Return the difference of two or more sets as a new set.\n\
+"difference($self, /, *others)\n\
+--\n\
 \n\
-(i.e. all elements that are in this set but not the others.)");
+Return a new set with elements in the set that are not in the others.");
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
@@ -1673,7 +1685,10 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 }
 
 PyDoc_STRVAR(symmetric_difference_update_doc,
-"Update a set with the symmetric difference of itself and another.");
+"symmetric_difference_update($self, other, /)\n\
+--\n\
+\n\
+Update the set, keeping only elements found in either set, but not in both.");
 
 static PyObject *
 set_symmetric_difference(PySetObject *so, PyObject *other)
@@ -1694,9 +1709,10 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 }
 
 PyDoc_STRVAR(symmetric_difference_doc,
-"Return the symmetric difference of two sets as a new set.\n\
+"symmetric_difference($self, other, /)\n\
+--\n\
 \n\
-(i.e. all elements that are in exactly one of the sets.)");
+Return a new set with elements in either the set or other but not both.");
 
 static PyObject *
 set_xor(PySetObject *so, PyObject *other)
@@ -2100,8 +2116,8 @@ static PyNumberMethods set_as_number = {
 };
 
 PyDoc_STRVAR(set_doc,
-"set() -> new empty set object\n\
-set(iterable) -> new set object\n\
+"set(iterable=(), /)\n\
+--\n\
 \n\
 Build an unordered collection of unique elements.");
 
@@ -2201,8 +2217,8 @@ static PyNumberMethods frozenset_as_number = {
 };
 
 PyDoc_STRVAR(frozenset_doc,
-"frozenset() -> empty frozenset object\n\
-frozenset(iterable) -> frozenset object\n\
+"frozenset(iterable=(), /)\n\
+--\n\
 \n\
 Build an immutable unordered collection of unique elements.");
 
@@ -2394,7 +2410,4 @@ static PyTypeObject _PySetDummy_Type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags */
 };
 
-static PyObject _dummy_struct = {
-    { _Py_IMMORTAL_REFCNT },
-    &_PySetDummy_Type
-};
+static PyObject _dummy_struct = _PyObject_HEAD_INIT(&_PySetDummy_Type);

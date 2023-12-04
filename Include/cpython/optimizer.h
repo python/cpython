@@ -6,9 +6,27 @@
 extern "C" {
 #endif
 
+typedef struct _PyExecutorLinkListNode {
+    struct _PyExecutorObject *next;
+    struct _PyExecutorObject *previous;
+} _PyExecutorLinkListNode;
+
+
+/* Bloom filter with m = 256
+ * https://en.wikipedia.org/wiki/Bloom_filter */
+#define BLOOM_FILTER_WORDS 8
+
+typedef struct _bloom_filter {
+    uint32_t bits[BLOOM_FILTER_WORDS];
+} _PyBloomFilter;
+
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
+    uint8_t valid;
+    uint8_t linked;
+    _PyBloomFilter bloom;
+    _PyExecutorLinkListNode links;
 } _PyVMData;
 
 typedef struct _PyExecutorObject {
@@ -27,6 +45,8 @@ typedef int (*optimize_func)(_PyOptimizerObject* self, PyCodeObject *code, _Py_C
 typedef struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
+    /* These thresholds are treated as signed so do not exceed INT16_MAX
+     * Use INT16_MAX to indicate that the optimizer should never be called */
     uint16_t resume_threshold;
     uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
@@ -45,11 +65,21 @@ _PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_
 
 extern _PyOptimizerObject _PyOptimizer_Default;
 
+void _Py_ExecutorInit(_PyExecutorObject *, _PyBloomFilter *);
+void _Py_ExecutorClear(_PyExecutorObject *);
+void _Py_BloomFilter_Init(_PyBloomFilter *);
+void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
+PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
+PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj);
+extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
+
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
 #define OPTIMIZER_BITS_IN_COUNTER 4
+/* Minimum of 16 additional executions before retry */
+#define MINIMUM_TIER2_BACKOFF 4
 
 #ifdef __cplusplus
 }
