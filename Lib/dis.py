@@ -491,13 +491,14 @@ class InstructionFormatter:
                        linestarts=None, line_offset=0):
         """Create and InstructionFormatter
 
+        *file* where to write the output
         *lineno_width* sets the width of the line number field (0 omits it)
-        *mark_as_current* inserts a '-->' marker arrow as part of the line
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
 
         *linestarts* dictionary mapping offset to lineno, for offsets that
                      start a new line
+        *line_offset* the line number (within the code unit)
         """
         self.file = file
         self.offset_width = offset_width
