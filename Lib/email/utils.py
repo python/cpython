@@ -146,6 +146,8 @@ def _strip_quoted_realnames(addr):
     return ''.join(result)
 
 
+supports_strict_parsing = True
+
 def getaddresses(fieldvalues, *, strict=True):
     """Return a list of (REALNAME, EMAIL) or ('','') for each fieldvalue.
 

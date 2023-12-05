@@ -16,6 +16,7 @@ from unittest.mock import patch
 
 import email
 import email.policy
+import email.utils
 
 from email.charset import Charset
 from email.generator import Generator, DecodedGenerator, BytesGenerator
@@ -3404,6 +3405,9 @@ Foo
         self.assertEqual(utils.parseaddr([address]), empty)
         self.assertEqual(utils.parseaddr([address], strict=False),
                          ('', address))
+
+        # Test email.utils.supports_strict_parsing attribute
+        self.assertEqual(email.utils.supports_strict_parsing, True)
 
     def test_getaddresses_nasty(self):
         for addresses, expected in (
