@@ -1,0 +1,1 @@
+Add ``track`` parameter to :class:`multiprocessing.shared_memory.SharedMemory` that allows using shared memory blocks without having to register with the POSIX resource tracker that automatically releases them upon process exit.
