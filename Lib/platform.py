@@ -318,9 +318,9 @@ def _syscmd_ver(system='', release='', version='',
 
 
 def _wmi_query(table, *keys):
+    global _wmi
     if not _wmi:
         raise OSError("not supported")
-
     table = {
         "OS": "Win32_OperatingSystem",
         "CPU": "Win32_Processor",
@@ -331,7 +331,6 @@ def _wmi_query(table, *keys):
             table,
         )).split("\0")
     except OSError:
-        global _wmi
         _wmi = None
         raise OSError("not supported")
     split_data = (i.partition("=") for i in data)
