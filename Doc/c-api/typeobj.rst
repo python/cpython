@@ -426,7 +426,7 @@ slot typedefs
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_buffer` *    |                      |
 +-----------------------------+-----------------------------+----------------------+
-| :c:type:`inquiry`           | void *                      | int                  |
+| :c:type:`inquiry`           | :c:type:`PyObject` *        | int                  |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`unaryfunc`         | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
