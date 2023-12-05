@@ -4603,6 +4603,11 @@ can be used interchangeably to index the same dictionary entry.
          LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
          return an arbitrary key/value pair.
 
+   .. describe:: sorted(d)
+
+      Return a sorted iterator over the keys of the dictionary. This is a 
+      shortcut for ``sorted(d.keys())``.
+
    .. describe:: reversed(d)
 
       Return a reverse iterator over the keys of the dictionary. This is a
