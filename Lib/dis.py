@@ -787,7 +787,6 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        *, file=None, line_offset=0, exception_entries=(),
                        co_positions=None, show_caches=False, original_code=None,
                        show_offsets=False):
-    # Omit the line number column entirely if we have no line number info
 
     if show_offsets:
         maxoffset = len(code) - 2
