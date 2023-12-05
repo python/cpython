@@ -21,7 +21,9 @@
 
 /* Helpers for hash functions */
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(PyObject *, double);
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
+
+// Kept for backward compatibility
+#define _Py_HashPointer Py_HashPointer
 
 
 /* hash function definition */

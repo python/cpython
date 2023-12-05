@@ -20,10 +20,6 @@ _Py_HashPointerRaw(const void *ptr)
     return (Py_hash_t)x;
 }
 
-
-// Kept for backward compatibility
-#define _Py_HashPointer Py_HashPointer
-
 // Export for '_datetime' shared extension
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 
