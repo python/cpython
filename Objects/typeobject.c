@@ -5342,9 +5342,9 @@ type_clear(PyObject *self)
 }
 
 static int
-type_is_gc(PyTypeObject *type)
+type_is_gc(PyObject *type)
 {
-    return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
+    return ((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
 
@@ -5395,7 +5395,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_alloc */
     type_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
-    (inquiry)type_is_gc,                        /* tp_is_gc */
+    type_is_gc,                                 /* tp_is_gc */
     .tp_vectorcall = type_vectorcall,
 };
 
