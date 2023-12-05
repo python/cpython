@@ -5292,8 +5292,10 @@ type_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-type_clear(PyTypeObject *type)
+type_clear(PyObject *self)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
+
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -5376,7 +5378,7 @@ PyTypeObject PyType_Type = {
     Py_TPFLAGS_ITEMS_AT_END,                    /* tp_flags */
     type_doc,                                   /* tp_doc */
     type_traverse,                              /* tp_traverse */
-    (inquiry)type_clear,                        /* tp_clear */
+    type_clear,                                 /* tp_clear */
     0,                                          /* tp_richcompare */
     offsetof(PyTypeObject, tp_weaklist),        /* tp_weaklistoffset */
     0,                                          /* tp_iter */
