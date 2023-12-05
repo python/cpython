@@ -1319,13 +1319,13 @@ class _PathBase(PurePath):
         """
         self._unsupported("rmdir")
 
-    def owner(self):
+    def owner(self, *, follow_symlinks=True):
         """
         Return the login name of the file owner.
         """
         self._unsupported("owner")
 
-    def group(self):
+    def group(self, *, follow_symlinks=True):
         """
         Return the group name of the file gid.
         """
@@ -1415,21 +1415,29 @@ class Path(_PathBase):
         """
         if self.is_absolute():
             return self
-        elif self.drive:
+        if self.root:
+            drive = os.path.splitroot(os.getcwd())[0]
+            return self._from_parsed_parts(drive, self.root, self._tail)
+        if self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = os.path.abspath(self.drive)
         else:
             cwd = os.getcwd()
+        if not self._tail:
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
             # We pass only one argument to with_segments() to avoid the cost
             # of joining, and we exploit the fact that getcwd() returns a
             # fully-normalized string by storing it in _str. This is used to
             # implement Path.cwd().
-            if not self.root and not self._tail:
-                result = self.with_segments(cwd)
-                result._str = cwd
-                return result
-        return self.with_segments(cwd, self)
+            result = self.with_segments(cwd)
+            result._str = cwd
+            return result
+        drive, root, rel = os.path.splitroot(cwd)
+        if not rel:
+            return self._from_parsed_parts(drive, root, self._tail)
+        tail = rel.split(self.pathmod.sep)
+        tail.extend(self._tail)
+        return self._from_parsed_parts(drive, root, tail)
 
     def resolve(self, strict=False):
         """
@@ -1440,18 +1448,20 @@ class Path(_PathBase):
         return self.with_segments(os.path.realpath(self, strict=strict))
 
     if pwd:
-        def owner(self):
+        def owner(self, *, follow_symlinks=True):
             """
             Return the login name of the file owner.
             """
-            return pwd.getpwuid(self.stat().st_uid).pw_name
+            uid = self.stat(follow_symlinks=follow_symlinks).st_uid
+            return pwd.getpwuid(uid).pw_name
 
     if grp:
-        def group(self):
+        def group(self, *, follow_symlinks=True):
             """
             Return the group name of the file gid.
             """
-            return grp.getgrgid(self.stat().st_gid).gr_name
+            gid = self.stat(follow_symlinks=follow_symlinks).st_gid
+            return grp.getgrgid(gid).gr_name
 
     if hasattr(os, "readlink"):
         def readlink(self):

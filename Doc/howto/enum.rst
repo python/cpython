@@ -868,7 +868,7 @@ Others
 While :class:`IntEnum` is part of the :mod:`enum` module, it would be very
 simple to implement independently::
 
-    class IntEnum(int, Enum):
+    class IntEnum(int, ReprEnum):   # or Enum instead of ReprEnum
         pass
 
 This demonstrates how similar derived enumerations can be defined; for example
@@ -876,8 +876,8 @@ a :class:`FloatEnum` that mixes in :class:`float` instead of :class:`int`.
 
 Some rules:
 
-1. When subclassing :class:`Enum`, mix-in types must appear before
-   :class:`Enum` itself in the sequence of bases, as in the :class:`IntEnum`
+1. When subclassing :class:`Enum`, mix-in types must appear before the
+   :class:`Enum` class itself in the sequence of bases, as in the :class:`IntEnum`
    example above.
 2. Mix-in types must be subclassable. For example, :class:`bool` and
    :class:`range` are not subclassable and will throw an error during Enum
@@ -961,30 +961,34 @@ all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
+- :attr:`~Enum._name_` -- name of the member
+- :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
+- :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
+  may be overridden
+- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
+  :class:`str`, that will not be transformed into members, and will be removed
+  from the final class
+- :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
+  an enum member; may be overridden
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.  See `MultiValueEnum`_ for an example.
 
-- ``_missing_`` -- a lookup function used when a value is not found; may be
-  overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
-  that will not be transformed into members, and will be removed from the final
-  class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
-  (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used by the `Functional API`_ and by
-  :class:`auto` to get an appropriate value for an enum member; may be
-  overridden
+  .. note::
 
-.. note::
+     For standard :class:`Enum` classes the next value chosen is the highest
+     value seen incremented by one.
 
-    For standard :class:`Enum` classes the next value chosen is the last value seen
-    incremented by one.
+     For :class:`Flag` classes the next value chosen will be the next highest
+     power-of-two.
 
-    For :class:`Flag` classes the next value chosen will be the next highest
-    power-of-two, regardless of the last value seen.
+  .. versionchanged:: 3.13
+     Prior versions would use the last seen value instead of the highest value.
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
 
 To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
 be provided.  It will be checked against the actual order of the enumeration
@@ -1445,6 +1449,29 @@ alias::
     This is a useful example for subclassing Enum to add or change other
     behaviors as well as disallowing aliases.  If the only desired change is
     disallowing aliases, the :func:`unique` decorator can be used instead.
+
+
+MultiValueEnum
+^^^^^^^^^^^^^^^^^
+
+Supports having more than one value per member::
+
+    >>> class MultiValueEnum(Enum):
+    ...     def __new__(cls, value, *values):
+    ...         self = object.__new__(cls)
+    ...         self._value_ = value
+    ...         for v in values:
+    ...             self._add_value_alias_(v)
+    ...         return self
+    ...
+    >>> class DType(MultiValueEnum):
+    ...     float32 = 'f', 8
+    ...     double64 = 'd', 9
+    ...
+    >>> DType('f')
+    <DType.float32: 'f'>
+    >>> DType(9)
+    <DType.double64: 'd'>
 
 
 Planet

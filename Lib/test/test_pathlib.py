@@ -41,6 +41,9 @@ only_nt = unittest.skipIf(os.name != 'nt',
 only_posix = unittest.skipIf(os.name == 'nt',
                              'test requires a POSIX-compatible system')
 
+root_in_posix = False
+if hasattr(os, 'geteuid'):
+    root_in_posix = (os.geteuid() == 0)
 
 #
 # Tests for the pure classes.
@@ -2975,27 +2978,75 @@ class PathTest(DummyPathTest, PurePathTest):
 
     # XXX also need a test for lchmod.
 
-    @unittest.skipUnless(pwd, "the pwd module is needed for this test")
-    def test_owner(self):
-        p = self.cls(BASE) / 'fileA'
-        uid = p.stat().st_uid
+    def _get_pw_name_or_skip_test(self, uid):
         try:
-            name = pwd.getpwuid(uid).pw_name
+            return pwd.getpwuid(uid).pw_name
         except KeyError:
             self.skipTest(
                 "user %d doesn't have an entry in the system database" % uid)
-        self.assertEqual(name, p.owner())
+
+    @unittest.skipUnless(pwd, "the pwd module is needed for this test")
+    def test_owner(self):
+        p = self.cls(BASE) / 'fileA'
+        expected_uid = p.stat().st_uid
+        expected_name = self._get_pw_name_or_skip_test(expected_uid)
+
+        self.assertEqual(expected_name, p.owner())
+
+    @unittest.skipUnless(pwd, "the pwd module is needed for this test")
+    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    def test_owner_no_follow_symlinks(self):
+        all_users = [u.pw_uid for u in pwd.getpwall()]
+        if len(all_users) < 2:
+            self.skipTest("test needs more than one user")
+
+        target = self.cls(BASE) / 'fileA'
+        link = self.cls(BASE) / 'linkA'
+
+        uid_1, uid_2 = all_users[:2]
+        os.chown(target, uid_1, -1)
+        os.chown(link, uid_2, -1, follow_symlinks=False)
+
+        expected_uid = link.stat(follow_symlinks=False).st_uid
+        expected_name = self._get_pw_name_or_skip_test(expected_uid)
+
+        self.assertEqual(expected_uid, uid_2)
+        self.assertEqual(expected_name, link.owner(follow_symlinks=False))
+
+    def _get_gr_name_or_skip_test(self, gid):
+        try:
+            return grp.getgrgid(gid).gr_name
+        except KeyError:
+            self.skipTest(
+                "group %d doesn't have an entry in the system database" % gid)
 
     @unittest.skipUnless(grp, "the grp module is needed for this test")
     def test_group(self):
         p = self.cls(BASE) / 'fileA'
-        gid = p.stat().st_gid
-        try:
-            name = grp.getgrgid(gid).gr_name
-        except KeyError:
-            self.skipTest(
-                "group %d doesn't have an entry in the system database" % gid)
-        self.assertEqual(name, p.group())
+        expected_gid = p.stat().st_gid
+        expected_name = self._get_gr_name_or_skip_test(expected_gid)
+
+        self.assertEqual(expected_name, p.group())
+
+    @unittest.skipUnless(grp, "the grp module is needed for this test")
+    @unittest.skipUnless(root_in_posix, "test needs root privilege")
+    def test_group_no_follow_symlinks(self):
+        all_groups = [g.gr_gid for g in grp.getgrall()]
+        if len(all_groups) < 2:
+            self.skipTest("test needs more than one group")
+
+        target = self.cls(BASE) / 'fileA'
+        link = self.cls(BASE) / 'linkA'
+
+        gid_1, gid_2 = all_groups[:2]
+        os.chown(target, -1, gid_1)
+        os.chown(link, -1, gid_2, follow_symlinks=False)
+
+        expected_gid = link.stat(follow_symlinks=False).st_gid
+        expected_name = self._get_pw_name_or_skip_test(expected_gid)
+
+        self.assertEqual(expected_gid, gid_2)
+        self.assertEqual(expected_name, link.group(follow_symlinks=False))
 
     def test_unlink(self):
         p = self.cls(BASE) / 'fileA'
