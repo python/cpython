@@ -1612,7 +1612,7 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 ``"argv"`` is read from :data:`sys.argv`.
 
 
-.. c:function:: int PyConfig_Get(const char *name, PyObject **value)
+.. c:function:: PyObject* PyConfig_Get(const char *name)
 
    Get a configuration option as a Python object.
 
@@ -1623,13 +1623,22 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * ``list[str]``
    * ``dict[str, str]``
 
-   * Return ``0`` and set *\*value* on success.
-   * Raise an exception and return ``-1`` on error.
+   Return value:
+
+   * Return a new reference on success.
+   * Set an exception and return ``NULL`` on error.
+
+   The function must not be called before Python is initialized or after
+   Python is finalized. The caller must hold the GIL.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyConfig_GetInt(const char *name, int *value)
 
    Similar to :c:func:`PyConfig_Get`, but get the value as a C int.
+
+   .. versionadded:: 3.13
 
 
 Example
