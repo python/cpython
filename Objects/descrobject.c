@@ -134,8 +134,9 @@ classmethod_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static PyObject *
-method_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
+method_get(PyObject *self, PyObject *obj, PyObject *type)
 {
+    PyMethodDescrObject *descr = (PyMethodDescrObject *)self;
     if (obj == NULL) {
         return Py_NewRef(descr);
     }
@@ -736,7 +737,7 @@ PyTypeObject PyMethodDescr_Type = {
     method_getset,                              /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    (descrgetfunc)method_get,                   /* tp_descr_get */
+    method_get,                                 /* tp_descr_get */
     0,                                          /* tp_descr_set */
 };
 
