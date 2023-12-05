@@ -15,7 +15,7 @@ class PathTests(unittest.TestCase):
         if os.name == 'nt':
             raise unittest.SkipTest('Windows has its own helper for this')
         else:
-            from .test_posixpath import PosixPathTest as posixdata
+            from test.test_posixpath import PosixPathTest as posixdata
             tests = posixdata.NORMPATH_CASES
         for filename, expected in tests:
             if not os.path.isabs(filename):

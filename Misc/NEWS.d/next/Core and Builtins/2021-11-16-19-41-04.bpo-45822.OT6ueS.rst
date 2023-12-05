@@ -1,2 +1,0 @@
-Fixed a bug in the parser that was causing it to not respect :pep:`263`
-coding cookies when no flags are provided. Patch by Pablo Galindo

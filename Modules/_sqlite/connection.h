@@ -23,7 +23,6 @@
 
 #ifndef PYSQLITE_CONNECTION_H
 #define PYSQLITE_CONNECTION_H
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 #include "structmember.h"
@@ -39,6 +38,12 @@ typedef struct _callback_context
     pysqlite_state *state;
 } callback_context;
 
+enum autocommit_mode {
+    AUTOCOMMIT_LEGACY = LEGACY_TRANSACTION_CONTROL,
+    AUTOCOMMIT_ENABLED = 1,
+    AUTOCOMMIT_DISABLED = 0,
+};
+
 typedef struct
 {
     PyObject_HEAD
@@ -51,6 +56,7 @@ typedef struct
 
     /* NULL for autocommit, otherwise a string with the isolation level */
     const char *isolation_level;
+    enum autocommit_mode autocommit;
 
     /* 1 if a check should be performed for each API call if the connection is
      * used from the same thread it was created in */
@@ -63,8 +69,9 @@ typedef struct
 
     PyObject *statement_cache;
 
-    /* Lists of weak references to statements and cursors used within this connection */
-    PyObject* cursors;
+    /* Lists of weak references to cursors and blobs used within this connection */
+    PyObject *cursors;
+    PyObject *blobs;
 
     /* Counters for how many cursors were created in the connection. May be
      * reset to 0 at certain intervals */
@@ -98,7 +105,6 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 

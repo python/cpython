@@ -1,3 +1,0 @@
-Properly marked-up grammar tokens in the documentation are now clickable and
-take you to the definition of a given piece of grammar.  Patch by Arthur
-Milchior.
