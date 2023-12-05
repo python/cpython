@@ -4605,7 +4605,7 @@ can be used interchangeably to index the same dictionary entry.
 
    .. describe:: sorted(d)
 
-      Return a sorted iterator over the keys of the dictionary. This is a 
+      Return a sorted iterator over the keys of the dictionary. This is a
       shortcut for ``sorted(d.keys())``.
 
    .. describe:: reversed(d)
