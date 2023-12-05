@@ -87,7 +87,9 @@ _query_thread(LPVOID param)
             NULL, NULL, 0, NULL, 0, 0, &services
         );
     }
-    SetEvent(data->connectEvent);
+    if (!SetEvent(data->connectEvent)) {
+        hr = HRESULT_FROM_WIN32(GetLastError());
+    }
     if (SUCCEEDED(hr)) {
         hr = CoSetProxyBlanket(
             services, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL,
