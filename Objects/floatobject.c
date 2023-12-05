@@ -588,9 +588,9 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static Py_hash_t
-float_hash(PyFloatObject *v)
+float_hash(PyObject *v)
 {
-    return _Py_HashDouble((PyObject *)v, v->ob_fval);
+    return _Py_HashDouble(v, ((PyFloatObject *)v)->ob_fval);
 }
 
 static PyObject *
@@ -1902,7 +1902,7 @@ PyTypeObject PyFloat_Type = {
     &float_as_number,                           /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)float_hash,                       /* tp_hash */
+    float_hash,                                 /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
