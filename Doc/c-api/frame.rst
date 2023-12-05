@@ -50,7 +50,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetBuiltins(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_builtins`` attribute.
+   Get the *frame*'s :attr:`~frame.f_builtins` attribute.
 
    Return a :term:`strong reference`. The result cannot be ``NULL``.
 
@@ -81,7 +81,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetGlobals(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_globals`` attribute.
+   Get the *frame*'s :attr:`~frame.f_globals` attribute.
 
    Return a :term:`strong reference`. The result cannot be ``NULL``.
 
@@ -90,7 +90,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: int PyFrame_GetLasti(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_lasti`` attribute.
+   Get the *frame*'s :attr:`~frame.f_lasti` attribute.
 
    Returns -1 if ``frame.f_lasti`` is ``None``.
 
@@ -120,7 +120,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_locals`` attribute (:class:`dict`).
+   Get the *frame*'s :attr:`~frame.f_locals` attribute (:class:`dict`).
 
    Return a :term:`strong reference`.
 

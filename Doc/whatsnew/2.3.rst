@@ -1998,13 +1998,13 @@ Some of the more notable changes are:
   It would be difficult to detect any resulting difference from Python code, apart
   from a slight speed up when Python is run without :option:`-O`.
 
-  C extensions that access the :attr:`f_lineno` field of frame objects should
+  C extensions that access the :attr:`~frame.f_lineno` field of frame objects should
   instead call ``PyCode_Addr2Line(f->f_code, f->f_lasti)``. This will have the
   added effect of making the code work as desired under "python -O" in earlier
   versions of Python.
 
   A nifty new feature is that trace functions can now assign to the
-  :attr:`f_lineno` attribute of frame objects, changing the line that will be
+  :attr:`~frame.f_lineno` attribute of frame objects, changing the line that will be
   executed next.  A ``jump`` command has been added to the :mod:`pdb` debugger
   taking advantage of this new feature. (Implemented by Richie Hindle.)
 

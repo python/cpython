@@ -2162,7 +2162,7 @@ Changes in the Python API
 
 * The format of the ``co_lnotab`` attribute of code objects changed to support
   a negative line number delta. By default, Python does not emit bytecode with
-  a negative line number delta. Functions using ``frame.f_lineno``,
+  a negative line number delta. Functions using :attr:`frame.f_lineno`,
   ``PyFrame_GetLineNumber()`` or ``PyCode_Addr2Line()`` are not affected.
   Functions directly decoding ``co_lnotab`` should be updated to use a signed
   8-bit integer type for the line number delta, but this is only required to

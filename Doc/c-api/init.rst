@@ -1662,7 +1662,8 @@ Python-level trace functions in previous versions.
 
    The value passed as the *what* parameter to a :c:type:`Py_tracefunc` function
    (but not a profiling function) when a line-number event is being reported.
-   It may be disabled for a frame by setting :attr:`f_trace_lines` to *0* on that frame.
+   It may be disabled for a frame by setting :attr:`~frame.f_trace_lines` to
+   *0* on that frame.
 
 
 .. c:var:: int PyTrace_RETURN
@@ -1694,7 +1695,7 @@ Python-level trace functions in previous versions.
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions (but not
    profiling functions) when a new opcode is about to be executed.  This event is
    not emitted by default: it must be explicitly requested by setting
-   :attr:`f_trace_opcodes` to *1* on the frame.
+   :attr:`~frame.f_trace_opcodes` to *1* on the frame.
 
 
 .. c:function:: void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)

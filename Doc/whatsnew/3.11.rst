@@ -2458,11 +2458,12 @@ Porting to Python 3.11
   * ``f_valuestack``: removed.
 
   The Python frame object is now created lazily. A side effect is that the
-  ``f_back`` member must not be accessed directly, since its value is now also
+  :attr:`~frame.f_back` member must not be accessed directly,
+  since its value is now also
   computed lazily. The :c:func:`PyFrame_GetBack` function must be called
   instead.
 
-  Debuggers that accessed the ``f_locals`` directly *must* call
+  Debuggers that accessed the :attr:`~frame.f_locals` directly *must* call
   :c:func:`PyFrame_GetLocals` instead. They no longer need to call
   :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the

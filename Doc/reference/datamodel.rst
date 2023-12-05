@@ -1174,16 +1174,36 @@ Frame objects represent execution frames.  They may occur in traceback objects
    single: f_lasti (frame attribute)
    single: f_builtins (frame attribute)
 
-Special read-only attributes: :attr:`f_back` is to the previous stack frame
-(towards the caller), or ``None`` if this is the bottom stack frame;
-:attr:`f_code` is the code object being executed in this frame; :attr:`f_locals`
-is the dictionary used to look up local variables; :attr:`f_globals` is used for
-global variables; :attr:`f_builtins` is used for built-in (intrinsic) names;
-:attr:`f_lasti` gives the precise instruction (this is an index into the
-bytecode string of the code object).
+Special read-only attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
-``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
+.. list-table::
+
+   * - .. attribute:: frame.f_back
+     - Points to the previous stack frame (towards the caller),
+       or ``None`` if this is the bottom stack frame
+
+   * - .. attribute:: frame.f_code
+     - The :ref:`code object <code-objects>` being executed in this frame.
+       Accessing this attribute raises an :ref:`auditing event <auditing>`
+       ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
+
+   * - .. attribute:: frame.f_locals
+     - The dictionary used by the frame to look up
+       :ref:`local variables <naming>`
+
+   * - .. attribute:: frame.f_globals
+     - The dictionary used by the frame to look up
+       :ref:`global variables <naming>`
+
+   * - .. attribute:: frame.f_builtins
+     - The dictionary used by the frame to look up
+       :ref:`built-in (intrinsic) names <naming>`
+
+   * - .. attribute:: frame.f_lasti
+     - The "precise instruction" of the frame object
+       (this is an index into the :term:`bytecode` string of the
+       :ref:`code object <code-objects>`)
 
 .. index::
    single: f_trace (frame attribute)
@@ -1191,30 +1211,44 @@ Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
    single: f_trace_opcodes (frame attribute)
    single: f_lineno (frame attribute)
 
-Special writable attributes: :attr:`f_trace`, if not ``None``, is a function
-called for various events during code execution (this is used by the debugger).
-Normally an event is triggered for each new source line - this can be
-disabled by setting :attr:`f_trace_lines` to :const:`False`.
+Special writable attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Implementations *may* allow per-opcode events to be requested by setting
-:attr:`f_trace_opcodes` to :const:`True`. Note that this may lead to
-undefined interpreter behaviour if exceptions raised by the trace
-function escape to the function being traced.
+.. list-table::
 
-:attr:`f_lineno` is the current line number of the frame --- writing to this
-from within a trace function jumps to the given line (only for the bottom-most
-frame).  A debugger can implement a Jump command (aka Set Next Statement)
-by writing to f_lineno.
+   * - .. attribute:: frame.f_trace
+     - If not ``None``, this is a function called for various events during
+       code execution (this is used by debuggers). Normally an event is
+       triggered for each new source line (see :attr:`~frame.f_trace_lines`).
+
+   * - .. attribute:: frame.f_trace_lines
+     - Set this attribute to :const:`False` to disable triggering a tracing
+       event for each source line.
+
+   * - .. attribute:: frame.f_trace_opcodes
+     - Set this attribute to :const:`True` to allow per-opcode events to be
+       requested. Note that this may lead to
+       undefined interpreter behaviour if exceptions raised by the trace
+       function escape to the function being traced.
+
+   * - .. attribute:: frame.f_lineno
+     - The current line number of the frame -- writing to this
+       from within a trace function jumps to the given line (only for the bottom-most
+       frame).  A debugger can implement a Jump command (aka Set Next Statement)
+       by writing to this attribute.
+
+Frame object methods
+~~~~~~~~~~~~~~~~~~~~
 
 Frame objects support one method:
 
 .. method:: frame.clear()
 
-   This method clears all references to local variables held by the
-   frame.  Also, if the frame belonged to a generator, the generator
+   This method clears all references to :ref:`local variables <naming>` held by the
+   frame.  Also, if the frame belonged to a :term:`generator`, the generator
    is finalized.  This helps break reference cycles involving frame
-   objects (for example when catching an exception and storing its
-   traceback for later use).
+   objects (for example when catching an :ref:`exception <bltin-exceptions>`
+   and storing its :ref:`traceback <traceback-objects>` for later use).
 
    :exc:`RuntimeError` is raised if the frame is currently executing
    or suspended.
