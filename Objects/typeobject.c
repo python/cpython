@@ -1631,8 +1631,9 @@ type_repr(PyObject *self)
 }
 
 static PyObject *
-type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
+type_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
     PyObject *obj;
     PyThreadState *tstate = _PyThreadState_GET();
 
@@ -5362,7 +5363,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    (ternaryfunc)type_call,                     /* tp_call */
+    type_call,                                  /* tp_call */
     0,                                          /* tp_str */
     (getattrofunc)_Py_type_getattro,            /* tp_getattro */
     (setattrofunc)type_setattro,                /* tp_setattro */
