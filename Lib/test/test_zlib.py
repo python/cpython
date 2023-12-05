@@ -19,6 +19,21 @@ requires_Decompress_copy = unittest.skipUnless(
         hasattr(zlib.decompressobj(), "copy"),
         'requires Decompress.copy()')
 
+
+def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
+    # Register "1.2.3" as "1.2.3.0"
+    # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
+    v = zlib_version.split('-', 1)[0].split('.')
+    if len(v) < 4:
+        v.append('0')
+    elif not v[-1].isnumeric():
+        v[-1] = '0'
+    return tuple(map(int, v))
+
+
+ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
+
+
 # bpo-46623: On s390x, when a hardware accelerator is used, using different
 # ways to compress data with zlib can produce different compressed data.
 # Simplified test_pair() code:
@@ -474,9 +489,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
                     'Z_PARTIAL_FLUSH']
 
-        ver = tuple(int(v) for v in zlib.ZLIB_RUNTIME_VERSION.split('.'))
         # Z_BLOCK has a known failure prior to 1.2.5.3
-        if ver >= (1, 2, 5, 3):
+        if ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 5, 3):
             sync_opt.append('Z_BLOCK')
 
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
@@ -794,16 +808,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
-        # Register "1.2.3" as "1.2.3.0"
-        # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
-        v = zlib.ZLIB_RUNTIME_VERSION.split('-', 1)[0].split('.')
-        if len(v) < 4:
-            v.append('0')
-        elif not v[-1].isnumeric():
-            v[-1] = '0'
-
-        v = tuple(map(int, v))
-        supports_wbits_0 = v >= (1, 2, 3, 5)
+        supports_wbits_0 = ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
