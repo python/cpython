@@ -612,6 +612,26 @@ Miscellaneous options
    .. versionadded:: 3.13
       The ``-X presite`` option.
 
+Controlling Color
+~~~~~~~~~~~~~~~~~
+
+The Python interpreter is configured by default to use colors to highlight
+output in certain situations such as when displaying tracebacks. This
+behavior can be controlled by setting different environment variables.
+
+Setting the environment variable ``TERM`` to ``dumb`` will disable color.
+
+If the environment variable ``FORCE_COLOR`` is set, then color will be
+enabled regardless of the value of TERM. This is useful on CI systems which
+aren’t terminals but can none-the-less display ANSI escape sequences.
+
+If the environment variable ``NO_COLOR`` is set, Python will disable all color
+in the output. This takes precedence over ``FORCE_COLOR``.
+
+All these environment variables are used also by other tools to control color
+output. To control the color output only in the Python interpreter, the
+:envvar:`PY_COLORS` environment variable can be used. This variable takes
+less precedence than ``NO_COLOR`` and ``FORCE_COLOR``.
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
