@@ -771,8 +771,8 @@ iterations of the loop.
 .. opcode:: RERAISE
 
    Re-raises the exception currently on top of the stack. If oparg is non-zero,
-   pops an additional value from the stack which is used to set ``f_lasti``
-   of the current frame.
+   pops an additional value from the stack which is used to set
+   :attr:`~frame.f_lasti` of the current frame.
 
    .. versionadded:: 3.9
 

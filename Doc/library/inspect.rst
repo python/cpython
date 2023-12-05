@@ -1588,8 +1588,8 @@ the following flags:
 
 .. data:: CO_NEWLOCALS
 
-   If set, a new dict will be created for the frame's ``f_locals`` when
-   the code object is executed.
+   If set, a new dict will be created for the frame's :attr:`~frame.f_locals`
+   when the code object is executed.
 
 .. data:: CO_VARARGS
 
