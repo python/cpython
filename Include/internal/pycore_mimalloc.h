@@ -35,6 +35,12 @@ typedef enum {
 #endif
 
 #ifdef Py_GIL_DISABLED
+struct _mimalloc_interp_state {
+    // When exiting, threads place any segments with live blocks in this
+    // shared pool for other threads to claim and reuse.
+    mi_abandoned_pool_t abandoned_pool;
+};
+
 struct _mimalloc_thread_state {
     mi_heap_t *current_object_heap;
     mi_heap_t heaps[_Py_MIMALLOC_HEAP_COUNT];
