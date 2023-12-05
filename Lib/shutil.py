@@ -674,7 +674,12 @@ def _rmtree_safe_fd(topfd, path, onexc):
                         _rmtree_safe_fd(dirfd, fullname, onexc)
                         try:
                             os.close(dirfd)
+                        except OSError as err:
+                            # close() should not be retried after an error.
                             dirfd_closed = True
+                            onexc(os.close, fullname, err)
+                        dirfd_closed = True
+                        try:
                             os.rmdir(entry.name, dir_fd=topfd)
                         except OSError as err:
                             onexc(os.rmdir, fullname, err)
@@ -689,7 +694,10 @@ def _rmtree_safe_fd(topfd, path, onexc):
                             onexc(os.path.islink, fullname, err)
                 finally:
                     if not dirfd_closed:
-                        os.close(dirfd)
+                        try:
+                            os.close(dirfd)
+                        except OSError as err:
+                            onexc(os.close, fullname, err)
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
@@ -765,7 +773,12 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                 _rmtree_safe_fd(fd, path, onexc)
                 try:
                     os.close(fd)
+                except OSError as err:
+                    # close() should not be retried after an error.
                     fd_closed = True
+                    onexc(os.close, path, err)
+                fd_closed = True
+                try:
                     os.rmdir(path, dir_fd=dir_fd)
                 except OSError as err:
                     onexc(os.rmdir, path, err)
@@ -777,7 +790,10 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                     onexc(os.path.islink, path, err)
         finally:
             if not fd_closed:
-                os.close(fd)
+                try:
+                    os.close(fd)
+                except OSError as err:
+                    onexc(os.close, path, err)
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
