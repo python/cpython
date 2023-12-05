@@ -3375,6 +3375,8 @@ class POSIXProcessTestCase(BaseTestCase):
         true_binary = "/bin/true"
         strace_command = [strace_binary, strace_filter]
 
+        if os.path.isfile(strace_binary):
+            self.skipTest(f"{strace_binary} not found.")
         does_strace_work_process = subprocess.run(
                 strace_command + [true_binary],
                 stderr=subprocess.PIPE,
@@ -3382,7 +3384,7 @@ class POSIXProcessTestCase(BaseTestCase):
         )
         if (does_strace_work_process.returncode != 0 or
             b"+++ exited with 0 +++" not in does_strace_work_process.stderr):
-            self.skipTest("strace not found or is not working as expected.")
+            self.skipTest("strace is not working as expected.")
 
         with self.subTest(name="default_is_vfork"):
             vfork_result = assert_python_ok(
