@@ -17,6 +17,7 @@ Currently, the HOWTOs are:
    cporting.rst
    curses.rst
    descriptor.rst
+   enum.rst
    functional.rst
    logging.rst
    logging-cookbook.rst
@@ -27,6 +28,9 @@ Currently, the HOWTOs are:
    urllib2.rst
    argparse.rst
    ipaddress.rst
-   clinic.rst
    instrumentation.rst
+   perf_profiling.rst
+   annotations.rst
+   isolating-extensions.rst
+   timerfd.rst
 

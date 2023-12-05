@@ -1,1 +1,0 @@
-:class:`typing.TypedDict` types created using the alternative call-style syntax now correctly respect the ``total`` keyword argument when setting their ``__required_keys__`` and ``__optional_keys__`` class attributes.

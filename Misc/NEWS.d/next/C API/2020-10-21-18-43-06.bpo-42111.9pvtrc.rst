@@ -1,2 +1,0 @@
-Update the ``xxlimited`` module to be a better example of how to use the
-limited C API.

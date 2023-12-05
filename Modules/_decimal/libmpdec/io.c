@@ -37,17 +37,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "typearith.h"
 #include "io.h"
+#include "typearith.h"
 
 
 /* This file contains functions for decimal <-> string conversions, including
    PEP-3101 formatting for numeric types. */
 
 
-/* Disable warning that is part of -Wextra since gcc 7.0. */
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 7
   #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+  #pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #endif
 
 
@@ -155,13 +155,13 @@ scan_dpoint_exp(const char *s, const char **dpoint, const char **exp,
                 s++;
             break;
         default:
-            if (!isdigit((uchar)*s))
+            if (!isdigit((unsigned char)*s))
                 return NULL;
             if (coeff == NULL && *exp == NULL) {
                 if (*s == '0') {
-                    if (!isdigit((uchar)*(s+1)))
+                    if (!isdigit((unsigned char)*(s+1)))
                         if (!(*(s+1) == '.' &&
-                              isdigit((uchar)*(s+2))))
+                              isdigit((unsigned char)*(s+2))))
                             coeff = s;
                 }
                 else {
@@ -187,7 +187,7 @@ scan_payload(const char *s, const char **end)
         s++;
     coeff = s;
 
-    while (isdigit((uchar)*s))
+    while (isdigit((unsigned char)*s))
         s++;
     *end = s;
 
@@ -689,8 +689,8 @@ mpd_to_eng_size(char **res, const mpd_t *dec, int fmt)
 static int
 _mpd_copy_utf8(char dest[5], const char *s)
 {
-    const uchar *cp = (const uchar *)s;
-    uchar lb, ub;
+    const unsigned char *cp = (const unsigned char *)s;
+    unsigned char lb, ub;
     int count, i;
 
 
@@ -843,7 +843,7 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
     }
 
     /* minimum width */
-    if (isdigit((uchar)*cp)) {
+    if (isdigit((unsigned char)*cp)) {
         if (*cp == '0') {
             return 0;
         }
@@ -865,7 +865,7 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
     /* fraction digits or significant digits */
     if (*cp == '.') {
         cp++;
-        if (!isdigit((uchar)*cp)) {
+        if (!isdigit((unsigned char)*cp)) {
             return 0;
         }
         errno = 0;
@@ -1105,9 +1105,9 @@ _mpd_apply_lconv(mpd_mbstr_t *result, const mpd_spec_t *spec, uint32_t *status)
         sign = dp++;
     }
     /* integer part */
-    assert(isdigit((uchar)*dp));
+    assert(isdigit((unsigned char)*dp));
     intpart = dp++;
-    while (isdigit((uchar)*dp)) {
+    while (isdigit((unsigned char)*dp)) {
         dp++;
     }
     n_int = (mpd_ssize_t)(dp-intpart);
@@ -1262,8 +1262,8 @@ mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec,
         return NULL;
     }
 
-    if (isupper((uchar)type)) {
-        type = (char)tolower((uchar)type);
+    if (isupper((unsigned char)type)) {
+        type = (char)tolower((unsigned char)type);
         flags |= MPD_FMT_UPPER;
     }
     if (spec->sign == ' ') {

@@ -30,7 +30,7 @@ Set a new default context.\n\
 \n");
 
 PyDoc_STRVAR(doc_localcontext,
-"localcontext($module, /, ctx=None)\n--\n\n\
+"localcontext($module, /, ctx=None, **kwargs)\n--\n\n\
 Return a context manager that will set the default context to a copy of ctx\n\
 on entry to the with-statement and restore the previous default context when\n\
 exiting the with-statement. If no context is specified, a copy of the current\n\

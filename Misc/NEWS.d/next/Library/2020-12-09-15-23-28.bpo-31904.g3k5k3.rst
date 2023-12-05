@@ -1,1 +1,0 @@
-Define THREAD_STACK_SIZE for VxWorks.
