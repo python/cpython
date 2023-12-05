@@ -133,6 +133,14 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 BUILTIN_EXCEPTION_LIMIT = object()
 
 def _can_colorize():
+    if sys.platform == "win32":
+        try:
+            import nt
+            if not nt._supports_virtual_terminal():
+                return False
+        except (ImportError, AttributeError):
+            return False
+
     if not _COLORIZE:
         return False
     if os.environ.get("PY_COLORS") == "1":
