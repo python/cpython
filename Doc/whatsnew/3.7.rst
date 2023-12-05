@@ -1891,7 +1891,7 @@ Other CPython Implementation Changes
 
 * Trace hooks may now opt out of receiving the ``line`` and opt into receiving
   the ``opcode`` events from the interpreter by setting the corresponding new
-  ``f_trace_lines`` and ``f_trace_opcodes`` attributes on the
+  :attr:`~frame.f_trace_lines` and :attr:`~frame.f_trace_opcodes` attributes on the
   frame being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
 
 * Fixed some consistency problems with namespace package module attributes.
