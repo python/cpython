@@ -1558,6 +1558,28 @@ are always available.  They are listed here in alphabetical order.
    If :func:`sys.displayhook` is not accessible, this function will raise
    :exc:`RuntimeError`.
 
+   Example::
+      
+      class Person:
+         def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+         def __repr__(self):
+            return f"Person('{self.name}', {self.age})"
+      
+      # Creating an object.
+      person = Person("Alice", 30)
+      
+      # Using repr() to obtain the string representation of the object.
+      repr_string = repr(person)
+      print("Representation String:", repr_string)
+
+      # Using eval() to convert the string representation back to an object.
+      new_person = eval(repr_string)
+      print("Name:", new_person.name)
+      print("Age:", new_person.age)
+
 
 .. function:: reversed(seq)
 
