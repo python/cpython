@@ -1561,83 +1561,6 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
-    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
-                     "vfork() not enabled by configure.")
-    @mock.patch("subprocess._fork_exec")
-    def test__use_vfork(self, mock_fork_exec):
-        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
-        mock_fork_exec.side_effect = RuntimeError("just testing args")
-        with self.assertRaises(RuntimeError):
-            subprocess.run([sys.executable, "-c", "pass"])
-        mock_fork_exec.assert_called_once()
-        # NOTE: These assertions are *ugly* as they require the last arg
-        # to remain the have_vfork boolean. We really need to refactor away
-        # from the giant "wall of args" internal C extension API.
-        self.assertTrue(mock_fork_exec.call_args.args[-1])
-        with mock.patch.object(subprocess, '_USE_VFORK', False):
-            with self.assertRaises(RuntimeError):
-                subprocess.run([sys.executable, "-c", "pass"])
-            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
-
-    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
-                     "vfork() not enabled by configure.")
-    @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
-    def test_vfork_used_when_expected(self):
-        # This is a performance regression test to ensure we default to using
-        # vfork() when possible.
-        strace_binary = "/usr/bin/strace"
-        # The only system calls we are interested in.
-        strace_filter = "--trace=execve,clone,clone3,fork,vfork,exit,exit_group"
-        true_binary = "/bin/true"
-        strace_command = [strace_binary, strace_filter]
-
-        does_strace_work_process = subprocess.run(
-                strace_command + [true_binary],
-                stderr=subprocess.PIPE,
-                stdout=subprocess.DEVNULL,
-        )
-        if (does_strace_work_process.returncode != 0 or
-            b"+++ exited with 0 +++" not in does_strace_work_process.stderr):
-            self.skipTest("strace not found or is not working as expected.")
-
-        with self.subTest(name="default_is_vfork"):
-            vfork_result = assert_python_ok(
-                    "-c",
-                    f"""if True:
-                    import subprocess
-                    subprocess.check_call([{true_binary!r}])
-                    """,
-                    _run_using_command=strace_command,
-            )
-            self.assertRegex(vfork_result.err, br"(?m)^vfork[(]")
-            self.assertNotRegex(vfork_result.err, br"(?m)^(fork|clone)")
-
-        # Test that each individual thing that would disable the use of vfork
-        # actually disables it.
-        for sub_name, preamble, sp_kwarg, expect_permission_error in (
-                ("!use_vfork", "subprocess._USE_VFORK = False", "", False),
-                ("preexec", "", "preexec_fn=lambda: None", False),
-                ("setgid", "", f"group={os.getgid()}", True),
-                ("setuid", "", f"user={os.getuid()}", True),
-                ("setgroups", "", "extra_groups=[]", True),
-        ):
-            with self.subTest(name=sub_name):
-                non_vfork_result = assert_python_ok(
-                    "-c",
-                    textwrap.dedent(f"""\
-                    import subprocess
-                    {preamble}
-                    try:
-                        subprocess.check_call(
-                                [{true_binary!r}], **dict({sp_kwarg}))
-                    except PermissionError:
-                        if not {expect_permission_error}:
-                            raise"""),
-                    _run_using_command=strace_command,
-                )
-                self.assertNotRegex(non_vfork_result.err, br"(?m)^vfork[(]")
-                self.assertRegex(non_vfork_result.err, br"(?m)^(fork|clone)")
-
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -3421,6 +3344,83 @@ class POSIXProcessTestCase(BaseTestCase):
         _, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, b'')
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
+
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    @mock.patch("subprocess._fork_exec")
+    def test__use_vfork(self, mock_fork_exec):
+        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
+        mock_fork_exec.side_effect = RuntimeError("just testing args")
+        with self.assertRaises(RuntimeError):
+            subprocess.run([sys.executable, "-c", "pass"])
+        mock_fork_exec.assert_called_once()
+        # NOTE: These assertions are *ugly* as they require the last arg
+        # to remain the have_vfork boolean. We really need to refactor away
+        # from the giant "wall of args" internal C extension API.
+        self.assertTrue(mock_fork_exec.call_args.args[-1])
+        with mock.patch.object(subprocess, '_USE_VFORK', False):
+            with self.assertRaises(RuntimeError):
+                subprocess.run([sys.executable, "-c", "pass"])
+            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
+
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
+    def test_vfork_used_when_expected(self):
+        # This is a performance regression test to ensure we default to using
+        # vfork() when possible.
+        strace_binary = "/usr/bin/strace"
+        # The only system calls we are interested in.
+        strace_filter = "--trace=execve,clone,clone3,fork,vfork,exit,exit_group"
+        true_binary = "/bin/true"
+        strace_command = [strace_binary, strace_filter]
+
+        does_strace_work_process = subprocess.run(
+                strace_command + [true_binary],
+                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+        )
+        if (does_strace_work_process.returncode != 0 or
+            b"+++ exited with 0 +++" not in does_strace_work_process.stderr):
+            self.skipTest("strace not found or is not working as expected.")
+
+        with self.subTest(name="default_is_vfork"):
+            vfork_result = assert_python_ok(
+                    "-c",
+                    f"""if True:
+                    import subprocess
+                    subprocess.check_call([{true_binary!r}])
+                    """,
+                    _run_using_command=strace_command,
+            )
+            self.assertRegex(vfork_result.err, br"(?m)^vfork[(]")
+            self.assertNotRegex(vfork_result.err, br"(?m)^(fork|clone)")
+
+        # Test that each individual thing that would disable the use of vfork
+        # actually disables it.
+        for sub_name, preamble, sp_kwarg, expect_permission_error in (
+                ("!use_vfork", "subprocess._USE_VFORK = False", "", False),
+                ("preexec", "", "preexec_fn=lambda: None", False),
+                ("setgid", "", f"group={os.getgid()}", True),
+                ("setuid", "", f"user={os.getuid()}", True),
+                ("setgroups", "", "extra_groups=[]", True),
+        ):
+            with self.subTest(name=sub_name):
+                non_vfork_result = assert_python_ok(
+                    "-c",
+                    textwrap.dedent(f"""\
+                    import subprocess
+                    {preamble}
+                    try:
+                        subprocess.check_call(
+                                [{true_binary!r}], **dict({sp_kwarg}))
+                    except PermissionError:
+                        if not {expect_permission_error}:
+                            raise"""),
+                    _run_using_command=strace_command,
+                )
+                self.assertNotRegex(non_vfork_result.err, br"(?m)^vfork[(]")
+                self.assertRegex(non_vfork_result.err, br"(?m)^(fork|clone)")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
