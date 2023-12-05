@@ -788,14 +788,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        co_positions=None, show_caches=False, original_code=None,
                        show_offsets=False):
 
-    if show_offsets:
-        maxoffset = len(code) - 2
-        if maxoffset >= 10000:
-            offset_width = len(str(maxoffset))
-        else:
-            offset_width = 4
-    else:
-        offset_width = 0
+    offset_width = len(str(max(len(code) - 2, 9999))) if show_offsets else 0
 
     labels_map = _make_labels_map(original_code or code, exception_entries)
     label_width = 4 + len(str(len(labels_map)))
