@@ -4300,18 +4300,20 @@ class TestColorizedTraceback(unittest.TestCase):
 
         red = traceback._ANSIColors.RED
         boldr = traceback._ANSIColors.BOLD_RED
+        magenta = traceback._ANSIColors.MAGENTA
+        boldm = traceback._ANSIColors.BOLD_MAGENTA
         reset = traceback._ANSIColors.RESET
         lno_foo = foo.__code__.co_firstlineno
         expected = ['Traceback (most recent call last):',
-            f'  File "{__file__}", '
-            f'line {lno_foo+5}, in test_colorized_traceback_is_the_default',
+            f'  File {magenta}"{__file__}"{reset}, '
+            f'line {magenta}{lno_foo+5}{reset}, in {magenta}test_colorized_traceback_is_the_default{reset}',
             f'    {red}foo{reset+boldr}(){reset}',
             f'    {red}~~~{reset+boldr}^^{reset}',
-            f'  File "{__file__}", '
-            f'line {lno_foo+1}, in foo',
+            f'  File {magenta}"{__file__}"{reset}, '
+            f'line {magenta}{lno_foo+1}{reset}, in {magenta}foo{reset}',
             f'    {red}1{reset+boldr}/{reset+red}0{reset}',
             f'    {red}~{reset+boldr}^{reset+red}~{reset}',
-            'ZeroDivisionError: division by zero']
+            f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
     def test_colorized_detection_checks_for_environment_variables(self):

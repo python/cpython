@@ -203,13 +203,19 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
 
 # -- not official API but folk probably use these two functions.
 
-def _format_final_exc_line(etype, value, *, insert_final_newline=True):
+def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=False):
     valuestr = _safe_string(value, 'exception')
     end_char = "\n" if insert_final_newline else ""
-    if value is None or not valuestr:
-        line = f"{etype}{end_char}"
+    if colorize:
+        if value is None or not valuestr:
+            line = f"{_ANSIColors.BOLD_MAGENTA}{etype}{_ANSIColors.RESET}{end_char}"
+        else:
+            line = f"{_ANSIColors.BOLD_MAGENTA}{etype}{_ANSIColors.RESET}: {_ANSIColors.MAGENTA}{valuestr}{_ANSIColors.RESET}{end_char}"
     else:
-        line = f"{etype}: {valuestr}{end_char}"
+        if value is None or not valuestr:
+            line = f"{etype}{end_char}"
+        else:
+            line = f"{etype}: {valuestr}{end_char}"
     return line
 
 def _safe_string(value, what, func=str):
@@ -440,6 +446,9 @@ _RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 class _ANSIColors:
     RED = '\x1b[31m'
     BOLD_RED = '\x1b[1;31m'
+    MAGENTA = '\x1b[35m'
+    BOLD_MAGENTA = '\x1b[1;35m'
+    GREY = '\x1b[90m'
     RESET = '\x1b[0m'
 
 class StackSummary(list):
@@ -543,8 +552,22 @@ class StackSummary(list):
         filename = frame_summary.filename
         if frame_summary.filename.startswith("<stdin>-"):
             filename = "<stdin>"
-        row.append('  File "{}", line {}, in {}\n'.format(
-            filename, frame_summary.lineno, frame_summary.name))
+        if colorize:
+            row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
+                    _ANSIColors.MAGENTA,
+                    filename,
+                    _ANSIColors.RESET,
+                    _ANSIColors.MAGENTA,
+                    frame_summary.lineno,
+                    _ANSIColors.RESET,
+                    _ANSIColors.MAGENTA,
+                    frame_summary.name,
+                    _ANSIColors.RESET,
+                    )
+            )
+        else:
+            row.append('  File "{}", line {}, in {}\n'.format(
+                filename, frame_summary.lineno, frame_summary.name))
         if frame_summary._dedented_lines and frame_summary._dedented_lines.strip():
             if (
                 frame_summary.colno is None or
@@ -1201,7 +1224,7 @@ class TracebackException:
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
-            yield indent + _format_final_exc_line(None, self._str)
+            yield indent + _format_final_exc_line(None, self._str, colorize=colorize)
             return
 
         stype = self.exc_type_str
@@ -1209,14 +1232,14 @@ class TracebackException:
             if _depth > 0:
                 # Nested exceptions needs correct handling of multiline messages.
                 formatted = _format_final_exc_line(
-                    stype, self._str, insert_final_newline=False,
+                    stype, self._str, insert_final_newline=False, colorize=colorize
                 ).split('\n')
                 yield from [
                     indent + l + '\n'
                     for l in formatted
                 ]
             else:
-                yield _format_final_exc_line(stype, self._str)
+                yield _format_final_exc_line(stype, self._str, colorize=colorize)
         else:
             yield from [indent + l for l in self._format_syntax_error(stype, colorize=colorize)]
 
@@ -1240,8 +1263,18 @@ class TracebackException:
         colorize = kwargs.get("colorize", False)
         filename_suffix = ''
         if self.lineno is not None:
-            yield '  File "{}", line {}\n'.format(
-                self.filename or "<string>", self.lineno)
+            if colorize:
+                yield '  File {}"{}"{}, line {}{}{}\n'.format(
+                    _ANSIColors.MAGENTA,
+                    self.filename or "<string>",
+                    _ANSIColors.RESET,
+                    _ANSIColors.MAGENTA,
+                    self.lineno,
+                    _ANSIColors.RESET,
+                    )
+            else:
+                yield '  File "{}", line {}\n'.format(
+                    self.filename or "<string>", self.lineno)
         elif self.filename is not None:
             filename_suffix = ' ({})'.format(self.filename)
 
