@@ -283,7 +283,7 @@ _Py_ThreadId(void)
     #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
     tid = (uintptr_t)__builtin_thread_pointer();
     #else
-    // s390/s390x: Access register 0 is used as thread pointer.
+    // Access register 0 is used as the thread pointer.
     __asm__ ("ear %0,%%a0" : "=d"(tid));
     #endif
 #else
