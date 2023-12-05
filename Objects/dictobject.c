@@ -2450,8 +2450,9 @@ Fail:
 /* Methods */
 
 static void
-dict_dealloc(PyDictObject *mp)
+dict_dealloc(PyObject *self)
 {
+    PyDictObject *mp = (PyDictObject *)self;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(Py_REFCNT(mp) == 0);
     Py_SET_REFCNT(mp, 1);
@@ -3958,7 +3959,7 @@ PyTypeObject PyDict_Type = {
     "dict",
     sizeof(PyDictObject),
     0,
-    (destructor)dict_dealloc,                   /* tp_dealloc */
+    dict_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
