@@ -4919,9 +4919,9 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
 /* This is similar to PyObject_GenericGetAttr(),
    but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
 PyObject *
-_Py_type_getattro(PyTypeObject *type, PyObject *name)
+_Py_type_getattro(PyObject *type, PyObject *name)
 {
-    return _Py_type_getattro_impl(type, name, NULL);
+    return _Py_type_getattro_impl((PyTypeObject *)type, name, NULL);
 }
 
 static int
@@ -5370,7 +5370,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_hash */
     type_call,                                  /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)_Py_type_getattro,            /* tp_getattro */
+    _Py_type_getattro,                          /* tp_getattro */
     type_setattro,                              /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
