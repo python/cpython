@@ -118,6 +118,10 @@ import re
 import sys
 import functools
 import itertools
+try:
+    import _wmi
+except ImportError:
+    _wmi = None
 
 ### Globals & Constants
 
@@ -312,30 +316,27 @@ def _syscmd_ver(system='', release='', version='',
         version = _norm_version(version)
     return system, release, version
 
-try:
-    import _wmi
-except ImportError:
-    def _wmi_query(table, *keys):
+
+def _wmi_query(table, *keys):
+    if not _wmi:
         raise OSError("not supported")
-else:
-    def _wmi_query(table, *keys):
-        table = {
-            "OS": "Win32_OperatingSystem",
-            "CPU": "Win32_Processor",
-        }[table]
-        try:
-            data = _wmi.exec_query("SELECT {} FROM {}".format(
-                ",".join(keys),
-                table,
-            )).split("\0")
-        except OSError:
-            global _wmi_query
-            def _wmi_query(table, *keys):
-                raise OSError("not supported")
-            raise OSError("not supported")
-        split_data = (i.partition("=") for i in data)
-        dict_data = {i[0]: i[2] for i in split_data}
-        return (dict_data[k] for k in keys)
+
+    table = {
+        "OS": "Win32_OperatingSystem",
+        "CPU": "Win32_Processor",
+    }[table]
+    try:
+        data = _wmi.exec_query("SELECT {} FROM {}".format(
+            ",".join(keys),
+            table,
+        )).split("\0")
+    except OSError:
+        global _wmi
+        _wmi = None
+        raise OSError("not supported")
+    split_data = (i.partition("=") for i in data)
+    dict_data = {i[0]: i[2] for i in split_data}
+    return (dict_data[k] for k in keys)
 
 
 _WIN32_CLIENT_RELEASES = [
