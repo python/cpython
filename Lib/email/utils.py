@@ -172,7 +172,7 @@ def getaddresses(fieldvalues, *, strict=True):
 
     fieldvalues = [str(v) for v in fieldvalues]
     fieldvalues = _pre_parse_validation(fieldvalues)
-    addr = COMMASPACE.join(v for v in fieldvalues)
+    addr = COMMASPACE.join(fieldvalues)
     a = _AddressList(addr)
     result = _post_parse_validation(a.addresslist)
 
