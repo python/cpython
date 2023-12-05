@@ -873,9 +873,9 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 
 
 PyObject*
-_Py_module_getattro(PyModuleObject *m, PyObject *name)
+_Py_module_getattro(PyObject *m, PyObject *name)
 {
-    return _Py_module_getattro_impl(m, name, 0);
+    return _Py_module_getattro_impl((PyModuleObject *)m, name, 0);
 }
 
 static int
@@ -1025,7 +1025,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)_Py_module_getattro,          /* tp_getattro */
+    _Py_module_getattro,                        /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
