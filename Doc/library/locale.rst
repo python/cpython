@@ -16,7 +16,7 @@ functionality. The POSIX locale mechanism allows programmers to deal with
 certain cultural issues in an application, without requiring the programmer to
 know all the specifics of each country where the software is executed.
 
-.. index:: module: _locale
+.. index:: pair: module; _locale
 
 The :mod:`locale` module is implemented on top of the :mod:`_locale` module,
 which in turn uses an ANSI C locale implementation if available.
@@ -303,7 +303,7 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. deprecated-removed:: 3.11 3.13
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. function:: getlocale(category=LC_CTYPE)
@@ -368,16 +368,6 @@ The :mod:`locale` module defines the following exception and functions:
 
    If the given encoding is not known, the function defaults to the default
    encoding for the locale code just like :func:`setlocale`.
-
-
-.. function:: resetlocale(category=LC_ALL)
-
-   Sets the locale for *category* to the default setting.
-
-   The default setting is determined by calling :func:`getdefaultlocale`.
-   *category* defaults to :const:`LC_ALL`.
-
-   .. deprecated-removed:: 3.11 3.13
 
 
 .. function:: strcoll(string1, string2)
@@ -464,11 +454,16 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_CTYPE
 
-   .. index:: module: string
+   Locale category for the character type functions.  Most importantly, this
+   category defines the text encoding, i.e. how bytes are interpreted as
+   Unicode codepoints.  See :pep:`538` and :pep:`540` for how this variable
+   might be automatically coerced to ``C.UTF-8`` to avoid issues created by
+   invalid settings in containers or incompatible settings passed over remote
+   SSH connections.
 
-   Locale category for the character type functions.  Depending on the settings of
-   this category, the functions of module :mod:`string` dealing with case change
-   their behaviour.
+   Python doesn't internally use locale-dependent character transformation functions
+   from ``ctype.h``. Instead, an internal ``pyctype.h`` provides locale-independent
+   equivalents like :c:macro:`!Py_TOLOWER`.
 
 
 .. data:: LC_COLLATE

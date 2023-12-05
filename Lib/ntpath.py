@@ -23,7 +23,6 @@ import stat
 import genericpath
 from genericpath import *
 
-
 __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
@@ -142,7 +141,7 @@ def join(path, *paths):
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
         if (result_path and not result_root and
-            result_drive and result_drive[-1:] != colon):
+            result_drive and result_drive[-1:] not in colon + seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
@@ -275,19 +274,6 @@ def basename(p):
 def dirname(p):
     """Returns the directory component of a pathname"""
     return split(p)[0]
-
-# Is a path a symbolic link?
-# This will always return false on systems where os.lstat doesn't exist.
-
-def islink(path):
-    """Test whether a path is a symbolic link.
-    This will always return false for Windows prior to 6.0.
-    """
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError, AttributeError):
-        return False
-    return stat.S_ISLNK(st.st_mode)
 
 
 # Is a path a junction?
@@ -614,7 +600,7 @@ else:  # use native Windows method on Windows
             return _abspath_fallback(path)
 
 try:
-    from nt import _getfinalpathname, readlink as _nt_readlink
+    from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
 except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     realpath = abspath
@@ -683,7 +669,7 @@ else:
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
-        tail = ''
+        tail = path[:0]
         while path:
             try:
                 path = _getfinalpathname(path)
@@ -701,10 +687,15 @@ else:
                 except OSError:
                     # If we fail to readlink(), let's keep traversing
                     pass
-                path, name = split(path)
-                # TODO (bpo-38186): Request the real file name from the directory
-                # entry using FindFirstFileW. For now, we will return the path
-                # as best we have it
+                # If we get these errors, try to get the real name of the file without accessing it.
+                if ex.winerror in (1, 5, 32, 50, 87, 1920, 1921):
+                    try:
+                        name = _findfirstfile(path)
+                        path, _ = split(path)
+                    except OSError:
+                        path, name = split(path)
+                else:
+                    path, name = split(path)
                 if path and not name:
                     return path + tail
                 tail = join(name, tail) if tail else name
@@ -734,6 +725,14 @@ else:
         try:
             path = _getfinalpathname(path)
             initial_winerror = 0
+        except ValueError as ex:
+            # gh-106242: Raised for embedded null characters
+            # In strict mode, we convert into an OSError.
+            # Non-strict mode returns the path as-is, since we've already
+            # made it absolute.
+            if strict:
+                raise OSError(str(ex)) from None
+            path = normpath(path)
         except OSError as ex:
             if strict:
                 raise
@@ -753,6 +752,10 @@ else:
             try:
                 if _getfinalpathname(spath) == path:
                     path = spath
+            except ValueError as ex:
+                # Unexpected, as an invalid path should not have gained a prefix
+                # at any point, but we ignore this error just in case.
+                pass
             except OSError as ex:
                 # If the path does not exist and originally did not exist, then
                 # strip the prefix anyway.
@@ -870,11 +873,29 @@ def commonpath(paths):
 
 
 try:
-    # The genericpath.isdir implementation uses os.stat and checks the mode
-    # attribute to tell whether or not the path is a directory.
-    # This is overkill on Windows - just pass the path to GetFileAttributes
-    # and check the attribute from there.
-    from nt import _isdir as isdir
+    # The isdir(), isfile(), islink() and exists() implementations in
+    # genericpath use os.stat(). This is overkill on Windows. Use simpler
+    # builtin functions if they are available.
+    from nt import _path_isdir as isdir
+    from nt import _path_isfile as isfile
+    from nt import _path_islink as islink
+    from nt import _path_exists as exists
 except ImportError:
-    # Use genericpath.isdir as imported above.
+    # Use genericpath.* as imported above
     pass
+
+
+try:
+    from nt import _path_isdevdrive
+except ImportError:
+    def isdevdrive(path):
+        """Determines whether the specified path is on a Windows Dev Drive."""
+        # Never a Dev Drive
+        return False
+else:
+    def isdevdrive(path):
+        """Determines whether the specified path is on a Windows Dev Drive."""
+        try:
+            return _path_isdevdrive(abspath(path))
+        except OSError:
+            return False

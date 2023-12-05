@@ -1,2 +1,0 @@
-Fix a possible memory leak in the parser when raising :exc:`MemoryError`.
-Patch by Pablo Galindo

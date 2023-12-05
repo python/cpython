@@ -223,6 +223,8 @@ class BaseSelectorTestCase:
         self.assertRaises(RuntimeError, s.get_key, wr)
         self.assertRaises(KeyError, mapping.__getitem__, rd)
         self.assertRaises(KeyError, mapping.__getitem__, wr)
+        self.assertEqual(mapping.get(rd), None)
+        self.assertEqual(mapping.get(wr), None)
 
     def test_get_key(self):
         s = self.SELECTOR()
@@ -241,13 +243,17 @@ class BaseSelectorTestCase:
         self.addCleanup(s.close)
 
         rd, wr = self.make_socketpair()
+        sentinel = object()
 
         keys = s.get_map()
         self.assertFalse(keys)
         self.assertEqual(len(keys), 0)
         self.assertEqual(list(keys), [])
+        self.assertEqual(keys.get(rd), None)
+        self.assertEqual(keys.get(rd, sentinel), sentinel)
         key = s.register(rd, selectors.EVENT_READ, "data")
         self.assertIn(rd, keys)
+        self.assertEqual(key, keys.get(rd))
         self.assertEqual(key, keys[rd])
         self.assertEqual(len(keys), 1)
         self.assertEqual(list(keys), [rd.fileno()])
@@ -278,6 +284,35 @@ class BaseSelectorTestCase:
                                         selectors.EVENT_WRITE))
 
         self.assertEqual([(wr_key, selectors.EVENT_WRITE)], result)
+
+    def test_select_read_write(self):
+        # gh-110038: when a file descriptor is registered for both read and
+        # write, the two events must be seen on a single call to select().
+        s = self.SELECTOR()
+        self.addCleanup(s.close)
+
+        sock1, sock2 = self.make_socketpair()
+        sock2.send(b"foo")
+        my_key = s.register(sock1, selectors.EVENT_READ | selectors.EVENT_WRITE)
+
+        seen_read, seen_write = False, False
+        result = s.select()
+        # We get the read and write either in the same result entry or in two
+        # distinct entries with the same key.
+        self.assertLessEqual(len(result), 2)
+        for key, events in result:
+            self.assertTrue(isinstance(key, selectors.SelectorKey))
+            self.assertEqual(key, my_key)
+            self.assertFalse(events & ~(selectors.EVENT_READ |
+                                        selectors.EVENT_WRITE))
+            if events & selectors.EVENT_READ:
+                self.assertFalse(seen_read)
+                seen_read = True
+            if events & selectors.EVENT_WRITE:
+                self.assertFalse(seen_write)
+                seen_write = True
+        self.assertTrue(seen_read)
+        self.assertTrue(seen_write)
 
     def test_context_manager(self):
         s = self.SELECTOR()
@@ -449,6 +484,7 @@ class ScalableSelectorMixIn:
     # see issue #18963 for why it's skipped on older OS X versions
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(resource, "Test needs resource module")
+    @support.requires_resource('cpu')
     def test_above_fd_setsize(self):
         # A scalable implementation should have no problem with more than
         # FD_SETSIZE file descriptors. Since we don't know the value, we just

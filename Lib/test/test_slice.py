@@ -80,10 +80,16 @@ class SliceTest(unittest.TestCase):
         self.assertEqual(repr(slice(1, 2, 3)), "slice(1, 2, 3)")
 
     def test_hash(self):
-        # Verify clearing of SF bug #800796
-        self.assertRaises(TypeError, hash, slice(5))
+        self.assertEqual(hash(slice(5)), slice(5).__hash__())
+        self.assertEqual(hash(slice(1, 2)), slice(1, 2).__hash__())
+        self.assertEqual(hash(slice(1, 2, 3)), slice(1, 2, 3).__hash__())
+        self.assertNotEqual(slice(5), slice(6))
+
         with self.assertRaises(TypeError):
-            slice(5).__hash__()
+            hash(slice(1, 2, []))
+
+        with self.assertRaises(TypeError):
+            hash(slice(4, {}))
 
     def test_cmp(self):
         s1 = slice(1, 2, 3)

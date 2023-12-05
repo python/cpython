@@ -206,15 +206,15 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 
 The grammar for a replacement field is as follows:
 
-   .. productionlist:: format-string
-      replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
-      field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-      arg_name: [`identifier` | `digit`+]
-      attribute_name: `identifier`
-      element_index: `digit`+ | `index_string`
-      index_string: <any source character except "]"> +
-      conversion: "r" | "s" | "a"
-      format_spec: <described in the next section>
+.. productionlist:: format-string
+   replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
+   field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
+   arg_name: [`identifier` | `digit`+]
+   attribute_name: `identifier`
+   element_index: `digit`+ | `index_string`
+   index_string: <any source character except "]"> +
+   conversion: "r" | "s" | "a"
+   format_spec: <described in the next section>
 
 In less formal terms, the replacement field can start with a *field_name* that specifies
 the object whose value is to be formatted and inserted
@@ -227,7 +227,9 @@ See also the :ref:`formatspec` section.
 
 The *field_name* itself begins with an *arg_name* that is either a number or a
 keyword.  If it's a number, it refers to a positional argument, and if it's a keyword,
-it refers to a named keyword argument.  If the numerical arg_names in a format string
+it refers to a named keyword argument. An *arg_name* is treated as a number if
+a call to :meth:`str.isdecimal` on the string would return true.
+If the numerical arg_names in a format string
 are 0, 1, 2, ... in sequence, they can all be omitted (not just some)
 and the numbers 0, 1, 2, ... will be automatically inserted in that order.
 Because *arg_name* is not quote-delimited, it is not possible to specify arbitrary
@@ -235,7 +237,7 @@ dictionary keys (e.g., the strings ``'10'`` or ``':-]'``) within a format string
 The *arg_name* can be followed by any number of index or
 attribute expressions. An expression of the form ``'.name'`` selects the named
 attribute using :func:`getattr`, while an expression of the form ``'[index]'``
-does an index lookup using :func:`__getitem__`.
+does an index lookup using :meth:`~object.__getitem__`.
 
 .. versionchanged:: 3.1
    The positional argument specifiers can be omitted for :meth:`str.format`,
@@ -254,10 +256,10 @@ Some simple format string examples::
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
 The *conversion* field causes a type coercion before formatting.  Normally, the
-job of formatting a value is done by the :meth:`__format__` method of the value
+job of formatting a value is done by the :meth:`~object.__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
 as a string, overriding its own definition of formatting.  By converting the
-value to a string before calling :meth:`__format__`, the normal formatting logic
+value to a string before calling :meth:`~object.__format__`, the normal formatting logic
 is bypassed.
 
 Three conversion flags are currently supported: ``'!s'`` which calls :func:`str`
@@ -310,7 +312,7 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`][z][#][0][`width`][`grouping_option`][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping_option`]["." `precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -330,30 +332,30 @@ affect the :func:`format` function.
 
 The meaning of the various alignment options is as follows:
 
-   .. index::
-      single: < (less); in string formatting
-      single: > (greater); in string formatting
-      single: = (equals); in string formatting
-      single: ^ (caret); in string formatting
+.. index::
+   single: < (less); in string formatting
+   single: > (greater); in string formatting
+   single: = (equals); in string formatting
+   single: ^ (caret); in string formatting
 
-   +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
-   +=========+==========================================================+
-   | ``'<'`` | Forces the field to be left-aligned within the available |
-   |         | space (this is the default for most objects).            |
-   +---------+----------------------------------------------------------+
-   | ``'>'`` | Forces the field to be right-aligned within the          |
-   |         | available space (this is the default for numbers).       |
-   +---------+----------------------------------------------------------+
-   | ``'='`` | Forces the padding to be placed after the sign (if any)  |
-   |         | but before the digits.  This is used for printing fields |
-   |         | in the form '+000000120'. This alignment option is only  |
-   |         | valid for numeric types.  It becomes the default for     |
-   |         | numbers when '0' immediately precedes the field width.   |
-   +---------+----------------------------------------------------------+
-   | ``'^'`` | Forces the field to be centered within the available     |
-   |         | space.                                                   |
-   +---------+----------------------------------------------------------+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``'<'`` | Forces the field to be left-aligned within the available |
+|         | space (this is the default for most objects).            |
++---------+----------------------------------------------------------+
+| ``'>'`` | Forces the field to be right-aligned within the          |
+|         | available space (this is the default for numbers).       |
++---------+----------------------------------------------------------+
+| ``'='`` | Forces the padding to be placed after the sign (if any)  |
+|         | but before the digits.  This is used for printing fields |
+|         | in the form '+000000120'. This alignment option is only  |
+|         | valid for numeric types.  It becomes the default for     |
+|         | numbers when '0' immediately precedes the field width.   |
++---------+----------------------------------------------------------+
+| ``'^'`` | Forces the field to be centered within the available     |
+|         | space.                                                   |
++---------+----------------------------------------------------------+
 
 Note that unless a minimum field width is defined, the field width will always
 be the same size as the data to fill it, so that the alignment option has no
@@ -362,23 +364,23 @@ meaning in this case.
 The *sign* option is only valid for number types, and can be one of the
 following:
 
-   .. index::
-      single: + (plus); in string formatting
-      single: - (minus); in string formatting
-      single: space; in string formatting
+.. index::
+   single: + (plus); in string formatting
+   single: - (minus); in string formatting
+   single: space; in string formatting
 
-   +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
-   +=========+==========================================================+
-   | ``'+'`` | indicates that a sign should be used for both            |
-   |         | positive as well as negative numbers.                    |
-   +---------+----------------------------------------------------------+
-   | ``'-'`` | indicates that a sign should be used only for negative   |
-   |         | numbers (this is the default behavior).                  |
-   +---------+----------------------------------------------------------+
-   | space   | indicates that a leading space should be used on         |
-   |         | positive numbers, and a minus sign on negative numbers.  |
-   +---------+----------------------------------------------------------+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``'+'`` | indicates that a sign should be used for both            |
+|         | positive as well as negative numbers.                    |
++---------+----------------------------------------------------------+
+| ``'-'`` | indicates that a sign should be used only for negative   |
+|         | numbers (this is the default behavior).                  |
++---------+----------------------------------------------------------+
+| space   | indicates that a leading space should be used on         |
+|         | positive numbers, and a minus sign on negative numbers.  |
++---------+----------------------------------------------------------+
 
 
 .. index:: single: z; in string formatting

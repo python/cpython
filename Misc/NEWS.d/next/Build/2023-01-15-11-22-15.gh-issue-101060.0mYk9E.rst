@@ -1,3 +1,0 @@
-Conditionally add ``-fno-reorder-blocks-and-partition`` in configure.
-Effectively fixes ``--enable-bolt`` when using Clang, as this appears to be
-a GCC-only flag.

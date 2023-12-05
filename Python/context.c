@@ -7,7 +7,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "structmember.h"         // PyMemberDef
+
 
 
 #include "clinic/context.c.h"
@@ -1042,7 +1042,7 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
 
 
 static PyMemberDef PyContextVar_members[] = {
-    {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
+    {"name", _Py_T_OBJECT, offsetof(PyContextVar, var_name), Py_READONLY},
     {NULL}
 };
 
@@ -1267,7 +1267,7 @@ PyTypeObject _PyContextTokenMissing_Type = {
 static PyObject *
 get_token_missing(void)
 {
-    return Py_NewRef(&_Py_SINGLETON(context_token_missing));
+    return (PyObject *)&_Py_SINGLETON(context_token_missing);
 }
 
 
@@ -1309,7 +1309,7 @@ _PyContext_Init(PyInterpreterState *interp)
 
     PyObject *missing = get_token_missing();
     if (PyDict_SetItemString(
-        PyContextToken_Type.tp_dict, "MISSING", missing))
+        _PyType_GetDict(&PyContextToken_Type), "MISSING", missing))
     {
         Py_DECREF(missing);
         return _PyStatus_ERR("can't init context types");

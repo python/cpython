@@ -1,2 +1,0 @@
-Fix a regression in detecting ``gdbm_compat`` library for the ``_gdbm``
-module build.
