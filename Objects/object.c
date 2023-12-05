@@ -2932,6 +2932,14 @@ int Py_IsFalse(PyObject *x)
 }
 
 
+// Py_REFCNT() implementation for stable ABI
+Py_ssize_t
+_Py_GetRefcnt(PyObject *ob)
+{
+    return Py_REFCNT(ob);
+}
+
+
 // Py_SET_REFCNT() implementation for stable ABI
 void
 _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)

@@ -290,8 +290,14 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 }
 #endif
 
+PyAPI_FUNC(Py_ssize_t) _Py_GetRefcnt(PyObject *ob);
+
 static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
-#if !defined(Py_GIL_DISABLED)
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
+    // Stable ABI implements Py_SET_REFCNT() as a function call
+    // on limited C API version 3.13 and newer.
+    return _Py_GetRefcnt(ob);
+#elif !defined(Py_GIL_DISABLED)
     return ob->ob_refcnt;
 #else
     uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
