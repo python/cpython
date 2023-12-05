@@ -261,6 +261,24 @@ _Py_ThreadId(void)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
 #elif defined(__aarch64__)
     __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
+#elif defined(__powerpc64__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
+    register uintptr_t tp __asm__ ("r13");
+    __asm__("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__powerpc__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
+    register uintptr_t tp __asm__ ("r2");
+    __asm__ ("" : "=r" (tp));
+    tid = tp;
+    #endif
 #else
   # error "define _Py_ThreadId for this platform"
 #endif
