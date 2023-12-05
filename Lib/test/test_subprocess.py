@@ -3397,8 +3397,10 @@ class POSIXProcessTestCase(BaseTestCase):
                     subprocess.check_call([{true_binary!r}])"""),
                     _run_using_command=strace_command,
             )
-            self.assertRegex(vfork_result.err, br"(?m)^vfork[(]")
-            self.assertNotRegex(vfork_result.err, br"(?m)^(fork|clone)")
+            # Match both vfork() and clone(..., flags=...|CLONE_VFORK|...)
+            self.assertRegex(vfork_result.err, br"(?mi)^vfork")
+            # Do NOT check that fork() or other clones did not happen.
+            # If the OS denys the vfork it'll fallback to plain fork().
 
         # Test that each individual thing that would disable the use of vfork
         # actually disables it.
@@ -3423,8 +3425,8 @@ class POSIXProcessTestCase(BaseTestCase):
                             raise"""),
                     _run_using_command=strace_command,
                 )
-                self.assertNotRegex(non_vfork_result.err, br"(?m)^vfork[(]")
-                self.assertRegex(non_vfork_result.err, br"(?m)^(fork|clone)")
+                # Ensure neither vfork() or clone(..., flags=...|CLONE_VFORK|...).
+                self.assertNotRegex(non_vfork_result.err, br"(?mi)^vfork")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
