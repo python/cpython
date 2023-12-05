@@ -1205,6 +1205,18 @@ always available.
 
    .. versionadded:: 3.12
 
+.. function:: _is_interned(string)
+
+   Return :const:`True` if the given string is "interned", :const:`False`
+   otherwise.
+
+   .. versionadded:: 3.13
+
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
+
+
 .. data:: last_type
           last_value
           last_traceback

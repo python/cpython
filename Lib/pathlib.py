@@ -5,18 +5,16 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
-import contextlib
 import functools
-import glob
 import io
 import ntpath
 import os
 import posixpath
-import re
 import sys
 import warnings
 from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
+from itertools import chain
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 try:
@@ -75,17 +73,23 @@ def _is_case_sensitive(pathmod):
 # Globbing helpers
 #
 
+re = glob = None
+
 
 @functools.lru_cache(maxsize=256)
 def _compile_pattern(pat, sep, case_sensitive):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
+    global re, glob
+    if re is None:
+        import re, glob
+
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
     # The string representation of an empty path is a single dot ('.'). Empty
     # paths shouldn't match wildcards, so we consume it with an atomic group.
     regex = r'(\.\Z)?+' + regex
-    return re.compile(regex, flags).match
+    return re.compile(regex, flags=flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -400,13 +404,14 @@ class PurePath:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        if not self.name:
-            raise ValueError("%r has an empty name" % (self,))
         m = self.pathmod
         if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
-            raise ValueError("Invalid name %r" % (name))
-        return self._from_parsed_parts(self.drive, self.root,
-                                       self._tail[:-1] + [name])
+            raise ValueError(f"Invalid name {name!r}")
+        tail = self._tail.copy()
+        if not tail:
+            raise ValueError(f"{self!r} has an empty name")
+        tail[-1] = name
+        return self._from_parsed_parts(self.drive, self.root, tail)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -417,21 +422,12 @@ class PurePath:
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
         """
-        m = self.pathmod
-        if m.sep in suffix or m.altsep and m.altsep in suffix:
-            raise ValueError("Invalid suffix %r" % (suffix,))
-        if suffix and not suffix.startswith('.') or suffix == '.':
-            raise ValueError("Invalid suffix %r" % (suffix))
-        name = self.name
-        if not name:
-            raise ValueError("%r has an empty name" % (self,))
-        old_suffix = self.suffix
-        if not old_suffix:
-            name = name + suffix
+        if not suffix:
+            return self.with_name(self.stem)
+        elif suffix.startswith('.') and len(suffix) > 1:
+            return self.with_name(self.stem + suffix)
         else:
-            name = name[:-len(old_suffix)] + suffix
-        return self._from_parsed_parts(self.drive, self.root,
-                                       self._tail[:-1] + [name])
+            raise ValueError(f"Invalid suffix {suffix!r}")
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -450,7 +446,7 @@ class PurePath:
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePath):
             other = self.with_segments(other)
-        for step, path in enumerate([other] + list(other.parents)):
+        for step, path in enumerate(chain([other], other.parents)):
             if path == self or path in self.parents:
                 break
             elif not walk_up:
@@ -950,12 +946,12 @@ class _PathBase(PurePath):
         with self.open(mode='rb') as f:
             return f.read()
 
-    def read_text(self, encoding=None, errors=None):
+    def read_text(self, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, read it, and close the file.
         """
         encoding = io.text_encoding(encoding)
-        with self.open(mode='r', encoding=encoding, errors=errors) as f:
+        with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
 
     def write_bytes(self, data):
@@ -989,7 +985,8 @@ class _PathBase(PurePath):
     def _scandir(self):
         # Emulate os.scandir(), which returns an object that can be used as a
         # context manager. This method is called by walk() and glob().
-        return contextlib.nullcontext(self.iterdir())
+        from contextlib import nullcontext
+        return nullcontext(self.iterdir())
 
     def _make_child_relpath(self, name):
         path_str = str(self)
@@ -1029,7 +1026,7 @@ class _PathBase(PurePath):
         elif not path_pattern._tail:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
-        pattern_parts = list(path_pattern._tail)
+        pattern_parts = path_pattern._tail.copy()
         if pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
@@ -1322,13 +1319,13 @@ class _PathBase(PurePath):
         """
         self._unsupported("rmdir")
 
-    def owner(self):
+    def owner(self, *, follow_symlinks=True):
         """
         Return the login name of the file owner.
         """
         self._unsupported("owner")
 
-    def group(self):
+    def group(self, *, follow_symlinks=True):
         """
         Return the group name of the file gid.
         """
@@ -1418,21 +1415,29 @@ class Path(_PathBase):
         """
         if self.is_absolute():
             return self
-        elif self.drive:
+        if self.root:
+            drive = os.path.splitroot(os.getcwd())[0]
+            return self._from_parsed_parts(drive, self.root, self._tail)
+        if self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = os.path.abspath(self.drive)
         else:
             cwd = os.getcwd()
+        if not self._tail:
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
             # We pass only one argument to with_segments() to avoid the cost
             # of joining, and we exploit the fact that getcwd() returns a
             # fully-normalized string by storing it in _str. This is used to
             # implement Path.cwd().
-            if not self.root and not self._tail:
-                result = self.with_segments(cwd)
-                result._str = cwd
-                return result
-        return self.with_segments(cwd, self)
+            result = self.with_segments(cwd)
+            result._str = cwd
+            return result
+        drive, root, rel = os.path.splitroot(cwd)
+        if not rel:
+            return self._from_parsed_parts(drive, root, self._tail)
+        tail = rel.split(self.pathmod.sep)
+        tail.extend(self._tail)
+        return self._from_parsed_parts(drive, root, tail)
 
     def resolve(self, strict=False):
         """
@@ -1443,18 +1448,20 @@ class Path(_PathBase):
         return self.with_segments(os.path.realpath(self, strict=strict))
 
     if pwd:
-        def owner(self):
+        def owner(self, *, follow_symlinks=True):
             """
             Return the login name of the file owner.
             """
-            return pwd.getpwuid(self.stat().st_uid).pw_name
+            uid = self.stat(follow_symlinks=follow_symlinks).st_uid
+            return pwd.getpwuid(uid).pw_name
 
     if grp:
-        def group(self):
+        def group(self, *, follow_symlinks=True):
             """
             Return the group name of the file gid.
             """
-            return grp.getgrgid(self.stat().st_gid).gr_name
+            gid = self.stat(follow_symlinks=follow_symlinks).st_gid
+            return grp.getgrgid(gid).gr_name
 
     if hasattr(os, "readlink"):
         def readlink(self):

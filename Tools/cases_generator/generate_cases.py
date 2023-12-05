@@ -769,6 +769,7 @@ class Generator(Analyzer):
 
             # Write and count instructions of all kinds
             n_macros = 0
+            cases = []
             for thing in self.everything:
                 match thing:
                     case parsing.InstDef():
@@ -776,11 +777,14 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(mac, self.out)
+                        cases.append((mac.name, mac))
                     case parsing.Pseudo():
                         pass
                     case _:
                         assert_never(thing)
+            cases.sort()
+            for _, mac in cases:
+                stacking.write_macro_instr(mac, self.out)
 
             self.out.write_raw("\n")
             self.out.write_raw("#undef TIER_ONE\n")
@@ -810,6 +814,8 @@ class Generator(Analyzer):
                     n_uops += 1
                     self.out.emit("")
                     with self.out.block(f"case {instr.name}:"):
+                        if instr.instr_flags.HAS_ARG_FLAG:
+                            self.out.emit("oparg = CURRENT_OPARG();")
                         stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")

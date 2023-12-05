@@ -406,7 +406,7 @@ def version_splitter(s: str) -> tuple[int, ...]:
     flush()
     return tuple(version)
 
-def version_comparitor(version1: str, version2: str) -> Literal[-1, 0, 1]:
+def version_comparator(version1: str, version2: str) -> Literal[-1, 0, 1]:
     iterator = itertools.zip_longest(
         version_splitter(version1), version_splitter(version2), fillvalue=0
     )
@@ -846,6 +846,10 @@ class CLanguage(Language):
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
     """)
+    PARSER_PROTOTYPE_GETTER: Final[str] = normalize_snippet("""
+        static PyObject *
+        {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
+    """)
     METH_O_PROTOTYPE: Final[str] = normalize_snippet("""
         static PyObject *
         {c_basename}({impl_parameters})
@@ -864,6 +868,10 @@ class CLanguage(Language):
     METHODDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #define {methoddef_name}    \
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
+    """)
+    GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #define {getter_name}    \
+            {{"{name}", (getter){c_basename}, NULL, NULL}},
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
         #ifndef {methoddef_name}
@@ -1111,7 +1119,8 @@ class CLanguage(Language):
             if include:
                 clinic.add_include(include.filename, include.reason,
                                    condition=include.condition)
-
+        if f.critical_section:
+            clinic.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
         simple_return = (f.return_converter.type == 'PyObject *'
                          and not f.critical_section)
@@ -1159,6 +1168,9 @@ class CLanguage(Language):
         return_value_declaration = "PyObject *return_value = NULL;"
         methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
         if new_or_init and not f.docstring:
+            docstring_prototype = docstring_definition = ''
+        elif f.kind is GETTER:
+            methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
         else:
             docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
@@ -1216,7 +1228,11 @@ class CLanguage(Language):
         parsearg: str | None
         if not parameters:
             parser_code: list[str] | None
-            if not requires_defining_class:
+            if f.kind is GETTER:
+                flags = "" # This should end up unused
+                parser_prototype = self.PARSER_PROTOTYPE_GETTER
+                parser_code = []
+            elif not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
                 parser_prototype = self.PARSER_PROTOTYPE_NOARGS
@@ -1669,6 +1685,8 @@ class CLanguage(Language):
         methoddef_cast_end = ""
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
+        elif f.kind is GETTER:
+            methoddef_cast = "" # This should end up unused
         elif limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
         else:
@@ -1866,8 +1884,18 @@ class CLanguage(Language):
         assert isinstance(f_self.converter, self_converter), "No self parameter in " + repr(f.full_name) + "!"
 
         if f.critical_section:
-            data.lock.append('Py_BEGIN_CRITICAL_SECTION({self_name});')
-            data.unlock.append('Py_END_CRITICAL_SECTION();')
+            match len(f.target_critical_section):
+                case 0:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION({self_name});'
+                    unlock = 'Py_END_CRITICAL_SECTION();'
+                case 1:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION({target_critical_section});'
+                    unlock = 'Py_END_CRITICAL_SECTION();'
+                case _:
+                    lock = 'Py_BEGIN_CRITICAL_SECTION2({target_critical_section});'
+                    unlock = 'Py_END_CRITICAL_SECTION2();'
+            data.lock.append(lock)
+            data.unlock.append(unlock)
 
         last_group = 0
         first_optional = len(selfless)
@@ -1916,12 +1944,17 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        template_dict['c_basename'] = f.c_basename
-        template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
+        if f.kind is GETTER:
+            template_dict['getter_name'] = f.c_basename.upper() + "_GETTERDEF"
+            template_dict['c_basename'] = f.c_basename + "_get"
+        else:
+            template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
+            template_dict['c_basename'] = f.c_basename
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
+        template_dict['target_critical_section'] = ', '.join(f.target_critical_section)
         for converter in converters:
             converter.set_template_dict(template_dict)
 
@@ -2920,6 +2953,7 @@ class FunctionKind(enum.Enum):
     CLASS_METHOD    = enum.auto()
     METHOD_INIT     = enum.auto()
     METHOD_NEW      = enum.auto()
+    GETTER          = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -2935,6 +2969,7 @@ STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
 CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
 METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
+GETTER: Final = FunctionKind.GETTER
 
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
@@ -2970,6 +3005,7 @@ class Function:
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
     critical_section: bool = False
+    target_critical_section: list[str] = dc.field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.parent = self.cls or self.module
@@ -3020,7 +3056,8 @@ class Function:
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
             case _ as kind:
-                assert kind is FunctionKind.CALLABLE, f"unknown kind: {kind!r}"
+                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER}
+                assert kind in acceptable_kinds, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
@@ -4665,7 +4702,7 @@ class Py_buffer_converter(CConverter):
 def correct_name_for_self(
         f: Function
 ) -> tuple[str, str]:
-    if f.kind in (CALLABLE, METHOD_INIT):
+    if f.kind in {CALLABLE, METHOD_INIT, GETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
@@ -5122,9 +5159,11 @@ class DSLParser:
     indent: IndentStack
     kind: FunctionKind
     coexist: bool
+    forced_text_signature: str | None
     parameter_continuation: str
     preserve_output: bool
     critical_section: bool
+    target_critical_section: list[str]
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
 
     def __init__(self, clinic: Clinic) -> None:
@@ -5156,14 +5195,15 @@ class DSLParser:
         self.indent = IndentStack()
         self.kind = CALLABLE
         self.coexist = False
-        self.forced_text_signature: str | None = None
+        self.forced_text_signature = None
         self.parameter_continuation = ''
         self.preserve_output = False
         self.critical_section = False
+        self.target_critical_section = []
 
     def directive_version(self, required: str) -> None:
         global version
-        if version_comparitor(version, required) < 0:
+        if version_comparator(version, required) < 0:
             fail("Insufficient Clinic version!\n"
                  f"  Version: {version}\n"
                  f"  Required: {required}")
@@ -5288,8 +5328,14 @@ class DSLParser:
             fail("Can't set @classmethod, function is not a normal callable")
         self.kind = CLASS_METHOD
 
-    def at_critical_section(self) -> None:
+    def at_critical_section(self, *args: str) -> None:
+        if len(args) > 2:
+            fail("Up to 2 critical section variables are supported")
+        self.target_critical_section.extend(args)
         self.critical_section = True
+
+    def at_getter(self) -> None:
+        self.kind = GETTER
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
@@ -5400,14 +5446,20 @@ class DSLParser:
         _, cls = self.clinic._module_and_class(fields)
         if name in unsupported_special_methods:
             fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
+
         if name == '__new__':
-            if (self.kind is not CLASS_METHOD) or (not cls):
+            if (self.kind is CLASS_METHOD) and cls:
+                self.kind = METHOD_NEW
+            else:
                 fail("'__new__' must be a class method!")
-            self.kind = METHOD_NEW
         elif name == '__init__':
-            if (self.kind is not CALLABLE) or (not cls):
-                fail("'__init__' must be a normal method, not a class or static method!")
-            self.kind = METHOD_INIT
+            if (self.kind is CALLABLE) and cls:
+                self.kind = METHOD_INIT
+            else:
+                fail(
+                    "'__init__' must be a normal method; "
+                    f"got '{self.kind}'!"
+                )
 
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
@@ -5514,7 +5566,8 @@ class DSLParser:
 
         self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
                                  return_converter=return_converter, kind=self.kind, coexist=self.coexist,
-                                 critical_section=self.critical_section)
+                                 critical_section=self.critical_section,
+                                 target_critical_section=self.target_critical_section)
         self.block.signatures.append(self.function)
 
         # insert a self converter automatically

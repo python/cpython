@@ -10,6 +10,7 @@ import unittest
 import _testinternalcapi
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 from test.support import script_helper
 
 
@@ -759,43 +760,6 @@ class RunStringTests(TestBase):
         with self.assertRaises(TypeError):
             interpreters.run_string(self.id, b'print("spam")')
 
-    @contextlib.contextmanager
-    def assert_run_failed(self, exctype, msg=None):
-        with self.assertRaises(interpreters.RunFailedError) as caught:
-            yield
-        if msg is None:
-            self.assertEqual(str(caught.exception).split(':')[0],
-                             exctype.__name__)
-        else:
-            self.assertEqual(str(caught.exception),
-                             "{}: {}".format(exctype.__name__, msg))
-
-    def test_invalid_syntax(self):
-        with self.assert_run_failed(SyntaxError):
-            # missing close paren
-            interpreters.run_string(self.id, 'print("spam"')
-
-    def test_failure(self):
-        with self.assert_run_failed(Exception, 'spam'):
-            interpreters.run_string(self.id, 'raise Exception("spam")')
-
-    def test_SystemExit(self):
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, 'raise SystemExit(42)')
-
-    def test_sys_exit(self):
-        with self.assert_run_failed(SystemExit):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit()
-                """))
-
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit(42)
-                """))
-
     def test_with_shared(self):
         r, w = os.pipe()
 
@@ -957,6 +921,163 @@ class RunStringTests(TestBase):
                 retcode = proc.wait()
 
         self.assertEqual(retcode, 0)
+
+
+class RunFailedTests(TestBase):
+
+    def setUp(self):
+        super().setUp()
+        self.id = interpreters.create()
+
+    def add_module(self, modname, text):
+        import tempfile
+        tempdir = tempfile.mkdtemp()
+        self.addCleanup(lambda: os_helper.rmtree(tempdir))
+        interpreters.run_string(self.id, dedent(f"""
+            import sys
+            sys.path.insert(0, {tempdir!r})
+            """))
+        return script_helper.make_script(tempdir, modname, text)
+
+    def run_script(self, text, *, fails=False):
+        r, w = os.pipe()
+        try:
+            script = dedent(f"""
+                import os, sys
+                os.write({w}, b'0')
+
+                # This raises an exception:
+                {{}}
+
+                # Nothing from here down should ever run.
+                os.write({w}, b'1')
+                class NeverError(Exception): pass
+                raise NeverError  # never raised
+                """).format(dedent(text))
+            if fails:
+                err = interpreters.run_string(self.id, script)
+                self.assertIsNot(err, None)
+                return err
+            else:
+                err = interpreters.run_string(self.id, script)
+                self.assertIs(err, None)
+                return None
+        except:
+            raise  # re-raise
+        else:
+            msg = os.read(r, 100)
+            self.assertEqual(msg, b'0')
+        finally:
+            os.close(r)
+            os.close(w)
+
+    def _assert_run_failed(self, exctype, msg, script):
+        if isinstance(exctype, str):
+            exctype_name = exctype
+            exctype = None
+        else:
+            exctype_name = exctype.__name__
+
+        # Run the script.
+        excinfo = self.run_script(script, fails=True)
+
+        # Check the wrapper exception.
+        self.assertEqual(excinfo.type.__name__, exctype_name)
+        if msg is None:
+            self.assertEqual(excinfo.formatted.split(':')[0],
+                             exctype_name)
+        else:
+            self.assertEqual(excinfo.formatted,
+                             '{}: {}'.format(exctype_name, msg))
+
+        return excinfo
+
+    def assert_run_failed(self, exctype, script):
+        self._assert_run_failed(exctype, None, script)
+
+    def assert_run_failed_msg(self, exctype, msg, script):
+        self._assert_run_failed(exctype, msg, script)
+
+    def test_exit(self):
+        with self.subTest('sys.exit(0)'):
+            # XXX Should an unhandled SystemExit(0) be handled as not-an-error?
+            self.assert_run_failed(SystemExit, """
+                sys.exit(0)
+                """)
+
+        with self.subTest('sys.exit()'):
+            self.assert_run_failed(SystemExit, """
+                import sys
+                sys.exit()
+                """)
+
+        with self.subTest('sys.exit(42)'):
+            self.assert_run_failed_msg(SystemExit, '42', """
+                import sys
+                sys.exit(42)
+                """)
+
+        with self.subTest('SystemExit'):
+            self.assert_run_failed_msg(SystemExit, '42', """
+                raise SystemExit(42)
+                """)
+
+        # XXX Also check os._exit() (via a subprocess)?
+
+    def test_plain_exception(self):
+        self.assert_run_failed_msg(Exception, 'spam', """
+            raise Exception("spam")
+            """)
+
+    def test_invalid_syntax(self):
+        script = dedent("""
+            x = 1 + 2
+            y = 2 + 4
+            z = 4 + 8
+
+            # missing close paren
+            print("spam"
+
+            if x + y + z < 20:
+                ...
+            """)
+
+        with self.subTest('script'):
+            self.assert_run_failed(SyntaxError, script)
+
+        with self.subTest('module'):
+            modname = 'spam_spam_spam'
+            filename = self.add_module(modname, script)
+            self.assert_run_failed(SyntaxError, f"""
+                import {modname}
+                """)
+
+    def test_NameError(self):
+        self.assert_run_failed(NameError, """
+            res = spam + eggs
+            """)
+        # XXX check preserved suggestions
+
+    def test_AttributeError(self):
+        self.assert_run_failed(AttributeError, """
+            object().spam
+            """)
+        # XXX check preserved suggestions
+
+    def test_ExceptionGroup(self):
+        self.assert_run_failed(ExceptionGroup, """
+            raise ExceptionGroup('exceptions', [
+                Exception('spam'),
+                ImportError('eggs'),
+            ])
+            """)
+
+    def test_user_defined_exception(self):
+        self.assert_run_failed_msg('MyError', 'spam', """
+            class MyError(Exception):
+                pass
+            raise MyError('spam')
+            """)
 
 
 class RunFuncTests(TestBase):
