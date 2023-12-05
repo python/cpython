@@ -911,7 +911,7 @@ explicit by using a non-capturing group: ``(?:...)``, where you can replace the
 
    >>> m = re.match("([abc])+", "abc")
    >>> m.groups()
-   ('c',)
+   ('a',)
    >>> m = re.match("(?:[abc])+", "abc")
    >>> m.groups()
    ()
