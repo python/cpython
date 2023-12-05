@@ -4314,8 +4314,8 @@ class TestColorizedTraceback(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_colorized_detection_checks_for_environment_variables(self):
-        with unittest.mock.patch("sys.stderr") as stderr_mock:
-            stderr_mock.isatty.return_value = True
+        with unittest.mock.patch("os.isatty") as isatty_mock:
+            isatty_mock.return_value = True
             with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
                 self.assertEqual(traceback._can_colorize(), False)
             with unittest.mock.patch("os.environ", {'PY_COLORS': '1'}):
@@ -4325,12 +4325,12 @@ class TestColorizedTraceback(unittest.TestCase):
             with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
                 self.assertEqual(traceback._can_colorize(), False)
             with unittest.mock.patch("os.environ", {'NO_COLOR': '1', "PY_COLORS": '1'}):
-                self.assertEqual(traceback._can_colorize(), True)
+                self.assertEqual(traceback._can_colorize(), False)
             with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
                 self.assertEqual(traceback._can_colorize(), True)
             with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
                 self.assertEqual(traceback._can_colorize(), False)
-            stderr_mock.isatty.return_value = False
+            isatty_mock.return_value = False
             self.assertEqual(traceback._can_colorize(), False)
 
 if __name__ == "__main__":

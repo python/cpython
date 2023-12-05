@@ -1,6 +1,7 @@
 """Extract, format and print information about Python stack traces."""
 
 import os
+import io
 import collections.abc
 import itertools
 import linecache
@@ -141,19 +142,22 @@ def _can_colorize():
         except (ImportError, AttributeError):
             return False
 
-    if not _COLORIZE:
+    if "NO_COLOR" in os.environ:
         return False
-    if os.environ.get("PY_COLORS") == "1":
-        return True
     if os.environ.get("PY_COLORS") == "0":
         return False
-    if "NO_COLOR" in os.environ:
+    if not _COLORIZE:
         return False
     if "FORCE_COLOR" in os.environ:
         return True
-    return (
-        hasattr(sys.stderr, "isatty") and sys.stderr.isatty() and os.environ.get("TERM") != "dumb"
-    )
+    if os.environ.get("PY_COLORS") == "1":
+        return True
+    if os.environ.get("TERM") == "dumb":
+        return False
+    try:
+        return os.isatty(sys.stderr.fileno())
+    except io.UnsupportedOperation:
+        return sys.stderr.isatty()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
