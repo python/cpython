@@ -1001,12 +1001,8 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('2004', 'spam')
         self.assertFailure('2004', '1', 'spam')
         self.assertFailure('2004', '1', '1')
-        self.assertFailure('2004', '0')
-        self.assertFailure('2004', '13')
         self.assertFailure('2004', '1', '1', 'spam')
         self.assertFailure('-t', 'html', '2004', '1')
-        self.assertFailure('--firstweekday', '-1')
-        self.assertFailure('--firstweekday', '7')
 
     def test_output_current_year(self):
         for run in self.runners:

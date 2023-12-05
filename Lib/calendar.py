@@ -758,9 +758,6 @@ def main(args=None):
 
     locale = options.locale, options.encoding
 
-    if not MONDAY <= options.firstweekday <= SUNDAY:
-        raise IllegalWeekdayError(options.firstweekday)
-
     if options.type == "html":
         if options.month:
             parser.error("incorrect number of arguments")
