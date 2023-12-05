@@ -3206,7 +3206,7 @@ PyTypeObject PyList_Type = {
 
 /*********************** List Iterator **************************/
 
-static void listiter_dealloc(_PyListIterObject *);
+static void listiter_dealloc(PyObject *);
 static int listiter_traverse(_PyListIterObject *, visitproc, void *);
 static PyObject *listiter_next(PyObject *);
 static PyObject *listiter_len(_PyListIterObject *, PyObject *);
@@ -3231,7 +3231,7 @@ PyTypeObject PyListIter_Type = {
     sizeof(_PyListIterObject),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)listiter_dealloc,               /* tp_dealloc */
+    listiter_dealloc,               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -3278,8 +3278,9 @@ list_iter(PyObject *seq)
 }
 
 static void
-listiter_dealloc(_PyListIterObject *it)
+listiter_dealloc(PyObject *obj)
 {
+    _PyListIterObject *it = (_PyListIterObject *)obj;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
