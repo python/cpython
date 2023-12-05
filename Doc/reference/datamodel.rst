@@ -1031,6 +1031,7 @@ mentioned here for completeness.
 
 .. index:: bytecode, object; code, code object
 
+.. _code-objects:
 
 Code objects
 ^^^^^^^^^^^^
