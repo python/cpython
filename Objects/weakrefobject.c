@@ -116,9 +116,9 @@ weakref_dealloc(PyObject *self)
 
 
 static int
-gc_traverse(PyWeakReference *self, visitproc visit, void *arg)
+gc_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->wr_callback);
+    Py_VISIT(((PyWeakReference *)self)->wr_callback);
     return 0;
 }
 
@@ -150,8 +150,9 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
 }
 
 static Py_hash_t
-weakref_hash(PyWeakReference *self)
+weakref_hash(PyObject *arg)
 {
+    PyWeakReference *self = (PyWeakReference *)arg;
     if (self->hash != -1)
         return self->hash;
     PyObject* obj = _PyWeakref_GET_REF((PyObject*)self);
@@ -371,10 +372,10 @@ _PyWeakref_RefType = {
     .tp_vectorcall_offset = offsetof(PyWeakReference, vectorcall),
     .tp_call = PyVectorcall_Call,
     .tp_repr = weakref_repr,
-    .tp_hash = (hashfunc)weakref_hash,
+    .tp_hash = weakref_hash,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
                 Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_BASETYPE,
-    .tp_traverse = (traverseproc)gc_traverse,
+    .tp_traverse = gc_traverse,
     .tp_clear = (inquiry)gc_clear,
     .tp_richcompare = weakref_richcompare,
     .tp_methods = weakref_methods,
@@ -734,7 +735,7 @@ _PyWeakref_ProxyType = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                  /* tp_doc */
-    (traverseproc)gc_traverse,          /* tp_traverse */
+    gc_traverse,                        /* tp_traverse */
     (inquiry)gc_clear,                  /* tp_clear */
     proxy_richcompare,                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
@@ -768,7 +769,7 @@ _PyWeakref_CallableProxyType = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                  /* tp_doc */
-    (traverseproc)gc_traverse,          /* tp_traverse */
+    gc_traverse,                        /* tp_traverse */
     (inquiry)gc_clear,                  /* tp_clear */
     proxy_richcompare,                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
