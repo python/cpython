@@ -5070,8 +5070,10 @@ _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
 
 
 static void
-type_dealloc(PyTypeObject *type)
+type_dealloc(PyObject *self)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
+
     // Assert this is a heap-allocated type object
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
@@ -5350,7 +5352,7 @@ PyTypeObject PyType_Type = {
     "type",                                     /* tp_name */
     sizeof(PyHeapTypeObject),                   /* tp_basicsize */
     sizeof(PyMemberDef),                        /* tp_itemsize */
-    (destructor)type_dealloc,                   /* tp_dealloc */
+    type_dealloc,                               /* tp_dealloc */
     offsetof(PyTypeObject, tp_vectorcall),      /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
