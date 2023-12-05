@@ -317,7 +317,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertTrue(os.path.exists(dir3))
         self.assertTrue(os.path.exists(file1))
 
-    def test_rmtree_errors_onerror(self):
+    def test_rmtree_errors(self):
         # filename is guaranteed not to exist
         filename = tempfile.mktemp(dir=self.mkdtemp())
         self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
@@ -326,8 +326,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
         # existing file
         tmpdir = self.mkdtemp()
-        write_file((tmpdir, "tstfile"), "")
         filename = os.path.join(tmpdir, "tstfile")
+        write_file(filename, "")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
         self.assertEqual(cm.exception.filename, filename)
@@ -335,6 +335,19 @@ class TestRmTree(BaseTest, unittest.TestCase):
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
         self.assertTrue(os.path.exists(filename))
+
+        self.assertRaises(TypeError, shutil.rmtree, None)
+        self.assertRaises(TypeError, shutil.rmtree, None, ignore_errors=True)
+        exc = TypeError if shutil.rmtree.avoids_symlink_attacks else NotImplementedError
+        with self.assertRaises(exc):
+            shutil.rmtree(filename, dir_fd='invalid')
+        with self.assertRaises(exc):
+            shutil.rmtree(filename, dir_fd='invalid', ignore_errors=True)
+
+    def test_rmtree_errors_onerror(self):
+        tmpdir = self.mkdtemp()
+        filename = os.path.join(tmpdir, "tstfile")
+        write_file(filename, "")
         errors = []
         def onerror(*args):
             errors.append(args)
@@ -350,23 +363,9 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertEqual(errors[1][2][1].filename, filename)
 
     def test_rmtree_errors_onexc(self):
-        # filename is guaranteed not to exist
-        filename = tempfile.mktemp(dir=self.mkdtemp())
-        self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
-        # test that ignore_errors option is honored
-        shutil.rmtree(filename, ignore_errors=True)
-
-        # existing file
         tmpdir = self.mkdtemp()
-        write_file((tmpdir, "tstfile"), "")
         filename = os.path.join(tmpdir, "tstfile")
-        with self.assertRaises(NotADirectoryError) as cm:
-            shutil.rmtree(filename)
-        self.assertEqual(cm.exception.filename, filename)
-        self.assertTrue(os.path.exists(filename))
-        # test that ignore_errors option is honored
-        shutil.rmtree(filename, ignore_errors=True)
-        self.assertTrue(os.path.exists(filename))
+        write_file(filename, "")
         errors = []
         def onexc(*args):
             errors.append(args)
