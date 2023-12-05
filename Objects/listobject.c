@@ -458,8 +458,9 @@ list_contains(PyListObject *a, PyObject *el)
 }
 
 static PyObject *
-list_item(PyListObject *a, Py_ssize_t i)
+list_item(PyObject *aa, Py_ssize_t i)
 {
+    PyListObject *a = (PyListObject *)aa;
     if (!valid_index(i, Py_SIZE(a))) {
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
@@ -514,8 +515,9 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 }
 
 static PyObject *
-list_concat(PyListObject *a, PyObject *bb)
+list_concat(PyObject *aa, PyObject *bb)
 {
+    PyListObject *a = (PyListObject *)aa;
     Py_ssize_t size;
     Py_ssize_t i;
     PyObject **src, **dest;
@@ -554,8 +556,9 @@ list_concat(PyListObject *a, PyObject *bb)
 }
 
 static PyObject *
-list_repeat(PyListObject *a, Py_ssize_t n)
+list_repeat(PyObject *aa, Py_ssize_t n)
 {
+    PyListObject *a = (PyListObject *)aa;
     const Py_ssize_t input_size = Py_SIZE(a);
     if (input_size == 0 || n <= 0)
         return PyList_New(0);
@@ -2926,9 +2929,9 @@ static PyMethodDef list_methods[] = {
 
 static PySequenceMethods list_as_sequence = {
     list_length,                                /* sq_length */
-    (binaryfunc)list_concat,                    /* sq_concat */
-    (ssizeargfunc)list_repeat,                  /* sq_repeat */
-    (ssizeargfunc)list_item,                    /* sq_item */
+    list_concat,                                /* sq_concat */
+    list_repeat,                                /* sq_repeat */
+    list_item,                                  /* sq_item */
     0,                                          /* sq_slice */
     list_ass_item,                              /* sq_ass_item */
     0,                                          /* sq_ass_slice */
