@@ -589,7 +589,6 @@ The following options are accepted:
 .. option:: year
 
    The year to print the calendar for.
-   Must be a number between 1 and 9999.
    Defaults to the current year.
 
 
