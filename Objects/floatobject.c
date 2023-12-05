@@ -379,8 +379,9 @@ convert_to_double(PyObject **v, double *dbl)
 }
 
 static PyObject *
-float_repr(PyFloatObject *v)
+float_repr(PyObject *obj)
 {
+    PyFloatObject *v = (PyFloatObject *)obj;
     PyObject *result;
     char *buf;
 
@@ -860,20 +861,23 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 #undef DOUBLE_IS_ODD_INTEGER
 
 static PyObject *
-float_neg(PyFloatObject *v)
+float_neg(PyObject *obj)
 {
+    PyFloatObject *v = (PyFloatObject *)obj;
     return PyFloat_FromDouble(-v->ob_fval);
 }
 
 static PyObject *
-float_abs(PyFloatObject *v)
+float_abs(PyObject *obj)
 {
+    PyFloatObject *v = (PyFloatObject *)obj;
     return PyFloat_FromDouble(fabs(v->ob_fval));
 }
 
 static int
-float_bool(PyFloatObject *v)
+float_bool(PyObject *obj)
 {
+    PyFloatObject *v = (PyFloatObject *)obj;
     return v->ob_fval != 0.0;
 }
 
@@ -1245,7 +1249,7 @@ float_hex_impl(PyObject *self)
     CONVERT_TO_DOUBLE(self, x);
 
     if (Py_IS_NAN(x) || Py_IS_INFINITY(x))
-        return float_repr((PyFloatObject *)self);
+        return float_repr(self);
 
     if (x == 0.0) {
         if (copysign(1.0, x) == -1.0)
@@ -1855,10 +1859,10 @@ static PyNumberMethods float_as_number = {
     float_rem,          /* nb_remainder */
     float_divmod,       /* nb_divmod */
     float_pow,          /* nb_power */
-    (unaryfunc)float_neg, /* nb_negative */
+    float_neg,          /* nb_negative */
     float_float,        /* nb_positive */
-    (unaryfunc)float_abs, /* nb_absolute */
-    (inquiry)float_bool, /* nb_bool */
+    float_abs,          /* nb_absolute */
+    float_bool,         /* nb_bool */
     0,                  /* nb_invert */
     0,                  /* nb_lshift */
     0,                  /* nb_rshift */
@@ -1894,7 +1898,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)float_repr,                       /* tp_repr */
+    float_repr,                                 /* tp_repr */
     &float_as_number,                           /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
