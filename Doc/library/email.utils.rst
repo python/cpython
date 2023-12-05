@@ -58,7 +58,7 @@ of the new API.
    begins with angle brackets, they are stripped off.
 
 
-.. function:: parseaddr(address)
+.. function:: parseaddr(address, *, strict=True)
 
    Parse address -- which should be the value of some address-containing field such
    as :mailheader:`To` or :mailheader:`Cc` -- into its constituent *realname* and
