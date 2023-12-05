@@ -108,14 +108,13 @@ def _iter_escaped_chars(addr):
     pos = 0
     escape = False
     for pos, ch in enumerate(addr):
-        if ch == '\\' and not escape:
+        if escape:
+            yield (pos, '\\' + ch)
+            escape = False
+        elif ch == '\\':
             escape = True
         else:
-            if escape:
-                yield (pos, '\\' + ch)
-            else:
-                yield (pos, ch)
-            escape = False
+            yield (pos, ch)
     if escape:
         yield (pos, '\\')
 
