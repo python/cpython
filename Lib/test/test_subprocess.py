@@ -3392,10 +3392,9 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.subTest(name="default_is_vfork"):
             vfork_result = assert_python_ok(
                     "-c",
-                    f"""if True:
+                    textwrap.dedent(f"""\
                     import subprocess
-                    subprocess.check_call([{true_binary!r}])
-                    """,
+                    subprocess.check_call([{true_binary!r}])"""),
                     _run_using_command=strace_command,
             )
             self.assertRegex(vfork_result.err, br"(?m)^vfork[(]")
