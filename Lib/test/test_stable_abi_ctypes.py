@@ -903,6 +903,7 @@ SYMBOL_NAMES = (
     "_Py_DecRef",
     "_Py_EllipsisObject",
     "_Py_FalseStruct",
+    "_Py_GetRefcnt",
     "_Py_IncRef",
     "_Py_NoneStruct",
     "_Py_NotImplementedStruct",
