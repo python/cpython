@@ -4925,8 +4925,9 @@ _Py_type_getattro(PyTypeObject *type, PyObject *name)
 }
 
 static int
-type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
+type_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
     int res;
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         PyErr_Format(
@@ -5370,7 +5371,7 @@ PyTypeObject PyType_Type = {
     type_call,                                  /* tp_call */
     0,                                          /* tp_str */
     (getattrofunc)_Py_type_getattro,            /* tp_getattro */
-    (setattrofunc)type_setattro,                /* tp_setattro */
+    type_setattro,                              /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
     Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TYPE_SUBCLASS |
