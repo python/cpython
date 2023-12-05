@@ -88,7 +88,7 @@ Some objects contain references to "external" resources such as open files or
 windows.  It is understood that these resources are freed when the object is
 garbage-collected, but since garbage collection is not guaranteed to happen,
 such objects also provide an explicit way to release the external resource,
-usually a :meth:`close` method. Programs are strongly recommended to explicitly
+usually a :meth:`!close` method. Programs are strongly recommended to explicitly
 close such objects.  The ':keyword:`try`...\ :keyword:`finally`' statement
 and the ':keyword:`with`' statement provide convenient ways to do this.
 
@@ -681,8 +681,8 @@ underlying the class method.
 When an instance method object is called, the underlying function
 (:attr:`__func__`) is called, inserting the class instance
 (:attr:`__self__`) in front of the argument list.  For instance, when
-:class:`C` is a class which contains a definition for a function
-:meth:`f`, and ``x`` is an instance of :class:`C`, calling ``x.f(1)`` is
+:class:`!C` is a class which contains a definition for a function
+:meth:`!f`, and ``x`` is an instance of :class:`!C`, calling ``x.f(1)`` is
 equivalent to calling ``C.f(x, 1)``.
 
 When an instance method object is derived from a class method object, the
@@ -795,7 +795,7 @@ Classes
 Classes are callable.  These objects normally act as factories for new
 instances of themselves, but variations are possible for class types that
 override :meth:`~object.__new__`.  The arguments of the call are passed to
-:meth:`__new__` and, in the typical case, to :meth:`~object.__init__` to
+:meth:`!__new__` and, in the typical case, to :meth:`~object.__init__` to
 initialize the new instance.
 
 
@@ -899,9 +899,9 @@ https://www.python.org/download/releases/2.3/mro/.
    pair: object; dictionary
    pair: class; attribute
 
-When a class attribute reference (for class :class:`C`, say) would yield a
+When a class attribute reference (for class :class:`!C`, say) would yield a
 class method object, it is transformed into an instance method object whose
-:attr:`__self__` attribute is :class:`C`.  When it would yield a static
+:attr:`__self__` attribute is :class:`!C`.  When it would yield a static
 method object, it is transformed into the object wrapped by the static method
 object. See section :ref:`descriptors` for another way in which attributes
 retrieved from a class may differ from those actually contained in its
@@ -1903,13 +1903,17 @@ class' :attr:`~object.__dict__`.
 
    Called to delete the attribute on an instance *instance* of the owner class.
 
+Instances of descriptors may also have the :attr:`!__objclass__` attribute
+present:
 
-The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
-as specifying the class where this object was defined (setting this
-appropriately can assist in runtime introspection of dynamic class attributes).
-For callables, it may indicate that an instance of the given type (or a
-subclass) is expected or required as the first positional argument (for example,
-CPython sets this attribute for unbound methods that are implemented in C).
+.. attribute:: object.__objclass__
+
+   The attribute :attr:`!__objclass__` is interpreted by the :mod:`inspect` module
+   as specifying the class where this object was defined (setting this
+   appropriately can assist in runtime introspection of dynamic class attributes).
+   For callables, it may indicate that an instance of the given type (or a
+   subclass) is expected or required as the first positional argument (for example,
+   CPython sets this attribute for unbound methods that are implemented in C).
 
 
 .. _descriptor-invocation:
@@ -1990,13 +1994,14 @@ For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`~object.__get__`, :meth:`~object.__set__` and
 :meth:`~object.__delete__`.  If it does not
-define :meth:`__get__`, then accessing the attribute will return the descriptor
+define :meth:`!__get__`, then accessing the attribute will return the descriptor
 object itself unless there is a value in the object's instance dictionary.  If
-the descriptor defines :meth:`__set__` and/or :meth:`__delete__`, it is a data
+the descriptor defines :meth:`!__set__` and/or :meth:`!__delete__`, it is a data
 descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
-descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
-descriptors have just the :meth:`__get__` method.  Data descriptors with
-:meth:`__get__` and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a redefinition in an
+descriptors define both :meth:`!__get__` and :meth:`!__set__`, while non-data
+descriptors have just the :meth:`!__get__` method.  Data descriptors with
+:meth:`!__get__` and :meth:`!__set__` (and/or :meth:`!__delete__`) defined
+always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
@@ -2573,16 +2578,17 @@ either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
 range of items.  It is also recommended that mappings provide the methods
-:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
-:meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
-:meth:`update` behaving similar to those for Python's standard :class:`dictionary <dict>`
+:meth:`!keys`, :meth:`!values`, :meth:`!items`, :meth:`!get`, :meth:`!clear`,
+:meth:`!setdefault`, :meth:`!pop`, :meth:`!popitem`, :meth:`!copy`, and
+:meth:`!update` behaving similar to those for Python's standard :class:`dictionary <dict>`
 objects.  The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
 :term:`abstract base class` to help create those methods from a base set of
-:meth:`~object.__getitem__`, :meth:`~object.__setitem__`, :meth:`~object.__delitem__`, and :meth:`keys`.
-Mutable sequences should provide methods :meth:`append`, :meth:`count`,
-:meth:`index`, :meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`,
-:meth:`reverse` and :meth:`sort`, like Python standard :class:`list`
+:meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
+:meth:`~object.__delitem__`, and :meth:`!keys`.
+Mutable sequences should provide methods :meth:`!append`, :meth:`!count`,
+:meth:`!index`, :meth:`!extend`, :meth:`!insert`, :meth:`!pop`, :meth:`!remove`,
+:meth:`!reverse` and :meth:`!sort`, like Python standard :class:`list`
 objects. Finally,
 sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
@@ -2595,7 +2601,7 @@ operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should
 search through the values.  It is further recommended that both mappings and
 sequences implement the :meth:`~object.__iter__` method to allow efficient iteration
-through the container; for mappings, :meth:`__iter__` should iterate
+through the container; for mappings, :meth:`!__iter__` should iterate
 through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
@@ -3174,7 +3180,7 @@ generators, coroutines do not directly support iteration.
    to the :meth:`~generator.send` method of the iterator that caused
    the coroutine to suspend.  The result (return value,
    :exc:`StopIteration`, or other exception) is the same as when
-   iterating over the :meth:`__await__` return value, described above.
+   iterating over the :meth:`!__await__` return value, described above.
 
 .. method:: coroutine.throw(value)
             coroutine.throw(type[, value[, traceback]])
