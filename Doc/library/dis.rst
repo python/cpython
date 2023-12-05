@@ -673,27 +673,27 @@ iterations of the loop.
 
    Pops a value from the stack, which is used to restore the exception state.
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: RERAISE
 
-    Re-raises the exception currently on top of the stack. If oparg is non-zero,
-    pops an additional value from the stack which is used to set ``f_lasti``
-    of the current frame.
+   Re-raises the exception currently on top of the stack. If oparg is non-zero,
+   pops an additional value from the stack which is used to set
+   :attr:`~frame.f_lasti` of the current frame.
 
-    .. versionadded:: 3.9
+   .. versionadded:: 3.9
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: PUSH_EXC_INFO
 
-    Pops a value from the stack. Pushes the current exception to the top of the stack.
-    Pushes the value originally popped back to the stack.
-    Used in exception handlers.
+   Pops a value from the stack. Pushes the current exception to the top of the stack.
+   Pushes the value originally popped back to the stack.
+   Used in exception handlers.
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 .. opcode:: CHECK_EXC_MATCH
 
