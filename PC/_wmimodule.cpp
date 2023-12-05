@@ -246,10 +246,10 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
         }
     }
 
-    // If current user doesn't have permission to query the WMI, the function
-    // IWbemLocator::ConnectServer will hang for 5 seconds, and there is no way
-    // to specify the timeout. So we use an Event object to simulate a timeout.
-    // More detail: gh-112278.
+    // gh-112278: If current user doesn't have permission to query the WMI, the
+    // function IWbemLocator::ConnectServer will hang for 5 seconds, and there
+    // is no way to specify the timeout. So we use an Event object to simulate
+    // a timeout.
     switch (WaitForSingleObject(data.connectEvent, 100)) {
     case WAIT_OBJECT_0:
         break;
