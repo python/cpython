@@ -2415,7 +2415,7 @@ PyObject *
 _PyEval_GetBuiltin(PyObject *name)
 {
     PyObject *attr;
-    if (PyDict_GetItemRef(PyEval_GetBuiltins(), name, &attr) == 0) {
+    if (PyMapping_GetOptionalItem(PyEval_GetBuiltins(), name, &attr) == 0) {
         PyErr_SetObject(PyExc_AttributeError, name);
     }
     return attr;
@@ -2568,7 +2568,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyDict_GetItemRef(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {
