@@ -1559,7 +1559,7 @@ are always available.  They are listed here in alphabetical order.
    :exc:`RuntimeError`.
 
    Example::
-      
+
       class Person:
          def __init__(self, name, age):
             self.name = name
@@ -1567,10 +1567,10 @@ are always available.  They are listed here in alphabetical order.
 
          def __repr__(self):
             return f"Person('{self.name}', {self.age})"
-      
+
       # Creating an object.
       person = Person("Alice", 30)
-      
+
       # Using repr() to obtain the string representation of the object.
       repr_string = repr(person)
       print("Representation String:", repr_string)
