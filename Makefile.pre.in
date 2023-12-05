@@ -2194,6 +2194,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/leakers \
 		test/libregrtest \
 		test/mathdata \
+		test/regrtestdata \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
