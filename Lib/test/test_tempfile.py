@@ -1641,6 +1641,17 @@ class TestTemporaryDirectory(BaseTestCase):
                 temp_path.exists(),
                 f"TemporaryDirectory {temp_path!s} exists after cleanup")
 
+    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
+    def test_explicit_cleanup_correct_error(self):
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(dir=working_dir)
+            with open(os.path.join(temp_dir.name, "example.txt"), 'wb'):
+                # Previously raised NotADirectoryError on some OSes
+                # (e.g. Windows). See bpo-43153.
+                with self.assertRaises(PermissionError):
+                    temp_dir.cleanup()
+
+
     @os_helper.skip_unless_symlink
     def test_cleanup_with_symlink_to_a_directory(self):
         # cleanup() should not follow symlinks to directories (issue #12464)
