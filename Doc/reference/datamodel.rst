@@ -1184,22 +1184,26 @@ Special read-only attributes
        or ``None`` if this is the bottom stack frame
 
    * - .. attribute:: frame.f_code
-     - The code object being executed in this frame.
+     - The :ref:`code object <code-objects>` being executed in this frame.
        Accessing this attribute raises an :ref:`auditing event <auditing>`
        ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
 
    * - .. attribute:: frame.f_locals
-     - The dictionary used to look up local variables
+     - The dictionary used by the frame to look up
+       :ref:`local variables <naming>`
 
    * - .. attribute:: frame.f_globals
-     - The dictionary used to look up global variables
+     - The dictionary used by the frame to look up
+       :ref:`global variables <naming>`
 
    * - .. attribute:: frame.f_builtins
-     - The dictionary used to look up built-in (intrinsic) names
+     - The dictionary used by the frame to look up
+       :ref:`built-in (intrinsic) names <naming>`
 
    * - .. attribute:: frame.f_lasti
      - The "precise instruction" of the frame object
-       (this is an index into the bytecode string of the code object)
+       (this is an index into the :term:`bytecode` string of the
+       :ref:`code object <code-objects>`)
 
 .. index::
    single: f_trace (frame attribute)
@@ -1214,7 +1218,7 @@ Special writable attributes
 
    * - .. attribute:: frame.f_trace
      - If not ``None``, this is a function called for various events during
-       code execution (this is used by the debugger). Normally an event is
+       code execution (this is used by debuggers). Normally an event is
        triggered for each new source line (see :attr:`~frame.f_trace_lines`).
 
    * - .. attribute:: frame.f_trace_lines
@@ -1240,11 +1244,11 @@ Frame objects support one method:
 
 .. method:: frame.clear()
 
-   This method clears all references to local variables held by the
-   frame.  Also, if the frame belonged to a generator, the generator
+   This method clears all references to :ref:`local variables <naming>` held by the
+   frame.  Also, if the frame belonged to a :term:`generator`, the generator
    is finalized.  This helps break reference cycles involving frame
-   objects (for example when catching an exception and storing its
-   traceback for later use).
+   objects (for example when catching an :ref:`exception <bltin-exceptions>`
+   and storing its :ref:`traceback <traceback-objects>` for later use).
 
    :exc:`RuntimeError` is raised if the frame is currently executing
    or suspended.
