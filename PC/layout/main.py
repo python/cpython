@@ -73,7 +73,10 @@ def copy_if_modified(src, dest):
         )
 
     if do_copy:
-        shutil.copy2(src, dest)
+        try:
+            shutil.copy2(src, dest)
+        except FileNotFoundError:
+            raise FileNotFoundError(src) from None
 
 
 def get_lib_layout(ns):
@@ -208,8 +211,7 @@ def get_layout(ns):
 
         for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
-        src = ns.source / "PC" / "pyconfig.h"
-        yield "include/pyconfig.h", src
+        yield "include/pyconfig.h", ns.build / "pyconfig.h"
 
     for dest, src in get_tcltk_lib(ns):
         yield dest, src
