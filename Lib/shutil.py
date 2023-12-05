@@ -687,7 +687,12 @@ def _rmtree_safe_fd(topfd, path, onexc):
                         _rmtree_safe_fd(dirfd, fullname, onexc)
                         try:
                             os.close(dirfd)
+                        except OSError as err:
+                            # close() should not be retried after an error.
                             dirfd_closed = True
+                            onexc(os.close, fullname, err)
+                        dirfd_closed = True
+                        try:
                             os.rmdir(entry.name, dir_fd=topfd)
                         except FileNotFoundError:
                             continue
@@ -785,7 +790,12 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                 _rmtree_safe_fd(fd, path, onexc)
                 try:
                     os.close(fd)
+                except OSError as err:
+                    # close() should not be retried after an error.
                     fd_closed = True
+                    onexc(os.close, path, err)
+                fd_closed = True
+                try:
                     os.rmdir(path, dir_fd=dir_fd)
                 except OSError as err:
                     onexc(os.rmdir, path, err)
