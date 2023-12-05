@@ -697,7 +697,12 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     stgdict->align = total_align;
     stgdict->length = len;      /* ADD ffi_ofs? */
 
-
+/*
+ * On Arm platforms, structs with at most 4 elements of any floating point
+ * type values can be passed through registers. If the type is double the
+ * maximum size of the struct is 32 bytes.
+ * By Arm platforms it is meant both 32 and 64-bit.
+*/
 #if defined(__aarch64__) || defined(__arm__)
 #  define MAX_STRUCT_SIZE 32
 #else
@@ -754,7 +759,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
          *     struct { uint_32 e1; uint_32 e2; ... uint_32 e_4; } f6;
          * }
          *
-         * The same principle applies for a struct 32 bytes in size.
+         * The same principle applies for a struct 32 bytes in size like in
+         * the case of Arm platforms.
          *
          * So the struct/union needs setting up as follows: all non-array
          * elements copied across as is, and all array elements replaced with
