@@ -4284,6 +4284,27 @@ class TestColorizedTraceback(unittest.TestCase):
         self.assertIn(boldr + ",4)" + reset, lines)
         self.assertIn(red + "bar" + reset + boldr + "()" + reset, lines)
 
+    def test_colorized_syntax_error(self):
+        try:
+            compile("a $ b", "<string>", "exec")
+        except SyntaxError as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+        actual = "".join(exc.format(colorize=True))
+        red = traceback._ANSIColors.RED
+        magenta = traceback._ANSIColors.MAGENTA
+        boldm = traceback._ANSIColors.BOLD_MAGENTA
+        boldr = traceback._ANSIColors.BOLD_RED
+        reset = traceback._ANSIColors.RESET
+        expected = "".join([
+        f'  File {magenta}"<string>"{reset}, line {magenta}1{reset}\n',
+        f'    a {boldr}${reset} b\n',
+        f'      {boldr}^{reset}\n',
+        f'{boldm}SyntaxError{reset}: {magenta}invalid syntax{reset}\n']
+        )
+        self.assertIn(expected, actual)
+
     def test_colorized_traceback_is_the_default(self):
         def foo():
             1/0

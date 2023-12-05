@@ -1310,22 +1310,32 @@ class TracebackException:
                         # colorize from colno to end_colno
                         ltext = (
                             ltext[:colno] +
-                            _ANSIColors.RED + ltext[colno:end_colno] + _ANSIColors.RESET +
+                            _ANSIColors.BOLD_RED + ltext[colno:end_colno] + _ANSIColors.RESET +
                             ltext[end_colno:]
                         )
-                        start_color = _ANSIColors.RED
+                        start_color = _ANSIColors.BOLD_RED
                         end_color = _ANSIColors.RESET
                     yield '    {}\n'.format(ltext)
-                    yield '    {}{}{}{}'.format(
+                    yield '    {}{}{}{}\n'.format(
                         "".join(caretspace),
                         start_color,
-                        ('^' * (end_colno - colno) + "\n"),
+                        ('^' * (end_colno - colno)),
                         end_color,
                     )
                 else:
                     yield '    {}\n'.format(ltext)
         msg = self.msg or "<no detail available>"
-        yield "{}: {}{}\n".format(stype, msg, filename_suffix)
+        if colorize:
+            yield "{}{}{}: {}{}{}{}\n".format(
+                _ANSIColors.BOLD_MAGENTA,
+                stype,
+                _ANSIColors.RESET,
+                _ANSIColors.MAGENTA,
+                msg,
+                _ANSIColors.RESET,
+                filename_suffix)
+        else:
+            yield "{}: {}{}\n".format(stype, msg, filename_suffix)
 
     def format(self, *, chain=True, _ctx=None, **kwargs):
         """Format the exception.
