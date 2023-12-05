@@ -6555,6 +6555,12 @@ PyDoc_STRVAR(object_doc,
 "When called, it accepts no arguments and returns a new featureless\n"
 "instance that has no instance attributes and cannot be given any.\n");
 
+static Py_hash_t
+object_hash(PyObject *obj)
+{
+    return _Py_HashPointer(obj);
+}
+
 PyTypeObject PyBaseObject_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "object",                                   /* tp_name */
@@ -6569,7 +6575,7 @@ PyTypeObject PyBaseObject_Type = {
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)_Py_HashPointer,                  /* tp_hash */
+    object_hash,                                /* tp_hash */
     0,                                          /* tp_call */
     object_str,                                 /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
