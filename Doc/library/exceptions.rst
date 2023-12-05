@@ -429,9 +429,11 @@ The following exceptions are the exceptions that are usually raised.
    :meth:`~iterator.__next__` method to signal that there are no further
    items produced by the iterator.
 
-   The exception object has a single attribute :attr:`value`, which is
-   given as an argument when constructing the exception, and defaults
-   to :const:`None`.
+   .. attribute:: StopIteration.value
+
+      The exception object has a single attribute :attr:`!value`, which is
+      given as an argument when constructing the exception, and defaults
+      to :const:`None`.
 
    When a :term:`generator` or :term:`coroutine` function
    returns, a new :exc:`StopIteration` instance is
