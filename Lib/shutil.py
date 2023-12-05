@@ -768,13 +768,13 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
         # lstat()/open()/fstat() trick.
         try:
             orig_st = os.lstat(path, dir_fd=dir_fd)
-        except Exception as err:
+        except OSError as err:
             onexc(os.lstat, path, err)
             return
         try:
             fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
             fd_closed = False
-        except Exception as err:
+        except OSError as err:
             onexc(os.open, path, err)
             return
         try:

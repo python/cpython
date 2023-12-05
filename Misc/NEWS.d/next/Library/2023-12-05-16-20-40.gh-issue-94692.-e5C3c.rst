@@ -1,0 +1,4 @@
+:func:`shutil.rmtree` now only catches OSError exceptions. Previously a
+symlink attack resistant version of ``shutil.rmtree()`` could ignore or pass
+to the error handler arbitrary exception when invalid arguments were
+provided.
