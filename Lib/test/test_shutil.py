@@ -578,6 +578,41 @@ class TestRmTree(BaseTest, unittest.TestCase):
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
+    @unittest.skipUnless(shutil._use_fd_functions, "requires safe rmtree")
+    def test_rmtree_fails_on_close(self):
+        # Test that the error handler is called for failed os.close() and that
+        # os.close() is only called once for a file descriptor.
+        tmp = self.mkdtemp()
+        dir1 = os.path.join(tmp, 'dir1')
+        os.mkdir(dir1)
+        dir2 = os.path.join(dir1, 'dir2')
+        os.mkdir(dir2)
+        def close(fd):
+            orig_close(fd)
+            nonlocal close_count
+            close_count += 1
+            raise OSError
+
+        close_count = 0
+        with support.swap_attr(os, 'close', close) as orig_close:
+            with self.assertRaises(OSError):
+                shutil.rmtree(dir1)
+        self.assertTrue(os.path.isdir(dir2))
+        self.assertEqual(close_count, 2)
+
+        close_count = 0
+        errors = []
+        def onexc(*args):
+            errors.append(args)
+        with support.swap_attr(os, 'close', close) as orig_close:
+            shutil.rmtree(dir1, onexc=onexc)
+        self.assertEqual(len(errors), 2)
+        self.assertIs(errors[0][0], close)
+        self.assertEqual(errors[0][1], dir2)
+        self.assertIs(errors[1][0], close)
+        self.assertEqual(errors[1][1], dir1)
+        self.assertEqual(close_count, 2)
+
     @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
         tmp_dir = self.mkdtemp()
