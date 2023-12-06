@@ -317,7 +317,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertTrue(os.path.exists(dir3))
         self.assertTrue(os.path.exists(file1))
 
-    def test_rmtree_errors_onerror(self):
+    def test_rmtree_errors(self):
         # filename is guaranteed not to exist
         filename = tempfile.mktemp(dir=self.mkdtemp())
         self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
@@ -326,8 +326,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
         # existing file
         tmpdir = self.mkdtemp()
-        write_file((tmpdir, "tstfile"), "")
         filename = os.path.join(tmpdir, "tstfile")
+        write_file(filename, "")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
         self.assertEqual(cm.exception.filename, filename)
@@ -335,6 +335,19 @@ class TestRmTree(BaseTest, unittest.TestCase):
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
         self.assertTrue(os.path.exists(filename))
+
+        self.assertRaises(TypeError, shutil.rmtree, None)
+        self.assertRaises(TypeError, shutil.rmtree, None, ignore_errors=True)
+        exc = TypeError if shutil.rmtree.avoids_symlink_attacks else NotImplementedError
+        with self.assertRaises(exc):
+            shutil.rmtree(filename, dir_fd='invalid')
+        with self.assertRaises(exc):
+            shutil.rmtree(filename, dir_fd='invalid', ignore_errors=True)
+
+    def test_rmtree_errors_onerror(self):
+        tmpdir = self.mkdtemp()
+        filename = os.path.join(tmpdir, "tstfile")
+        write_file(filename, "")
         errors = []
         def onerror(*args):
             errors.append(args)
@@ -350,23 +363,9 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertEqual(errors[1][2][1].filename, filename)
 
     def test_rmtree_errors_onexc(self):
-        # filename is guaranteed not to exist
-        filename = tempfile.mktemp(dir=self.mkdtemp())
-        self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
-        # test that ignore_errors option is honored
-        shutil.rmtree(filename, ignore_errors=True)
-
-        # existing file
         tmpdir = self.mkdtemp()
-        write_file((tmpdir, "tstfile"), "")
         filename = os.path.join(tmpdir, "tstfile")
-        with self.assertRaises(NotADirectoryError) as cm:
-            shutil.rmtree(filename)
-        self.assertEqual(cm.exception.filename, filename)
-        self.assertTrue(os.path.exists(filename))
-        # test that ignore_errors option is honored
-        shutil.rmtree(filename, ignore_errors=True)
-        self.assertTrue(os.path.exists(filename))
+        write_file(filename, "")
         errors = []
         def onexc(*args):
             errors.append(args)
@@ -576,6 +575,41 @@ class TestRmTree(BaseTest, unittest.TestCase):
         else:
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
+
+    @unittest.skipUnless(shutil._use_fd_functions, "requires safe rmtree")
+    def test_rmtree_fails_on_close(self):
+        # Test that the error handler is called for failed os.close() and that
+        # os.close() is only called once for a file descriptor.
+        tmp = self.mkdtemp()
+        dir1 = os.path.join(tmp, 'dir1')
+        os.mkdir(dir1)
+        dir2 = os.path.join(dir1, 'dir2')
+        os.mkdir(dir2)
+        def close(fd):
+            orig_close(fd)
+            nonlocal close_count
+            close_count += 1
+            raise OSError
+
+        close_count = 0
+        with support.swap_attr(os, 'close', close) as orig_close:
+            with self.assertRaises(OSError):
+                shutil.rmtree(dir1)
+        self.assertTrue(os.path.isdir(dir2))
+        self.assertEqual(close_count, 2)
+
+        close_count = 0
+        errors = []
+        def onexc(*args):
+            errors.append(args)
+        with support.swap_attr(os, 'close', close) as orig_close:
+            shutil.rmtree(dir1, onexc=onexc)
+        self.assertEqual(len(errors), 2)
+        self.assertIs(errors[0][0], close)
+        self.assertEqual(errors[0][1], dir2)
+        self.assertIs(errors[1][0], close)
+        self.assertEqual(errors[1][1], dir1)
+        self.assertEqual(close_count, 2)
 
     @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
