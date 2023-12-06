@@ -44,7 +44,8 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`~object.__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a
+:meth:`~object.__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
@@ -197,7 +198,7 @@ exception.
 
 Two more operations with the same syntactic priority, :keyword:`in` and
 :keyword:`not in`, are supported by types that are :term:`iterable` or
-implement the :meth:`__contains__` method.
+implement the :meth:`~object.__contains__` method.
 
 .. _typesnumeric:
 
@@ -717,7 +718,7 @@ that's defined for any rational number, and hence applies to all instances of
 :class:`int` and :class:`fractions.Fraction`, and all finite instances of
 :class:`float` and :class:`decimal.Decimal`.  Essentially, this function is
 given by reduction modulo ``P`` for a fixed prime ``P``.  The value of ``P`` is
-made available to Python as the :attr:`modulus` attribute of
+made available to Python as the :attr:`~sys.hash_info.modulus` attribute of
 :data:`sys.hash_info`.
 
 .. impl-detail::
@@ -906,9 +907,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -3669,7 +3670,7 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'b'``    | Bytes (any object that follows the                  | \(5)  |
 |            | :ref:`buffer protocol <bufferobjects>` or has       |       |
-|            | :meth:`__bytes__`).                                 |       |
+|            | :meth:`~object.__bytes__`).                         |       |
 +------------+-----------------------------------------------------+-------+
 | ``'s'``    | ``'s'`` is an alias for ``'b'`` and should only     | \(6)  |
 |            | be used for Python2/3 code bases.                   |       |
@@ -4407,7 +4408,8 @@ The constructors for both classes work the same:
    :meth:`symmetric_difference_update` methods will accept any iterable as an
    argument.
 
-   Note, the *elem* argument to the :meth:`__contains__`, :meth:`remove`, and
+   Note, the *elem* argument to the :meth:`~object.__contains__`,
+   :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
    frozenset, a temporary one is created from *elem*.
 
@@ -5233,9 +5235,11 @@ instantiated from the type::
    TypeError: cannot create 'types.UnionType' instances
 
 .. note::
-   The :meth:`__or__` method for type objects was added to support the syntax
-   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
-   override it::
+   The :meth:`!__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`!__or__`, the Union may
+   override it:
+
+   .. doctest::
 
       >>> class M(type):
       ...     def __or__(self, other):
@@ -5247,7 +5251,7 @@ instantiated from the type::
       >>> C | int
       'Hello'
       >>> int | C
-      int | __main__.C
+      int | C
 
 .. seealso::
 
