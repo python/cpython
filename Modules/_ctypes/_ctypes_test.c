@@ -133,6 +133,42 @@ _testfunc_array_in_struct2a(Test3B in)
     return result;
 }
 
+/*
+ * See gh-110190. structs containing arrays of up to four floating point types
+ * (max 32 bytes) are passed in registers on Arm.
+ */
+
+typedef struct {
+    double data[4];
+} Test3C;
+
+EXPORT(Test3C)
+_testfunc_array_in_struct_set_defaults_3C(void)
+{
+    Test3C s;
+    s.data[0] = 1.0;
+    s.data[1] = 2.0;
+    s.data[2] = 3.0;
+    s.data[3] = 4.0;
+    return s;
+}
+
+typedef struct {
+    double data[5];
+} Test3D;
+
+EXPORT(Test3D)
+_testfunc_array_in_struct_set_defaults_3D(void)
+{
+    Test3D s;
+    s.data[0] = 1.0;
+    s.data[1] = 2.0;
+    s.data[2] = 3.0;
+    s.data[3] = 4.0;
+    s.data[4] = 5.0;
+    return s;
+}
+
 typedef union {
     long a_long;
     struct {
