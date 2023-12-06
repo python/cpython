@@ -2905,10 +2905,10 @@ list___sizeof___impl(PyListObject *self)
 }
 
 static PyObject *list_iter(PyObject *seq);
-static PyObject *list_subscript(PyListObject*, PyObject*);
+static PyObject *list_subscript(PyObject*, PyObject*);
 
 static PyMethodDef list_methods[] = {
-    {"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST,
+    {"__getitem__", list_subscript, METH_O|METH_COEXIST,
      PyDoc_STR("__getitem__($self, index, /)\n--\n\nReturn self[index].")},
     LIST___REVERSED___METHODDEF
     LIST___SIZEOF___METHODDEF
@@ -2941,8 +2941,9 @@ static PySequenceMethods list_as_sequence = {
 };
 
 static PyObject *
-list_subscript(PyListObject* self, PyObject* item)
+list_subscript(PyObject* obj, PyObject* item)
 {
+    PyListObject* self = (PyListObject*)obj;
     if (_PyIndex_Check(item)) {
         Py_ssize_t i;
         i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -3158,7 +3159,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
 static PyMappingMethods list_as_mapping = {
     list_length,
-    (binaryfunc)list_subscript,
+    list_subscript,
     (objobjargproc)list_ass_subscript
 };
 
