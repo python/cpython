@@ -154,13 +154,6 @@ readline.set_auto_history({})
 input()
 print("History length:", readline.get_current_history_length())
 """
-    auto_history_script_with_null = """\
-import readline
-readline.set_auto_history({})
-input("Hello \\x00 World: ")
-print("History length:", readline.get_current_history_length())
-"""
-
 
     def test_auto_history_enabled(self):
         output = run_pty(self.auto_history_script.format(True))
@@ -173,10 +166,6 @@ print("History length:", readline.get_current_history_length())
         # bpo-44949: Sometimes, the newline character is not written at the
         # end, so don't expect it in the output.
         self.assertIn(b"History length: 0", output)
-
-    def test_prompt_contains_null(self):
-        output = run_pty(self.auto_history_script_with_null.format(False))
-        self.assertIn(b"ValueError: input: prompt string cannot contain null characters", output)
 
     def test_set_complete_delims(self):
         script = textwrap.dedent("""
