@@ -139,17 +139,17 @@ class Analyzer:
             match thing:
                 case parsing.InstDef(name=name):
                     macro: parsing.Macro | None = None
-                    if thing.kind == "inst" and not thing.override:
+                    if thing.kind == "inst" and "override" not in thing.annotations:
                         macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
-                        if not thing.override:
+                        if "override" not in thing.annotations:
                             raise psr.make_syntax_error(
                                 f"Duplicate definition of '{name}' @ {thing.context} "
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
                         self.everything[instrs_idx[name]] = thing
-                    if name not in self.instrs and thing.override:
+                    if name not in self.instrs and "override" in thing.annotations:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
                             "an override but no previous definition exists.",
@@ -390,9 +390,14 @@ class Analyzer:
             else:
                 targets.append(self.macro_instrs[target_name])
         assert targets
-        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
+        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG",
+                          "HAS_ESCAPES_FLAG"}
         assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
-        return PseudoInstruction(pseudo.name, targets, targets[0].instr_flags)
+
+        flags = InstructionFlags(**{f"{f}_FLAG" : True for f in pseudo.flags})
+        for t in targets:
+            flags.add(t.instr_flags)
+        return PseudoInstruction(pseudo.name, targets, flags)
 
     def analyze_instruction(
         self, instr: Instruction, offset: int

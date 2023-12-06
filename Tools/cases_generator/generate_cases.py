@@ -94,7 +94,7 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument(
     "-v",
-    "--verbose",
+    "--viable",
     help="Print list of non-viable uops and exit",
     action="store_true",
 )
@@ -651,11 +651,14 @@ class Generator(Analyzer):
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         for part in parts:
             if isinstance(part, Component):
-                # All component instructions must be viable uops
-                if not part.instr.is_viable_uop():
+                # Skip specializations
+                if "specializing" in part.instr.annotations:
+                    continue
+                # All other component instructions must be viable uops
+                if not part.instr.is_viable_uop() and "replaced" not in part.instr.annotations:
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
-                    # It is sometimes emitted for macros that have a
+                    # Suppress it using 'replaced op(...)' for macros having
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
                     if len(parts) > 1 or part.instr.name != name:
@@ -766,6 +769,7 @@ class Generator(Analyzer):
 
             # Write and count instructions of all kinds
             n_macros = 0
+            cases = []
             for thing in self.everything:
                 match thing:
                     case parsing.InstDef():
@@ -773,11 +777,14 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(mac, self.out)
+                        cases.append((mac.name, mac))
                     case parsing.Pseudo():
                         pass
                     case _:
                         assert_never(thing)
+            cases.sort()
+            for _, mac in cases:
+                stacking.write_macro_instr(mac, self.out)
 
             self.out.write_raw("\n")
             self.out.write_raw("#undef TIER_ONE\n")
@@ -807,6 +814,8 @@ class Generator(Analyzer):
                     n_uops += 1
                     self.out.emit("")
                     with self.out.block(f"case {instr.name}:"):
+                        if instr.instr_flags.HAS_ARG_FLAG:
+                            self.out.emit("oparg = CURRENT_OPARG();")
                         stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
@@ -868,7 +877,7 @@ def main() -> None:
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    if args.verbose:
+    if args.viable:
         # Load execution counts from bmraw.json, if it exists
         a.report_non_viable_uops("bmraw.json")
         return
