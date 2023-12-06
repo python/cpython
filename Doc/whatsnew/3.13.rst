@@ -572,7 +572,8 @@ Pending Removal in Python 3.14
   * date and datetime adapter, date and timestamp converter:
     see the :mod:`sqlite3` documentation for suggested replacement recipes.
 
-* :class:`types.CodeType`: Accessing ``co_lnotab`` was deprecated in :pep:`626`
+* :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+  deprecated in :pep:`626`
   since 3.10 and was planned to be removed in 3.12,
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.14.
@@ -735,7 +736,7 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
-* ``types.CodeType.co_lnotab``: use the ``co_lines`` attribute instead.
+* :attr:`~codeobject.co_lnotab`: use the ``co_lines`` attribute instead.
 
 * :class:`typing.Text` (:gh:`92332`).
 
