@@ -2938,3 +2938,14 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 {
     Py_SET_REFCNT(ob, refcnt);
 }
+
+
+// Export inline functions as a regular functions
+#ifdef Py_GIL_DISABLED
+extern inline uintptr_t _Py_ThreadId(void);
+extern inline int _Py_IsOwnedByCurrentThread(PyObject *ob);
+#endif
+#undef _Py_IsImmortal
+extern inline PyAPI_FUNC(int) _Py_IsImmortal(PyObject *op);
+#undef Py_SET_REFCNT
+extern inline PyAPI_FUNC(void) Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt);

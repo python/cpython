@@ -239,7 +239,7 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-static inline uintptr_t
+inline PyAPI_FUNC(uintptr_t)
 _Py_ThreadId(void)
 {
     uintptr_t tid;
@@ -285,7 +285,7 @@ _Py_ThreadId(void)
   return tid;
 }
 
-static inline Py_ALWAYS_INLINE int
+inline Py_ALWAYS_INLINE PyAPI_FUNC(int)
 _Py_IsOwnedByCurrentThread(PyObject *ob)
 {
     return ob->ob_tid == _Py_ThreadId();
@@ -332,7 +332,8 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
 #endif
 
-static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
+inline Py_ALWAYS_INLINE PyAPI_FUNC(int) _Py_IsImmortal(PyObject *op)
 {
 #if defined(Py_GIL_DISABLED)
     return (op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL);
@@ -343,6 +344,8 @@ static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 #endif
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
+#endif  // !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
+
 
 static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
     return Py_TYPE(ob) == type;
@@ -352,15 +355,12 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 #endif
 
 
-// Py_SET_REFCNT() implementation for stable ABI
-PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
-
-static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+// Stable ABI implements Py_SET_REFCNT() as an opaque function call in the
+// limited C API version 3.13 and newer.
 #if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
-    // Stable ABI implements Py_SET_REFCNT() as a function call
-    // on limited C API version 3.13 and newer.
-    _Py_SetRefcnt(ob, refcnt);
+PyAPI_FUNC(void) Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt);
 #else
+inline PyAPI_FUNC(void) Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     // This immortal check is for code that is unaware of immortal objects.
     // The runtime tracks these objects and we should avoid as much
     // as possible having extensions inadvertently change the refcnt
@@ -394,11 +394,11 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
 #endif  // Py_GIL_DISABLED
-#endif  // Py_LIMITED_API+0 < 0x030d0000
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
 #endif
+#endif  // !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
 
 
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
