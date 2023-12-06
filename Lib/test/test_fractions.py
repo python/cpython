@@ -7,6 +7,7 @@ import numbers
 import operator
 import fractions
 import functools
+import os
 import sys
 import typing
 import unittest
@@ -15,6 +16,9 @@ import pickle
 from pickle import dumps, loads
 F = fractions.Fraction
 
+#locate file with float format test values
+test_dir = os.path.dirname(__file__) or os.curdir
+format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""
@@ -488,6 +492,7 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(5, 6), F(2, 3) * F(5, 4))
         self.assertEqual(F(1, 4), F(1, 10) / F(2, 5))
         self.assertEqual(F(-15, 8), F(3, 4) / F(-2, 5))
+        self.assertRaises(ZeroDivisionError, operator.truediv, F(1), F(0))
         self.assertTypedEquals(2, F(9, 10) // F(2, 5))
         self.assertTypedEquals(10**23, F(10**23, 1) // F(1))
         self.assertEqual(F(5, 6), F(7, 3) % F(3, 2))
@@ -1218,6 +1223,30 @@ class FractionTest(unittest.TestCase):
             with self.subTest(spec=spec):
                 with self.assertRaises(ValueError):
                     format(fraction, spec)
+
+    @requires_IEEE_754
+    def test_float_format_testfile(self):
+        with open(format_testfile, encoding="utf-8") as testfile:
+            for line in testfile:
+                if line.startswith('--'):
+                    continue
+                line = line.strip()
+                if not line:
+                    continue
+
+                lhs, rhs = map(str.strip, line.split('->'))
+                fmt, arg = lhs.split()
+                if fmt == '%r':
+                    continue
+                fmt2 = fmt[1:]
+                with self.subTest(fmt=fmt, arg=arg):
+                    f = F(float(arg))
+                    self.assertEqual(format(f, fmt2), rhs)
+                    if f:  # skip negative zero
+                        self.assertEqual(format(-f, fmt2), '-' + rhs)
+                    f = F(arg)
+                    self.assertEqual(float(format(f, fmt2)), float(rhs))
+                    self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
 
 
 if __name__ == '__main__':

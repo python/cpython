@@ -78,19 +78,19 @@ used by extension writers. Structure member names do not have a reserved prefix.
 
 The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
-:file:`{exec_prefix}/include/pythonversion/`, where :envvar:`prefix` and
-:envvar:`exec_prefix` are defined by the corresponding parameters to Python's
+:file:`{exec_prefix}/include/pythonversion/`, where :option:`prefix <--prefix>` and
+:option:`exec_prefix <--exec-prefix>` are defined by the corresponding parameters to Python's
 :program:`configure` script and *version* is
 ``'%d.%d' % sys.version_info[:2]``.  On Windows, the headers are installed
-in :file:`{prefix}/include`, where :envvar:`prefix` is the installation
+in :file:`{prefix}/include`, where ``prefix`` is the installation
 directory specified to the installer.
 
 To include the headers, place both directories (if different) on your compiler's
 search path for includes.  Do *not* place the parent directories on the search
 path and then use ``#include <pythonX.Y/Python.h>``; this will break on
 multi-platform builds since the platform independent headers under
-:envvar:`prefix` include the platform specific headers from
-:envvar:`exec_prefix`.
+:option:`prefix <--prefix>` include the platform specific headers from
+:option:`exec_prefix <--exec-prefix>`.
 
 C++ users should note that although the API is defined entirely using C, the
 header files properly declare the entry points to be ``extern "C"``. As a result,
@@ -104,6 +104,30 @@ Several useful macros are defined in the Python header files.  Many are
 defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
+
+.. c:macro:: PyMODINIT_FUNC
+
+   Declare an extension module ``PyInit`` initialization function. The function
+   return type is :c:expr:`PyObject*`. The macro declares any special linkage
+   declarations required by the platform, and for C++ declares the function as
+   ``extern "C"``.
+
+   The initialization function must be named :samp:`PyInit_{name}`, where
+   *name* is the name of the module, and should be the only non-\ ``static``
+   item defined in the module file. Example::
+
+       static struct PyModuleDef spam_module = {
+           PyModuleDef_HEAD_INIT,
+           .m_name = "spam",
+           ...
+       };
+
+       PyMODINIT_FUNC
+       PyInit_spam(void)
+       {
+           return PyModule_Create(&spam_module);
+       }
+
 
 .. c:macro:: Py_ABS(x)
 
@@ -261,7 +285,7 @@ complete listing.
 Objects, Types and Reference Counts
 ===================================
 
-.. index:: object: type
+.. index:: pair: object; type
 
 Most Python/C API functions have one or more arguments as well as a return value
 of type :c:expr:`PyObject*`.  This type is a pointer to an opaque data type
@@ -287,52 +311,58 @@ true if (and only if) the object pointed to by *a* is a Python list.
 Reference Counts
 ----------------
 
-The reference count is important because today's computers have a  finite (and
-often severely limited) memory size; it counts how many  different places there
-are that have a reference to an object.  Such a  place could be another object,
-or a global (or static) C variable, or  a local variable in some C function.
-When an object's reference count  becomes zero, the object is deallocated.  If
-it contains references to  other objects, their reference count is decremented.
-Those other  objects may be deallocated in turn, if this decrement makes their
-reference count become zero, and so on.  (There's an obvious problem  with
-objects that reference each other here; for now, the solution is  "don't do
-that.")
+The reference count is important because today's computers have a  finite
+(and often severely limited) memory size; it counts how many different
+places there are that have a :term:`strong reference` to an object.
+Such a place could be another object, or a global (or static) C variable,
+or a local variable in some C function.
+When the last :term:`strong reference` to an object is released
+(i.e. its reference count becomes zero), the object is deallocated.
+If it contains references to other objects, those references are released.
+Those other objects may be deallocated in turn, if there are no more
+references to them, and so on.  (There's an obvious problem  with
+objects that reference each other here; for now, the solution
+is "don't do that.")
 
 .. index::
    single: Py_INCREF()
    single: Py_DECREF()
 
-Reference counts are always manipulated explicitly.  The normal way is  to use
-the macro :c:func:`Py_INCREF` to increment an object's reference count by one,
-and :c:func:`Py_DECREF` to decrement it by   one.  The :c:func:`Py_DECREF` macro
+Reference counts are always manipulated explicitly.  The normal way is
+to use the macro :c:func:`Py_INCREF` to take a new reference to an
+object (i.e. increment its reference count by one),
+and :c:func:`Py_DECREF` to release that reference (i.e. decrement the
+reference count by one).  The :c:func:`Py_DECREF` macro
 is considerably more complex than the incref one, since it must check whether
 the reference count becomes zero and then cause the object's deallocator to be
-called. The deallocator is a function pointer contained in the object's type
-structure.  The type-specific deallocator takes care of decrementing the
-reference counts for other objects contained in the object if this is a compound
+called.  The deallocator is a function pointer contained in the object's type
+structure.  The type-specific deallocator takes care of releasing references
+for other objects contained in the object if this is a compound
 object type, such as a list, as well as performing any additional finalization
 that's needed.  There's no chance that the reference count can overflow; at
 least as many bits are used to hold the reference count as there are distinct
 memory locations in virtual memory (assuming ``sizeof(Py_ssize_t) >= sizeof(void*)``).
 Thus, the reference count increment is a simple operation.
 
-It is not necessary to increment an object's reference count for every  local
-variable that contains a pointer to an object.  In theory, the  object's
+It is not necessary to hold a :term:`strong reference` (i.e. increment
+the reference count) for every local variable that contains a pointer
+to an object.  In theory, the  object's
 reference count goes up by one when the variable is made to  point to it and it
 goes down by one when the variable goes out of  scope.  However, these two
 cancel each other out, so at the end the  reference count hasn't changed.  The
 only real reason to use the  reference count is to prevent the object from being
 deallocated as  long as our variable is pointing to it.  If we know that there
 is at  least one other reference to the object that lives at least as long as
-our variable, there is no need to increment the reference count  temporarily.
+our variable, there is no need to take a new :term:`strong reference`
+(i.e. increment the reference count) temporarily.
 An important situation where this arises is in objects  that are passed as
 arguments to C functions in an extension module  that are called from Python;
 the call mechanism guarantees to hold a  reference to every argument for the
 duration of the call.
 
 However, a common pitfall is to extract an object from a list and hold on to it
-for a while without incrementing its reference count. Some other operation might
-conceivably remove the object from the list, decrementing its reference count
+for a while without taking a new reference.  Some other operation might
+conceivably remove the object from the list, releasing that reference,
 and possibly deallocating it. The real danger is that innocent-looking
 operations may invoke arbitrary Python code which could do this; there is a code
 path which allows control to flow back to the user from a :c:func:`Py_DECREF`, so
@@ -340,7 +370,8 @@ almost any operation is potentially dangerous.
 
 A safe approach is to always use the generic operations (functions  whose name
 begins with ``PyObject_``, ``PyNumber_``, ``PySequence_`` or ``PyMapping_``).
-These operations always increment the reference count of the object they return.
+These operations always create a new :term:`strong reference`
+(i.e. increment the reference count) of the object they return.
 This leaves the caller with the responsibility to call :c:func:`Py_DECREF` when
 they are done with the result; this soon becomes second nature.
 
@@ -356,7 +387,7 @@ to objects (objects are not owned: they are always shared).  "Owning a
 reference" means being responsible for calling Py_DECREF on it when the
 reference is no longer needed.  Ownership can also be transferred, meaning that
 the code that receives ownership of the reference then becomes responsible for
-eventually decref'ing it by calling :c:func:`Py_DECREF` or :c:func:`Py_XDECREF`
+eventually releasing it by calling :c:func:`Py_DECREF` or :c:func:`Py_XDECREF`
 when it's no longer needed---or passing on this responsibility (usually to its
 caller). When a function passes ownership of a reference on to its caller, the
 caller is said to receive a *new* reference.  When no ownership is transferred,
@@ -414,9 +445,9 @@ For example, the above two blocks of code could be replaced by the following
 
 It is much more common to use :c:func:`PyObject_SetItem` and friends with items
 whose references you are only borrowing, like arguments that were passed in to
-the function you are writing.  In that case, their behaviour regarding reference
-counts is much saner, since you don't have to increment a reference count so you
-can give a reference away ("have it be stolen").  For example, this function
+the function you are writing.  In that case, their behaviour regarding references
+is much saner, since you don't have to take a new reference just so you
+can give that reference away ("have it be stolen").  For example, this function
 sets all items of a list (actually, any mutable sequence) to a given item::
 
    int
@@ -616,7 +647,7 @@ and lose important information about the exact cause of the error.
 .. index:: single: sum_sequence()
 
 A simple example of detecting exceptions and passing them on is shown in the
-:c:func:`sum_sequence` example above.  It so happens that this example doesn't
+:c:func:`!sum_sequence` example above.  It so happens that this example doesn't
 need to clean up any owned references when it detects an error.  The following
 example function shows some error cleanup.  First, to remind you why you like
 Python, we show the equivalent Python code::
@@ -705,9 +736,9 @@ interpreter can only be used after the interpreter has been initialized.
 
 .. index::
    single: Py_Initialize()
-   module: builtins
-   module: __main__
-   module: sys
+   pair: module; builtins
+   pair: module; __main__
+   pair: module; sys
    triple: module; search; path
    single: path (in module sys)
 
@@ -739,14 +770,14 @@ environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
 .. index::
-   single: Py_SetProgramName()
    single: Py_GetPath()
    single: Py_GetPrefix()
    single: Py_GetExecPrefix()
    single: Py_GetProgramFullPath()
 
-The embedding application can steer the search by calling
-``Py_SetProgramName(file)`` *before* calling  :c:func:`Py_Initialize`.  Note that
+The embedding application can steer the search by setting
+:c:member:`PyConfig.program_name` *before* calling
+:c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
 inserted in front of the standard path.  An application that requires total
 control has to provide its own implementation of :c:func:`Py_GetPath`,

@@ -22,7 +22,6 @@ from test.support.import_helper import import_fresh_module
 from test.support import os_helper
 from test.support import requires_resource
 from test.support import threading_helper
-from test.support import warnings_helper
 from http.client import HTTPException
 
 
@@ -359,6 +358,15 @@ class HashLibTestCase(unittest.TestCase):
             h.update(zero_1mb)
         h.update(b"hello world")
         self.assertEqual(h.hexdigest(), "a5364f7a52ebe2e25f1838a4ca715a893b6fd7a23f2a0d9e9762120da8b1bf53")
+
+    @requires_resource('cpu')
+    def test_sha3_256_update_over_4gb(self):
+        zero_1mb = b"\0" * 1024 * 1024
+        h = hashlib.sha3_256()
+        for i in range(0, 4096):
+            h.update(zero_1mb)
+        h.update(b"hello world")
+        self.assertEqual(h.hexdigest(), "e2d4535e3b613135c14f2fe4e026d7ad8d569db44901740beffa30d430acb038")
 
     def check(self, name, data, hexdigest, shake=False, **kwargs):
         length = len(hexdigest)//2

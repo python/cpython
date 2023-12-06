@@ -294,7 +294,7 @@ by Nir Soffer.
 .. nonce: Nj3A0x
 .. section: Library
 
-Make :meth:`msilib.SummaryInformation.GetProperty` return ``None`` when the
+Make :meth:`!msilib.SummaryInformation.GetProperty` return ``None`` when the
 value of property is ``VT_EMPTY``.  Initial patch by Mark Mc Mahon.
 
 ..
@@ -316,7 +316,7 @@ Initial patch by Robin Wellner.
 .. nonce: xWT9k0
 .. section: Library
 
-:func:`msilib.OpenDatabase` now raises a better exception message when it
+:func:`!msilib.OpenDatabase` now raises a better exception message when it
 couldn't open or create an MSI file.  Initial patch by William Tisäter.
 
 ..

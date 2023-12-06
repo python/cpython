@@ -116,23 +116,28 @@ server is the address family.
    :class:`ForkingMixIn` and the Forking classes mentioned below are
    only available on POSIX platforms that support :func:`~os.fork`.
 
-   :meth:`socketserver.ForkingMixIn.server_close` waits until all child
-   processes complete, except if
-   :attr:`socketserver.ForkingMixIn.block_on_close` attribute is false.
+   .. attribute:: block_on_close
 
-   :meth:`socketserver.ThreadingMixIn.server_close` waits until all non-daemon
-   threads complete, except if
-   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute is false. Use
-   daemonic threads by setting
-   :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
-   complete.
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>`
+      waits until all child processes complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>`
+      waits until all non-daemon threads complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+   .. attribute:: daemon_threads
+
+      For :class:`ThreadingMixIn` use daemonic threads by setting
+      :data:`ThreadingMixIn.daemon_threads <daemon_threads>`
+      to ``True`` to not wait until threads complete.
 
    .. versionchanged:: 3.7
 
-      :meth:`socketserver.ForkingMixIn.server_close` and
-      :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>` and
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>` now waits until all
       child processes and non-daemonic threads complete.
-      Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class
+      Add a new :attr:`ForkingMixIn.block_on_close <block_on_close>` class
       attribute to opt-in for the pre-3.7 behaviour.
 
 
@@ -140,9 +145,16 @@ server is the address family.
            ForkingUDPServer
            ThreadingTCPServer
            ThreadingUDPServer
+           ForkingUnixStreamServer
+           ForkingUnixDatagramServer
+           ThreadingUnixStreamServer
+           ThreadingUnixDatagramServer
 
    These classes are pre-defined using the mix-in classes.
 
+.. versionadded:: 3.12
+   The ``ForkingUnixStreamServer`` and ``ForkingUnixDatagramServer`` classes
+   were added.
 
 To implement a service, you must derive a class from :class:`BaseRequestHandler`
 and redefine its :meth:`~BaseRequestHandler.handle` method.
@@ -405,13 +417,13 @@ Request Handler Objects
 
       This function must do all the work required to service a request.  The
       default implementation does nothing.  Several instance attributes are
-      available to it; the request is available as :attr:`self.request`; the client
-      address as :attr:`self.client_address`; and the server instance as
-      :attr:`self.server`, in case it needs access to per-server information.
+      available to it; the request is available as :attr:`request`; the client
+      address as :attr:`client_address`; and the server instance as
+      :attr:`server`, in case it needs access to per-server information.
 
-      The type of :attr:`self.request` is different for datagram or stream
-      services.  For stream services, :attr:`self.request` is a socket object; for
-      datagram services, :attr:`self.request` is a pair of string and socket.
+      The type of :attr:`request` is different for datagram or stream
+      services.  For stream services, :attr:`request` is a socket object; for
+      datagram services, :attr:`request` is a pair of string and socket.
 
 
    .. method:: finish()
@@ -421,20 +433,42 @@ Request Handler Objects
       raises an exception, this function will not be called.
 
 
+   .. attribute:: request
+
+      The *new* :class:`socket.socket` object
+      to be used to communicate with the client.
+
+
+   .. attribute:: client_address
+
+      Client address returned by :meth:`BaseServer.get_request`.
+
+
+   .. attribute:: server
+
+      :class:`BaseServer` object used for handling the request.
+
+
 .. class:: StreamRequestHandler
            DatagramRequestHandler
 
    These :class:`BaseRequestHandler` subclasses override the
    :meth:`~BaseRequestHandler.setup` and :meth:`~BaseRequestHandler.finish`
-   methods, and provide :attr:`self.rfile` and :attr:`self.wfile` attributes.
-   The :attr:`self.rfile` and :attr:`self.wfile` attributes can be
-   read or written, respectively, to get the request data or return data
-   to the client.
-   The :attr:`!rfile` attributes support the :class:`io.BufferedIOBase` readable interface,
-   and :attr:`!wfile` attributes support the :class:`!io.BufferedIOBase` writable interface.
+   methods, and provide :attr:`rfile` and :attr:`wfile` attributes.
+
+   .. attribute:: rfile
+
+      A file object from which receives the request is read.
+      Support the :class:`io.BufferedIOBase` readable interface.
+
+   .. attribute:: wfile
+
+      A file object to which the reply is written.
+      Support the :class:`io.BufferedIOBase` writable interface
+
 
    .. versionchanged:: 3.6
-      :attr:`StreamRequestHandler.wfile` also supports the
+      :attr:`wfile` also supports the
       :class:`io.BufferedIOBase` writable interface.
 
 
