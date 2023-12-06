@@ -850,11 +850,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(ns['foo'], ('foo.bar', ns, ns, None, 0))
 
     def test_eval_builtins_mapping_reduce(self):
-        code = compile("iter([1, 2]).__reduce__()", "test", "eval")
-        ns = {'__builtins__': types.MappingProxyType({})}
-        self.assertRaisesRegex(NameError, "name 'iter' is not defined",
-                               eval, code, ns)
-        ns = {'__builtins__': types.MappingProxyType({'iter': iter})}
+        code = compile("x.__reduce__()", "test", "eval")
+        ns = {'__builtins__': types.MappingProxyType({}), 'x': iter([1, 2])}
+        self.assertRaisesRegex(AttributeError, "iter", eval, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({'iter': iter}), 'x': iter([1, 2])}
         self.assertEqual(eval(code, ns), (iter, ([1, 2],), 0))
 
     def test_exec_redirected(self):
