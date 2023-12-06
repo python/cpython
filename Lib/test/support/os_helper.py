@@ -591,20 +591,17 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
+    fd_path = None
     if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
-        try:
-            names = os.listdir("/proc/self/fd")
-            # Subtract one because listdir() internally opens a file
-            # descriptor to list the content of the /proc/self/fd/ directory.
-            return len(names) - 1
-        except FileNotFoundError:
-            pass
+        fd_path = "/proc/self/fd"
+    elif sys.platform == "darwin":
+        fd_path = "/dev/fd"
 
-    if sys.platform == 'darwin':
+    if fd_path is not None:
         try:
-            names = os.listdir("/dev/fd")
+            names = os.listdir(fd_path)
             # Subtract one because listdir() internally opens a file
-            # descriptor to list the content of the /dev/fd directory.
+            # descriptor to list the content of the directory.
             return len(names) - 1
         except FileNotFoundError:
             pass
