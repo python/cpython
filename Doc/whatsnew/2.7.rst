@@ -2405,7 +2405,7 @@ Other Changes and Fixes
   :issue:`5464`.)
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
-  with an existing :file:`.py` counterpart, the :attr:`co_filename`
+  with an existing :file:`.py` counterpart, the :attr:`~codeobject.co_filename`
   attributes of the resulting code objects are overwritten when the
   original filename is obsolete.  This can happen if the file has been
   renamed, moved, or is accessed through different paths.  (Patch by

@@ -324,8 +324,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Line numbers can be decreasing. Before, they were always increasing.
 
    .. versionchanged:: 3.10
-      The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
-      and ``co_lnotab`` attributes of the code object.
+      The :pep:`626` ``co_lines`` method is used instead of the
+      :attr:`~codeobject.co_firstlineno` and :attr:`~codeobject.co_lnotab`
+      attributes of the code object.
 
 
 .. function:: findlabels(code)
@@ -889,13 +890,13 @@ iterations of the loop.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
-   :attr:`!co_names` of the :ref:`code object <code-objects>`.
+   :attr:`~codeobject.co_names` of the :ref:`code object <code-objects>`.
    The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
 
-   Implements ``del name``, where *namei* is the index into :attr:`!co_names`
+   Implements ``del name``, where *namei* is the index into :attr:`~codeobject.co_names`
    attribute of the :ref:`code object <code-objects>`.
 
 
@@ -935,7 +936,7 @@ iterations of the loop.
       value = STACK.pop()
       obj.name = value
 
-   where *namei* is the index of name in :attr:`!co_names` of the
+   where *namei* is the index of name in :attr:`~codeobject.co_names` of the
    :ref:`code object <code-objects>`.
 
 .. opcode:: DELETE_ATTR (namei)
@@ -945,7 +946,7 @@ iterations of the loop.
       obj = STACK.pop()
       del obj.name
 
-   where *namei* is the index of name into :attr:`!co_names` of the
+   where *namei* is the index of name into :attr:`~codeobject.co_names` of the
    :ref:`code object <code-objects>`.
 
 
@@ -1308,7 +1309,7 @@ iterations of the loop.
    Pushes a reference to the object the cell contains on the stack.
 
    .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+      ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
 
 
 .. opcode:: LOAD_FROM_DICT_OR_DEREF (i)
@@ -1330,7 +1331,7 @@ iterations of the loop.
    storage.
 
    .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+      ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
 
 
 .. opcode:: DELETE_DEREF (i)
@@ -1341,7 +1342,7 @@ iterations of the loop.
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+      ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
 
 
 .. opcode:: COPY_FREE_VARS (n)
