@@ -5,6 +5,7 @@ import hashlib
 import json
 import glob
 import pathlib
+import subprocess
 import typing
 
 # Before adding a new entry to this list, double check that
@@ -78,6 +79,33 @@ def spdx_id(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9.\-]+", "-", value)
 
 
+def filter_gitignored_paths(paths: list[str]) -> list[str]:
+    """
+    Filter out paths excluded by the gitignore file.
+    The output of 'git check-ignore --non-matching --verbose' looks
+    like this for non-matching (included) files:
+
+        '::<whitespace><path>'
+
+    And looks like this for matching (excluded) files:
+
+        '.gitignore:9:*.a    Tools/lib.a'
+    """
+    # Filter out files in gitignore.
+    # Non-matching files show up as '::<whitespace><path>'
+    git_check_ignore_proc = subprocess.run(
+        ["git", "check-ignore", "--verbose", "--non-matching", *paths],
+        check=False,
+        stdout=subprocess.PIPE
+    )
+    # 1 means matches, 0 means no matches.
+    assert git_check_ignore_proc.returncode in (0, 1)
+
+    # Return the list of paths sorted
+    git_check_ignore_lines = git_check_ignore_proc.stdout.decode().splitlines()
+    return sorted([line.split()[-1] for line in git_check_ignore_lines if line.startswith("::")])
+
+
 def main() -> None:
     root_dir = pathlib.Path(__file__).parent.parent.parent
     sbom_path = root_dir / "Misc/sbom.spdx.json"
@@ -108,7 +136,10 @@ def main() -> None:
         package_spdx_id = spdx_id(f"SPDXRef-PACKAGE-{name}")
         exclude = files.exclude or ()
         for include in sorted(files.include):
-            paths = sorted(glob.glob(include, root_dir=root_dir, recursive=True))
+
+            # Find all the paths and then filter them through .gitignore.
+            paths = glob.glob(include, root_dir=root_dir, recursive=True)
+            paths = filter_gitignored_paths(paths)
             assert paths, include  # Make sure that every value returns something!
 
             for path in paths:
