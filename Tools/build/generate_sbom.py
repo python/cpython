@@ -78,7 +78,7 @@ def spdx_id(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9.\-]+", "-", value)
 
 
-def main():
+def main() -> None:
     root_dir = pathlib.Path(__file__).parent.parent.parent
     sbom_path = root_dir / "Misc/sbom.spdx.json"
     sbom_data = json.loads(sbom_path.read_bytes())
