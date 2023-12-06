@@ -508,6 +508,7 @@ OBJECT_OBJS=	\
 		Objects/moduleobject.o \
 		Objects/namespaceobject.o \
 		Objects/object.o \
+		Objects/object_abi.o \
 		Objects/obmalloc.o \
 		Objects/picklebufobject.o \
 		Objects/rangeobject.o \

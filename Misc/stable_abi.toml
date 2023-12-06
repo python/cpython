@@ -2478,6 +2478,5 @@
     added = '3.13'
 [function.PySys_AuditTuple]
     added = '3.13'
-[function._Py_SetRefcnt]
+[function.Py_SET_REFCNT]
     added = '3.13'
-    abi_only = true

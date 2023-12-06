@@ -1142,6 +1142,9 @@
     <ClCompile Include="..\Objects\object.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\object_abi.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\obmalloc.c">
       <Filter>Objects</Filter>
     </ClCompile>

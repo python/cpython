@@ -352,15 +352,17 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 #endif
 
 
-// Py_SET_REFCNT() implementation for stable ABI
-PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
+// Stable ABI implements Py_SET_REFCNT() as a function call
+// on limited C API version 3.13 and newer.
+PyAPI_FUNC(void) Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt);
+#else
+
+#ifdef _Py_STABLE_ABI_IMPL
+#  define Py_SET_REFCNT _Py_SET_REFCNT
+#endif
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030d0000
-    // Stable ABI implements Py_SET_REFCNT() as a function call
-    // on limited C API version 3.13 and newer.
-    _Py_SetRefcnt(ob, refcnt);
-#else
     // This immortal check is for code that is unaware of immortal objects.
     // The runtime tracks these objects and we should avoid as much
     // as possible having extensions inadvertently change the refcnt
@@ -394,10 +396,10 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
 #endif  // Py_GIL_DISABLED
-#endif  // Py_LIMITED_API+0 < 0x030d0000
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if (!defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000) && !defined(_Py_STABLE_ABI_IMPL)
 #  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
+#endif
 #endif
 
 
