@@ -1800,9 +1800,6 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
-/* Define to build the readline module against Apple BSD editline. */
-#undef WITH_APPLE_EDITLINE
-
 /* Define if you want build the _decimal module using a coroutine-local rather
    than a thread-local context */
 #undef WITH_DECIMAL_CONTEXTVAR

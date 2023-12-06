@@ -26,7 +26,6 @@ Doc/howto/enum.rst
 Doc/howto/isolating-extensions.rst
 Doc/howto/logging.rst
 Doc/howto/urllib2.rst
-Doc/library/abc.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
@@ -56,7 +55,6 @@ Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
 Doc/library/ftplib.rst
-Doc/library/functions.rst
 Doc/library/functools.rst
 Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst

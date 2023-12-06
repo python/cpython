@@ -270,9 +270,11 @@ pathlib
   (Contributed by Barney Gale in :gh:`73435`.)
 
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
-  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
-  :meth:`~pathlib.Path.is_dir`.
-  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
+  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
+  :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
+  :meth:`~pathlib.Path.group`.
+  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
+  Kamil Turek in :gh:`107962`).
 
 pdb
 ---
@@ -296,6 +298,13 @@ sqlite3
 * A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
+sys
+---
+
+* Add the :func:`sys._is_interned` function to test if the string was interned.
+  This function is not guaranteed to exist in all implementations of Python.
+  (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
 tkinter
 -------
@@ -1103,6 +1112,16 @@ New Features
   :ref:`format codes <arg-parsing-string-and-buffers>`.
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
+
+* The *keywords* parameter of :c:func:`PyArg_ParseTupleAndKeywords` and
+  :c:func:`PyArg_VaParseTupleAndKeywords` has now type :c:expr:`char * const *`
+  in C and :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
+  It makes these functions compatible with arguments of type
+  :c:expr:`const char * const *`, :c:expr:`const char **` or
+  :c:expr:`char * const *` in C++ and :c:expr:`char * const *` in C
+  without an explicit type cast.
+  This can be overridden with the :c:macro:`PY_CXX_CONST` macro.
+  (Contributed by Serhiy Storchaka in :gh:`65210`.)
 
 * Add :c:func:`PyImport_AddModuleRef`: similar to
   :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
