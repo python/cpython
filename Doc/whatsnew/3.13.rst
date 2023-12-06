@@ -85,7 +85,13 @@ Important deprecations, removals or restrictions:
 New Features
 ============
 
+Improved Error Messages
+-----------------------
 
+* The interpreter now colorizes error messages when displaying tracebacks by default.
+  This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variables. (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 Other Language Changes
 ======================
