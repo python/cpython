@@ -491,15 +491,16 @@ subtract_refs(PyGC_Head *containers)
         PyObject *op = FROM_GC(gc);
         traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(op,
-                        (visitproc)visit_decref,
+                        visit_decref,
                         op);
     }
 }
 
 /* A traversal callback for move_unreachable. */
 static int
-visit_reachable(PyObject *op, PyGC_Head *reachable)
+visit_reachable(PyObject *op, void *arg)
 {
+    PyGC_Head *reachable = arg;
     OBJECT_STAT_INC(object_visits);
     if (!_PyObject_IS_GC(op)) {
         return 0;
@@ -603,7 +604,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             // NOTE: visit_reachable may change gc->_gc_next when
             // young->_gc_prev == gc.  Don't do gc = GC_NEXT(gc) before!
             (void) traverse(op,
-                    (visitproc)visit_reachable,
+                    visit_reachable,
                     (void *)young);
             // relink gc_prev to prev element.
             _PyGCHead_SET_PREV(gc, prev);
@@ -726,8 +727,9 @@ clear_unreachable_mask(PyGC_Head *unreachable)
 
 /* A traversal callback for move_legacy_finalizer_reachable. */
 static int
-visit_move(PyObject *op, PyGC_Head *tolist)
+visit_move(PyObject *op, void *arg)
 {
+    PyGC_Head *tolist = arg;
     OBJECT_STAT_INC(object_visits);
     if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
@@ -751,7 +753,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
         /* Note that the finalizers list may grow during this. */
         traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
         (void) traverse(FROM_GC(gc),
-                        (visitproc)visit_move,
+                        visit_move,
                         (void *)finalizers);
     }
 }
@@ -1684,8 +1686,9 @@ gc_get_count_impl(PyObject *module)
 }
 
 static int
-referrersvisit(PyObject* obj, PyObject *objs)
+referrersvisit(PyObject* obj, void *arg)
 {
+    PyObject *objs = arg;
     Py_ssize_t i;
     for (i = 0; i < PyTuple_GET_SIZE(objs); i++)
         if (PyTuple_GET_ITEM(objs, i) == obj)
@@ -1704,7 +1707,7 @@ gc_referrers_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
         traverse = Py_TYPE(obj)->tp_traverse;
         if (obj == objs || obj == resultlist)
             continue;
-        if (traverse(obj, (visitproc)referrersvisit, objs)) {
+        if (traverse(obj, referrersvisit, objs)) {
             if (PyList_Append(resultlist, obj) < 0)
                 return 0; /* error */
         }
@@ -1740,8 +1743,9 @@ gc_get_referrers(PyObject *self, PyObject *args)
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
 static int
-referentsvisit(PyObject *obj, PyObject *list)
+referentsvisit(PyObject *obj, void *arg)
 {
+    PyObject *list = arg;
     return PyList_Append(list, obj) < 0;
 }
 
@@ -1770,7 +1774,7 @@ gc_get_referents(PyObject *self, PyObject *args)
         traverse = Py_TYPE(obj)->tp_traverse;
         if (! traverse)
             continue;
-        if (traverse(obj, (visitproc)referentsvisit, result)) {
+        if (traverse(obj, referentsvisit, result)) {
             Py_DECREF(result);
             return NULL;
         }
