@@ -631,7 +631,8 @@ in the output. This takes precedence over ``FORCE_COLOR``.
 All these environment variables are used also by other tools to control color
 output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
-less precedence than ``NO_COLOR`` and ``FORCE_COLOR``.
+precedence over ``NO_COLOR``, which in turn takes precedence over
+``FORCE_COLOR``.
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~

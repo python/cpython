@@ -4354,10 +4354,12 @@ class TestColorizedTraceback(unittest.TestCase):
                 with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
                     self.assertEqual(traceback._can_colorize(), False)
                 with unittest.mock.patch("os.environ", {'NO_COLOR': '1', "PYTHON_COLORS": '1'}):
-                    self.assertEqual(traceback._can_colorize(), False)
+                    self.assertEqual(traceback._can_colorize(), True)
                 with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
                     self.assertEqual(traceback._can_colorize(), True)
                 with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
+                    self.assertEqual(traceback._can_colorize(), False)
+                with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}):
                     self.assertEqual(traceback._can_colorize(), False)
                 isatty_mock.return_value = False
                 self.assertEqual(traceback._can_colorize(), False)
