@@ -88,7 +88,7 @@ Some objects contain references to "external" resources such as open files or
 windows.  It is understood that these resources are freed when the object is
 garbage-collected, but since garbage collection is not guaranteed to happen,
 such objects also provide an explicit way to release the external resource,
-usually a :meth:`close` method. Programs are strongly recommended to explicitly
+usually a :meth:`!close` method. Programs are strongly recommended to explicitly
 close such objects.  The ':keyword:`try`...\ :keyword:`finally`' statement
 and the ':keyword:`with`' statement provide convenient ways to do this.
 
@@ -681,8 +681,8 @@ underlying the class method.
 When an instance method object is called, the underlying function
 (:attr:`__func__`) is called, inserting the class instance
 (:attr:`__self__`) in front of the argument list.  For instance, when
-:class:`C` is a class which contains a definition for a function
-:meth:`f`, and ``x`` is an instance of :class:`C`, calling ``x.f(1)`` is
+:class:`!C` is a class which contains a definition for a function
+:meth:`!f`, and ``x`` is an instance of :class:`!C`, calling ``x.f(1)`` is
 equivalent to calling ``C.f(x, 1)``.
 
 When an instance method object is derived from a class method object, the
@@ -795,7 +795,7 @@ Classes
 Classes are callable.  These objects normally act as factories for new
 instances of themselves, but variations are possible for class types that
 override :meth:`~object.__new__`.  The arguments of the call are passed to
-:meth:`__new__` and, in the typical case, to :meth:`~object.__init__` to
+:meth:`!__new__` and, in the typical case, to :meth:`~object.__init__` to
 initialize the new instance.
 
 
@@ -899,9 +899,9 @@ https://www.python.org/download/releases/2.3/mro/.
    pair: object; dictionary
    pair: class; attribute
 
-When a class attribute reference (for class :class:`C`, say) would yield a
+When a class attribute reference (for class :class:`!C`, say) would yield a
 class method object, it is transformed into an instance method object whose
-:attr:`__self__` attribute is :class:`C`.  When it would yield a static
+:attr:`__self__` attribute is :class:`!C`.  When it would yield a static
 method object, it is transformed into the object wrapped by the static method
 object. See section :ref:`descriptors` for another way in which attributes
 retrieved from a class may differ from those actually contained in its
@@ -1174,16 +1174,36 @@ Frame objects represent execution frames.  They may occur in traceback objects
    single: f_lasti (frame attribute)
    single: f_builtins (frame attribute)
 
-Special read-only attributes: :attr:`f_back` is to the previous stack frame
-(towards the caller), or ``None`` if this is the bottom stack frame;
-:attr:`f_code` is the code object being executed in this frame; :attr:`f_locals`
-is the dictionary used to look up local variables; :attr:`f_globals` is used for
-global variables; :attr:`f_builtins` is used for built-in (intrinsic) names;
-:attr:`f_lasti` gives the precise instruction (this is an index into the
-bytecode string of the code object).
+Special read-only attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
-``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
+.. list-table::
+
+   * - .. attribute:: frame.f_back
+     - Points to the previous stack frame (towards the caller),
+       or ``None`` if this is the bottom stack frame
+
+   * - .. attribute:: frame.f_code
+     - The :ref:`code object <code-objects>` being executed in this frame.
+       Accessing this attribute raises an :ref:`auditing event <auditing>`
+       ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
+
+   * - .. attribute:: frame.f_locals
+     - The dictionary used by the frame to look up
+       :ref:`local variables <naming>`
+
+   * - .. attribute:: frame.f_globals
+     - The dictionary used by the frame to look up
+       :ref:`global variables <naming>`
+
+   * - .. attribute:: frame.f_builtins
+     - The dictionary used by the frame to look up
+       :ref:`built-in (intrinsic) names <naming>`
+
+   * - .. attribute:: frame.f_lasti
+     - The "precise instruction" of the frame object
+       (this is an index into the :term:`bytecode` string of the
+       :ref:`code object <code-objects>`)
 
 .. index::
    single: f_trace (frame attribute)
@@ -1191,30 +1211,44 @@ Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
    single: f_trace_opcodes (frame attribute)
    single: f_lineno (frame attribute)
 
-Special writable attributes: :attr:`f_trace`, if not ``None``, is a function
-called for various events during code execution (this is used by the debugger).
-Normally an event is triggered for each new source line - this can be
-disabled by setting :attr:`f_trace_lines` to :const:`False`.
+Special writable attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Implementations *may* allow per-opcode events to be requested by setting
-:attr:`f_trace_opcodes` to :const:`True`. Note that this may lead to
-undefined interpreter behaviour if exceptions raised by the trace
-function escape to the function being traced.
+.. list-table::
 
-:attr:`f_lineno` is the current line number of the frame --- writing to this
-from within a trace function jumps to the given line (only for the bottom-most
-frame).  A debugger can implement a Jump command (aka Set Next Statement)
-by writing to f_lineno.
+   * - .. attribute:: frame.f_trace
+     - If not ``None``, this is a function called for various events during
+       code execution (this is used by debuggers). Normally an event is
+       triggered for each new source line (see :attr:`~frame.f_trace_lines`).
+
+   * - .. attribute:: frame.f_trace_lines
+     - Set this attribute to :const:`False` to disable triggering a tracing
+       event for each source line.
+
+   * - .. attribute:: frame.f_trace_opcodes
+     - Set this attribute to :const:`True` to allow per-opcode events to be
+       requested. Note that this may lead to
+       undefined interpreter behaviour if exceptions raised by the trace
+       function escape to the function being traced.
+
+   * - .. attribute:: frame.f_lineno
+     - The current line number of the frame -- writing to this
+       from within a trace function jumps to the given line (only for the bottom-most
+       frame).  A debugger can implement a Jump command (aka Set Next Statement)
+       by writing to this attribute.
+
+Frame object methods
+~~~~~~~~~~~~~~~~~~~~
 
 Frame objects support one method:
 
 .. method:: frame.clear()
 
-   This method clears all references to local variables held by the
-   frame.  Also, if the frame belonged to a generator, the generator
+   This method clears all references to :ref:`local variables <naming>` held by the
+   frame.  Also, if the frame belonged to a :term:`generator`, the generator
    is finalized.  This helps break reference cycles involving frame
-   objects (for example when catching an exception and storing its
-   traceback for later use).
+   objects (for example when catching an :ref:`exception <bltin-exceptions>`
+   and storing its :ref:`traceback <traceback-objects>` for later use).
 
    :exc:`RuntimeError` is raised if the frame is currently executing
    or suspended.
@@ -1903,13 +1937,17 @@ class' :attr:`~object.__dict__`.
 
    Called to delete the attribute on an instance *instance* of the owner class.
 
+Instances of descriptors may also have the :attr:`!__objclass__` attribute
+present:
 
-The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
-as specifying the class where this object was defined (setting this
-appropriately can assist in runtime introspection of dynamic class attributes).
-For callables, it may indicate that an instance of the given type (or a
-subclass) is expected or required as the first positional argument (for example,
-CPython sets this attribute for unbound methods that are implemented in C).
+.. attribute:: object.__objclass__
+
+   The attribute :attr:`!__objclass__` is interpreted by the :mod:`inspect` module
+   as specifying the class where this object was defined (setting this
+   appropriately can assist in runtime introspection of dynamic class attributes).
+   For callables, it may indicate that an instance of the given type (or a
+   subclass) is expected or required as the first positional argument (for example,
+   CPython sets this attribute for unbound methods that are implemented in C).
 
 
 .. _descriptor-invocation:
@@ -1990,13 +2028,14 @@ For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`~object.__get__`, :meth:`~object.__set__` and
 :meth:`~object.__delete__`.  If it does not
-define :meth:`__get__`, then accessing the attribute will return the descriptor
+define :meth:`!__get__`, then accessing the attribute will return the descriptor
 object itself unless there is a value in the object's instance dictionary.  If
-the descriptor defines :meth:`__set__` and/or :meth:`__delete__`, it is a data
+the descriptor defines :meth:`!__set__` and/or :meth:`!__delete__`, it is a data
 descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
-descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
-descriptors have just the :meth:`__get__` method.  Data descriptors with
-:meth:`__get__` and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a redefinition in an
+descriptors define both :meth:`!__get__` and :meth:`!__set__`, while non-data
+descriptors have just the :meth:`!__get__` method.  Data descriptors with
+:meth:`!__get__` and :meth:`!__set__` (and/or :meth:`!__delete__`) defined
+always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
@@ -2573,16 +2612,17 @@ either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or :class:`slice` objects, which define a
 range of items.  It is also recommended that mappings provide the methods
-:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
-:meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
-:meth:`update` behaving similar to those for Python's standard :class:`dictionary <dict>`
+:meth:`!keys`, :meth:`!values`, :meth:`!items`, :meth:`!get`, :meth:`!clear`,
+:meth:`!setdefault`, :meth:`!pop`, :meth:`!popitem`, :meth:`!copy`, and
+:meth:`!update` behaving similar to those for Python's standard :class:`dictionary <dict>`
 objects.  The :mod:`collections.abc` module provides a
 :class:`~collections.abc.MutableMapping`
 :term:`abstract base class` to help create those methods from a base set of
-:meth:`~object.__getitem__`, :meth:`~object.__setitem__`, :meth:`~object.__delitem__`, and :meth:`keys`.
-Mutable sequences should provide methods :meth:`append`, :meth:`count`,
-:meth:`index`, :meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`,
-:meth:`reverse` and :meth:`sort`, like Python standard :class:`list`
+:meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
+:meth:`~object.__delitem__`, and :meth:`!keys`.
+Mutable sequences should provide methods :meth:`!append`, :meth:`!count`,
+:meth:`!index`, :meth:`!extend`, :meth:`!insert`, :meth:`!pop`, :meth:`!remove`,
+:meth:`!reverse` and :meth:`!sort`, like Python standard :class:`list`
 objects. Finally,
 sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
@@ -2595,7 +2635,7 @@ operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should
 search through the values.  It is further recommended that both mappings and
 sequences implement the :meth:`~object.__iter__` method to allow efficient iteration
-through the container; for mappings, :meth:`__iter__` should iterate
+through the container; for mappings, :meth:`!__iter__` should iterate
 through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
@@ -3174,7 +3214,7 @@ generators, coroutines do not directly support iteration.
    to the :meth:`~generator.send` method of the iterator that caused
    the coroutine to suspend.  The result (return value,
    :exc:`StopIteration`, or other exception) is the same as when
-   iterating over the :meth:`__await__` return value, described above.
+   iterating over the :meth:`!__await__` return value, described above.
 
 .. method:: coroutine.throw(value)
             coroutine.throw(type[, value[, traceback]])
