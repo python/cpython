@@ -850,6 +850,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(ns['foo'], ('foo.bar', ns, ns, None, 0))
 
     def test_eval_builtins_mapping_reduce(self):
+        # list_iterator.__reduce__() calls _PyEval_GetBuiltin("iter")
         code = compile("x.__reduce__()", "test", "eval")
         ns = {'__builtins__': types.MappingProxyType({}), 'x': iter([1, 2])}
         self.assertRaisesRegex(AttributeError, "iter", eval, code, ns)
