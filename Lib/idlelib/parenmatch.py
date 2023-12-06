@@ -179,5 +179,5 @@ ParenMatch.reload()
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_parenmatch', verbosity=2)
+    from unittest import main
+    main('idlelib.idle_test.test_parenmatch', verbosity=2)

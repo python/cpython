@@ -2,6 +2,7 @@ import decimal
 from io import StringIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
+from test import support
 
 
 class TestDecode:
@@ -58,7 +59,9 @@ class TestDecode:
     def test_keys_reuse(self):
         s = '[{"a_key": 1, "b_\xe9": 2}, {"a_key": 3, "b_\xe9": 4}]'
         self.check_keys_reuse(s, self.loads)
-        self.check_keys_reuse(s, self.json.decoder.JSONDecoder().decode)
+        decoder = self.json.decoder.JSONDecoder()
+        self.check_keys_reuse(s, decoder.decode)
+        self.assertFalse(decoder.memo)
 
     def test_extra_data(self):
         s = '[1, 2, 3]5'
@@ -92,6 +95,14 @@ class TestDecode:
     def test_negative_index(self):
         d = self.json.JSONDecoder()
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
+
+    def test_limit_int(self):
+        maxdigits = 5000
+        with support.adjust_int_max_str_digits(maxdigits):
+            self.loads('1' * maxdigits)
+            with self.assertRaises(ValueError):
+                self.loads('1' * (maxdigits + 1))
+
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass

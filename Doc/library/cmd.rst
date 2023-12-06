@@ -26,6 +26,13 @@ interface.
    key; it defaults to :kbd:`Tab`. If *completekey* is not :const:`None` and
    :mod:`readline` is available, command completion is done automatically.
 
+   The default, ``'tab'``, is treated specially, so that it refers to the
+   :kbd:`Tab` key on every :data:`readline.backend`.
+   Specifically, if :data:`readline.backend` is ``editline``,
+   ``Cmd`` will use ``'^I'`` instead of ``'tab'``.
+   Note that other values are not treated this way, and might only work
+   with a specific backend.
+
    The optional arguments *stdin* and *stdout* specify the  input and output file
    objects that the Cmd instance or subclass  instance will use for input and
    output. If not specified, they will default to :data:`sys.stdin` and
@@ -34,6 +41,9 @@ interface.
    If you want a given *stdin* to be used, make sure to set the instance's
    :attr:`use_rawinput` attribute to ``False``, otherwise *stdin* will be
    ignored.
+
+   .. versionchanged:: 3.13
+      ``completekey='tab'`` is replaced by ``'^I'`` for ``editline``.
 
 
 .. _cmd-objects:
@@ -60,6 +70,10 @@ A :class:`Cmd` instance has the following methods:
    cursor to the left non-destructively, etc.).
 
    An end-of-file on input is passed back as the string ``'EOF'``.
+
+   .. index::
+      single: ? (question mark); in a command interpreter
+      single: ! (exclamation); in a command interpreter
 
    An interpreter instance will recognize a command name ``foo`` if and only if it
    has a method :meth:`do_foo`.  As a special case, a line beginning with the
@@ -115,6 +129,13 @@ A :class:`Cmd` instance has the following methods:
 
    Method called to complete an input line when no command-specific
    :meth:`complete_\*` method is available.  By default, it returns an empty list.
+
+
+.. method:: Cmd.columnize(list, displaywidth=80)
+
+   Method called to display a list of strings as a compact set of columns.
+   Each column is only as wide as necessary.
+   Columns are separated by two spaces for readability.
 
 
 .. method:: Cmd.precmd(line)

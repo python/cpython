@@ -17,6 +17,8 @@ are useful for Python core developers who are working on the :mod:`pickle`;
 ordinary users of the :mod:`pickle` module probably won't find the
 :mod:`pickletools` module relevant.
 
+.. _pickletools-cli:
+
 Command line usage
 ------------------
 
@@ -51,24 +53,24 @@ Command line options
 
 .. program:: pickletools
 
-.. cmdoption:: -a, --annotate
+.. option:: -a, --annotate
 
    Annotate each line with a short opcode description.
 
-.. cmdoption:: -o, --output=<file>
+.. option:: -o, --output=<file>
 
    Name of a file where the output should be written.
 
-.. cmdoption:: -l, --indentlevel=<num>
+.. option:: -l, --indentlevel=<num>
 
    The number of blanks by which to indent a new MARK level.
 
-.. cmdoption:: -m, --memo
+.. option:: -m, --memo
 
    When multiple objects are disassembled, preserve memo between
    disassemblies.
 
-.. cmdoption:: -p, --preamble=<preamble>
+.. option:: -p, --preamble=<preamble>
 
    When more than one pickle file are specified, print given preamble
    before each disassembly.

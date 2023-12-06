@@ -38,6 +38,9 @@
 #ifndef PYEXPATNS_H
 #define PYEXPATNS_H
 
+#define testingAccountingGetCountBytesDirect PyExpat_testingAccountingGetCountBytesDirect
+#define testingAccountingGetCountBytesIndirect PyExpat_testingAccountingGetCountBytesIndirect
+#define unsignedCharToPrintable PyExpat_unsignedCharToPrintable
 #define XML_DefaultCurrent              PyExpat_XML_DefaultCurrent
 #define XML_ErrorString                 PyExpat_XML_ErrorString
 #define XML_ExpatVersion                PyExpat_XML_ExpatVersion
@@ -81,6 +84,8 @@
 #define XML_ResumeParser                PyExpat_XML_ResumeParser
 #define XML_SetAttlistDeclHandler       PyExpat_XML_SetAttlistDeclHandler
 #define XML_SetBase                     PyExpat_XML_SetBase
+#define XML_SetBillionLaughsAttackProtectionActivationThreshold PyExpat_XML_SetBillionLaughsAttackProtectionActivationThreshold
+#define XML_SetBillionLaughsAttackProtectionMaximumAmplification PyExpat_XML_SetBillionLaughsAttackProtectionMaximumAmplification
 #define XML_SetCdataSectionHandler      PyExpat_XML_SetCdataSectionHandler
 #define XML_SetCharacterDataHandler     PyExpat_XML_SetCharacterDataHandler
 #define XML_SetCommentHandler           PyExpat_XML_SetCommentHandler

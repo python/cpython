@@ -1,0 +1,592 @@
+.. bpo: 33622
+.. date: 2018-05-23-20-46-14
+.. nonce: xPucO9
+.. release date: 2018-05-30
+.. section: Core and Builtins
+
+Fixed a leak when the garbage collector fails to add an object with the
+``__del__`` method or referenced by it into the :data:`gc.garbage` list.
+:c:func:`PyGC_Collect` can now be called when an exception is set and
+preserves it.
+
+..
+
+.. bpo: 33509
+.. date: 2018-05-14-17-31-02
+.. nonce: pIUfTd
+.. section: Core and Builtins
+
+Fix module_globals parameter of warnings.warn_explicit(): don't crash if
+module_globals is not a dict.
+
+..
+
+.. bpo: 20104
+.. date: 2018-05-14-11-34-55
+.. nonce: kqBNzv
+.. section: Core and Builtins
+
+The new `os.posix_spawn` added in 3.7.0b1 was removed as we are still
+working on what the API should look like.  Expect this in 3.8 instead.
+
+..
+
+.. bpo: 33475
+.. date: 2018-05-13-01-26-18
+.. nonce: rI0y1U
+.. section: Core and Builtins
+
+Fixed miscellaneous bugs in converting annotations to strings and optimized
+parentheses in the string representation.
+
+..
+
+.. bpo: 33391
+.. date: 2018-05-02-08-36-03
+.. nonce: z4a7rb
+.. section: Core and Builtins
+
+Fix a leak in set_symmetric_difference().
+
+..
+
+.. bpo: 28055
+.. date: 2018-04-25-20-44-42
+.. nonce: f49kfC
+.. section: Core and Builtins
+
+Fix unaligned accesses in siphash24(). Patch by Rolf Eike Beer.
+
+..
+
+.. bpo: 32911
+.. date: 2018-02-27-20-57-00
+.. nonce: cmKfco
+.. section: Core and Builtins
+
+Due to unexpected compatibility issues discovered during downstream beta
+testing, reverted :issue:`29463`. ``docstring`` field is removed from
+Module, ClassDef, FunctionDef, and AsyncFunctionDef ast nodes which was
+added in 3.7a1.  Docstring expression is restored as a first statement in
+their body. Based on patch by Inada Naoki.
+
+..
+
+.. bpo: 21983
+.. date: 2017-10-02-21-02-14
+.. nonce: UoC319
+.. section: Core and Builtins
+
+Fix a crash in `ctypes.cast()` in case the type argument is a ctypes
+structured data type. Patch by Eryk Sun and Oren Milman.
+
+..
+
+.. bpo: 32751
+.. date: 2018-05-29-15-32-18
+.. nonce: oBTqr7
+.. section: Library
+
+When cancelling the task due to a timeout, :meth:`asyncio.wait_for` will now
+wait until the cancellation is complete.
+
+..
+
+.. bpo: 32684
+.. date: 2018-05-29-12-51-18
+.. nonce: ZEIism
+.. section: Library
+
+Fix gather to propagate cancellation of itself even with return_exceptions.
+
+..
+
+.. bpo: 33654
+.. date: 2018-05-29-01-13-39
+.. nonce: sa81Si
+.. section: Library
+
+Support protocol type switching in SSLTransport.set_protocol().
+
+..
+
+.. bpo: 33674
+.. date: 2018-05-29-00-37-56
+.. nonce: 2IkGhL
+.. section: Library
+
+Pause the transport as early as possible to further reduce the risk of
+data_received() being called before connection_made().
+
+..
+
+.. bpo: 33674
+.. date: 2018-05-28-22-49-59
+.. nonce: 6LFFj7
+.. section: Library
+
+Fix a race condition in SSLProtocol.connection_made() of asyncio.sslproto:
+start immediately the handshake instead of using call_soon(). Previously,
+data_received() could be called before the handshake started, causing the
+handshake to hang or fail.
+
+..
+
+.. bpo: 31647
+.. date: 2018-05-28-18-40-26
+.. nonce: s4Fad3
+.. section: Library
+
+Fixed bug where calling write_eof() on a _SelectorSocketTransport after it's
+already closed raises AttributeError.
+
+..
+
+.. bpo: 32610
+.. date: 2018-05-28-16-40-32
+.. nonce: KvUAsL
+.. section: Library
+
+Make asyncio.all_tasks() return only pending tasks.
+
+..
+
+.. bpo: 32410
+.. date: 2018-05-28-16-19-35
+.. nonce: Z1DZaF
+.. section: Library
+
+Avoid blocking on file IO in sendfile fallback code
+
+..
+
+.. bpo: 33469
+.. date: 2018-05-28-15-55-12
+.. nonce: hmXBpY
+.. section: Library
+
+Fix RuntimeError after closing loop that used run_in_executor
+
+..
+
+.. bpo: 33672
+.. date: 2018-05-28-12-29-54
+.. nonce: GM_Xm_
+.. section: Library
+
+Fix Task.__repr__ crash with Cython's bogus coroutines
+
+..
+
+.. bpo: 33654
+.. date: 2018-05-26-13-09-34
+.. nonce: IbYWxA
+.. section: Library
+
+Fix transport.set_protocol() to support switching between asyncio.Protocol
+and asyncio.BufferedProtocol.  Fix loop.start_tls() to work with
+asyncio.BufferedProtocols.
+
+..
+
+.. bpo: 33652
+.. date: 2018-05-26-10-13-59
+.. nonce: humFJ1
+.. section: Library
+
+Pickles of type variables and subscripted generics are now future-proof and
+compatible with older Python versions.
+
+..
+
+.. bpo: 32493
+.. date: 2018-05-24-17-41-36
+.. nonce: 5tAoAu
+.. section: Library
+
+Fixed :func:`uuid.uuid1` on FreeBSD.
+
+..
+
+.. bpo: 33618
+.. date: 2018-05-23-20-14-34
+.. nonce: xU39lr
+.. section: Library
+
+Finalize and document preliminary and experimental TLS 1.3 support with
+OpenSSL 1.1.1
+
+..
+
+.. bpo: 33623
+.. date: 2018-05-23-14-58-05
+.. nonce: wAw1cF
+.. section: Library
+
+Fix possible SIGSGV when asyncio.Future is created in __del__
+
+..
+
+.. bpo: 30877
+.. date: 2018-05-22-13-05-12
+.. nonce: JZEGjI
+.. section: Library
+
+Fixed a bug in the Python implementation of the JSON decoder that prevented
+the cache of parsed strings from clearing after finishing the decoding.
+Based on patch by c-fos.
+
+..
+
+.. bpo: 33570
+.. date: 2018-05-18-21-50-47
+.. nonce: 7CZy4t
+.. section: Library
+
+Change TLS 1.3 cipher suite settings for compatibility with OpenSSL
+1.1.1-pre6 and newer. OpenSSL 1.1.1 will have TLS 1.3 ciphers enabled by
+default.
+
+..
+
+.. bpo: 28556
+.. date: 2018-05-17-22-53-08
+.. nonce: C6Hnd1
+.. section: Library
+
+Do not simplify arguments to `typing.Union`. Now `Union[Manager, Employee]`
+is not simplified to `Employee` at runtime. Such simplification previously
+caused several bugs and limited possibilities for introspection.
+
+..
+
+.. bpo: 33540
+.. date: 2018-05-16-18-10-38
+.. nonce: wy9LRV
+.. section: Library
+
+Add a new ``block_on_close`` class attribute to ``ForkingMixIn`` and
+``ThreadingMixIn`` classes of :mod:`socketserver`.
+
+..
+
+.. bpo: 33548
+.. date: 2018-05-16-17-05-48
+.. nonce: xWslmx
+.. section: Library
+
+tempfile._candidate_tempdir_list should consider common TEMP locations
+
+..
+
+.. bpo: 33109
+.. date: 2018-05-16-14-57-58
+.. nonce: nPLL_S
+.. section: Library
+
+argparse subparsers are once again not required by default, reverting the
+change in behavior introduced by bpo-26510 in 3.7.0a2.
+
+..
+
+.. bpo: 33536
+.. date: 2018-05-16-10-07-40
+.. nonce: _s0TE8
+.. section: Library
+
+dataclasses.make_dataclass now checks for invalid field names and duplicate
+fields. Also, added a check for invalid field specifications.
+
+..
+
+.. bpo: 33542
+.. date: 2018-05-16-09-30-27
+.. nonce: idNAcs
+.. section: Library
+
+Prevent ``uuid.get_node`` from using a DUID instead of a MAC on Windows.
+Patch by Zvi Effron
+
+..
+
+.. bpo: 26819
+.. date: 2018-05-16-05-24-43
+.. nonce: taxbVT
+.. section: Library
+
+Fix race condition with `ReadTransport.resume_reading` in Windows proactor
+event loop.
+
+..
+
+.. bpo: 0
+.. date: 2018-05-15-18-02-03
+.. nonce: pj2Mbb
+.. section: Library
+
+Fix failure in `typing.get_type_hints()` when ClassVar was provided as a
+string forward reference.
+
+..
+
+.. bpo: 33505
+.. date: 2018-05-14-18-05-35
+.. nonce: L8pAyt
+.. section: Library
+
+Optimize asyncio.ensure_future() by reordering if checks: 1.17x faster.
+
+..
+
+.. bpo: 33497
+.. date: 2018-05-14-17-49-34
+.. nonce: wWT6XM
+.. section: Library
+
+Add errors param to cgi.parse_multipart and make an encoding in FieldStorage
+use the given errors (needed for Twisted).  Patch by Amber Brown.
+
+..
+
+.. bpo: 33495
+.. date: 2018-05-14-10-29-03
+.. nonce: TeGTQJ
+.. section: Library
+
+Change dataclasses.Fields repr to use the repr of each of its members,
+instead of str.  This makes it more clear what each field actually
+represents.  This is especially true for the 'type' member.
+
+..
+
+.. bpo: 33453
+.. date: 2018-05-12-06-01-02
+.. nonce: Fj-jMD
+.. section: Library
+
+Fix dataclasses to work if using literal string type annotations or if using
+PEP 563 "Postponed Evaluation of Annotations".  Only specific string
+prefixes are detected for both ClassVar ("ClassVar" and "typing.ClassVar")
+and InitVar ("InitVar" and "dataclasses.InitVar").
+
+..
+
+.. bpo: 28556
+.. date: 2018-05-08-16-43-42
+.. nonce: _xr5mp
+.. section: Library
+
+Minor fixes in typing module: add annotations to ``NamedTuple.__new__``,
+pass ``*args`` and ``**kwds`` in ``Generic.__new__``.  Original PRs by
+Paulius Šarka and Chad Dombrova.
+
+..
+
+.. bpo: 20087
+.. date: 2018-05-05-18-02-24
+.. nonce: lJrvXL
+.. section: Library
+
+Updated alias mapping with glibc 2.27 supported locales.
+
+..
+
+.. bpo: 33422
+.. date: 2018-05-05-09-53-05
+.. nonce: 4FtQ0q
+.. section: Library
+
+Fix trailing quotation marks getting deleted when looking up byte/string
+literals on pydoc. Patch by Andrés Delfino.
+
+..
+
+.. bpo: 28167
+.. date: 2018-05-02-07-26-29
+.. nonce: 7FwDfN
+.. section: Library
+
+The function ``platform.linux_distribution`` and ``platform.dist`` now
+trigger a ``DeprecationWarning`` and have been marked for removal in Python
+3.8
+
+..
+
+.. bpo: 33197
+.. date: 2018-04-29-23-56-20
+.. nonce: dgRLqr
+.. section: Library
+
+Update error message when constructing invalid inspect.Parameters Patch by
+Donghee Na.
+
+..
+
+.. bpo: 33263
+.. date: 2018-04-11-20-29-19
+.. nonce: B56Hc1
+.. section: Library
+
+Fix FD leak in `_SelectorSocketTransport`  Patch by Vlad Starostin.
+
+..
+
+.. bpo: 32861
+.. date: 2018-04-02-20-44-54
+.. nonce: HeBjzN
+.. section: Library
+
+The urllib.robotparser's ``__str__`` representation now includes wildcard
+entries and the "Crawl-delay" and "Request-rate" fields. Patch by Michael
+Lazar.
+
+..
+
+.. bpo: 32257
+.. date: 2018-02-26-09-08-07
+.. nonce: 6ElnUt
+.. section: Library
+
+The ssl module now contains OP_NO_RENEGOTIATION constant, available with
+OpenSSL 1.1.0h or 1.1.1.
+
+..
+
+.. bpo: 16865
+.. date: 2017-09-29-16-40-38
+.. nonce: l-f6I_
+.. section: Library
+
+Support arrays >=2GiB in :mod:`ctypes`.  Patch by Segev Finer.
+
+..
+
+.. bpo: 23859
+.. date: 2018-05-29-16-02-31
+.. nonce: E5gba1
+.. section: Documentation
+
+Document that `asyncio.wait()` does not cancel its futures on timeout.
+
+..
+
+.. bpo: 32436
+.. date: 2018-05-23-11-59-51
+.. nonce: S1LGPa
+.. section: Documentation
+
+Document :pep:`567` changes to asyncio.
+
+..
+
+.. bpo: 33604
+.. date: 2018-05-22-11-47-14
+.. nonce: 5YHTpz
+.. section: Documentation
+
+Update HMAC md5 default to a DeprecationWarning, bump removal to 3.8.
+
+..
+
+.. bpo: 33503
+.. date: 2018-05-14-20-08-58
+.. nonce: Wvt0qg
+.. section: Documentation
+
+Fix broken pypi link
+
+..
+
+.. bpo: 33421
+.. date: 2018-05-14-15-15-41
+.. nonce: 3GU_QO
+.. section: Documentation
+
+Add missing documentation for ``typing.AsyncContextManager``.
+
+..
+
+.. bpo: 33655
+.. date: 2018-05-26-16-01-40
+.. nonce: Frb4LA
+.. section: Tests
+
+Ignore test_posix_fallocate failures on BSD platforms that might be due to
+running on ZFS.
+
+..
+
+.. bpo: 32604
+.. date: 2018-05-14-13-32-46
+.. nonce: a_z6D_
+.. section: Tests
+
+Remove the _xxsubinterpreters module (meant for testing) and associated
+helpers.  This module was originally added recently in 3.7b1.
+
+..
+
+.. bpo: 33614
+.. date: 2018-05-28-11-40-22
+.. nonce: 28e0sE
+.. section: Build
+
+Ensures module definition files for the stable ABI on Windows are correctly
+regenerated.
+
+..
+
+.. bpo: 33522
+.. date: 2018-05-15-12-44-50
+.. nonce: mJoNcA
+.. section: Build
+
+Enable CI builds on Visual Studio Team Services at
+https://python.visualstudio.com/cpython
+
+..
+
+.. bpo: 33012
+.. date: 2018-05-10-21-10-01
+.. nonce: 5Zfjac
+.. section: Build
+
+Add ``-Wno-cast-function-type`` for gcc 8 for silencing warnings about
+function casts like casting to PyCFunction in method definition lists.
+
+..
+
+.. bpo: 13631
+.. date: 2018-05-16-13-25-58
+.. nonce: UIjDyY
+.. section: macOS
+
+The .editrc file in user's home directory is now processed correctly during
+the readline initialization through editline emulation on macOS.
+
+..
+
+.. bpo: 33628
+.. date: 2018-05-23-19-51-07
+.. nonce: sLlFLO
+.. section: IDLE
+
+IDLE: Cleanup codecontext.py and its test.
+
+..
+
+.. bpo: 33564
+.. date: 2018-05-17-19-41-12
+.. nonce: XzHZJe
+.. section: IDLE
+
+IDLE's code context now recognizes async as a block opener.
+
+..
+
+.. bpo: 32831
+.. date: 2018-02-12-08-08-45
+.. nonce: srDRvU
+.. section: IDLE
+
+Add docstrings and tests for codecontext.

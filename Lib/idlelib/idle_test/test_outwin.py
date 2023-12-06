@@ -1,12 +1,11 @@
-""" Test idlelib.outwin.
-"""
+"Test outwin, coverage 76%."
 
+from idlelib import outwin
 import unittest
+from test.support import requires
 from tkinter import Tk, Text
 from idlelib.idle_test.mock_tk import Mbox_func
 from idlelib.idle_test.mock_idle import Func
-from idlelib import outwin
-from test.support import requires
 from unittest import mock
 
 
@@ -58,11 +57,6 @@ class OutputWindowTest(unittest.TestCase):
         delete = self.text.delete
         get = self.text.get
         write = self.window.write
-
-        # Test bytes.
-        b = b'Test bytes.'
-        eq(write(b), len(b))
-        eq(get('1.0', '1.end'), b.decode())
 
         # No new line - insert stays on same line.
         delete('1.0', 'end')
@@ -165,7 +159,7 @@ class ModuleFunctionTest(unittest.TestCase):
         for line, expected_output in test_lines:
             self.assertEqual(flh(line), expected_output)
             if expected_output:
-                mock_open.assert_called_with(expected_output[0], 'r')
+                mock_open.assert_called_with(expected_output[0])
 
 
 if __name__ == '__main__':
