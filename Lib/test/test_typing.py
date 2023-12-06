@@ -3533,13 +3533,26 @@ class ProtocolTests(BaseTestCase):
 
     def test_issubclass_fails_correctly(self):
         @runtime_checkable
-        class P(Protocol):
+        class NonCallableMembers(Protocol):
             x = 1
+
+        class NotRuntimeCheckable(Protocol):
+            def callable_member(self) -> int: ...
+
+        @runtime_checkable
+        class RuntimeCheckable(Protocol):
+            def callable_member(self) -> int: ...
 
         class C: pass
 
-        with self.assertRaisesRegex(TypeError, r"issubclass\(\) arg 1 must be a class"):
-            issubclass(C(), P)
+        # These three all exercise different code paths,
+        # but should result in the same error message:
+        for protocol in NonCallableMembers, NotRuntimeCheckable, RuntimeCheckable:
+            with self.subTest(proto_name=protocol.__name__):
+                with self.assertRaisesRegex(
+                    TypeError, r"issubclass\(\) arg 1 must be a class"
+                ):
+                    issubclass(C(), protocol)
 
     def test_defining_generic_protocols(self):
         T = TypeVar('T')
@@ -8674,6 +8687,40 @@ class AnnotatedTests(BaseTestCase):
         class X(Annotated[int, (1, 10)]): ...
         self.assertEqual(X.__mro__, (X, int, object),
                          "Annotated should be transparent.")
+
+    def test_annotated_cached_with_types(self):
+        class A(str): ...
+        class B(str): ...
+
+        field_a1 = Annotated[str, A("X")]
+        field_a2 = Annotated[str, B("X")]
+        a1_metadata = field_a1.__metadata__[0]
+        a2_metadata = field_a2.__metadata__[0]
+
+        self.assertIs(type(a1_metadata), A)
+        self.assertEqual(a1_metadata, A("X"))
+        self.assertIs(type(a2_metadata), B)
+        self.assertEqual(a2_metadata, B("X"))
+        self.assertIsNot(type(a1_metadata), type(a2_metadata))
+
+        field_b1 = Annotated[str, A("Y")]
+        field_b2 = Annotated[str, B("Y")]
+        b1_metadata = field_b1.__metadata__[0]
+        b2_metadata = field_b2.__metadata__[0]
+
+        self.assertIs(type(b1_metadata), A)
+        self.assertEqual(b1_metadata, A("Y"))
+        self.assertIs(type(b2_metadata), B)
+        self.assertEqual(b2_metadata, B("Y"))
+        self.assertIsNot(type(b1_metadata), type(b2_metadata))
+
+        field_c1 = Annotated[int, 1]
+        field_c2 = Annotated[int, 1.0]
+        field_c3 = Annotated[int, True]
+
+        self.assertIs(type(field_c1.__metadata__[0]), int)
+        self.assertIs(type(field_c2.__metadata__[0]), float)
+        self.assertIs(type(field_c3.__metadata__[0]), bool)
 
 
 class TypeAliasTests(BaseTestCase):

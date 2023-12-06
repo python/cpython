@@ -2216,6 +2216,14 @@ class CoroutineTest(unittest.TestCase):
             gen.cr_frame.clear()
         gen.close()
 
+    def test_cr_frame_after_close(self):
+        async def f():
+            pass
+        gen = f()
+        self.assertIsNotNone(gen.cr_frame)
+        gen.close()
+        self.assertIsNone(gen.cr_frame)
+
     def test_stack_in_coroutine_throw(self):
         # Regression test for https://github.com/python/cpython/issues/93592
         async def a():

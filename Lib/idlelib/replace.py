@@ -299,6 +299,7 @@ def _replace_dialog(parent):  # htest #
     button = Button(frame, text="Replace", command=show_replace)
     button.pack()
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_replace', verbosity=2, exit=False)

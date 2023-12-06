@@ -860,7 +860,8 @@ Some smaller changes made to the core Python language are:
 
 * When using ``@classmethod`` and ``@staticmethod`` to wrap
   methods as class or static methods, the wrapper object now
-  exposes the wrapped function as their :attr:`__func__` attribute.
+  exposes the wrapped function as their :ref:`__func__ <instance-methods>`
+  attribute.
   (Contributed by Amaury Forgeot d'Arc, after a suggestion by
   George Sakkis; :issue:`5982`.)
 
@@ -2404,7 +2405,7 @@ Other Changes and Fixes
   :issue:`5464`.)
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
-  with an existing :file:`.py` counterpart, the :attr:`co_filename`
+  with an existing :file:`.py` counterpart, the :attr:`~codeobject.co_filename`
   attributes of the resulting code objects are overwritten when the
   original filename is obsolete.  This can happen if the file has been
   renamed, moved, or is accessed through different paths.  (Patch by
