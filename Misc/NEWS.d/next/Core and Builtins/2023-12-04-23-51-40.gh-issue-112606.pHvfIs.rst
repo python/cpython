@@ -1,1 +1,0 @@
-If ``sem_clockwait`` and ``CLOCK_MONOTONIC`` are supported, ``parking_lot.c`` will use ``sem_clockwait`` with monotonic time rather than system time in ``_PySemaphore_PlatformWait``.

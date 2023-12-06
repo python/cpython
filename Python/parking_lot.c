@@ -125,7 +125,6 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
 
         err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
 #else
-        // does not support CLOCK_MONOTONIC, use system clock
         _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
 
         _PyTime_AsTimespec_clamp(deadline, &ts);
