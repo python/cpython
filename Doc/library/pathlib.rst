@@ -596,7 +596,7 @@ Pure paths provide the following methods and properties:
       True
 
    .. versionchanged:: 3.12
-      Accepts path object.
+      Accepts another path object.
 
    As with other methods, case-sensitivity follows platform defaults::
 
