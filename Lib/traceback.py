@@ -686,7 +686,7 @@ class StackSummary(list):
                         colorized_line_parts = []
                         colorized_carets_parts = []
 
-                        for color, group in itertools.groupby(zip(line, carets), key=lambda x: x[1]):
+                        for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
                             caret_group = list(group)
                             if color == "^":
                                 colorized_line_parts.append(_ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + _ANSIColors.RESET)
@@ -700,7 +700,7 @@ class StackSummary(list):
 
                         colorized_line = "".join(colorized_line_parts)
                         colorized_carets = "".join(colorized_carets_parts)
-                        result[-1] = colorized_line + "\n"
+                        result[-1] = colorized_line
                         result.append(colorized_carets + "\n")
                     else:
                         result.append("".join(carets) + "\n")
