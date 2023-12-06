@@ -193,9 +193,6 @@ class Parser(typing.Generic[S, R]):
         holes = []
         holes_data = []
         padding = 0
-        while len(self.text) % self.target.alignment:
-            self.text.append(0)
-            padding += 1
         offset_data = 0
         disassembly_data = []
         padding_data = 0
@@ -230,11 +227,24 @@ class Parser(typing.Generic[S, R]):
         for hole in holes:
             if hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"} and hole.value is HoleValue.ZERO:
                 base = len(self.text)
-                self.text.extend([0xd2, 0x80, 0x00, 0x08])
-                self.text.extend([0xf2, 0xa0, 0x00, 0x08])
-                self.text.extend([0xf2, 0xc0, 0x00, 0x08])
-                self.text.extend([0xf2, 0xe0, 0x00, 0x08])
-                self.text.extend([0xd6, 0x1f, 0x01, 0x00])
+                self.text.extend([0xd2, 0x80, 0x00, 0x08][::-1])
+                self.text.extend([0xf2, 0xa0, 0x00, 0x08][::-1])
+                self.text.extend([0xf2, 0xc0, 0x00, 0x08][::-1])
+                self.text.extend([0xf2, 0xe0, 0x00, 0x08][::-1])
+                self.text.extend([0xd6, 0x1f, 0x01, 0x00][::-1])
+                disassembly.extend(
+                    [  # XXX: Include addend:
+                        f"{base:x}: d2800008      mov     x8, #0x0",
+                        f"{base:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
+                        f"{base + 4:x}: f2a00008      movk    x8, #0x0, lsl #16",
+                        f"{base + 4:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
+                        f"{base + 8:x}: f2c00008      movk    x8, #0x0, lsl #32",
+                        f"{base + 8:016x}:  R_AARCH64_MOVW_UABS_G2_NC    {hole.symbol}",
+                        f"{base + 12:x}: f2e00008      movk    x8, #0x0, lsl #48",
+                        f"{base + 12:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
+                        f"{base + 16:x}: d61f0100      br      x8",
+                    ]
+                )
                 remaining.extend(
                     [
                         Hole(
