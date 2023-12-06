@@ -878,7 +878,7 @@ class TemporaryDirectory:
             # Pass follow_symlinks=False, unless not supported on this platform.
             if func in _os.supports_follow_symlinks:
                 func(path, *args, follow_symlinks=False)
-            elif not _os.path.islink(path):
+            elif _os.name == 'nt' or not _os.path.islink(path):
                 func(path, *args)
 
         def resetperms(path):
