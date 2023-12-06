@@ -73,18 +73,23 @@ PACKAGE_TO_FILES = {
 }
 
 
+def spdx_id(value: str) -> str:
+    """Encode a value into characters that are valid in an SPDX ID"""
+    return re.sub(r"[^a-zA-Z0-9.\-]+", "-", value)
+
+
 def main():
     root_dir = pathlib.Path(__file__).parent.parent.parent
-    sbom_path = (root_dir / "Misc/sbom.spdx.json")
+    sbom_path = root_dir / "Misc/sbom.spdx.json"
     sbom_data = json.loads(sbom_path.read_bytes())
 
-    # Make a bunch of assertions about the SBOM data to ensure its consistent.
+    # Make a bunch of assertions about the SBOM data to ensure it's consistent.
     assert {package["name"] for package in sbom_data["packages"]} == set(PACKAGE_TO_FILES)
     for package in sbom_data["packages"]:
 
         # Properties and ID must be properly formed.
         assert set(package.keys()) == REQUIRED_PROPERTIES_PACKAGE
-        assert package["SPDXID"] == f"SPDXRef-PACKAGE-{package['name']}"
+        assert package["SPDXID"] == spdx_id(f"SPDXRef-PACKAGE-{package['name']}")
 
         # Version must be in the download and external references.
         version = package["versionInfo"]
@@ -100,7 +105,7 @@ def main():
 
     # We call 'sorted()' here a lot to avoid filesystem scan order issues.
     for name, files in sorted(PACKAGE_TO_FILES.items()):
-        package_spdx_id = f"SPDXRef-PACKAGE-{name}"
+        package_spdx_id = spdx_id(f"SPDXRef-PACKAGE-{name}")
         exclude = files.exclude or ()
         for include in sorted(files.include):
             paths = sorted(glob.glob(include, root_dir=root_dir, recursive=True))
@@ -116,7 +121,7 @@ def main():
                 checksum_sha1 = hashlib.sha1(data).hexdigest()
                 checksum_sha256 = hashlib.sha256(data).hexdigest()
 
-                file_spdx_id = re.sub(r"[^a-zA-Z0-9.\-]+", "-", f"SPDXRef-FILE-{path}")
+                file_spdx_id = spdx_id(f"SPDXRef-FILE-{path}")
                 sbom_files.append({
                     "SPDXID": file_spdx_id,
                     "fileName": path,
