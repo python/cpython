@@ -159,7 +159,7 @@ the :mod:`glob` module.)
    On Unix and Windows, return the argument with an initial component of ``~`` or
    ``~user`` replaced by that *user*'s home directory.
 
-   .. index:: module: pwd
+   .. index:: pair: module; pwd
 
    On Unix, an initial ``~`` is replaced by the environment variable :envvar:`HOME`
    if it is set; otherwise the current user's home directory is looked up in the
@@ -304,19 +304,38 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isdevdrive(path)
+
+   Return ``True`` if pathname *path* is located on a Windows Dev Drive.
+   A Dev Drive is optimized for developer scenarios, and offers faster
+   performance for reading and writing files. It is recommended for use for
+   source code, temporary build directories, package caches, and other
+   IO-intensive operations.
+
+   May raise an error for an invalid path, for example, one without a
+   recognizable drive, but returns ``False`` on platforms that do not support
+   Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
+   for information on enabling and creating Dev Drives.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
+
+
 .. function:: join(path, *paths)
 
-   Join one or more path components intelligently.  The return value is the
-   concatenation of *path* and any members of *\*paths* with exactly one
-   directory separator following each non-empty part except the last, meaning
-   that the result will only end in a separator if the last part is empty.  If
-   a component is an absolute path, all previous components are thrown away
-   and joining continues from the absolute path component.
+   Join one or more path segments intelligently.  The return value is the
+   concatenation of *path* and all members of *\*paths*, with exactly one
+   directory separator following each non-empty part, except the last. That is,
+   the result will only end in a separator if the last part is either empty or
+   ends in a separator. If a segment is an absolute path (which on Windows
+   requires both a drive and a root), then all previous segments are ignored and
+   joining continues from the absolute path segment.
 
-   On Windows, the drive letter is not reset when an absolute path component
-   (e.g., ``r'\foo'``) is encountered.  If a component contains a drive
-   letter, all previous components are thrown away and the drive letter is
-   reset.  Note that since there is a current directory for each drive,
+   On Windows, the drive is not reset when a rooted path segment (e.g.,
+   ``r'\foo'``) is encountered. If a segment is on a different drive or is an
+   absolute path, all previous segments are ignored and the drive is reset. Note
+   that since there is a current directory for each drive,
    ``os.path.join("c:", "foo")`` represents a path relative to the current
    directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
 
@@ -358,7 +377,8 @@ the :mod:`glob` module.)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating
-   system).
+   system). On Windows, this function will also resolve MS-DOS (also called 8.3)
+   style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
 
    If a path doesn't exist or a symlink loop is encountered, and *strict* is
    ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
@@ -391,7 +411,7 @@ the :mod:`glob` module.)
    *start*.  On Windows, :exc:`ValueError` is raised when *path* and *start*
    are on different drives.
 
-   *start* defaults to :attr:`os.curdir`.
+   *start* defaults to :data:`os.curdir`.
 
    .. availability:: Unix, Windows.
 
@@ -485,6 +505,39 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+
+.. function:: splitroot(path)
+
+   Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where
+   *drive* is a device name or mount point, *root* is a string of separators
+   after the drive, and *tail* is everything after the root. Any of these
+   items may be the empty string. In all cases, ``drive + root + tail`` will
+   be the same as *path*.
+
+   On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
+   relative), a single forward slash (if *path* is absolute), or two forward slashes
+   (implementation-defined per `IEEE Std 1003.1-2017; 4.13 Pathname Resolution
+   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
+   For example::
+
+      >>> splitroot('/home/sam')
+      ('', '/', 'home/sam')
+      >>> splitroot('//home/sam')
+      ('', '//', 'home/sam')
+      >>> splitroot('///home/sam')
+      ('', '/', '//home/sam')
+
+   On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
+   name. The *root* may be empty, a forward slash, or a backward slash. For
+   example::
+
+      >>> splitroot('C:/Users/Sam')
+      ('C:', '/', 'Users/Sam')
+      >>> splitroot('//Server/Share/Users/Sam')
+      ('//Server/Share', '/', 'Users/Sam')
+
+   .. versionadded:: 3.12
 
 
 .. function:: splitext(path)

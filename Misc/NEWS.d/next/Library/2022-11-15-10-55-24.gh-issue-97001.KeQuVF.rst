@@ -1,1 +1,0 @@
-Release the GIL when calling termios APIs to avoid blocking threads.

@@ -470,7 +470,7 @@ user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
 optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
 ``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
-dependants, such as Idle), pip and the Python documentation are not included.
+dependents, such as Idle), pip and the Python documentation are not included.
 
 .. note::
 
@@ -541,7 +541,7 @@ Besides the standard CPython distribution, there are modified packages including
 additional functionality.  The following is a list of popular versions and their
 key features:
 
-`ActivePython <https://www.activestate.com/activepython/>`_
+`ActivePython <https://www.activestate.com/products/python/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
 `Anaconda <https://www.anaconda.com/download/>`_
@@ -743,21 +743,46 @@ command::
 
   py -2
 
-You should find the latest version of Python 3.x starts.
-
 If you see the following error, you do not have the launcher installed::
 
   'py' is not recognized as an internal or external command,
   operable program or batch file.
-
-Per-user installations of Python do not add the launcher to :envvar:`PATH`
-unless the option was selected on installation.
 
 The command::
 
   py --list
 
 displays the currently installed version(s) of Python.
+
+The ``-x.y`` argument is the short form of the ``-V:Company/Tag`` argument,
+which allows selecting a specific Python runtime, including those that may have
+come from somewhere other than python.org. Any runtime registered by following
+:pep:`514` will be discoverable. The ``--list`` command lists all available
+runtimes using the ``-V:`` format.
+
+When using the ``-V:`` argument, specifying the Company will limit selection to
+runtimes from that provider, while specifying only the Tag will select from all
+providers. Note that omitting the slash implies a tag::
+
+  # Select any '3.*' tagged runtime
+  py -V:3
+
+  # Select any 'PythonCore' released runtime
+  py -V:PythonCore/
+
+  # Select PythonCore's latest Python 3 runtime
+  py -V:PythonCore/3
+
+The short form of the argument (``-3``) only ever selects from core Python
+releases, and not other distributions. However, the longer form (``-V:3``) will
+select from any.
+
+The Company is matched on the full string, case-insenitive. The Tag is matched
+oneither the full string, or a prefix, provided the next character is a dot or a
+hyphen. This allows ``-V:3.1`` to match ``3.1-32``, but not ``3.10``. Tags are
+sorted using numerical ordering (``3.10`` is newer than ``3.1``), but are
+compared using text (``-V:3.01`` does not match ``3.1``).
+
 
 Virtual environments
 ^^^^^^^^^^^^^^^^^^^^
@@ -797,7 +822,7 @@ is printed.  Now try changing the first line to be:
 Re-executing the command should now print the latest Python 3.x information.
 As with the above command-line examples, you can specify a more explicit
 version qualifier.  Assuming you have Python 3.7 installed, try changing
-the first line to ``#! python3.7`` and you should find the |version|
+the first line to ``#! python3.7`` and you should find the 3.7
 version information printed.
 
 Note that unlike interactive use, a bare "python" will use the latest
@@ -831,7 +856,7 @@ To allow shebang lines in Python scripts to be portable between Unix and
 Windows, this launcher supports a number of 'virtual' commands to specify
 which interpreter to use.  The supported virtual commands are:
 
-* ``/usr/bin/env python``
+* ``/usr/bin/env``
 * ``/usr/bin/python``
 * ``/usr/local/bin/python``
 * ``python``
@@ -842,17 +867,18 @@ For example, if the first line of your script starts with
 
   #! /usr/bin/python
 
-The default Python will be located and used.  As many Python scripts written
-to work on Unix will already have this line, you should find these scripts can
-be used by the launcher without modification.  If you are writing a new script
-on Windows which you hope will be useful on Unix, you should use one of the
-shebang lines starting with ``/usr``.
+The default Python or an active virtual environment will be located and used.
+As many Python scripts written to work on Unix will already have this line,
+you should find these scripts can be used by the launcher without modification.
+If you are writing a new script on Windows which you hope will be useful on
+Unix, you should use one of the shebang lines starting with ``/usr``.
 
 Any of the above virtual commands can be suffixed with an explicit version
 (either just the major version, or the major and minor version).
 Furthermore the 32-bit version can be requested by adding "-32" after the
 minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
-32-bit python 3.7.
+32-bit Python 3.7. If a virtual environment is active, the version will be
+ignored and the environment will be used.
 
 .. versionadded:: 3.7
 
@@ -864,18 +890,40 @@ minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
 
    The "-64" suffix is deprecated, and now implies "any architecture that is
    not provably i386/32-bit". To request a specific environment, use the new
-   ``-V:<TAG>`` argument with the complete tag.
+   :samp:`-V:{TAG}` argument with the complete tag.
+
+.. versionchanged:: 3.13
+
+   Virtual commands referencing ``python`` now prefer an active virtual
+   environment rather than searching :envvar:`PATH`. This handles cases where
+   the shebang specifies ``/usr/bin/env python3`` but :file:`python3.exe` is
+   not present in the active environment.
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
-executable :envvar:`PATH` for a Python executable. This corresponds to the
-behaviour of the Unix ``env`` program, which performs a :envvar:`PATH` search.
+executable :envvar:`PATH` for a Python executable matching the name provided
+as the first argument. This corresponds to the behaviour of the Unix ``env``
+program, which performs a :envvar:`PATH` search.
 If an executable matching the first argument after the ``env`` command cannot
-be found, it will be handled as described below. Additionally, the environment
-variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set (to any value) to skip
-this additional search.
+be found, but the argument starts with ``python``, it will be handled as
+described for the other virtual commands.
+The environment variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set
+(to any value) to skip this search of :envvar:`PATH`.
 
-Shebang lines that do not match any of these patterns are treated as **Windows**
+Shebang lines that do not match any of these patterns are looked up in the
+``[commands]`` section of the launcher's :ref:`.INI file <launcher-ini>`.
+This may be used to handle certain commands in a way that makes sense for your
+system. The name of the command must be a single argument (no spaces in the
+shebang executable), and the value substituted is the full path to the
+executable (additional arguments specified in the .INI will be quoted as part
+of the filename).
+
+.. code-block:: ini
+
+   [commands]
+   /bin/xpython=C:\Program Files\XPython\python.exe
+
+Any commands not found in the .INI file are treated as **Windows** executable
 paths that are absolute or relative to the directory containing the script file.
 This is a convenience for Windows-only scripts, such as those generated by an
 installer, since the behavior is not compatible with Unix-style shells.
@@ -898,15 +946,16 @@ Then Python will be started with the ``-v`` option
 Customization
 -------------
 
+.. _launcher-ini:
+
 Customization via INI files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Two .ini files will be searched by the launcher - ``py.ini`` in the current
-user's "application data" directory (i.e. the directory returned by calling the
-Windows function ``SHGetFolderPath`` with ``CSIDL_LOCAL_APPDATA``) and ``py.ini`` in the
-same directory as the launcher. The same .ini files are used for both the
-'console' version of the launcher (i.e. py.exe) and for the 'windows' version
-(i.e. pyw.exe).
+user's application data directory (``%LOCALAPPDATA%`` or ``$env:LocalAppData``)
+and ``py.ini`` in the same directory as the launcher. The same .ini files are
+used for both the 'console' version of the launcher (i.e. py.exe) and for the
+'windows' version (i.e. pyw.exe).
 
 Customization specified in the "application directory" will have precedence over
 the one next to the executable, so a user, who may not have write access to the
@@ -1128,8 +1177,8 @@ following advice will prevent conflicts with other installations:
   listed.
 
 * If you are loading :file:`python3.dll` or :file:`python37.dll` in your own
-  executable, explicitly call :c:func:`Py_SetPath` or (at least)
-  :c:func:`Py_SetProgramName` before :c:func:`Py_Initialize`.
+  executable, explicitly set :c:member:`PyConfig.module_search_paths` before
+  :c:func:`Py_InitializeFromConfig`.
 
 * Clear and/or overwrite :envvar:`PYTHONPATH` and set :envvar:`PYTHONHOME`
   before launching :file:`python.exe` from your application.
@@ -1146,21 +1195,22 @@ Otherwise, your users may experience problems using your application. Note that
 the first suggestion is the best, as the others may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
-.. versionchanged::
-   3.6
+.. versionchanged:: 3.6
 
-      * Adds ``._pth`` file support and removes ``applocal`` option from
-        ``pyvenv.cfg``.
-      * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
-        to the executable.
+   Add ``._pth`` file support and removes ``applocal`` option from
+   ``pyvenv.cfg``.
 
-.. deprecated::
-   3.6
+.. versionchanged:: 3.6
 
-      Modules specified in the registry under ``Modules`` (not ``PythonPath``)
-      may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
-      This finder is enabled on Windows in 3.6.0 and earlier, but may need to
-      be explicitly added to :attr:`sys.meta_path` in the future.
+   Add :file:`python{XX}.zip` as a potential landmark when directly adjacent
+   to the executable.
+
+.. deprecated:: 3.6
+
+   Modules specified in the registry under ``Modules`` (not ``PythonPath``)
+   may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
+   This finder is enabled on Windows in 3.6.0 and earlier, but may need to
+   be explicitly added to :data:`sys.meta_path` in the future.
 
 Additional modules
 ==================
@@ -1205,8 +1255,8 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a ``distutils``
-extension which wraps Python scripts into executable Windows programs
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_
+wraps Python scripts into executable Windows programs
 (:file:`{*}.exe` files).  When you have done this, you can distribute your
 application without requiring your users to install Python.
 

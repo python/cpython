@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import unittest
+from textwrap import dedent
 
 # XXX(nnorwitz): This test sucks.  I don't know of a platform independent way
 # to verify that the messages were really logged.
@@ -77,6 +78,69 @@ class Test(unittest.TestCase):
                 stop = True
         finally:
             sys.setswitchinterval(orig_si)
+
+    def test_subinterpreter_syslog(self):
+        # syslog.syslog() is not allowed in subinterpreters, but only if
+        # syslog.openlog() hasn't been called in the main interpreter yet.
+        with self.subTest('before openlog()'):
+            code = dedent('''
+                import syslog
+                caught_error = False
+                try:
+                    syslog.syslog('foo')
+                except RuntimeError:
+                    caught_error = True
+                assert(caught_error)
+            ''')
+            res = support.run_in_subinterp(code)
+            self.assertEqual(res, 0)
+
+        syslog.openlog()
+        try:
+            with self.subTest('after openlog()'):
+                code = dedent('''
+                    import syslog
+                    syslog.syslog('foo')
+                ''')
+                res = support.run_in_subinterp(code)
+                self.assertEqual(res, 0)
+        finally:
+            syslog.closelog()
+
+    def test_subinterpreter_openlog(self):
+        try:
+            code = dedent('''
+                import syslog
+                caught_error = False
+                try:
+                    syslog.openlog()
+                except RuntimeError:
+                    caught_error = True
+
+                assert(caught_error)
+            ''')
+            res = support.run_in_subinterp(code)
+            self.assertEqual(res, 0)
+        finally:
+            syslog.closelog()
+
+    def test_subinterpreter_closelog(self):
+        syslog.openlog('python')
+        try:
+            code = dedent('''
+                import syslog
+                caught_error = False
+                try:
+                    syslog.closelog()
+                except RuntimeError:
+                    caught_error = True
+
+                assert(caught_error)
+            ''')
+            res = support.run_in_subinterp(code)
+            self.assertEqual(res, 0)
+        finally:
+            syslog.closelog()
 
 
 if __name__ == "__main__":

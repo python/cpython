@@ -208,6 +208,9 @@ class OperatorTestCase:
         nan = float("nan")
         self.assertEqual(operator.indexOf([nan, nan, 21], nan), 0)
         self.assertEqual(operator.indexOf([{}, 1, {}, 2], {}), 0)
+        it = iter('leave the iterator at exactly the position after the match')
+        self.assertEqual(operator.indexOf(it, 'a'), 2)
+        self.assertEqual(next(it), 'v')
 
     def test_invert(self):
         operator = self.module

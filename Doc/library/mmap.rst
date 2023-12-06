@@ -19,7 +19,7 @@ the current file position, and :meth:`seek` through the file to different positi
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
 descriptor for a file opened for update. If you wish to map an existing Python
-file object, use its :meth:`fileno` method to obtain the correct value for the
+file object, use its :meth:`~io.IOBase.fileno` method to obtain the correct value for the
 *fileno* parameter.  Otherwise, you can open the file using the
 :func:`os.open` function, which returns a file descriptor directly (the file
 still needs to be closed when done).
@@ -285,6 +285,14 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       values are ``os.SEEK_CUR`` or ``1`` (seek relative to the current
       position) and ``os.SEEK_END`` or ``2`` (seek relative to the file's end).
 
+      .. versionchanged:: 3.13
+         Return the new absolute position instead of ``None``.
+
+   .. method:: seekable()
+
+      Return whether the file supports seeking, and the return value is always ``True``.
+
+      .. versionadded:: 3.13
 
    .. method:: size()
 
@@ -370,11 +378,19 @@ MAP_* Constants
           MAP_ANONYMOUS
           MAP_POPULATE
           MAP_STACK
+          MAP_ALIGNED_SUPER
+          MAP_CONCEAL
 
-    These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
+    These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
+    is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
+    that some options might not be present on some systems.
 
     .. versionchanged:: 3.10
-       Added MAP_POPULATE constant.
+       Added :data:`MAP_POPULATE` constant.
 
     .. versionadded:: 3.11
-       Added MAP_STACK constant.
+       Added :data:`MAP_STACK` constant.
+
+    .. versionadded:: 3.12
+       Added :data:`MAP_ALIGNED_SUPER` constant.
+       Added :data:`MAP_CONCEAL` constant.

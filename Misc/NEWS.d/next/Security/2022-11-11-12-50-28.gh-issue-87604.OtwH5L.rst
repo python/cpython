@@ -1,2 +1,0 @@
-Avoid publishing list of active per-interpreter audit hooks via the
-:mod:`gc` module

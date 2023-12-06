@@ -90,7 +90,10 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     kind, result = c.recv()
     if kind == '#RETURN':
         return result
-    raise convert_to_error(kind, result)
+    try:
+        raise convert_to_error(kind, result)
+    finally:
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -833,7 +836,10 @@ class BaseProxy(object):
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
             return proxy
-        raise convert_to_error(kind, result)
+        try:
+            raise convert_to_error(kind, result)
+        finally:
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''
@@ -1159,15 +1165,19 @@ class ListProxy(BaseListProxy):
         self._callmethod('__imul__', (value,))
         return self
 
+    __class_getitem__ = classmethod(types.GenericAlias)
 
-DictProxy = MakeProxyType('DictProxy', (
+
+_BaseDictProxy = MakeProxyType('DictProxy', (
     '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
     '__setitem__', 'clear', 'copy', 'get', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
-DictProxy._method_to_typeid_ = {
+_BaseDictProxy._method_to_typeid_ = {
     '__iter__': 'Iterator',
     }
+class DictProxy(_BaseDictProxy):
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
