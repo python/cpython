@@ -600,6 +600,15 @@ def fd_count():
         except FileNotFoundError:
             pass
 
+    if sys.platform == 'darwin':
+        try:
+            names = os.listdir("/dev/fd")
+            # Subtract one because listdir() internally opens a file
+            # descriptor to list the content of the /dev/fd directory.
+            return len(names) - 1
+        except FileNotFoundError:
+            pass
+
     MAXFD = 256
     if hasattr(os, 'sysconf'):
         try:
