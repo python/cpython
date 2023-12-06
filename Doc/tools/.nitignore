@@ -95,7 +95,6 @@ Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/random.rst
 Doc/library/readline.rst
-Doc/library/reprlib.rst
 Doc/library/resource.rst
 Doc/library/rlcompleter.rst
 Doc/library/select.rst
