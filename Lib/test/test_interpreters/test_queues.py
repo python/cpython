@@ -47,13 +47,42 @@ class QueueTests(TestBase):
             with self.assertRaises(TypeError):
                 queues.create('1')
 
-    @unittest.expectedFailure
     def test_shareable(self):
         queue1 = queues.create()
-        queue2 = queues.create()
-        queue1.put(queue2)
-        queue3 = queue1.get()
-        self.assertIs(queue3, queue1)
+
+        interp = interpreters.create()
+        interp.exec_sync(dedent(f"""
+            from test.support.interpreters import queues
+            queue1 = queues.Queue({queue1.id})
+            """));
+
+        with self.subTest('same interpreter'):
+            queue2 = queues.create()
+            queue1.put(queue2)
+            queue3 = queue1.get()
+            self.assertIs(queue3, queue2)
+
+        with self.subTest('from current interpreter'):
+            queue4 = queues.create()
+            queue1.put(queue4)
+            out = _run_output(interp, dedent("""
+                queue4 = queue1.get()
+                print(queue4.id)
+                """))
+            qid = int(out)
+            self.assertEqual(qid, queue4.id)
+
+        with self.subTest('from subinterpreter'):
+            out = _run_output(interp, dedent("""
+                queue5 = queues.create()
+                queue1.put(queue5)
+                print(queue5.id)
+                """))
+            qid = int(out)
+            queue5 = queue1.get()
+            self.assertEqual(queue5.id, qid)
+
+        # XXX check with maxsize
 
     def test_id_type(self):
         queue = queues.create()

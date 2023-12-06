@@ -62,6 +62,22 @@ _get_current_interp(void)
 }
 
 static PyObject *
+_get_current_module(void)
+{
+    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyImport_GetModule(name);
+    Py_DECREF(name);
+    if (mod == NULL) {
+        return NULL;
+    }
+    assert(mod != Py_None);
+    return mod;
+}
+
+static PyObject *
 add_new_exception(PyObject *mod, const char *name, PyObject *base)
 {
     assert(!PyObject_HasAttrStringWithError(mod, name));
@@ -130,6 +146,9 @@ idarg_int64_converter(PyObject *arg, void *ptr)
 /* module state *************************************************************/
 
 typedef struct {
+    /* external types (added at runtime by interpreters module) */
+    PyTypeObject *queue_type;
+
     /* exceptions */
     PyObject *QueueError;
     PyObject *QueueNotFoundError;
@@ -144,9 +163,27 @@ get_module_state(PyObject *mod)
     return state;
 }
 
+static module_state *
+_get_current_module_state(void)
+{
+    PyObject *mod = _get_current_module();
+    if (mod == NULL) {
+        // XXX import it?
+        PyErr_SetString(PyExc_RuntimeError,
+                        MODULE_NAME " module not imported yet");
+        return NULL;
+    }
+    module_state *state = get_module_state(mod);
+    Py_DECREF(mod);
+    return state;
+}
+
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
+    /* external types */
+    Py_VISIT(state->queue_type);
+
     /* exceptions */
     Py_VISIT(state->QueueError);
     Py_VISIT(state->QueueNotFoundError);
@@ -157,6 +194,9 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 static int
 clear_module_state(module_state *state)
 {
+    /* external types */
+    Py_CLEAR(state->queue_type);
+
     /* exceptions */
     Py_CLEAR(state->QueueError);
     Py_CLEAR(state->QueueNotFoundError);
@@ -937,6 +977,116 @@ finally:
 }
 
 
+/* external objects *********************************************************/
+
+// XXX Use a new __xid__ protocol instead?
+
+static PyTypeObject *
+_get_current_queue_type(void)
+{
+    module_state *state = _get_current_module_state();
+    assert(state != NULL);
+
+    PyTypeObject *cls = state->queue_type;
+    if (cls == NULL) {
+        // Force the module to be loaded, to register the type.
+        PyObject *highlevel = PyImport_ImportModule("interpreters.queue");
+        if (highlevel == NULL) {
+            PyErr_Clear();
+            highlevel = PyImport_ImportModule("test.support.interpreters.queue");
+            if (highlevel == NULL) {
+                return NULL;
+            }
+        }
+        Py_DECREF(highlevel);
+        cls = state->queue_type;
+        assert(cls != NULL);
+    }
+    return cls;
+}
+
+struct _queueid_xid {
+    int64_t qid;
+};
+
+static _queues * _get_global_queues(void);
+
+static void *
+_queueid_xid_new(int64_t qid)
+{
+    _queues *queues = _get_global_queues();
+    if (_queues_incref(queues, qid) < 0) {
+        return NULL;
+    }
+
+    struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
+    if (data == NULL) {
+        _queues_decref(queues, qid);
+        return NULL;
+    }
+    data->qid = qid;
+    return (void *)data;
+}
+
+static void
+_queueid_xid_free(void *data)
+{
+    int64_t qid = ((struct _queueid_xid *)data)->qid;
+    PyMem_RawFree(data);
+    _queues *queues = _get_global_queues();
+    _queues_decref(queues, qid);
+}
+
+static PyObject *
+_queueobj_from_xid(_PyCrossInterpreterData *data)
+{
+    int64_t qid = *(int64_t *)data->data;
+    PyObject *qidobj = PyLong_FromLongLong(qid);
+    if (qidobj == NULL) {
+        return NULL;
+    }
+
+    PyTypeObject *cls = _get_current_queue_type();
+    if (cls == NULL) {
+        Py_DECREF(qidobj);
+        return NULL;
+    }
+    PyObject *obj = PyObject_CallOneArg((PyObject *)cls, (PyObject *)qidobj);
+    Py_DECREF(qidobj);
+    return obj;
+}
+
+static int
+_queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
+                 _PyCrossInterpreterData *data)
+{
+    PyObject *qidobj = PyObject_GetAttrString(queueobj, "_id");
+    if (qidobj == NULL) {
+        return -1;
+    }
+    struct idarg_int64_converter_data converted = {
+        .label = "queue ID",
+    };
+    int res = idarg_int64_converter(qidobj, &converted);
+    Py_DECREF(qidobj);
+    if (!res) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+
+    void *raw = _queueid_xid_new(converted.id);
+    if (raw == NULL) {
+        Py_DECREF(qidobj);
+        return -1;
+    }
+    _PyCrossInterpreterData_Init(data, tstate->interp, raw, NULL,
+                                 _queueobj_from_xid);
+    Py_DECREF(qidobj);
+    data->free = _queueid_xid_free;
+    return 0;
+}
+
+
 /* module level code ********************************************************/
 
 /* globals is the process-global state for the module.  It holds all
@@ -976,6 +1126,12 @@ _globals_fini(void)
     }
 
     _queues_fini(&_globals.queues);
+}
+
+static _queues *
+_get_global_queues(void)
+{
+    return &_globals.queues;
 }
 
 
@@ -1245,6 +1401,40 @@ PyDoc_STRVAR(queuesmod_get_count_doc,
 \n\
 Return the number of items in the queue.");
 
+static PyObject *
+queuesmod__register_queue_type(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"queuetype", NULL};
+    PyObject *queuetype;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:_register_queue_type", kwlist,
+                                     &queuetype)) {
+        return NULL;
+    }
+    if (!PyType_Check(queuetype)) {
+        PyErr_SetString(PyExc_TypeError, "expected a type for 'queuetype'");
+        return NULL;
+    }
+    PyTypeObject *cls_queue = (PyTypeObject *)queuetype;
+
+    module_state *state = get_module_state(self);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    if (state->queue_type != NULL) {
+        PyErr_SetString(PyExc_TypeError, "already registered");
+        return NULL;
+    }
+    state->queue_type = (PyTypeObject *)Py_NewRef(cls_queue);
+
+    if (_PyCrossInterpreterData_RegisterClass(cls_queue, _queueobj_shared) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"create",                     queuesmod_create,
      METH_NOARGS,                  queuesmod_create_doc},
@@ -1262,6 +1452,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, queuesmod_release_doc},
     {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_count_doc},
+    {"_register_queue_type",       _PyCFunction_CAST(queuesmod__register_queue_type),
+     METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */
 };
@@ -1321,6 +1513,10 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
+
+    if (state->queue_type != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->queue_type);
+    }
 
     // Now we clear the module state.
     clear_module_state(state);

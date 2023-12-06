@@ -157,5 +157,4 @@ class Queue:
         return obj
 
 
-# XXX add this:
-#_channels._register_queue_type(Queue)
+_queues._register_queue_type(Queue)
