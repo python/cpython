@@ -271,6 +271,8 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
+#include "pycore_bitutils.h"  // _Py_bit_length
+
 #define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
 #define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
@@ -283,7 +285,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
     do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
-#define UOP_EXE_INC(opname) do { if (_Py_stats) _Py_stats->optimization_stats.opcode[opname].execution_count++; } while (0)
+#define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
     do { \
@@ -308,7 +310,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #define GC_STAT_ADD(gen, name, n) ((void)0)
 #define OPT_STAT_INC(name) ((void)0)
-#define UOP_EXE_INC(opname) ((void)0)
+#define UOP_STAT_INC(opname, name) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #endif  // !Py_STATS
@@ -392,27 +394,29 @@ write_varint(uint8_t *ptr, unsigned int val)
         val >>= 6;
         written++;
     }
-    *ptr = val;
+    *ptr = (uint8_t)val;
     return written;
 }
 
 static inline int
 write_signed_varint(uint8_t *ptr, int val)
 {
+    unsigned int uval;
     if (val < 0) {
-        val = ((-val)<<1) | 1;
+        // (unsigned int)(-val) has an undefined behavior for INT_MIN
+        uval = ((0 - (unsigned int)val) << 1) | 1;
     }
     else {
-        val = val << 1;
+        uval = (unsigned int)val << 1;
     }
-    return write_varint(ptr, val);
+    return write_varint(ptr, uval);
 }
 
 static inline int
 write_location_entry_start(uint8_t *ptr, int code, int length)
 {
     assert((code & 15) == code);
-    *ptr = 128 | (code << 3) | (length - 1);
+    *ptr = 128 | (uint8_t)(code << 3) | (uint8_t)(length - 1);
     return 1;
 }
 
@@ -452,9 +456,9 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 
 static inline uint16_t
-adaptive_counter_bits(int value, int backoff) {
-    return (value << ADAPTIVE_BACKOFF_BITS) |
-        (backoff & ((1<<ADAPTIVE_BACKOFF_BITS)-1));
+adaptive_counter_bits(uint16_t value, uint16_t backoff) {
+    return ((value << ADAPTIVE_BACKOFF_BITS)
+            | (backoff & ((1 << ADAPTIVE_BACKOFF_BITS) - 1)));
 }
 
 static inline uint16_t
@@ -471,12 +475,12 @@ adaptive_counter_cooldown(void) {
 
 static inline uint16_t
 adaptive_counter_backoff(uint16_t counter) {
-    unsigned int backoff = counter & ((1<<ADAPTIVE_BACKOFF_BITS)-1);
+    uint16_t backoff = counter & ((1 << ADAPTIVE_BACKOFF_BITS) - 1);
     backoff++;
     if (backoff > MAX_BACKOFF_VALUE) {
         backoff = MAX_BACKOFF_VALUE;
     }
-    unsigned int value = (1 << backoff) - 1;
+    uint16_t value = (uint16_t)(1 << backoff) - 1;
     return adaptive_counter_bits(value, backoff);
 }
 
