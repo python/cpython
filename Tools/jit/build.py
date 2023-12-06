@@ -33,7 +33,7 @@ PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-STUBS = ["trampoline", "wrapper"]
+STUBS = ["wrapper"]
 
 LLVM_VERSION = 16
 
