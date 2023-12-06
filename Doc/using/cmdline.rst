@@ -630,7 +630,7 @@ in the output. This takes precedence over ``FORCE_COLOR``.
 
 All these environment variables are used also by other tools to control color
 output. To control the color output only in the Python interpreter, the
-:envvar:`PY_COLORS` environment variable can be used. This variable takes
+:envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 less precedence than ``NO_COLOR`` and ``FORCE_COLOR``.
 
 Options you shouldn't use
@@ -1130,9 +1130,9 @@ conflict.
 
    .. versionadded:: 3.13
 
-.. envvar:: PY_COLORS
+.. envvar:: PYTHON_COLORS
 
-   If this variable is set to ``1``, the interpreter will colorize different kinds
+   If this variable is set to ``1``, the interpreter will colorize various kinds
    of output. Setting it to ``0`` deactivates this behavior.
 
    .. versionadded:: 3.13

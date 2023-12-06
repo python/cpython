@@ -144,13 +144,13 @@ def _can_colorize():
 
     if "NO_COLOR" in os.environ:
         return False
-    if os.environ.get("PY_COLORS") == "0":
+    if os.environ.get("PYTHON_COLORS") == "0":
         return False
     if not _COLORIZE:
         return False
     if "FORCE_COLOR" in os.environ:
         return True
-    if os.environ.get("PY_COLORS") == "1":
+    if os.environ.get("PYTHON_COLORS") == "1":
         return True
     if os.environ.get("TERM") == "dumb":
         return False
