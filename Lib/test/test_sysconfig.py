@@ -478,8 +478,8 @@ class TestSysConfig(unittest.TestCase):
             pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
             if os.name == 'nt':
-                # <prefix>/pyconfig.h exists on Windows in a build dir
-                pyconfig_h = os.path.join(sys.prefix, 'pyconfig.h')
+                # <executable dir>/pyconfig.h exists on Windows in a build tree
+                pyconfig_h = os.path.join(sys.executable, '..', 'pyconfig.h')
                 self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
