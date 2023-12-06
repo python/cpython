@@ -301,8 +301,10 @@ typedef struct {
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
+#ifndef OPENSSL_NO_PSK
     PyObject *psk_client_callback;
     PyObject *psk_server_callback;
+#endif
 } PySSLContext;
 
 typedef struct {
@@ -3125,8 +3127,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
+#ifndef OPENSSL_NO_PSK
     self->psk_client_callback = NULL;
     self->psk_server_callback = NULL;
+#endif
 
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
@@ -3239,8 +3243,10 @@ context_clear(PySSLContext *self)
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
     Py_CLEAR(self->keylog_filename);
+#ifndef OPENSSL_NO_PSK
     Py_CLEAR(self->psk_client_callback);
     Py_CLEAR(self->psk_server_callback);
+#endif
     if (self->keylog_bio != NULL) {
         PySSL_BEGIN_ALLOW_THREADS
         BIO_free_all(self->keylog_bio);
@@ -4668,6 +4674,7 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
     return NULL;
 }
 
+#ifndef OPENSSL_NO_PSK
 static unsigned int psk_client_callback(SSL *s,
                                         const char *hint,
                                         char *identity,
@@ -4735,6 +4742,7 @@ error:
     PyGILState_Release(gstate);
     return 0;
 }
+#endif
 
 /*[clinic input]
 _ssl._SSLContext.set_psk_client_callback
@@ -4747,6 +4755,7 @@ _ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
                                               PyObject *callback)
 /*[clinic end generated code: output=0aba86f6ed75119e input=7627bae0e5ee7635]*/
 {
+#ifndef OPENSSL_NO_PSK
     if (self->protocol == PY_SSL_VERSION_TLS_SERVER) {
         _setSSLError(get_state_ctx(self),
                      "Cannot add PSK client callback to a "
@@ -4774,8 +4783,14 @@ _ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
     SSL_CTX_set_psk_client_callback(self->ctx, ssl_callback);
 
     Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "TLS-PSK is not supported by your OpenSSL version.");
+    return NULL;
+#endif
 }
 
+#ifndef OPENSSL_NO_PSK
 static unsigned int psk_server_callback(SSL *s,
                                         const char *identity,
                                         unsigned char *psk,
@@ -4835,6 +4850,7 @@ error:
     PyGILState_Release(gstate);
     return 0;
 }
+#endif
 
 /*[clinic input]
 _ssl._SSLContext.set_psk_server_callback
@@ -4849,6 +4865,7 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
                                               const char *identity_hint)
 /*[clinic end generated code: output=1f4d6a4e09a92b03 input=65d4b6022aa85ea3]*/
 {
+#ifndef OPENSSL_NO_PSK
     if (self->protocol == PY_SSL_VERSION_TLS_CLIENT) {
         _setSSLError(get_state_ctx(self),
                      "Cannot add PSK server callback to a "
@@ -4882,6 +4899,11 @@ _ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
     SSL_CTX_set_psk_server_callback(self->ctx, ssl_callback);
 
     Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "TLS-PSK is not supported by your OpenSSL version.");
+    return NULL;
+#endif
 }
 
 
@@ -6241,6 +6263,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_TLSv1_3", 1);
 #else
     addbool(m, "HAS_TLSv1_3", 0);
+#endif
+
+#ifdef OPENSSL_NO_PSK
+    addbool(m, "HAS_PSK", 0);
+#else
+    addbool(m, "HAS_PSK", 1);
 #endif
 
 #undef addbool

@@ -24,7 +24,13 @@ extensions = [
     'sphinx.ext.doctest',
 ]
 
-# Skip if downstream redistributors haven't installed it
+# Skip if downstream redistributors haven't installed them
+try:
+    import notfound.extension
+except ImportError:
+    pass
+else:
+    extensions.append('notfound.extension')
 try:
     import sphinxext.opengraph
 except ImportError:
@@ -157,6 +163,9 @@ nitpick_ignore = [
     ('envvar', 'USER'),
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
+    # Deprecated function that was never documented:
+    ('py:func', 'getargspec'),
+    ('py:func', 'inspect.getargspec'),
 ]
 
 # Temporary undocumented names.

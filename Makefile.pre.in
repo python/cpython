@@ -2196,6 +2196,9 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/leakers \
 		test/libregrtest \
 		test/mathdata \
+		test/regrtestdata \
+		test/regrtestdata/import_from_tests \
+		test/regrtestdata/import_from_tests/test_regrtest_b \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
@@ -2741,6 +2744,7 @@ clobber: clean
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -f python-config.py python-config
+	-rm -rf cross-build
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
