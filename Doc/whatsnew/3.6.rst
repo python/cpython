@@ -2160,14 +2160,15 @@ Changes in the Python API
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned.
 
-* The format of the ``co_lnotab`` attribute of code objects changed to support
+* The format of the :attr:`~codeobject.co_lnotab` attribute of code objects
+  changed to support
   a negative line number delta. By default, Python does not emit bytecode with
   a negative line number delta. Functions using :attr:`frame.f_lineno`,
   ``PyFrame_GetLineNumber()`` or ``PyCode_Addr2Line()`` are not affected.
-  Functions directly decoding ``co_lnotab`` should be updated to use a signed
+  Functions directly decoding :attr:`!co_lnotab` should be updated to use a signed
   8-bit integer type for the line number delta, but this is only required to
   support applications using a negative line number delta. See
-  ``Objects/lnotab_notes.txt`` for the ``co_lnotab`` format and how to decode
+  ``Objects/lnotab_notes.txt`` for the :attr:`!co_lnotab` format and how to decode
   it, and see the :pep:`511` for the rationale.
 
 * The functions in the :mod:`compileall` module now return booleans instead

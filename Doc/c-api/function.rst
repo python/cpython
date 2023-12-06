@@ -37,7 +37,7 @@ There are a few functions specific to Python functions.
    The function's docstring and name are retrieved from the code object. *__module__*
    is retrieved from *globals*. The argument defaults, annotations and closure are
    set to ``NULL``. *__qualname__* is set to the same value as the code object's
-   ``co_qualname`` field.
+   :attr:`~codeobject.co_qualname` field.
 
 
 .. c:function:: PyObject* PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
@@ -45,7 +45,7 @@ There are a few functions specific to Python functions.
    As :c:func:`PyFunction_New`, but also allows setting the function object's
    ``__qualname__`` attribute.  *qualname* should be a unicode object or ``NULL``;
    if ``NULL``, the ``__qualname__`` attribute is set to the same value as the
-   code object's ``co_qualname`` field.
+   code object's :attr:`~codeobject.co_qualname` field.
 
    .. versionadded:: 3.3
 
