@@ -7052,12 +7052,19 @@ typedef intptr_t Py_ssize_t;
 
 int main()
 {
-    uint64_t byte;
-    _Py_atomic_store_uint64(&byte, 2);
-    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+    uint64_t value;
+    _Py_atomic_store_uint64(&value, 2);
+    if (_Py_atomic_or_uint64(&value, 8) != 2) {
         return 1; // error
     }
-    if (_Py_atomic_load_uint64(&byte) != 10) {
+    if (_Py_atomic_load_uint64(&value) != 10) {
+        return 1; // error
+    }
+    uint8_t byte = 0xb8;
+    if (_Py_atomic_or_uint8(&byte, 0x2d) != 0xb8) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint8(&byte) != 0xbd) {
         return 1; // error
     }
     return 0; // all good
