@@ -232,51 +232,32 @@ class Parser(typing.Generic[S, R]):
                 self.text.extend([0xf2, 0xc0, 0x00, 0x08][::-1])
                 self.text.extend([0xf2, 0xe0, 0x00, 0x08][::-1])
                 self.text.extend([0xd6, 0x1f, 0x01, 0x00][::-1])
-                disassembly.extend(
-                    [  # XXX: Include addend:
-                        f"{base:x}: d2800008      mov     x8, #0x0",
-                        f"{base:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
-                        f"{base + 4:x}: f2a00008      movk    x8, #0x0, lsl #16",
-                        f"{base + 4:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
-                        f"{base + 8:x}: f2c00008      movk    x8, #0x0, lsl #32",
-                        f"{base + 8:016x}:  R_AARCH64_MOVW_UABS_G2_NC    {hole.symbol}",
-                        f"{base + 12:x}: f2e00008      movk    x8, #0x0, lsl #48",
-                        f"{base + 12:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
-                        f"{base + 16:x}: d61f0100      br      x8",
-                    ]
-                )
-                remaining.extend(
-                    [
-                        Hole(
-                            base,
-                            "R_AARCH64_MOVW_UABS_G0_NC",
-                            hole.value,
-                            hole.symbol,
-                            hole.addend
-                        ),
-                        Hole(
-                            base + 4,
-                            "R_AARCH64_MOVW_UABS_G1_NC",
-                            hole.value,
-                            hole.symbol,
-                            hole.addend
-                        ),
-                        Hole(
-                            base + 8,
-                            "R_AARCH64_MOVW_UABS_G2_NC",
-                            hole.value,
-                            hole.symbol,
-                            hole.addend
-                        ),
-                        Hole(
-                            base + 12,
-                            "R_AARCH64_MOVW_UABS_G3",
-                            hole.value,
-                            hole.symbol,
-                            hole.addend
-                        ),
-                    ]
-                )
+                disassembly += [
+                    # XXX: Include addend:
+                    f"{base:x}: d2800008      mov     x8, #0x0",
+                    f"{base:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
+                    f"{base + 4:x}: f2a00008      movk    x8, #0x0, lsl #16",
+                    f"{base + 4:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
+                    f"{base + 8:x}: f2c00008      movk    x8, #0x0, lsl #32",
+                    f"{base + 8:016x}:  R_AARCH64_MOVW_UABS_G2_NC    {hole.symbol}",
+                    f"{base + 12:x}: f2e00008      movk    x8, #0x0, lsl #48",
+                    f"{base + 12:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
+                    f"{base + 16:x}: d61f0100      br      x8",
+                ]
+                remaining += [
+                    dataclasses.replace(
+                        hole, offset=base, kind="R_AARCH64_MOVW_UABS_G0_NC"
+                    ),
+                    dataclasses.replace(
+                        hole, offset=base+4, kind="R_AARCH64_MOVW_UABS_G1_NC"
+                    ),
+                    dataclasses.replace(
+                        hole, offset=base+8, kind="R_AARCH64_MOVW_UABS_G2_NC"
+                    ),
+                    dataclasses.replace(
+                        hole, offset=base+12, kind="R_AARCH64_MOVW_UABS_G3"
+                    ),
+                ]
                 instruction = int.from_bytes(self.text[hole.offset : hole.offset + 4], sys.byteorder)
                 instruction = (instruction & 0xFC000000) | (((base - hole.offset) >> 2) & 0x03FFFFFF)
                 self.text[hole.offset : hole.offset + 4] = instruction.to_bytes(4, sys.byteorder)
@@ -724,8 +705,8 @@ class Compiler:
             f"-I{self._target.pyconfig.parent}",
             "-c",
             # We have three options for code model:
-            # - "small": assumes that code and data reside in the lowest 2GB of
-            #   memory (128MB on aarch64)
+            # - "small": the default, assumes that code and data reside in the
+            #   lowest 2GB of memory (128MB on aarch64)
             # - "medium": assumes that code resides in the lowest 2GB of memory,
             #   and makes no assumptions about data (not available on aarch64)
             # - "large": makes no assumptions about either code or data
