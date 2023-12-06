@@ -832,14 +832,15 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
                                exec, code, {'__builtins__': customdict()})
 
-    def test_exec_builtins_mapping(self):
-        code = compile("superglobal", "test", "exec")
+    def test_eval_builtins_mapping(self):
+        code = compile("superglobal", "test", "eval")
         # works correctly
-        exec(code, {'__builtins__': types.MappingProxyType({'superglobal': 1})})
+        ns = {'__builtins__': types.MappingProxyType({'superglobal': 1})}
+        self.assertEqual(eval(code, ns), 1)
         # custom builtins mapping is missing key
         ns = {'__builtins__': types.MappingProxyType({})}
         self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
-                               exec, code, ns)
+                               eval, code, ns)
 
     def test_exec_builtins_mapping_import(self):
         code = compile("import foo.bar", "test", "exec")
