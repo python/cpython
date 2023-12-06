@@ -33,7 +33,7 @@ PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-STUBS = ["trampoline", "wrapper"]
+STUBS = ["wrapper"]
 
 LLVM_VERSION = 16
 
@@ -193,9 +193,6 @@ class Parser(typing.Generic[S, R]):
         holes = []
         holes_data = []
         padding = 0
-        while len(self.text) % self.target.alignment:
-            self.text.append(0)
-            padding += 1
         offset_data = 0
         disassembly_data = []
         padding_data = 0
@@ -226,6 +223,68 @@ class Parser(typing.Generic[S, R]):
                     newhole.offset, newhole.kind, HoleValue.TEXT, None, addend
                 )
             holes.append(newhole)
+        remaining = []
+        for hole in holes:
+            if hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"} and hole.value is HoleValue.ZERO:
+                base = len(self.text)
+                self.text.extend([0xd2, 0x80, 0x00, 0x08][::-1])
+                self.text.extend([0xf2, 0xa0, 0x00, 0x08][::-1])
+                self.text.extend([0xf2, 0xc0, 0x00, 0x08][::-1])
+                self.text.extend([0xf2, 0xe0, 0x00, 0x08][::-1])
+                self.text.extend([0xd6, 0x1f, 0x01, 0x00][::-1])
+                disassembly.extend(
+                    [  # XXX: Include addend:
+                        f"{base:x}: d2800008      mov     x8, #0x0",
+                        f"{base:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
+                        f"{base + 4:x}: f2a00008      movk    x8, #0x0, lsl #16",
+                        f"{base + 4:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
+                        f"{base + 8:x}: f2c00008      movk    x8, #0x0, lsl #32",
+                        f"{base + 8:016x}:  R_AARCH64_MOVW_UABS_G2_NC    {hole.symbol}",
+                        f"{base + 12:x}: f2e00008      movk    x8, #0x0, lsl #48",
+                        f"{base + 12:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
+                        f"{base + 16:x}: d61f0100      br      x8",
+                    ]
+                )
+                remaining.extend(
+                    [
+                        Hole(
+                            base,
+                            "R_AARCH64_MOVW_UABS_G0_NC",
+                            hole.value,
+                            hole.symbol,
+                            hole.addend
+                        ),
+                        Hole(
+                            base + 4,
+                            "R_AARCH64_MOVW_UABS_G1_NC",
+                            hole.value,
+                            hole.symbol,
+                            hole.addend
+                        ),
+                        Hole(
+                            base + 8,
+                            "R_AARCH64_MOVW_UABS_G2_NC",
+                            hole.value,
+                            hole.symbol,
+                            hole.addend
+                        ),
+                        Hole(
+                            base + 12,
+                            "R_AARCH64_MOVW_UABS_G3",
+                            hole.value,
+                            hole.symbol,
+                            hole.addend
+                        ),
+                    ]
+                )
+                instruction = int.from_bytes(self.text[hole.offset : hole.offset + 4], sys.byteorder)
+                instruction = (instruction & 0xFC000000) | (((base - hole.offset) >> 2) & 0x03FFFFFF)
+                self.text[hole.offset : hole.offset + 4] = instruction.to_bytes(4, sys.byteorder)
+            else:
+                remaining.append(hole)
+        holes = remaining
+        while len(self.text) % self.target.alignment:
+            self.text.append(0)
         for base, relocation in self.data_relocations:
             newhole = self._handle_relocation(base, relocation, self.data)
             if newhole.symbol in self.data_symbols:
@@ -261,8 +320,8 @@ class Parser(typing.Generic[S, R]):
             if value_part and not symbol and not addend:
                 addend_part = ""
             else:
-                addend_part = f"&{symbol} + " if symbol else "",
-                addend_part = format_addend(addend)
+                addend_part = f"&{symbol} + " if symbol else ""
+                addend_part += format_addend(addend)
                 if value_part:
                     value_part += " + "
             disassembly_data.append(f"{offset_data:x}: {value_part}{addend_part}")
@@ -559,7 +618,6 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
 @dataclasses.dataclass
 class Target:
     pattern: str
-    model: typing.Literal["small", "medium", "large"]
     pyconfig: pathlib.Path
     alignment: int
     prefix: str
@@ -569,7 +627,6 @@ class Target:
 TARGETS = [
     Target(
         pattern=r"aarch64-apple-darwin.*",
-        model="large",
         pyconfig=PYCONFIG_H,
         alignment=8,
         prefix="_",
@@ -577,7 +634,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"aarch64-.*-linux-gnu",
-        model="large",
         pyconfig=PYCONFIG_H,
         alignment=8,
         prefix="",
@@ -585,7 +641,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"i686-pc-windows-msvc",
-        model="small",
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
         prefix="_",
@@ -593,7 +648,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"x86_64-apple-darwin.*",
-        model="medium",
         pyconfig=PYCONFIG_H,
         alignment=1,
         prefix="_",
@@ -601,7 +655,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"x86_64-pc-windows-msvc",
-        model="medium",
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
         prefix="",
@@ -609,7 +662,6 @@ TARGETS = [
     ),
     Target(
         pattern=r"x86_64-.*-linux-gnu",
-        model="medium",
         pyconfig=PYCONFIG_H,
         alignment=1,
         prefix="",
@@ -677,12 +729,7 @@ class Compiler:
             # - "medium": assumes that code resides in the lowest 2GB of memory,
             #   and makes no assumptions about data (not available on aarch64)
             # - "large": makes no assumptions about either code or data
-            # We need 64-bit addresses for data everywhere, but we'd *really*
-            # prefer direct short jumps instead of indirect long ones where
-            # possible. So, we use the "large" code model on aarch64 and the
-            # "medium" code model elsewhere, which gives us correctly-sized
-            # direct jumps and immediate data loads on basically all platforms:
-            f"-mcmodel={self._target.model}",
+            f"-mcmodel=large",
         ]
         await run(self._clang, *flags, "-o", o, c)
         self._stencils_built[opname] = await self._target.parser(

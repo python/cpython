@@ -118,7 +118,7 @@ size_to_pages(uint64_t size)
     return (size + page_size - 1) / page_size;
 }
 
-static char *emit_trampoline(uint64_t where, char **trampolines);
+// static char *emit_trampoline(uint64_t where, char **trampolines);
 
 static bool
 fits_in_signed_bits(uint64_t value, int bits)
@@ -127,14 +127,14 @@ fits_in_signed_bits(uint64_t value, int bits)
     return (v >= -(1LL << (bits - 1))) && (v < (1LL << (bits - 1)));
 }
 
-static uint64_t
-potential_trampoline_size(const StencilGroup *stencil_group)
-{
-    return stencil_group->text.holes_size * trampoline_stencil_group.text.body_size;
-}
+// static uint64_t
+// potential_trampoline_size(const StencilGroup *stencil_group)
+// {
+//     return stencil_group->text.holes_size * trampoline_stencil_group.text.body_size;
+// }
 
 static void
-patch(char *base, const Hole *hole, uint64_t *patches, char **trampolines)
+patch(char *base, const Hole *hole, uint64_t *patches)
 {
     char *location = base + hole->offset;
     uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
@@ -150,9 +150,9 @@ patch(char *base, const Hole *hole, uint64_t *patches, char **trampolines)
         case HoleKind_X86_64_RELOC_BRANCH:
         case HoleKind_X86_64_RELOC_GOT:
         case HoleKind_X86_64_RELOC_GOT_LOAD:
-            if (!fits_in_signed_bits(value - (uint64_t)location, 32)) {
-                value = (uint64_t)emit_trampoline(value + 4, trampolines) - 4;  // XXX
-            }
+            // if (!fits_in_signed_bits(value - (uint64_t)location, 32)) {
+            //     value = (uint64_t)emit_trampoline(value + 4, trampolines) - 4;  // XXX
+            // }
             value -= (uint64_t)location;
             assert(fits_in_signed_bits(value, 32));
             *addr = (uint32_t)value;
@@ -174,9 +174,9 @@ patch(char *base, const Hole *hole, uint64_t *patches, char **trampolines)
             return;
         case HoleKind_R_AARCH64_CALL26:
         case HoleKind_R_AARCH64_JUMP26:
-            if (!fits_in_signed_bits(value - (uint64_t)location, 28)) {
-                value = (uint64_t)emit_trampoline(value, trampolines);
-            }
+            // if (!fits_in_signed_bits(value - (uint64_t)location, 28)) {
+            //     value = (uint64_t)emit_trampoline(value, trampolines);
+            // }
             value -= (uint64_t)location;
             assert(((*addr & 0xFC000000) == 0x14000000) ||
                    ((*addr & 0xFC000000) == 0x94000000));
@@ -219,38 +219,38 @@ patch(char *base, const Hole *hole, uint64_t *patches, char **trampolines)
 }
 
 static void
-copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches, char **trampolines)
+copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
 {
     memcpy(base, stencil->body, stencil->body_size);
     for (uint64_t i = 0; i < stencil->holes_size; i++) {
-        patch(base, &stencil->holes[i], patches, trampolines);
+        patch(base, &stencil->holes[i], patches);
     }
 }
 
 static void
-emit(const StencilGroup *stencil_group, uint64_t patches[], char **trampolines)
+emit(const StencilGroup *stencil_group, uint64_t patches[])
 {
     char *data = (char *)patches[HoleValue_DATA];
-    copy_and_patch(data, &stencil_group->data, patches, trampolines);
+    copy_and_patch(data, &stencil_group->data, patches);
     char *text = (char *)patches[HoleValue_TEXT];
-    copy_and_patch(text, &stencil_group->text, patches, trampolines);
+    copy_and_patch(text, &stencil_group->text, patches);
 }
 
-static char *
-emit_trampoline(uint64_t where, char **trampolines)
-{
-    assert(trampolines && *trampolines);
-    const StencilGroup *stencil_group = &trampoline_stencil_group;
-    assert(stencil_group->data.body_size == 0);
-    uint64_t patches[] = GET_PATCHES();
-    patches[HoleValue_CONTINUE] = where;
-    patches[HoleValue_TEXT] = (uint64_t)*trampolines;
-    patches[HoleValue_ZERO] = 0;
-    emit(stencil_group, patches, NULL);
-    char *trampoline = *trampolines;
-    *trampolines += stencil_group->text.body_size;
-    return trampoline;
-}
+// static char *
+// emit_trampoline(uint64_t where, char **trampolines)
+// {
+//     assert(trampolines && *trampolines);
+//     const StencilGroup *stencil_group = &trampoline_stencil_group;
+//     assert(stencil_group->data.body_size == 0);
+//     uint64_t patches[] = GET_PATCHES();
+//     patches[HoleValue_CONTINUE] = where;
+//     patches[HoleValue_TEXT] = (uint64_t)*trampolines;
+//     patches[HoleValue_ZERO] = 0;
+//     emit(stencil_group, patches, NULL);
+//     char *trampoline = *trampolines;
+//     *trampolines += stencil_group->text.body_size;
+//     return trampoline;
+// }
 
 static void
 initialize_jit(void)
@@ -275,25 +275,25 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
 {
     initialize_jit();
     // First, loop over everything once to find the total compiled size:
-    uint64_t trampoline_size = potential_trampoline_size(&wrapper_stencil_group);
+    // uint64_t trampoline_size = potential_trampoline_size(&wrapper_stencil_group);
     uint64_t text_size = wrapper_stencil_group.text.body_size;
     uint64_t data_size = wrapper_stencil_group.data.body_size;
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
-        trampoline_size += potential_trampoline_size(stencil_group);
+        // trampoline_size += potential_trampoline_size(stencil_group);
         text_size += stencil_group->text.body_size;
         data_size += stencil_group->data.body_size;
         assert(stencil_group->text.body_size);
     };
-    uint64_t text_pages = size_to_pages(text_size + trampoline_size);
+    uint64_t text_pages = size_to_pages(text_size);
     uint64_t data_pages = size_to_pages(data_size);
     char *text = alloc(text_pages + data_pages);
     if (text == NULL) {
         return NULL;
     }
     char *data = text + text_pages * page_size;
-    char *head_trampolines = text + text_size;
+    // char *head_trampolines = text + text_size;
     char *head_text = text;
     char *head_data = data;
     // First, the wrapper:
@@ -303,7 +303,7 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     patches[HoleValue_DATA] = (uint64_t)head_data;
     patches[HoleValue_TEXT] = (uint64_t)head_text;
     patches[HoleValue_ZERO] = 0;
-    emit(stencil_group, patches, &head_trampolines);
+    emit(stencil_group, patches);
     head_text += stencil_group->text.body_size;
     head_data += stencil_group->data.body_size;
     // Then, all of the stencils:
@@ -320,7 +320,7 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         patches[HoleValue_TEXT] = (uint64_t)head_text;
         patches[HoleValue_TOP] = (uint64_t)text + wrapper_stencil_group.text.body_size;
         patches[HoleValue_ZERO] = 0;
-        emit(stencil_group, patches, &head_trampolines);
+        emit(stencil_group, patches);
         head_text += stencil_group->text.body_size;
         head_data += stencil_group->data.body_size;
     };
