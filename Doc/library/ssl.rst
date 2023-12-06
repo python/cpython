@@ -180,7 +180,7 @@ purposes.
 
    .. note::
       This context enables :data:`VERIFY_X509_STRICT` by default, which
-      may reject older (pre-:rfc:`5280`) or malformed certificates that the
+      may reject pre-:rfc:`5280` or malformed certificates that the
       underlying OpenSSL implementation otherwise would accept. While disabling
       this is not recommended, you can do so using::
 

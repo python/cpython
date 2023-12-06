@@ -707,6 +707,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     # `VERIFY_X509_PARTIAL_CHAIN` makes OpenSSL's chain building behave more
     # like RFC 3280 and 5280, which specify that chain building stops with the
     # first trust anchor, even if that anchor is not self-signed.
+    #
     # `VERIFY_X509_STRICT` makes OpenSSL more conservative about the
     # certificates it accepts, including "disabling workarounds for
     # some broken certificates."
