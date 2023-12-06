@@ -54,7 +54,7 @@ int Py_IsFalse(PyObject *x)
 
 #undef Py_SET_REFCNT
 
-void
+PyAPI_FUNC(void)
 Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt)
 {
     _Py_SET_REFCNT(ob, refcnt);
