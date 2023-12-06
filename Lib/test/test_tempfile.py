@@ -1674,8 +1674,8 @@ class TestTemporaryDirectory(BaseTestCase):
         d2.cleanup()
 
     @os_helper.skip_unless_symlink
-    def test_cleanup_with_error_deleting_symlink(self):
-        # cleanup() should not follow symlinks when fixing mode bits etc. (#91133)
+    def test_cleanup_with_symlink_modes(self):
+        # cleanup() should not follow symlinks when fixing mode bits (#91133)
         with self.do_create(recurse=0) as d2:
             file1 = os.path.join(d2, 'file1')
             open(file1, 'wb').close()
@@ -1721,6 +1721,54 @@ class TestTemporaryDirectory(BaseTestCase):
                         new_mode = os.stat(dir1).st_mode
                         self.assertEqual(new_mode, old_mode,
                                          '%03o != %03o' % (new_mode, old_mode))
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
+    @os_helper.skip_unless_symlink
+    def test_cleanup_with_symlink_flags(self):
+        # cleanup() should not follow symlinks when fixing flags (#91133)
+        flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+        self.check_flags()
+
+        with self.do_create(recurse=0) as d2:
+            file1 = os.path.join(d2, 'file1')
+            open(file1, 'wb').close()
+            dir1 = os.path.join(d2, 'dir1')
+            os.mkdir(dir1)
+            def test(target, target_is_directory):
+                d1 = self.do_create(recurse=0)
+                symlink = os.path.join(d1.name, 'symlink')
+                os.symlink(target, symlink,
+                           target_is_directory=target_is_directory)
+                try:
+                    os.chflags(symlink, flags, follow_symlinks=False)
+                except NotImplementedError:
+                    pass
+                try:
+                    os.chflags(symlink, flags)
+                except FileNotFoundError:
+                    pass
+                os.chflags(d1.name, flags)
+                d1.cleanup()
+                self.assertFalse(os.path.exists(d1.name))
+
+            with self.subTest('nonexisting file'):
+                test('nonexisting', target_is_directory=False)
+            with self.subTest('nonexisting dir'):
+                test('nonexisting', target_is_directory=True)
+
+            with self.subTest('existing file'):
+                os.chflags(file1, flags)
+                old_flags = os.stat(file1).st_flags
+                test(file1, target_is_directory=False)
+                new_flags = os.stat(file1).st_flags
+                self.assertEqual(new_flags, old_flags)
+
+            with self.subTest('existing dir'):
+                os.chflags(dir1, flags)
+                old_flags = os.stat(dir1).st_flags
+                test(dir1, target_is_directory=True)
+                new_flags = os.stat(dir1).st_flags
+                self.assertEqual(new_flags, old_flags)
 
     @support.cpython_only
     def test_del_on_collection(self):
@@ -1894,8 +1942,7 @@ class TestTemporaryDirectory(BaseTestCase):
                     d.cleanup()
                 self.assertFalse(os.path.exists(d.name))
 
-    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
-    def test_flags(self):
+    def check_flags(self):
         flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
 
         # skip the test if these flags are not supported (ex: FreeBSD 13)
@@ -1912,6 +1959,11 @@ class TestTemporaryDirectory(BaseTestCase):
                 os.chflags(filename, 0)
         finally:
             os_helper.unlink(filename)
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
+    def test_flags(self):
+        flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+        self.check_flags()
 
         d = self.do_create(recurse=3, dirs=2, files=2)
         with d:
