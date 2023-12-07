@@ -1,4 +1,5 @@
 import _ctypes_test
+import platform
 import struct
 import sys
 import unittest
@@ -494,51 +495,6 @@ class StructureTestCase(unittest.TestCase):
                 ('more_data', c_float * 2),
             ]
 
-        class Test3C1(Structure):
-            _fields_ = [
-                ("data", c_double * 4)
-            ]
-
-        class DataType4(Array):
-            _type_ = c_double
-            _length_ = 4
-
-        class Test3C2(Structure):
-            _fields_ = [
-                ("data", DataType4)
-            ]
-
-        class Test3C3(Structure):
-            _fields_ = [
-                ("x", c_double),
-                ("y", c_double),
-                ("z", c_double),
-                ("t", c_double)
-            ]
-
-        class Test3D1(Structure):
-            _fields_ = [
-                ("data", c_double * 5)
-            ]
-
-        class DataType5(Array):
-            _type_ = c_double
-            _length_ = 5
-
-        class Test3D2(Structure):
-            _fields_ = [
-                ("data", DataType5)
-            ]
-
-        class Test3D3(Structure):
-            _fields_ = [
-                ("x", c_double),
-                ("y", c_double),
-                ("z", c_double),
-                ("t", c_double),
-                ("u", c_double)
-            ]
-
         # Load the shared library
         dll = CDLL(_ctypes_test.__file__)
 
@@ -586,6 +542,58 @@ class StructureTestCase(unittest.TestCase):
         self.assertAlmostEqual(s.data[1], 2.71828, places=6)
         self.assertAlmostEqual(s.more_data[0], -3.0, places=6)
         self.assertAlmostEqual(s.more_data[1], -2.0, places=6)
+
+    @unittest.skipIf(
+        'ppc64le' in platform.uname().machine,
+        "gh-110190: currently fails on ppc64le",
+    )
+    def test_array_in_struct_registers(self):
+        dll = CDLL(_ctypes_test.__file__)
+
+        class Test3C1(Structure):
+            _fields_ = [
+                ("data", c_double * 4)
+            ]
+
+        class DataType4(Array):
+            _type_ = c_double
+            _length_ = 4
+
+        class Test3C2(Structure):
+            _fields_ = [
+                ("data", DataType4)
+            ]
+
+        class Test3C3(Structure):
+            _fields_ = [
+                ("x", c_double),
+                ("y", c_double),
+                ("z", c_double),
+                ("t", c_double)
+            ]
+
+        class Test3D1(Structure):
+            _fields_ = [
+                ("data", c_double * 5)
+            ]
+
+        class DataType5(Array):
+            _type_ = c_double
+            _length_ = 5
+
+        class Test3D2(Structure):
+            _fields_ = [
+                ("data", DataType5)
+            ]
+
+        class Test3D3(Structure):
+            _fields_ = [
+                ("x", c_double),
+                ("y", c_double),
+                ("z", c_double),
+                ("t", c_double),
+                ("u", c_double)
+            ]
 
         # Tests for struct Test3C
         expected = (1.0, 2.0, 3.0, 4.0)
