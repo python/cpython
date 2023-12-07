@@ -1052,8 +1052,9 @@ PyList_Clear(PyObject *self)
 
 
 static PyObject *
-list_inplace_concat(PyListObject *self, PyObject *other)
+list_inplace_concat(PyObject *obj, PyObject *other)
 {
+    PyListObject *self = (PyListObject *)obj;
     if (list_extend(self, other) < 0) {
         return NULL;
     }
@@ -2937,7 +2938,7 @@ static PySequenceMethods list_as_sequence = {
     list_ass_item,                              /* sq_ass_item */
     0,                                          /* sq_ass_slice */
     list_contains,                              /* sq_contains */
-    (binaryfunc)list_inplace_concat,            /* sq_inplace_concat */
+    list_inplace_concat,                        /* sq_inplace_concat */
     (ssizeargfunc)list_inplace_repeat,          /* sq_inplace_repeat */
 };
 
