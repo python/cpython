@@ -3218,7 +3218,7 @@ static int listiter_traverse(PyObject *, visitproc, void *);
 static PyObject *listiter_next(PyObject *);
 static PyObject *listiter_len(PyObject *, PyObject *);
 static PyObject *listiter_reduce_general(void *_it, int forward);
-static PyObject *listiter_reduce(_PyListIterObject *, PyObject *);
+static PyObject *listiter_reduce(PyObject *, PyObject *);
 static PyObject *listiter_setstate(_PyListIterObject *, PyObject *state);
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
@@ -3227,7 +3227,7 @@ PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef listiter_methods[] = {
     {"__length_hint__", listiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)listiter_reduce, METH_NOARGS, reduce_doc},
+    {"__reduce__", listiter_reduce, METH_NOARGS, reduce_doc},
     {"__setstate__", (PyCFunction)listiter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -3338,7 +3338,7 @@ listiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-listiter_reduce(_PyListIterObject *it, PyObject *Py_UNUSED(ignored))
+listiter_reduce(PyObject *it, PyObject *Py_UNUSED(ignored))
 {
     return listiter_reduce_general(it, 1);
 }
