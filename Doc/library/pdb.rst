@@ -588,7 +588,7 @@ can be overridden by the local file.
       command.
 
    .. versionchanged:: 3.13
-      :pdbcmd:`interact` will direct its output to the debugger's
+      :pdbcmd:`interact` directs its output to the debugger's
       output channel rather than :data:`sys.stderr`.
 
 .. _debugger-aliases:
