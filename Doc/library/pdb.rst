@@ -583,6 +583,14 @@ can be overridden by the local file.
 
    .. versionadded:: 3.2
 
+   .. versionadded:: 3.13
+      ``exit()`` and ``quit()`` can be used to exit :pdbcmd:`interact`
+      command.
+
+   .. versionchanged:: 3.13
+      :pdbcmd:`interact` will direct its output to the debugger's
+      output channel rather than :data:`sys.stderr`.
+
 .. _debugger-aliases:
 
 .. pdbcommand:: alias [name [command]]
