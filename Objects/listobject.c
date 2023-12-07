@@ -3368,12 +3368,12 @@ static int listreviter_traverse(PyObject *, visitproc, void *);
 static PyObject *listreviter_next(PyObject *);
 static PyObject *listreviter_len(PyObject *, PyObject *);
 static PyObject *listreviter_reduce(PyObject *, PyObject *);
-static PyObject *listreviter_setstate(listreviterobject *, PyObject *);
+static PyObject *listreviter_setstate(PyObject *, PyObject *);
 
 static PyMethodDef listreviter_methods[] = {
     {"__length_hint__", listreviter_len, METH_NOARGS, length_hint_doc},
     {"__reduce__", listreviter_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)listreviter_setstate, METH_O, setstate_doc},
+    {"__setstate__", listreviter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -3492,8 +3492,9 @@ listreviter_reduce(PyObject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-listreviter_setstate(listreviterobject *it, PyObject *state)
+listreviter_setstate(PyObject *self, PyObject *state)
 {
+    listreviterobject *it = (listreviterobject *)self;
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
