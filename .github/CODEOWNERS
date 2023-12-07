@@ -190,3 +190,7 @@ Doc/howto/clinic.rst          @erlend-aasland
 
 # WebAssembly
 /Tools/wasm/                  @brettcannon
+
+# SBOM
+/Misc/sbom.spdx.json          @sethmlarson
+/Tools/build/generate_sbom.py @sethmlarson
