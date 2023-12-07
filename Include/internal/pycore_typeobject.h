@@ -133,6 +133,8 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing
 PyObject *
 _Py_type_getattro(PyTypeObject *type, PyObject *name);
 
+extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
+
 PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
 PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
