@@ -334,15 +334,20 @@ statement, of a variable or attribute annotation and an optional assignment stat
 The difference from normal :ref:`assignment` is that only a single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
-the annotations are evaluated and stored in a special class or module
+the annotations are available in a special class or module
 attribute :attr:`__annotations__`
-that is a dictionary mapping from variable names (mangled if private) to
-evaluated annotations. This attribute is writable and is automatically
+that is a dictionary mapping from variable names (mangled if private) to the
+annotations.  This attribute is writable and is automatically
 created at the start of class or module body execution, if annotations
-are found statically.
+are found statically.  If the ``annotations`` import from :mod:`__future__` is used
+(i.e. :pep:`563` is enabled), the annotations are stored as string values in
+:attr:`__annotations__` at runtime which enables postponed evaluation.  Otherwise,
+they are eagerly evaluated at runtime in the corresponding scope and then stored into
+:attr:`__annotations__`.
 
 For expressions as assignment targets, the annotations are evaluated if
-in class or module scope, but not stored.
+in class or module scope (regardless of whether :pep:`563` is enabled), but not
+stored.
 
 If a name is annotated in a function scope, then this name is local for
 that scope. Annotations are never evaluated and stored in function scopes.
@@ -364,6 +369,10 @@ target, then the interpreter evaluates the target except for the last
       The proposal that added the :mod:`typing` module to provide a standard
       syntax for type annotations that can be used in static analysis tools and
       IDEs.
+
+   :pep:`563` - Postponed Evaluation of Annotations
+      Support for forward references within annotations by preserving
+      annotations in a string form at runtime instead of eager evaluation.
 
 .. versionchanged:: 3.8
    Now annotated assignments allow the same expressions in the right hand side as
