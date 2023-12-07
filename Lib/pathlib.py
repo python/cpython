@@ -1069,7 +1069,9 @@ class _PathBase(PurePath):
         elif not path_pattern._tail:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
-        pattern_parts = list(path_pattern.parts)
+        sep = self.pathmod.sep
+        pattern = str(path_pattern)
+        pattern_parts = pattern.split(sep)
         if pattern_parts[-1] == '**':
             # GH-70303: '**' only matches directories. Add trailing slash.
             warnings.warn(
@@ -1092,7 +1094,6 @@ class _PathBase(PurePath):
         # do not perform any filesystem access, which can be much faster!
         filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
-        sep = self.pathmod.sep
         if not self.is_dir():
             paths = iter([])
         elif not self._tail:
@@ -1120,7 +1121,7 @@ class _PathBase(PurePath):
 
                     # Filter out paths that don't match pattern.
                     prefix_len = len(str(self._make_child_relpath('_'))) - 1
-                    match = _compile_pattern(str(path_pattern), sep, case_sensitive)
+                    match = _compile_pattern(pattern, sep, case_sensitive)
                     paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
 
