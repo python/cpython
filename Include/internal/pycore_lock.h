@@ -92,6 +92,13 @@ PyMutex_IsLocked(PyMutex *m)
     return (_Py_atomic_load_uint8(&m->v) & _Py_LOCKED) != 0;
 }
 
+// Re-initializes the mutex after a fork to the unlocked state.
+static inline void
+_PyMutex_at_fork_reinit(PyMutex *m)
+{
+    *m = (PyMutex){0};
+}
+
 typedef enum _PyLockFlags {
     // Do not detach/release the GIL when waiting on the lock.
     _Py_LOCK_DONT_DETACH = 0,

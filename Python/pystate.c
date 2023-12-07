@@ -379,6 +379,18 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
+#define LOCKS_INIT(runtime) \
+    { \
+        &(runtime)->interpreters.mutex, \
+        &(runtime)->xi.registry.mutex, \
+        &(runtime)->unicode_state.ids.mutex, \
+        &(runtime)->imports.extensions.mutex, \
+        &(runtime)->ceval.pending_mainthread.mutex, \
+        &(runtime)->atexit.mutex, \
+        &(runtime)->audit_hooks.mutex, \
+        &(runtime)->allocators.mutex, \
+    }
+
 static void
 init_runtime(_PyRuntimeState *runtime,
              void *open_code_hook, void *open_code_userdata,
@@ -476,14 +488,10 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     _PyParkingLot_AfterFork();
 
     // Re-initialize global locks
-    runtime->interpreters.mutex = (PyMutex){0};
-    runtime->xi.registry.mutex = (PyMutex){0};
-    runtime->unicode_state.ids.mutex = (PyMutex){0};
-    runtime->imports.extensions.mutex = (PyMutex){0};
-    runtime->ceval.pending_mainthread.mutex = (PyMutex){0};
-    runtime->atexit.mutex = (PyMutex){0};
-    runtime->audit_hooks.mutex = (PyMutex){0};
-    runtime->allocators.mutex = (PyMutex){0};
+    PyMutex *locks[] = LOCKS_INIT(runtime);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(locks); i++) {
+        _PyMutex_at_fork_reinit(locks[i]);
+    }
 
     /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
      * not force the default allocator. */

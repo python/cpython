@@ -457,6 +457,7 @@ _xidregistry_lock(struct _xidregistry *registry)
     if (registry->global) {
         PyMutex_Lock(&registry->mutex);
     }
+    // else: Within an interpreter we rely on the GIL instead of a separate lock.
 }
 
 static void
