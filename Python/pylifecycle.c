@@ -820,6 +820,11 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
+    status = _PyDtoa_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     // The GC must be initialized before the first GC collection.
     status = _PyGC_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1776,6 +1781,7 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
+    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
