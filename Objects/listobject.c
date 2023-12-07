@@ -3364,7 +3364,7 @@ typedef struct {
 } listreviterobject;
 
 static void listreviter_dealloc(listreviterobject *);
-static int listreviter_traverse(listreviterobject *, visitproc, void *);
+static int listreviter_traverse(PyObject *, visitproc, void *);
 static PyObject *listreviter_next(listreviterobject *);
 static PyObject *listreviter_len(listreviterobject *, PyObject *);
 static PyObject *listreviter_reduce(listreviterobject *, PyObject *);
@@ -3400,7 +3400,7 @@ PyTypeObject PyListRevIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)listreviter_traverse,         /* tp_traverse */
+    listreviter_traverse,                       /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -3441,9 +3441,9 @@ listreviter_dealloc(listreviterobject *it)
 }
 
 static int
-listreviter_traverse(listreviterobject *it, visitproc visit, void *arg)
+listreviter_traverse(PyObject *it, visitproc visit, void *arg)
 {
-    Py_VISIT(it->it_seq);
+    Py_VISIT(((listreviterobject *)it)->it_seq);
     return 0;
 }
 
