@@ -213,6 +213,30 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
+// A readers-writer (RW) lock. The lock supports multiple concurrent readers or
+// a single writer. The lock is write-preferring: if a writer is waiting, then
+// new readers will be blocked. This avoids starvation of writers.
+//
+// The low two bits store whether the lock is write-locked (_Py_LOCKED) and
+// whether there are parked threads (_Py_HAS_PARKED). The remaining bits are
+// used to store the number of readers.
+//
+// The design is optimized for simplicity of the implementation. The lock is
+// not fair: if fairness is desired, use an additional PyMutex to serialize
+// writers. The lock is also not reentrant.
+typedef struct {
+    uintptr_t bits;
+} _PyRWMutex;
+
+// Read lock
+PyAPI_FUNC(void) _PyRWMutex_RLock(_PyRWMutex *rwmutex);
+PyAPI_FUNC(void) _PyRWMutex_RUnlock(_PyRWMutex *rwmutex);
+
+// Write lock
+PyAPI_FUNC(void) _PyRWMutex_Lock(_PyRWMutex *rwmutex);
+PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
+
+
 #ifdef __cplusplus
 }
 #endif
