@@ -48,7 +48,7 @@ descr_repr(PyDescrObject *descr, const char *format)
 }
 
 static PyObject *
-method_repr(PyMethodDescrObject *descr)
+method_repr(PyObject *descr)
 {
     return descr_repr((PyDescrObject *)descr,
                       "<method '%V' of '%s' objects>");
@@ -712,7 +712,7 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)method_repr,                      /* tp_repr */
+    method_repr,                                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -752,7 +752,7 @@ PyTypeObject PyClassMethodDescr_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)method_repr,                      /* tp_repr */
+    method_repr,                                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
