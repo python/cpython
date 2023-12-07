@@ -486,9 +486,10 @@ method_vectorcall_O(
    we implement this simply by calling __get__ and then calling the result.
 */
 static PyObject *
-classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
+classmethoddescr_call(PyObject *_descr, PyObject *args,
                       PyObject *kwds)
 {
+    PyMethodDescrObject *descr = (PyMethodDescrObject *)_descr;
     Py_ssize_t argc = PyTuple_GET_SIZE(args);
     if (argc < 1) {
         PyErr_Format(PyExc_TypeError,
@@ -757,7 +758,7 @@ PyTypeObject PyClassMethodDescr_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    (ternaryfunc)classmethoddescr_call,         /* tp_call */
+    classmethoddescr_call,                      /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
