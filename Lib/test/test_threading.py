@@ -1836,29 +1836,24 @@ class MiscTestCase(unittest.TestCase):
             with open(filename, 'w') as outfile:
                 outfile.write("""if True:
                     import _thread
-                    ns = globals().update(vars(_thread))
-                    #from _thread import *
+                    globals().update(vars(_thread))
                     del _is_main_interpreter
                     """)
-            expected_output = 'success!'
-            script = f"""if True:
+
+            expected_output = b'success!'
+            _, out, err = assert_python_ok("-c", f"""if True:
                 import sys
                 sys.path.insert(0, {tempdir!r})
                 import {modname}
-                sys.modules['_thread'] = _thread_fake
+                sys.modules['_thread'] = {modname}
                 del sys.modules[{modname!r}]
 
                 import threading
-                print({expected_output!r}, end='')
-                """
-            proc = subprocess.run(
-                [sys.executable, "-c", script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            self.assertEqual(proc.stdout, expected_output)
-            self.assertEqual(proc.returncode, 0)
+                print({expected_output.decode('utf-8')!r}, end='')
+                """)
+
+            self.assertEqual(out, expected_output)
+            self.assertEqual(err, b'')
 
 
 class InterruptMainTests(unittest.TestCase):
