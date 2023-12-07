@@ -180,11 +180,11 @@ class PurePathTest(unittest.TestCase):
         # Unanchored parts.
         check((),                   '', '', ())
         check(('a',),               '', '', ('a',))
-        check(('a/',),              '', '', ('a', ''))
+        check(('a/',),              '', '', ('a',))
         check(('a', 'b'),           '', '', ('a', 'b'))
         # Expansion.
         check(('a/b',),             '', '', ('a', 'b'))
-        check(('a/b/',),            '', '', ('a', 'b', ''))
+        check(('a/b/',),            '', '', ('a', 'b'))
         check(('a', 'b/c', 'd'),    '', '', ('a', 'b', 'c', 'd'))
         # Collapsing and stripping excess slashes.
         check(('a', 'b//c', 'd'),   '', '', ('a', 'b', 'c', 'd'))
@@ -193,7 +193,7 @@ class PurePathTest(unittest.TestCase):
         check(('.',),               '', '', ())
         check(('.', '.', 'b'),      '', '', ('b',))
         check(('a', '.', 'b'),      '', '', ('a', 'b'))
-        check(('a', '.', '.'),      '', '', ('a', ''))
+        check(('a', '.', '.'),      '', '', ('a',))
         # The first part is anchored.
         check(('/a/b',),            '', sep, (sep, 'a', 'b'))
         check(('/a', 'b'),          '', sep, (sep, 'a', 'b'))
@@ -385,10 +385,6 @@ class PurePathTest(unittest.TestCase):
         p = P('/a/b')
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
-        # When the path has a trailing separator, an additional empty part is present.
-        p = P('a/b/')
-        parts = p.parts
-        self.assertEqual(parts, ('a', 'b', ''))
 
     def test_equivalences(self):
         for k, tuples in self.equivalences.items():
@@ -1085,7 +1081,7 @@ class PureWindowsPathTest(PurePathTest):
         # UNC paths.
         check(('a', '//b/c', 'd'),      '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
         # Collapsing and stripping excess slashes.
-        check(('a', 'Z://b//c/', 'd/'), 'Z:', '\\', ('Z:\\', 'b', 'c', 'd', ''))
+        check(('a', 'Z://b//c/', 'd/'), 'Z:', '\\', ('Z:\\', 'b', 'c', 'd'))
         # UNC paths.
         check(('a', '//b/c//', 'd'),    '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
         # Extended paths.
@@ -1240,10 +1236,6 @@ class PureWindowsPathTest(PurePathTest):
         p = P('//a/b/c/d')
         parts = p.parts
         self.assertEqual(parts, ('\\\\a\\b\\', 'c', 'd'))
-        # Trailing sep
-        p = P('c:/a/b/')
-        parts = p.parts
-        self.assertEqual(parts, ('c:\\', 'a', 'b', ''))
 
     def test_parent(self):
         # Anchored

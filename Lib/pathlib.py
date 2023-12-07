@@ -507,12 +507,10 @@ class PurePath:
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        result = tuple(self._tail)
         if self.drive or self.root:
-            result = (self.drive + self.root,) + result
-        if self.has_trailing_sep:
-            result = result + ('',)
-        return result
+            return (self.drive + self.root,) + tuple(self._tail)
+        else:
+            return tuple(self._tail)
 
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
