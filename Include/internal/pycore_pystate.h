@@ -19,23 +19,27 @@ extern "C" {
 // interpreter at the same time. Only the "bound" thread may perform the
 // transitions between "attached" and "detached" on its own PyThreadState.
 //
-// The "gc" state is used to implement stop-the-world pauses, such as for
-// cyclic garbage collection. It is only used in `--disable-gil` builds. It is
-// similar to the "detached" state, but only the thread performing a
-// stop-the-world pause may transition threads between the "detached" and "gc"
-// states. A thread trying to "attach" from the "gc" state will block until
-// it is transitioned back to "detached" when the stop-the-world pause is
-// complete.
+// The "suspended" state is used to implement stop-the-world pauses, such as
+// for cyclic garbage collection. It is only used in `--disable-gil` builds. It
+// is similar to the "detached" state, but only the thread performing a
+// stop-the-world pause may transition a thread from the "suspended" state back
+// to the "detached" state. A thread trying to "attach" from the "suspended"
+// state will block until it is transitioned back to "detached" when the
+// stop-the-world pause is complete.
 //
 // State transition diagram:
 //
 //            (bound thread)        (stop-the-world thread)
-// [attached]       <->       [detached]       <->       [gc]
+// [attached]       <->       [detached]       <->       [suspended]
+//   +                                                        ^
+//   +--------------------------------------------------------+
+//                          (bound thread)
 //
-// See `_PyThreadState_Attach()` and `_PyThreadState_Detach()`.
+// See `_PyThreadState_Attach()`, `_PyThreadState_Detach()`, and
+// `_PyThreadState_Suspend()`.
 #define _Py_THREAD_DETACHED     0
 #define _Py_THREAD_ATTACHED     1
-#define _Py_THREAD_GC           2
+#define _Py_THREAD_SUSPENDED    2
 
 
 /* Check if the current thread is the main thread.
@@ -146,13 +150,13 @@ extern void _PyThreadState_Attach(PyThreadState *tstate);
 // calls this function.
 extern void _PyThreadState_Detach(PyThreadState *tstate);
 
-// Temporarily pauses the thread in the GC state.
+// Detaches the current thread to the "suspended" state if a stop-the-world
+// pause is in progress.
 //
-// This is used to implement stop-the-world pauses. The thread must be in the
-// "attached" state. It will switch to the "GC" state and pause until the
-// stop-the-world event completes, after which it will switch back to the
-// "attached" state.
-extern void _PyThreadState_Park(PyThreadState *tstate);
+// If there is no stop-the-world pause in progress, then this function is
+// a no-op. Returns one if the thread was switched to the "suspended" state and
+// zero otherwise.
+extern int _PyThreadState_Suspend(PyThreadState *tstate);
 
 // Perform a stop-the-world pause for all threads in the all interpreters.
 //
