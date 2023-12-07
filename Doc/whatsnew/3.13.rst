@@ -85,7 +85,13 @@ Important deprecations, removals or restrictions:
 New Features
 ============
 
+Improved Error Messages
+-----------------------
 
+* The interpreter now colorizes error messages when displaying tracebacks by default.
+  This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variables. (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 Other Language Changes
 ======================
@@ -572,7 +578,8 @@ Pending Removal in Python 3.14
   * date and datetime adapter, date and timestamp converter:
     see the :mod:`sqlite3` documentation for suggested replacement recipes.
 
-* :class:`types.CodeType`: Accessing ``co_lnotab`` was deprecated in :pep:`626`
+* :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+  deprecated in :pep:`626`
   since 3.10 and was planned to be removed in 3.12,
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.14.
@@ -735,7 +742,7 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
-* ``types.CodeType.co_lnotab``: use the ``co_lines`` attribute instead.
+* :attr:`~codeobject.co_lnotab`: use the ``co_lines`` attribute instead.
 
 * :class:`typing.Text` (:gh:`92332`).
 
@@ -1248,6 +1255,9 @@ New Features
   similar to :meth:`dict.pop`, but without the default value and not raising
   :exc:`KeyError` if the key missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
+
+* Add :c:func:`Py_HashPointer` function to hash a pointer.
+  (Contributed by Victor Stinner in :gh:`111545`.)
 
 
 Porting to Python 3.13

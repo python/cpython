@@ -1596,8 +1596,8 @@ updated as expected:
 Code Objects Bit Flags
 ----------------------
 
-Python code objects have a ``co_flags`` attribute, which is a bitmap of
-the following flags:
+Python code objects have a :attr:`~codeobject.co_flags` attribute,
+which is a bitmap of the following flags:
 
 .. data:: CO_OPTIMIZED
 
@@ -1605,8 +1605,8 @@ the following flags:
 
 .. data:: CO_NEWLOCALS
 
-   If set, a new dict will be created for the frame's ``f_locals`` when
-   the code object is executed.
+   If set, a new dict will be created for the frame's :attr:`~frame.f_locals`
+   when the code object is executed.
 
 .. data:: CO_VARARGS
 
