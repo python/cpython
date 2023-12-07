@@ -2998,8 +2998,9 @@ list_subscript(PyObject* obj, PyObject* item)
 }
 
 static int
-list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
+list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
 {
+    PyListObject *self = (PyListObject *)_self;
     if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
@@ -3162,7 +3163,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 static PyMappingMethods list_as_mapping = {
     list_length,
     list_subscript,
-    (objobjargproc)list_ass_subscript
+    list_ass_subscript
 };
 
 PyTypeObject PyList_Type = {
