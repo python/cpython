@@ -5593,6 +5593,12 @@ object_richcompare(PyObject *self, PyObject *other, int op)
     return res;
 }
 
+PyObject*
+_Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op)
+{
+    return object_richcompare(self, other, op);
+}
+
 static PyObject *
 object_get_class(PyObject *self, void *closure)
 {
