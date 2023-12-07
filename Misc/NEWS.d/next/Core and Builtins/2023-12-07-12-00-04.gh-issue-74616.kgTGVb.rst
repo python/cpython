@@ -1,0 +1,2 @@
+:func:`input` now raises a ValueError when output on the terminal if the
+prompt contains embedded null characters instead of silently truncating it.
