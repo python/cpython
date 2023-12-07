@@ -155,7 +155,6 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
 #else
     pthread_mutex_lock(&sema->mutex);
     int err = 0;
-
     if (sema->counter == 0) {
         if (timeout >= 0) {
             struct timespec ts;
