@@ -35,7 +35,7 @@ Functions and macros for modules that implement new object types.
    fields, this also fills in the ob_size field.
 
  - PyObject_Free(op) releases the memory allocated for an object.  It does not
-   run a destructor -- it only frees the memory.  PyObject_Free is identical.
+   run a destructor -- it only frees the memory.
 
  - PyObject_Init(op, typeobj) and PyObject_InitVar(op, typeobj, n) don't
    allocate memory.  Instead of a 'type' parameter, they take a pointer to a
