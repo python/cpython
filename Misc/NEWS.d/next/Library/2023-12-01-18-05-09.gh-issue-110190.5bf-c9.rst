@@ -1,1 +1,0 @@
-Fix ctypes structs with array on Arm platform by setting ``MAX_STRUCT_SIZE`` to 32 in stgdict. Patch by Diego Russo.

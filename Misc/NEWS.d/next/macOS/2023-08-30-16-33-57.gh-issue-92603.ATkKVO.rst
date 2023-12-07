@@ -1,3 +1,0 @@
-Update macOS installer to include a fix accepted by upstream Tcl/Tk
-for a crash encountered after the first :meth:`tkinter.Tk` instance
-is destroyed.

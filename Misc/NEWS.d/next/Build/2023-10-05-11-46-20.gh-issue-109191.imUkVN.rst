@@ -1,1 +1,0 @@
-Fix compile error when building with recent versions of libedit.
