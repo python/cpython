@@ -1651,6 +1651,17 @@ class TestTemporaryDirectory(BaseTestCase):
                 with self.assertRaises(PermissionError):
                     temp_dir.cleanup()
 
+    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
+    def test_cleanup_with_used_directory(self):
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(dir=working_dir)
+            subdir = os.path.join(temp_dir.name, "subdir")
+            os.mkdir(subdir)
+            with os_helper.change_cwd(subdir):
+                # Previously raised RecursionError on some OSes
+                # (e.g. Windows). See bpo-35144.
+                with self.assertRaises(PermissionError):
+                    temp_dir.cleanup()
 
     @os_helper.skip_unless_symlink
     def test_cleanup_with_symlink_to_a_directory(self):
