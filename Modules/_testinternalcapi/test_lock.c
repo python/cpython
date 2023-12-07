@@ -432,6 +432,12 @@ test_lock_rwlock(PyObject *self, PyObject *obj)
 {
     struct test_rwlock_data test_data = {.nthreads = 3};
 
+    _PyRWMutex_Lock(&test_data.rw);
+    assert(test_data.rw.bits == 1);
+
+    _PyRWMutex_Unlock(&test_data.rw);
+    assert(test_data.rw.bits == 0);
+
     // Start two readers
     PyThread_start_new_thread(rdlock_thread, &test_data);
     PyThread_start_new_thread(rdlock_thread, &test_data);

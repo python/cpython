@@ -217,9 +217,20 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
 // a single writer. The lock is write-preferring: if a writer is waiting, then
 // new readers will be blocked. This avoids starvation of writers.
 //
-// The low two bits store whether the lock is write-locked (_Py_LOCKED) and
-// whether there are parked threads (_Py_HAS_PARKED). The remaining bits are
-// used to store the number of readers.
+// The bitfield is structured as follows:
+//
+// N ...                                     2  1  0
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                  reader_count           |P |WL|
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
+// The least significant bit (WL / _Py_WRITE_LOCKED) indicates if the mutex is
+// write-locked. The next bit (PK/ _Py_HAS_PARKED) indicates if there are
+// parked threads (either readers or writers). The remaining bits
+// (reader_count) indicate the number of readers holding the lock.
+//
+// Note that reader_count must be zero if WL is set, and vice versa. The lock
+// can only be held by readers or a writer, but not both.
 //
 // The design is optimized for simplicity of the implementation. The lock is
 // not fair: if fairness is desired, use an additional PyMutex to serialize

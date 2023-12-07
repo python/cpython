@@ -354,16 +354,54 @@ _PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     }
 }
 
+#define _Py_WRITE_LOCKED 1
 #define _PyRWMutex_READER_SHIFT 2
+#define _Py_RWMUTEX_MAX_READERS (UINTPTR_MAX >> _PyRWMutex_READER_SHIFT)
+
+static uintptr_t
+rwmutex_set_parked_and_wait(_PyRWMutex *rwmutex, uintptr_t bits)
+{
+    // Set _Py_HAS_PARKED and wait until we are woken up.
+    if ((bits & _Py_HAS_PARKED) == 0) {
+        uintptr_t newval = bits | _Py_HAS_PARKED;
+        if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
+                                                 &bits, newval)) {
+            return bits;
+        }
+        bits = newval;
+    }
+
+    _PyParkingLot_Park(&rwmutex->bits, &bits, sizeof(bits), -1, NULL, 1);
+    return _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
+}
+
+// The number of readers holding the lock
+static uintptr_t
+rwmutex_reader_count(uintptr_t bits)
+{
+    return bits >> _PyRWMutex_READER_SHIFT;
+}
 
 void
 _PyRWMutex_RLock(_PyRWMutex *rwmutex)
 {
     uintptr_t bits = _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
     for (;;) {
-        // If the lock is not write-locked and there is no writer waiting, then
-        // we can increment the reader count.
-        if ((bits & (_Py_LOCKED|_Py_HAS_PARKED)) == 0) {
+        if ((bits & _Py_WRITE_LOCKED)) {
+            // The lock is write-locked.
+            bits = rwmutex_set_parked_and_wait(rwmutex, bits);
+            continue;
+        }
+        else if ((bits & _Py_HAS_PARKED)) {
+            // There is at least one waiting writer. We can't grab the lock
+            // because we don't want to starve the writer. Instead, we park
+            // ourselves and wait for the writer to eventually wake us up.
+            bits = rwmutex_set_parked_and_wait(rwmutex, bits);
+            continue;
+        }
+        else {
+            // The lock is unlocked or read-locked. Try to grab it.
+            assert(rwmutex_reader_count(bits) < _Py_RWMUTEX_MAX_READERS);
             uintptr_t newval = bits + (1 << _PyRWMutex_READER_SHIFT);
             if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
                                                      &bits, newval)) {
@@ -371,19 +409,6 @@ _PyRWMutex_RLock(_PyRWMutex *rwmutex)
             }
             return;
         }
-
-        // Set _Py_HAS_PARKED if it's not already set.
-        if ((bits & _Py_HAS_PARKED) == 0) {
-            uintptr_t newval = bits | _Py_HAS_PARKED;
-            if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
-                                                     &bits, newval)) {
-                continue;
-            }
-            bits = newval;
-        }
-
-        _PyParkingLot_Park(&rwmutex->bits, &bits, sizeof(bits), -1, NULL, 1);
-        bits = _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
     }
 }
 
@@ -393,7 +418,7 @@ _PyRWMutex_RUnlock(_PyRWMutex *rwmutex)
     uintptr_t bits = _Py_atomic_add_uintptr(&rwmutex->bits, -(1 << _PyRWMutex_READER_SHIFT));
     bits -= (1 << _PyRWMutex_READER_SHIFT);
 
-    if ((bits >> _PyRWMutex_READER_SHIFT) == 0 && (bits & _Py_HAS_PARKED)) {
+    if (rwmutex_reader_count(bits) == 0 && (bits & _Py_HAS_PARKED)) {
         _PyParkingLot_UnparkAll(&rwmutex->bits);
         return;
     }
@@ -409,23 +434,14 @@ _PyRWMutex_Lock(_PyRWMutex *rwmutex)
         if ((bits & ~_Py_HAS_PARKED) == 0) {
             if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
                                                      &bits,
-                                                     bits | _Py_LOCKED)) {
-                return;
-            }
-            continue;
-        }
-
-        if (!(bits & _Py_HAS_PARKED)) {
-            if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
-                                                     &bits,
-                                                     bits | _Py_HAS_PARKED)) {
+                                                     bits | _Py_WRITE_LOCKED)) {
                 continue;
             }
-            bits |= _Py_HAS_PARKED;
+            return;
         }
 
-        _PyParkingLot_Park(&rwmutex->bits, &bits, sizeof(bits), -1, NULL, 1);
-        bits = _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
+        // Otherwise, we have to wait.
+        bits = rwmutex_set_parked_and_wait(rwmutex, bits);
     }
 }
 
@@ -433,7 +449,9 @@ void
 _PyRWMutex_Unlock(_PyRWMutex *rwmutex)
 {
     uintptr_t old_bits = _Py_atomic_exchange_uintptr(&rwmutex->bits, 0);
-    assert(old_bits >> _PyRWMutex_READER_SHIFT == 0);
+
+    assert((old_bits & _Py_WRITE_LOCKED) && "lock was not write-locked");
+    assert(rwmutex_reader_count(old_bits) == 0 && "lock was read-locked");
 
     if ((old_bits & _Py_HAS_PARKED) != 0) {
         _PyParkingLot_UnparkAll(&rwmutex->bits);
