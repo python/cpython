@@ -2144,9 +2144,9 @@ The following features and APIs have been removed from Python 3.7:
 * Removed support of the *exclude* argument in :meth:`tarfile.TarFile.add`.
   It was deprecated in Python 2.7 and 3.2.  Use the *filter* argument instead.
 
-* The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
-  Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
-  function instead.
+* The :func:`!ntpath.splitunc` function was deprecated in
+  Python 3.1, and has now been removed.  Use :func:`~os.path.splitdrive`
+  instead.
 
 * :func:`collections.namedtuple` no longer supports the *verbose* parameter
   or ``_source`` attribute which showed the generated source code for the
