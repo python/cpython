@@ -584,7 +584,6 @@ extern "C" {
 #if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
 #   undef ALIGNOF_MAX_ALIGN_T
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
-#  error "Why?"
 #endif
 
 #ifndef PY_CXX_CONST
