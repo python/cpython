@@ -29,6 +29,7 @@ extern "C" {
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -38,16 +39,6 @@ extern "C" {
 struct _Py_long_state {
     int max_str_digits;
 };
-
-// Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
-// PyThreadState fields are exposed as part of the C API, although most fields
-// are intended to be private. The _PyThreadStateImpl fields not exposed.
-typedef struct _PyThreadStateImpl {
-    // semi-public fields are in PyThreadState.
-    PyThreadState base;
-
-    // TODO: add private fields here
-} _PyThreadStateImpl;
 
 
 /* cross-interpreter data registry */
