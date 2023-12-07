@@ -455,17 +455,6 @@ class COFF(Parser[schema.COFFSection, schema.COFFRelocation]):
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 8], "little")
             case {
-                "Type": {
-                    "Value": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
-                },
-                "Symbol": s,
-                "Offset": offset,
-            }:
-                offset += base
-                s = s.removeprefix(self.target.prefix)
-                value, symbol = self._symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little") - 4
-            case {
                 "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
                 "Symbol": s,
                 "Offset": offset,
@@ -547,30 +536,6 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
                 s = s.removeprefix(self.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = 0
-            case {
-                "Type": {"Value": "X86_64_RELOC_BRANCH" as kind},
-                "Symbol": {"Value": s},
-                "Offset": offset,
-            }:
-                offset += base
-                s = s.removeprefix(self.target.prefix)
-                value, symbol = self._symbol_to_value(s)
-                addend = (
-                    int.from_bytes(self.text[offset : offset + 4], sys.byteorder) - 4
-                )
-            case {
-                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
-                "Symbol": {"Value": s},
-                "Offset": offset,
-            }:
-                offset += base
-                s = s.removeprefix(self.target.prefix)
-                value, symbol = HoleValue.DATA, None
-                addend = (
-                    int.from_bytes(raw[offset : offset + 4], "little")
-                    + self._global_offset_table_lookup(s)
-                    - 4
-                )
             case {
                 "Type": {"Value": kind},
                 "Symbol": {"Value": s},

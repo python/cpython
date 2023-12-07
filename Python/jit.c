@@ -24,10 +24,7 @@
     #include <sys/mman.h>
 #endif
 
-#define FITS_IN_BITS(U, B) \
-    (((int64_t)(U) >= -(1LL << ((B) - 1))) && ((int64_t)(U) < (1LL << ((B) - 1))))
-
-static uint64_t
+static size_t
 get_page_size(void)
 {
 #ifdef MS_WINDOWS
@@ -49,7 +46,7 @@ jit_warn(const char *message)
 }
 
 static char *
-jit_alloc(uint64_t size)
+jit_alloc(size_t size)
 {
     assert(size);
     assert(size % get_page_size() == 0);
@@ -68,7 +65,7 @@ jit_alloc(uint64_t size)
 }
 
 static void
-jit_free(char *memory, uint64_t size)
+jit_free(char *memory, size_t size)
 {
     assert(size);
     assert(size % get_page_size() == 0);
@@ -83,7 +80,7 @@ jit_free(char *memory, uint64_t size)
 }
 
 static int
-mark_executable(char *memory, uint64_t size)
+mark_executable(char *memory, size_t size)
 {
     if (size == 0) {
         return 0;
@@ -108,7 +105,7 @@ mark_executable(char *memory, uint64_t size)
 }
 
 static int
-mark_readable(char *memory, uint64_t size)
+mark_readable(char *memory, size_t size)
 {
     if (size == 0) {
         return 0;
@@ -130,75 +127,66 @@ mark_readable(char *memory, uint64_t size)
 static void
 patch(char *base, const Hole *hole, uint64_t *patches)
 {
-    char *location = base + hole->offset;
+    void *location = base + hole->offset;
     uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
-    uint32_t *addr = (uint32_t *)location;
+    uint32_t *loc32 = (uint32_t *)location;
+    uint64_t *loc64 = (uint64_t *)location;
     switch (hole->kind) {
-        case HoleKind_IMAGE_REL_I386_DIR32:
-            *addr = (uint32_t)value;
+        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
+            value = ((value >> 12) << 12) - (((uint64_t)location >> 12) << 12);
+            assert((*loc32 & 0x9F000000) == 0x90000000);
+            assert((value & 0xFFF) == 0);
+            uint32_t lo = (value << 17) & 0x60000000;
+            uint32_t hi = (value >> 9) & 0x00FFFFE0;
+            *loc32 = (*loc32 & 0x9F00001F) | hi | lo;
             return;
-        case HoleKind_IMAGE_REL_AMD64_REL32:
-        case HoleKind_IMAGE_REL_I386_REL32:
-        case HoleKind_X86_64_RELOC_BRANCH:
-        case HoleKind_X86_64_RELOC_GOT:
-        case HoleKind_X86_64_RELOC_GOT_LOAD:
-            value -= (uint64_t)location;
-            assert(FITS_IN_BITS(value, 32));
-            *addr = (uint32_t)value;
+        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
+            value &= (1 << 12) - 1;
+            assert(((*loc32 & 0x3B000000) == 0x39000000) ||
+                   ((*loc32 & 0x11C00000) == 0x11000000));
+            int shift = 0;
+            if ((*loc32 & 0x3B000000) == 0x39000000) {
+                shift = ((*loc32 >> 30) & 0x3);
+                if (shift == 0 && (*loc32 & 0x04800000) == 0x04800000) {
+                    shift = 4;
+                }
+            }
+            assert(((value & ((1 << shift) - 1)) == 0));
+            *loc32 = (*loc32 & 0xFFC003FF) | (((value >> shift) << 10) & 0x003FFC00);
             return;
         case HoleKind_ARM64_RELOC_UNSIGNED:
         case HoleKind_IMAGE_REL_AMD64_ADDR64:
         case HoleKind_R_AARCH64_ABS64:
         case HoleKind_R_X86_64_64:
         case HoleKind_X86_64_RELOC_UNSIGNED:
-            *(uint64_t *)addr = value;
+            *loc64 = value;
             return;
-        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
-            value = ((value >> 12) << 12) - (((uint64_t)location >> 12) << 12);
-            assert((*addr & 0x9F000000) == 0x90000000);
-            assert((value & 0xFFF) == 0);
-            uint32_t lo = (value << 17) & 0x60000000;
-            uint32_t hi = (value >> 9) & 0x00FFFFE0;
-            *addr = (*addr & 0x9F00001F) | hi | lo;
+        case HoleKind_IMAGE_REL_I386_DIR32:
+            *loc32 = (uint32_t)value;
             return;
         case HoleKind_R_AARCH64_CALL26:
         case HoleKind_R_AARCH64_JUMP26:
             value -= (uint64_t)location;
-            assert(((*addr & 0xFC000000) == 0x14000000) ||
-                   ((*addr & 0xFC000000) == 0x94000000));
+            assert(((*loc32 & 0xFC000000) == 0x14000000) ||
+                   ((*loc32 & 0xFC000000) == 0x94000000));
             assert((value & 0x3) == 0);
-            assert(FITS_IN_BITS(value, 28));
-            *addr = (*addr & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
-            return;
-        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
-            value &= (1 << 12) - 1;
-            assert(((*addr & 0x3B000000) == 0x39000000) ||
-                   ((*addr & 0x11C00000) == 0x11000000));
-            int shift = 0;
-            if ((*addr & 0x3B000000) == 0x39000000) {
-                shift = ((*addr >> 30) & 0x3);
-                if (shift == 0 && (*addr & 0x04800000) == 0x04800000) {
-                    shift = 4;
-                }
-            }
-            assert(((value & ((1 << shift) - 1)) == 0));
-            *addr = (*addr & 0xFFC003FF) | ((uint32_t)((value >> shift) << 10) & 0x003FFC00);
+            *loc32 = (*loc32 & 0xFC000000) | ((value >> 2) & 0x03FFFFFF);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
-            assert(((*addr >> 21) & 0x3) == 0);
-            *addr = (*addr & 0xFFE0001F) | (((value >>  0) & 0xFFFF) << 5);
+            assert(((*loc32 >> 21) & 0x3) == 0);
+            *loc32 = (*loc32 & 0xFFE0001F) | (((value >>  0) & 0xFFFF) << 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
-            assert(((*addr >> 21) & 0x3) == 1);
-            *addr = (*addr & 0xFFE0001F) | (((value >> 16) & 0xFFFF) << 5);
+            assert(((*loc32 >> 21) & 0x3) == 1);
+            *loc32 = (*loc32 & 0xFFE0001F) | (((value >> 16) & 0xFFFF) << 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
-            assert(((*addr >> 21) & 0x3) == 2);
-            *addr = (*addr & 0xFFE0001F) | (((value >> 32) & 0xFFFF) << 5);
+            assert(((*loc32 >> 21) & 0x3) == 2);
+            *loc32 = (*loc32 & 0xFFE0001F) | (((value >> 32) & 0xFFFF) << 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G3:
-            assert(((*addr >> 21) & 0x3) == 3);
-            *addr = (*addr & 0xFFE0001F) | (((value >> 48) & 0xFFFF) << 5);
+            assert(((*loc32 >> 21) & 0x3) == 3);
+            *loc32 = (*loc32 & 0xFFE0001F) | (((value >> 48) & 0xFFFF) << 5);
             return;
     }
     Py_UNREACHABLE();
@@ -235,7 +223,7 @@ void
 _PyJIT_Free(_PyUOpExecutorObject *executor)
 {
     char *memory = (char *)executor->jit_code;
-    uint64_t size = executor->jit_size;
+    size_t size = executor->jit_size;
     if (memory) {
         executor->jit_code = NULL;
         executor->jit_size = 0;
@@ -246,15 +234,15 @@ _PyJIT_Free(_PyUOpExecutorObject *executor)
 int
 _PyJIT_Compile(_PyUOpExecutorObject *executor)
 {
-    uint64_t text_size = 0;
-    uint64_t data_size = 0;
+    size_t text_size = 0;
+    size_t data_size = 0;
     for (int i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
         text_size += stencil_group->text.body_size;
         data_size += stencil_group->data.body_size;
     }
-    uint64_t page_size = get_page_size();
+    size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
     text_size += page_size - (text_size & (page_size - 1));
     data_size += page_size - (data_size & (page_size - 1));

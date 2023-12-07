@@ -9,9 +9,7 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "ARM64_RELOC_GOT_LOAD_PAGEOFF12",
     "ARM64_RELOC_UNSIGNED",
     "IMAGE_REL_AMD64_ADDR64",
-    "IMAGE_REL_AMD64_REL32",
     "IMAGE_REL_I386_DIR32",
-    "IMAGE_REL_I386_REL32",
     "R_AARCH64_ABS64",
     "R_AARCH64_CALL26",
     "R_AARCH64_JUMP26",
@@ -20,9 +18,6 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "R_AARCH64_MOVW_UABS_G2_NC",
     "R_AARCH64_MOVW_UABS_G3",
     "R_X86_64_64",
-    "X86_64_RELOC_BRANCH",
-    "X86_64_RELOC_GOT",
-    "X86_64_RELOC_GOT_LOAD",
     "X86_64_RELOC_UNSIGNED",
 ]
 

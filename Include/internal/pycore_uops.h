@@ -22,7 +22,7 @@ typedef struct {
 typedef struct {
     _PyExecutorObject base;
     void *jit_code;
-    uint64_t jit_size;
+    size_t jit_size;
     _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
