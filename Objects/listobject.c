@@ -3211,7 +3211,7 @@ PyTypeObject PyList_Type = {
 /*********************** List Iterator **************************/
 
 static void listiter_dealloc(PyObject *);
-static int listiter_traverse(_PyListIterObject *, visitproc, void *);
+static int listiter_traverse(PyObject *, visitproc, void *);
 static PyObject *listiter_next(PyObject *);
 static PyObject *listiter_len(_PyListIterObject *, PyObject *);
 static PyObject *listiter_reduce_general(void *_it, int forward);
@@ -3252,7 +3252,7 @@ PyTypeObject PyListIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)listiter_traverse,            /* tp_traverse */
+    listiter_traverse,                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -3291,9 +3291,9 @@ listiter_dealloc(PyObject *obj)
 }
 
 static int
-listiter_traverse(_PyListIterObject *it, visitproc visit, void *arg)
+listiter_traverse(PyObject *it, visitproc visit, void *arg)
 {
-    Py_VISIT(it->it_seq);
+    Py_VISIT(((_PyListIterObject *)it)->it_seq);
     return 0;
 }
 
