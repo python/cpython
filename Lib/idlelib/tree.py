@@ -32,7 +32,7 @@ except NameError:
 if os.path.isdir(_icondir):
     ICONDIR = _icondir
 elif not os.path.isdir(ICONDIR):
-    raise RuntimeError("can't find icon directory (%r)" % (ICONDIR,))
+    raise RuntimeError(f"can't find icon directory ({ICONDIR!r})")
 
 def listicons(icondir=ICONDIR):
     """Utility to display the available icons."""
@@ -491,6 +491,7 @@ def _tree_widget(parent):  # htest #
     item = FileTreeItem(ICONDIR)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
+
 
 if __name__ == '__main__':
     from unittest import main

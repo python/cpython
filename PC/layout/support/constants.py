@@ -6,7 +6,6 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import os
-import re
 import struct
 import sys
 
@@ -16,7 +15,7 @@ def _unpack_hexversion():
         hexversion = int(os.getenv("PYTHON_HEXVERSION"), 16)
     except (TypeError, ValueError):
         hexversion = sys.hexversion
-    return struct.pack(">i", sys.hexversion)
+    return struct.pack(">i", hexversion)
 
 
 def _get_suffix(field4):
