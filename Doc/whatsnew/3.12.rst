@@ -1895,7 +1895,7 @@ Changes in the Python API
   * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
     raise a :exc:`TabError`.
 
-  * The :mod:`threading` module now expects the `_thread` module to have
+  * The :mod:`threading` module now expects the :mod:`!_thread` module to have
     a ``_is_main_interpreter`` attribute.  Is is a function with no
     arguments that returns ``True`` if the current interpreter is the
     main interpreter.
