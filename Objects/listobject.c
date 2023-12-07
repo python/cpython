@@ -3216,7 +3216,7 @@ PyTypeObject PyList_Type = {
 static void listiter_dealloc(PyObject *);
 static int listiter_traverse(PyObject *, visitproc, void *);
 static PyObject *listiter_next(PyObject *);
-static PyObject *listiter_len(_PyListIterObject *, PyObject *);
+static PyObject *listiter_len(PyObject *, PyObject *);
 static PyObject *listiter_reduce_general(void *_it, int forward);
 static PyObject *listiter_reduce(_PyListIterObject *, PyObject *);
 static PyObject *listiter_setstate(_PyListIterObject *, PyObject *state);
@@ -3226,7 +3226,7 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef listiter_methods[] = {
-    {"__length_hint__", (PyCFunction)listiter_len, METH_NOARGS, length_hint_doc},
+    {"__length_hint__", listiter_len, METH_NOARGS, length_hint_doc},
     {"__reduce__", (PyCFunction)listiter_reduce, METH_NOARGS, reduce_doc},
     {"__setstate__", (PyCFunction)listiter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
@@ -3325,8 +3325,9 @@ listiter_next(PyObject *obj)
 }
 
 static PyObject *
-listiter_len(_PyListIterObject *it, PyObject *Py_UNUSED(ignored))
+listiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    _PyListIterObject *it = (_PyListIterObject *)self;
     Py_ssize_t len;
     if (it->it_seq) {
         len = PyList_GET_SIZE(it->it_seq) - it->it_index;
