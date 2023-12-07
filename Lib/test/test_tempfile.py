@@ -1727,7 +1727,7 @@ class TestTemporaryDirectory(BaseTestCase):
     def test_cleanup_with_symlink_flags(self):
         # cleanup() should not follow symlinks when fixing flags (#91133)
         flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
-        self.check_flags()
+        self.check_flags(flags)
 
         with self.do_create(recurse=0) as d2:
             file1 = os.path.join(d2, 'file1')
@@ -1942,9 +1942,7 @@ class TestTemporaryDirectory(BaseTestCase):
                     d.cleanup()
                 self.assertFalse(os.path.exists(d.name))
 
-    def check_flags(self):
-        flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
-
+    def check_flags(self, flags):
         # skip the test if these flags are not supported (ex: FreeBSD 13)
         filename = os_helper.TESTFN
         try:
@@ -1953,8 +1951,8 @@ class TestTemporaryDirectory(BaseTestCase):
                 os.chflags(filename, flags)
             except OSError as exc:
                 # "OSError: [Errno 45] Operation not supported"
-                self.skipTest(f"chflags() doesn't support "
-                              f"UF_IMMUTABLE|UF_NOUNLINK: {exc}")
+                self.skipTest(f"chflags() doesn't support flags "
+                              f"{flags:#b}: {exc}")
             else:
                 os.chflags(filename, 0)
         finally:
@@ -1963,7 +1961,7 @@ class TestTemporaryDirectory(BaseTestCase):
     @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
     def test_flags(self):
         flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
-        self.check_flags()
+        self.check_flags(flags)
 
         d = self.do_create(recurse=3, dirs=2, files=2)
         with d:
