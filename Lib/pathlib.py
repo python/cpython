@@ -92,6 +92,12 @@ def _compile_pattern(pat, sep, case_sensitive):
     return re.compile(regex, flags=flags).match
 
 
+def _select_parents(paths, dir_only):
+    """Yield lexical parents of the given paths."""
+    for path in paths:
+        yield path._make_child_relpath('..', dir_only)
+
+
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
     """Yield direct children of given paths, filtering by name and type."""
     if follow_symlinks is None:
@@ -1105,7 +1111,7 @@ class _PathBase(PurePath):
                 pass
             elif part == '..':
                 dir_only = part_idx < len(pattern_parts)
-                paths = (path._make_child_relpath('..', dir_only) for path in paths)
+                paths = _select_parents(paths, dir_only)
             elif part == '**':
                 # Consume adjacent '**' components.
                 while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
