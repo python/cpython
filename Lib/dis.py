@@ -382,20 +382,15 @@ class Instruction(_Instruction):
 
     def __str__(self):
         output = io.StringIO()
-        formatter = Formatter(file=output,
-                              lineno_width=3,
-                              offset_width=0,
-                              label_width=0)
+        formatter = Formatter(file=output)
         formatter.print_instruction(self, False)
         return output.getvalue()
 
 
 class Formatter:
 
-    NO_LINENO = '  --'
-
-    def __init__(self, file=None, lineno_width=3, offset_width=0, label_width=0,
-                       linestarts=None, line_offset=0):
+    def __init__(self, file=None, lineno_width=0, offset_width=0, label_width=0,
+                       line_offset=0):
         """Create a Formatter
 
         *file* where to write the output
@@ -403,35 +398,12 @@ class Formatter:
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
 
-        *linestarts* dictionary mapping offset to lineno, for offsets that
-                     start a new line
         *line_offset* the line number (within the code unit)
         """
         self.file = file
+        self.lineno_width = lineno_width
         self.offset_width = offset_width
         self.label_width = label_width
-        self.linestarts = linestarts
-
-        # Omit the line number column entirely if we have no line number info
-        if bool(linestarts):
-            linestarts_ints = [line for line in linestarts.values() if line is not None]
-            show_lineno = len(linestarts_ints) > 0
-        else:
-            show_lineno = False
-
-        if show_lineno:
-            maxlineno = max(linestarts_ints) + line_offset
-            if maxlineno >= 1000:
-                lineno_width = len(str(maxlineno))
-            else:
-                lineno_width = 3
-
-            if lineno_width < len(self.NO_LINENO) and None in linestarts.values():
-                lineno_width = len(self.NO_LINENO)
-        else:
-            lineno_width = 0
-
-        self.lineno_width = lineno_width
 
 
     def print_instruction(self, instr, mark_as_current=False):
@@ -452,7 +424,7 @@ class Formatter:
             if instr.starts_line:
                 lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
                 lineno_fmt = lineno_fmt % lineno_width
-                lineno = self.NO_LINENO if instr.line_number is None else instr.line_number
+                lineno = _NO_LINENO if instr.line_number is None else instr.line_number
                 fields.append(lineno_fmt % lineno)
             else:
                 fields.append(' ' * lineno_width)
@@ -779,6 +751,20 @@ def _make_labels_map(original_code, exception_entries=()):
         e.target_label = labels_map[e.target]
     return labels_map
 
+_NO_LINENO = '  --'
+
+def _get_lineno_width(linestarts):
+    if linestarts is None:
+        return 0
+    maxlineno = max(filter(None, linestarts.values()), default=-1)
+    if maxlineno == -1:
+        # Omit the line number column entirely if we have no line number info
+        return 0
+    lineno_width = max(3, len(str(maxlineno)))
+    if lineno_width < len(_NO_LINENO) and None in linestarts.values():
+        lineno_width = len(_NO_LINENO)
+    return lineno_width
+
 
 def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        names=None, co_consts=None, linestarts=None,
@@ -792,9 +778,9 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
     label_width = 4 + len(str(len(labels_map)))
 
     formatter = Formatter(file=file,
+                          lineno_width=_get_lineno_width(linestarts),
                           offset_width=offset_width,
                           label_width=label_width,
-                          linestarts=linestarts,
                           line_offset=line_offset)
 
     arg_resolver = ArgResolver(co_consts, names, varname_from_oparg, labels_map)
