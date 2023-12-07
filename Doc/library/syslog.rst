@@ -117,11 +117,11 @@ Facilities:
    :const:`LOG_AUTH`, :const:`LOG_LPR`, :const:`LOG_NEWS`, :const:`LOG_UUCP`,
    :const:`LOG_CRON`, :const:`LOG_SYSLOG`, :const:`LOG_LOCAL0` to
    :const:`LOG_LOCAL7`, and, if defined in ``<syslog.h>``,
-   :const:`LOG_AUTHPRIV`, :const:`LOG_FTP`, :const:`LOG_NETINFO`, 
+   :const:`LOG_AUTHPRIV`, :const:`LOG_FTP`, :const:`LOG_NETINFO`,
    :const:`LOG_REMOTEAUTH`, :const:`LOG_INSTALL`, :const:`LOG_RAS`.
 
    .. versionchanged:: 3.13
-       Added :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`, 
+       Added :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`,
        :const:`LOG_INSTALL`, :const:`LOG_RAS`, and :const:`LOG_LAUNCHD`.
 
 Log options:
