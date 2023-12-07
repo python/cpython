@@ -3363,7 +3363,7 @@ typedef struct {
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listreviterobject;
 
-static void listreviter_dealloc(listreviterobject *);
+static void listreviter_dealloc(PyObject *);
 static int listreviter_traverse(PyObject *, visitproc, void *);
 static PyObject *listreviter_next(listreviterobject *);
 static PyObject *listreviter_len(listreviterobject *, PyObject *);
@@ -3383,7 +3383,7 @@ PyTypeObject PyListRevIter_Type = {
     sizeof(listreviterobject),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)listreviter_dealloc,            /* tp_dealloc */
+    listreviter_dealloc,                        /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -3433,8 +3433,9 @@ list___reversed___impl(PyListObject *self)
 }
 
 static void
-listreviter_dealloc(listreviterobject *it)
+listreviter_dealloc(PyObject *self)
 {
+    listreviterobject *it = (listreviterobject *)self;
     PyObject_GC_UnTrack(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
