@@ -395,7 +395,7 @@ class Formatter:
     NO_LINENO = '  --'
 
     def __init__(self, file=None, lineno_width=3, offset_width=0, label_width=0,
-                       linestarts=None, exception_entries=None, line_offset=0):
+                       linestarts=None, line_offset=0):
         """Create a Formatter
 
         *file* where to write the output
@@ -412,7 +412,6 @@ class Formatter:
         self.offset_width = offset_width
         self.label_width = label_width
         self.linestarts = linestarts
-        self.exception_entries = exception_entries
 
         # Omit the line number column entirely if we have no line number info
         if bool(linestarts):
@@ -487,11 +486,11 @@ class Formatter:
                 fields.append('(' + instr.argrepr + ')')
         print(' '.join(fields).rstrip(), file=self.file)
 
-    def print_exception_table(self):
+    def print_exception_table(self, exception_entries):
         file = self.file
-        if self.exception_entries:
+        if exception_entries:
             print("ExceptionTable:", file=file)
-            for entry in self.exception_entries:
+            for entry in exception_entries:
                 lasti = " lasti" if entry.lasti else ""
                 start = entry.start_label
                 end = entry.end_label
@@ -797,8 +796,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                           offset_width=offset_width,
                           label_width=label_width,
                           linestarts=linestarts,
-                          line_offset=line_offset,
-                          exception_entries=exception_entries)
+                          line_offset=line_offset)
 
     arg_resolver = ArgResolver(co_consts, names, varname_from_oparg, labels_map)
     instrs = _get_instructions_bytes(code, linestarts=linestarts,
@@ -809,10 +807,11 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                                            labels_map=labels_map,
                                            arg_resolver=arg_resolver)
 
-    print_instructions(instrs, formatter, show_caches=show_caches, lasti=lasti)
+    print_instructions(instrs, exception_entries, formatter,
+                       show_caches=show_caches, lasti=lasti)
 
 
-def print_instructions(instrs, formatter, show_caches=False, lasti=-1):
+def print_instructions(instrs, exception_entries, formatter, show_caches=False, lasti=-1):
     for instr in instrs:
         if show_caches:
             is_current_instr = instr.offset == lasti
@@ -821,7 +820,7 @@ def print_instructions(instrs, formatter, show_caches=False, lasti=-1):
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         formatter.print_instruction(instr, is_current_instr)
-    formatter.print_exception_table()
+    formatter.print_exception_table(exception_entries)
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
