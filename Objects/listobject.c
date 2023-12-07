@@ -752,8 +752,9 @@ PyList_SetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 }
 
 static PyObject *
-list_inplace_repeat(PyListObject *self, Py_ssize_t n)
+list_inplace_repeat(PyObject *_self, Py_ssize_t n)
 {
+    PyListObject *self = (PyListObject *)_self;
     Py_ssize_t input_size = PyList_GET_SIZE(self);
     if (input_size == 0 || n == 1) {
         return Py_NewRef(self);
@@ -2939,7 +2940,7 @@ static PySequenceMethods list_as_sequence = {
     0,                                          /* sq_ass_slice */
     list_contains,                              /* sq_contains */
     list_inplace_concat,                        /* sq_inplace_concat */
-    (ssizeargfunc)list_inplace_repeat,          /* sq_inplace_repeat */
+    list_inplace_repeat,                        /* sq_inplace_repeat */
 };
 
 static PyObject *
