@@ -1285,11 +1285,11 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
         case _INIT_CALL_PY_EXACT_ARGS:
             return 1;
         case _PUSH_FRAME:
-            return 1;
+            return 0;
         case CALL_BOUND_METHOD_EXACT_ARGS:
-            return 1;
+            return 0;
         case CALL_PY_EXACT_ARGS:
-            return 1;
+            return 0;
         case CALL_PY_WITH_DEFAULTS:
             return 1;
         case CALL_TYPE_1:
