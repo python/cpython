@@ -8,18 +8,29 @@ from _xxsubinterpreters import (
     InterpreterError, InterpreterNotFoundError,
     is_shareable,
 )
-from .queues import (
-    create as create_queue,
-    Queue, QueueEmpty, QueueFull,
-)
 
 
 __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
     'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
-    'create_queue', 'QueueEmpty', 'QueueFull',
+    'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
 ]
+
+
+_queuemod = None
+
+def __getattr__(name):
+    if name in ('Queue', 'QueueEmpty', 'QueueFull', 'create_queue'):
+        global create_queue, Queue, QueueEmpty, QueueFull
+        ns = globals()
+        from .queues import (
+            create as create_queue,
+            Queue, QueueEmpty, QueueFull,
+        )
+        return ns[name]
+    else:
+        raise AttributeError(name)
 
 
 class ExecFailure(RuntimeError):

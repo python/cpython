@@ -12,6 +12,24 @@ from test.support.interpreters import InterpreterNotFoundError
 from .utils import _captured_script, _run_output, _running, TestBase
 
 
+class ModuleTests(TestBase):
+
+    def test_queue_aliases(self):
+        first = [
+            interpreters.create_queue,
+            interpreters.Queue,
+            interpreters.QueueEmpty,
+            interpreters.QueueFull,
+        ]
+        second = [
+            interpreters.create_queue,
+            interpreters.Queue,
+            interpreters.QueueEmpty,
+            interpreters.QueueFull,
+        ]
+        self.assertEqual(second, first)
+
+
 class CreateTests(TestBase):
 
     def test_in_main(self):
