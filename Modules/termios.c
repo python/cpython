@@ -764,7 +764,7 @@ static struct constant {
 #ifdef NL2
     {"NL2", NL2},
 #endif
-#ifdef NL1
+#ifdef NL3
     {"NL3", NL3},
 #endif
 #ifdef CR0
@@ -898,7 +898,9 @@ static struct constant {
     {"VKILL", VKILL},
     {"VEOF", VEOF},
     {"VTIME", VTIME},
+#ifdef VSTATUS
     {"VSTATUS", VSTATUS},
+#endif
     {"VMIN", VMIN},
 #ifdef VSWTC
     /* The #defines above ensure that if either is defined, both are,
