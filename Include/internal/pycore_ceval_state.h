@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"            // PyMutex
 #include "pycore_gil.h"             // struct _gil_runtime_state
 
 
@@ -15,7 +16,7 @@ typedef int (*_Py_pending_call_func)(void *);
 
 struct _pending_calls {
     int busy;
-    PyThread_type_lock lock;
+    PyMutex mutex;
     /* Request for running pending calls. */
     int32_t calls_to_do;
 #define NPENDINGCALLS 32

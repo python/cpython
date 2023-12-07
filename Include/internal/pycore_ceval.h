@@ -41,8 +41,7 @@ PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
 #endif
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
-extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
-extern void _PyEval_FiniState(struct _ceval_state *ceval);
+extern void _PyEval_InitState(PyInterpreterState *);
 extern void _PyEval_SignalReceived(PyInterpreterState *interp);
 
 // bitwise flags:

@@ -418,11 +418,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
-    LAST_MODULE_INDEX++;
-    Py_ssize_t index = LAST_MODULE_INDEX;
-    PyThread_release_lock(EXTENSIONS.mutex);
-    return index;
+    return _Py_atomic_add_ssize(&LAST_MODULE_INDEX, 1) + 1;
 }
 
 static const char *
@@ -882,13 +878,13 @@ gets even messier.
 static inline void
 extensions_lock_acquire(void)
 {
-    PyThread_acquire_lock(_PyRuntime.imports.extensions.mutex, WAIT_LOCK);
+    PyMutex_Lock(&_PyRuntime.imports.extensions.mutex);
 }
 
 static inline void
 extensions_lock_release(void)
 {
-    PyThread_release_lock(_PyRuntime.imports.extensions.mutex);
+    PyMutex_Unlock(&_PyRuntime.imports.extensions.mutex);
 }
 
 /* Magic for extension modules (built-in as well as dynamically

@@ -3056,13 +3056,13 @@ wait_for_thread_shutdown(PyThreadState *tstate)
 int Py_AtExit(void (*func)(void))
 {
     struct _atexit_runtime_state *state = &_PyRuntime.atexit;
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     if (state->ncallbacks >= NEXITFUNCS) {
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         return -1;
     }
     state->callbacks[state->ncallbacks++] = func;
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
     return 0;
 }
 
@@ -3072,18 +3072,18 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
     atexit_callbackfunc exitfunc;
     struct _atexit_runtime_state *state = &runtime->atexit;
 
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     while (state->ncallbacks > 0) {
         /* pop last function from the list */
         state->ncallbacks--;
         exitfunc = state->callbacks[state->ncallbacks];
         state->callbacks[state->ncallbacks] = NULL;
 
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         exitfunc();
-        PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+        PyMutex_Lock(&state->mutex);
     }
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
 
     fflush(stdout);
     fflush(stderr);

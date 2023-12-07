@@ -220,9 +220,9 @@ PyAPI_FUNC(int) _PyState_AddModule(
 extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #define HEAD_LOCK(runtime) \
-    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
+    PyMutex_LockFlags(&(runtime)->interpreters.mutex, _Py_LOCK_DONT_DETACH)
 #define HEAD_UNLOCK(runtime) \
-    PyThread_release_lock((runtime)->interpreters.mutex)
+    PyMutex_Unlock(&(runtime)->interpreters.mutex)
 
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.
