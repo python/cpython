@@ -2953,7 +2953,7 @@ list_subscript(PyObject* obj, PyObject* item)
             return NULL;
         if (i < 0)
             i += PyList_GET_SIZE(self);
-        return list_item(self, i);
+        return list_item((PyObject *)self, i);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, i;
