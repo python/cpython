@@ -1331,6 +1331,11 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
 
+    if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
+        // Start in the suspended state if there is an ongoing stop-the-world.
+        tstate->state = _Py_THREAD_SUSPENDED;
+    }
+
     tstate->_status.initialized = 1;
 }
 
