@@ -405,7 +405,6 @@ class Formatter:
 
         *linestarts* dictionary mapping offset to lineno, for offsets that
                      start a new line
-        *exception_entries* the exception table (list of ExceptionEntry)
         *line_offset* the line number (within the code unit)
         """
         self.file = file
