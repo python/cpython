@@ -16073,6 +16073,26 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 }
 #endif
 
+#if defined(MS_WINDOWS)
+/*[clinic input]
+os._supports_virtual_terminal
+
+Checks if virtual terminal is supported in windows
+[clinic start generated code]*/
+
+static PyObject *
+os__supports_virtual_terminal_impl(PyObject *module)
+/*[clinic end generated code: output=bd0556a6d9d99fe6 input=0752c98e5d321542]*/
+{
+    DWORD mode = 0;
+    HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
+    if (!GetConsoleMode(handle, &mode)) {
+        Py_RETURN_FALSE;
+    }
+    return PyBool_FromLong(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+#endif
+
 
 static PyMethodDef posix_methods[] = {
 
@@ -16277,6 +16297,8 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF
     OS__PATH_EXISTS_METHODDEF
+
+    OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

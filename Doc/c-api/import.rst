@@ -154,7 +154,7 @@ Importing Modules
    :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
    The module's :attr:`__file__` attribute will be set to the code object's
-   :attr:`!co_filename`.  If applicable, :attr:`__cached__` will also
+   :attr:`~codeobject.co_filename`.  If applicable, :attr:`__cached__` will also
    be set.
 
    This function will reload the module if it was already imported.  See
