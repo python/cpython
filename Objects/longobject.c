@@ -6201,9 +6201,15 @@ static PyMethodDef long_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyObject *
+long_long_meth_getter(PyObject *self, void *arg)
+{
+    return long_long_meth(self, arg);
+}
+
 static PyGetSetDef long_getset[] = {
     {"real",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_meth_getter, (setter)NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
@@ -6211,7 +6217,7 @@ static PyGetSetDef long_getset[] = {
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_meth_getter, (setter)NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",
