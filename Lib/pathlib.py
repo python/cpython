@@ -274,7 +274,7 @@ class PurePath:
             elif len(drv_parts) == 6:
                 # e.g. //?/unc/server/share
                 root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
+        parsed = [x for x in rel.split(sep) if x and x != '.']
         return drv, root, parsed
 
     def _load_parts(self):
@@ -606,7 +606,7 @@ class PurePath:
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
-        return (self.__class__, self.parts)
+        return (self.__class__, tuple(self._raw_paths))
 
     def __fspath__(self):
         return str(self)

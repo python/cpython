@@ -695,14 +695,19 @@ class PurePathTest(unittest.TestCase):
 
     def test_pickling_common(self):
         P = self.cls
-        p = P('/a/b')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertIs(pp.__class__, p.__class__)
-            self.assertEqual(pp, p)
-            self.assertEqual(hash(pp), hash(p))
-            self.assertEqual(str(pp), str(p))
+        paths = [
+            P('a'), P('a', 'b'), P('a/b'), P('a', 'b', 'c'), P('a/b/c'),
+            P('/'), P('/a', 'b'), P('/a/b'), P('/a', 'b', 'c'), P('/a/b/c'),
+        ]
+        for p in paths:
+            with self.subTest(path=p):
+                for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+                    dumped = pickle.dumps(p, proto)
+                    pp = pickle.loads(dumped)
+                    self.assertIs(pp.__class__, p.__class__)
+                    self.assertEqual(pp, p)
+                    self.assertEqual(hash(pp), hash(p))
+                    self.assertEqual(str(pp), str(p))
 
     def test_fspath_common(self):
         P = self.cls
@@ -2544,22 +2549,6 @@ class DummyPathTest(unittest.TestCase):
         self.assertFalse((P / 'fileA' / 'bah').is_char_device())
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
-
-    def test_pickling_common(self):
-        p = self.cls(BASE, 'fileA')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertEqual(pp.stat(), p.stat())
-
-    def test_parts_interning(self):
-        P = self.cls
-        p = P('/usr/bin/foo')
-        q = P('/usr/local/bin')
-        # 'usr'
-        self.assertIs(p.parts[1], q.parts[1])
-        # 'bin'
-        self.assertIs(p.parts[2], q.parts[3])
 
     def _check_complex_symlinks(self, link0_target):
         if not self.can_symlink:
