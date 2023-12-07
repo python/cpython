@@ -96,7 +96,7 @@ PyMutex_IsLocked(PyMutex *m)
 static inline void
 _PyMutex_at_fork_reinit(PyMutex *m)
 {
-    *m = (PyMutex){0};
+    memset(m, 0, sizeof(*m));
 }
 
 typedef enum _PyLockFlags {
