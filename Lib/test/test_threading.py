@@ -1827,6 +1827,34 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, not_exported=not_exported)
 
+    @requires_subprocess()
+    def test_gh112826_missing__thread__is_main_interpreter(self):
+        with os_helper.temp_dir() as tempdir:
+            modname = '_thread_fake'
+            import os.path
+            filename = os.path.join(tempdir, modname + '.py')
+            with open(filename, 'w') as outfile:
+                outfile.write("""if True:
+                    import _thread
+                    globals().update(vars(_thread))
+                    del _is_main_interpreter
+                    """)
+
+            expected_output = b'success!'
+            _, out, err = assert_python_ok("-c", f"""if True:
+                import sys
+                sys.path.insert(0, {tempdir!r})
+                import {modname}
+                sys.modules['_thread'] = {modname}
+                del sys.modules[{modname!r}]
+
+                import threading
+                print({expected_output.decode('utf-8')!r}, end='')
+                """)
+
+            self.assertEqual(out, expected_output)
+            self.assertEqual(err, b'')
+
 
 class InterruptMainTests(unittest.TestCase):
     def check_interrupt_main_with_signal_handler(self, signum):
