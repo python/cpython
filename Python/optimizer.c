@@ -322,6 +322,9 @@ PyUnstable_Optimizer_NewCounter(void)
 static void
 uop_dealloc(_PyUOpExecutorObject *self) {
     _Py_ExecutorClear((_PyExecutorObject *)self);
+#ifdef _Py_JIT
+    _PyJIT_Free(self);
+#endif
     PyObject_Free(self);
 }
 
@@ -833,18 +836,14 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
+    executor->base.execute = _PyUOpExecute;
 #ifdef _Py_JIT
-    _PyJITFunction execute = _PyJIT_CompileTrace(executor, executor->trace, length);
-    if (execute == NULL) {
+    if (_PyJIT_Compile(executor)) {
         if (PyErr_Occurred()) {
             Py_DECREF(executor);
             return NULL;
         }
-        execute = _PyUOpExecute;
     }
-    executor->base.execute = execute;
-#else
-    executor->base.execute = _PyUOpExecute;
 #endif
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
 #ifdef Py_DEBUG

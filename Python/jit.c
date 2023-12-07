@@ -10,6 +10,7 @@
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
+#include "pycore_optimizer.h"
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
@@ -39,7 +40,7 @@ get_page_size(void)
 }
 
 static void
-warn(const char *message)
+jit_warn(const char *message)
 {
 #ifdef MS_WINDOWS
     int errno = GetLastError();
@@ -48,7 +49,7 @@ warn(const char *message)
 }
 
 static char *
-alloc(uint64_t size)
+jit_alloc(uint64_t size)
 {
     assert(size);
     assert(size % get_page_size() == 0);
@@ -60,10 +61,25 @@ alloc(uint64_t size)
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
-        warn("unable to allocate memory");
+        jit_warn("unable to allocate memory");
         return NULL;
     }
     return memory;
+}
+
+static void
+jit_free(char *memory, uint64_t size)
+{
+    assert(size);
+    assert(size % get_page_size() == 0);
+#ifdef MS_WINDOWS
+    int failed = !VirtualFree(memory, 0, MEM_RELEASE);
+#else
+    int failed = munmap(memory, size);
+#endif
+    if (failed) {
+        jit_warn("unable to free memory");
+    }
 }
 
 static int
@@ -75,7 +91,7 @@ mark_executable(char *memory, uint64_t size)
     assert(size % get_page_size() == 0);
 #ifdef MS_WINDOWS
     if (!FlushInstructionCache(GetCurrentProcess(), memory, size)) {
-        warn("unable to flush instruction cache");
+        jit_warn("unable to flush instruction cache");
         return -1;
     }
     DWORD old;
@@ -85,7 +101,7 @@ mark_executable(char *memory, uint64_t size)
     int failed = mprotect(memory, size, PROT_EXEC);
 #endif
     if (failed) {
-        warn("unable to protect executable memory");
+        jit_warn("unable to protect executable memory");
         return -1;
     }
     return 0;
@@ -105,7 +121,7 @@ mark_readable(char *memory, uint64_t size)
     int failed = mprotect(memory, size, PROT_READ);
 #endif
     if (failed) {
-        warn("unable to protect readable memory");
+        jit_warn("unable to protect readable memory");
         return -1;
     }
     return 0;
@@ -206,13 +222,34 @@ emit(const StencilGroup *stencil_group, uint64_t patches[])
     copy_and_patch(text, &stencil_group->text, patches);
 }
 
-_PyJITFunction
-_PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, int size)
+static _PyInterpreterFrame *
+execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
-    uint64_t text_size = wrapper_stencil_group.text.body_size;
-    uint64_t data_size = wrapper_stencil_group.data.body_size;
-    for (int i = 0; i < size; i++) {
-        _PyUOpInstruction *instruction = &trace[i];
+    assert(PyObject_TypeCheck(executor, &_PyUOpExecutor_Type));
+    frame = ((_PyJITContinueFunction)(((_PyUOpExecutorObject *)(executor))->jit_code))(frame, stack_pointer, PyThreadState_Get());
+    Py_DECREF(executor);
+    return frame;
+}
+
+void
+_PyJIT_Free(_PyUOpExecutorObject *executor)
+{
+    char *memory = (char *)executor->jit_code;
+    uint64_t size = executor->jit_size;
+    if (memory) {
+        executor->jit_code = NULL;
+        executor->jit_size = 0;
+        jit_free(memory, size);
+    }
+}
+
+int
+_PyJIT_Compile(_PyUOpExecutorObject *executor)
+{
+    uint64_t text_size = 0;
+    uint64_t data_size = 0;
+    for (int i = 0; i < Py_SIZE(executor); i++) {
+        _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
         text_size += stencil_group->text.body_size;
         data_size += stencil_group->data.body_size;
@@ -221,23 +258,14 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     assert((page_size & (page_size - 1)) == 0);
     text_size += page_size - (text_size & (page_size - 1));
     data_size += page_size - (data_size & (page_size - 1));
-    char *memory = alloc(text_size + data_size);
+    char *memory = jit_alloc(text_size + data_size);
     if (memory == NULL) {
-        return NULL;
+        return -1;
     }
     char *text = memory;
     char *data = memory + text_size;
-    const StencilGroup *stencil_group = &wrapper_stencil_group;
-    uint64_t patches[] = GET_PATCHES();
-    patches[HoleValue_CONTINUE] = (uint64_t)text + stencil_group->text.body_size;
-    patches[HoleValue_DATA] = (uint64_t)data;
-    patches[HoleValue_TEXT] = (uint64_t)text;
-    patches[HoleValue_ZERO] = 0;
-    emit(stencil_group, patches);
-    text += stencil_group->text.body_size;
-    data += stencil_group->data.body_size;
-    for (int i = 0; i < size; i++) {
-        _PyUOpInstruction *instruction = &trace[i];
+    for (int i = 0; i < Py_SIZE(executor); i++) {
+        _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
         uint64_t patches[] = GET_PATCHES();
         patches[HoleValue_CONTINUE] = (uint64_t)text + stencil_group->text.body_size;
@@ -247,7 +275,7 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
         patches[HoleValue_TARGET] = instruction->target;
         patches[HoleValue_DATA] = (uint64_t)data;
         patches[HoleValue_TEXT] = (uint64_t)text;
-        patches[HoleValue_TOP] = (uint64_t)memory + wrapper_stencil_group.text.body_size;
+        patches[HoleValue_TOP] = (uint64_t)memory;
         patches[HoleValue_ZERO] = 0;
         emit(stencil_group, patches);
         text += stencil_group->text.body_size;
@@ -256,9 +284,13 @@ _PyJIT_CompileTrace(_PyUOpExecutorObject *executor, _PyUOpInstruction *trace, in
     if (mark_executable(memory, text_size) ||
         mark_readable(memory + text_size, data_size))
     {
-        return NULL;
+        jit_free(memory, text_size + data_size);
+        return -1;
     }
-    return (_PyJITFunction)memory;
+    executor->base.execute = execute;
+    executor->jit_code = memory;
+    executor->jit_size = text_size + data_size;
+    return 0;
 }
 
 #endif

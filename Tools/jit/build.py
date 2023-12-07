@@ -33,8 +33,6 @@ PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-STUBS = ["wrapper"]
-
 LLVM_VERSION = 16
 
 
@@ -707,9 +705,6 @@ class Compiler:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                for stub in STUBS:
-                    task = self._compile(stub, TOOLS_JIT / f"{stub}.c", work)
-                    group.create_task(task)
                 for opname in opnames:
                     task = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
                     group.create_task(task)
@@ -808,12 +803,8 @@ class Compiler:
         yield "    .data = INIT_STENCIL(OP##_data), \\"
         yield "}"
         yield ""
-        assert opnames[-len(STUBS) :] == STUBS
-        for stub in opnames[-len(STUBS) :]:
-            yield f"static const StencilGroup {stub}_stencil_group = INIT_STENCIL_GROUP({stub});"
-        yield ""
         yield "static const StencilGroup stencil_groups[512] = {"
-        for opname in opnames[: -len(STUBS)]:
+        for opname in opnames:
             yield f"    [{opname}] = INIT_STENCIL_GROUP({opname}),"
         yield "};"
         yield ""
