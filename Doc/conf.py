@@ -160,6 +160,10 @@ nitpick_ignore = [
     # Deprecated function that was never documented:
     ('py:func', 'getargspec'),
     ('py:func', 'inspect.getargspec'),
+    # Undocumented modules that users shouldn't have to worry about
+    # (implementation details of `os.path`):
+    ('py:mod', 'ntpath'),
+    ('py:mod', 'posixpath'),
 ]
 
 # Temporary undocumented names.
