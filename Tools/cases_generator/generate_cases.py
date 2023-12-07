@@ -883,7 +883,6 @@ def main() -> None:
         return
 
     # These raise OSError if output can't be written
-    a.write_instructions(args.output, args.emit_line_directives)
 
     a.assign_opcode_ids()
     a.write_opcode_ids(args.opcode_ids_h, args.opcode_targets_h)
