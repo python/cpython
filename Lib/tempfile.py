@@ -41,7 +41,6 @@ import warnings as _warnings
 import io as _io
 import os as _os
 import shutil as _shutil
-import stat as _stat
 import errno as _errno
 from random import Random as _Random
 import sys as _sys
@@ -909,18 +908,7 @@ class TemporaryDirectory:
                         # raise NotADirectoryError and mask the PermissionError.
                         # So we must re-raise the current PermissionError if
                         # path is not a directory.
-                        try:
-                            st = _os.lstat(path)
-                        except OSError:
-                            if ignore_errors:
-                                return
-                            raise
-                        if (_stat.S_ISLNK(st.st_mode) or
-                            not _stat.S_ISDIR(st.st_mode) or
-                            (hasattr(st, 'st_file_attributes') and
-                             st.st_file_attributes & _stat.FILE_ATTRIBUTE_REPARSE_POINT and
-                             st.st_reparse_tag == _stat.IO_REPARSE_TAG_MOUNT_POINT)
-                        ):
+                        if not _os.path.isdir(path) or _os.path.isjunction(path):
                             if ignore_errors:
                                 return
                             raise
