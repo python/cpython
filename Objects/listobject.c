@@ -3366,12 +3366,12 @@ typedef struct {
 static void listreviter_dealloc(PyObject *);
 static int listreviter_traverse(PyObject *, visitproc, void *);
 static PyObject *listreviter_next(PyObject *);
-static PyObject *listreviter_len(listreviterobject *, PyObject *);
+static PyObject *listreviter_len(PyObject *, PyObject *);
 static PyObject *listreviter_reduce(listreviterobject *, PyObject *);
 static PyObject *listreviter_setstate(listreviterobject *, PyObject *);
 
 static PyMethodDef listreviter_methods[] = {
-    {"__length_hint__", (PyCFunction)listreviter_len, METH_NOARGS, length_hint_doc},
+    {"__length_hint__", listreviter_len, METH_NOARGS, length_hint_doc},
     {"__reduce__", (PyCFunction)listreviter_reduce, METH_NOARGS, reduce_doc},
     {"__setstate__", (PyCFunction)listreviter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
@@ -3476,8 +3476,9 @@ listreviter_next(PyObject *self)
 }
 
 static PyObject *
-listreviter_len(listreviterobject *it, PyObject *Py_UNUSED(ignored))
+listreviter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    listreviterobject *it = (listreviterobject *)self;
     Py_ssize_t len = it->it_index + 1;
     if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
         len = 0;
