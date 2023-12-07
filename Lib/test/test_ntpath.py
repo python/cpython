@@ -256,6 +256,7 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.join("a", "b", "c")', 'a\\b\\c')
         tester('ntpath.join("a\\", "b", "c")', 'a\\b\\c')
         tester('ntpath.join("a", "b\\", "c")', 'a\\b\\c')
+        tester('ntpath.join("a", "b", "c\\")', 'a\\b\\c\\')
         tester('ntpath.join("a", "b", "\\c")', '\\c')
         tester('ntpath.join("d:\\", "\\pleep")', 'd:\\pleep')
         tester('ntpath.join("d:\\", "a", "b")', 'd:\\a\\b')
@@ -313,6 +314,16 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.join('\\\\computer\\', 'share')", '\\\\computer\\share')
         tester("ntpath.join('\\\\computer\\share\\', 'a')", '\\\\computer\\share\\a')
         tester("ntpath.join('\\\\computer\\share\\a\\', 'b')", '\\\\computer\\share\\a\\b')
+        # Second part is anchored, so that the first part is ignored.
+        tester("ntpath.join('a', 'Z:b', 'c')", 'Z:b\\c')
+        tester("ntpath.join('a', 'Z:\\b', 'c')", 'Z:\\b\\c')
+        tester("ntpath.join('a', '\\\\b\\c', 'd')", '\\\\b\\c\\d')
+        # Second part has a root but not drive.
+        tester("ntpath.join('a', '\\b', 'c')", '\\b\\c')
+        tester("ntpath.join('Z:/a', '/b', 'c')", 'Z:\\b\\c')
+        tester("ntpath.join('//?/Z:/a', '/b', 'c')",  '\\\\?\\Z:\\b\\c')
+        tester("ntpath.join('D:a', './c:b')", 'D:a\\.\\c:b')
+        tester("ntpath.join('D:/a', './c:b')", 'D:\\a\\.\\c:b')
 
     def test_normpath(self):
         tester("ntpath.normpath('A//////././//.//B')", r'A\B')
