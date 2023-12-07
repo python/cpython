@@ -17,7 +17,7 @@ for parsing and creating XML data.
    This module will use a fast implementation whenever available.
 
 .. deprecated:: 3.3
-   The :mod:`xml.etree.cElementTree` module is deprecated.
+   The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
 .. warning::
@@ -154,6 +154,7 @@ elements, call :meth:`XMLPullParser.read_events`.  Here is an example::
    ...     print(elem.tag, 'text=', elem.text)
    ...
    end
+   mytag text= sometext more text
 
 The obvious use case is applications that operate in a non-blocking fashion
 where the XML data is being received from a socket or read incrementally from
@@ -361,13 +362,6 @@ These two approaches both output::
      |--> Sir Robin
      |--> Gunther
      |--> Commander Clement
-
-
-Additional resources
-^^^^^^^^^^^^^^^^^^^^
-
-See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs.
 
 
 .. _elementtree-xpath:
@@ -628,7 +622,9 @@ Functions
    *parser* is an optional parser instance.  If not given, the standard
    :class:`XMLParser` parser is used.  *parser* must be a subclass of
    :class:`XMLParser` and can only use the default :class:`TreeBuilder` as a
-   target.  Returns an :term:`iterator` providing ``(event, elem)`` pairs.
+   target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
+   it has a ``root`` attribute that references the root element of the
+   resulting XML tree once *source* is fully read.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
@@ -832,7 +828,10 @@ Reference
 Functions
 ^^^^^^^^^
 
+.. module:: xml.etree.ElementInclude
+
 .. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
+   :module:
 
    Default loader. This default loader reads an included resource from disk.  *href* is a URL.
    *parse* is for parse mode either "xml" or "text".  *encoding*
@@ -844,6 +843,7 @@ Functions
 
 .. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
                                                 max_depth=6)
+   :module:
 
    This function expands XInclude directives.  *elem* is the root element.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
@@ -866,6 +866,9 @@ Functions
 
 Element Objects
 ^^^^^^^^^^^^^^^
+
+.. module:: xml.etree.ElementTree
+   :noindex:
 
 .. class:: Element(tag, attrib={}, **extra)
 
@@ -1050,9 +1053,9 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  This behavior
-   will change in future versions.  Use specific ``len(elem)`` or ``elem is
-   None`` test instead. ::
+   Caution: Elements with no subelements will test as ``False``.  Testing the
+   truth value of an Element is deprecated and will raise an exception in
+   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
 
      element = root.find('foo')
 
@@ -1061,6 +1064,9 @@ Element Objects
 
      if element is None:
          print("element not found")
+
+   .. versionchanged:: 3.12
+      Testing the truth value of an Element emits :exc:`DeprecationWarning`.
 
    Prior to Python 3.8, the serialisation order of the XML attributes of
    elements was artificially made predictable by sorting the attributes by
@@ -1217,6 +1223,7 @@ Example of changing the attribute "target" of every link in first paragraph::
     [<Element 'a' at 0xb77ec2ac>, <Element 'a' at 0xb77ec1cc>]
     >>> for i in links:             # Iterates through all found links
     ...     i.attrib["target"] = "blank"
+    ...
     >>> tree.write("output.xhtml")
 
 .. _elementtree-qname-objects:

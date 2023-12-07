@@ -126,7 +126,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
 .. method:: HTMLParser.handle_starttag(tag, attrs)
 
-   This method is called to handle the start of a tag (e.g. ``<div id="main">``).
+   This method is called to handle the start tag of an element (e.g. ``<div id="main">``).
 
    The *tag* argument is the name of the tag converted to lower case. The *attrs*
    argument is a list of ``(name, value)`` pairs containing the attributes found
@@ -173,7 +173,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 .. method:: HTMLParser.handle_charref(name)
 
    This method is called to process decimal and hexadecimal numeric character
-   references of the form ``&#NNN;`` and ``&#xNNN;``.  For example, the decimal
+   references of the form :samp:`&#{NNN};` and :samp:`&#x{NNN};`.  For example, the decimal
    equivalent for ``&gt;`` is ``&#62;``, whereas the hexadecimal is ``&#x3E;``;
    in this case the method will receive ``'62'`` or ``'x3E'``.  This method
    is never called if *convert_charrefs* is ``True``.

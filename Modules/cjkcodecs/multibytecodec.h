@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include "pycore_unicodeobject.h" // _PyUnicodeWriter
+
 #ifdef uint16_t
 typedef uint16_t ucs2_t, DBCHAR;
 #else
@@ -27,28 +29,31 @@ typedef struct {
     unsigned char c[8];
 } MultibyteCodec_State;
 
-typedef int (*mbcodec_init)(const void *config);
+struct _cjk_mod_state;
+struct _multibyte_codec;
+
+typedef int (*mbcodec_init)(const struct _multibyte_codec *codec);
 typedef Py_ssize_t (*mbencode_func)(MultibyteCodec_State *state,
-                        const void *config,
+                        const struct _multibyte_codec *codec,
                         int kind, const void *data,
                         Py_ssize_t *inpos, Py_ssize_t inlen,
                         unsigned char **outbuf, Py_ssize_t outleft,
                         int flags);
 typedef int (*mbencodeinit_func)(MultibyteCodec_State *state,
-                                 const void *config);
+                                 const struct _multibyte_codec *codec);
 typedef Py_ssize_t (*mbencodereset_func)(MultibyteCodec_State *state,
-                        const void *config,
+                        const struct _multibyte_codec *codec,
                         unsigned char **outbuf, Py_ssize_t outleft);
 typedef Py_ssize_t (*mbdecode_func)(MultibyteCodec_State *state,
-                        const void *config,
+                        const struct _multibyte_codec *codec,
                         const unsigned char **inbuf, Py_ssize_t inleft,
                         _PyUnicodeWriter *writer);
 typedef int (*mbdecodeinit_func)(MultibyteCodec_State *state,
-                                 const void *config);
+                                 const struct _multibyte_codec *codec);
 typedef Py_ssize_t (*mbdecodereset_func)(MultibyteCodec_State *state,
-                                         const void *config);
+                                         const struct _multibyte_codec *codec);
 
-typedef struct {
+typedef struct _multibyte_codec {
     const char *encoding;
     const void *config;
     mbcodec_init codecinit;
@@ -58,18 +63,20 @@ typedef struct {
     mbdecode_func decode;
     mbdecodeinit_func decinit;
     mbdecodereset_func decreset;
+    struct _cjk_mod_state *modstate;
 } MultibyteCodec;
 
 typedef struct {
     PyObject_HEAD
-    MultibyteCodec *codec;
+    const MultibyteCodec *codec;
+    PyObject *cjk_module;
 } MultibyteCodecObject;
 
 #define MultibyteCodec_Check(state, op) Py_IS_TYPE((op), state->multibytecodec_type)
 
 #define _MultibyteStatefulCodec_HEAD            \
     PyObject_HEAD                               \
-    MultibyteCodec *codec;                      \
+    const MultibyteCodec *codec;                \
     MultibyteCodec_State state;                 \
     PyObject *errors;
 typedef struct {
@@ -130,7 +137,13 @@ typedef struct {
 #define MBENC_FLUSH             0x0001 /* encode all characters encodable */
 #define MBENC_MAX               MBENC_FLUSH
 
-#define PyMultibyteCodec_CAPSULE_NAME "multibytecodec.__map_*"
+typedef struct {
+    const MultibyteCodec *codec;
+    PyObject *cjk_module;
+} codec_capsule;
+
+#define MAP_CAPSULE "multibytecodec.map"
+#define CODEC_CAPSULE "multibytecodec.codec"
 
 
 #ifdef __cplusplus
