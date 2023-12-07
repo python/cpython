@@ -876,9 +876,14 @@ class TemporaryDirectory:
             ignore_errors=self._ignore_cleanup_errors)
 
     @classmethod
-    def _rmtree(cls, name, ignore_errors=False):
+    def _rmtree(cls, name, ignore_errors=False, repeated=False):
         def onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
+                if repeated and path == name:
+                    if ignore_errors:
+                        return
+                    raise
+
                 try:
                     if path != name:
                         _resetperms(_os.path.dirname(path))
@@ -911,7 +916,8 @@ class TemporaryDirectory:
                             if ignore_errors:
                                 return
                             raise
-                        cls._rmtree(path, ignore_errors=ignore_errors)
+                        cls._rmtree(path, ignore_errors=ignore_errors,
+                                    repeated=(path == name))
                 except FileNotFoundError:
                     pass
             elif issubclass(exc_info[0], FileNotFoundError):
