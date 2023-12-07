@@ -328,12 +328,15 @@ operation is being performed, so the intermediate analysis object isn't useful:
    source line information (if any) is taken directly from the disassembled code
    object.
 
-   The *show_caches* and *adaptive* parameters work as they do in :func:`dis`.
+   The *adaptive* parameter works as it does in :func:`dis`.
 
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
+
+   .. versionchanged:: 3.13
+      The *show_caches* parameter is deprecated and has no effect.
 
 
 .. function:: findlinestarts(code)
