@@ -612,7 +612,9 @@ Miscellaneous options
    .. versionadded:: 3.13
       The ``-X presite`` option.
 
-Controlling Color
+.. _using-on-controlling-color:
+
+Controlling color
 ~~~~~~~~~~~~~~~~~
 
 The Python interpreter is configured by default to use colors to highlight
@@ -1135,6 +1137,7 @@ conflict.
 
    If this variable is set to ``1``, the interpreter will colorize various kinds
    of output. Setting it to ``0`` deactivates this behavior.
+   See also :ref:`using-on-controlling-color`.
 
    .. versionadded:: 3.13
 
