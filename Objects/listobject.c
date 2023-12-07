@@ -343,9 +343,9 @@ PyList_Append(PyObject *op, PyObject *newitem)
 /* Methods */
 
 static void
-list_dealloc(PyObject *obj)
+list_dealloc(PyObject *self)
 {
-    PyListObject *op = (PyListObject *)obj;
+    PyListObject *op = (PyListObject *)self;
     Py_ssize_t i;
     PyObject_GC_UnTrack(op);
     Py_TRASHCAN_BEGIN(op, list_dealloc)
@@ -379,9 +379,9 @@ list_dealloc(PyObject *obj)
 }
 
 static PyObject *
-list_repr(PyObject *obj)
+list_repr(PyObject *self)
 {
-    PyListObject *v = (PyListObject *)obj;
+    PyListObject *v = (PyListObject *)self;
     Py_ssize_t i;
     PyObject *s;
     _PyUnicodeWriter writer;
@@ -622,10 +622,9 @@ list_clear(PyListObject *a)
 }
 
 static int
-list_clear_slot(PyObject *obj)
+list_clear_slot(PyObject *self)
 {
-    PyListObject *self = (PyListObject *)obj;
-    list_clear(self);
+    list_clear((PyListObject *)self);
     return 0;
 }
 
@@ -784,9 +783,9 @@ list_inplace_repeat(PyObject *_self, Py_ssize_t n)
 }
 
 static int
-list_ass_item(PyObject *obj, Py_ssize_t i, PyObject *v)
+list_ass_item(PyObject *aa, Py_ssize_t i, PyObject *v)
 {
-    PyListObject *a = (PyListObject *)obj;
+    PyListObject *a = (PyListObject *)aa;
     if (!valid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
@@ -1053,9 +1052,9 @@ PyList_Clear(PyObject *self)
 
 
 static PyObject *
-list_inplace_concat(PyObject *obj, PyObject *other)
+list_inplace_concat(PyObject *_self, PyObject *other)
 {
-    PyListObject *self = (PyListObject *)obj;
+    PyListObject *self = (PyListObject *)_self;
     if (list_extend(self, other) < 0) {
         return NULL;
     }
@@ -2766,9 +2765,9 @@ list_remove(PyListObject *self, PyObject *value)
 }
 
 static int
-list_traverse(PyObject *obj, visitproc visit, void *arg)
+list_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    PyListObject *o = (PyListObject *)obj;
+    PyListObject *o = (PyListObject *)self;
     Py_ssize_t i;
 
     for (i = Py_SIZE(o); --i >= 0; )
@@ -2944,9 +2943,9 @@ static PySequenceMethods list_as_sequence = {
 };
 
 static PyObject *
-list_subscript(PyObject* obj, PyObject* item)
+list_subscript(PyObject* _self, PyObject* item)
 {
-    PyListObject* self = (PyListObject*)obj;
+    PyListObject* self = (PyListObject*)_self;
     if (_PyIndex_Check(item)) {
         Py_ssize_t i;
         i = PyNumber_AsSsize_t(item, PyExc_IndexError);
@@ -3286,9 +3285,9 @@ list_iter(PyObject *seq)
 }
 
 static void
-listiter_dealloc(PyObject *obj)
+listiter_dealloc(PyObject *self)
 {
-    _PyListIterObject *it = (_PyListIterObject *)obj;
+    _PyListIterObject *it = (_PyListIterObject *)self;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
@@ -3302,9 +3301,9 @@ listiter_traverse(PyObject *it, visitproc visit, void *arg)
 }
 
 static PyObject *
-listiter_next(PyObject *obj)
+listiter_next(PyObject *self)
 {
-    _PyListIterObject *it = (_PyListIterObject *)obj;
+    _PyListIterObject *it = (_PyListIterObject *)self;
     PyListObject *seq;
     PyObject *item;
 
