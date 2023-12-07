@@ -93,9 +93,9 @@ Facilities:
    :const:`LOG_AUTHPRIV`, :const:`LOG_FTP`, :const:`LOG_NETINFO`, 
    :const:`LOG_REMOTEAUTH`, :const:`LOG_INSTALL`, :const:`LOG_RAS`.
 
-   .. versionchanged:: 3.10
-       Added :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`, :const:`LOG_INSTALL`,
-       :const:`LOG_RAS`, and :const:`LOG_LAUNCHD`.
+   .. versionchanged:: 3.13
+       Added :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`, 
+       :const:`LOG_INSTALL`, :const:`LOG_RAS`, and :const:`LOG_LAUNCHD`.
 
 Log options:
    :const:`LOG_PID`, :const:`LOG_CONS`, :const:`LOG_NDELAY`, and, if defined
