@@ -279,9 +279,11 @@ def _dont_follow_symlinks(func, path, *args):
 
 def _resetperms(path):
     try:
-        _dont_follow_symlinks(_os.chflags, path, 0)
+        chflags = _os.chflags
     except AttributeError:
         pass
+    else:
+        _dont_follow_symlinks(chflags, path, 0)
     _dont_follow_symlinks(_os.chmod, path, 0o700)
 
 
