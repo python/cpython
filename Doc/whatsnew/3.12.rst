@@ -1901,7 +1901,7 @@ Changes in the Python API
     main interpreter.
 
     Any library or application that provides a custom ``_thread`` module
-    must make sure it provides ``_is_main_interpreter()``.
+    should provide ``_is_main_interpreter()``.
     (See :gh:`112826`.)
 
 Build Changes
