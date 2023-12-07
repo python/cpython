@@ -589,7 +589,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     take_gil(tstate);
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
-    pending->mutex = (PyMutex){0};
+    _PyMutex_at_fork_reinit(&pending->mutex);
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(tstate);
