@@ -126,7 +126,9 @@ async def run(*args: str | os.PathLike[str], capture: bool = False) -> bytes | N
 
 
 S = typing.TypeVar("S", schema.COFFSection, schema.ELFSection, schema.MachOSection)
-R = typing.TypeVar("R", schema.COFFRelocation, schema.ELFRelocation, schema.MachORelocation)
+R = typing.TypeVar(
+    "R", schema.COFFRelocation, schema.ELFRelocation, schema.MachORelocation
+)
 
 
 class Parser(typing.Generic[S, R]):
@@ -220,13 +222,16 @@ class Parser(typing.Generic[S, R]):
             holes.append(newhole)
         remaining = []
         for hole in holes:
-            if hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"} and hole.value is HoleValue.ZERO:
+            if (
+                hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
+                and hole.value is HoleValue.ZERO
+            ):
                 base = len(self.text)
-                self.text.extend([0xd2, 0x80, 0x00, 0x08][::-1])
-                self.text.extend([0xf2, 0xa0, 0x00, 0x08][::-1])
-                self.text.extend([0xf2, 0xc0, 0x00, 0x08][::-1])
-                self.text.extend([0xf2, 0xe0, 0x00, 0x08][::-1])
-                self.text.extend([0xd6, 0x1f, 0x01, 0x00][::-1])
+                self.text.extend([0xD2, 0x80, 0x00, 0x08][::-1])
+                self.text.extend([0xF2, 0xA0, 0x00, 0x08][::-1])
+                self.text.extend([0xF2, 0xC0, 0x00, 0x08][::-1])
+                self.text.extend([0xF2, 0xE0, 0x00, 0x08][::-1])
+                self.text.extend([0xD6, 0x1F, 0x01, 0x00][::-1])
                 disassembly += [
                     # XXX: Include addend:
                     f"{base:x}: d2800008      mov     x8, #0x0",
@@ -239,18 +244,29 @@ class Parser(typing.Generic[S, R]):
                     f"{base + 12:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
                     f"{base + 16:x}: d61f0100      br      x8",
                 ]
-                for offset, kind in [
-                    (base, "R_AARCH64_MOVW_UABS_G0_NC"),
-                    (base + 4, "R_AARCH64_MOVW_UABS_G1_NC"),
-                    (base + 8, "R_AARCH64_MOVW_UABS_G2_NC"),
-                    (base + 12, "R_AARCH64_MOVW_UABS_G3"),
-                ]:
-                    remaining.append(
-                        dataclasses.replace(hole, offset=offset, kind=kind)
-                    )
-                instruction = int.from_bytes(self.text[hole.offset : hole.offset + 4], sys.byteorder)
-                instruction = (instruction & 0xFC000000) | (((base - hole.offset) >> 2) & 0x03FFFFFF)
-                self.text[hole.offset : hole.offset + 4] = instruction.to_bytes(4, sys.byteorder)
+                remaining += [
+                    dataclasses.replace(
+                        hole, offset=base, kind="R_AARCH64_MOVW_UABS_G0_NC"
+                    ),
+                    dataclasses.replace(
+                        hole, offset=base + 4, kind="R_AARCH64_MOVW_UABS_G1_NC"
+                    ),
+                    dataclasses.replace(
+                        hole, offset=base + 8, kind="R_AARCH64_MOVW_UABS_G2_NC"
+                    ),
+                    dataclasses.replace(
+                        hole, offset=base + 12, kind="R_AARCH64_MOVW_UABS_G3"
+                    ),
+                ]
+                instruction = int.from_bytes(
+                    self.text[hole.offset : hole.offset + 4], sys.byteorder
+                )
+                instruction = (instruction & 0xFC000000) | (
+                    ((base - hole.offset) >> 2) & 0x03FFFFFF
+                )
+                self.text[hole.offset : hole.offset + 4] = instruction.to_bytes(
+                    4, sys.byteorder
+                )
             else:
                 remaining.append(hole)
         holes = remaining
@@ -639,7 +655,7 @@ CLANG_FLAGS = [
     # - "medium": assumes that code resides in the lowest 2GB of memory,
     #   and makes no assumptions about data (not available on aarch64)
     # - "large": makes no assumptions about either code or data
-    f"-mcmodel=large",
+    "-mcmodel=large",
 ]
 
 
@@ -652,7 +668,9 @@ class Compiler:
         self._objdump = find_llvm_tool("llvm-objdump")
         self._target = target
 
-    async def _compile(self, opname: str, c: pathlib.Path, tempdir: pathlib.Path) -> None:
+    async def _compile(
+        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+    ) -> None:
         o = tempdir / f"{opname}.o"
         flags = [
             f"--target={self._target.triple}",

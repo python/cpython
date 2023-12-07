@@ -40,9 +40,11 @@ static void
 jit_warn(const char *message)
 {
 #ifdef MS_WINDOWS
-    int errno = GetLastError();
+    int code = GetLastError();
+#else
+    int code = errno;
 #endif
-    PyErr_WarnFormat(PyExc_RuntimeWarning, 0, "JIT %s (%d)", message, errno);
+    PyErr_WarnFormat(PyExc_RuntimeWarning, 0, "JIT %s (%d)", message, code);
 }
 
 static char *
