@@ -604,8 +604,6 @@ class PurePath:
         self._resolving = False
 
     def __reduce__(self):
-        # Using the parts tuple helps share interned path parts
-        # when pickling related paths.
         return (self.__class__, tuple(self._raw_paths))
 
     def __fspath__(self):
