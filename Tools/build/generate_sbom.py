@@ -70,7 +70,7 @@ PACKAGE_TO_FILES = {
             "Modules/_hacl/README.md",
             "Modules/_hacl/python_hacl_namespace.h",
         ]
-    )
+    ),
 }
 
 
@@ -96,7 +96,7 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     git_check_ignore_proc = subprocess.run(
         ["git", "check-ignore", "--verbose", "--non-matching", *paths],
         check=False,
-        stdout=subprocess.PIPE
+        stdout=subprocess.PIPE,
     )
     # 1 means matches, 0 means no matches.
     assert git_check_ignore_proc.returncode in (0, 1)
@@ -158,15 +158,15 @@ def main() -> None:
                     "fileName": path,
                     "checksums": [
                         {"algorithm": "SHA1", "checksumValue": checksum_sha1},
-                        {"algorithm": "SHA256", "checksumValue": checksum_sha256}
-                    ]
+                        {"algorithm": "SHA256", "checksumValue": checksum_sha256},
+                    ],
                 })
 
                 # Tie each file back to its respective package.
                 sbom_relationships.append({
                     "spdxElementId": package_spdx_id,
                     "relatedSpdxElement": file_spdx_id,
-                    "relationshipType": "CONTAINS"
+                    "relationshipType": "CONTAINS",
                 })
 
     # Update the SBOM on disk
