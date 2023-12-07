@@ -591,11 +591,12 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    fd_path = None
     if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
         fd_path = "/proc/self/fd"
     elif sys.platform == "darwin":
         fd_path = "/dev/fd"
+    else:
+        fd_path = None
 
     if fd_path is not None:
         try:
