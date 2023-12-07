@@ -1366,7 +1366,6 @@ free_threadstate(_PyThreadStateImpl *tstate)
     // as part of the interpreter state so should not be freed.
     if (tstate == &tstate->base.interp->_initial_thread) {
         // Restore to _PyThreadState_INIT.
-        tstate = &tstate->base.interp->_initial_thread;
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
@@ -1385,9 +1384,10 @@ free_threadstate(_PyThreadStateImpl *tstate)
   */
 
 static void
-init_threadstate(PyThreadState *tstate,
+init_threadstate(_PyThreadStateImpl *_tstate,
                  PyInterpreterState *interp, uint64_t id, int whence)
 {
+    PyThreadState *tstate = (PyThreadState *)_tstate;
     if (tstate->_status.initialized) {
         Py_FatalError("thread state already initialized");
     }
@@ -1481,8 +1481,8 @@ new_threadstate(PyInterpreterState *interp, int whence)
                sizeof(*tstate));
     }
 
-    init_threadstate(&tstate->base, interp, id, whence);
-    add_threadstate(interp, &tstate->base, old_head);
+    init_threadstate(tstate, interp, id, whence);
+    add_threadstate(interp, (PyThreadState *)tstate, old_head);
 
     HEAD_UNLOCK(runtime);
     if (!used_newtstate) {
