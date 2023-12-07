@@ -116,22 +116,19 @@ _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 
 async def run(*args: str | os.PathLike[str], capture: bool = False) -> bytes | None:
+    stdout = subprocess.PIPE if capture else None
     async with _SEMAPHORE:
         # print(shlex.join(map(str, args)))
-        process = await asyncio.create_subprocess_exec(
-            *args, cwd=ROOT, stdout=subprocess.PIPE if capture else None
-        )
-        stdout, stderr = await process.communicate()
-    assert stderr is None, stderr
+        process = await asyncio.create_subprocess_exec(*args, cwd=ROOT, stdout=stdout)
+        out, err = await process.communicate()
+    assert err is None, err
     if process.returncode:
         raise RuntimeError(f"{args[0]} exited with {process.returncode}")
-    return stdout
+    return out
 
 
 S = typing.TypeVar("S", schema.COFFSection, schema.ELFSection, schema.MachOSection)
-R = typing.TypeVar(
-    "R", schema.COFFRelocation, schema.ELFRelocation, schema.MachORelocation
-)
+R = typing.TypeVar("R", schema.COFFRelocation, schema.ELFRelocation, schema.MachORelocation)
 
 
 class Parser(typing.Generic[S, R]):
@@ -244,20 +241,15 @@ class Parser(typing.Generic[S, R]):
                     f"{base + 12:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
                     f"{base + 16:x}: d61f0100      br      x8",
                 ]
-                remaining += [
-                    dataclasses.replace(
-                        hole, offset=base, kind="R_AARCH64_MOVW_UABS_G0_NC"
-                    ),
-                    dataclasses.replace(
-                        hole, offset=base+4, kind="R_AARCH64_MOVW_UABS_G1_NC"
-                    ),
-                    dataclasses.replace(
-                        hole, offset=base+8, kind="R_AARCH64_MOVW_UABS_G2_NC"
-                    ),
-                    dataclasses.replace(
-                        hole, offset=base+12, kind="R_AARCH64_MOVW_UABS_G3"
-                    ),
-                ]
+                for offset, kind in [
+                    (base, "R_AARCH64_MOVW_UABS_G0_NC"),
+                    (base + 4, "R_AARCH64_MOVW_UABS_G1_NC"),
+                    (base + 8, "R_AARCH64_MOVW_UABS_G2_NC"),
+                    (base + 12, "R_AARCH64_MOVW_UABS_G3"),
+                ]:
+                    remaining.append(
+                        dataclasses.replace(hole, offset=offset, kind=kind)
+                    )
                 instruction = int.from_bytes(self.text[hole.offset : hole.offset + 4], sys.byteorder)
                 instruction = (instruction & 0xFC000000) | (((base - hole.offset) >> 2) & 0x03FFFFFF)
                 self.text[hole.offset : hole.offset + 4] = instruction.to_bytes(4, sys.byteorder)
@@ -329,9 +321,8 @@ class Parser(typing.Generic[S, R]):
             self.data.append(0)
         if symbol is None:
             return len(self.data)
-        return len(self.data) + self.global_offset_table.setdefault(
-            symbol, 8 * len(self.global_offset_table)
-        )
+        default = 8 * len(self.global_offset_table)
+        return len(self.data) + self.global_offset_table.setdefault(symbol, default)
 
     def _symbol_to_value(self, symbol: str) -> tuple[HoleValue, str | None]:
         try:
@@ -598,6 +589,7 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
 
 @dataclasses.dataclass
 class Target:
+    triple: str
     pattern: str
     pyconfig: pathlib.Path
     alignment: int
@@ -607,6 +599,7 @@ class Target:
 
 TARGETS = [
     Target(
+        triple="aarch64-apple-darwin",
         pattern=r"aarch64-apple-darwin.*",
         pyconfig=PYCONFIG_H,
         alignment=8,
@@ -614,6 +607,7 @@ TARGETS = [
         parser=MachO,
     ),
     Target(
+        triple="aarch64-unknown-linux-gnu",
         pattern=r"aarch64-.*-linux-gnu",
         pyconfig=PYCONFIG_H,
         alignment=8,
@@ -621,6 +615,7 @@ TARGETS = [
         parser=ELF,
     ),
     Target(
+        triple="i686-pc-windows-msvc",
         pattern=r"i686-pc-windows-msvc",
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
@@ -628,6 +623,7 @@ TARGETS = [
         parser=COFF,
     ),
     Target(
+        triple="x86_64-apple-darwin",
         pattern=r"x86_64-apple-darwin.*",
         pyconfig=PYCONFIG_H,
         alignment=1,
@@ -635,6 +631,7 @@ TARGETS = [
         parser=MachO,
     ),
     Target(
+        triple="x86_64-pc-windows-msvc",
         pattern=r"x86_64-pc-windows-msvc",
         pyconfig=PC_PYCONFIG_H,
         alignment=1,
@@ -642,6 +639,7 @@ TARGETS = [
         parser=COFF,
     ),
     Target(
+        triple="x86_64-unknown-linux-gnu",
         pattern=r"x86_64-.*-linux-gnu",
         pyconfig=PYCONFIG_H,
         alignment=1,
@@ -658,64 +656,50 @@ def get_target(host: str) -> Target:
     raise NotImplementedError(host)
 
 
-CFLAGS = [
-    "-O3",
-    "-ffreestanding",
-    # Position-independent code adds indirection to every load and jump:
-    "-fno-pic",
-    "-fno-jump-tables",  # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds
-    "-fno-stack-protector",
-]
-
-CPPFLAGS = [
+CLANG_FLAGS = [
     "-DPy_BUILD_CORE",
     "-D_PyJIT_ACTIVE",
     f"-I{INCLUDE}",
     f"-I{INCLUDE_INTERNAL}",
     f"-I{PYTHON}",
+    "-O3",
+    "-c",
+    "-ffreestanding",
+    # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
+    "-fno-jump-tables",
+    # Position-independent code adds indirection to every load and jump:
+    "-fno-pic",
+    "-fno-stack-protector",
+    # We have three options for code model:
+    # - "small": the default, assumes that code and data reside in the
+    #   lowest 2GB of memory (128MB on aarch64)
+    # - "medium": assumes that code resides in the lowest 2GB of memory,
+    #   and makes no assumptions about data (not available on aarch64)
+    # - "large": makes no assumptions about either code or data
+    f"-mcmodel=large",
 ]
 
 
 class Compiler:
-    def __init__(
-        self,
-        *,
-        verbose: bool = False,
-        target: Target,
-        host: str,
-    ) -> None:
+    def __init__(self, *, verbose: bool = False, target: Target) -> None:
         self._stencils_built: dict[str, StencilGroup] = {}
         self._verbose = verbose
         self._clang = require_llvm_tool("clang")
         self._readobj = require_llvm_tool("llvm-readobj")
         self._objdump = find_llvm_tool("llvm-objdump")
         self._target = target
-        self._host = host
 
-    async def _compile(
-        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
-    ) -> None:
+    async def _compile(self, opname: str, c: pathlib.Path, tempdir: pathlib.Path) -> None:
         o = tempdir / f"{opname}.o"
         flags = [
-            *CFLAGS,
-            *CPPFLAGS,
-            f"--target={self._host}",
+            f"--target={self._target.triple}",
             "-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG",  # XXX
             f"-D_JIT_OPCODE={opname}",
             f"-I{self._target.pyconfig.parent}",
-            "-c",
-            # We have three options for code model:
-            # - "small": the default, assumes that code and data reside in the
-            #   lowest 2GB of memory (128MB on aarch64)
-            # - "medium": assumes that code resides in the lowest 2GB of memory,
-            #   and makes no assumptions about data (not available on aarch64)
-            # - "large": makes no assumptions about either code or data
-            f"-mcmodel=large",
         ]
-        await run(self._clang, *flags, "-o", o, c)
-        self._stencils_built[opname] = await self._target.parser(
-            o, self._readobj, self._objdump, self._target
-        ).parse()
+        await run(self._clang, *CLANG_FLAGS, *flags, "-o", o, c)
+        parser = self._target.parser(o, self._readobj, self._objdump, self._target)
+        self._stencils_built[opname] = await parser.parse()
 
     async def build(self) -> None:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
@@ -860,7 +844,7 @@ def main(host: str) -> None:
         with PYTHON_JIT_STENCILS_H.open() as file:
             if file.readline().removeprefix("// ").removesuffix("\n") == digest:
                 return
-    compiler = Compiler(verbose=True, target=target, host=host)
+    compiler = Compiler(verbose=True, target=target)
     asyncio.run(compiler.build())
     with PYTHON_JIT_STENCILS_H.open("w") as file:
         file.write(f"// {digest}\n")

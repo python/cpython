@@ -20,8 +20,6 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "R_AARCH64_MOVW_UABS_G2_NC",
     "R_AARCH64_MOVW_UABS_G3",
     "R_X86_64_64",
-    "R_X86_64_PC32",
-    "R_X86_64_PLT32",
     "X86_64_RELOC_BRANCH",
     "X86_64_RELOC_GOT",
     "X86_64_RELOC_GOT_LOAD",
