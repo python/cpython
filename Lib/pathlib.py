@@ -1065,21 +1065,21 @@ class _PathBase(PurePath):
         elif not path_pattern._tail:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
-        sep = self.pathmod.sep
-        pattern = str(path_pattern)
-        pattern_parts = pattern.split(sep)
-        if pattern_parts[-1] == '**':
+        if path_pattern.name == '**' and not path_pattern.has_trailing_sep:
             # GH-70303: '**' only matches directories. Add trailing slash.
             warnings.warn(
                 "Pattern ending '**' will match files and directories in a "
                 "future Python release. Add a trailing slash to match only "
                 "directories and remove this warning.",
                 FutureWarning, 3)
-            pattern_parts.append('')
+            path_pattern = path_pattern.with_trailing_sep()
 
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
+        sep = self.pathmod.sep
+        pattern_str = str(path_pattern)
+        pattern_parts = pattern_str.split(sep)
 
         # If symlinks are handled consistently, and the pattern does not
         # contain '..' components, then we can use a 'walk-and-match' strategy
@@ -1117,7 +1117,7 @@ class _PathBase(PurePath):
 
                     # Filter out paths that don't match pattern.
                     prefix_len = len(str(self._make_child_relpath('_'))) - 1
-                    match = _compile_pattern(pattern, sep, case_sensitive)
+                    match = _compile_pattern(pattern_str, sep, case_sensitive)
                     paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
 
