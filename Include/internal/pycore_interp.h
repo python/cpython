@@ -29,6 +29,7 @@ extern "C" {
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -210,8 +211,8 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-   /* the initial PyInterpreterState.threads.head */
-    PyThreadState _initial_thread;
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
     Py_ssize_t _interactive_src_count;
 };
 
