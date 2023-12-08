@@ -2551,8 +2551,9 @@ is_multiindex(PyObject *key)
    0-d memoryview objects can be referenced using mv[...] or mv[()]
    but not with anything else. */
 static PyObject *
-memory_subscript(PyMemoryViewObject *self, PyObject *key)
+memory_subscript(PyObject *_self, PyObject *key)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view;
     view = &(self->view);
 
@@ -2728,7 +2729,7 @@ memory_length(PyMemoryViewObject *self)
 /* As mapping */
 static PyMappingMethods memory_as_mapping = {
     (lenfunc)memory_length,               /* mp_length */
-    (binaryfunc)memory_subscript,         /* mp_subscript */
+    memory_subscript,                     /* mp_subscript */
     (objobjargproc)memory_ass_sub,        /* mp_ass_subscript */
 };
 
