@@ -1513,8 +1513,9 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self)
 /**************************************************************************/
 
 static int
-memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
+memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *base = &self->view;
     int baseflags = self->flags;
 
@@ -1602,7 +1603,7 @@ memory_releasebuf(PyObject *_self, Py_buffer *view)
 
 /* Buffer methods */
 static PyBufferProcs memory_as_buffer = {
-    (getbufferproc)memory_getbuf,         /* bf_getbuffer */
+    memory_getbuf,         /* bf_getbuffer */
     memory_releasebuf,                    /* bf_releasebuffer */
 };
 
