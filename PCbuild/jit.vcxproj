@@ -24,13 +24,13 @@
           Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc'
           WorkingDirectory="$(PySourcePath)"/>
 	  <Exec Condition="$(Configuration) == 'Debug' and $(Platform) == 'Win32'"
-          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc -d'
+          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc --debug'
           WorkingDirectory="$(PySourcePath)"/>
 	  <Exec Condition="$(Configuration) != 'Debug' and $(Platform) == 'x64'"
           Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc'
           WorkingDirectory="$(PySourcePath)"/>
 	  <Exec Condition="$(Configuration) == 'Debug' and $(Platform) == 'x64'"
-          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc -d'
+          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc --debug'
           WorkingDirectory="$(PySourcePath)"/>
   </Target>
   <Target Name="CleanAll">

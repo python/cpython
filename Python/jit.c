@@ -248,7 +248,7 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
     data_size += page_size - (data_size & (page_size - 1));
     char *memory = jit_alloc(text_size + data_size);
     if (memory == NULL) {
-        return -1;
+        goto fail;
     }
     char *text = memory;
     char *data = memory + text_size;
@@ -273,12 +273,14 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
         mark_readable(memory + text_size, data_size))
     {
         jit_free(memory, text_size + data_size);
-        return -1;
+        goto fail;
     }
     executor->base.execute = execute;
     executor->jit_code = memory;
     executor->jit_size = text_size + data_size;
-    return 0;
+    return 1;
+fail:
+    return PyErr_Occurred() ? -1 : 0;
 }
 
-#endif
+#endif  // _Py_JIT

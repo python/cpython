@@ -837,14 +837,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     }
     assert(dest == -1);
     executor->base.execute = _PyUOpExecute;
-#ifdef _Py_JIT
-    if (_PyJIT_Compile(executor)) {
-        if (PyErr_Occurred()) {
-            Py_DECREF(executor);
-            return NULL;
-        }
-    }
-#endif
+    executor->jit_code = NULL;
+    executor->jit_size = 0;
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -895,6 +889,15 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
+#ifdef _Py_JIT
+    if (((_PyUOpOptimizerObject *)self)->jit) {
+        err = _PyJIT_Compile((_PyExecutorObject *)executor);
+        if (err <= 0) {
+            Py_DECREF(executor);
+            return err;
+        }
+    }
+#endif
     OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
     *exec_ptr = executor;
     return 1;
@@ -917,24 +920,31 @@ uop_opt_dealloc(PyObject *self) {
 PyTypeObject _PyUOpOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_optimizer",
-    .tp_basicsize = sizeof(_PyOptimizerObject),
+    .tp_basicsize = sizeof(_PyUOpOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = uop_opt_dealloc,
 };
 
 PyObject *
-PyUnstable_Optimizer_NewUOpOptimizer(void)
+PyUnstable_Optimizer_NewUOpOptimizer(int jit)
 {
-    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
+#ifndef _Py_JIT
+    if (jit && PyErr_WarnEx(PyExc_RuntimeWarning, "JIT not available", 0)) {
+        return NULL;
+    }
+    jit = false;
+#endif
+    _PyUOpOptimizerObject *opt = PyObject_New(_PyUOpOptimizerObject, &_PyUOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }
-    opt->optimize = uop_optimize;
-    opt->resume_threshold = INT16_MAX;
+    opt->base.optimize = uop_optimize;
+    opt->base.resume_threshold = INT16_MAX;
     // Need at least 3 iterations to settle specializations.
     // A few lower bits of the counter are reserved for other flags.
-    opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
+    opt->base.backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
+    opt->jit = jit;
     return (PyObject *)opt;
 }
 

@@ -1236,12 +1236,18 @@ init_interp_main(PyThreadState *tstate)
     // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
         char *envvar = Py_GETENV("PYTHON_UOPS");
-        int enabled = envvar != NULL && *envvar > '0';
+        bool interpret_tier_two = envvar != NULL && *envvar > '0';
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
-            enabled = 1;
+            interpret_tier_two = true;
         }
-        if (true) {  // XXX
-            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
+#ifdef _Py_JIT
+        bool jit_tier_two = true;
+#else
+        bool jit_tier_two = false;
+#endif
+        if (interpret_tier_two || jit_tier_two) {
+            // If both are set, the interpreter wins:
+            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer(!interpret_tier_two);
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
