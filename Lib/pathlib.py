@@ -219,14 +219,18 @@ class PurePath:
         # in the `__init__()` method.
         '_raw_paths',
 
-        # The `_drv`, `_root`, `_tail_cached` and `_has_trailing_sep` slots
-        # store parsed and normalized parts of the path. They are set when any
-        # of the `drive`, `root`, `_tail` or `has_trailing_sep` properties are
-        # accessed for the first time. The three-part division corresponds to
-        # the result of `os.path.splitroot()`, except that the tail is further
-        # split on path separators (i.e. it is a list of strings), and that
-        # the root and tail are normalized.
-        '_drv', '_root', '_tail_cached', '_has_trailing_sep',
+        # The `_drv`, `_root` and `_tail_cached` slots store parsed and
+        # normalized parts of the path. They are set when any of the `drive`,
+        # `root` or `_tail` properties are accessed for the first time. The
+        # three-part division corresponds to the result of
+        # `os.path.splitroot()`, except that the tail is further split on path
+        # separators (i.e. it is a list of strings), and that the root and
+        # tail are normalized.
+        '_drv', '_root', '_tail_cached',
+
+        # The `_has_trailing_sep` slot stores a boolean indicating whether a
+        # trailing slash follows the path name.
+        '_has_trailing_sep',
 
         # The `_str` slot stores the string representation of the path,
         # computed from the drive, root and tail when `__str__()` is called
@@ -465,6 +469,12 @@ class PurePath:
             return self
         return self._from_parsed_parts(self.drive, self.root, self._tail, False)
 
+    @property
+    def _ancestors(self):
+        """Yields this path (sans trailing slash) and its parents."""
+        yield self.without_trailing_sep()
+        yield from _PathParents(self)
+
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
@@ -556,11 +566,6 @@ class PurePath:
         # The value of this property should not be cached on the path object,
         # as doing so would introduce a reference cycle.
         return _PathParents(self)
-
-    @property
-    def _ancestors(self):
-        yield self.without_trailing_sep()
-        yield from _PathParents(self)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
@@ -1070,8 +1075,7 @@ class _PathBase(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         elif not path_pattern._tail:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-
-        if path_pattern.name == '**' and not path_pattern.has_trailing_sep:
+        elif path_pattern.name == '**' and not path_pattern.has_trailing_sep:
             # GH-70303: '**' only matches directories. Add trailing slash.
             warnings.warn(
                 "Pattern ending '**' will match files and directories in a "
@@ -1083,6 +1087,7 @@ class _PathBase(PurePath):
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
+
         sep = self.pathmod.sep
         pattern_str = str(path_pattern)
         pattern_parts = pattern_str.split(sep)
