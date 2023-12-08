@@ -1188,8 +1188,9 @@ mappingproxy_hash(PyObject *self)
 }
 
 static PyObject *
-mappingproxy_str(mappingproxyobject *pp)
+mappingproxy_str(PyObject *self)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_Str(pp->mapping);
 }
 
@@ -1940,7 +1941,7 @@ PyTypeObject PyDictProxy_Type = {
     &mappingproxy_as_mapping,                   /* tp_as_mapping */
     mappingproxy_hash,                          /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)mappingproxy_str,                 /* tp_str */
+    mappingproxy_str,                           /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
