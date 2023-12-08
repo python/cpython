@@ -1132,8 +1132,9 @@ mappingproxy_items(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
+mappingproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(copy));
 }
 
@@ -1157,7 +1158,7 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("D.values() -> an object providing a view on D's values")},
     {"items",     (PyCFunction)mappingproxy_items,      METH_NOARGS,
      PyDoc_STR("D.items() -> a set-like object providing a view on D's items")},
-    {"copy",      (PyCFunction)mappingproxy_copy,       METH_NOARGS,
+    {"copy",      mappingproxy_copy,       METH_NOARGS,
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
