@@ -1210,8 +1210,9 @@ mappingproxy_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-mappingproxy_richcompare(mappingproxyobject *v, PyObject *w, int op)
+mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 {
+    mappingproxyobject *v = (mappingproxyobject *)self;
     return PyObject_RichCompare(v->mapping, w, op);
 }
 
@@ -1951,7 +1952,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_doc */
     mappingproxy_traverse,                      /* tp_traverse */
     0,                                          /* tp_clear */
-    (richcmpfunc)mappingproxy_richcompare,      /* tp_richcompare */
+    mappingproxy_richcompare,                   /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     mappingproxy_getiter,                       /* tp_iter */
     0,                                          /* tp_iternext */
