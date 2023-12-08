@@ -55,7 +55,7 @@ method_repr(PyObject *descr)
 }
 
 static PyObject *
-member_repr(PyMemberDescrObject *descr)
+member_repr(PyObject *descr)
 {
     return descr_repr((PyDescrObject *)descr,
                       "<member '%V' of '%s' objects>");
@@ -790,7 +790,7 @@ PyTypeObject PyMemberDescr_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)member_repr,                      /* tp_repr */
+    member_repr,                                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
