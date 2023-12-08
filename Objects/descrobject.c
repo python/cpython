@@ -19,9 +19,9 @@ class property "propertyobject *" "&PyProperty_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
 
 static void
-descr_dealloc(PyObject *obj)
+descr_dealloc(PyObject *self)
 {
-    PyDescrObject *descr = (PyDescrObject *)obj;
+    PyDescrObject *descr = (PyDescrObject *)self;
     _PyObject_GC_UNTRACK(descr);
     Py_XDECREF(descr->d_type);
     Py_XDECREF(descr->d_name);
