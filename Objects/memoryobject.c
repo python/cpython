@@ -3419,7 +3419,7 @@ PyTypeObject PyMemoryView_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
        Py_TPFLAGS_SEQUENCE,                   /* tp_flags */
     memoryview__doc__,                        /* tp_doc */
-    memory_traverse,            /* tp_traverse */
+    memory_traverse,                          /* tp_traverse */
     memory_clear,                             /* tp_clear */
     memory_richcompare,                       /* tp_richcompare */
     offsetof(PyMemoryViewObject, weakreflist),/* tp_weaklistoffset */
