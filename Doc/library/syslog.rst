@@ -124,7 +124,7 @@ The module defines the following constants:
           LOG_AUTHPRIV
           LOG_CRON
           LOG_DAEMON
-          LOG_FTP 
+          LOG_FTP
           LOG_INSTALL
           LOG_KERN
           LOG_LAUNCHD
