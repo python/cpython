@@ -576,6 +576,9 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match(pattern)
       True
 
+   .. versionchanged:: 3.12
+      Accepts an object implementing the :class:`os.PathLike` interface.
+
    As with other methods, case-sensitivity follows platform defaults::
 
       >>> PurePosixPath('b.py').match('*.PY')
