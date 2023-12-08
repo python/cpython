@@ -5080,7 +5080,10 @@ class ForkTests(unittest.TestCase):
                 support.wait_process(pid, exitcode=0)
         """
         assert_python_ok("-c", code)
-        assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
+        if support.Py_GIL_DISABLED:
+            assert_python_ok("-c", code, PYTHONMALLOC="mimalloc_debug")
+        else:
+            assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
     @unittest.skipUnless(sys.platform in ("linux", "darwin"),
                          "Only Linux and macOS detect this today.")
