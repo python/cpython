@@ -212,7 +212,8 @@ The module defines the following functions:
 
 .. function:: walk_tb(tb)
 
-   Walk a traceback following ``tb_next`` yielding the frame and line number
+   Walk a traceback following :attr:`~traceback.tb_next` yielding the frame and
+   line number
    for each frame. This helper is used with :meth:`StackSummary.extract`.
 
    .. versionadded:: 3.5
