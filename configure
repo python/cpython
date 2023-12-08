@@ -27885,6 +27885,9 @@ printf "%s\n" "$TEST_MODULES" >&6; }
 # libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
 # compiler flags.
 #
+# gh-112779: On RISC-V, GCC 12 and earlier require libatomic support for 1-byte
+# and 2-byte operations, but not for 8-byte operations.
+#
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
 # If the check is done after AC_OUTPUT, modifying LIBS has no effect
@@ -27924,12 +27927,19 @@ typedef intptr_t Py_ssize_t;
 
 int main()
 {
-    uint64_t byte;
-    _Py_atomic_store_uint64(&byte, 2);
-    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+    uint64_t value;
+    _Py_atomic_store_uint64(&value, 2);
+    if (_Py_atomic_or_uint64(&value, 8) != 2) {
         return 1; // error
     }
-    if (_Py_atomic_load_uint64(&byte) != 10) {
+    if (_Py_atomic_load_uint64(&value) != 10) {
+        return 1; // error
+    }
+    uint8_t byte = 0xb8;
+    if (_Py_atomic_or_uint8(&byte, 0x2d) != 0xb8) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint8(&byte) != 0xbd) {
         return 1; // error
     }
     return 0; // all good
