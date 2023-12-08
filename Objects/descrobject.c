@@ -1340,14 +1340,15 @@ wrapper_repr(PyObject *self)
 }
 
 static PyObject *
-wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
+wrapper_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    wrapperobject *wp = (wrapperobject *)self;
     return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(&_Py_ID(getattr)),
                          wp->self, PyDescr_NAME(wp->descr));
 }
 
 static PyMethodDef wrapper_methods[] = {
-    {"__reduce__", (PyCFunction)wrapper_reduce, METH_NOARGS, NULL},
+    {"__reduce__", wrapper_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
