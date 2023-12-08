@@ -3038,8 +3038,9 @@ result:
 /**************************************************************************/
 
 static Py_hash_t
-memory_hash(PyMemoryViewObject *self)
+memory_hash(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     if (self->hash == -1) {
         Py_buffer *view = &self->view;
         char *mem = view->buf;
@@ -3385,7 +3386,7 @@ PyTypeObject PyMemoryView_Type = {
     0,                                        /* tp_as_number */
     &memory_as_sequence,                      /* tp_as_sequence */
     &memory_as_mapping,                       /* tp_as_mapping */
-    (hashfunc)memory_hash,                    /* tp_hash */
+    memory_hash,                              /* tp_hash */
     0,                                        /* tp_call */
     0,                                        /* tp_str */
     PyObject_GenericGetAttr,                  /* tp_getattro */
