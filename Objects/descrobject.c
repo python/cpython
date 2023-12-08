@@ -1376,8 +1376,9 @@ wrapper_name(PyObject *wp, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
+wrapper_doc(PyObject *self, void *Py_UNUSED(ignored))
 {
+    wrapperobject *wp = (wrapperobject *)self;
     return _PyType_GetDocFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
 }
 
@@ -1400,7 +1401,7 @@ static PyGetSetDef wrapper_getsets[] = {
     {"__objclass__", wrapper_objclass},
     {"__name__", wrapper_name},
     {"__qualname__", wrapper_qualname},
-    {"__doc__", (getter)wrapper_doc},
+    {"__doc__", wrapper_doc},
     {"__text_signature__", wrapper_text_signature},
     {0}
 };
