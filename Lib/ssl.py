@@ -568,20 +568,7 @@ class SSLSocket(socket):
                              "in client mode")
         if self._context.check_hostname and not server_hostname:
             raise ValueError("check_hostname requires server_hostname")
-
-        kwargs = dict(
-            family=sock.family, type=sock.type, proto=sock.proto,
-            fileno=sock.fileno()
-        )
-        self = cls.__new__(cls, **kwargs)
-        super(SSLSocket, self).__init__(**kwargs)
         sock_timeout = sock.gettimeout()
-        sock.detach()
-
-        self._context = context
-        self._session = session
-        self._closed = False
-        self._sslobj = None
         self.server_side = server_side
         self.server_hostname = server_hostname
         self.do_handshake_on_connect = do_handshake_on_connect

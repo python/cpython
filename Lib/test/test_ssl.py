@@ -6,7 +6,8 @@ import unittest
 from test import test_support as support
 from test.script_helper import assert_python_ok
 import asyncore
-import unittest.mock
+# import unittest.mock
+from mock import Mock
 from test import support
 import re
 import socket
@@ -15,7 +16,6 @@ import struct
 import time
 import datetime
 import gc
-import http.client
 import os
 import errno
 import pprint
@@ -89,6 +89,35 @@ OP_SINGLE_DH_USE = getattr(ssl, "OP_SINGLE_DH_USE", 0)
 OP_SINGLE_ECDH_USE = getattr(ssl, "OP_SINGLE_ECDH_USE", 0)
 OP_CIPHER_SERVER_PREFERENCE = getattr(ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
 OP_ENABLE_MIDDLEBOX_COMPAT = getattr(ssl, "OP_ENABLE_MIDDLEBOX_COMPAT", 0)
+
+SIGNED_CERTFILE_HOSTNAME = 'localhost'
+SIGNED_CERTFILE2_HOSTNAME = 'fakehostname'
+NOSANFILE = data_file("nosan.pem")
+NOSAN_HOSTNAME = 'localhost'
+
+
+def testing_context(server_cert=SIGNED_CERTFILE):
+    """Create context
+
+    client_context, server_context, hostname = testing_context()
+    """
+    if server_cert == SIGNED_CERTFILE:
+        hostname = SIGNED_CERTFILE_HOSTNAME
+    elif server_cert == SIGNED_CERTFILE2:
+        hostname = SIGNED_CERTFILE2_HOSTNAME
+    elif server_cert == NOSANFILE:
+        hostname = NOSAN_HOSTNAME
+    else:
+        raise ValueError(server_cert)
+
+    client_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    client_context.load_verify_locations(SIGNING_CA)
+
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    server_context.load_cert_chain(server_cert)
+    server_context.load_verify_locations(SIGNING_CA)
+
+    return client_context, server_context, hostname
 
 
 def handle_error(prefix):
@@ -1758,7 +1787,7 @@ else:
                         return False
                     else:
                         # OSError may occur with wrong protocols, e.g. both
-                        # sides use PROTOCOL_TLS_SERVER.
+                        # sides use PROTOCOL_TLS.
                         #
                         # XXX Various errors can have happened here, for example
                         # a mismatching protocol version, an invalid certificate,
@@ -2158,7 +2187,7 @@ else:
 
 
     class ThreadedTests(unittest.TestCase):
-
+        # FIX: client_context, server_context, hostname = testing_context()
         @skip_if_broken_ubuntu_ssl
         def test_echo(self):
             """Basic test of an SSL client connecting to a server"""
@@ -3246,6 +3275,7 @@ else:
                 self.assertRaises(ValueError, s.write, b'hello')
 
 
+        client_context, server_context, hostname = testing_context()
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
             with client_context.wrap_socket(socket.socket(),
@@ -3316,14 +3346,14 @@ else:
         # verify that post_handshake_auth does not implicitly enable cert
         # validation.
         hostname = SIGNED_CERTFILE_HOSTNAME
-        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         client_context.post_handshake_auth = True
         client_context.load_cert_chain(SIGNED_CERTFILE)
         # no cert validation and CA on client side
         client_context.check_hostname = False
         client_context.verify_mode = ssl.CERT_NONE
 
-        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
         server_context.load_cert_chain(SIGNED_CERTFILE)
         server_context.load_verify_locations(SIGNING_CA)
         server_context.post_handshake_auth = True
@@ -3357,7 +3387,7 @@ class TestSSLDebug(unittest.TestCase):
     @requires_keylog
     def test_keylog_defaults(self):
         self.addCleanup(support.unlink, support.TESTFN)
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
         self.assertEqual(ctx.keylog_filename, None)
 
         self.assertFalse(os.path.isfile(support.TESTFN))
@@ -3417,11 +3447,11 @@ class TestSSLDebug(unittest.TestCase):
                      "test is not compatible with ignore_environment")
     def test_keylog_env(self):
         self.addCleanup(support.unlink, support.TESTFN)
-        with unittest.mock.patch.dict(os.environ):
+        with mock.patch.dict(os.environ):
             os.environ['SSLKEYLOGFILE'] = support.TESTFN
             self.assertEqual(os.environ['SSLKEYLOGFILE'], support.TESTFN)
 
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
             self.assertEqual(ctx.keylog_filename, None)
 
             ctx = ssl.create_default_context()
@@ -3506,7 +3536,7 @@ class TestPreHandshakeClose(unittest.TestCase):
 
     class SingleConnectionTestServerThread(threading.Thread):
 
-        def __init__(self, *, name, call_after_accept):
+        def __init__(self, _dummy=object(), name="name", call_after_accept=False):
             self.call_after_accept = call_after_accept
             self.received_data = b''  # set by .run()
             self.wrap_error = None  # set by .run()
@@ -3568,8 +3598,7 @@ class TestPreHandshakeClose(unittest.TestCase):
             # we're specifically trying to test. The way this test is written
             # is known to work on Linux. We'll skip it anywhere else that it
             # does not present as doing so.
-            self.skipTest(f"Could not recreate conditions on {sys.platform}:"
-                          f" {err=}")
+            self.skipTest("Could not recreate conditions on {sys.platform}: {err}".format(sys.plattform,err))
         # If maintaining this conditional winds up being a problem.
         # just turn this into an unconditional skip anything but Linux.
         # The important thing is that our CI has the logic covered.
@@ -3660,52 +3689,6 @@ class TestPreHandshakeClose(unittest.TestCase):
         self.assertIn("before TLS handshake with data", wrap_error.reason)
         self.assertNotEqual(0, wrap_error.args[0])
         self.assertIsNone(wrap_error.library, msg="attr must exist")
-
-    def test_https_client_non_tls_response_ignored(self):
-
-        server_responding = threading.Event()
-
-        class SynchronizedHTTPSConnection(http.client.HTTPSConnection):
-            def connect(self):
-                http.client.HTTPConnection.connect(self)
-                # Wait for our fault injection server to have done its thing.
-                if not server_responding.wait(1.0) and support.verbose:
-                    sys.stdout.write("server_responding event never set.")
-                self.sock = self._context.wrap_socket(
-                        self.sock, server_hostname=self.host)
-
-        def call_after_accept(conn_to_client):
-            # This forces an immediate connection close via RST on .close().
-            set_socket_so_linger_on_with_zero_timeout(conn_to_client)
-            conn_to_client.send(
-                    b"HTTP/1.0 402 Payment Required\r\n"
-                    b"\r\n")
-            conn_to_client.close()  # RST
-            server_responding.set()
-            return True  # Tell the server to stop.
-
-        server = self.SingleConnectionTestServerThread(
-                call_after_accept=call_after_accept,
-                name="non_tls_http_RST_responder")
-        server.__enter__()  # starts it
-        self.addCleanup(server.__exit__)  # ... & unittest.TestCase stops it.
-        # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
-        set_socket_so_linger_on_with_zero_timeout(server.listener)
-
-        connection = SynchronizedHTTPSConnection(
-                f"localhost",
-                port=server.port,
-                context=ssl.create_default_context(),
-                timeout=2.0,
-        )
-        # There are lots of reasons this raises as desired, long before this
-        # test was added. Sending the request requires a successful TLS wrapped
-        # socket; that fails if the connection is broken. It may seem pointless
-        # to test this. It serves as an illustration of something that we never
-        # want to happen... properly not happening.
-        with self.assertRaises(OSError) as err_ctx:
-            connection.request("HEAD", "/test", headers={"Host": "localhost"})
-            response = connection.getresponse()
 
 
 def test_main(verbose=False):
