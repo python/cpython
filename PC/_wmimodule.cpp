@@ -44,6 +44,7 @@ struct _query_data {
     LPCWSTR query;
     HANDLE writePipe;
     HANDLE readPipe;
+    HANDLE initEvent;
     HANDLE connectEvent;
 };
 
@@ -81,13 +82,16 @@ _query_thread(LPVOID param)
             IID_IWbemLocator, (LPVOID *)&locator
         );
     }
+    if (SUCCEEDED(hr) && !SetEvent(data->initEvent)) {
+        hr = HRESULT_FROM_WIN32(GetLastError());
+    }
     if (SUCCEEDED(hr)) {
         hr = locator->ConnectServer(
             bstr_t(L"ROOT\\CIMV2"),
             NULL, NULL, 0, NULL, 0, 0, &services
         );
     }
-    if (!SetEvent(data->connectEvent)) {
+    if (SUCCEEDED(hr) && !SetEvent(data->connectEvent)) {
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
     if (SUCCEEDED(hr)) {
@@ -193,6 +197,24 @@ _query_thread(LPVOID param)
 }
 
 
+static DWORD
+wait_event(HANDLE event, DWORD timeout)
+{
+    DWORD err = 0;
+    switch (WaitForSingleObject(event, timeout)) {
+    case WAIT_OBJECT_0:
+        break;
+    case WAIT_TIMEOUT:
+        err = WAIT_TIMEOUT;
+        break;
+    default:
+        err = GetLastError();
+        break;
+    }
+    return err;
+}
+
+
 /*[clinic input]
 _wmi.exec_query
 
@@ -235,8 +257,11 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
 
     Py_BEGIN_ALLOW_THREADS
 
+    data.initEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     data.connectEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (!data.connectEvent || !CreatePipe(&data.readPipe, &data.writePipe, NULL, 0)) {
+    if (!data.initEvent || !data.connectEvent ||
+        !CreatePipe(&data.readPipe, &data.writePipe, NULL, 0))
+    {
         err = GetLastError();
     } else {
         hThread = CreateThread(NULL, 0, _query_thread, (LPVOID*)&data, 0, NULL);
@@ -251,16 +276,12 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     // gh-112278: If current user doesn't have permission to query the WMI, the
     // function IWbemLocator::ConnectServer will hang for 5 seconds, and there
     // is no way to specify the timeout. So we use an Event object to simulate
-    // a timeout.
-    switch (WaitForSingleObject(data.connectEvent, 100)) {
-    case WAIT_OBJECT_0:
-        break;
-    case WAIT_TIMEOUT:
-        err = WAIT_TIMEOUT;
-        break;
-    default:
-        err = GetLastError();
-        break;
+    // a timeout.  The initEvent will be set after COM initialization, it will
+    // take a longer time when first initialized.  The connectEvent will be set
+    // after connected to WMI.
+    err = wait_event(data.initEvent, 1000);
+    if (!err) {
+        err = wait_event(data.connectEvent, 100);
     }
 
     while (!err) {
@@ -306,6 +327,7 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     }
 
     CloseHandle(hThread);
+    CloseHandle(data.initEvent);
     CloseHandle(data.connectEvent);
     hThread = NULL;
 
