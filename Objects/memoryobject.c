@@ -2614,8 +2614,9 @@ memory_subscript(PyObject *_self, PyObject *key)
 }
 
 static int
-memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
+memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &(self->view);
     Py_buffer src;
     const char *fmt;
@@ -2731,7 +2732,7 @@ memory_length(PyObject *_self)
 static PyMappingMethods memory_as_mapping = {
     memory_length,                        /* mp_length */
     memory_subscript,                     /* mp_subscript */
-    (objobjargproc)memory_ass_sub,        /* mp_ass_subscript */
+    memory_ass_sub,                       /* mp_ass_subscript */
 };
 
 /* As sequence */
