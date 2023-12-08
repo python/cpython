@@ -8,7 +8,7 @@
       * only compile-time constant in these scenarios.
       */
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 
 # undef ALIGNOF_MAX_ALIGN_T
 # undef SIZEOF_LONG
