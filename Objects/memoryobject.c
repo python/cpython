@@ -119,8 +119,9 @@ mbuf_release(_PyManagedBufferObject *self)
 }
 
 static void
-mbuf_dealloc(_PyManagedBufferObject *self)
+mbuf_dealloc(PyObject *_self)
 {
+    _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
     assert(self->exports == 0);
     mbuf_release(self);
     if (self->flags&_Py_MANAGED_BUFFER_FREE_FORMAT)
@@ -150,7 +151,7 @@ PyTypeObject _PyManagedBuffer_Type = {
     "managedbuffer",
     sizeof(_PyManagedBufferObject),
     0,
-    (destructor)mbuf_dealloc,                /* tp_dealloc */
+    mbuf_dealloc,                            /* tp_dealloc */
     0,                                       /* tp_vectorcall_offset */
     0,                                       /* tp_getattr */
     0,                                       /* tp_setattr */
