@@ -1330,8 +1330,9 @@ wrapper_hash(wrapperobject *wp)
 }
 
 static PyObject *
-wrapper_repr(wrapperobject *wp)
+wrapper_repr(PyObject *self)
 {
+    wrapperobject *wp = (wrapperobject *)self;
     return PyUnicode_FromFormat("<method-wrapper '%s' of %s object at %p>",
                                wp->descr->d_base->name,
                                Py_TYPE(wp->self)->tp_name,
@@ -1425,7 +1426,7 @@ PyTypeObject _PyMethodWrapper_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)wrapper_repr,                     /* tp_repr */
+    wrapper_repr,                               /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
