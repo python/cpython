@@ -650,8 +650,9 @@ static PyGetSetDef method_getset[] = {
 };
 
 static PyObject *
-member_get_doc(PyMemberDescrObject *descr, void *closure)
+member_get_doc(PyObject *_descr, void *closure)
 {
+    PyMemberDescrObject *descr = (PyMemberDescrObject *)_descr;
     if (descr->d_member->doc == NULL) {
         Py_RETURN_NONE;
     }
@@ -659,7 +660,7 @@ member_get_doc(PyMemberDescrObject *descr, void *closure)
 }
 
 static PyGetSetDef member_getset[] = {
-    {"__doc__", (getter)member_get_doc},
+    {"__doc__", member_get_doc},
     {"__qualname__", descr_get_qualname},
     {0}
 };
