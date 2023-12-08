@@ -769,8 +769,10 @@ data from a string buffer instead, and pass it as an argument.
    or arithmetic operators, and assigning such a "pseudo-file" to sys.stdin will
    not cause the interpreter to read further input from it.)
 
-Instance method objects have attributes, too: ``m.__self__`` is the instance
-object with the method :meth:`!m`, and ``m.__func__`` is the function object
+:ref:`Instance method objects <instance-methods>` have attributes, too:
+:attr:`m.__self__ <method.__self__>` is the instance
+object with the method :meth:`!m`, and :attr:`m.__func__ <method.__func__>` is
+the :ref:`function object <user-defined-funcs>`
 corresponding to the method.
 
 
