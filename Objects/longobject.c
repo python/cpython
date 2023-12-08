@@ -5336,10 +5336,10 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
     }
 
     /* Initial reduction: make sure that 0 <= b <= a. */
-    a = (PyLongObject *)long_abs(a);
+    a = (PyLongObject *)long_abs((PyObject *)a);
     if (a == NULL)
         return NULL;
-    b = (PyLongObject *)long_abs(b);
+    b = (PyLongObject *)long_abs((PyObject *)b);
     if (b == NULL) {
         Py_DECREF(a);
         return NULL;
