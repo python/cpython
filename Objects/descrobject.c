@@ -1413,8 +1413,9 @@ static PyGetSetDef wrapper_getsets[] = {
 };
 
 static PyObject *
-wrapper_call(wrapperobject *wp, PyObject *args, PyObject *kwds)
+wrapper_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    wrapperobject *wp = (wrapperobject *)self;
     return wrapperdescr_raw_call(wp->descr, wp->self, args, kwds);
 }
 
@@ -1443,7 +1444,7 @@ PyTypeObject _PyMethodWrapper_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     wrapper_hash,                               /* tp_hash */
-    (ternaryfunc)wrapper_call,                  /* tp_call */
+    wrapper_call,                               /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
