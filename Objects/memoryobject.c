@@ -1156,8 +1156,9 @@ memory_traverse(PyMemoryViewObject *self, visitproc visit, void *arg)
 }
 
 static int
-memory_clear(PyMemoryViewObject *self)
+memory_clear(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     (void)_memory_release(self);
     Py_CLEAR(self->mbuf);
     return 0;
@@ -3391,7 +3392,7 @@ PyTypeObject PyMemoryView_Type = {
        Py_TPFLAGS_SEQUENCE,                   /* tp_flags */
     memoryview__doc__,                        /* tp_doc */
     (traverseproc)memory_traverse,            /* tp_traverse */
-    (inquiry)memory_clear,                    /* tp_clear */
+    memory_clear,                             /* tp_clear */
     memory_richcompare,                       /* tp_richcompare */
     offsetof(PyMemoryViewObject, weakreflist),/* tp_weaklistoffset */
     memory_iter,                              /* tp_iter */
