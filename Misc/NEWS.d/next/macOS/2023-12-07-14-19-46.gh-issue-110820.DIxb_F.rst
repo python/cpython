@@ -1,0 +1,3 @@
+Make sure the preprocessor definitions for ``ALIGNOF_MAX_ALIGN_T``,
+``SIZEOF_LONG_DOUBLE`` and ``HAVE_GCC_ASM_FOR_X64`` are correct for
+Universal 2 builds on macOS.
