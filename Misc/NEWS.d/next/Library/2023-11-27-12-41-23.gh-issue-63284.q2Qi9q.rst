@@ -1,0 +1,1 @@
+Added support for TLS-PSK (pre-shared key) mode to the :mod:`ssl` module.

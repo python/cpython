@@ -21,7 +21,7 @@ static const _PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
 // Spin for a bit before parking the thread. This is only enabled for
 // `--disable-gil` builds because it is unlikely to be helpful if the GIL is
 // enabled.
-#if Py_NOGIL
+#if Py_GIL_DISABLED
 static const int MAX_SPIN_COUNT = 40;
 #else
 static const int MAX_SPIN_COUNT = 0;

@@ -3006,21 +3006,21 @@ subtype_getweakref(PyObject *obj, void *context)
 
 static PyGetSetDef subtype_getsets_full[] = {
     {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables (if defined)")},
+     PyDoc_STR("dictionary for instance variables")},
     {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object (if defined)")},
+     PyDoc_STR("list of weak references to the object")},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_dict_only[] = {
     {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables (if defined)")},
+     PyDoc_STR("dictionary for instance variables")},
     {0}
 };
 
 static PyGetSetDef subtype_getsets_weakref_only[] = {
     {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object (if defined)")},
+     PyDoc_STR("list of weak references to the object")},
     {0}
 };
 
@@ -4540,6 +4540,12 @@ PyType_GetQualName(PyTypeObject *type)
     return type_qualname(type, NULL);
 }
 
+PyObject *
+_PyType_GetModuleName(PyTypeObject *type)
+{
+    return type_module(type, NULL);
+}
+
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
@@ -5617,6 +5623,12 @@ object_richcompare(PyObject *self, PyObject *other, int op)
     }
 
     return res;
+}
+
+PyObject*
+_Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op)
+{
+    return object_richcompare(self, other, op);
 }
 
 static PyObject *

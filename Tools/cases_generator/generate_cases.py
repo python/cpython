@@ -102,13 +102,6 @@ arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 arg_parser.add_argument(
-    "-n",
-    "--opcode_ids_h",
-    type=str,
-    help="Header file with opcode number definitions",
-    default=DEFAULT_OPCODE_IDS_H_OUTPUT,
-)
-arg_parser.add_argument(
     "-t",
     "--opcode_targets_h",
     type=str,
@@ -334,42 +327,8 @@ class Generator(Analyzer):
         self.opmap = opmap
         self.markers = markers
 
-    def write_opcode_ids(
-        self, opcode_ids_h_filename: str, opcode_targets_filename: str
-    ) -> None:
-        """Write header file that defined the opcode IDs"""
-
-        with open(opcode_ids_h_filename, "w") as f:
-            # Create formatter
-            self.out = Formatter(f, 0)
-
-            self.write_provenance_header()
-
-            self.out.emit("")
-            self.out.emit("#ifndef Py_OPCODE_IDS_H")
-            self.out.emit("#define Py_OPCODE_IDS_H")
-            self.out.emit("#ifdef __cplusplus")
-            self.out.emit('extern "C" {')
-            self.out.emit("#endif")
-            self.out.emit("")
-            self.out.emit("/* Instruction opcodes for compiled code */")
-
-            def define(name: str, opcode: int) -> None:
-                self.out.emit(f"#define {name:<38} {opcode:>3}")
-
-            all_pairs: list[tuple[int, int, str]] = []
-            # the second item in the tuple sorts the markers before the ops
-            all_pairs.extend((i, 1, name) for (name, i) in self.markers.items())
-            all_pairs.extend((i, 2, name) for (name, i) in self.opmap.items())
-            for i, _, name in sorted(all_pairs):
-                assert name is not None
-                define(name, i)
-
-            self.out.emit("")
-            self.out.emit("#ifdef __cplusplus")
-            self.out.emit("}")
-            self.out.emit("#endif")
-            self.out.emit("#endif /* !Py_OPCODE_IDS_H */")
+    def write_opcode_targets(self, opcode_targets_filename: str) -> None:
+        """Write header file that defines the jump target table"""
 
         with open(opcode_targets_filename, "w") as f:
             # Create formatter
@@ -769,6 +728,7 @@ class Generator(Analyzer):
 
             # Write and count instructions of all kinds
             n_macros = 0
+            cases = []
             for thing in self.everything:
                 match thing:
                     case parsing.InstDef():
@@ -776,11 +736,14 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(mac, self.out)
+                        cases.append((mac.name, mac))
                     case parsing.Pseudo():
                         pass
                     case _:
                         assert_never(thing)
+            cases.sort()
+            for _, mac in cases:
+                stacking.write_macro_instr(mac, self.out)
 
             self.out.write_raw("\n")
             self.out.write_raw("#undef TIER_ONE\n")
@@ -810,6 +773,8 @@ class Generator(Analyzer):
                     n_uops += 1
                     self.out.emit("")
                     with self.out.block(f"case {instr.name}:"):
+                        if instr.instr_flags.HAS_ARG_FLAG:
+                            self.out.emit("oparg = CURRENT_OPARG();")
                         stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
@@ -877,10 +842,9 @@ def main() -> None:
         return
 
     # These raise OSError if output can't be written
-    a.write_instructions(args.output, args.emit_line_directives)
 
     a.assign_opcode_ids()
-    a.write_opcode_ids(args.opcode_ids_h, args.opcode_targets_h)
+    a.write_opcode_targets(args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
     a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
     a.write_abstract_interpreter_instructions(

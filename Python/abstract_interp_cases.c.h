@@ -624,6 +624,12 @@
             break;
         }
 
+        case _FOR_ITER_TIER_TWO: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
         case _ITER_CHECK_LIST: {
             break;
         }
@@ -768,7 +774,8 @@
         }
 
         case _PUSH_FRAME: {
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            STACK_SHRINK(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(0)), true);
             break;
         }
 
