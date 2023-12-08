@@ -1389,15 +1389,16 @@ wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-wrapper_qualname(wrapperobject *wp, void *Py_UNUSED(ignored))
+wrapper_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
+    wrapperobject *wp = (wrapperobject *)self;
     return descr_get_qualname((PyDescrObject *)wp->descr, NULL);
 }
 
 static PyGetSetDef wrapper_getsets[] = {
     {"__objclass__", wrapper_objclass},
     {"__name__", wrapper_name},
-    {"__qualname__", (getter)wrapper_qualname},
+    {"__qualname__", wrapper_qualname},
     {"__doc__", (getter)wrapper_doc},
     {"__text_signature__", (getter)wrapper_text_signature},
     {0}
