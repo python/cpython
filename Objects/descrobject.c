@@ -579,8 +579,9 @@ method_get_doc(PyObject *_descr, void *closure)
 }
 
 static PyObject *
-method_get_text_signature(PyMethodDescrObject *descr, void *closure)
+method_get_text_signature(PyObject *_descr, void *closure)
 {
+    PyMethodDescrObject *descr = (PyMethodDescrObject *)_descr;
     return _PyType_GetTextSignatureFromInternalDoc(descr->d_method->ml_name,
                                                    descr->d_method->ml_doc,
                                                    descr->d_method->ml_flags);
@@ -644,7 +645,7 @@ static PyMemberDef descr_members[] = {
 static PyGetSetDef method_getset[] = {
     {"__doc__", method_get_doc},
     {"__qualname__", descr_get_qualname},
-    {"__text_signature__", (getter)method_get_text_signature},
+    {"__text_signature__", method_get_text_signature},
     {0}
 };
 
