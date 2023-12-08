@@ -39,7 +39,6 @@ Doc/library/collections.abc.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
-Doc/library/contextlib.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/ctypes.rst
