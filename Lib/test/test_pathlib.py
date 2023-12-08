@@ -3039,6 +3039,9 @@ class PathTest(DummyPathTest, PurePathTest):
             self.assertEqual(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
             self.assertEqual(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
 
+            # Trailing slash should be preserved
+            self.assertEqual(str(P('a/').absolute()), os.path.join(BASE, 'a', ''))
+
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
         self.assertEqual(p, q)
@@ -3066,6 +3069,12 @@ class PathTest(DummyPathTest, PurePathTest):
         P = self.cls
         p = P('~')
         self.assertEqual(p.expanduser(), P(os.path.expanduser('~')))
+        p = P('~/')
+        self.assertEqual(p.expanduser(), P(os.path.expanduser('~/')))
+        p = P('~/foo')
+        self.assertEqual(p.expanduser(), P(os.path.expanduser('~/foo')))
+        p = P('~/foo/')
+        self.assertEqual(p.expanduser(), P(os.path.expanduser('~/foo/')))
         p = P('foo')
         self.assertEqual(p.expanduser(), p)
         p = P('/~')
@@ -3845,10 +3854,12 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
             # Relative path with root
             self.assertEqual(str(P('\\').absolute()), drive + '\\')
             self.assertEqual(str(P('\\foo').absolute()), drive + '\\foo')
+            self.assertEqual(str(P('\\foo\\').absolute()), drive + '\\foo\\')
 
             # Relative path on current drive
             self.assertEqual(str(P(drive).absolute()), BASE)
             self.assertEqual(str(P(drive + 'foo').absolute()), os.path.join(BASE, 'foo'))
+            self.assertEqual(str(P(drive + 'foo\\').absolute()), os.path.join(BASE, 'foo\\'))
 
         with os_helper.subst_drive(BASE) as other_drive:
             # Set the working directory on the substitute drive
@@ -3860,6 +3871,7 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
             # Relative path on another drive
             self.assertEqual(str(P(other_drive).absolute()), other_cwd)
             self.assertEqual(str(P(other_drive + 'foo').absolute()), other_cwd + '\\foo')
+            self.assertEqual(str(P(other_drive + 'foo\\').absolute()), other_cwd + '\\foo\\')
 
     def test_glob(self):
         P = self.cls
