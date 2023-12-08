@@ -3194,22 +3194,25 @@ memory_ndim_get(PyObject *_self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-memory_c_contiguous(PyMemoryViewObject *self, PyObject *dummy)
+memory_c_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(MV_C_CONTIGUOUS(self->flags));
 }
 
 static PyObject *
-memory_f_contiguous(PyMemoryViewObject *self, PyObject *dummy)
+memory_f_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(MV_F_CONTIGUOUS(self->flags));
 }
 
 static PyObject *
-memory_contiguous(PyMemoryViewObject *self, PyObject *dummy)
+memory_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(MV_ANY_CONTIGUOUS(self->flags));
 }
@@ -3255,9 +3258,9 @@ static PyGetSetDef memory_getsetlist[] = {
     {"shape",           memory_shape_get,      NULL, memory_shape_doc},
     {"strides",         memory_strides_get,    NULL, memory_strides_doc},
     {"suboffsets",      memory_suboffsets_get, NULL, memory_suboffsets_doc},
-    {"c_contiguous",    (getter)memory_c_contiguous,   NULL, memory_c_contiguous_doc},
-    {"f_contiguous",    (getter)memory_f_contiguous,   NULL, memory_f_contiguous_doc},
-    {"contiguous",      (getter)memory_contiguous,     NULL, memory_contiguous_doc},
+    {"c_contiguous",    memory_c_contiguous,   NULL, memory_c_contiguous_doc},
+    {"f_contiguous",    memory_f_contiguous,   NULL, memory_f_contiguous_doc},
+    {"contiguous",      memory_contiguous,     NULL, memory_contiguous_doc},
     {NULL, NULL, NULL, NULL},
 };
 
