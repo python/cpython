@@ -531,8 +531,9 @@ wrapperdescr_raw_call(PyWrapperDescrObject *descr, PyObject *self,
 }
 
 static PyObject *
-wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
+wrapperdescr_call(PyObject *_descr, PyObject *args, PyObject *kwds)
 {
+    PyWrapperDescrObject *descr = (PyWrapperDescrObject *)_descr;
     Py_ssize_t argc;
     PyObject *self, *result;
 
@@ -869,7 +870,7 @@ PyTypeObject PyWrapperDescr_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    (ternaryfunc)wrapperdescr_call,             /* tp_call */
+    wrapperdescr_call,                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
