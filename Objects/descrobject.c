@@ -1138,8 +1138,9 @@ mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-mappingproxy_reversed(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
+mappingproxy_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(__reversed__));
 }
 
@@ -1160,7 +1161,7 @@ static PyMethodDef mappingproxy_methods[] = {
      PyDoc_STR("D.copy() -> a shallow copy of D")},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
-    {"__reversed__", (PyCFunction)mappingproxy_reversed, METH_NOARGS,
+    {"__reversed__", mappingproxy_reversed, METH_NOARGS,
      PyDoc_STR("D.__reversed__() -> reverse iterator")},
     {0}
 };
