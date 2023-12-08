@@ -129,8 +129,9 @@ mbuf_dealloc(_PyManagedBufferObject *self)
 }
 
 static int
-mbuf_traverse(_PyManagedBufferObject *self, visitproc visit, void *arg)
+mbuf_traverse(PyObject *_self, visitproc visit, void *arg)
 {
+    _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
     Py_VISIT(self->master.obj);
     return 0;
 }
@@ -166,7 +167,7 @@ PyTypeObject _PyManagedBuffer_Type = {
     0,                                       /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                       /* tp_doc */
-    (traverseproc)mbuf_traverse,             /* tp_traverse */
+    mbuf_traverse,                           /* tp_traverse */
     mbuf_clear                               /* tp_clear */
 };
 
