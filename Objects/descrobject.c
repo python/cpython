@@ -1994,7 +1994,7 @@ PyTypeObject PyProperty_Type = {
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
     property_init__doc__,                       /* tp_doc */
     property_traverse,                          /* tp_traverse */
-    (inquiry)property_clear,                    /* tp_clear */
+    property_clear,                             /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
