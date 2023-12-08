@@ -3117,8 +3117,9 @@ _IntTupleFromSsizet(int len, Py_ssize_t *vals)
 }
 
 static PyObject *
-memory_obj_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_obj_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &self->view;
 
     CHECK_RELEASED(self);
@@ -3129,57 +3130,65 @@ memory_obj_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-memory_nbytes_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_nbytes_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyLong_FromSsize_t(self->view.len);
 }
 
 static PyObject *
-memory_format_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_format_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyUnicode_FromString(self->view.format);
 }
 
 static PyObject *
-memory_itemsize_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_itemsize_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyLong_FromSsize_t(self->view.itemsize);
 }
 
 static PyObject *
-memory_shape_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_shape_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.shape);
 }
 
 static PyObject *
-memory_strides_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_strides_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.strides);
 }
 
 static PyObject *
-memory_suboffsets_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_suboffsets_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.suboffsets);
 }
 
 static PyObject *
-memory_readonly_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_readonly_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(self->view.readonly);
 }
 
 static PyObject *
-memory_ndim_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_ndim_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyLong_FromLong(self->view.ndim);
 }
@@ -3237,15 +3246,15 @@ PyDoc_STRVAR(memory_contiguous_doc,
 
 
 static PyGetSetDef memory_getsetlist[] = {
-    {"obj",             (getter)memory_obj_get,        NULL, memory_obj_doc},
-    {"nbytes",          (getter)memory_nbytes_get,     NULL, memory_nbytes_doc},
-    {"readonly",        (getter)memory_readonly_get,   NULL, memory_readonly_doc},
-    {"itemsize",        (getter)memory_itemsize_get,   NULL, memory_itemsize_doc},
-    {"format",          (getter)memory_format_get,     NULL, memory_format_doc},
-    {"ndim",            (getter)memory_ndim_get,       NULL, memory_ndim_doc},
-    {"shape",           (getter)memory_shape_get,      NULL, memory_shape_doc},
-    {"strides",         (getter)memory_strides_get,    NULL, memory_strides_doc},
-    {"suboffsets",      (getter)memory_suboffsets_get, NULL, memory_suboffsets_doc},
+    {"obj",             memory_obj_get,        NULL, memory_obj_doc},
+    {"nbytes",          memory_nbytes_get,     NULL, memory_nbytes_doc},
+    {"readonly",        memory_readonly_get,   NULL, memory_readonly_doc},
+    {"itemsize",        memory_itemsize_get,   NULL, memory_itemsize_doc},
+    {"format",          memory_format_get,     NULL, memory_format_doc},
+    {"ndim",            memory_ndim_get,       NULL, memory_ndim_doc},
+    {"shape",           memory_shape_get,      NULL, memory_shape_doc},
+    {"strides",         memory_strides_get,    NULL, memory_strides_doc},
+    {"suboffsets",      memory_suboffsets_get, NULL, memory_suboffsets_doc},
     {"c_contiguous",    (getter)memory_c_contiguous,   NULL, memory_c_contiguous_doc},
     {"f_contiguous",    (getter)memory_f_contiguous,   NULL, memory_f_contiguous_doc},
     {"contiguous",      (getter)memory_contiguous,     NULL, memory_contiguous_doc},
