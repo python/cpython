@@ -1368,9 +1368,9 @@ wrapper_objclass(PyObject *wp, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-wrapper_name(wrapperobject *wp, void *Py_UNUSED(ignored))
+wrapper_name(PyObject *wp, void *Py_UNUSED(ignored))
 {
-    const char *s = wp->descr->d_base->name;
+    const char *s = ((wrapperobject *)wp)->descr->d_base->name;
 
     return PyUnicode_FromString(s);
 }
@@ -1396,7 +1396,7 @@ wrapper_qualname(wrapperobject *wp, void *Py_UNUSED(ignored))
 
 static PyGetSetDef wrapper_getsets[] = {
     {"__objclass__", wrapper_objclass},
-    {"__name__", (getter)wrapper_name},
+    {"__name__", wrapper_name},
     {"__qualname__", (getter)wrapper_qualname},
     {"__doc__", (getter)wrapper_doc},
     {"__text_signature__", (getter)wrapper_text_signature},
