@@ -33,6 +33,9 @@ The :mod:`pty` module defines the following functions:
    file descriptor connected to the child's controlling terminal (and also to the
    child's standard input and output).
 
+   .. warning:: On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
 
 .. function:: openpty()
 
