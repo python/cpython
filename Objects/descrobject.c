@@ -615,8 +615,9 @@ calculate_qualname(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
+descr_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyDescrObject *descr = (PyDescrObject *)self;
     if (descr->d_qualname == NULL)
         descr->d_qualname = calculate_qualname(descr);
     return Py_XNewRef(descr->d_qualname);
@@ -642,7 +643,7 @@ static PyMemberDef descr_members[] = {
 
 static PyGetSetDef method_getset[] = {
     {"__doc__", method_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
+    {"__qualname__", descr_get_qualname},
     {"__text_signature__", (getter)method_get_text_signature},
     {0}
 };
@@ -658,7 +659,7 @@ member_get_doc(PyMemberDescrObject *descr, void *closure)
 
 static PyGetSetDef member_getset[] = {
     {"__doc__", (getter)member_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
+    {"__qualname__", descr_get_qualname},
     {0}
 };
 
@@ -673,7 +674,7 @@ getset_get_doc(PyGetSetDescrObject *descr, void *closure)
 
 static PyGetSetDef getset_getset[] = {
     {"__doc__", (getter)getset_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
+    {"__qualname__", descr_get_qualname},
     {0}
 };
 
@@ -692,7 +693,7 @@ wrapperdescr_get_text_signature(PyWrapperDescrObject *descr, void *closure)
 
 static PyGetSetDef wrapperdescr_getset[] = {
     {"__doc__", (getter)wrapperdescr_get_doc},
-    {"__qualname__", (getter)descr_get_qualname},
+    {"__qualname__", descr_get_qualname},
     {"__text_signature__", (getter)wrapperdescr_get_text_signature},
     {0}
 };
