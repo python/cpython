@@ -1137,8 +1137,9 @@ memoryview_release_impl(PyMemoryViewObject *self)
 }
 
 static void
-memory_dealloc(PyMemoryViewObject *self)
+memory_dealloc(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     assert(self->exports == 0);
     _PyObject_GC_UNTRACK(self);
     (void)_memory_release(self);
@@ -3374,7 +3375,7 @@ PyTypeObject PyMemoryView_Type = {
     "memoryview",                             /* tp_name */
     offsetof(PyMemoryViewObject, ob_array),   /* tp_basicsize */
     sizeof(Py_ssize_t),                       /* tp_itemsize */
-    (destructor)memory_dealloc,               /* tp_dealloc */
+    memory_dealloc,                           /* tp_dealloc */
     0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
