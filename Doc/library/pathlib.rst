@@ -596,7 +596,7 @@ Pure paths provide the following methods and properties:
       True
 
    .. versionchanged:: 3.12
-      Accepts another path object.
+      Accepts an object implementing the :class:`os.PathLike` interface.
 
    As with other methods, case-sensitivity follows platform defaults::
 
