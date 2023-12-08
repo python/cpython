@@ -1360,9 +1360,9 @@ static PyMemberDef wrapper_members[] = {
 };
 
 static PyObject *
-wrapper_objclass(wrapperobject *wp, void *Py_UNUSED(ignored))
+wrapper_objclass(PyObject *wp, void *Py_UNUSED(ignored))
 {
-    PyObject *c = (PyObject *)PyDescr_TYPE(wp->descr);
+    PyObject *c = (PyObject *)PyDescr_TYPE(((wrapperobject *)wp)->descr);
 
     return Py_NewRef(c);
 }
@@ -1395,7 +1395,7 @@ wrapper_qualname(wrapperobject *wp, void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef wrapper_getsets[] = {
-    {"__objclass__", (getter)wrapper_objclass},
+    {"__objclass__", wrapper_objclass},
     {"__name__", (getter)wrapper_name},
     {"__qualname__", (getter)wrapper_qualname},
     {"__doc__", (getter)wrapper_doc},
