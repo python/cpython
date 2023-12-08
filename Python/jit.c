@@ -14,10 +14,8 @@
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
-#include "pycore_uops.h"
 #include "pycore_jit.h"
 
-#include "ceval_macros.h"
 #include "jit_stencils.h"
 
 #ifndef MS_WINDOWS

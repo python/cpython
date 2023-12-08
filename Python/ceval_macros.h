@@ -401,8 +401,3 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
 #define CURRENT_OPERAND() (next_uop[-1].operand)
-
-#define JUMP_TO_TOP()                       \
-    do {                                    \
-        next_uop = current_executor->trace; \
-    } while (0)

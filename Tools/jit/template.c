@@ -5,30 +5,23 @@
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit.h"
 #include "pycore_long.h"
-#include "pycore_object.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
-#include "pycore_pyerrors.h"
 #include "pycore_range.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
-#include "pycore_uops.h"
 
 #define TIER_TWO 2
 #include "ceval_macros.h"
 
-#include "opcode.h"
-
-extern _PyUOpExecutorObject _JIT_CURRENT_EXECUTOR;
-extern void _JIT_OPARG;
-extern void _JIT_OPERAND;
-extern void _JIT_TARGET;
-
 #undef CURRENT_OPARG
 #define CURRENT_OPARG() (_oparg)
+
 #undef CURRENT_OPERAND
 #define CURRENT_OPERAND() (_operand)
+
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     do {                         \
@@ -36,60 +29,58 @@ extern void _JIT_TARGET;
             goto exit_trace;     \
         }                        \
     } while (0)
+
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION (0)
+
 #undef GOTO_ERROR
 #define GOTO_ERROR(LABEL)        \
     do {                         \
         goto LABEL ## _tier_two; \
     } while (0)
+
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
     do {                \
     } while (0)
-#undef JUMP_TO_TOP
-#define JUMP_TO_TOP() \
-    do {              \
-    } while (0)
 
-#define TAIL_CALL(WHERE)                                         \
-    do {                                                         \
-        _PyInterpreterFrame *(WHERE)(_PyInterpreterFrame *frame, \
-                                     PyObject **stack_pointer,   \
-                                     PyThreadState *tstate);     \
-        __attribute__((musttail))                                \
-        return (WHERE)(frame, stack_pointer, tstate);            \
-    } while (0)
+// Pretend to modify the patched values to keep clang from being clever and
+// optimizing them based on valid extern addresses, which must be in
+// range(1, 2**31 - 2**24):
+#define PATCH_VALUE(TYPE, NAME, ALIAS)  \
+    extern void ALIAS;                  \
+    TYPE NAME = (TYPE)(uint64_t)&ALIAS; \
+    asm("" : "+r" (NAME));  // XXX?
+
+#define PATCH_JUMP(ALIAS)                                                  \
+    extern void ALIAS;                                                     \
+    __attribute__((musttail))                                              \
+    return ((_PyJITContinueFunction)&ALIAS)(frame, stack_pointer, tstate); \
 
 _PyInterpreterFrame *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
            PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
-    _PyUOpExecutorObject *current_executor = &_JIT_CURRENT_EXECUTOR;
-    int opcode = _JIT_OPCODE;
+    PATCH_VALUE(_PyUOpExecutorObject *, current_executor, _JIT_CURRENT_EXECUTOR)
     int oparg;
-    uint16_t _oparg = (uintptr_t)&_JIT_OPARG;
-    uint64_t _operand = (uintptr_t)&_JIT_OPERAND;
-    uint32_t _target = (uintptr_t)&_JIT_TARGET;
-    // Pretend to modify the burned-in values to keep clang from being clever
-    // and optimizing them based on valid extern addresses, which must be in
-    // range(1, 2**31 - 2**24):
-    asm("" : "+r" (current_executor));
-    asm("" : "+r" (_oparg));
-    asm("" : "+r" (_operand));
-    asm("" : "+r" (_target));
-    // Now, the actual instruction definitions (only one will be used):
+    int opcode = _JIT_OPCODE;
+    _PyUOpInstruction *next_uop;
+    // Other stuff we need handy:
+    PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
+    PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
+    PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
+    // The actual instruction definitions (only one will be used):
     if (opcode == _JUMP_TO_TOP) {
         CHECK_EVAL_BREAKER();
-        TAIL_CALL(_JIT_TOP);
+        PATCH_JUMP(_JIT_TOP);
     }
     switch (opcode) {
 #include "executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }
-    TAIL_CALL(_JIT_CONTINUE);
+    PATCH_JUMP(_JIT_CONTINUE);
     // Labels that the instruction implementations expect to exist:
 unbound_local_error_tier_two:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG, PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg));

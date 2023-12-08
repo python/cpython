@@ -3334,7 +3334,7 @@
         }
 
         case _JUMP_TO_TOP: {
-            JUMP_TO_TOP();
+            next_uop = current_executor->trace;
             CHECK_EVAL_BREAKER();
             break;
         }
