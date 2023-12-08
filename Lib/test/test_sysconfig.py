@@ -472,8 +472,8 @@ class TestSysConfig(unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            # <srcdir>/PC/pyconfig.h always exists even if unused
-            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
+            # <srcdir>/PC/pyconfig.h.in always exists even if unused
+            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
             pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
