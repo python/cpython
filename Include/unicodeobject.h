@@ -61,7 +61,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #define Py_USING_UNICODE
 
 #ifndef SIZEOF_WCHAR_T
-#error Must define SIZEOF_WCHAR_T
+#  error Must define SIZEOF_WCHAR_T
 #endif
 
 #define Py_UNICODE_SIZE SIZEOF_WCHAR_T
