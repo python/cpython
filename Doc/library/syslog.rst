@@ -146,7 +146,7 @@ The module defines the following constants:
           LOG_LOCAL6
           LOG_LOCAL7
 
-   Facilities, depending on availabiltiy in ``<syslog.h>`` for :const:`LOG_AUTHPRIV`,
+   Facilities, depending on availability in ``<syslog.h>`` for :const:`LOG_AUTHPRIV`,
    :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`,
    :const:`LOG_INSTALL` and :const:`LOG_RAS`.
 
