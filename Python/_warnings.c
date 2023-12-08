@@ -425,14 +425,14 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         Py_DECREF(version_obj);
     }
     else {
-        already_warned = PyDict_GetItemWithError(registry, key);
+        if (PyDict_GetItemRef(registry, key, &already_warned) < 0) {
+            return -1;
+        }
         if (already_warned != NULL) {
             int rc = PyObject_IsTrue(already_warned);
+            Py_DECREF(already_warned);
             if (rc != 0)
                 return rc;
-        }
-        else if (PyErr_Occurred()) {
-            return -1;
         }
     }
 

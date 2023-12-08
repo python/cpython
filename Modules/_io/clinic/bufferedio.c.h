@@ -327,6 +327,24 @@ _io__Buffered_simple_flush(buffered *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#define _IO__BUFFERED_CLOSED_GETTERDEF    \
+    {"closed", (getter)_io__Buffered_closed_get, NULL, NULL},
+
+static PyObject *
+_io__Buffered_closed_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_closed_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_closed_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__Buffered_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -437,6 +455,42 @@ _io__Buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
 
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_writable_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#define _IO__BUFFERED_NAME_GETTERDEF    \
+    {"name", (getter)_io__Buffered_name_get, NULL, NULL},
+
+static PyObject *
+_io__Buffered_name_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_name_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_name_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#define _IO__BUFFERED_MODE_GETTERDEF    \
+    {"mode", (getter)_io__Buffered_mode_get, NULL, NULL},
+
+static PyObject *
+_io__Buffered_mode_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_mode_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_mode_get_impl(self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -1164,4 +1218,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8ad39a45531d7f2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f21ed03255032b43 input=a9049054013a1b77]*/

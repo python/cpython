@@ -26,7 +26,6 @@ Doc/howto/enum.rst
 Doc/howto/isolating-extensions.rst
 Doc/howto/logging.rst
 Doc/howto/urllib2.rst
-Doc/library/abc.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
@@ -56,9 +55,7 @@ Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
 Doc/library/ftplib.rst
-Doc/library/functions.rst
 Doc/library/functools.rst
-Doc/library/gettext.rst
 Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.cookies.rst
@@ -75,7 +72,6 @@ Doc/library/multiprocessing.rst
 Doc/library/multiprocessing.shared_memory.rst
 Doc/library/numbers.rst
 Doc/library/optparse.rst
-Doc/library/os.path.rst
 Doc/library/os.rst
 Doc/library/pickle.rst
 Doc/library/pickletools.rst
@@ -87,7 +83,6 @@ Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/random.rst
 Doc/library/readline.rst
-Doc/library/reprlib.rst
 Doc/library/resource.rst
 Doc/library/rlcompleter.rst
 Doc/library/select.rst
