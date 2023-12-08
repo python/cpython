@@ -1382,8 +1382,9 @@ wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
+wrapper_text_signature(PyObject *self, void *Py_UNUSED(ignored))
 {
+    wrapperobject *wp = (wrapperobject *)self;
     return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name,
                                                    wp->descr->d_base->doc, 0);
 }
@@ -1400,7 +1401,7 @@ static PyGetSetDef wrapper_getsets[] = {
     {"__name__", wrapper_name},
     {"__qualname__", wrapper_qualname},
     {"__doc__", (getter)wrapper_doc},
-    {"__text_signature__", (getter)wrapper_text_signature},
+    {"__text_signature__", wrapper_text_signature},
     {0}
 };
 
