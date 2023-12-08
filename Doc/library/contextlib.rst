@@ -106,8 +106,8 @@ Functions and classes provided:
 
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`async with` statement asynchronous context managers,
-   without needing to create a class or separate :meth:`__aenter__` and
-   :meth:`__aexit__` methods. It must be applied to an :term:`asynchronous
+   without needing to create a class or separate :meth:`~object.__aenter__` and
+   :meth:`~object.__aexit__` methods. It must be applied to an :term:`asynchronous
    generator` function.
 
    A simple example::
@@ -616,12 +616,12 @@ Functions and classes provided:
    asynchronous context managers, as well as having coroutines for
    cleanup logic.
 
-   The :meth:`close` method is not implemented, :meth:`aclose` must be used
+   The :meth:`~ExitStack.close` method is not implemented; :meth:`aclose` must be used
    instead.
 
    .. coroutinemethod:: enter_async_context(cm)
 
-      Similar to :meth:`enter_context` but expects an asynchronous context
+      Similar to :meth:`ExitStack.enter_context` but expects an asynchronous context
       manager.
 
       .. versionchanged:: 3.11
@@ -630,16 +630,16 @@ Functions and classes provided:
 
    .. method:: push_async_exit(exit)
 
-      Similar to :meth:`push` but expects either an asynchronous context manager
+      Similar to :meth:`ExitStack.push` but expects either an asynchronous context manager
       or a coroutine function.
 
    .. method:: push_async_callback(callback, /, *args, **kwds)
 
-      Similar to :meth:`callback` but expects a coroutine function.
+      Similar to :meth:`ExitStack.callback` but expects a coroutine function.
 
    .. coroutinemethod:: aclose()
 
-      Similar to :meth:`close` but properly handles awaitables.
+      Similar to :meth:`ExitStack.close` but properly handles awaitables.
 
    Continuing the example for :func:`asynccontextmanager`::
 
