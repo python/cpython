@@ -528,7 +528,7 @@ def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
     Raises a StatisticsError if the input dataset is empty
-    of if it contains a negative value.
+    or if it contains a negative value.
 
     Returns zero if the product of inputs is zero.
 
