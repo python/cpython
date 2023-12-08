@@ -528,11 +528,6 @@ pycore_init_runtime(_PyRuntimeState *runtime,
         return status;
     }
 
-    status = _PyTime_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyImport_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -821,6 +816,11 @@ pycore_interp_init(PyThreadState *tstate)
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
     // and the empty tuple singletons (tp_bases).
     status = pycore_init_global_objects(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyDtoa_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1781,6 +1781,7 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
+    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1797,6 +1798,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
+        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
@@ -1854,7 +1856,6 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
-    PyUnstable_PerfMapState_Fini();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -3055,13 +3056,13 @@ wait_for_thread_shutdown(PyThreadState *tstate)
 int Py_AtExit(void (*func)(void))
 {
     struct _atexit_runtime_state *state = &_PyRuntime.atexit;
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     if (state->ncallbacks >= NEXITFUNCS) {
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         return -1;
     }
     state->callbacks[state->ncallbacks++] = func;
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
     return 0;
 }
 
@@ -3071,18 +3072,18 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
     atexit_callbackfunc exitfunc;
     struct _atexit_runtime_state *state = &runtime->atexit;
 
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     while (state->ncallbacks > 0) {
         /* pop last function from the list */
         state->ncallbacks--;
         exitfunc = state->callbacks[state->ncallbacks];
         state->callbacks[state->ncallbacks] = NULL;
 
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         exitfunc();
-        PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+        PyMutex_Lock(&state->mutex);
     }
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
 
     fflush(stdout);
     fflush(stderr);

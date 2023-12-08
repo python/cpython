@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"            // PyMutex
 #include "pycore_pyerrors.h"
 
 
@@ -128,7 +129,7 @@ struct _xidregitem {
 struct _xidregistry {
     int global;  /* builtin types or heap types */
     int initialized;
-    PyThread_type_lock mutex;
+    PyMutex mutex;
     struct _xidregitem *head;
 };
 

@@ -592,7 +592,7 @@ Macro name                       C type                        Python type
 
    (*): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;
-   with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
+   with :c:macro:`!Py_T_STRING_INPLACE` the string is stored directly
    in the structure.
 
    (**): String of length 1. Only ASCII is accepted.

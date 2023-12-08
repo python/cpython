@@ -44,6 +44,7 @@ struct _query_data {
     LPCWSTR query;
     HANDLE writePipe;
     HANDLE readPipe;
+    HANDLE connectEvent;
 };
 
 
@@ -85,6 +86,9 @@ _query_thread(LPVOID param)
             bstr_t(L"ROOT\\CIMV2"),
             NULL, NULL, 0, NULL, 0, 0, &services
         );
+    }
+    if (!SetEvent(data->connectEvent)) {
+        hr = HRESULT_FROM_WIN32(GetLastError());
     }
     if (SUCCEEDED(hr)) {
         hr = CoSetProxyBlanket(
@@ -231,7 +235,8 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
 
     Py_BEGIN_ALLOW_THREADS
 
-    if (!CreatePipe(&data.readPipe, &data.writePipe, NULL, 0)) {
+    data.connectEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (!data.connectEvent || !CreatePipe(&data.readPipe, &data.writePipe, NULL, 0)) {
         err = GetLastError();
     } else {
         hThread = CreateThread(NULL, 0, _query_thread, (LPVOID*)&data, 0, NULL);
@@ -241,6 +246,21 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
             // we need to close it here.
             CloseHandle(data.writePipe);
         }
+    }
+
+    // gh-112278: If current user doesn't have permission to query the WMI, the
+    // function IWbemLocator::ConnectServer will hang for 5 seconds, and there
+    // is no way to specify the timeout. So we use an Event object to simulate
+    // a timeout.
+    switch (WaitForSingleObject(data.connectEvent, 100)) {
+    case WAIT_OBJECT_0:
+        break;
+    case WAIT_TIMEOUT:
+        err = WAIT_TIMEOUT;
+        break;
+    default:
+        err = GetLastError();
+        break;
     }
 
     while (!err) {
@@ -265,7 +285,7 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     }
 
     // Allow the thread some time to clean up
-    switch (WaitForSingleObject(hThread, 1000)) {
+    switch (WaitForSingleObject(hThread, 100)) {
     case WAIT_OBJECT_0:
         // Thread ended cleanly
         if (!GetExitCodeThread(hThread, (LPDWORD)&err)) {
@@ -286,6 +306,7 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
     }
 
     CloseHandle(hThread);
+    CloseHandle(data.connectEvent);
     hThread = NULL;
 
     Py_END_ALLOW_THREADS

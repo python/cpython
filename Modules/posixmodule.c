@@ -1030,6 +1030,10 @@ typedef struct {
     PyObject *struct_rusage;
 #endif
     PyObject *st_mode;
+#ifndef MS_WINDOWS
+    // times() clock frequency in hertz; used by os.times()
+    long ticks_per_second;
+#endif
 } _posixstate;
 
 
@@ -9986,8 +9990,6 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 #endif /* HAVE_SYMLINK */
 
 
-
-
 static PyStructSequence_Field times_result_fields[] = {
     {"user",    "user time"},
     {"system",   "system time"},
@@ -10012,12 +10014,6 @@ static PyStructSequence_Desc times_result_desc = {
     times_result_fields,
     5
 };
-
-#ifdef MS_WINDOWS
-#define HAVE_TIMES  /* mandatory, for the method table */
-#endif
-
-#ifdef HAVE_TIMES
 
 static PyObject *
 build_times_result(PyObject *module, double user, double system,
@@ -10064,8 +10060,8 @@ All fields are floating point numbers.
 static PyObject *
 os_times_impl(PyObject *module)
 /*[clinic end generated code: output=35f640503557d32a input=2bf9df3d6ab2e48b]*/
-#ifdef MS_WINDOWS
 {
+#ifdef MS_WINDOWS
     FILETIME create, exit, kernel, user;
     HANDLE hProc;
     hProc = GetCurrentProcess();
@@ -10083,28 +10079,26 @@ os_times_impl(PyObject *module)
         (double)0,
         (double)0,
         (double)0);
-}
 #else /* MS_WINDOWS */
-{
-    struct tms t;
-    clock_t c;
+    _posixstate *state = get_posix_state(module);
+    long ticks_per_second = state->ticks_per_second;
+
+    struct tms process;
+    clock_t elapsed;
     errno = 0;
-    c = times(&t);
-    if (c == (clock_t) -1) {
+    elapsed = times(&process);
+    if (elapsed == (clock_t) -1) {
         return posix_error();
     }
-    assert(_PyRuntime.time.ticks_per_second_initialized);
-#define ticks_per_second _PyRuntime.time.ticks_per_second
+
     return build_times_result(module,
-                         (double)t.tms_utime / ticks_per_second,
-                         (double)t.tms_stime / ticks_per_second,
-                         (double)t.tms_cutime / ticks_per_second,
-                         (double)t.tms_cstime / ticks_per_second,
-                         (double)c / ticks_per_second);
-#undef ticks_per_second
-}
+        (double)process.tms_utime / ticks_per_second,
+        (double)process.tms_stime / ticks_per_second,
+        (double)process.tms_cutime / ticks_per_second,
+        (double)process.tms_cstime / ticks_per_second,
+        (double)elapsed / ticks_per_second);
 #endif /* MS_WINDOWS */
-#endif /* HAVE_TIMES */
+}
 
 
 #if defined(HAVE_TIMERFD_CREATE)
@@ -16079,6 +16073,26 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 }
 #endif
 
+#if defined(MS_WINDOWS)
+/*[clinic input]
+os._supports_virtual_terminal
+
+Checks if virtual terminal is supported in windows
+[clinic start generated code]*/
+
+static PyObject *
+os__supports_virtual_terminal_impl(PyObject *module)
+/*[clinic end generated code: output=bd0556a6d9d99fe6 input=0752c98e5d321542]*/
+{
+    DWORD mode = 0;
+    HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
+    if (!GetConsoleMode(handle, &mode)) {
+        Py_RETURN_FALSE;
+    }
+    return PyBool_FromLong(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+#endif
+
 
 static PyMethodDef posix_methods[] = {
 
@@ -16283,6 +16297,8 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF
     OS__PATH_EXISTS_METHODDEF
+
+    OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -17278,6 +17294,15 @@ posixmodule_exec(PyObject *m)
             return -1;
         Py_DECREF(unicode);
     }
+
+#ifndef MS_WINDOWS
+    if (_Py_GetTicksPerSecond(&state->ticks_per_second) < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot read ticks_per_second");
+        return -1;
+    }
+    assert(state->ticks_per_second >= 1);
+#endif
 
     return PyModule_Add(m, "_have_functions", list);
 }
