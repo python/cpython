@@ -97,7 +97,7 @@ def run_python_until_end(*args, **env_vars):
     *args are the command line flags to pass to the python interpreter.
     **env_vars keyword arguments are environment variables to set on the process.
 
-    If _run_using_command= is supplied, it must be a list of
+    If __run_using_command= is supplied, it must be a list of
     command line arguments to prepend to the command line used.
     Useful when you want to run another command that should launch the
     python interpreter via its own arguments. ["/bin/echo", "--"] for
@@ -105,7 +105,7 @@ def run_python_until_end(*args, **env_vars):
     run it.
     """
     env_required = interpreter_requires_environment()
-    run_using_command = env_vars.pop('_run_using_command', None)
+    run_using_command = env_vars.pop('__run_using_command', None)
     cwd = env_vars.pop('__cwd', None)
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')

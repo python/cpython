@@ -3395,10 +3395,10 @@ class POSIXProcessTestCase(BaseTestCase):
                     textwrap.dedent(f"""\
                     import subprocess
                     subprocess.check_call([{true_binary!r}])"""),
-                    _run_using_command=strace_command,
+                    __run_using_command=strace_command,
             )
             # Match both vfork() and clone(..., flags=...|CLONE_VFORK|...)
-            self.assertRegex(vfork_result.err, br"(?mi)vfork")
+            self.assertRegex(vfork_result.err, br"(?i)vfork")
             # Do NOT check that fork() or other clones did not happen.
             # If the OS denys the vfork it'll fallback to plain fork().
 
@@ -3423,10 +3423,10 @@ class POSIXProcessTestCase(BaseTestCase):
                     except PermissionError:
                         if not {expect_permission_error}:
                             raise"""),
-                    _run_using_command=strace_command,
+                    __run_using_command=strace_command,
                 )
                 # Ensure neither vfork() or clone(..., flags=...|CLONE_VFORK|...).
-                self.assertNotRegex(non_vfork_result.err, br"(?mi)vfork")
+                self.assertNotRegex(non_vfork_result.err, br"(?i)vfork")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
