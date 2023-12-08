@@ -1318,8 +1318,9 @@ wrapper_richcompare(PyObject *a, PyObject *b, int op)
 }
 
 static Py_hash_t
-wrapper_hash(wrapperobject *wp)
+wrapper_hash(PyObject *self)
 {
+    wrapperobject *wp = (wrapperobject *)self;
     Py_hash_t x, y;
     x = _Py_HashPointer(wp->self);
     y = _Py_HashPointer(wp->descr);
@@ -1431,7 +1432,7 @@ PyTypeObject _PyMethodWrapper_Type = {
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)wrapper_hash,                     /* tp_hash */
+    wrapper_hash,                               /* tp_hash */
     (ternaryfunc)wrapper_call,                  /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
