@@ -1416,7 +1416,7 @@ static PyObject *
 wrapper_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     wrapperobject *wp = (wrapperobject *)self;
-    return descr_get_qualname((PyDescrObject *)wp->descr, NULL);
+    return descr_get_qualname((PyObject *)wp->descr, NULL);
 }
 
 static PyGetSetDef wrapper_getsets[] = {
