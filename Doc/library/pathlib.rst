@@ -635,6 +635,10 @@ Pure paths provide the following methods and properties:
       Support for the recursive wildcard "``**``" was added. In previous
       versions, it acted like the non-recursive wildcard "``*``".
 
+   .. versionchanged:: 3.13
+      Matching now considers whether the path and *pattern* end with path
+      separators.
+
 
 .. method:: PurePath.relative_to(other, walk_up=False)
 
@@ -1075,6 +1079,11 @@ call fails (for example because the path doesn't exist).
       Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
       future Python release, patterns with this ending will match both files
       and directories. Add a trailing slash to match only directories.
+
+   .. versionchanged:: 3.13
+      Returns paths with trailing path separators if *pattern* also ends with
+      a pathname components separator (:data:`~os.sep` or :data:`~os.altsep`).
+
 
 .. method:: Path.group(*, follow_symlinks=True)
 
