@@ -3289,8 +3289,9 @@ memoryiter_dealloc(memoryiterobject *it)
 }
 
 static int
-memoryiter_traverse(memoryiterobject *it, visitproc visit, void *arg)
+memoryiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    memoryiterobject *it = (memoryiterobject *)self;
     Py_VISIT(it->it_seq);
     return 0;
 }
@@ -3368,7 +3369,7 @@ PyTypeObject _PyMemoryIter_Type = {
     .tp_dealloc = (destructor)memoryiter_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)memoryiter_traverse,
+    .tp_traverse = memoryiter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = memoryiter_next,
 };
