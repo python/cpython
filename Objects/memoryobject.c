@@ -3281,8 +3281,9 @@ typedef struct {
 } memoryiterobject;
 
 static void
-memoryiter_dealloc(memoryiterobject *it)
+memoryiter_dealloc(PyObject *self)
 {
+    memoryiterobject *it = (memoryiterobject *)self;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
@@ -3366,7 +3367,7 @@ PyTypeObject _PyMemoryIter_Type = {
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),
     // methods
-    .tp_dealloc = (destructor)memoryiter_dealloc,
+    .tp_dealloc = memoryiter_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = memoryiter_traverse,
