@@ -49,8 +49,35 @@ if hasattr(os, 'geteuid'):
 # Tests for the pure classes.
 #
 
-class PurePathTest(unittest.TestCase):
-    cls = pathlib.PurePath
+
+class PurePathBaseTest(unittest.TestCase):
+    cls = pathlib._PurePathBase
+
+    def test_magic_methods(self):
+        P = self.cls
+        self.assertFalse(hasattr(P, '__fspath__'))
+        self.assertFalse(hasattr(P, '__bytes__'))
+        self.assertIs(P.__reduce__, object.__reduce__)
+        self.assertIs(P.__hash__, object.__hash__)
+        self.assertIs(P.__eq__, object.__eq__)
+        self.assertIs(P.__lt__, object.__lt__)
+        self.assertIs(P.__le__, object.__le__)
+        self.assertIs(P.__gt__, object.__gt__)
+        self.assertIs(P.__ge__, object.__ge__)
+
+
+class DummyPurePath(pathlib._PurePathBase):
+    def __eq__(self, other):
+        if not isinstance(other, DummyPurePath):
+            return NotImplemented
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
+
+class DummyPurePathTest(unittest.TestCase):
+    cls = DummyPurePath
 
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
@@ -82,12 +109,6 @@ class PurePathTest(unittest.TestCase):
         P('/a', 'b', 'c')
         P('a/b/c')
         P('/a/b/c')
-        P(FakePath("a/b/c"))
-        self.assertEqual(P(P('a')), P('a'))
-        self.assertEqual(P(P('a'), 'b'), P('a/b'))
-        self.assertEqual(P(P('a'), P('b')), P('a/b'))
-        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
-        self.assertEqual(P(P('./a:b')), P('./a:b'))
 
     def test_concrete_class(self):
         if self.cls is pathlib.PurePath:
@@ -193,8 +214,6 @@ class PurePathTest(unittest.TestCase):
         self.assertIs(type(pp), type(p))
         pp = p.joinpath('c', 'd')
         self.assertEqual(pp, P('a/b/c/d'))
-        pp = p.joinpath(P('c'))
-        self.assertEqual(pp, P('a/b/c'))
         pp = p.joinpath('/c')
         self.assertEqual(pp, P('/c'))
 
@@ -211,8 +230,6 @@ class PurePathTest(unittest.TestCase):
         self.assertEqual(pp, P('a/b/c/d'))
         pp = 'c' / p / 'd'
         self.assertEqual(pp, P('c/a/b/d'))
-        pp = p / P('c')
-        self.assertEqual(pp, P('a/b/c'))
         pp = p/ '/c'
         self.assertEqual(pp, P('/c'))
 
@@ -677,6 +694,29 @@ class PurePathTest(unittest.TestCase):
         self.assertFalse(p.is_relative_to(P()))
         self.assertFalse(p.is_relative_to(''))
         self.assertFalse(p.is_relative_to(P('a')))
+
+
+class PurePathTest(DummyPurePathTest):
+    cls = pathlib.PurePath
+
+    def test_constructor_nested(self):
+        P = self.cls
+        P(FakePath("a/b/c"))
+        self.assertEqual(P(P('a')), P('a'))
+        self.assertEqual(P(P('a'), 'b'), P('a/b'))
+        self.assertEqual(P(P('a'), P('b')), P('a/b'))
+        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
+        self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def test_join_nested(self):
+        P = self.cls
+        p = P('a/b').joinpath(P('c'))
+        self.assertEqual(p, P('a/b/c'))
+
+    def test_div_nested(self):
+        P = self.cls
+        p = P('a/b') / P('c')
+        self.assertEqual(p, P('a/b/c'))
 
     def test_pickling_common(self):
         P = self.cls
@@ -1545,7 +1585,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the virtual classes.
 #
 
-class PathBaseTest(PurePathTest):
+class PathBaseTest(PurePathBaseTest):
     cls = pathlib._PathBase
 
     def test_unsupported_operation(self):
@@ -1636,6 +1676,14 @@ class DummyPath(pathlib._PathBase):
     _directories = {}
     _symlinks = {}
 
+    def __eq__(self, other):
+        if not isinstance(other, DummyPath):
+            return NotImplemented
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
     def stat(self, *, follow_symlinks=True):
         if follow_symlinks:
             path = str(self.resolve())
@@ -1707,7 +1755,7 @@ class DummyPath(pathlib._PathBase):
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
 
 
-class DummyPathTest(unittest.TestCase):
+class DummyPathTest(DummyPurePathTest):
     """Tests for PathBase methods that use stat(), open() and iterdir()."""
 
     cls = DummyPath
@@ -2014,7 +2062,7 @@ class DummyPathTest(unittest.TestCase):
 
     def test_rglob_common(self):
         def _check(glob, expected):
-            self.assertEqual(sorted(glob), sorted(P(BASE, q) for q in expected))
+            self.assertEqual(set(glob), {P(BASE, q) for q in expected})
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
@@ -2198,7 +2246,7 @@ class DummyPathTest(unittest.TestCase):
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
         base = self.cls(BASE, 'deep')
-        path = self.cls(base, *(['d'] * directory_depth))
+        path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
@@ -2741,7 +2789,7 @@ class DummyPathTest(unittest.TestCase):
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
         base = self.cls(BASE, 'deep')
-        path = self.cls(base, *(['d'] * directory_depth))
+        path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
