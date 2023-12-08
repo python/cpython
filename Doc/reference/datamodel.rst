@@ -519,6 +519,8 @@ These are the types to which the function call operation (see section
 :ref:`calls`) can be applied:
 
 
+.. _user-defined-funcs:
+
 User-defined functions
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -654,43 +656,64 @@ callable object (normally a user-defined function).
    single: __name__ (method attribute)
    single: __module__ (method attribute)
 
-Special read-only attributes: :attr:`__self__` is the class instance object,
-:attr:`__func__` is the function object; :attr:`__doc__` is the method's
-documentation (same as ``__func__.__doc__``); :attr:`~definition.__name__` is the
-method name (same as ``__func__.__name__``); :attr:`__module__` is the
-name of the module the method was defined in, or ``None`` if unavailable.
+Special read-only attributes:
+
+.. list-table::
+
+   * - .. attribute:: method.__self__
+     - Refers to the class instance object to which the method is
+       :ref:`bound <method-binding>`
+
+   * - .. attribute:: method.__func__
+     - Refers to the original function object
+
+   * - .. attribute:: method.__doc__
+     - The method's documentation (same as :attr:`!method.__func__.__doc__`).
+       A :class:`string <str>` if the original function had a docstring, else
+       ``None``.
+
+   * - .. attribute:: method.__name__
+     - The name of the method (same as :attr:`!method.__func__.__name__`)
+
+   * - .. attribute:: method.__module__
+     - The name of the module the method was defined in, or ``None`` if
+       unavailable.
 
 Methods also support accessing (but not setting) the arbitrary function
-attributes on the underlying function object.
+attributes on the underlying :ref:`function object <user-defined-funcs>`.
 
 User-defined method objects may be created when getting an attribute of a
 class (perhaps via an instance of that class), if that attribute is a
-user-defined function object or a class method object.
+user-defined :ref:`function object <user-defined-funcs>` or a
+:class:`classmethod` object.
+
+.. _method-binding:
 
 When an instance method object is created by retrieving a user-defined
-function object from a class via one of its instances, its
-:attr:`__self__` attribute is the instance, and the method object is said
-to be bound.  The new method's :attr:`__func__` attribute is the original
-function object.
+:ref:`function object <user-defined-funcs>` from a class via one of its
+instances, its :attr:`~method.__self__` attribute is the instance, and the
+method object is said to be *bound*.  The new method's :attr:`~method.__func__`
+attribute is the original function object.
 
-When an instance method object is created by retrieving a class method
-object from a class or instance, its :attr:`__self__` attribute is the
-class itself, and its :attr:`__func__` attribute is the function object
+When an instance method object is created by retrieving a :class:`classmethod`
+object from a class or instance, its :attr:`~method.__self__` attribute is the
+class itself, and its :attr:`~method.__func__` attribute is the function object
 underlying the class method.
 
 When an instance method object is called, the underlying function
-(:attr:`__func__`) is called, inserting the class instance
-(:attr:`__self__`) in front of the argument list.  For instance, when
+(:attr:`~method.__func__`) is called, inserting the class instance
+(:attr:`~method.__self__`) in front of the argument list.  For instance, when
 :class:`!C` is a class which contains a definition for a function
 :meth:`!f`, and ``x`` is an instance of :class:`!C`, calling ``x.f(1)`` is
 equivalent to calling ``C.f(x, 1)``.
 
-When an instance method object is derived from a class method object, the
-"class instance" stored in :attr:`__self__` will actually be the class
+When an instance method object is derived from a :class:`classmethod` object, the
+"class instance" stored in :attr:`~method.__self__` will actually be the class
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from function object to instance method
+Note that the transformation from :ref:`function object <user-defined-funcs>`
+to instance method
 object happens each time the attribute is retrieved from the instance.  In
 some cases, a fruitful optimization is to assign the attribute to a local
 variable and call that local variable. Also notice that this
@@ -774,6 +797,8 @@ set to ``None`` (but see the next item); :attr:`__module__` is the name of
 the module the function was defined in or ``None`` if unavailable.
 
 
+.. _builtin-methods:
+
 Built-in methods
 ^^^^^^^^^^^^^^^^
 
@@ -785,8 +810,9 @@ Built-in methods
 This is really a different disguise of a built-in function, this time containing
 an object passed to the C function as an implicit extra argument.  An example of
 a built-in method is ``alist.append()``, assuming *alist* is a list object. In
-this case, the special read-only attribute :attr:`__self__` is set to the object
-denoted by *alist*.
+this case, the special read-only attribute :attr:`!__self__` is set to the object
+denoted by *alist*. (The attribute has the same semantics as it does with
+:attr:`other instance methods <method.__self__>`.)
 
 
 Classes
@@ -901,8 +927,9 @@ https://www.python.org/download/releases/2.3/mro/.
 
 When a class attribute reference (for class :class:`!C`, say) would yield a
 class method object, it is transformed into an instance method object whose
-:attr:`__self__` attribute is :class:`!C`.  When it would yield a static
-method object, it is transformed into the object wrapped by the static method
+:attr:`~method.__self__` attribute is :class:`!C`.
+When it would yield a :class:`staticmethod` object,
+it is transformed into the object wrapped by the static method
 object. See section :ref:`descriptors` for another way in which attributes
 retrieved from a class may differ from those actually contained in its
 :attr:`~object.__dict__`.
@@ -970,7 +997,7 @@ in which attribute references are searched.  When an attribute is not found
 there, and the instance's class has an attribute by that name, the search
 continues with the class attributes.  If a class attribute is found that is a
 user-defined function object, it is transformed into an instance method
-object whose :attr:`__self__` attribute is the instance.  Static method and
+object whose :attr:`~method.__self__` attribute is the instance.  Static method and
 class method objects are also transformed; see above under "Classes".  See
 section :ref:`descriptors` for another way in which attributes of a class
 retrieved via its instances may differ from the objects actually stored in
