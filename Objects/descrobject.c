@@ -1037,14 +1037,15 @@ mappingproxy_len(mappingproxyobject *pp)
 }
 
 static PyObject *
-mappingproxy_getitem(mappingproxyobject *pp, PyObject *key)
+mappingproxy_getitem(PyObject *self, PyObject *key)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_GetItem(pp->mapping, key);
 }
 
 static PyMappingMethods mappingproxy_as_mapping = {
     (lenfunc)mappingproxy_len,                  /* mp_length */
-    (binaryfunc)mappingproxy_getitem,           /* mp_subscript */
+    mappingproxy_getitem,                       /* mp_subscript */
     0,                                          /* mp_ass_subscript */
 };
 
