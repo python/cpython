@@ -1120,8 +1120,9 @@ mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-mappingproxy_values(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
+mappingproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(values));
 }
 
@@ -1155,7 +1156,7 @@ static PyMethodDef mappingproxy_methods[] = {
                "  d defaults to None.")},
     {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,
      PyDoc_STR("D.keys() -> a set-like object providing a view on D's keys")},
-    {"values",    (PyCFunction)mappingproxy_values,     METH_NOARGS,
+    {"values",    mappingproxy_values,     METH_NOARGS,
      PyDoc_STR("D.values() -> an object providing a view on D's values")},
     {"items",     mappingproxy_items,      METH_NOARGS,
      PyDoc_STR("D.items() -> a set-like object providing a view on D's items")},
