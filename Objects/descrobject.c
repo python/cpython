@@ -1174,8 +1174,9 @@ mappingproxy_dealloc(PyObject *self)
 }
 
 static PyObject *
-mappingproxy_getiter(mappingproxyobject *pp)
+mappingproxy_getiter(PyObject *self)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_GetIter(pp->mapping);
 }
 
@@ -1949,7 +1950,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_clear */
     (richcmpfunc)mappingproxy_richcompare,      /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
-    (getiterfunc)mappingproxy_getiter,          /* tp_iter */
+    mappingproxy_getiter,                       /* tp_iter */
     0,                                          /* tp_iternext */
     mappingproxy_methods,                       /* tp_methods */
     0,                                          /* tp_members */
