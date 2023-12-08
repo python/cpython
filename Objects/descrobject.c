@@ -1114,8 +1114,9 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
 }
 
 static PyObject *
-mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
+mappingproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_CallMethodNoArgs(pp->mapping, &_Py_ID(keys));
 }
 
@@ -1154,7 +1155,7 @@ static PyMethodDef mappingproxy_methods[] = {
     {"get",       _PyCFunction_CAST(mappingproxy_get), METH_FASTCALL,
      PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
                "  d defaults to None.")},
-    {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,
+    {"keys",      mappingproxy_keys,       METH_NOARGS,
      PyDoc_STR("D.keys() -> a set-like object providing a view on D's keys")},
     {"values",    mappingproxy_values,     METH_NOARGS,
      PyDoc_STR("D.values() -> an object providing a view on D's values")},
