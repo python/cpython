@@ -136,8 +136,9 @@ mbuf_traverse(_PyManagedBufferObject *self, visitproc visit, void *arg)
 }
 
 static int
-mbuf_clear(_PyManagedBufferObject *self)
+mbuf_clear(PyObject *_self)
 {
+    _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
     assert(self->exports >= 0);
     mbuf_release(self);
     return 0;
@@ -166,7 +167,7 @@ PyTypeObject _PyManagedBuffer_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                       /* tp_doc */
     (traverseproc)mbuf_traverse,             /* tp_traverse */
-    (inquiry)mbuf_clear                      /* tp_clear */
+    mbuf_clear                               /* tp_clear */
 };
 
 
