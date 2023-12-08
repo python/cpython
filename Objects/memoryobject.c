@@ -1592,8 +1592,9 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 }
 
 static void
-memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
+memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     self->exports--;
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
@@ -1602,7 +1603,7 @@ memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
 /* Buffer methods */
 static PyBufferProcs memory_as_buffer = {
     (getbufferproc)memory_getbuf,         /* bf_getbuffer */
-    (releasebufferproc)memory_releasebuf, /* bf_releasebuffer */
+    memory_releasebuf,                    /* bf_releasebuffer */
 };
 
 
