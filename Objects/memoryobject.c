@@ -2347,8 +2347,9 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
 }
 
 static PyObject *
-memory_repr(PyMemoryViewObject *self)
+memory_repr(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
         return PyUnicode_FromFormat("<released memory at %p>", self);
     else
@@ -3380,7 +3381,7 @@ PyTypeObject PyMemoryView_Type = {
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
     0,                                        /* tp_as_async */
-    (reprfunc)memory_repr,                    /* tp_repr */
+    memory_repr,                              /* tp_repr */
     0,                                        /* tp_as_number */
     &memory_as_sequence,                      /* tp_as_sequence */
     &memory_as_mapping,                       /* tp_as_mapping */
