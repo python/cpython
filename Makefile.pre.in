@@ -1359,7 +1359,7 @@ regen-unicodedata:
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects
+	regen-test-levenshtein regen-global-objects regen-sbom
 	@echo
 	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
 	@echo "make regen-configure and make regen-unicodedata should be run manually"
@@ -1587,7 +1587,6 @@ regen-cases:
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
 		$(CASESFLAG) \
-		-o $(srcdir)/Python/generated_cases.c.h.new \
 		-n $(srcdir)/Include/opcode_ids.h.new \
 		-t $(srcdir)/Python/opcode_targets.h.new \
 		-m $(srcdir)/Include/internal/pycore_opcode_metadata.h.new \
@@ -1595,6 +1594,8 @@ regen-cases:
 		-p $(srcdir)/Lib/_opcode_metadata.py.new \
 		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
 		$(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) \
+	    $(srcdir)/Tools/cases_generator/tier1_generator.py -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
@@ -1873,6 +1874,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
+		$(srcdir)/Include/internal/pycore_tstate.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
@@ -2649,6 +2651,10 @@ autoconf:
 .PHONY: regen-configure
 regen-configure:
 	$(srcdir)/Tools/build/regen-configure.sh
+
+.PHONY: regen-sbom
+regen-sbom:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sbom.py
 
 # Create a tags file for vi
 tags::
