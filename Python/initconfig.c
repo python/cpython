@@ -78,6 +78,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(interactive, UINT, NULL),
     SPEC(optimization_level, UINT, NULL),
     SPEC(parser_debug, UINT, NULL),
+    // config_get_sys_write_bytecode() gets sys.dont_write_bytecode
     SPEC(write_bytecode, UINT, NULL),
     SPEC(verbose, UINT, NULL),
     SPEC(quiet, UINT, NULL),
