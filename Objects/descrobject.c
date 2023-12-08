@@ -626,14 +626,15 @@ descr_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
+descr_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    PyDescrObject *descr = (PyDescrObject *)self;
     return Py_BuildValue("N(OO)", _PyEval_GetBuiltin(&_Py_ID(getattr)),
                          PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
 
 static PyMethodDef descr_methods[] = {
-    {"__reduce__", (PyCFunction)descr_reduce, METH_NOARGS, NULL},
+    {"__reduce__", descr_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
