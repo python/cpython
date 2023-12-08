@@ -1073,8 +1073,9 @@ static PyNumberMethods mappingproxy_as_number = {
 };
 
 static int
-mappingproxy_contains(mappingproxyobject *pp, PyObject *key)
+mappingproxy_contains(PyObject *self, PyObject *key)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     if (PyDict_CheckExact(pp->mapping))
         return PyDict_Contains(pp->mapping, key);
     else
@@ -1089,7 +1090,7 @@ static PySequenceMethods mappingproxy_as_sequence = {
     0,                                          /* sq_slice */
     0,                                          /* sq_ass_item */
     0,                                          /* sq_ass_slice */
-    (objobjproc)mappingproxy_contains,                 /* sq_contains */
+    mappingproxy_contains,                      /* sq_contains */
     0,                                          /* sq_inplace_concat */
     0,                                          /* sq_inplace_repeat */
 };
