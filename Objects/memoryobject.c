@@ -2425,8 +2425,9 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
    with the type specified by view->format. Otherwise, the item is a sub-view.
    The function is used in memory_subscript() and memory_as_sequence. */
 static PyObject *
-memory_item(PyMemoryViewObject *self, Py_ssize_t index)
+memory_item(PyObject *_self, Py_ssize_t index)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &(self->view);
     const char *fmt;
 
@@ -2579,7 +2580,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
             return NULL;
-        return memory_item(self, index);
+        return memory_item((PyObject *)self, index);
     }
     else if (PySlice_Check(key)) {
         CHECK_RESTRICTED(self);
@@ -2736,7 +2737,7 @@ static PySequenceMethods memory_as_sequence = {
         (lenfunc)memory_length,           /* sq_length */
         0,                                /* sq_concat */
         0,                                /* sq_repeat */
-        (ssizeargfunc)memory_item,        /* sq_item */
+        memory_item,                      /* sq_item */
 };
 
 
