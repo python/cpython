@@ -48,8 +48,13 @@ class CWriter:
             if offset <= self.indents[-1] or offset > 40:
                 offset = self.indents[-1] + 4
             self.indents.append(offset)
-        elif "{" in txt or is_label(txt):
+        if is_label(txt):
             self.indents.append(self.indents[-1] + 4)
+        elif "{" in txt:
+            if 'extern "C"' in txt:
+                self.indents.append(self.indents[-1])
+            else:
+                self.indents.append(self.indents[-1] + 4)
 
     def emit_text(self, txt: str) -> None:
         self.out.write(txt)

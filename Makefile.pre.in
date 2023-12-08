@@ -1587,13 +1587,14 @@ regen-cases:
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
 		$(CASESFLAG) \
-		-n $(srcdir)/Include/opcode_ids.h.new \
 		-t $(srcdir)/Python/opcode_targets.h.new \
 		-m $(srcdir)/Include/internal/pycore_opcode_metadata.h.new \
 		-e $(srcdir)/Python/executor_cases.c.h.new \
 		-p $(srcdir)/Lib/_opcode_metadata.py.new \
 		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
 		$(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) \
+	    $(srcdir)/Tools/cases_generator/opcode_id_generator.py -o $(srcdir)/Include/opcode_ids.h.new $(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/tier1_generator.py -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
