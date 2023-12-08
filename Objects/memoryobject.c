@@ -2716,8 +2716,9 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
 }
 
 static Py_ssize_t
-memory_length(PyMemoryViewObject *self)
+memory_length(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED_INT(self);
     if (self->view.ndim == 0) {
         PyErr_SetString(PyExc_TypeError, "0-dim memory has no length");
@@ -2728,14 +2729,14 @@ memory_length(PyMemoryViewObject *self)
 
 /* As mapping */
 static PyMappingMethods memory_as_mapping = {
-    (lenfunc)memory_length,               /* mp_length */
+    memory_length,                        /* mp_length */
     memory_subscript,                     /* mp_subscript */
     (objobjargproc)memory_ass_sub,        /* mp_ass_subscript */
 };
 
 /* As sequence */
 static PySequenceMethods memory_as_sequence = {
-        (lenfunc)memory_length,           /* sq_length */
+        memory_length,                    /* sq_length */
         0,                                /* sq_concat */
         0,                                /* sq_repeat */
         memory_item,                      /* sq_item */
@@ -3369,7 +3370,7 @@ memory_iter(PyObject *seq)
         return NULL;
     }
     it->it_fmt = fmt;
-    it->it_length = memory_length(obj);
+    it->it_length = memory_length((PyObject *)obj);
     it->it_index = 0;
     it->it_seq = (PyMemoryViewObject*)Py_NewRef(obj);
     _PyObject_GC_TRACK(it);
