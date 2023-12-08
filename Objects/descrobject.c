@@ -1281,8 +1281,9 @@ typedef struct {
 #define Wrapper_Check(v) Py_IS_TYPE(v, &_PyMethodWrapper_Type)
 
 static void
-wrapper_dealloc(wrapperobject *wp)
+wrapper_dealloc(PyObject *self)
 {
+    wrapperobject *wp = (wrapperobject *)self;
     PyObject_GC_UnTrack(wp);
     Py_TRASHCAN_BEGIN(wp, wrapper_dealloc)
     Py_XDECREF(wp->descr);
@@ -1423,7 +1424,7 @@ PyTypeObject _PyMethodWrapper_Type = {
     sizeof(wrapperobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)wrapper_dealloc,                /* tp_dealloc */
+    wrapper_dealloc,                            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
