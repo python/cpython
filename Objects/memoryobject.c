@@ -3296,8 +3296,9 @@ memoryiter_traverse(memoryiterobject *it, visitproc visit, void *arg)
 }
 
 static PyObject *
-memoryiter_next(memoryiterobject *it)
+memoryiter_next(PyObject *self)
 {
+    memoryiterobject *it = (memoryiterobject *)self;
     PyMemoryViewObject *seq;
     seq = it->it_seq;
     if (seq == NULL) {
@@ -3369,7 +3370,7 @@ PyTypeObject _PyMemoryIter_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)memoryiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)memoryiter_next,
+    .tp_iternext = memoryiter_next,
 };
 
 PyTypeObject PyMemoryView_Type = {
