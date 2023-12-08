@@ -1165,9 +1165,9 @@ static PyMethodDef mappingproxy_methods[] = {
 };
 
 static void
-mappingproxy_dealloc(PyObject *obj)
+mappingproxy_dealloc(PyObject *self)
 {
-    mappingproxyobject *pp = (mappingproxyobject *)obj;
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     _PyObject_GC_UNTRACK(pp);
     Py_DECREF(pp->mapping);
     PyObject_GC_Del(pp);
