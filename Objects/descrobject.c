@@ -200,8 +200,9 @@ getset_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static PyObject *
-wrapperdescr_get(PyWrapperDescrObject *descr, PyObject *obj, PyObject *type)
+wrapperdescr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
+    PyWrapperDescrObject *descr = (PyWrapperDescrObject *)self;
     if (obj == NULL) {
         return Py_NewRef(descr);
     }
@@ -896,7 +897,7 @@ PyTypeObject PyWrapperDescr_Type = {
     wrapperdescr_getset,                        /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
-    (descrgetfunc)wrapperdescr_get,             /* tp_descr_get */
+    wrapperdescr_get,                           /* tp_descr_get */
     0,                                          /* tp_descr_set */
 };
 
