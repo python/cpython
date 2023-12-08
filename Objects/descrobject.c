@@ -62,7 +62,7 @@ member_repr(PyMemberDescrObject *descr)
 }
 
 static PyObject *
-getset_repr(PyGetSetDescrObject *descr)
+getset_repr(PyObject *descr)
 {
     return descr_repr((PyDescrObject *)descr,
                       "<attribute '%V' of '%s' objects>");
@@ -827,7 +827,7 @@ PyTypeObject PyGetSetDescr_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)getset_repr,                      /* tp_repr */
+    getset_repr,                                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
