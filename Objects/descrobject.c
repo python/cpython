@@ -1195,8 +1195,9 @@ mappingproxy_str(PyObject *self)
 }
 
 static PyObject *
-mappingproxy_repr(mappingproxyobject *pp)
+mappingproxy_repr(PyObject *self)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyUnicode_FromFormat("mappingproxy(%R)", pp->mapping);
 }
 
@@ -1935,7 +1936,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)mappingproxy_repr,                /* tp_repr */
+    mappingproxy_repr,                          /* tp_repr */
     &mappingproxy_as_number,                    /* tp_as_number */
     &mappingproxy_as_sequence,                  /* tp_as_sequence */
     &mappingproxy_as_mapping,                   /* tp_as_mapping */
