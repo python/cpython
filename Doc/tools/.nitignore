@@ -86,7 +86,6 @@ Doc/library/readline.rst
 Doc/library/resource.rst
 Doc/library/rlcompleter.rst
 Doc/library/select.rst
-Doc/library/shelve.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
 Doc/library/socket.rst
