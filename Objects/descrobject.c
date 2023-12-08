@@ -1031,8 +1031,9 @@ typedef struct {
 } mappingproxyobject;
 
 static Py_ssize_t
-mappingproxy_len(mappingproxyobject *pp)
+mappingproxy_len(PyObject *self)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     return PyObject_Size(pp->mapping);
 }
 
@@ -1044,7 +1045,7 @@ mappingproxy_getitem(PyObject *self, PyObject *key)
 }
 
 static PyMappingMethods mappingproxy_as_mapping = {
-    (lenfunc)mappingproxy_len,                  /* mp_length */
+    mappingproxy_len,                           /* mp_length */
     mappingproxy_getitem,                       /* mp_subscript */
     0,                                          /* mp_ass_subscript */
 };
