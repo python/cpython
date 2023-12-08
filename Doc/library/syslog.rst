@@ -117,7 +117,7 @@ The module defines the following constants:
           LOG_INFO
           LOG_DEBUG
 
-   Priority levels (high to low):
+   Priority levels (high to low).
 
 
 .. data:: LOG_AUTH
