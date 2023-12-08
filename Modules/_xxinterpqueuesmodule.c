@@ -163,21 +163,6 @@ get_module_state(PyObject *mod)
     return state;
 }
 
-static module_state *
-_get_current_module_state(void)
-{
-    PyObject *mod = _get_current_module();
-    if (mod == NULL) {
-        // XXX import it?
-        PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME " module not imported yet");
-        return NULL;
-    }
-    module_state *state = get_module_state(mod);
-    Py_DECREF(mod);
-    return state;
-}
-
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
@@ -205,14 +190,12 @@ clear_module_state(module_state *state)
 }
 
 
-/* queue-specific code ******************************************************/
-
-/* queue errors */
+/* queue errors *************************************************************/
 
 #define ERR_QUEUE_NOT_FOUND -2
 #define ERR_QUEUE_EMPTY -5
-#define ERR_QUEUE_MUTEX_INIT -7
-#define ERR_QUEUES_MUTEX_INIT -8
+#define ERR_QUEUE_ALLOC -7
+#define ERR_QUEUES_ALLOC -8
 #define ERR_NO_NEXT_QUEUE_ID -9
 
 static int
@@ -261,13 +244,13 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
         //PyErr_Format(state->QueueEmpty,
                      "queue %" PRId64 " is empty", qid);
     }
-    else if (err == ERR_QUEUE_MUTEX_INIT) {
+    else if (err == ERR_QUEUE_ALLOC) {
         PyErr_SetString(state->QueueError,
-                        "can't initialize mutex for new queue");
+                        "can't allocate memory for new queue");
     }
-    else if (err == ERR_QUEUES_MUTEX_INIT) {
+    else if (err == ERR_QUEUES_ALLOC) {
         PyErr_SetString(state->QueueError,
-                        "can't initialize mutex for queue management");
+                        "can't allocate memory for queue management");
     }
     else if (err == ERR_NO_NEXT_QUEUE_ID) {
         PyErr_SetString(state->QueueError,
@@ -280,9 +263,7 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
 }
 
 
-/* the channel queue */
-
-typedef uintptr_t _queueitem_id_t;
+/* the basic queue **********************************************************/
 
 struct _queueitem;
 
@@ -290,12 +271,6 @@ typedef struct _queueitem {
     _PyCrossInterpreterData *data;
     struct _queueitem *next;
 } _queueitem;
-
-static inline _queueitem_id_t
-_queueitem_ID(_queueitem *item)
-{
-    return (_queueitem_id_t)item;
-}
 
 static void
 _queueitem_init(_queueitem *item, _PyCrossInterpreterData *data)
@@ -311,7 +286,7 @@ _queueitem_clear(_queueitem *item)
     item->next = NULL;
 
     if (item->data != NULL) {
-        // It was allocated in channel_send().
+        // It was allocated in queue_put().
         (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
         item->data = NULL;
     }
@@ -355,187 +330,210 @@ _queueitem_popped(_queueitem *item, _PyCrossInterpreterData **p_data)
     _queueitem_free(item);
 }
 
-typedef struct _queueitems {
-    int64_t count;
-    _queueitem *first;
-    _queueitem *last;
-} _queueitems;
 
-static _queueitems *
-_queueitems_new(void)
+/* the queue */
+typedef struct _queue {
+    Py_ssize_t num_waiters;  // protected by global lock
+    PyThread_type_lock mutex;
+    int alive;
+    struct _queueitems {
+        int64_t count;
+        _queueitem *first;
+        _queueitem *last;
+    } items;
+} _queue;
+
+static int
+_queue_init(_queue *queue)
 {
-    _queueitems *queue = GLOBAL_MALLOC(_queueitems);
-    if (queue == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+    PyThread_type_lock mutex = PyThread_allocate_lock();
+    if (mutex == NULL) {
+        return ERR_QUEUE_ALLOC;
     }
-    queue->count = 0;
-    queue->first = NULL;
-    queue->last = NULL;
-    return queue;
+    *queue = (_queue){
+        .mutex = mutex,
+        .alive = 1,
+    };
+    return 0;
 }
 
 static void
-_queueitems_clear(_queueitems *queue)
+_queue_clear(_queue *queue)
 {
-    _queueitem_free_all(queue->first);
-    queue->count = 0;
-    queue->first = NULL;
-    queue->last = NULL;
+    assert(!queue->alive);
+    assert(queue->num_waiters == 0);
+    _queueitem_free_all(queue->items.first);
+    assert(queue->mutex != NULL);
+    PyThread_free_lock(queue->mutex);
+    *queue = (_queue){0};
 }
 
 static void
-_queueitems_free(_queueitems *queue)
+_queue_kill_and_wait(_queue *queue)
 {
-    _queueitems_clear(queue);
-    GLOBAL_FREE(queue);
+    // Mark it as dead.
+    PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
+    assert(queue->alive);
+    queue->alive = 0;
+    PyThread_release_lock(queue->mutex);
+
+    // Wait for all waiters to fail.
+    while (queue->num_waiters > 0) {
+        PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
+        PyThread_release_lock(queue->mutex);
+    };
+}
+
+static void
+_queue_mark_waiter(_queue *queue, PyThread_type_lock parent_mutex)
+{
+    if (parent_mutex != NULL) {
+        PyThread_acquire_lock(parent_mutex, WAIT_LOCK);
+        queue->num_waiters += 1;
+        PyThread_release_lock(parent_mutex);
+    }
+    else {
+        // The caller must be holding the parent lock already.
+        queue->num_waiters += 1;
+    }
+}
+
+static void
+_queue_unmark_waiter(_queue *queue, PyThread_type_lock parent_mutex)
+{
+    if (parent_mutex != NULL) {
+        PyThread_acquire_lock(parent_mutex, WAIT_LOCK);
+        queue->num_waiters -= 1;
+        PyThread_release_lock(parent_mutex);
+    }
+    else {
+        // The caller must be holding the parent lock already.
+        queue->num_waiters -= 1;
+    }
 }
 
 static int
-_queueitems_put(_queueitems *queue,
-                  _PyCrossInterpreterData *data)
+_queue_lock(_queue *queue)
 {
+    // The queue must be marked as a waiter already.
+    PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
+    if (!queue->alive) {
+        PyThread_release_lock(queue->mutex);
+        return ERR_QUEUE_NOT_FOUND;
+    }
+    return 0;
+}
+
+static void
+_queue_unlock(_queue *queue)
+{
+    PyThread_release_lock(queue->mutex);
+}
+
+static int
+_queue_add(_queue *queue, _PyCrossInterpreterData *data)
+{
+    int err = _queue_lock(queue);
+    if (err < 0) {
+        return err;
+    }
+
     _queueitem *item = _queueitem_new(data);
     if (item == NULL) {
+        _queue_unlock(queue);
         return -1;
     }
 
-    queue->count += 1;
-    if (queue->first == NULL) {
-        queue->first = item;
+    queue->items.count += 1;
+    if (queue->items.first == NULL) {
+        queue->items.first = item;
     }
     else {
-        queue->last->next = item;
+        queue->items.last->next = item;
     }
-    queue->last = item;
+    queue->items.last = item;
 
+    _queue_unlock(queue);
     return 0;
 }
 
 static int
-_queueitems_get(_queueitems *queue, _PyCrossInterpreterData **p_data)
+_queue_next(_queue *queue, _PyCrossInterpreterData **p_data)
 {
-    _queueitem *item = queue->first;
+    int err = _queue_lock(queue);
+    if (err < 0) {
+        return err;
+    }
+
+    _queueitem *item = queue->items.first;
     if (item == NULL) {
+        _queue_unlock(queue);
         return ERR_QUEUE_EMPTY;
     }
-    queue->first = item->next;
-    if (queue->last == item) {
-        queue->last = NULL;
+    queue->items.first = item->next;
+    if (queue->items.last == item) {
+        queue->items.last = NULL;
     }
-    queue->count -= 1;
+    queue->items.count -= 1;
 
     _queueitem_popped(item, p_data);
+
+    _queue_unlock(queue);
+    return 0;
+}
+
+static int
+_queue_get_count(_queue *queue, Py_ssize_t *p_count)
+{
+    int err = _queue_lock(queue);
+    if (err < 0) {
+        return err;
+    }
+
+    // Get the number of queued objects.
+    assert(queue->items.count <= PY_SSIZE_T_MAX);
+    *p_count = (Py_ssize_t)queue->items.count;
+
+    _queue_unlock(queue);
     return 0;
 }
 
 static void
-_queueitems_clear_interpreter(_queueitems *queue, int64_t interpid)
+_queue_clear_interpreter(_queue *queue, int64_t interpid)
 {
+    int err = _queue_lock(queue);
+    if (err == ERR_QUEUE_NOT_FOUND) {
+        // The queue is already destroyed, so there's nothing to clear.
+        assert(!PyErr_Occurred());
+        return;
+    }
+    assert(err == 0);  // There should be no other errors.
+
     _queueitem *prev = NULL;
-    _queueitem *next = queue->first;
+    _queueitem *next = queue->items.first;
     while (next != NULL) {
         _queueitem *item = next;
         next = item->next;
         if (item->data->interpid == interpid) {
             if (prev == NULL) {
-                queue->first = item->next;
+                queue->items.first = item->next;
             }
             else {
                 prev->next = item->next;
             }
             _queueitem_free(item);
-            queue->count -= 1;
+            queue->items.count -= 1;
         }
         else {
             prev = item;
         }
     }
+
+    _queue_unlock(queue);
 }
 
 
-/* each channel's state */
-
-struct _queue;
-
-typedef struct _queue {
-    PyThread_type_lock mutex;
-    _queueitems *items;
-} _queue_state;
-
-static _queue_state *
-_queue_new(PyThread_type_lock mutex)
-{
-    _queue_state *queue = GLOBAL_MALLOC(_queue_state);
-    if (queue == NULL) {
-        return NULL;
-    }
-    queue->mutex = mutex;
-    queue->items = _queueitems_new();
-    if (queue->items == NULL) {
-        GLOBAL_FREE(queue);
-        return NULL;
-    }
-    return queue;
-}
-
-static void
-_queue_free(_queue_state *queue)
-{
-    PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
-    _queueitems_free(queue->items);
-    PyThread_release_lock(queue->mutex);
-
-    PyThread_free_lock(queue->mutex);
-    GLOBAL_FREE(queue);
-}
-
-static int
-_queue_add(_queue_state *queue, _PyCrossInterpreterData *data)
-{
-    int res = -1;
-    PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
-
-    if (_queueitems_put(queue->items, data) != 0) {
-        goto done;
-    }
-
-    res = 0;
-done:
-    PyThread_release_lock(queue->mutex);
-    return res;
-}
-
-static int
-_queue_next(_queue_state *queue, _PyCrossInterpreterData **p_data)
-{
-    int err = 0;
-    PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
-
-#ifdef NDEBUG
-    (void)_queueitems_get(queue->items, p_data);
-#else
-    int empty = _queueitems_get(queue->items, p_data);
-    assert(empty == 0 || empty == ERR_QUEUE_EMPTY);
-#endif
-    assert(!PyErr_Occurred());
-
-    PyThread_release_lock(queue->mutex);
-    return err;
-}
-
-static void
-_queue_clear_interpreter(_queue_state *queue, int64_t interpid)
-{
-    PyThread_acquire_lock(queue->mutex, WAIT_LOCK);
-
-    _queueitems_clear_interpreter(queue->items, interpid);
-
-    PyThread_release_lock(queue->mutex);
-}
-
-
-/* the set of channels */
+/* external queue references ************************************************/
 
 struct _queueref;
 
@@ -543,30 +541,8 @@ typedef struct _queueref {
     struct _queueref *next;
     int64_t qid;
     Py_ssize_t refcount;
-    _queue_state *queue;
+    _queue *queue;
 } _queueref;
-
-static _queueref *
-_queueref_new(int64_t qid, _queue_state *queue)
-{
-    _queueref *ref = GLOBAL_MALLOC(_queueref);
-    if (ref == NULL) {
-        return NULL;
-    }
-    ref->next = NULL;
-    ref->qid = qid;
-    ref->refcount = 0;
-    ref->queue = queue;
-    return ref;
-}
-
-static void
-_queueref_free(_queueref *ref)
-{
-    assert(ref->next == NULL);
-    // ref->queue is freed by the caller.
-    GLOBAL_FREE(ref);
-}
 
 static _queueref *
 _queuerefs_find(_queueref *first, int64_t qid, _queueref **pprev)
@@ -586,6 +562,8 @@ _queuerefs_find(_queueref *first, int64_t qid, _queueref **pprev)
     return ref;
 }
 
+
+/* a collection of queues ***************************************************/
 
 typedef struct _queues {
     PyThread_type_lock mutex;
@@ -627,41 +605,28 @@ _queues_next_id(_queues *queues)  // needs lock
 }
 
 static int
-_queues_lookup(_queues *queues, int64_t qid, PyThread_type_lock *pmutex,
-               _queue_state **res)
+_queues_lookup(_queues *queues, int64_t qid, _queue **res)
 {
-    int err = -1;
-    _queue_state *queue = NULL;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-    if (pmutex != NULL) {
-        *pmutex = NULL;
-    }
 
     _queueref *ref = _queuerefs_find(queues->head, qid, NULL);
     if (ref == NULL) {
-        err = ERR_QUEUE_NOT_FOUND;
-        goto done;
+        PyThread_release_lock(queues->mutex);
+        return ERR_QUEUE_NOT_FOUND;
     }
     assert(ref->queue != NULL);
+    _queue *queue = ref->queue;
+    _queue_mark_waiter(queue, NULL);
+    // The caller must unmark it.
 
-    if (pmutex != NULL) {
-        // The mutex will be closed by the caller.
-        *pmutex = queues->mutex;
-    }
+    PyThread_release_lock(queues->mutex);
 
-    queue = ref->queue;
-    err = 0;
-
-done:
-    if (pmutex == NULL || *pmutex == NULL) {
-        PyThread_release_lock(queues->mutex);
-    }
     *res = queue;
-    return err;
+    return 0;
 }
 
 static int64_t
-_queues_add(_queues *queues, _queue_state *queue)
+_queues_add(_queues *queues, _queue *queue)
 {
     int64_t qid = -1;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
@@ -672,13 +637,18 @@ _queues_add(_queues *queues, _queue_state *queue)
         qid = ERR_NO_NEXT_QUEUE_ID;
         goto done;
     }
-    _queueref *ref = _queueref_new(_qid, queue);
+    _queueref *ref = GLOBAL_MALLOC(_queueref);
     if (ref == NULL) {
+        qid = ERR_QUEUE_ALLOC;
         goto done;
     }
+    *ref = (_queueref){
+        .qid = _qid,
+        .queue = queue,
+    };
 
     // Add it to the list.
-    // We assume that the channel is a new one (not already in the list).
+    // We assume that the queue is a new one (not already in the list).
     ref->next = queues->head;
     queues->head = ref;
     queues->count += 1;
@@ -691,8 +661,10 @@ done:
 
 static void
 _queues_remove_ref(_queues *queues, _queueref *ref, _queueref *prev,
-                   _queue_state **p_queue)
+                   _queue **p_queue)
 {
+    assert(ref->queue != NULL);
+
     if (ref == queues->head) {
         queues->head = ref->next;
     }
@@ -702,35 +674,27 @@ _queues_remove_ref(_queues *queues, _queueref *ref, _queueref *prev,
     ref->next = NULL;
     queues->count -= 1;
 
-    if (p_queue != NULL) {
-        *p_queue = ref->queue;
-    }
-    _queueref_free(ref);
+    *p_queue = ref->queue;
+    ref->queue = NULL;
+    GLOBAL_FREE(ref);
 }
 
 static int
-_queues_remove(_queues *queues, int64_t qid, _queue_state **p_queue)
+_queues_remove(_queues *queues, int64_t qid, _queue **p_queue)
 {
-    int res = -1;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-
-    if (p_queue != NULL) {
-        *p_queue = NULL;
-    }
 
     _queueref *prev = NULL;
     _queueref *ref = _queuerefs_find(queues->head, qid, &prev);
     if (ref == NULL) {
-        res = ERR_QUEUE_NOT_FOUND;
-        goto done;
+        PyThread_release_lock(queues->mutex);
+        return ERR_QUEUE_NOT_FOUND;
     }
 
     _queues_remove_ref(queues, ref, prev, p_queue);
-
-    res = 0;
-done:
     PyThread_release_lock(queues->mutex);
-    return res;
+
+    return 0;
 }
 
 static int
@@ -754,6 +718,8 @@ done:
     return res;
 }
 
+static void _queue_free(_queue *);
+
 static void
 _queues_decref(_queues *queues, int64_t qid)
 {
@@ -765,21 +731,24 @@ _queues_decref(_queues *queues, int64_t qid)
         assert(!PyErr_Occurred());
         // Already destroyed.
         // XXX Warn?
-        goto done;
+        goto finally;
     }
     assert(ref->refcount > 0);
     ref->refcount -= 1;
 
     // Destroy if no longer used.
+    assert(ref->queue != NULL);
     if (ref->refcount == 0) {
-        _queue_state *queue = NULL;
+        _queue *queue = NULL;
         _queues_remove_ref(queues, ref, prev, &queue);
-        if (queue != NULL) {
-            _queue_free(queue);
-        }
+        PyThread_release_lock(queues->mutex);
+
+        _queue_kill_and_wait(queue);
+        _queue_free(queue);
+        return;
     }
 
-done:
+finally:
     PyThread_release_lock(queues->mutex);
 }
 
@@ -819,40 +788,47 @@ _queues_clear_interpreter(_queues *queues, int64_t interpid)
 }
 
 
-/* "high"-level channel-related functions */
+/* "high"-level queue-related functions *************************************/
 
-// Create a new channel.
+static void
+_queue_free(_queue *queue)
+{
+    _queue_clear(queue);
+    GLOBAL_FREE(queue);
+}
+
+// Create a new queue.
 static int64_t
 queue_create(_queues *queues)
 {
-    PyThread_type_lock mutex = PyThread_allocate_lock();
-    if (mutex == NULL) {
-        return ERR_QUEUE_MUTEX_INIT;
-    }
-    _queue_state *queue = _queue_new(mutex);
+    _queue *queue = GLOBAL_MALLOC(_queue);
     if (queue == NULL) {
-        PyThread_free_lock(mutex);
-        return -1;
+        return ERR_QUEUE_ALLOC;
+    }
+    int err = _queue_init(queue);
+    if (err < 0) {
+        GLOBAL_FREE(queue);
+        return (int64_t)err;
     }
     int64_t qid = _queues_add(queues, queue);
     if (qid < 0) {
-        _queue_free(queue);
+        _queue_clear(queue);
+        GLOBAL_FREE(queue);
     }
     return qid;
 }
 
-// Completely destroy the channel.
+// Completely destroy the queue.
 static int
 queue_destroy(_queues *queues, int64_t qid)
 {
-    _queue_state *queue = NULL;
+    _queue *queue = NULL;
     int err = _queues_remove(queues, qid, &queue);
-    if (err != 0) {
+    if (err < 0) {
         return err;
     }
-    if (queue != NULL) {
-        _queue_free(queue);
-    }
+    _queue_kill_and_wait(queue);
+    _queue_free(queue);
     return 0;
 }
 
@@ -860,31 +836,29 @@ queue_destroy(_queues *queues, int64_t qid)
 static int
 queue_put(_queues *queues, int64_t qid, PyObject *obj)
 {
-    // Look up the channel.
-    PyThread_type_lock mutex = NULL;
-    _queue_state *queue = NULL;
-    int err = _queues_lookup(queues, qid, &mutex, &queue);
+    // Look up the queue.
+    _queue *queue = NULL;
+    int err = _queues_lookup(queues, qid, &queue);
     if (err != 0) {
         return err;
     }
     assert(queue != NULL);
-    // Past this point we are responsible for releasing the mutex.
 
     // Convert the object to cross-interpreter data.
     _PyCrossInterpreterData *data = GLOBAL_MALLOC(_PyCrossInterpreterData);
     if (data == NULL) {
-        PyThread_release_lock(mutex);
+        _queue_unmark_waiter(queue, queues->mutex);
         return -1;
     }
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
-        PyThread_release_lock(mutex);
+        _queue_unmark_waiter(queue, queues->mutex);
         GLOBAL_FREE(data);
         return -1;
     }
 
-    // Add the data to the channel.
+    // Add the data to the queue.
     int res = _queue_add(queue, data);
-    PyThread_release_lock(mutex);
+    _queue_unmark_waiter(queue, queues->mutex);
     if (res != 0) {
         // We may chain an exception here:
         (void)_release_xid_data(data, 0);
@@ -895,8 +869,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj)
     return 0;
 }
 
-// Pop the next object off the channel.  Fail if empty.
-// The current interpreter gets associated with the recv end of the channel.
+// Pop the next object off the queue.  Fail if empty.
 // XXX Support a "wait" mutex?
 static int
 queue_get(_queues *queues, int64_t qid, PyObject **res)
@@ -904,20 +877,19 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
     int err;
     *res = NULL;
 
-    // Look up the channel.
-    PyThread_type_lock mutex = NULL;
-    _queue_state *queue = NULL;
-    err = _queues_lookup(queues, qid, &mutex, &queue);
+    // Look up the queue.
+    _queue *queue = NULL;
+    err = _queues_lookup(queues, qid, &queue);
     if (err != 0) {
         return err;
     }
-    assert(queue != NULL);
     // Past this point we are responsible for releasing the mutex.
+    assert(queue != NULL);
 
-    // Pop off the next item from the channel.
+    // Pop off the next item from the queue.
     _PyCrossInterpreterData *data = NULL;
     err = _queue_next(queue, &data);
-    PyThread_release_lock(mutex);
+    _queue_unmark_waiter(queue, queues->mutex);
     if (err != 0) {
         return err;
     }
@@ -930,11 +902,11 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
     PyObject *obj = _PyCrossInterpreterData_NewObject(data);
     if (obj == NULL) {
         assert(PyErr_Occurred());
-        // It was allocated in channel_send(), so we free it.
+        // It was allocated in queue_put(), so we free it.
         (void)_release_xid_data(data, XID_IGNORE_EXC | XID_FREE);
         return -1;
     }
-    // It was allocated in channel_send(), so we free it.
+    // It was allocated in queue_put(), so we free it.
     int release_res = _release_xid_data(data, XID_FREE);
     if (release_res < 0) {
         // The source interpreter has been destroyed already.
@@ -948,43 +920,48 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
 }
 
 
-/* channel info */
-
 static int
 queue_get_count(_queues *queues, int64_t qid, Py_ssize_t *p_count)
 {
-    int err = 0;
-
-    // Hold the global lock until we're done.
-    PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
-
-    // Find the channel.
-    _queueref *ref = _queuerefs_find(queues->head, qid, NULL);
-    if (ref == NULL) {
-        err = ERR_QUEUE_NOT_FOUND;
-        goto finally;
+    _queue *queue = NULL;
+    int err = _queues_lookup(queues, qid, &queue);
+    if (err < 0) {
+        return err;
     }
-    _queue_state *queue = ref->queue;
-    assert(queue != NULL);
-
-    // Get the number of queued objects.
-    assert(queue->items->count <= PY_SSIZE_T_MAX);
-    *p_count = (Py_ssize_t)queue->items->count;
-
-finally:
-    PyThread_release_lock(queues->mutex);
+    err = _queue_get_count(queue, p_count);
+    _queue_unmark_waiter(queue, queues->mutex);
     return err;
 }
 
 
-/* external objects *********************************************************/
+/* external Queue objects ***************************************************/
 
-// XXX Use a new __xid__ protocol instead?
+static int _queueobj_shared(PyThreadState *,
+                            PyObject *, _PyCrossInterpreterData *);
+
+static int
+set_external_queue_type(PyObject *module, PyTypeObject *queue_type)
+{
+    module_state *state = get_module_state(module);
+    assert(state != NULL);
+
+    if (state->queue_type != NULL) {
+        PyErr_SetString(PyExc_TypeError, "already registered");
+        return -1;
+    }
+    state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
+
+    if (_PyCrossInterpreterData_RegisterClass(queue_type, _queueobj_shared) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
 
 static PyTypeObject *
-_get_current_queue_type(void)
+get_external_queue_type(PyObject *module)
 {
-    module_state *state = _get_current_module_state();
+    module_state *state = get_module_state(module);
     assert(state != NULL);
 
     PyTypeObject *cls = state->queue_type;
@@ -1005,6 +982,9 @@ _get_current_queue_type(void)
     return cls;
 }
 
+
+// XXX Use a new __xid__ protocol instead?
+
 struct _queueid_xid {
     int64_t qid;
 };
@@ -1021,7 +1001,7 @@ _queueid_xid_new(int64_t qid)
 
     struct _queueid_xid *data = PyMem_RawMalloc(sizeof(struct _queueid_xid));
     if (data == NULL) {
-        _queues_decref(queues, qid);
+        _queues_incref(queues, qid);
         return NULL;
     }
     data->qid = qid;
@@ -1046,7 +1026,16 @@ _queueobj_from_xid(_PyCrossInterpreterData *data)
         return NULL;
     }
 
-    PyTypeObject *cls = _get_current_queue_type();
+    PyObject *mod = _get_current_module();
+    if (mod == NULL) {
+        // XXX import it?
+        PyErr_SetString(PyExc_RuntimeError,
+                        MODULE_NAME " module not imported yet");
+        return NULL;
+    }
+
+    PyTypeObject *cls = get_external_queue_type(mod);
+    Py_DECREF(mod);
     if (cls == NULL) {
         Py_DECREF(qidobj);
         return NULL;
@@ -1110,7 +1099,7 @@ _globals_init(void)
     assert(_globals.queues.mutex == NULL);
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
-        return ERR_QUEUES_MUTEX_INIT;
+        return ERR_QUEUES_ALLOC;
     }
     _queues_init(&_globals.queues, mutex);
     return 0;
@@ -1169,10 +1158,7 @@ queuesmod_create(PyObject *self, PyObject *Py_UNUSED(ignored))
         (void)handle_queue_error(-1, self, qid);
         return NULL;
     }
-    module_state *state = get_module_state(self);
-    if (state == NULL) {
-        return NULL;
-    }
+
     PyObject *qidobj = PyLong_FromLongLong(qid);
     if (qidobj == NULL) {
         int err = queue_destroy(&_globals.queues, qid);
@@ -1181,6 +1167,7 @@ queuesmod_create(PyObject *self, PyObject *Py_UNUSED(ignored))
         }
         return NULL;
     }
+
     return qidobj;
 }
 
@@ -1227,12 +1214,6 @@ queuesmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     PyObject *ids = PyList_New((Py_ssize_t)count);
     if (ids == NULL) {
-        goto finally;
-    }
-    module_state *state = get_module_state(self);
-    if (state == NULL) {
-        Py_DECREF(ids);
-        ids = NULL;
         goto finally;
     }
     int64_t *cur = qids;
@@ -1417,18 +1398,7 @@ queuesmod__register_queue_type(PyObject *self, PyObject *args, PyObject *kwds)
     }
     PyTypeObject *cls_queue = (PyTypeObject *)queuetype;
 
-    module_state *state = get_module_state(self);
-    if (state == NULL) {
-        return NULL;
-    }
-
-    if (state->queue_type != NULL) {
-        PyErr_SetString(PyExc_TypeError, "already registered");
-        return NULL;
-    }
-    state->queue_type = (PyTypeObject *)Py_NewRef(cls_queue);
-
-    if (_PyCrossInterpreterData_RegisterClass(cls_queue, _queueobj_shared) < 0) {
+    if (set_external_queue_type(self, cls_queue) < 0) {
         return NULL;
     }
 
