@@ -10,6 +10,7 @@
 
 #ifdef __APPLE__
 
+# undef ALIGNOF_MAX_ALIGN_T
 # undef SIZEOF_LONG
 # undef SIZEOF_LONG_DOUBLE
 # undef SIZEOF_PTHREAD_T
