@@ -164,7 +164,7 @@ class PyMemPymallocDebugTests(PyMemDebugTests):
 
 
 @unittest.skipUnless(support.with_mimalloc(), 'need mimaloc')
-class PyMemMallocDebugTests(PyMemDebugTests):
+class PyMemMimallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'mimalloc_debug'
 
 
