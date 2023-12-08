@@ -682,8 +682,9 @@ static PyGetSetDef getset_getset[] = {
 };
 
 static PyObject *
-wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
+wrapperdescr_get_doc(PyObject *self, void *closure)
 {
+    PyWrapperDescrObject *descr = (PyWrapperDescrObject *)self;
     return _PyType_GetDocFromInternalDoc(descr->d_base->name, descr->d_base->doc);
 }
 
@@ -695,7 +696,7 @@ wrapperdescr_get_text_signature(PyWrapperDescrObject *descr, void *closure)
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
-    {"__doc__", (getter)wrapperdescr_get_doc},
+    {"__doc__", wrapperdescr_get_doc},
     {"__qualname__", descr_get_qualname},
     {"__text_signature__", (getter)wrapperdescr_get_text_signature},
     {0}
