@@ -1276,19 +1276,13 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyObject *obj = NULL;
     int err = queue_get(&_globals.queues, qid, &obj);
-    if (handle_queue_error(err, self, qid)) {
-        return NULL;
-    }
-    Py_XINCREF(dflt);
-    if (obj == NULL) {
-        // Use the default.
-        if (dflt == NULL) {
-            (void)handle_queue_error(ERR_QUEUE_EMPTY, self, qid);
-            return NULL;
-        }
+    if (err == ERR_QUEUE_EMPTY && dflt != NULL) {
+        assert(obj == NULL);
         obj = Py_NewRef(dflt);
     }
-    Py_XDECREF(dflt);
+    else if (handle_queue_error(err, self, qid)) {
+        return NULL;
+    }
     return obj;
 }
 
