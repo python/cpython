@@ -572,8 +572,9 @@ wrapperdescr_call(PyObject *_descr, PyObject *args, PyObject *kwds)
 
 
 static PyObject *
-method_get_doc(PyMethodDescrObject *descr, void *closure)
+method_get_doc(PyObject *_descr, void *closure)
 {
+    PyMethodDescrObject *descr = (PyMethodDescrObject *)_descr;
     return _PyType_GetDocFromInternalDoc(descr->d_method->ml_name, descr->d_method->ml_doc);
 }
 
@@ -640,7 +641,7 @@ static PyMemberDef descr_members[] = {
 };
 
 static PyGetSetDef method_getset[] = {
-    {"__doc__", (getter)method_get_doc},
+    {"__doc__", method_get_doc},
     {"__qualname__", (getter)descr_get_qualname},
     {"__text_signature__", (getter)method_get_text_signature},
     {0}
