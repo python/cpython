@@ -1149,8 +1149,9 @@ memory_dealloc(PyMemoryViewObject *self)
 }
 
 static int
-memory_traverse(PyMemoryViewObject *self, visitproc visit, void *arg)
+memory_traverse(PyObject *_self, visitproc visit, void *arg)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_VISIT(self->mbuf);
     return 0;
 }
@@ -3391,7 +3392,7 @@ PyTypeObject PyMemoryView_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
        Py_TPFLAGS_SEQUENCE,                   /* tp_flags */
     memoryview__doc__,                        /* tp_doc */
-    (traverseproc)memory_traverse,            /* tp_traverse */
+    memory_traverse,                          /* tp_traverse */
     memory_clear,                             /* tp_clear */
     memory_richcompare,                       /* tp_richcompare */
     offsetof(PyMemoryViewObject, weakreflist),/* tp_weaklistoffset */
