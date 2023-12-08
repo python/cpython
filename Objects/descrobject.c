@@ -69,7 +69,7 @@ getset_repr(PyObject *descr)
 }
 
 static PyObject *
-wrapperdescr_repr(PyWrapperDescrObject *descr)
+wrapperdescr_repr(PyObject *descr)
 {
     return descr_repr((PyDescrObject *)descr,
                       "<slot wrapper '%V' of '%s' objects>");
@@ -864,7 +864,7 @@ PyTypeObject PyWrapperDescr_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)wrapperdescr_repr,                /* tp_repr */
+    wrapperdescr_repr,                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
