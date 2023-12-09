@@ -810,14 +810,15 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
 
 static PyObject*
-get_typename(PyTclObject* obj, void* ignored)
+get_typename(PyObject *self, void* ignored)
 {
+    PyTclObject *obj = (PyTclObject *)self;
     return unicodeFromTclString(obj->value->typePtr->name);
 }
 
 
 static PyGetSetDef PyTclObject_getsetlist[] = {
-    {"typename", (getter)get_typename, NULL, get_typename__doc__},
+    {"typename", get_typename, NULL, get_typename__doc__},
     {"string", PyTclObject_string, NULL,
      PyTclObject_string__doc__},
     {0},
