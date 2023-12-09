@@ -70,12 +70,7 @@ class PurePath(_abc.PurePathBase):
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
         return object.__new__(cls)
 
-    def _load_args(self, args):
-        """Type-checks and returns the given *args*. TypeError is raised if
-        any argument does not implement the os.PathLike interface, or
-        implements it but doesn't return a string. This method is called from
-        PurePathBase.__init__().
-        """
+    def __init__(self, *args):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
@@ -95,7 +90,8 @@ class PurePath(_abc.PurePathBase):
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
                 paths.append(path)
-        return paths
+        self._raw_paths = paths
+        self._resolving = False
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts

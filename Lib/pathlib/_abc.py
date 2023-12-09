@@ -206,17 +206,9 @@ class PurePathBase:
     )
     pathmod = os.path
 
-    def __init__(self, *args):
-        self._raw_paths = self._load_args(args)
+    def __init__(self, *paths):
+        self._raw_paths = paths
         self._resolving = False
-
-    def _load_args(self, args):
-        """Returns the given *args* unchanged. Subclasses may override this
-        method to avoid adding an __init__() method that calls super() and
-        packs/unpacks arguments, which would introduce a noticeable slowdown.
-        This method is overridden in PurePath.
-        """
-        return args
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
