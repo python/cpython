@@ -4141,8 +4141,9 @@ dictiter_dealloc(dictiterobject *di)
 }
 
 static int
-dictiter_traverse(dictiterobject *di, visitproc visit, void *arg)
+dictiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    dictiterobject *di = (dictiterobject *)self;
     Py_VISIT(di->di_dict);
     Py_VISIT(di->di_result);
     return 0;
@@ -4265,7 +4266,7 @@ PyTypeObject PyDictIterKey_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)dictiter_traverse,            /* tp_traverse */
+    dictiter_traverse,                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -4364,7 +4365,7 @@ PyTypeObject PyDictIterValue_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)dictiter_traverse,            /* tp_traverse */
+    dictiter_traverse,                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -4488,7 +4489,7 @@ PyTypeObject PyDictIterItem_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)dictiter_traverse,            /* tp_traverse */
+    dictiter_traverse,                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -4606,7 +4607,7 @@ PyTypeObject PyDictRevIterKey_Type = {
     sizeof(dictiterobject),
     .tp_dealloc = (destructor)dictiter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)dictiter_traverse,
+    .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)dictreviter_iternext,
     .tp_methods = dictiter_methods
@@ -4647,7 +4648,7 @@ PyTypeObject PyDictRevIterItem_Type = {
     sizeof(dictiterobject),
     .tp_dealloc = (destructor)dictiter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)dictiter_traverse,
+    .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)dictreviter_iternext,
     .tp_methods = dictiter_methods
@@ -4659,7 +4660,7 @@ PyTypeObject PyDictRevIterValue_Type = {
     sizeof(dictiterobject),
     .tp_dealloc = (destructor)dictiter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)dictiter_traverse,
+    .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)dictreviter_iternext,
     .tp_methods = dictiter_methods
