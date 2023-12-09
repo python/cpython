@@ -1785,6 +1785,12 @@ class InstructionTests(InstructionTestCase):
         super().__init__(*args)
         self.maxDiff = None
 
+    def test_instruction_str(self):
+        # smoke test for __str__
+        instrs = dis.get_instructions(simple)
+        for instr in instrs:
+            str(instr)
+
     def test_default_first_line(self):
         actual = dis.get_instructions(simple)
         self.assertInstructionsEqual(list(actual), expected_opinfo_simple)
@@ -1955,15 +1961,16 @@ class InstructionTests(InstructionTestCase):
         self.assertEqual(10 + 2 + 1*2 + 100*2, instruction.jump_target)
 
     def test_argval_argrepr(self):
-        def f(*args):
-            return dis.Instruction._get_argval_argrepr(
-                *args, labels_map={24: 1})
+        def f(opcode, oparg, offset, *init_args):
+            arg_resolver = dis.ArgResolver(*init_args)
+            return arg_resolver.get_argval_argrepr(opcode, oparg, offset)
 
         offset = 42
         co_consts = (0, 1, 2, 3)
         names = {1: 'a', 2: 'b'}
         varname_from_oparg = lambda i : names[i]
-        args = (offset, co_consts, names, varname_from_oparg)
+        labels_map = {24: 1}
+        args = (offset, co_consts, names, varname_from_oparg, labels_map)
         self.assertEqual(f(opcode.opmap["POP_TOP"], None, *args), (None, ''))
         self.assertEqual(f(opcode.opmap["LOAD_CONST"], 1, *args), (1, '1'))
         self.assertEqual(f(opcode.opmap["LOAD_GLOBAL"], 2, *args), ('a', 'a'))
