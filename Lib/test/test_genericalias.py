@@ -209,6 +209,9 @@ class BaseTest(unittest.TestCase):
     def test_repr(self):
         class MyList(list):
             pass
+        class MyGeneric:
+            __class_getitem__ = classmethod(GenericAlias)
+
         self.assertEqual(repr(list[str]), 'list[str]')
         self.assertEqual(repr(list[()]), 'list[()]')
         self.assertEqual(repr(tuple[int, ...]), 'tuple[int, ...]')
@@ -220,6 +223,11 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(x3), 'tuple[*tuple[int, ...]]')
         self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
+
+        # gh-105488
+        self.assertTrue(repr(MyGeneric[int]).endswith('MyGeneric[int]'))
+        self.assertTrue(repr(MyGeneric[[]]).endswith('MyGeneric[[]]'))
+        self.assertTrue(repr(MyGeneric[[int, str]]).endswith('MyGeneric[[int, str]]'))
 
     def test_exposed_type(self):
         import types
@@ -314,8 +322,11 @@ class BaseTest(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             list[int][int]
+        with self.assertRaises(TypeError):
             dict[T, int][str, int]
+        with self.assertRaises(TypeError):
             dict[str, T][str, int]
+        with self.assertRaises(TypeError):
             dict[T, T][str, int]
 
     def test_equality(self):

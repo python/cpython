@@ -960,24 +960,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 }
 
 
-PyStatus
-_PyTuple_InitTypes(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyTuple_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize tuple type");
-    }
-
-    if (PyType_Ready(&PyTupleIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize tuple iterator type");
-    }
-
-    return _PyStatus_OK();
-}
-
 static void maybe_freelist_clear(PyInterpreterState *, int);
 
 void

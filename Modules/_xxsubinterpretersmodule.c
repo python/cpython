@@ -1,15 +1,9 @@
 
 /* interpreters module */
 /* low-level access to interpreter primitives */
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
 
 #include "Python.h"
-// XXX This module should not rely on internal API.
-#include "pycore_frame.h"
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_interpreteridobject.h"
+#include "interpreteridobject.h"
 
 
 #define MODULE_NAME "_xxsubinterpreters"
@@ -376,7 +370,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    struct _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         return 0;
     }
@@ -512,13 +506,14 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = _PyThreadState_GET();
-    const _PyInterpreterConfig config = isolated
-        ? (_PyInterpreterConfig)_PyInterpreterConfig_INIT
-        : (_PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+    PyThreadState *save_tstate = PyThreadState_Get();
+    assert(save_tstate != NULL);
+    const PyInterpreterConfig config = isolated
+        ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
+        : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
     // XXX Possible GILState issues?
     PyThreadState *tstate = NULL;
-    PyStatus status = _Py_NewInterpreterFromConfig(&tstate, &config);
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
     PyThreadState_Swap(save_tstate);
     if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
@@ -821,6 +816,7 @@ error:
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

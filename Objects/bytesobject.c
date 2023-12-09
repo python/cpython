@@ -423,9 +423,6 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (flags & F_ALT) {
         dtoa_flags |= Py_DTSF_ALT;
     }
-    if (flags & F_NO_NEG_0) {
-        dtoa_flags |= Py_DTSF_NO_NEG_0;
-    }
     p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
@@ -705,7 +702,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
-                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
@@ -1278,8 +1274,25 @@ _PyBytes_Find(const char *haystack, Py_ssize_t len_haystack,
               const char *needle, Py_ssize_t len_needle,
               Py_ssize_t offset)
 {
-    return stringlib_find(haystack, len_haystack,
-                          needle, len_needle, offset);
+    assert(len_haystack >= 0);
+    assert(len_needle >= 0);
+    // Extra checks because stringlib_find accesses haystack[len_haystack].
+    if (len_needle == 0) {
+        return offset;
+    }
+    if (len_needle > len_haystack) {
+        return -1;
+    }
+    assert(len_haystack >= 1);
+    Py_ssize_t res = stringlib_find(haystack, len_haystack - 1,
+                                    needle, len_needle, offset);
+    if (res == -1) {
+        Py_ssize_t last_align = len_haystack - len_needle;
+        if (memcmp(haystack + last_align, needle, len_needle) == 0) {
+            return offset + last_align;
+        }
+    }
+    return res;
 }
 
 Py_ssize_t
@@ -3087,25 +3100,6 @@ error:
     Py_DECREF(v);
     PyErr_BadInternalCall();
     return -1;
-}
-
-
-PyStatus
-_PyBytes_InitTypes(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyBytes_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize bytes type");
-    }
-
-    if (PyType_Ready(&PyBytesIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize bytes iterator type");
-    }
-
-    return _PyStatus_OK();
 }
 
 

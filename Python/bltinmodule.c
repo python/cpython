@@ -907,7 +907,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
 /*[clinic end generated code: output=0a0824aa70093116 input=11ee718a8640e527]*/
 {
-    PyObject *result, *source_copy;
+    PyObject *result = NULL, *source_copy;
     const char *str;
 
     if (locals != Py_None && !PyMapping_Check(locals)) {
@@ -923,19 +923,25 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
-            locals = PyEval_GetLocals();
+            locals = _PyEval_GetFrameLocals();
             if (locals == NULL)
                 return NULL;
         }
+        else {
+            Py_INCREF(locals);
+        }
     }
     else if (locals == Py_None)
-        locals = globals;
+        locals = Py_NewRef(globals);
+    else {
+        Py_INCREF(locals);
+    }
 
     if (globals == NULL || locals == NULL) {
         PyErr_SetString(PyExc_TypeError,
             "eval must be given globals and locals "
             "when called without a frame");
-        return NULL;
+        goto error;
     }
 
     int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
@@ -943,34 +949,38 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
     }
     if (r < 0) {
-        return NULL;
+        goto error;
     }
 
     if (PyCode_Check(source)) {
         if (PySys_Audit("exec", "O", source) < 0) {
-            return NULL;
+            goto error;
         }
 
         if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
             PyErr_SetString(PyExc_TypeError,
                 "code object passed to eval() may not contain free variables");
-            return NULL;
+            goto error;
         }
-        return PyEval_EvalCode(source, globals, locals);
+        result = PyEval_EvalCode(source, globals, locals);
+    }
+    else {
+        PyCompilerFlags cf = _PyCompilerFlags_INIT;
+        cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+        str = _Py_SourceAsString(source, "eval", "string, bytes or code", &cf, &source_copy);
+        if (str == NULL)
+            goto error;
+
+        while (*str == ' ' || *str == '\t')
+            str++;
+
+        (void)PyEval_MergeCompilerFlags(&cf);
+        result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
+        Py_XDECREF(source_copy);
     }
 
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-    cf.cf_flags = PyCF_SOURCE_IS_UTF8;
-    str = _Py_SourceAsString(source, "eval", "string, bytes or code", &cf, &source_copy);
-    if (str == NULL)
-        return NULL;
-
-    while (*str == ' ' || *str == '\t')
-        str++;
-
-    (void)PyEval_MergeCompilerFlags(&cf);
-    result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
-    Py_XDECREF(source_copy);
+  error:
+    Py_XDECREF(locals);
     return result;
 }
 
@@ -1005,9 +1015,12 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
-            locals = PyEval_GetLocals();
+            locals = _PyEval_GetFrameLocals();
             if (locals == NULL)
                 return NULL;
+        }
+        else {
+            Py_INCREF(locals);
         }
         if (!globals || !locals) {
             PyErr_SetString(PyExc_SystemError,
@@ -1015,26 +1028,30 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             return NULL;
         }
     }
-    else if (locals == Py_None)
-        locals = globals;
+    else if (locals == Py_None) {
+        locals = Py_NewRef(globals);
+    }
+    else {
+        Py_INCREF(locals);
+    }
 
     if (!PyDict_Check(globals)) {
         PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
                      Py_TYPE(globals)->tp_name);
-        return NULL;
+        goto error;
     }
     if (!PyMapping_Check(locals)) {
         PyErr_Format(PyExc_TypeError,
             "locals must be a mapping or None, not %.100s",
             Py_TYPE(locals)->tp_name);
-        return NULL;
+        goto error;
     }
     int r = PyDict_Contains(globals, &_Py_ID(__builtins__));
     if (r == 0) {
         r = PyDict_SetItem(globals, &_Py_ID(__builtins__), PyEval_GetBuiltins());
     }
     if (r < 0) {
-        return NULL;
+        goto error;
     }
 
     if (closure == Py_None) {
@@ -1047,7 +1064,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             if (closure) {
                 PyErr_SetString(PyExc_TypeError,
                     "cannot use a closure with this code object");
-                return NULL;
+                goto error;
             }
         } else {
             int closure_is_ok =
@@ -1067,12 +1084,12 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                 PyErr_Format(PyExc_TypeError,
                     "code object requires a closure of exactly length %zd",
                     num_free);
-                return NULL;
+                goto error;
             }
         }
 
         if (PySys_Audit("exec", "O", source) < 0) {
-            return NULL;
+            goto error;
         }
 
         if (!closure) {
@@ -1099,7 +1116,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                                        "string, bytes or code", &cf,
                                        &source_copy);
         if (str == NULL)
-            return NULL;
+            goto error;
         if (PyEval_MergeCompilerFlags(&cf))
             v = PyRun_StringFlags(str, Py_file_input, globals,
                                   locals, &cf);
@@ -1108,9 +1125,14 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         Py_XDECREF(source_copy);
     }
     if (v == NULL)
-        return NULL;
+        goto error;
+    Py_DECREF(locals);
     Py_DECREF(v);
     Py_RETURN_NONE;
+
+  error:
+    Py_XDECREF(locals);
+    return NULL;
 }
 
 
@@ -1720,10 +1742,7 @@ static PyObject *
 builtin_locals_impl(PyObject *module)
 /*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
 {
-    PyObject *d;
-
-    d = PyEval_GetLocals();
-    return Py_XNewRef(d);
+    return _PyEval_GetFrameLocals();
 }
 
 
@@ -2164,17 +2183,29 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 
         /* stdin is a text stream, so it must have an encoding. */
         stdin_encoding = PyObject_GetAttr(fin, &_Py_ID(encoding));
+        if (stdin_encoding == NULL) {
+            tty = 0;
+            goto _readline_errors;
+        }
         stdin_errors = PyObject_GetAttr(fin, &_Py_ID(errors));
-        if (!stdin_encoding || !stdin_errors ||
-                !PyUnicode_Check(stdin_encoding) ||
-                !PyUnicode_Check(stdin_errors)) {
+        if (stdin_errors == NULL) {
+            tty = 0;
+            goto _readline_errors;
+        }
+        if (!PyUnicode_Check(stdin_encoding) ||
+            !PyUnicode_Check(stdin_errors))
+        {
             tty = 0;
             goto _readline_errors;
         }
         stdin_encoding_str = PyUnicode_AsUTF8(stdin_encoding);
-        stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
-        if (!stdin_encoding_str || !stdin_errors_str)
+        if (stdin_encoding_str == NULL) {
             goto _readline_errors;
+        }
+        stdin_errors_str = PyUnicode_AsUTF8(stdin_errors);
+        if (stdin_errors_str == NULL) {
+            goto _readline_errors;
+        }
         tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
         if (tmp == NULL)
             PyErr_Clear();
@@ -2185,17 +2216,29 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             const char *stdout_encoding_str, *stdout_errors_str;
             PyObject *stringpo;
             stdout_encoding = PyObject_GetAttr(fout, &_Py_ID(encoding));
+            if (stdout_encoding == NULL) {
+                tty = 0;
+                goto _readline_errors;
+            }
             stdout_errors = PyObject_GetAttr(fout, &_Py_ID(errors));
-            if (!stdout_encoding || !stdout_errors ||
-                    !PyUnicode_Check(stdout_encoding) ||
-                    !PyUnicode_Check(stdout_errors)) {
+            if (stdout_errors == NULL) {
+                tty = 0;
+                goto _readline_errors;
+            }
+            if (!PyUnicode_Check(stdout_encoding) ||
+                !PyUnicode_Check(stdout_errors))
+            {
                 tty = 0;
                 goto _readline_errors;
             }
             stdout_encoding_str = PyUnicode_AsUTF8(stdout_encoding);
-            stdout_errors_str = PyUnicode_AsUTF8(stdout_errors);
-            if (!stdout_encoding_str || !stdout_errors_str)
+            if (stdout_encoding_str == NULL) {
                 goto _readline_errors;
+            }
+            stdout_errors_str = PyUnicode_AsUTF8(stdout_errors);
+            if (stdout_errors_str == NULL) {
+                goto _readline_errors;
+            }
             stringpo = PyObject_Str(prompt);
             if (stringpo == NULL)
                 goto _readline_errors;
@@ -2316,7 +2359,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 {
     PyObject *round, *result;
 
-    if (Py_TYPE(number)->tp_dict == NULL) {
+    if (!_PyType_IsReady(Py_TYPE(number))) {
         if (PyType_Ready(Py_TYPE(number)) < 0)
             return NULL;
     }
@@ -2419,7 +2462,7 @@ builtin_vars_impl(PyObject *module, PyObject *object)
     PyObject *d;
 
     if (object == NULL) {
-        d = Py_XNewRef(PyEval_GetLocals());
+        d = _PyEval_GetFrameLocals();
     }
     else {
         if (_PyObject_LookupAttr(object, &_Py_ID(__dict__), &d) == 0) {
@@ -2562,7 +2605,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 // Improved Kahan–Babuška algorithm by Arnold Neumaier
-                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                // Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
+                // zur Summation endlicher Summen.  Z. angew. Math. Mech.,
+                // 54: 39-51. https://doi.org/10.1002/zamm.19740540106
+                // https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
                 double x = PyFloat_AS_DOUBLE(item);
                 double t = f_result + x;
                 if (fabs(f_result) >= fabs(x)) {
@@ -3014,9 +3060,16 @@ static PyMethodDef builtin_methods[] = {
 };
 
 PyDoc_STRVAR(builtin_doc,
-"Built-in functions, exceptions, and other objects.\n\
+"Built-in functions, types, exceptions, and other objects.\n\
 \n\
-Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.");
+This module provides direct access to all 'built-in'\n\
+identifiers of Python; for example, builtins.len is\n\
+the full name for the built-in function len().\n\
+\n\
+This module is not normally accessed explicitly by most\n\
+applications, but can be useful in modules that provide\n\
+objects with the same name as a built-in value, but in\n\
+which the built-in of that name is also needed.");
 
 static struct PyModuleDef builtinsmodule = {
     PyModuleDef_HEAD_INIT,

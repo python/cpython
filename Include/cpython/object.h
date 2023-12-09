@@ -227,7 +227,7 @@ struct _typeobject {
     vectorcallfunc tp_vectorcall;
 
     /* bitset of which type-watchers care about this type */
-    char tp_watched;
+    unsigned char tp_watched;
 };
 
 /* This struct is used by the specializer
@@ -283,6 +283,7 @@ PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
@@ -553,6 +554,7 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
         Py_TRASHCAN_END; \
     } while(0);
 
+PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
 PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);

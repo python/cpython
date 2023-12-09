@@ -93,37 +93,6 @@ class PointerTestCase(unittest.TestCase):
         x = pointer(i)
         self.assertEqual(x._objects, {'1': i})
 
-class DeletePointerTestCase(unittest.TestCase):
-    @unittest.skip('test disabled')
-    def test_X(self):
-        class X(Structure):
-            _fields_ = [("p", POINTER(c_char_p))]
-        x = X()
-        i = c_char_p("abc def")
-        from sys import getrefcount as grc
-        print("2?", grc(i))
-        x.p = pointer(i)
-        print("3?", grc(i))
-        for i in range(320):
-            c_int(99)
-            x.p[0]
-        print(x.p[0])
-##        del x
-##        print "2?", grc(i)
-##        del i
-        import gc
-        gc.collect()
-        for i in range(320):
-            c_int(99)
-            x.p[0]
-        print(x.p[0])
-        print(x.p.contents)
-##        print x._objects
-
-        x.p[0] = "spam spam"
-##        print x.p[0]
-        print("+" * 42)
-        print(x._objects)
 
 class PointerToStructure(unittest.TestCase):
     def test(self):

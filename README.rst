@@ -1,5 +1,5 @@
-This is Python version 3.12.0 alpha 7
-=====================================
+This is Python version 3.12.0
+=============================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
@@ -209,30 +209,6 @@ install``.  Install all other versions using ``make altinstall``.
 For example, if you want to install Python 2.7, 3.6, and 3.12 with 3.12 being the
 primary version, you would execute ``make install`` in your 3.12 build directory
 and ``make altinstall`` in the others.
-
-
-Issue Tracker and Mailing List
-------------------------------
-
-Bug reports are welcome!  You can use Github to `report bugs
-<https://github.com/python/cpython/issues>`_, and/or `submit pull requests
-<https://github.com/python/cpython/pulls>`_.
-
-You can also follow development discussion on the `python-dev mailing list
-<https://mail.python.org/mailman/listinfo/python-dev/>`_.
-
-
-Proposals for enhancement
--------------------------
-
-If you have a proposal to change Python, you may want to send an email to the
-`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
-Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
-All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`peps.python.org <https://peps.python.org/>`_.
-
-.. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
-.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 Release Schedule

@@ -1,0 +1,2 @@
+Ensure the signature of :func:`os.path.isdir` is identical on all platforms.
+Patch by Amin Alaee.

@@ -11,17 +11,22 @@ extern "C" {
 struct _py_object_runtime_state {
 #ifdef Py_REF_DEBUG
     Py_ssize_t interpreter_leaks;
-#else
-    int _not_used;
 #endif
+    int _not_used;
 };
 
 struct _py_object_state {
 #ifdef Py_REF_DEBUG
     Py_ssize_t reftotal;
-#else
-    int _not_used;
 #endif
+#ifdef Py_TRACE_REFS
+    /* Head of circular doubly-linked list of all objects.  These are linked
+     * together via the _ob_prev and _ob_next members of a PyObject, which
+     * exist only in a Py_TRACE_REFS build.
+     */
+    PyObject refchain;
+#endif
+    int _not_used;
 };
 
 

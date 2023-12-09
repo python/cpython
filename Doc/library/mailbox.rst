@@ -167,7 +167,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       Return a representation of the message corresponding to *key*. If no such
       message exists, *default* is returned if the method was called as
       :meth:`get` and a :exc:`KeyError` exception is raised if the method was
-      called as :meth:`__getitem__`. The message is represented as an instance
+      called as :meth:`~object.__getitem__`. The message is represented as an instance
       of the appropriate format-specific :class:`Message` subclass unless a
       custom message factory was specified when the :class:`Mailbox` instance
       was initialized.
@@ -477,7 +477,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -588,7 +588,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls. For MH mailboxes, locking
+      :c:func:`!flock` and :c:func:`!lockf` system calls. For MH mailboxes, locking
       the mailbox means locking the :file:`.mh_sequences` file and, only for the
       duration of any operations that affect them, locking individual message
       files.
@@ -686,7 +686,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -737,7 +737,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::

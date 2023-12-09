@@ -1,0 +1,4 @@
+# Requirements file for hypothesis that
+# we use to run our property-based tests in CI.
+
+hypothesis==6.84.0

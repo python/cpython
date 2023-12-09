@@ -529,6 +529,12 @@ class ComplexTest(unittest.TestCase):
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
 
+    def test_constructor_negative_nans_from_string(self):
+        self.assertEqual(copysign(1., complex("-nan").real), -1.)
+        self.assertEqual(copysign(1., complex("-nanj").imag), -1.)
+        self.assertEqual(copysign(1., complex("-nan-nanj").real), -1.)
+        self.assertEqual(copysign(1., complex("-nan-nanj").imag), -1.)
+
     def test_underscores(self):
         # check underscores
         for lit in VALID_UNDERSCORE_LITERALS:
@@ -569,6 +575,7 @@ class ComplexTest(unittest.TestCase):
         test(complex(NAN, 1), "(nan+1j)")
         test(complex(1, NAN), "(1+nanj)")
         test(complex(NAN, NAN), "(nan+nanj)")
+        test(complex(-NAN, -NAN), "(nan+nanj)")
 
         test(complex(0, INF), "infj")
         test(complex(0, -INF), "-infj")

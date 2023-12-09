@@ -934,7 +934,7 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
 "    Maximum number of splits (starting from the left).\n"
@@ -1058,7 +1058,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
 "    Maximum number of splits (starting from the left).\n"
@@ -1497,4 +1497,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05d942840635dadf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32edbbf75dc8a03b input=a9049054013a1b77]*/

@@ -23,6 +23,10 @@
 *.gc??
 *.profclang?
 *.profraw
+# Copies of binaries before BOLT optimizations.
+*.prebolt
+# BOLT profile data.
+*.fdata
 *.dyn
 .gdb_history
 .purify
@@ -124,6 +128,7 @@ Tools/unicode/data/
 /platform
 /profile-clean-stamp
 /profile-run-stamp
+/profile-bolt-stamp
 /Python/deepfreeze/*.c
 /pybuilddir.txt
 /pyconfig.h
@@ -151,6 +156,3 @@ Python/frozen_modules/MANIFEST
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
-
-# main branch only: ABI files are not checked/maintained
-Doc/data/python*.abi

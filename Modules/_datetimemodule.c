@@ -4620,7 +4620,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
     }
 
     int hour = 0, minute = 0, second = 0, microsecond = 0;
-    int tzoffset, tzimicrosecond = 0;
+    int tzoffset = 0, tzimicrosecond = 0;
     int rv = parse_isoformat_time(p, len,
                                   &hour, &minute, &second, &microsecond,
                                   &tzoffset, &tzimicrosecond);
@@ -5144,6 +5144,13 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
 static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.datetime.utcnow() is deprecated and scheduled for removal in a "
+        "future version. Use timezone-aware objects to represent datetimes "
+        "in UTC: datetime.datetime.now(datetime.UTC).", 1))
+    {
+        return NULL;
+    }
     return datetime_best_possible(cls, _PyTime_gmtime, Py_None);
 }
 
@@ -5180,6 +5187,13 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal "
+        "in a future version. Use timezone-aware objects to represent "
+        "datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).", 1))
+    {
+        return NULL;
+    }
     PyObject *timestamp;
     PyObject *result = NULL;
 
@@ -6857,24 +6871,49 @@ _datetime_exec(PyObject *module)
     assert(DI100Y == days_before_year(100+1));
 
     us_per_ms = PyLong_FromLong(1000);
+    if (us_per_ms == NULL) {
+        goto error;
+    }
     us_per_second = PyLong_FromLong(1000000);
+    if (us_per_second == NULL) {
+        goto error;
+    }
     us_per_minute = PyLong_FromLong(60000000);
+    if (us_per_minute == NULL) {
+        goto error;
+    }
     seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (us_per_ms == NULL || us_per_second == NULL ||
-        us_per_minute == NULL || seconds_per_day == NULL) {
-        return -1;
+    if (seconds_per_day == NULL) {
+        goto error;
     }
 
     /* The rest are too big for 32-bit ints, but even
      * us_per_week fits in 40 bits, so doubles should be exact.
      */
     us_per_hour = PyLong_FromDouble(3600000000.0);
-    us_per_day = PyLong_FromDouble(86400000000.0);
-    us_per_week = PyLong_FromDouble(604800000000.0);
-    if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL) {
-        return -1;
+    if (us_per_hour == NULL) {
+        goto error;
     }
+    us_per_day = PyLong_FromDouble(86400000000.0);
+    if (us_per_day == NULL) {
+        goto error;
+    }
+    us_per_week = PyLong_FromDouble(604800000000.0);
+    if (us_per_week == NULL) {
+        goto error;
+    }
+
     return 0;
+
+error:
+    Py_XDECREF(us_per_ms);
+    Py_XDECREF(us_per_second);
+    Py_XDECREF(us_per_minute);
+    Py_XDECREF(us_per_hour);
+    Py_XDECREF(us_per_day);
+    Py_XDECREF(us_per_week);
+    Py_XDECREF(seconds_per_day);
+    return -1;
 }
 
 static struct PyModuleDef datetimemodule = {

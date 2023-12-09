@@ -16,6 +16,7 @@ def _iterdump(connection):
     directly but instead called from the Connection method, iterdump().
     """
 
+    writeable_schema = False
     cu = connection.cursor()
     yield('BEGIN TRANSACTION;')
 
@@ -42,13 +43,15 @@ def _iterdump(connection):
             yield('ANALYZE "sqlite_master";')
         elif table_name.startswith('sqlite_'):
             continue
-        # NOTE: Virtual table support not implemented
-        #elif sql.startswith('CREATE VIRTUAL TABLE'):
-        #    qtable = table_name.replace("'", "''")
-        #    yield("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"\
-        #        "VALUES('table','{0}','{0}',0,'{1}');".format(
-        #        qtable,
-        #        sql.replace("''")))
+        elif sql.startswith('CREATE VIRTUAL TABLE'):
+            if not writeable_schema:
+                writeable_schema = True
+                yield('PRAGMA writable_schema=ON;')
+            yield("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
+                  "VALUES('table','{0}','{0}',0,'{1}');".format(
+                      table_name.replace("'", "''"),
+                      sql.replace("'", "''"),
+                  ))
         else:
             yield('{0};'.format(sql))
 
@@ -73,6 +76,9 @@ def _iterdump(connection):
     schema_res = cu.execute(q)
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
+
+    if writeable_schema:
+        yield('PRAGMA writable_schema=OFF;')
 
     # gh-79009: Yield statements concerning the sqlite_sequence table at the
     # end of the transaction.

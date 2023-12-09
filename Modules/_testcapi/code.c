@@ -1,4 +1,5 @@
 #include "parts.h"
+#include "util.h"
 
 static Py_ssize_t
 get_code_extra_index(PyInterpreterState* interp) {
@@ -9,7 +10,7 @@ get_code_extra_index(PyInterpreterState* interp) {
     PyObject *interp_dict = PyInterpreterState_GetDict(interp); // borrowed
     assert(interp_dict);  // real users would handle missing dict... somehow
 
-    PyObject *index_obj = PyDict_GetItemString(interp_dict, key); // borrowed
+    PyObject *index_obj = _PyDict_GetItemStringWithError(interp_dict, key); // borrowed
     Py_ssize_t index = 0;
     if (!index_obj) {
         if (PyErr_Occurred()) {
@@ -74,7 +75,7 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
     }
 
     // Check the value is initially NULL
-    void *extra;
+    void *extra = UNINITIALIZED_PTR;
     int res = PyUnstable_Code_GetExtra(test_func_code, code_extra_index, &extra);
     if (res < 0) {
         goto finally;
@@ -87,6 +88,7 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
         goto finally;
     }
     // Assert it was set correctly
+    extra = UNINITIALIZED_PTR;
     res = PyUnstable_Code_GetExtra(test_func_code, code_extra_index, &extra);
     if (res < 0) {
         goto finally;

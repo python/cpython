@@ -50,11 +50,13 @@ The following token type values aren't used by the C tokenizer but are needed fo
 the :mod:`tokenize` module.
 
 .. data:: COMMENT
+   :noindex:
 
    Token value used to indicate a comment.
 
 
 .. data:: NL
+   :noindex:
 
    Token value used to indicate a non-terminating newline.  The
    :data:`NEWLINE` token indicates the end of a logical line of Python code;

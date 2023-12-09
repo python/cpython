@@ -59,7 +59,7 @@
           Inputs="@(_OpcodeSources)" Outputs="@(_OpcodeOutputs)"
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_OpcodeOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
-    <Exec Command="$(PythonForBuild) Tools\build\generate_opcode_h.py Lib\opcode.py Include\opcode.h Include\internal\pycore_opcode.h"
+    <Exec Command="$(PythonForBuild) Tools\build\generate_opcode_h.py Lib\opcode.py Include\opcode.h Include\internal\pycore_opcode.h Include\internal\pycore_intrinsics.h"
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) Python\makeopcodetargets.py Python\opcode_targets.h"
           WorkingDirectory="$(PySourcePath)" />
@@ -104,8 +104,9 @@
     <_LicenseSources Include="$(PySourcePath)LICENSE;
                               $(PySourcePath)PC\crtlicense.txt;
                               $(bz2Dir)LICENSE;
-                              $(opensslOutDir)LICENSE;
                               $(libffiDir)LICENSE;" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE.txt" Condition="Exists('$(opensslOutDir)LICENSE.txt')" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE" Condition="!Exists('$(opensslOutDir)LICENSE.txt')" />
     <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
                               $(tcltkDir)tklicense.terms;
                               $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />

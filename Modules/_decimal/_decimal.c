@@ -246,14 +246,12 @@ value_error_int(const char *mesg)
     return -1;
 }
 
-#ifdef CONFIG_32
 static PyObject *
 value_error_ptr(const char *mesg)
 {
     PyErr_SetString(PyExc_ValueError, mesg);
     return NULL;
 }
-#endif
 
 static int
 type_error_int(const char *mesg)
@@ -540,6 +538,8 @@ getround(PyObject *v)
    initialized to new SignalDicts. Once a SignalDict is tied to
    a context, it cannot be deleted. */
 
+static const char *INVALID_SIGNALDICT_ERROR_MSG = "invalid signal dict";
+
 static int
 signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
 {
@@ -548,8 +548,11 @@ signaldict_init(PyObject *self, PyObject *args UNUSED, PyObject *kwds UNUSED)
 }
 
 static Py_ssize_t
-signaldict_len(PyObject *self UNUSED)
+signaldict_len(PyObject *self)
 {
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+    }
     return SIGNAL_MAP_LEN;
 }
 
@@ -557,6 +560,9 @@ static PyObject *SignalTuple;
 static PyObject *
 signaldict_iter(PyObject *self UNUSED)
 {
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
     return PyTuple_Type.tp_iter(SignalTuple);
 }
 
@@ -564,6 +570,9 @@ static PyObject *
 signaldict_getitem(PyObject *self, PyObject *key)
 {
     uint32_t flag;
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
 
     flag = exception_as_flag(key);
     if (flag & DEC_ERRORS) {
@@ -578,6 +587,10 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     uint32_t flag;
     int x;
+
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_int(INVALID_SIGNALDICT_ERROR_MSG);
+    }
 
     if (value == NULL) {
         return value_error_int("signal keys cannot be deleted");
@@ -611,6 +624,10 @@ signaldict_repr(PyObject *self)
     const char *b[SIGNAL_MAP_LEN]; /* bool */
     int i;
 
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
+
     assert(SIGNAL_MAP_LEN == 9);
 
     for (cm=signal_map, i=0; cm->name != NULL; cm++, i++) {
@@ -632,6 +649,9 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
     PyObject *res = Py_NotImplemented;
 
     assert(PyDecSignalDict_Check(v));
+    if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
 
     if (op == Py_EQ || op == Py_NE) {
         if (PyDecSignalDict_Check(w)) {
@@ -660,6 +680,9 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 static PyObject *
 signaldict_copy(PyObject *self, PyObject *args UNUSED)
 {
+    if (SdFlagAddr(self) == NULL) {
+        return value_error_ptr(INVALID_SIGNALDICT_ERROR_MSG);
+    }
     return flags_as_dict(SdFlags(self));
 }
 
@@ -3615,9 +3638,13 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
             goto error;
         }
         Py_SETREF(numerator, _py_long_floor_divide(numerator, tmp));
+        if (numerator == NULL) {
+            Py_DECREF(tmp);
+            goto error;
+        }
         Py_SETREF(denominator, _py_long_floor_divide(denominator, tmp));
         Py_DECREF(tmp);
-        if (numerator == NULL || denominator == NULL) {
+        if (denominator == NULL) {
             goto error;
         }
     }
@@ -5867,16 +5894,15 @@ PyInit__decimal(void)
     ASSIGN_PTR(m, PyModule_Create(&_decimal_module));
 
     /* Add types to the module */
-    CHECK_INT(PyModule_AddObject(m, "Decimal", Py_NewRef(&PyDec_Type)));
-    CHECK_INT(PyModule_AddObject(m, "Context",
-                                 Py_NewRef(&PyDecContext_Type)));
-    CHECK_INT(PyModule_AddObject(m, "DecimalTuple", Py_NewRef(DecimalTuple)));
+    CHECK_INT(PyModule_AddObjectRef(m, "Decimal", (PyObject *)&PyDec_Type));
+    CHECK_INT(PyModule_AddObjectRef(m, "Context", (PyObject *)&PyDecContext_Type));
+    CHECK_INT(PyModule_AddObjectRef(m, "DecimalTuple", (PyObject *)DecimalTuple));
 
     /* Create top level exception */
     ASSIGN_PTR(DecimalException, PyErr_NewException(
                                      "decimal.DecimalException",
                                      PyExc_ArithmeticError, NULL));
-    CHECK_INT(PyModule_AddObject(m, "DecimalException", Py_NewRef(DecimalException)));
+    CHECK_INT(PyModule_AddObjectRef(m, "DecimalException", DecimalException));
 
     /* Create signal tuple */
     ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
@@ -5916,7 +5942,7 @@ PyInit__decimal(void)
         Py_DECREF(base);
 
         /* add to module */
-        CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
+        CHECK_INT(PyModule_AddObjectRef(m, cm->name, cm->ex));
 
         /* add to signal tuple */
         PyTuple_SET_ITEM(SignalTuple, i, Py_NewRef(cm->ex));
@@ -5945,38 +5971,38 @@ PyInit__decimal(void)
         ASSIGN_PTR(cm->ex, PyErr_NewException(cm->fqname, base, NULL));
         Py_DECREF(base);
 
-        CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
+        CHECK_INT(PyModule_AddObjectRef(m, cm->name, cm->ex));
     }
 
 
     /* Init default context template first */
     ASSIGN_PTR(default_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
-    CHECK_INT(PyModule_AddObject(m, "DefaultContext",
-                                 Py_NewRef(default_context_template)));
+    CHECK_INT(PyModule_AddObjectRef(m, "DefaultContext",
+                                    default_context_template));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_False)));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_False));
 #else
     ASSIGN_PTR(current_context_var, PyContextVar_New("decimal_context", NULL));
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_True)));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_True));
 #endif
-    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_NewRef(Py_True)));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_THREADS", Py_True));
 
     /* Init basic context template */
     ASSIGN_PTR(basic_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_basic_context(basic_context_template);
-    CHECK_INT(PyModule_AddObject(m, "BasicContext",
-                                 Py_NewRef(basic_context_template)));
+    CHECK_INT(PyModule_AddObjectRef(m, "BasicContext",
+                                    basic_context_template));
 
     /* Init extended context template */
     ASSIGN_PTR(extended_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_extended_context(extended_context_template);
-    CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
-                                 Py_NewRef(extended_context_template)));
+    CHECK_INT(PyModule_AddObjectRef(m, "ExtendedContext",
+                                    extended_context_template));
 
 
     /* Init mpd_ssize_t constants */
@@ -5995,7 +6021,7 @@ PyInit__decimal(void)
     /* Init string constants */
     for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
         ASSIGN_PTR(round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
-        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], Py_NewRef(round_map[i])));
+        CHECK_INT(PyModule_AddObjectRef(m, mpd_round_string[i], round_map[i]));
     }
 
     /* Add specification version number */

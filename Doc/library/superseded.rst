@@ -9,6 +9,7 @@ backwards compatibility. They have been superseded by other modules.
 
 
 .. toctree::
+   :maxdepth: 1
 
    aifc.rst
    audioop.rst
@@ -17,7 +18,6 @@ backwards compatibility. They have been superseded by other modules.
    chunk.rst
    crypt.rst
    imghdr.rst
-   imp.rst
    mailcap.rst
    msilib.rst
    nis.rst

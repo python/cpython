@@ -20,7 +20,8 @@ import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip, TEST_HOME_DIR)
+                          requires_venv_with_pip, TEST_HOME_DIR,
+                          requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -560,6 +561,7 @@ class BasicTest(BaseTest):
                                     platlibdir,
                                     stdlib_zip)
         additional_pythonpath_for_non_installed = []
+
         # Copy stdlib files to the non-installed python so venv can
         # correctly calculate the prefix.
         for eachpath in sys.path:
@@ -569,14 +571,19 @@ class BasicTest(BaseTest):
                         eachpath,
                         os.path.join(non_installed_dir, platlibdir))
             elif os.path.isfile(os.path.join(eachpath, "os.py")):
-                for name in os.listdir(eachpath):
+                names = os.listdir(eachpath)
+                ignored_names = copy_python_src_ignore(eachpath, names)
+                for name in names:
+                    if name in ignored_names:
+                        continue
                     if name == "site-packages":
                         continue
                     fn = os.path.join(eachpath, name)
                     if os.path.isfile(fn):
                         shutil.copy(fn, libdir)
                     elif os.path.isdir(fn):
-                        shutil.copytree(fn, os.path.join(libdir, name))
+                        shutil.copytree(fn, os.path.join(libdir, name),
+                                        ignore=copy_python_src_ignore)
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)
@@ -600,15 +607,14 @@ class BasicTest(BaseTest):
             ld_library_path_env = "DYLD_LIBRARY_PATH"
         else:
             ld_library_path_env = "LD_LIBRARY_PATH"
-        # Note that in address sanitizer mode, the current runtime
-        # implementation leaks memory due to not being able to correctly
-        # clean all unicode objects during runtime shutdown. Therefore,
-        # this uses subprocess.run instead of subprocess.check_call to
-        # maintain the core of the test while not failing due to the refleaks.
-        # This should be able to use check_call once all refleaks are fixed.
-        subprocess.run(cmd,
-                       env={"PYTHONPATH": pythonpath,
-                            ld_library_path_env: ld_library_path})
+        child_env = {
+                "PYTHONPATH": pythonpath,
+                ld_library_path_env: ld_library_path,
+        }
+        if asan_options := os.environ.get("ASAN_OPTIONS"):
+            # prevent https://github.com/python/cpython/issues/104839
+            child_env["ASAN_OPTIONS"] = asan_options
+        subprocess.check_call(cmd, env=child_env)
         envpy = os.path.join(self.env_dir, self.bindir, self.exe)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
@@ -776,6 +782,7 @@ class EnsurePipTest(BaseTest):
             )
 
     @requires_venv_with_pip()
+    @requires_resource('cpu')
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

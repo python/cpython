@@ -516,12 +516,12 @@ _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
     return result;
 
   failure:
-    if (handle != SEM_FAILED)
-        SEM_CLOSE(handle);
-    PyMem_Free(name_copy);
     if (!PyErr_Occurred()) {
         _PyMp_SetError(NULL, MP_STANDARD_ERROR);
     }
+    if (handle != SEM_FAILED)
+        SEM_CLOSE(handle);
+    PyMem_Free(name_copy);
     return NULL;
 }
 
@@ -556,8 +556,9 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
     if (name != NULL) {
         handle = sem_open(name, 0);
         if (handle == SEM_FAILED) {
+            PyErr_SetFromErrno(PyExc_OSError);
             PyMem_Free(name_copy);
-            return PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
         }
     }
 #endif

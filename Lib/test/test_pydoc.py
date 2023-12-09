@@ -24,7 +24,8 @@ from collections import namedtuple
 from urllib.request import urlopen, urlcleanup
 from test.support import import_helper
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import (assert_python_ok,
+                                        assert_python_failure, spawn_python)
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
@@ -39,8 +40,8 @@ class nonascii:
 
 if test.support.HAVE_DOCSTRINGS:
     expected_data_docstrings = (
-        'dictionary for instance variables (if defined)',
-        'list of weak references to the object (if defined)',
+        'dictionary for instance variables',
+        'list of weak references to the object',
         ) * 2
 else:
     expected_data_docstrings = ('', '', '', '')
@@ -104,10 +105,10 @@ CLASSES
      |  Data descriptors defined here:
      |
      |  __dict__
-     |      dictionary for instance variables (if defined)
+     |      dictionary for instance variables
      |
      |  __weakref__
-     |      list of weak references to the object (if defined)
+     |      list of weak references to the object
 
 FUNCTIONS
     doc_func()
@@ -165,16 +166,16 @@ class A(builtins.object)
 
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 
 class B(builtins.object)
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
         __annotations__ = {'NO_MEANING': <class 'str'>}
@@ -191,9 +192,9 @@ class C(builtins.object)
         __class_getitem__(item) from builtins.type
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-             list of weak references to the object (if defined)
+             list of weak references to the object
 
 Functions
     doc_func()
@@ -631,6 +632,21 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
+    def test_fail_help_cli(self):
+        elines = (missing_pattern % 'abd').splitlines()
+        with spawn_python("-c" "help()") as proc:
+            out, _ = proc.communicate(b"abd")
+            olines = out.decode().splitlines()[-9:-6]
+            olines[0] = olines[0].removeprefix('help> ')
+            self.assertEqual(elines, olines)
+
+    def test_fail_help_output_redirect(self):
+        with StringIO() as buf:
+            helper = pydoc.Helper(output=buf)
+            helper.help("abd")
+            expected = missing_pattern % "abd"
+            self.assertEqual(expected, buf.getvalue().strip().replace('\n', os.linesep))
+
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
@@ -810,10 +826,10 @@ class B(A)
  |  Data descriptors inherited from A:
  |
  |  __dict__
- |      dictionary for instance variables (if defined)
+ |      dictionary for instance variables
  |
  |  __weakref__
- |      list of weak references to the object (if defined)
+ |      list of weak references to the object
 ''' % __name__)
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
@@ -842,9 +858,9 @@ class B(A)
 
     Data descriptors inherited from A:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 """
         as_text = html2text(doc)
         expected_lines = [line.strip() for line in expected_text.split("\n") if line]

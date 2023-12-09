@@ -151,14 +151,14 @@ calculate_suggestions(PyObject *dir,
     }
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
+        if (_PyUnicode_Equal(name, item)) {
+            continue;
+        }
         Py_ssize_t item_size;
         const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
             PyMem_Free(buffer);
             return NULL;
-        }
-        if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
-            continue;
         }
         // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
@@ -220,37 +220,48 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     assert(code != NULL && code->co_localsplusnames != NULL);
 
     PyObject *varnames = _PyCode_GetVarnames(code);
+    Py_DECREF(code);
     if (varnames == NULL) {
         return NULL;
     }
     PyObject *dir = PySequence_List(varnames);
     Py_DECREF(varnames);
-    Py_DECREF(code);
     if (dir == NULL) {
         return NULL;
     }
 
     // Are we inside a method and the instance has an attribute called 'name'?
-    if (PySequence_Contains(dir, &_Py_ID(self)) > 0) {
+    int res = PySequence_Contains(dir, &_Py_ID(self));
+    if (res < 0) {
+        goto error;
+    }
+    if (res > 0) {
         PyObject* locals = PyFrame_GetLocals(frame);
         if (!locals) {
             goto error;
         }
-        PyObject* self = PyDict_GetItem(locals, &_Py_ID(self)); /* borrowed */
-        Py_DECREF(locals);
+        PyObject* self = PyDict_GetItemWithError(locals, &_Py_ID(self)); /* borrowed */
         if (!self) {
+            Py_DECREF(locals);
             goto error;
         }
 
-        if (PyObject_HasAttr(self, name)) {
+        PyObject *value;
+        res = _PyObject_LookupAttr(self, name, &value);
+        Py_DECREF(locals);
+        if (res < 0) {
+            goto error;
+        }
+        if (value) {
+            Py_DECREF(value);
             Py_DECREF(dir);
-            return PyUnicode_FromFormat("self.%S", name);
+            return PyUnicode_FromFormat("self.%U", name);
         }
     }
 
     PyObject *suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
-    if (suggestions != NULL) {
+    if (suggestions != NULL || PyErr_Occurred()) {
         return suggestions;
     }
 
@@ -260,7 +271,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     }
     suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
-    if (suggestions != NULL) {
+    if (suggestions != NULL || PyErr_Occurred()) {
         return suggestions;
     }
 
@@ -319,15 +330,16 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     assert(frame != NULL);
 
     PyObject* suggestion = get_suggestions_for_name_error(name, frame);
-    bool is_stdlib_module = is_name_stdlib_module(name);
-
-    if (suggestion == NULL && !is_stdlib_module) {
+    if (suggestion == NULL && PyErr_Occurred()) {
         return NULL;
     }
 
     // Add a trailer ". Did you mean: (...)?"
     PyObject* result = NULL;
-    if (!is_stdlib_module) {
+    if (!is_name_stdlib_module(name)) {
+        if (suggestion == NULL) {
+            return NULL;
+        }
         result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
     } else if (suggestion == NULL) {
         result = PyUnicode_FromFormat(". Did you forget to import %R?", name);

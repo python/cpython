@@ -25,7 +25,7 @@ extern "C" {
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
 #include "pycore_import.h"        // struct _import_state
-#include "pycore_instruments.h"   // PY_MONITORING_EVENTS
+#include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_object_state.h"   // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct obmalloc_state
@@ -50,9 +50,20 @@ struct _is {
 
     PyInterpreterState *next;
 
+    int64_t id;
+    int64_t id_refcount;
+    int requires_idref;
+    PyThread_type_lock id_mutex;
+
+    /* Has been initialized to a safe state.
+
+       In order to be effective, this must be set to 0 during or right
+       after allocation. */
+    int _initialized;
+    int finalizing;
+
     uint64_t monitoring_version;
     uint64_t last_restart_version;
-
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
@@ -71,29 +82,44 @@ struct _is {
        Get runtime from tstate: tstate->interp->runtime. */
     struct pyruntimestate *runtime;
 
-    int64_t id;
-    int64_t id_refcount;
-    int requires_idref;
-    PyThread_type_lock id_mutex;
+    /* Set by Py_EndInterpreter().
 
-    /* Has been initialized to a safe state.
+       Use _PyInterpreterState_GetFinalizing()
+       and _PyInterpreterState_SetFinalizing()
+       to access it, don't access it directly. */
+    _Py_atomic_address _finalizing;
 
-       In order to be effective, this must be set to 0 during or right
-       after allocation. */
-    int _initialized;
-    int finalizing;
-
-    struct _obmalloc_state obmalloc;
-
-    struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
-    struct _import_state imports;
+    /* The following fields are here to avoid allocation during init.
+       The data is exposed through PyInterpreterState pointer fields.
+       These fields should not be accessed directly outside of init.
+
+       All other PyInterpreterState pointer fields are populated when
+       needed and default to NULL.
+
+       For now there are some exceptions to that rule, which require
+       allocation during init.  These will be addressed on a case-by-case
+       basis.  Also see _PyRuntimeState regarding the various mutex fields.
+       */
 
     // Dictionary of the sys module
     PyObject *sysdict;
+
     // Dictionary of the builtins module
     PyObject *builtins;
+
+    struct _ceval_state ceval;
+
+    struct _import_state imports;
+
+    /* The per-interpreter GIL, which might not be used. */
+    struct _gil_runtime_state _gil;
+
+     /* ---------- IMPORTANT ---------------------------
+     The fields above this line are declared as early as
+     possible to facilitate out-of-process observability
+     tools. */
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
@@ -126,6 +152,8 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 
+    struct _obmalloc_state obmalloc;
+
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
@@ -154,31 +182,19 @@ struct _is {
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
 
-    _Py_Monitors monitors;
+    _Py_GlobalMonitors monitors;
     bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
-    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][PY_MONITORING_EVENTS];
+    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-    /* The following fields are here to avoid allocation during init.
-       The data is exposed through PyInterpreterState pointer fields.
-       These fields should not be accessed directly outside of init.
-
-       All other PyInterpreterState pointer fields are populated when
-       needed and default to NULL.
-
-       For now there are some exceptions to that rule, which require
-       allocation during init.  These will be addressed on a case-by-case
-       basis.  Also see _PyRuntimeState regarding the various mutex fields.
-       */
-
-    /* the initial PyInterpreterState.threads.head */
+   /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
 };
 
@@ -186,6 +202,17 @@ struct _is {
 /* other API */
 
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
+
+
+static inline PyThreadState*
+_PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
+    return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
+}
+
+static inline void
+_PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
+    _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+}
 
 
 /* cross-interpreter data registry */

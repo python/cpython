@@ -1,0 +1,34 @@
+fix = true
+select = [
+    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
+]
+extend-exclude = [
+    # Excluded (run with the other AC files in its own separate ruff job in pre-commit)
+    "test_clinic.py",
+    # Failed to lint
+    "badsyntax_pep3120.py",
+    "encoded_modules/module_iso_8859_1.py",
+    "encoded_modules/module_koi8_r.py",
+    # Failed to parse
+    "badsyntax_3131.py",
+    "test_lib2to3/data/bom.py",
+    "test_lib2to3/data/crlf.py",
+    "test_lib2to3/data/different_encoding.py",
+    "test_lib2to3/data/false_encoding.py",
+    "test_lib2to3/data/py2_test_grammar.py",
+    # TODO Fix: F811 Redefinition of unused name
+    "test_buffer.py",
+    "test_capi/test_misc.py",
+    "test_capi/test_unicode.py",
+    "test_dataclasses/__init__.py",
+    "test_descr.py",
+    "test_enum.py",
+    "test_functools.py",
+    "test_grammar.py",
+    "test_import/__init__.py",
+    "test_lib2to3/data/py3_test_grammar.py",
+    "test_pkg.py",
+    "test_tokenize.py",
+    "test_yield_from.py",
+    "time_hashlib.py",
+]

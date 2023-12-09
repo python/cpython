@@ -665,6 +665,35 @@ PyUnstable_Code_NewWithPosOnlyArgs(
         _Py_set_localsplus_info(offset, name, CO_FAST_FREE,
                                localsplusnames, localspluskinds);
     }
+
+    // gh-110543: Make sure the CO_FAST_HIDDEN flag is set correctly.
+    if (!(flags & CO_OPTIMIZED)) {
+        Py_ssize_t code_len = PyBytes_GET_SIZE(code);
+        _Py_CODEUNIT *code_data = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
+        Py_ssize_t num_code_units = code_len / sizeof(_Py_CODEUNIT);
+        int extended_arg = 0;
+        for (int i = 0; i < num_code_units; i += 1 + _PyOpcode_Caches[code_data[i].op.code]) {
+            _Py_CODEUNIT *instr = &code_data[i];
+            uint8_t opcode = instr->op.code;
+            if (opcode == EXTENDED_ARG) {
+                extended_arg = extended_arg << 8 | instr->op.arg;
+                continue;
+            }
+            if (opcode == LOAD_FAST_AND_CLEAR) {
+                int oparg = extended_arg << 8 | instr->op.arg;
+                if (oparg >= nlocalsplus) {
+                    PyErr_Format(PyExc_ValueError,
+                                "code: LOAD_FAST_AND_CLEAR oparg %d out of range",
+                                oparg);
+                    goto error;
+                }
+                _PyLocals_Kind kind = _PyLocals_GetKind(localspluskinds, oparg);
+                _PyLocals_SetKind(localspluskinds, oparg, kind | CO_FAST_HIDDEN);
+            }
+            extended_arg = 0;
+        }
+    }
+
     // If any cells were args then nlocalsplus will have shrunk.
     if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
         if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0
@@ -1962,27 +1991,28 @@ code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
+@text_signature "($self, /, **changes)"
 code.replace
 
     *
-    co_argcount: int(c_default="self->co_argcount") = -1
-    co_posonlyargcount: int(c_default="self->co_posonlyargcount") = -1
-    co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = -1
-    co_nlocals: int(c_default="self->co_nlocals") = -1
-    co_stacksize: int(c_default="self->co_stacksize") = -1
-    co_flags: int(c_default="self->co_flags") = -1
-    co_firstlineno: int(c_default="self->co_firstlineno") = -1
-    co_code: PyBytesObject(c_default="NULL") = None
-    co_consts: object(subclass_of="&PyTuple_Type", c_default="self->co_consts") = None
-    co_names: object(subclass_of="&PyTuple_Type", c_default="self->co_names") = None
-    co_varnames: object(subclass_of="&PyTuple_Type", c_default="NULL") = None
-    co_freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = None
-    co_cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = None
-    co_filename: unicode(c_default="self->co_filename") = None
-    co_name: unicode(c_default="self->co_name") = None
-    co_qualname: unicode(c_default="self->co_qualname") = None
-    co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
-    co_exceptiontable: PyBytesObject(c_default="(PyBytesObject *)self->co_exceptiontable") = None
+    co_argcount: int(c_default="self->co_argcount") = unchanged
+    co_posonlyargcount: int(c_default="self->co_posonlyargcount") = unchanged
+    co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = unchanged
+    co_nlocals: int(c_default="self->co_nlocals") = unchanged
+    co_stacksize: int(c_default="self->co_stacksize") = unchanged
+    co_flags: int(c_default="self->co_flags") = unchanged
+    co_firstlineno: int(c_default="self->co_firstlineno") = unchanged
+    co_code: object(subclass_of="&PyBytes_Type", c_default="NULL") = unchanged
+    co_consts: object(subclass_of="&PyTuple_Type", c_default="self->co_consts") = unchanged
+    co_names: object(subclass_of="&PyTuple_Type", c_default="self->co_names") = unchanged
+    co_varnames: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
+    co_freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
+    co_cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
+    co_filename: unicode(c_default="self->co_filename") = unchanged
+    co_name: unicode(c_default="self->co_name") = unchanged
+    co_qualname: unicode(c_default="self->co_qualname") = unchanged
+    co_linetable: object(subclass_of="&PyBytes_Type", c_default="self->co_linetable") = unchanged
+    co_exceptiontable: object(subclass_of="&PyBytes_Type", c_default="self->co_exceptiontable") = unchanged
 
 Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
@@ -1991,14 +2021,13 @@ static PyObject *
 code_replace_impl(PyCodeObject *self, int co_argcount,
                   int co_posonlyargcount, int co_kwonlyargcount,
                   int co_nlocals, int co_stacksize, int co_flags,
-                  int co_firstlineno, PyBytesObject *co_code,
-                  PyObject *co_consts, PyObject *co_names,
-                  PyObject *co_varnames, PyObject *co_freevars,
-                  PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyObject *co_qualname,
-                  PyBytesObject *co_linetable,
-                  PyBytesObject *co_exceptiontable)
-/*[clinic end generated code: output=b6cd9988391d5711 input=f6f68e03571f8d7c]*/
+                  int co_firstlineno, PyObject *co_code, PyObject *co_consts,
+                  PyObject *co_names, PyObject *co_varnames,
+                  PyObject *co_freevars, PyObject *co_cellvars,
+                  PyObject *co_filename, PyObject *co_name,
+                  PyObject *co_qualname, PyObject *co_linetable,
+                  PyObject *co_exceptiontable)
+/*[clinic end generated code: output=e75c48a15def18b9 input=18e280e07846c122]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -2023,13 +2052,14 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         if (code == NULL) {
             return NULL;
         }
-        co_code = (PyBytesObject *)code;
+        co_code = code;
     }
 
     if (PySys_Audit("code.__new__", "OOOiiiiii",
                     co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,
                     co_stacksize, co_flags) < 0) {
+        Py_XDECREF(code);
         return NULL;
     }
 
@@ -2061,10 +2091,10 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
     co = PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
-        co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
+        co_stacksize, co_flags, co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
         co_qualname, co_firstlineno,
-        (PyObject*)co_linetable, (PyObject*)co_exceptiontable);
+        co_linetable, co_exceptiontable);
 
 error:
     Py_XDECREF(code);

@@ -514,6 +514,17 @@ def test_not_in_gc():
             assert hook not in o
 
 
+def test_sys_monitoring_register_callback():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys.monitoring"):
+            print(event, args)
+
+    sys.addaudithook(hook)
+    sys.monitoring.register_callback(1, 1, None)
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

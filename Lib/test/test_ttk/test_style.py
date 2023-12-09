@@ -170,7 +170,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                     newname = f'C.{name}'
                     self.assertEqual(style.map(newname), {})
                     style.map(newname, **default)
-                    if theme == 'alt' and name == '.' and get_tk_patchlevel() < (8, 6, 1):
+                    if theme == 'alt' and name == '.' and get_tk_patchlevel(self.root) < (8, 6, 1):
                         default['embossed'] = [('disabled', '1')]
                     self.assertEqual(style.map(newname), default)
                     for key, value in default.items():

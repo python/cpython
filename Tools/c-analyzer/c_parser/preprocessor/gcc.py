@@ -219,6 +219,7 @@ def _strip_directives(line, partial=0):
         line = line[m.end():]
 
     line = re.sub(r'__extension__', '', line)
+    line = re.sub(r'__thread\b', '_Thread_local', line)
 
     while (m := COMPILER_DIRECTIVE_RE.match(line)):
         before, _, _, closed = m.groups()

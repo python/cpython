@@ -15,6 +15,7 @@ extern "C" {
 typedef void (*atexit_callbackfunc)(void);
 
 struct _atexit_runtime_state {
+    PyThread_type_lock mutex;
 #define NEXITFUNCS 32
     atexit_callbackfunc callbacks[NEXITFUNCS];
     int ncallbacks;

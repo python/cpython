@@ -1,0 +1,319 @@
+.. date: 2023-09-18-15-35-08
+.. gh-issue: 109496
+.. nonce: Kleoz3
+.. release date: 2023-09-18
+.. section: Core and Builtins
+
+On a Python built in debug mode, :c:func:`Py_DECREF()` now calls
+``_Py_NegativeRefcount()`` if the object is a dangling pointer to
+deallocated memory: memory filled with ``0xDD`` "dead byte" by the debug
+hook on memory allocators. The fix is to check the reference count *before*
+checking for ``_Py_IsImmortal()``. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-13-21-04-04
+.. gh-issue: 109371
+.. nonce: HPEJr8
+.. section: Core and Builtins
+
+Deopted instructions correctly for tool initialization and modified the
+incorrect assertion in instrumentation, when a previous tool already sets
+INSTRUCTION events
+
+..
+
+.. date: 2023-09-13-19-16-51
+.. gh-issue: 105658
+.. nonce: z2nR2u
+.. section: Core and Builtins
+
+Fix bug where the line trace of an except block ending with a conditional
+includes an excess event with the line of the conditional expression.
+
+..
+
+.. date: 2023-09-13-08-42-45
+.. gh-issue: 109219
+.. nonce: UiN8sc
+.. section: Core and Builtins
+
+Fix compiling type param scopes that use a name which is also free in an
+inner scope.
+
+..
+
+.. date: 2023-09-12-15-45-49
+.. gh-issue: 109341
+.. nonce: 4V5bkm
+.. section: Core and Builtins
+
+Fix crash when compiling an invalid AST involving a :class:`ast.TypeAlias`.
+
+..
+
+.. date: 2023-09-11-15-51-55
+.. gh-issue: 109195
+.. nonce: iwxmuo
+.. section: Core and Builtins
+
+Fix source location for the ``LOAD_*`` instruction preceding a
+``LOAD_SUPER_ATTR`` to load the ``super`` global (or shadowing variable) so
+that it encompasses only the name ``super`` and not the following
+parentheses.
+
+..
+
+.. date: 2023-09-09-12-49-46
+.. gh-issue: 109118
+.. nonce: gx0X4h
+.. section: Core and Builtins
+
+Disallow nested scopes (lambdas, generator expressions, and comprehensions)
+within PEP 695 annotation scopes that are nested within classes.
+
+..
+
+.. date: 2023-09-08-01-50-41
+.. gh-issue: 109114
+.. nonce: adqgtb
+.. section: Core and Builtins
+
+Relax the detection of the error message for invalid lambdas inside
+f-strings to not search for arbitrary replacement fields to avoid false
+positives. Patch by Pablo Galindo
+
+..
+
+.. date: 2023-09-07-18-24-42
+.. gh-issue: 109118
+.. nonce: yPXRAe
+.. section: Core and Builtins
+
+Fix interpreter crash when a NameError is raised inside the type parameters
+of a generic class.
+
+..
+
+.. date: 2023-09-06-22-50-25
+.. gh-issue: 108976
+.. nonce: MUKaIJ
+.. section: Core and Builtins
+
+Fix crash that occurs after de-instrumenting a code object in a monitoring
+callback.
+
+..
+
+.. date: 2023-09-06-13-28-42
+.. gh-issue: 108732
+.. nonce: I6DkEQ
+.. section: Core and Builtins
+
+Make iteration variables of module- and class-scoped comprehensions visible
+to pdb and other tools that use ``frame.f_locals`` again.
+
+..
+
+.. date: 2023-09-05-20-52-17
+.. gh-issue: 108959
+.. nonce: 6z45Sy
+.. section: Core and Builtins
+
+Fix caret placement for error locations for subscript and binary operations
+that involve non-semantic parentheses and spaces. Patch by Pablo Galindo
+
+..
+
+.. date: 2023-09-06-19-33-41
+.. gh-issue: 108682
+.. nonce: 35Xnc5
+.. section: Library
+
+Enum: require ``names=()`` or ``type=...`` to create an empty enum using the
+functional syntax.
+
+..
+
+.. date: 2023-09-06-06-17-23
+.. gh-issue: 108843
+.. nonce: WJMhsS
+.. section: Library
+
+Fix an issue in :func:`ast.unparse` when unparsing f-strings containing many
+quote types.
+
+..
+
+.. date: 2023-03-19-09-39-31
+.. gh-issue: 102823
+.. nonce: OzsOz0
+.. section: Documentation
+
+Document the return type of ``x // y`` when ``x`` and ``y`` have type
+:class:`float`.
+
+..
+
+.. date: 2023-09-14-22-58-47
+.. gh-issue: 109396
+.. nonce: J1a4jR
+.. section: Tests
+
+Fix ``test_socket.test_hmac_sha1()`` in FIPS mode. Use a longer key: FIPS
+mode requires at least of at least 112 bits. The previous key was only 32
+bits. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-13-05-58-09
+.. gh-issue: 104736
+.. nonce: lA25Fu
+.. section: Tests
+
+Fix test_gdb on Python built with LLVM clang 16 on Linux ppc64le (ex: Fedora
+38). Search patterns in gdb "bt" command output to detect when gdb fails to
+retrieve the traceback. For example, skip a test if ``Backtrace stopped:
+frame did not save the PC`` is found. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-10-22-32-20
+.. gh-issue: 109237
+.. nonce: SvgKwD
+.. section: Tests
+
+Fix ``test_site.test_underpth_basic()`` when the working directory contains
+at least one non-ASCII character: encode the ``._pth`` file to UTF-8 and
+enable the UTF-8 Mode to use UTF-8 for the child process stdout. Patch by
+Victor Stinner.
+
+..
+
+.. date: 2023-09-10-19-59-57
+.. gh-issue: 109230
+.. nonce: SRNLFQ
+.. section: Tests
+
+Fix ``test_pyexpat.test_exception()``: it can now be run from a directory
+different than Python source code directory. Before, the test failed in this
+case.  Skip the test if Modules/pyexpat.c source is not available. Skip also
+the test on Python implementations other than CPython. Patch by Victor
+Stinner.
+
+..
+
+.. date: 2023-09-06-18-27-53
+.. gh-issue: 109015
+.. nonce: 1dS1AQ
+.. section: Tests
+
+Fix test_asyncio, test_imaplib and test_socket tests on FreeBSD if the TCP
+blackhole is enabled (``sysctl net.inet.tcp.blackhole``). Skip the few tests
+which failed with ``ETIMEDOUT`` which such non standard configuration.
+Currently, the `FreeBSD GCP image enables TCP and UDP blackhole
+<https://reviews.freebsd.org/D41751>`_ (``sysctl net.inet.tcp.blackhole=2``
+and ``sysctl net.inet.udp.blackhole=1``).  Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-06-15-36-51
+.. gh-issue: 91960
+.. nonce: P3nD5v
+.. section: Tests
+
+Skip ``test_gdb`` if gdb is unable to retrieve Python frame objects: if a
+frame is ``<optimized out>``. When Python is built with "clang -Og", gdb can
+fail to retrive the *frame* parameter of ``_PyEval_EvalFrameDefault()``. In
+this case, tests like ``py_bt()`` are likely to fail. Without getting access
+to Python frames, ``python-gdb.py`` is mostly clueless on retrieving the
+Python traceback. Moreover, ``test_gdb`` is no longer skipped on macOS if
+Python is built with Clang. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-05-23-00-09
+.. gh-issue: 108962
+.. nonce: R4NwuU
+.. section: Tests
+
+Skip ``test_tempfile.test_flags()`` if ``chflags()`` fails with "OSError:
+[Errno 45] Operation not supported" (ex: on FreeBSD 13). Patch by Victor
+Stinner.
+
+..
+
+.. date: 2023-09-03-21-41-10
+.. gh-issue: 108851
+.. nonce: xFTYOE
+.. section: Tests
+
+Fix ``test_tomllib`` recursion tests for WASI buildbots: reduce the
+recursion limit and compute the maximum nested array/dict depending on the
+current available recursion limit. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-03-21-18-35
+.. gh-issue: 108851
+.. nonce: CCuHyI
+.. section: Tests
+
+Add ``get_recursion_available()`` and ``get_recursion_depth()`` functions to
+the :mod:`test.support` module. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-03-20-15-49
+.. gh-issue: 108834
+.. nonce: Osvmhf
+.. section: Tests
+
+Add ``--fail-rerun option`` option to regrtest: if a test failed when then
+passed when rerun in verbose mode, exit the process with exit code 2
+(error), instead of exit code 0 (success). Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-03-06-17-12
+.. gh-issue: 108834
+.. nonce: fjV-CJ
+.. section: Tests
+
+Rename regrtest ``--verbose2`` option (``-w``) to ``--rerun``. Keep
+``--verbose2`` as a deprecated alias. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-09-03-02-01-55
+.. gh-issue: 108834
+.. nonce: iAwXzj
+.. section: Tests
+
+When regrtest reruns failed tests in verbose mode (``./python -m test
+--rerun``), tests are now rerun in fresh worker processes rather than being
+executed in the main process. If a test does crash or is killed by a
+timeout, the main process can detect and handle the killed worker process.
+Tests are rerun in parallel if the ``-jN`` option is used to run tests in
+parallel. Patch by Victor Stinner.
+
+..
+
+.. date: 2023-04-05-06-45-20
+.. gh-issue: 103186
+.. nonce: 640Eg-
+.. section: Tests
+
+Suppress and assert expected RuntimeWarnings in test_sys_settrace.py
+
+..
+
+.. date: 2023-09-01-01-39-26
+.. gh-issue: 108740
+.. nonce: JHExAQ
+.. section: Build
+
+Fix a race condition in ``make regen-all``. The ``deepfreeze.c`` source and
+files generated by Argument Clinic are now generated or updated before
+generating "global objects". Previously, some identifiers may miss depending
+on the order in which these files were generated. Patch by Victor Stinner.

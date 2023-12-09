@@ -15,6 +15,8 @@ from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
 from test.support import os_helper
+from test.support.import_helper import import_module
+from test.support.pty_helper import run_pty
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
@@ -662,8 +664,10 @@ def test_pdb_alias_command():
     ...     o.method()
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi',
     ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
     ...     'alias ps pi self',
+    ...     'alias ps',
     ...     'pi o',
     ...     's',
     ...     'ps',
@@ -672,8 +676,12 @@ def test_pdb_alias_command():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
     -> o.method()
+    (Pdb) alias pi
+    *** Unknown alias 'pi'
     (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
     (Pdb) alias ps pi self
+    (Pdb) alias ps
+    ps = pi self
     (Pdb) pi o
     o.attr1 = 10
     o.attr2 = str
@@ -743,6 +751,84 @@ def test_pdb_where_command():
     -> g();
       <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    """
+
+def test_convenience_variables():
+    """Test convenience variables
+
+    >>> def util_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     try:
+    ...         raise Exception('test')
+    ...     except:
+    ...         pass
+    ...     return 1
+
+    >>> def test_function():
+    ...     util_function()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     '$_frame.f_lineno', # Check frame convenience variable
+    ...     '$a = 10',          # Set a convenience variable
+    ...     '$a',               # Print its value
+    ...     'p $a + 2',         # Do some calculation
+    ...     'u',                # Switch frame
+    ...     '$_frame.f_lineno', # Make sure the frame changed
+    ...     '$a',               # Make sure the value persists
+    ...     'd',                # Go back to the original frame
+    ...     'next',
+    ...     '$a',               # The value should be gone
+    ...     'next',
+    ...     '$_exception',      # Check exception convenience variable
+    ...     'next',
+    ...     '$_exception',      # Exception should be gone
+    ...     'return',
+    ...     '$_retval',         # Check return convenience variable
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) $_frame.f_lineno
+    3
+    (Pdb) $a = 10
+    (Pdb) $a
+    10
+    (Pdb) p $a + 2
+    12
+    (Pdb) u
+    > <doctest test.test_pdb.test_convenience_variables[1]>(2)test_function()
+    -> util_function()
+    (Pdb) $_frame.f_lineno
+    2
+    (Pdb) $a
+    10
+    (Pdb) d
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $a
+    *** KeyError: 'a'
+    (Pdb) next
+    Exception: test
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $_exception
+    Exception('test')
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
+    -> except:
+    (Pdb) $_exception
+    *** KeyError: '_exception'
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_convenience_variables[0]>(7)util_function()->1
+    -> return 1
+    (Pdb) $_retval
+    1
     (Pdb) continue
     """
 
@@ -1715,8 +1801,97 @@ def test_pdb_issue_gh_101517():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(5)test_function()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
+    -> Warning: lineno is None
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_108976():
+    """See GH-108976
+    Make sure setting f_trace_opcodes = True won't crash pdb
+    >>> def test_function():
+    ...     import sys
+    ...     sys._getframe().f_trace_opcodes = True
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     a = 1
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    bdb.Bdb.dispatch: unknown debugging event: 'opcode'
+    > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(5)test_function()
+    -> a = 1
+    (Pdb) continue
+    """
+
+def test_pdb_ambiguous_statements():
+    """See GH-104301
+
+    Make sure that ambiguous statements prefixed by '!' are properly disambiguated
+
+    >>> with PdbTestInput([
+    ...     '! n = 42',  # disambiguated statement: reassign the name n
+    ...     'n',         # advance the debugger into the print()
+    ...     'continue'
+    ... ]):
+    ...     n = -1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(f"The value of n is {n}")
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(8)<module>()
+    -> print(f"The value of n is {n}")
+    (Pdb) ! n = 42
+    (Pdb) n
+    The value of n is 42
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
+    -> with PdbTestInput([
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_65052():
+    """See GH-65052
+
+    args, retval and display should not crash if the object is not displayable
+    >>> class A:
+    ...     def __new__(cls):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         return object.__new__(cls)
+    ...     def __init__(self):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         self.a = 1
+    ...     def __repr__(self):
+    ...         return self.a
+
+    >>> def test_function():
+    ...     A()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    ...     's',
+    ...     'retval',
+    ...     'continue',
+    ...     'args',
+    ...     'display self',
+    ...     'display',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()
+    -> return object.__new__(cls)
+    (Pdb) s
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()-><A instance at ...>
+    -> return object.__new__(cls)
+    (Pdb) retval
+    *** repr(retval) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(7)__init__()
+    -> self.a = 1
+    (Pdb) args
+    self = *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display self
+    display self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display
+    Currently displaying:
+    self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
     (Pdb) continue
     """
 
@@ -2128,8 +2303,7 @@ def bœr():
         stdout, stderr = self._run_pdb(
             ['-m', module_name], "", expected_returncode=1
         )
-        self.assertIn("ImportError: No module named t_main.__main__",
-                      stdout.splitlines())
+        self.assertIn("ImportError: No module named t_main.__main__;", stdout)
 
     def test_package_without_a_main(self):
         pkg_name = 't_pkg'
@@ -2146,6 +2320,22 @@ def bœr():
         self.assertIn(
             "'t_pkg.t_main' is a package and cannot be directly executed",
             stdout)
+
+    def test_nonexistent_module(self):
+        assert not os.path.exists(os_helper.TESTFN)
+        stdout, stderr = self._run_pdb(["-m", os_helper.TESTFN], "", expected_returncode=1)
+        self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout)
+
+    def test_dir_as_script(self):
+        with os_helper.temp_dir() as temp_dir:
+            stdout, stderr = self._run_pdb([temp_dir], "", expected_returncode=1)
+            self.assertIn(f"Error: {temp_dir} is a directory", stdout)
+
+    def test_invalid_cmd_line_options(self):
+        stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=1)
+        self.assertIn(f"Error: option -c requires argument", stdout)
+        stdout, stderr = self._run_pdb(["--spam"], "", expected_returncode=1)
+        self.assertIn(f"Error: option --spam not recognized", stdout)
 
     def test_blocks_at_first_code_line(self):
         script = """
@@ -2437,6 +2627,34 @@ class ChecklineTests(unittest.TestCase):
             db = pdb.Pdb()
             for lineno in range(num_lines):
                 self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
+
+
+@support.requires_subprocess()
+class PdbTestReadline(unittest.TestCase):
+    def setUpClass():
+        # Ensure that the readline module is loaded
+        # If this fails, the test is skipped because SkipTest will be raised
+        readline = import_module('readline')
+        if readline.__doc__ and "libedit" in readline.__doc__:
+            raise unittest.SkipTest("libedit readline is not supported for pdb")
+
+    def test_basic_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+            # Concatenate strings so that the output doesn't appear in the source
+            print('hello' + '!')
+        """)
+
+        # List everything starting with 'co', there should be multiple matches
+        # then add ntin and complete 'contin' to 'continue'
+        input = b"co\t\tntin\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'commands', output)
+        self.assertIn(b'condition', output)
+        self.assertIn(b'continue', output)
+        self.assertIn(b'hello!', output)
 
 
 def load_tests(loader, tests, pattern):

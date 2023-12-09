@@ -367,8 +367,9 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
             &NewWaitObject, Object, PostToQueueCallback, pdata, Milliseconds,
             WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
     {
+        SetFromWindowsErr(0);
         PyMem_RawFree(pdata);
-        return SetFromWindowsErr(0);
+        return NULL;
     }
 
     return Py_BuildValue(F_HANDLE, NewWaitObject);
@@ -2050,6 +2051,7 @@ overlapped_exec(PyObject *module)
 
 static PyModuleDef_Slot overlapped_slots[] = {
     {Py_mod_exec, overlapped_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

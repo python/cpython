@@ -1715,6 +1715,70 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__path_isdevdrive__doc__,
+"_path_isdevdrive($module, /, path)\n"
+"--\n"
+"\n"
+"Determines whether the specified path is on a Windows Dev Drive.");
+
+#define OS__PATH_ISDEVDRIVE_METHODDEF    \
+    {"_path_isdevdrive", _PyCFunction_CAST(os__path_isdevdrive), METH_FASTCALL|METH_KEYWORDS, os__path_isdevdrive__doc__},
+
+static PyObject *
+os__path_isdevdrive_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__path_isdevdrive(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_path_isdevdrive",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_path_isdevdrive", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_isdevdrive_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getfullpathname__doc__,
 "_getfullpathname($module, path, /)\n"
 "--\n"
@@ -1911,7 +1975,7 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, /, path)\n"
+"_path_isdir($module, /, s)\n"
 "--\n"
 "\n"
 "Return true if the pathname refers to an existing directory.");
@@ -1920,7 +1984,7 @@ PyDoc_STRVAR(os__path_isdir__doc__,
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
 static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *path);
+os__path_isdir_impl(PyObject *module, PyObject *s);
 
 static PyObject *
 os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1935,7 +1999,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
+        .ob_item = { &_Py_ID(s), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1944,7 +2008,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"s", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_path_isdir",
@@ -1952,14 +2016,14 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *path;
+    PyObject *s;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    path = args[0];
-    return_value = os__path_isdir_impl(module, path);
+    s = args[0];
+    return_value = os__path_isdir_impl(module, s);
 
 exit:
     return return_value;
@@ -6432,13 +6496,22 @@ exit:
 #endif /* defined(HAVE_LOCKF) */
 
 PyDoc_STRVAR(os_lseek__doc__,
-"lseek($module, fd, position, how, /)\n"
+"lseek($module, fd, position, whence, /)\n"
 "--\n"
 "\n"
 "Set the position of a file descriptor.  Return the new position.\n"
 "\n"
-"Return the new cursor position in number of bytes\n"
-"relative to the beginning of the file.");
+"  fd\n"
+"    An open file descriptor, as returned by os.open().\n"
+"  position\n"
+"    Position, interpreted relative to \'whence\'.\n"
+"  whence\n"
+"    The relative position to seek from. Valid values are:\n"
+"    - SEEK_SET: seek from the start of the file.\n"
+"    - SEEK_CUR: seek from the current file position.\n"
+"    - SEEK_END: seek from the end of the file.\n"
+"\n"
+"The return value is the number of bytes relative to the beginning of the file.");
 
 #define OS_LSEEK_METHODDEF    \
     {"lseek", _PyCFunction_CAST(os_lseek), METH_FASTCALL, os_lseek__doc__},
@@ -8086,7 +8159,7 @@ exit:
 
 #endif /* (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
 
-#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG))
+#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__))
 
 PyDoc_STRVAR(os_posix_fallocate__doc__,
 "posix_fallocate($module, fd, offset, length, /)\n"
@@ -8131,7 +8204,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG)) */
+#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__)) */
 
 #if (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG))
 
@@ -11379,6 +11452,10 @@ exit:
     #define OS_LISTMOUNTS_METHODDEF
 #endif /* !defined(OS_LISTMOUNTS_METHODDEF) */
 
+#ifndef OS__PATH_ISDEVDRIVE_METHODDEF
+    #define OS__PATH_ISDEVDRIVE_METHODDEF
+#endif /* !defined(OS__PATH_ISDEVDRIVE_METHODDEF) */
+
 #ifndef OS__GETFULLPATHNAME_METHODDEF
     #define OS__GETFULLPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFULLPATHNAME_METHODDEF) */
@@ -11922,4 +11999,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=47750e0e29c8d707 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa29739d72cfc07e input=a9049054013a1b77]*/

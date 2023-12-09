@@ -1017,9 +1017,9 @@ PyObject_ClearWeakRefs(PyObject *object)
  * or anything else.
  */
 void
-_PyStaticType_ClearWeakRefs(PyTypeObject *type)
+_PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
-    static_builtin_state *state = _PyStaticType_GetState(type);
+    static_builtin_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     while (*list != NULL) {
         /* Note that clear_weakref() pops the first ref off the type's

@@ -5,7 +5,7 @@
 List Objects
 ------------
 
-.. index:: object: list
+.. index:: pair: object; list
 
 
 .. c:type:: PyListObject
@@ -45,7 +45,7 @@ List Objects
 
 .. c:function:: Py_ssize_t PyList_Size(PyObject *list)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the length of the list object in *list*; this is equivalent to
    ``len(list)`` on a list object.
@@ -138,7 +138,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_AsTuple(PyObject *list)
 
-   .. index:: builtin: tuple
+   .. index:: pair: built-in function; tuple
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.

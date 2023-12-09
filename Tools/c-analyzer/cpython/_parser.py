@@ -71,6 +71,7 @@ Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
 Modules/_ssl_data.h
+Modules/_ssl_data_31.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
 Modules/cjkcodecs/mappings_*.h
@@ -114,6 +115,7 @@ Modules/_hacl/*.h	Modules/_hacl/include
 Modules/md5module.c	Modules/_hacl/include
 Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
+Modules/sha3module.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
 
 # possible system-installed headers, just in case
@@ -225,6 +227,7 @@ Include/cpython/fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
 Include/cpython/fileutils.h	Py_CPYTHON_FILEUTILS_H	1
 Include/cpython/frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
 Include/cpython/import.h	Py_CPYTHON_IMPORT_H	1
+Include/cpython/interpreteridobject.h	Py_CPYTHON_INTERPRETERIDOBJECT_H	1
 Include/cpython/listobject.h	Py_CPYTHON_LISTOBJECT_H	1
 Include/cpython/methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
 Include/cpython/object.h	Py_CPYTHON_OBJECT_H	1
@@ -270,13 +273,6 @@ Modules/_decimal/**/*.c	ASM	1
 Modules/expat/xmlparse.c	HAVE_EXPAT_CONFIG_H	1
 Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
 Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
-
-# from Modules/_sha3/sha3module.c
-Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c	PLATFORM_BYTE_ORDER	4321  # force big-endian
-Modules/_sha3/kcp/*.c	KeccakOpt	64
-Modules/_sha3/kcp/*.c	KeccakP200_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP400_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP800_excluded	1
 
 # others
 Modules/_sre/sre_lib.h	LOCAL(type)	static inline type

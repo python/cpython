@@ -2141,11 +2141,10 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
-# Pegen does not produce this error message yet
-# >>> def f(): x = yield = y
-# Traceback (most recent call last):
-#   ...
-# SyntaxError: assignment to yield expression not possible
+>>> def f(): x = yield = y
+Traceback (most recent call last):
+  ...
+SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
@@ -2177,6 +2176,7 @@ caught ValueError ()
 caught ValueError (xyz)
 
 >>> import warnings
+>>> old_filters = warnings.filters.copy()
 >>> warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Filter DeprecationWarning: regarding the (type, val, tb) signature of throw().
@@ -2250,8 +2250,7 @@ Traceback (most recent call last):
   ...
 ValueError: 7
 
->>> warnings.filters.pop(0)
-('ignore', None, <class 'DeprecationWarning'>, None, 0)
+>>> warnings.filters[:] = old_filters
 
 # Re-enable DeprecationWarning: the (type, val, tb) exception representation is deprecated,
 #                               and may be removed in a future version of Python.

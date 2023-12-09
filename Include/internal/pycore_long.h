@@ -118,6 +118,21 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 #define SIGN_NEGATIVE 2
 #define NON_SIZE_BITS 3
 
+/* The functions _PyLong_IsCompact and _PyLong_CompactValue are defined
+ * in Include/cpython/longobject.h, since they need to be inline.
+ *
+ * "Compact" values have at least one bit to spare,
+ * so that addition and subtraction can be performed on the values
+ * without risk of overflow.
+ *
+ * The inline functions need tag bits.
+ * For readability, rather than do `#define SIGN_MASK _PyLong_SIGN_MASK`
+ * we define them to the numbers in both places and then assert that
+ * they're the same.
+ */
+static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
+static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
+
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
  * In other words, for 64 bit machines, compact
@@ -131,32 +146,12 @@ _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
 }
 
-static inline int
-_PyLong_IsCompact(const PyLongObject* op) {
-    assert(PyLong_Check(op));
-    return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
-}
 
 static inline int
 _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
-}
-
-/* Returns a *compact* value, iff `_PyLong_IsCompact` is true for `op`.
- *
- * "Compact" values have at least one bit to spare,
- * so that addition and subtraction can be performed on the values
- * without risk of overflow.
- */
-static inline Py_ssize_t
-_PyLong_CompactValue(const PyLongObject *op)
-{
-    assert(PyLong_Check(op));
-    assert(_PyLong_IsCompact(op));
-    Py_ssize_t sign = 1 - (op->long_value.lv_tag & SIGN_MASK);
-    return sign * (Py_ssize_t)op->long_value.ob_digit[0];
 }
 
 static inline bool

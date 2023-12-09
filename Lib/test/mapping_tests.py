@@ -2,6 +2,7 @@
 import unittest
 import collections
 import sys
+from test.support import C_RECURSION_LIMIT
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -624,7 +625,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
     def test_repr_deep(self):
         d = self._empty_mapping()
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(C_RECURSION_LIMIT + 1):
             d0 = d
             d = self._empty_mapping()
             d[1] = d0

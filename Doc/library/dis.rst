@@ -42,14 +42,22 @@ interpreter.
       bytecode to specialize it for different runtime conditions. The
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
+   .. versionchanged:: 3.12
+      The argument of a jump is the offset of the target instruction relative
+      to the instruction that appears immediately after the jump instruction's
+      :opcode:`CACHE` entries.
 
-Example: Given the function :func:`myfunc`::
+      As a consequence, the presence of the :opcode:`CACHE` instructions is
+      transparent for forward jumps but needs to be taken into account when
+      reasoning about backward jumps.
+
+Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`:
+:func:`!myfunc`:
 
 .. doctest::
 
@@ -62,6 +70,28 @@ the following command can be used to display the disassembly of
                 22 RETURN_VALUE
 
 (The "2" is a line number).
+
+.. _dis-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`dis` module can be invoked as a script from the command line:
+
+.. code-block:: sh
+
+   python -m dis [-h] [infile]
+
+The following options are accepted:
+
+.. program:: dis
+
+.. cmdoption:: -h, --help
+
+   Display usage and exit.
+
+If :file:`infile` is specified, its disassembled code will be written to stdout.
+Otherwise, disassembly is performed on compiled source code recieved from stdin.
 
 Bytecode analysis
 -----------------
@@ -188,9 +218,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
    For a module, it disassembles all functions. For a class, it disassembles
    all methods (including class and static methods). For a code object or
    sequence of raw bytecode, it prints one line per bytecode instruction.
-   It also recursively disassembles nested code objects (the code of
-   comprehensions, generator expressions and nested functions, and the code
-   used for building nested classes).
+   It also recursively disassembles nested code objects. These can include
+   generator expressions, nested functions, the bodies of nested classes,
+   and the code objects used for :ref:`annotation scopes <annotation-scopes>`.
    Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
    function disassembles the last traceback.
@@ -402,7 +432,7 @@ The Python compiler currently generates the following bytecode instructions.
 
 **General instructions**
 
-In the following, We will refer to the interpreter stack as STACK and describe
+In the following, We will refer to the interpreter stack as ``STACK`` and describe
 operations on it as if it was a Python list. The top of the stack corresponds to
 ``STACK[-1]`` in this language.
 
@@ -414,7 +444,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: POP_TOP
 
-   Removes the top-of-stack item.::
+   Removes the top-of-stack item::
 
       STACK.pop()
 
@@ -422,8 +452,16 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 .. opcode:: END_FOR
 
    Removes the top two values from the stack.
-   Equivalent to POP_TOP; POP_TOP.
+   Equivalent to ``POP_TOP``; ``POP_TOP``.
    Used to clean up at the end of loops, hence the name.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: END_SEND
+
+   Implements ``del STACK[-2]``.
+   Used to clean up when a generator exits.
 
    .. versionadded:: 3.12
 
@@ -431,7 +469,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 .. opcode:: COPY (i)
 
    Push the i-th item to the top of the stack without removing it from its original
-   location.::
+   location::
 
       assert i > 0
       STACK.append(STACK[-i])
@@ -441,7 +479,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: SWAP (i)
 
-   Swap the top of the stack with the i-th element.::
+   Swap the top of the stack with the i-th element::
 
       STACK[-i], STACK[-1] = stack[-1], STACK[-i]
 
@@ -513,7 +551,7 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: BINARY_OP (op)
 
    Implements the binary and in-place operators (depending on the value of
-   *op*).::
+   *op*)::
 
       rhs = STACK.pop()
       lhs = STACK.pop()
@@ -528,7 +566,7 @@ not have to be) the original ``STACK[-2]``.
 
       key = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[index])
+      STACK.append(container[key])
 
 
 .. opcode:: STORE_SUBSCR
@@ -580,14 +618,14 @@ not have to be) the original ``STACK[-2]``.
 
    Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
-   the CO_ITERABLE_COROUTINE flag, or resolves
+   the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
    ``o.__await__``.
 
     If the ``where`` operand is nonzero, it indicates where the instruction
     occurs:
 
-    * ``1`` After a call to ``__aenter__``
-    * ``2`` After a call to ``__aexit__``
+    * ``1``: After a call to ``__aenter__``
+    * ``2``: After a call to ``__aexit__``
 
    .. versionadded:: 3.5
 
@@ -622,8 +660,8 @@ not have to be) the original ``STACK[-2]``.
 
    .. versionadded:: 3.8
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 
 .. opcode:: CLEANUP_THROW
@@ -652,6 +690,7 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: SET_ADD (i)
 
    Implements::
+
       item = STACK.pop()
       set.add(STACK[-i], item)
 
@@ -705,11 +744,11 @@ iterations of the loop.
 
    Yields ``STACK.pop()`` from a :term:`generator`.
 
-    .. versionchanged:: 3.11
-       oparg set to be the stack depth.
+   .. versionchanged:: 3.11
+      oparg set to be the stack depth.
 
-    .. versionchanged:: 3.12
-       oparg set to be the exception block depth, for efficient closing of generators.
+   .. versionchanged:: 3.12
+      oparg set to be the exception block depth, for efficient closing of generators.
 
 
 .. opcode:: SETUP_ANNOTATIONS
@@ -726,32 +765,32 @@ iterations of the loop.
 
    Pops a value from the stack, which is used to restore the exception state.
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: RERAISE
 
-    Re-raises the exception currently on top of the stack. If oparg is non-zero,
-    pops an additional value from the stack which is used to set ``f_lasti``
-    of the current frame.
+   Re-raises the exception currently on top of the stack. If oparg is non-zero,
+   pops an additional value from the stack which is used to set ``f_lasti``
+   of the current frame.
 
-    .. versionadded:: 3.9
+   .. versionadded:: 3.9
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: PUSH_EXC_INFO
 
-    Pops a value from the stack. Pushes the current exception to the top of the stack.
-    Pushes the value originally popped back to the stack.
-    Used in exception handlers.
+   Pops a value from the stack. Pushes the current exception to the top of the stack.
+   Pushes the value originally popped back to the stack.
+   Used in exception handlers.
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 .. opcode:: CHECK_EXC_MATCH
 
    Performs exception matching for ``except``. Tests whether the ``STACK[-2]``
-   is an exception matching ``STACK[-1]``. Pops STACK[-1] and pushes the boolean
+   is an exception matching ``STACK[-1]``. Pops ``STACK[-1]`` and pushes the boolean
    result of the test.
 
    .. versionadded:: 3.11
@@ -770,16 +809,16 @@ iterations of the loop.
 
 .. opcode:: WITH_EXCEPT_START
 
-    Calls the function in position 4 on the stack with arguments (type, val, tb)
-    representing the exception at the top of the stack.
-    Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
-    has occurred in a :keyword:`with` statement.
+   Calls the function in position 4 on the stack with arguments (type, val, tb)
+   representing the exception at the top of the stack.
+   Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
+   has occurred in a :keyword:`with` statement.
 
-    .. versionadded:: 3.9
+   .. versionadded:: 3.9
 
-    .. versionchanged:: 3.11
-       The ``__exit__`` function is in position 4 of the stack rather than 7.
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      The ``__exit__`` function is in position 4 of the stack rather than 7.
+      Exception representation on the stack now consist of one, not three, items.
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
@@ -792,7 +831,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_BUILD_CLASS
 
-   Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
+   Pushes :func:`!builtins.__build_class__` onto the stack.  It is later called
    to construct a class.
 
 
@@ -817,7 +856,7 @@ iterations of the loop.
 .. opcode:: MATCH_MAPPING
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Mapping` (or, more
-   technically: if it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
+   technically: if it has the :c:macro:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise,
    push ``False``.
 
@@ -828,7 +867,7 @@ iterations of the loop.
 
    If ``STACK[-1]`` is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
-   the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
+   the :c:macro:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
@@ -850,22 +889,23 @@ iterations of the loop.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use
-   :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
+   :attr:`!co_names` of the :ref:`code object <code-objects>`.
+   The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
 
-   Implements ``del name``, where *namei* is the index into :attr:`co_names`
-   attribute of the code object.
+   Implements ``del name``, where *namei* is the index into :attr:`!co_names`
+   attribute of the :ref:`code object <code-objects>`.
 
 
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
-   right-to-left.::
+   right-to-left. Require there to be exactly *count* values.::
 
-      STACK.extend(STACK.pop()[:count:-1])
+      assert(len(STACK[-1]) == count)
+      STACK.extend(STACK.pop()[:-count-1:-1])
 
 
 .. opcode:: UNPACK_EX (counts)
@@ -895,7 +935,8 @@ iterations of the loop.
       value = STACK.pop()
       obj.name = value
 
-   where *namei* is the index of name in :attr:`co_names`.
+   where *namei* is the index of name in :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 .. opcode:: DELETE_ATTR (namei)
 
@@ -904,7 +945,8 @@ iterations of the loop.
       obj = STACK.pop()
       del obj.name
 
-   where *namei* is the index of name into :attr:`co_names`.
+   where *namei* is the index of name into :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
@@ -925,6 +967,27 @@ iterations of the loop.
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
+   The name is looked up within the locals, then the globals, then the builtins.
+
+
+.. opcode:: LOAD_LOCALS
+
+   Pushes a reference to the locals dictionary onto the stack.  This is used
+   to prepare namespace dictionaries for :opcode:`LOAD_FROM_DICT_OR_DEREF`
+   and :opcode:`LOAD_FROM_DICT_OR_GLOBALS`.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: LOAD_FROM_DICT_OR_GLOBALS (i)
+
+   Pops a mapping off the stack and looks up the value for ``co_names[namei]``.
+   If the name is not found there, looks it up in the globals and then the builtins,
+   similar to :opcode:`LOAD_GLOBAL`.
+   This is used for loading global variables in
+   :ref:`annotation scopes <annotation-scopes>` within class bodies.
+
+   .. versionadded:: 3.12
 
 
 .. opcode:: BUILD_TUPLE (count)
@@ -1028,7 +1091,7 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   when calling the unbound method. Otherwise, ``NULL`` and the object return by
+   when calling the unbound method. Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1038,15 +1101,21 @@ iterations of the loop.
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
 
-   This opcode implements :func:`super` (e.g. ``super().method()`` and
-   ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
-   ``namei`` is shifted left by 2 bits instead of 1, and instead of expecting a
-   single receiver on the stack, it expects three objects (from top of stack
-   down): ``self`` (the first argument to the current method), ``cls`` (the
-   class within which the current method was defined), and the global ``super``.
+   This opcode implements :func:`super`, both in its zero-argument and
+   two-argument forms (e.g. ``super().method()``, ``super().attr`` and
+   ``super(cls, self).method()``, ``super(cls, self).attr``).
+
+   It pops three values from the stack (from top of stack down):
+   - ``self``: the first argument to the current method
+   -  ``cls``: the class within which the current method was defined
+   -  the global ``super``
+
+   With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
+   except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`.
+   :opcode:`LOAD_ATTR`, which results in pushing ``None`` and the loaded method.
+   When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
    call to :func:`super` (unset means zero-argument).
@@ -1195,6 +1264,14 @@ iterations of the loop.
 
    .. versionadded:: 3.12
 
+.. opcode:: LOAD_FAST_AND_CLEAR (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack (or
+   pushes ``NULL`` onto the stack if the local variable has not been
+   initialized) and sets ``co_varnames[var_num]`` to ``NULL``.
+
+   .. versionadded:: 3.12
+
 .. opcode:: STORE_FAST (var_num)
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
@@ -1207,7 +1284,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_CELL (i)
 
-   Creates a new cell in slot ``i``.  If that slot is empty then
+   Creates a new cell in slot ``i``.  If that slot is nonempty then
    that value is stored into the new cell.
 
    .. versionadded:: 3.11
@@ -1234,16 +1311,17 @@ iterations of the loop.
       ``i`` is no longer offset by the length of ``co_varnames``.
 
 
-.. opcode:: LOAD_CLASSDEREF (i)
+.. opcode:: LOAD_FROM_DICT_OR_DEREF (i)
 
-   Much like :opcode:`LOAD_DEREF` but first checks the locals dictionary before
-   consulting the cell.  This is used for loading free variables in class
-   bodies.
+   Pops a mapping off the stack and looks up the name associated with
+   slot ``i`` of the "fast locals" storage in this mapping.
+   If the name is not found there, loads it from the cell contained in
+   slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
+   free variables in class bodies (which previously used
+   :opcode:`!LOAD_CLASSDEREF`) and in
+   :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
-   .. versionadded:: 3.4
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+   .. versionadded:: 3.12
 
 
 .. opcode:: STORE_DEREF (i)
@@ -1332,9 +1410,9 @@ iterations of the loop.
 
 .. opcode:: PUSH_NULL
 
-    Pushes a ``NULL`` to the stack.
-    Used in the call sequence to match the ``NULL`` pushed by
-    :opcode:`LOAD_METHOD` for non-method calls.
+   Pushes a ``NULL`` to the stack.
+   Used in the call sequence to match the ``NULL`` pushed by
+   :opcode:`LOAD_METHOD` for non-method calls.
 
    .. versionadded:: 3.11
 
@@ -1358,15 +1436,18 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at ``STACK[-2]``)
-   * the :term:`qualified name` of the function (at ``STACK[-1]``)
+   * the code associated with the function (at ``STACK[-1]``)
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
 
+   .. versionchanged:: 3.11
+      Qualified name at ``STACK[-1]`` was removed.
+
+
 .. opcode:: BUILD_SLICE (argc)
 
-   .. index:: builtin: slice
+   .. index:: pair: built-in function; slice
 
    Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2, implements::
 
@@ -1434,38 +1515,38 @@ iterations of the loop.
 
 .. opcode:: RESUME (where)
 
-    A no-op. Performs internal tracing, debugging and optimization checks.
+   A no-op. Performs internal tracing, debugging and optimization checks.
 
-    The ``where`` operand marks where the ``RESUME`` occurs:
+   The ``where`` operand marks where the ``RESUME`` occurs:
 
-    * ``0`` The start of a function, which is neither a generator, coroutine
-      nor an async generator
-    * ``1`` After a ``yield`` expression
-    * ``2`` After a ``yield from`` expression
-    * ``3`` After an ``await`` expression
+   * ``0`` The start of a function, which is neither a generator, coroutine
+     nor an async generator
+   * ``1`` After a ``yield`` expression
+   * ``2`` After a ``yield from`` expression
+   * ``3`` After an ``await`` expression
 
    .. versionadded:: 3.11
 
 
 .. opcode:: RETURN_GENERATOR
 
-    Create a generator, coroutine, or async generator from the current frame.
-    Used as first opcode of in code object for the above mentioned callables.
-    Clear the current frame and return the newly created generator.
+   Create a generator, coroutine, or async generator from the current frame.
+   Used as first opcode of in code object for the above mentioned callables.
+   Clear the current frame and return the newly created generator.
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 
 .. opcode:: SEND (delta)
 
-    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
-    and ``await`` statements.
+   Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
+   and ``await`` statements.
 
-    If the call raises :exc:`StopIteration`, pop both items, push the
-    exception's ``value`` attribute, and increment the bytecode counter by
-    *delta*.
+   If the call raises :exc:`StopIteration`, pop the top value from the stack,
+   push the exception's ``value`` attribute, and increment the bytecode counter
+   by *delta*.
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 
 .. opcode:: HAVE_ARGUMENT
@@ -1491,37 +1572,90 @@ iterations of the loop.
 
    Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
    argument and sets ``STACK[-1]`` to the result. Used to implement
-   functionality that is necessary but not performance critical.
+   functionality that is not performance critical.
 
-    The operand determines which intrinsic function is called:
+   The operand determines which intrinsic function is called:
 
-    * ``0`` Not valid
-    * ``1`` Prints the argument to standard out. Used in the REPL.
-    * ``2`` Performs ``import *`` for the named module.
-    * ``3`` Extracts the return value from a ``StopIteration`` exception.
-    * ``4`` Wraps an aync generator value
-    * ``5`` Performs the unary ``+`` operation
-    * ``6`` Converts a list to a tuple
+   +-----------------------------------+-----------------------------------+
+   | Operand                           | Description                       |
+   +===================================+===================================+
+   | ``INTRINSIC_1_INVALID``           | Not valid                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PRINT``               | Prints the argument to standard   |
+   |                                   | out. Used in the REPL.            |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_IMPORT_STAR``         | Performs ``import *`` for the     |
+   |                                   | named module.                     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
+   |                                   | ``StopIteration`` exception.      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
+   |                                   | operation                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_LIST_TO_TUPLE``       | Converts a list to a tuple        |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR``             | Creates a :class:`typing.TypeVar` |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PARAMSPEC``           | Creates a                         |
+   |                                   | :class:`typing.ParamSpec`         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVARTUPLE``        | Creates a                         |
+   |                                   | :class:`typing.TypeVarTuple`      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_SUBSCRIPT_GENERIC``   | Returns :class:`typing.Generic`   |
+   |                                   | subscripted with the argument     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEALIAS``           | Creates a                         |
+   |                                   | :class:`typing.TypeAliasType`;    |
+   |                                   | used in the :keyword:`type`       |
+   |                                   | statement. The argument is a tuple|
+   |                                   | of the type alias's name,         |
+   |                                   | type parameters, and value.       |
+   +-----------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 
 .. opcode:: CALL_INTRINSIC_2
 
-   Calls an intrinsic function with two arguments. Passes ``STACK[-2]``, ``STACK[-1]`` as the
-   arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
-   necessary but not performance critical.
+   Calls an intrinsic function with two arguments. Used to implement functionality
+   that is not performance critical::
 
-    The operand determines which intrinsic function is called:
+      arg2 = STACK.pop()
+      arg1 = STACK.pop()
+      result = intrinsic2(arg1, arg2)
+      STACK.push(result)
 
-    * ``0`` Not valid
-    * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
+   The operand determines which intrinsic function is called:
+
+   +----------------------------------------+-----------------------------------+
+   | Operand                                | Description                       |
+   +========================================+===================================+
+   | ``INTRINSIC_2_INVALID``                | Not valid                         |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_PREP_RERAISE_STAR``        | Calculates the                    |
+   |                                        | :exc:`ExceptionGroup` to raise    |
+   |                                        | from a ``try-except*``.           |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_BOUND``       | Creates a :class:`typing.TypeVar` |
+   |                                        | with a bound.                     |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR_WITH_CONSTRAINTS`` | Creates a                         |
+   |                                        | :class:`typing.TypeVar` with      |
+   |                                        | constraints.                      |
+   +----------------------------------------+-----------------------------------+
+   | ``INTRINSIC_SET_FUNCTION_TYPE_PARAMS`` | Sets the ``__type_params__``      |
+   |                                        | attribute of a function.          |
+   +----------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 
 
 **Pseudo-instructions**
 
-These opcodes do not appear in python bytecode, they are used by the compiler
+These opcodes do not appear in Python bytecode. They are used by the compiler
 but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_FINALLY (target)
@@ -1533,7 +1667,7 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_CLEANUP (target)
 
-   Like ``SETUP_FINALLY``, but in case of exception also pushes the last
+   Like ``SETUP_FINALLY``, but in case of an exception also pushes the last
    instruction (``lasti``) to the stack so that ``RERAISE`` can restore it.
    If an exception occurs, the value stack level and the last instruction on
    the frame are restored to their current state, and control is transferred
@@ -1542,7 +1676,7 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_WITH (target)
 
-   Like ``SETUP_CLEANUP``, but in case of exception one more item is popped
+   Like ``SETUP_CLEANUP``, but in case of an exception one more item is popped
    from the stack before control is transferred to the exception handler at
    ``target``.
 
@@ -1576,9 +1710,10 @@ Opcode collections
 These collections are provided for automatic introspection of bytecode
 instructions:
 
-   .. versionchanged:: 3.12
-      The collections now contain pseudo instructions as well. These are
-      opcodes with values ``>= MIN_PSEUDO_OPCODE``.
+.. versionchanged:: 3.12
+   The collections now contain pseudo instructions and instrumented
+   instructions as well. These are opcodes with values ``>= MIN_PSEUDO_OPCODE``
+   and ``>= MIN_INSTRUMENTED_OPCODE``.
 
 .. data:: opname
 
@@ -1599,7 +1734,7 @@ instructions:
 
    Sequence of bytecodes that use their argument.
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 
 .. data:: hasconst
@@ -1609,10 +1744,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable (note that 'free' in this
+   Sequence of bytecodes that access a free variable. 'free' in this
    context refers to names in the current scope that are referenced by inner
    scopes or names in outer scopes that are referenced from this scope.  It does
-   *not* include references to global or builtin scopes).
+   *not* include references to global or builtin scopes.
 
 
 .. data:: hasname
@@ -1643,4 +1778,4 @@ instructions:
 
    Sequence of bytecodes that set an exception handler.
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12

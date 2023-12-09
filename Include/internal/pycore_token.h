@@ -78,7 +78,9 @@ extern "C" {
 #define TAGSTRING_START 62
 #define FSTRING_MIDDLE  63
 #define FSTRING_END     64
-#define ERRORTOKEN      65
+#define COMMENT         65
+#define NL              66
+#define ERRORTOKEN      67
 #define N_TOKENS        69
 #define NT_OFFSET       256
 

@@ -341,11 +341,12 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         return NULL;
     }
     FILE *fp = _Py_wfopen(path, L"rb");
-    PyMem_Free((void *)path);
     if (!fp) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyMem_Free((void *)path);
         return NULL;
     }
+    PyMem_Free((void *)path);
 
     r = PyList_New(0);
     if (!r) {

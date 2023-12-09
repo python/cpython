@@ -94,6 +94,7 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
+    unsigned int sigcount;
 } SRE_STATE;
 
 typedef struct {

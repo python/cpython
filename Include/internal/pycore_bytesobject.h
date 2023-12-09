@@ -9,11 +9,6 @@ extern "C" {
 #endif
 
 
-/* runtime lifecycle */
-
-extern PyStatus _PyBytes_InitTypes(PyInterpreterState *);
-
-
 /* Substring Search.
 
    Returns the index of the first occurrence of

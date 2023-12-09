@@ -1092,22 +1092,15 @@ error:
 }
 
 static int
-print_exception_notes(struct exception_print_context *ctx, PyObject *value)
+print_exception_notes(struct exception_print_context *ctx, PyObject *notes)
 {
     PyObject *f = ctx->file;
 
-    if (!PyExceptionInstance_Check(value)) {
+    if (notes == NULL) {
         return 0;
     }
 
-    if (!PyObject_HasAttr(value, &_Py_ID(__notes__))) {
-        return 0;
-    }
-    PyObject *notes = PyObject_GetAttr(value, &_Py_ID(__notes__));
-    if (notes == NULL) {
-        return -1;
-    }
-    if (!PySequence_Check(notes)) {
+    if (!PySequence_Check(notes) || PyUnicode_Check(notes) || PyBytes_Check(notes)) {
         int res = 0;
         if (write_indented_margin(ctx, f) < 0) {
             res = -1;
@@ -1121,7 +1114,9 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
             res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
             Py_DECREF(s);
         }
-        Py_DECREF(notes);
+        if (PyFile_WriteString("\n", f) < 0) {
+            res = -1;
+        }
         return res;
     }
     Py_ssize_t num_notes = PySequence_Length(notes);
@@ -1163,17 +1158,16 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
         }
     }
 
-    Py_DECREF(notes);
     return 0;
 error:
     Py_XDECREF(lines);
-    Py_DECREF(notes);
     return -1;
 }
 
 static int
 print_exception(struct exception_print_context *ctx, PyObject *value)
 {
+    PyObject *notes = NULL;
     PyObject *f = ctx->file;
 
     if (!PyExceptionInstance_Check(value)) {
@@ -1187,8 +1181,11 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
         goto error;
     }
 
-    /* grab the type now because value can change below */
+    /* grab the type and notes now because value can change below */
     PyObject *type = (PyObject *) Py_TYPE(value);
+    if (_PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes) < 0) {
+        goto error;
+    }
 
     if (print_exception_file_and_line(ctx, &value) < 0) {
         goto error;
@@ -1202,14 +1199,16 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     if (PyFile_WriteString("\n", f) < 0) {
         goto error;
     }
-    if (print_exception_notes(ctx, value) < 0) {
+    if (print_exception_notes(ctx, notes) < 0) {
         goto error;
     }
 
+    Py_XDECREF(notes);
     Py_DECREF(value);
     assert(!PyErr_Occurred());
     return 0;
 error:
+    Py_XDECREF(notes);
     Py_DECREF(value);
     return -1;
 }

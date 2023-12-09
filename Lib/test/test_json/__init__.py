@@ -18,7 +18,6 @@ class PyTest(unittest.TestCase):
     json = pyjson
     loads = staticmethod(pyjson.loads)
     dumps = staticmethod(pyjson.dumps)
-    AttrDict = pyjson.AttrDict
     JSONDecodeError = staticmethod(pyjson.JSONDecodeError)
 
 @unittest.skipUnless(cjson, 'requires _json')

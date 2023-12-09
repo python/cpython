@@ -18,6 +18,7 @@ import re
 import sys
 import traceback
 import types
+import typing
 import unittest
 import warnings
 from contextlib import ExitStack
@@ -926,6 +927,7 @@ class BuiltinTest(unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
         # thrashcan mechanism. See gh-102356 for more details.
@@ -2176,8 +2178,6 @@ class PtyTests(unittest.TestCase):
         if pid == 0:
             # Child
             try:
-                # Make sure we don't get stuck if there's a problem
-                signal.alarm(2)
                 os.close(r)
                 with open(w, "w") as wpipe:
                     child(wpipe)
@@ -2372,24 +2372,31 @@ class ShutdownTest(unittest.TestCase):
 
 @cpython_only
 class ImmortalTests(unittest.TestCase):
-    def test_immortal(self):
-        none_refcount = sys.getrefcount(None)
-        true_refcount = sys.getrefcount(True)
-        false_refcount = sys.getrefcount(False)
-        smallint_refcount = sys.getrefcount(100)
 
-        # Assert that all of these immortal instances have large ref counts.
-        self.assertGreater(none_refcount, 2 ** 15)
-        self.assertGreater(true_refcount, 2 ** 15)
-        self.assertGreater(false_refcount, 2 ** 15)
-        self.assertGreater(smallint_refcount, 2 ** 15)
+    if sys.maxsize < (1 << 32):
+        IMMORTAL_REFCOUNT = (1 << 30) - 1
+    else:
+        IMMORTAL_REFCOUNT = (1 << 32) - 1
 
-        # Confirm that the refcount doesn't change even with a new ref to them.
-        l = [None, True, False, 100]
-        self.assertEqual(sys.getrefcount(None), none_refcount)
-        self.assertEqual(sys.getrefcount(True), true_refcount)
-        self.assertEqual(sys.getrefcount(False), false_refcount)
-        self.assertEqual(sys.getrefcount(100), smallint_refcount)
+    IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
+
+    def assert_immortal(self, immortal):
+        with self.subTest(immortal):
+            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+
+    def test_immortals(self):
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_list_repeat_respect_immortality(self):
+        refs = list(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_tuple_repeat_respect_immortality(self):
+        refs = tuple(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
 
 
 class TestType(unittest.TestCase):
@@ -2477,6 +2484,17 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')
+
+    def test_type_typeparams(self):
+        class A[T]:
+            pass
+        T, = A.__type_params__
+        self.assertIsInstance(T, typing.TypeVar)
+        A.__type_params__ = "whatever"
+        self.assertEqual(A.__type_params__, "whatever")
+        with self.assertRaises(TypeError):
+            del A.__type_params__
+        self.assertEqual(A.__type_params__, "whatever")
 
     def test_type_doc(self):
         for doc in 'x', '\xc4', '\U0001f40d', 'x\x00y', b'x', 42, None:

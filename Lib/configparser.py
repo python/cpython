@@ -59,7 +59,7 @@ ConfigParser -- responsible for parsing a list of
         instance. It will be used as the handler for option value
         pre-processing when using getters. RawConfigParser objects don't do
         any sort of interpolation, whereas ConfigParser uses an instance of
-        BasicInterpolation. The library also provides a ``zc.buildbot``
+        BasicInterpolation. The library also provides a ``zc.buildout``
         inspired ExtendedInterpolation implementation.
 
         When `converters` is given, it should be a dictionary where each key

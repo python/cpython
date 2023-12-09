@@ -198,11 +198,12 @@ Data Types
         >>> some_var = Color.RED
         >>> some_var in Color
         True
+        >>> Color.RED.value in Color
+        True
 
-      .. note::
+   .. versionchanged:: 3.12
 
-         In Python 3.12 it will be possible to check for member values and not
-         just members; until then, a ``TypeError`` will be raised if a
+         Before Python 3.12, a ``TypeError`` is raised if a
          non-Enum-member is used in a containment check.
 
    .. method:: EnumType.__dir__(cls)
@@ -240,6 +241,10 @@ Data Types
 
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
+
+   .. versionadded:: 3.11
+
+      Before 3.11 ``enum`` used ``EnumMeta`` type, which is kept as an alias.
 
 
 .. class:: Enum
@@ -406,18 +411,18 @@ Data Types
    with an *IntEnum* member, the resulting value loses its enumeration status.
 
       >>> from enum import IntEnum
-      >>> class Numbers(IntEnum):
+      >>> class Number(IntEnum):
       ...     ONE = 1
       ...     TWO = 2
       ...     THREE = 3
       ...
-      >>> Numbers.THREE
-      <Numbers.THREE: 3>
-      >>> Numbers.ONE + Numbers.TWO
+      >>> Number.THREE
+      <Number.THREE: 3>
+      >>> Number.ONE + Number.TWO
       3
-      >>> Numbers.THREE + 5
+      >>> Number.THREE + 5
       8
-      >>> Numbers.THREE == 3
+      >>> Number.THREE == 3
       True
 
    .. note::
@@ -593,8 +598,8 @@ Data Types
 
    If a *Flag* operation is performed with an *IntFlag* member and:
 
-      * the result is a valid *IntFlag*: an *IntFlag* is returned
-      * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
+   * the result is a valid *IntFlag*: an *IntFlag* is returned
+   * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
 
    The *repr()* of unnamed zero-valued flags has changed.  It is now:
 
@@ -621,8 +626,8 @@ Data Types
    :class:`!ReprEnum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
    but the :class:`str() <str>` of the mixed-in data type:
 
-      * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
-      * :meth:`!str.__str__` for :class:`StrEnum`
+   * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
+   * :meth:`!str.__str__` for :class:`StrEnum`
 
    Inherit from :class:`!ReprEnum` to keep the :class:`str() <str>` / :func:`format`
    of the mixed-in data type instead of using the
@@ -785,13 +790,13 @@ Supported ``_sunder_`` names
 - ``_generate_next_value_`` -- used to get an appropriate value for an enum
   member; may be overridden
 
-   .. note::
+  .. note::
 
-       For standard :class:`Enum` classes the next value chosen is the last value seen
-       incremented by one.
+     For standard :class:`Enum` classes the next value chosen is the last value seen
+     incremented by one.
 
-       For :class:`Flag` classes the next value chosen will be the next highest
-       power-of-two, regardless of the last value seen.
+     For :class:`Flag` classes the next value chosen will be the next highest
+     power-of-two, regardless of the last value seen.
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
@@ -813,11 +818,11 @@ Utilities and Decorators
 
    *auto* instances are only resolved when at the top level of an assignment:
 
-      * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
-      * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
-         used to create the ``SECOND`` enum member;
-      * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
-        create the ``THREE`` enum member)
+   * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
+   * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
+      used to create the ``SECOND`` enum member;
+   * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
+     create the ``THREE`` enum member)
 
    .. versionchanged:: 3.11.1
 

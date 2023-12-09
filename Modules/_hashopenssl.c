@@ -227,12 +227,16 @@ get_hashlib_state(PyObject *module)
 typedef struct {
     PyObject_HEAD
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock   lock;  /* OpenSSL context lock */
 } EVPobject;
 
 typedef struct {
     PyObject_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
     PyThread_type_lock lock;  /* HMAC context lock */
 } HMACobject;
 
@@ -379,14 +383,15 @@ py_digest_by_digestmod(PyObject *module, PyObject *digestmod, enum Py_hash_type 
     } else {
         _hashlibstate *state = get_hashlib_state(module);
         // borrowed ref
-        name_obj = PyDict_GetItem(state->constructs, digestmod);
+        name_obj = PyDict_GetItemWithError(state->constructs, digestmod);
     }
     if (name_obj == NULL) {
-        _hashlibstate *state = get_hashlib_state(module);
-        PyErr_Clear();
-        PyErr_Format(
-            state->unsupported_digestmod_error,
-            "Unsupported digestmod %R", digestmod);
+        if (!PyErr_Occurred()) {
+            _hashlibstate *state = get_hashlib_state(module);
+            PyErr_Format(
+                state->unsupported_digestmod_error,
+                "Unsupported digestmod %R", digestmod);
+        }
         return NULL;
     }
 
@@ -896,6 +901,8 @@ py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
 
     if (view.buf && view.len) {
         if (view.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
             Py_BEGIN_ALLOW_THREADS
             result = EVP_hash(self, view.buf, view.len);
             Py_END_ALLOW_THREADS
@@ -2260,6 +2267,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_md_meth_names},
     {Py_mod_exec, hashlib_init_constructors},
     {Py_mod_exec, hashlib_exception},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -67,12 +67,6 @@ static PyMethodDef symtable_methods[] = {
 };
 
 static int
-symtable_init_stentry_type(PyObject *m)
-{
-    return PyType_Ready(&PySTEntry_Type);
-}
-
-static int
 symtable_init_constants(PyObject *m)
 {
     if (PyModule_AddIntMacro(m, USE) < 0) return -1;
@@ -91,6 +85,14 @@ symtable_init_constants(PyObject *m)
     if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0) return -1;
     if (PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock) < 0)
         return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_ANNOTATION", AnnotationBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_VAR_BOUND", TypeVarBoundBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_ALIAS", TypeAliasBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_TYPE_PARAM", TypeParamBlock) < 0)
+        return -1;
 
     if (PyModule_AddIntMacro(m, LOCAL) < 0) return -1;
     if (PyModule_AddIntMacro(m, GLOBAL_EXPLICIT) < 0) return -1;
@@ -105,8 +107,8 @@ symtable_init_constants(PyObject *m)
 }
 
 static PyModuleDef_Slot symtable_slots[] = {
-    {Py_mod_exec, symtable_init_stentry_type},
     {Py_mod_exec, symtable_init_constants},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

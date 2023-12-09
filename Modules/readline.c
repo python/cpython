@@ -11,7 +11,10 @@
 #include <signal.h>
 #include <stddef.h>
 #include <stdlib.h>               // free()
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#include <time.h>
 
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
@@ -439,7 +442,7 @@ readline_set_completion_display_matches_hook_impl(PyObject *module,
        default completion display. */
     rl_completion_display_matches_hook =
         readlinestate_global->completion_display_matches_hook ?
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(HAVE_RL_COMPDISP_FUNC_T)
         (rl_compdisp_func_t *)on_completion_display_matches_hook : 0;
 #else
         (VFunction *)on_completion_display_matches_hook : 0;

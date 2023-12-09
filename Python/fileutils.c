@@ -1132,7 +1132,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
-    } else {
+    }
+    if (!result->st_ino && !result->st_ino_high) {
         /* should only occur for DirEntry_from_find_data, in which case the
            index is likely to be zero anyway. */
         result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
@@ -1235,6 +1236,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     BY_HANDLE_FILE_INFORMATION info;
     FILE_BASIC_INFO basicInfo;
     FILE_ID_INFO idInfo;
+    FILE_ID_INFO *pIdInfo = &idInfo;
     HANDLE h;
     int type;
 
@@ -1267,15 +1269,19 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     }
 
     if (!GetFileInformationByHandle(h, &info) ||
-        !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo)) ||
-        !GetFileInformationByHandleEx(h, FileIdInfo, &idInfo, sizeof(idInfo))) {
+        !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
         /* The Win32 error is already set, but we also set errno for
            callers who expect it */
         errno = winerror_to_errno(GetLastError());
         return -1;
     }
 
-    _Py_attribute_data_to_stat(&info, 0, &basicInfo, &idInfo, status);
+    if (!GetFileInformationByHandleEx(h, FileIdInfo, &idInfo, sizeof(idInfo))) {
+        /* Failed to get FileIdInfo, so do not pass it along */
+        pIdInfo = NULL;
+    }
+
+    _Py_attribute_data_to_stat(&info, 0, &basicInfo, pIdInfo, status);
     return 0;
 #else
     return fstat(fd, status);
@@ -1789,6 +1795,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    int saved_errno = errno;
     PyMem_Free(wpath);
 #else
     PyObject *bytes;
@@ -1811,13 +1818,14 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-
+    int saved_errno = errno;
     Py_DECREF(bytes);
 #endif
     if (async_err)
         return NULL;
 
     if (f == NULL) {
+        errno = saved_errno;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
         return NULL;
     }
@@ -2376,12 +2384,14 @@ _Py_find_basename(const wchar_t *filename)
    path, which will be within the original buffer. Guaranteed to not
    make the path longer, and will not fail. 'size' is the length of
    the path, if known. If -1, the first null character will be assumed
-   to be the end of the path. */
+   to be the end of the path. 'normsize' will be set to contain the
+   length of the resulting normalized path. */
 wchar_t *
-_Py_normpath(wchar_t *path, Py_ssize_t size)
+_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
 {
     assert(path != NULL);
-    if (!path[0] || size == 0) {
+    if ((size < 0 && !path[0]) || size == 0) {
+        *normsize = 0;
         return path;
     }
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
@@ -2430,11 +2440,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 *p2++ = lastC = *p1;
             }
         }
-        if (sepCount) {
-            minP2 = p2;      // Invalid path
-        } else {
-            minP2 = p2 - 1;  // Absolute path has SEP at minP2
-        }
+        minP2 = p2 - 1;
     }
 #else
     // Skip past two leading SEPs
@@ -2494,11 +2500,26 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
         while (--p2 != minP2 && *p2 == SEP) {
             *p2 = L'\0';
         }
+    } else {
+        --p2;
     }
+    *normsize = p2 - path + 1;
 #undef SEP_OR_END
 #undef IS_SEP
 #undef IS_END
     return path;
+}
+
+/* In-place path normalisation. Returns the start of the normalized
+   path, which will be within the original buffer. Guaranteed to not
+   make the path longer, and will not fail. 'size' is the length of
+   the path, if known. If -1, the first null character will be assumed
+   to be the end of the path. */
+wchar_t *
+_Py_normpath(wchar_t *path, Py_ssize_t size)
+{
+    Py_ssize_t norm_length;
+    return _Py_normpath_and_size(path, size, &norm_length);
 }
 
 

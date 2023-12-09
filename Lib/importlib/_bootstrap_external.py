@@ -442,6 +442,9 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12b1 3526 (Add instrumentation support)
 #     Python 3.12b1 3527 (Add LOAD_SUPER_ATTR)
 #     Python 3.12b1 3528 (Add LOAD_SUPER_ATTR_METHOD specialization)
+#     Python 3.12b1 3529 (Inline list/dict/set comprehensions)
+#     Python 3.12b1 3530 (Shrink the LOAD_SUPER_ATTR caches)
+#     Python 3.12b1 3531 (Add PEP 695 changes)
 
 #     Python 3.13 will start with 3550
 
@@ -458,7 +461,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3528).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3531).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
@@ -657,26 +660,6 @@ def _check_name(method):
 
     _wrap(_check_name_wrapper, method)
     return _check_name_wrapper
-
-
-def _find_module_shim(self, fullname):
-    """Try to find a loader for the specified module by delegating to
-    self.find_loader().
-
-    This method is deprecated in favor of finder.find_spec().
-
-    """
-    _warnings.warn("find_module() is deprecated and "
-                   "slated for removal in Python 3.12; use find_spec() instead",
-                   DeprecationWarning)
-    # Call find_loader(). If it returns a string (indicating this
-    # is a namespace package portion), generate a warning and
-    # return None.
-    loader, portions = self.find_loader(fullname)
-    if loader is None and len(portions):
-        msg = f'Not importing directory {portions[0]}: missing __init__'
-        _warnings.warn(msg, ImportWarning)
-    return loader
 
 
 def _classify_pyc(data, name, exc_details):
@@ -984,22 +967,6 @@ class WindowsRegistryFinder:
                                                    loader(fullname, filepath),
                                                    origin=filepath)
                 return spec
-
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """Find module named in the registry.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("WindowsRegistryFinder.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        spec = cls.find_spec(fullname, path)
-        if spec is not None:
-            return spec.loader
-        else:
-            return None
 
 
 class _LoaderBasics:
@@ -1518,27 +1485,6 @@ class PathFinder:
         return finder
 
     @classmethod
-    def _legacy_get_spec(cls, fullname, finder):
-        # This would be a good place for a DeprecationWarning if
-        # we ended up going that route.
-        if hasattr(finder, 'find_loader'):
-            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
-                    "falling back to find_loader()")
-            _warnings.warn(msg, ImportWarning)
-            loader, portions = finder.find_loader(fullname)
-        else:
-            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
-                    "falling back to find_module()")
-            _warnings.warn(msg, ImportWarning)
-            loader = finder.find_module(fullname)
-            portions = []
-        if loader is not None:
-            return _bootstrap.spec_from_loader(fullname, loader)
-        spec = _bootstrap.ModuleSpec(fullname, None)
-        spec.submodule_search_locations = portions
-        return spec
-
-    @classmethod
     def _get_spec(cls, fullname, path, target=None):
         """Find the loader or namespace_path for this module/package name."""
         # If this ends up being a namespace package, namespace_path is
@@ -1549,10 +1495,7 @@ class PathFinder:
                 continue
             finder = cls._path_importer_cache(entry)
             if finder is not None:
-                if hasattr(finder, 'find_spec'):
-                    spec = finder.find_spec(fullname, target)
-                else:
-                    spec = cls._legacy_get_spec(fullname, finder)
+                spec = finder.find_spec(fullname, target)
                 if spec is None:
                     continue
                 if spec.loader is not None:
@@ -1593,22 +1536,6 @@ class PathFinder:
                 return None
         else:
             return spec
-
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """find the module on sys.path or 'path' based on sys.path_hooks and
-        sys.path_importer_cache.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("PathFinder.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        spec = cls.find_spec(fullname, path)
-        if spec is None:
-            return None
-        return spec.loader
 
     @staticmethod
     def find_distributions(*args, **kwargs):
@@ -1653,23 +1580,6 @@ class FileFinder:
     def invalidate_caches(self):
         """Invalidate the directory mtime."""
         self._path_mtime = -1
-
-    find_module = _find_module_shim
-
-    def find_loader(self, fullname):
-        """Try to find a loader for the specified module, or the namespace
-        package portions. Returns (loader, list-of-portions).
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("FileFinder.find_loader() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        spec = self.find_spec(fullname)
-        if spec is None:
-            return None, []
-        return spec.loader, spec.submodule_search_locations or []
 
     def _get_spec(self, loader_class, fullname, path, smsl, target):
         loader = loader_class(fullname, path)

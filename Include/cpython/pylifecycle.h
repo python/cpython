@@ -52,6 +52,7 @@ PyAPI_FUNC(const char *) _Py_gitidentifier(void);
 PyAPI_FUNC(const char *) _Py_gitversion(void);
 
 PyAPI_FUNC(int) _Py_IsFinalizing(void);
+PyAPI_FUNC(int) _Py_IsInterpreterFinalizing(PyInterpreterState *interp);
 
 /* Random */
 PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
@@ -62,9 +63,48 @@ PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
-PyAPI_FUNC(PyStatus) _Py_NewInterpreterFromConfig(
+/* --- PyInterpreterConfig ------------------------------------ */
+
+#define PyInterpreterConfig_DEFAULT_GIL (0)
+#define PyInterpreterConfig_SHARED_GIL (1)
+#define PyInterpreterConfig_OWN_GIL (2)
+
+typedef struct {
+    // XXX "allow_object_sharing"?  "own_objects"?
+    int use_main_obmalloc;
+    int allow_fork;
+    int allow_exec;
+    int allow_threads;
+    int allow_daemon_threads;
+    int check_multi_interp_extensions;
+    int gil;
+} PyInterpreterConfig;
+
+#define _PyInterpreterConfig_INIT \
+    { \
+        .use_main_obmalloc = 0, \
+        .allow_fork = 0, \
+        .allow_exec = 0, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 0, \
+        .check_multi_interp_extensions = 1, \
+        .gil = PyInterpreterConfig_OWN_GIL, \
+    }
+
+#define _PyInterpreterConfig_LEGACY_INIT \
+    { \
+        .use_main_obmalloc = 1, \
+        .allow_fork = 1, \
+        .allow_exec = 1, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 1, \
+        .check_multi_interp_extensions = 0, \
+        .gil = PyInterpreterConfig_SHARED_GIL, \
+    }
+
+PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(
     PyThreadState **tstate_p,
-    const _PyInterpreterConfig *config);
+    const PyInterpreterConfig *config);
 
 typedef void (*atexit_datacallbackfunc)(void *);
 PyAPI_FUNC(int) _Py_AtExit(

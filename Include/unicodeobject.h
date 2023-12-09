@@ -626,7 +626,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsLatin1String(
 
 /* --- ASCII Codecs -------------------------------------------------------
 
-   Only 7-bit ASCII data is excepted. All other codes generate errors.
+   Only 7-bit ASCII data is expected. All other codes generate errors.
 
 */
 

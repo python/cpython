@@ -178,10 +178,10 @@ class ArrayTestCase(unittest.TestCase):
             class T(Array):
                 pass
         with self.assertRaises(AttributeError):
-            class T(Array):
+            class T2(Array):
                 _type_ = c_int
         with self.assertRaises(AttributeError):
-            class T(Array):
+            class T3(Array):
                 _length_ = 13
 
     def test_bad_length(self):
@@ -190,15 +190,15 @@ class ArrayTestCase(unittest.TestCase):
                 _type_ = c_int
                 _length_ = - sys.maxsize * 2
         with self.assertRaises(ValueError):
-            class T(Array):
+            class T2(Array):
                 _type_ = c_int
                 _length_ = -1
         with self.assertRaises(TypeError):
-            class T(Array):
+            class T3(Array):
                 _type_ = c_int
                 _length_ = 1.87
         with self.assertRaises(OverflowError):
-            class T(Array):
+            class T4(Array):
                 _type_ = c_int
                 _length_ = sys.maxsize * 2
 

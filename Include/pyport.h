@@ -429,11 +429,6 @@ Please be conservative with adding new ones, document them and enclose them
 in platform-specific #ifdefs.
 **************************************************************************/
 
-#ifdef SOLARIS
-/* Unchecked */
-extern int gethostname(char *, int);
-#endif
-
 #ifdef HAVE__GETPTY
 #include <sys/types.h>          /* we need to import mode_t */
 extern char * _getpty(int *, int, mode_t, int);
@@ -763,6 +758,17 @@ extern char * _getpty(int *, int, mode_t, int);
 /* AIX has __bool__ redefined in it's system header file. */
 #if defined(_AIX) && defined(__bool__)
 #undef __bool__
+#endif
+
+// Make sure we have maximum alignment, even if the current compiler
+// does not support max_align_t. Note that:
+// - Autoconf reports alignment of unknown types to 0.
+// - 'long double' has maximum alignment on *most* platforms,
+//   looks like the best we can do for pre-C11 compilers.
+// - The value is tested, see test_alignof_max_align_t
+#if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
+#   undef ALIGNOF_MAX_ALIGN_T
+#   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
 #endif
 
 #endif /* Py_PYPORT_H */

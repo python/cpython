@@ -1,0 +1,2 @@
+Fix the compiler's redundant NOP detection algorithm to skip over NOPs with
+no line number when looking for the next instruction's lineno.

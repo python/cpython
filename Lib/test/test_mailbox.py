@@ -116,10 +116,13 @@ class TestMailbox(TestBase):
         self.assertMailboxEmpty()
 
     def test_add_that_raises_leaves_mailbox_empty(self):
+        class CustomError(Exception): ...
+        exc_msg = "a fake error"
+
         def raiser(*args, **kw):
-            raise Exception("a fake error")
+            raise CustomError(exc_msg)
         support.patch(self, email.generator.BytesGenerator, 'flatten', raiser)
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(CustomError, exc_msg):
             self._box.add(email.message_from_string("From: Alphöso"))
         self.assertEqual(len(self._box), 0)
         self._box.close()

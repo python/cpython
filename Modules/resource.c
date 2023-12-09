@@ -1,7 +1,10 @@
 
 #include "Python.h"
 #include <sys/resource.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#include <time.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -514,6 +517,7 @@ resource_exec(PyObject *module)
 
 static struct PyModuleDef_Slot resource_slots[] = {
     {Py_mod_exec, resource_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -71,9 +71,9 @@ const char * const _PyParser_TokenNames[] = {
     "TAGSTRING_START",
     "FSTRING_MIDDLE",
     "FSTRING_END",
+    "COMMENT",
+    "NL",
     "<ERRORTOKEN>",
-    "<COMMENT>",
-    "<NL>",
     "<ENCODING>",
     "<N_TOKENS>",
 };

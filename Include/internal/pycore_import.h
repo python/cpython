@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+#include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_time.h"          // _PyTime_t
+
 
 struct _import_runtime_state {
     /* The builtin modules (defined in config.c). */
@@ -15,19 +18,15 @@ struct _import_runtime_state {
        See PyInterpreterState.modules_by_index for more info. */
     Py_ssize_t last_module_index;
     struct {
-        /* A thread state tied to the main interpreter,
-           used exclusively for when the extensions dict is access/modified
-           from an arbitrary thread. */
-        PyThreadState main_tstate;
-        /* A lock to guard the dict. */
+        /* A lock to guard the cache. */
         PyThread_type_lock mutex;
-        /* A dict mapping (filename, name) to PyModuleDef for modules.
+        /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)
            or are imported in the main interpreter.
            This is initialized lazily in _PyImport_FixupExtensionObject().
            Modules are added there and looked up in _imp.find_extension(). */
-        PyObject *dict;
+        _Py_hashtable_t *hashtable;
     } extensions;
     /* Package context -- the full module name for package imports */
     const char * pkgcontext;

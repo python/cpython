@@ -195,7 +195,6 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("returnblob", 0, func_returnblob)
         self.con.create_function("returnlonglong", 0, func_returnlonglong)
         self.con.create_function("returnnan", 0, lambda: float("nan"))
-        self.con.create_function("returntoolargeint", 0, lambda: 1 << 65)
         self.con.create_function("return_noncont_blob", 0,
                                  lambda: memoryview(b"blob")[::2])
         self.con.create_function("raiseexception", 0, func_raiseexception)
@@ -293,11 +292,6 @@ class FunctionTests(unittest.TestCase):
         cur = self.con.cursor()
         cur.execute("select returnnan()")
         self.assertIsNone(cur.fetchone()[0])
-
-    def test_func_return_too_large_int(self):
-        cur = self.con.cursor()
-        self.assertRaisesRegex(sqlite.DataError, "string or blob too big",
-                               self.con.execute, "select returntoolargeint()")
 
     @with_tracebacks(ZeroDivisionError, name="func_raiseexception")
     def test_func_exception(self):
@@ -444,9 +438,10 @@ class FunctionTests(unittest.TestCase):
     @with_tracebacks(OverflowError)
     def test_func_return_too_large_int(self):
         cur = self.con.cursor()
+        msg = "string or blob too big"
         for value in 2**63, -2**63-1, 2**64:
             self.con.create_function("largeint", 0, lambda value=value: value)
-            with self.assertRaises(sqlite.DataError):
+            with self.assertRaisesRegex(sqlite.DataError, msg):
                 cur.execute("select largeint()")
 
     @with_tracebacks(UnicodeEncodeError, "surrogates not allowed", "chr")

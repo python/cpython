@@ -452,6 +452,35 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
+class TestCallCache(unittest.TestCase):
+    def test_too_many_defaults_0(self):
+        def f():
+            pass
+
+        f.__defaults__ = (None,)
+        for _ in range(1025):
+            f()
+
+    def test_too_many_defaults_1(self):
+        def f(x):
+            pass
+
+        f.__defaults__ = (None, None)
+        for _ in range(1025):
+            f(None)
+            f()
+
+    def test_too_many_defaults_2(self):
+        def f(x, y):
+            pass
+
+        f.__defaults__ = (None, None, None)
+        for _ in range(1025):
+            f(None, None)
+            f(None)
+            f()
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()

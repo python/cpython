@@ -1,0 +1,4 @@
+Fix a couple of issues in :meth:`pathlib.PurePath.with_name`: a single dot
+was incorrectly considered a valid name, and in :class:`PureWindowsPath`, a
+name with an NTFS alternate data stream, like ``a:b``, was incorrectly
+considered invalid.

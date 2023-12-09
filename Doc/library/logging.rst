@@ -397,21 +397,39 @@ have specific values relative to the predefined levels. If you define a level
 with the same numeric value, it overwrites the predefined value; the predefined
 name is lost.
 
-+--------------+---------------+
-| Level        | Numeric value |
-+==============+===============+
-| ``CRITICAL`` | 50            |
-+--------------+---------------+
-| ``ERROR``    | 40            |
-+--------------+---------------+
-| ``WARNING``  | 30            |
-+--------------+---------------+
-| ``INFO``     | 20            |
-+--------------+---------------+
-| ``DEBUG``    | 10            |
-+--------------+---------------+
-| ``NOTSET``   | 0             |
-+--------------+---------------+
++-----------------------+---------------+-------------------------------------+
+| Level                 | Numeric value | What it means / When to use it      |
++=======================+===============+=====================================+
+| .. py:data:: NOTSET   | 0             | When set on a logger, indicates that|
+|                       |               | ancestor loggers are to be consulted|
+|                       |               | to determine the effective level.   |
+|                       |               | If that still resolves to           |
+|                       |               | :const:`!NOTSET`, then all events   |
+|                       |               | are logged. When set on a handler,  |
+|                       |               | all events are handled.             |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: DEBUG    | 10            | Detailed information, typically only|
+|                       |               | of interest to a developer trying to|
+|                       |               | diagnose a problem.                 |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: INFO     | 20            | Confirmation that things are working|
+|                       |               | as expected.                        |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: WARNING  | 30            | An indication that something        |
+|                       |               | unexpected happened, or that a      |
+|                       |               | problem might occur in the near     |
+|                       |               | future (e.g. 'disk space low'). The |
+|                       |               | software is still working as        |
+|                       |               | expected.                           |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: ERROR    | 40            | Due to a more serious problem, the  |
+|                       |               | software has not been able to       |
+|                       |               | perform some function.              |
++-----------------------+---------------+-------------------------------------+
+| .. py:data:: CRITICAL | 50            | A serious error, indicating that the|
+|                       |               | program itself may be unable to     |
+|                       |               | continue running.                   |
++-----------------------+---------------+-------------------------------------+
 
 
 .. _handler:
@@ -421,7 +439,7 @@ Handler Objects
 
 Handlers have the following attributes and methods. Note that :class:`Handler`
 is never instantiated directly; this class acts as a base for more useful
-subclasses. However, the :meth:`__init__` method in subclasses needs to call
+subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 :meth:`Handler.__init__`.
 
 .. class:: Handler
@@ -889,7 +907,7 @@ you want to use.
 
 In the case of {}-formatting, you can specify formatting flags by placing them
 after the attribute name, separated from it with a colon. For example: a
-placeholder of ``{msecs:03d}`` would format a millisecond value of ``4`` as
+placeholder of ``{msecs:03.0f}`` would format a millisecond value of ``4`` as
 ``004``. Refer to the :meth:`str.format` documentation for full details on
 the options available to you.
 
@@ -997,23 +1015,33 @@ information into logging calls. For a usage example, see the section on
       'extra'. The return value is a (*msg*, *kwargs*) tuple which has the
       (possibly modified) versions of the arguments passed in.
 
-In addition to the above, :class:`LoggerAdapter` supports the following
-methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
-:meth:`~Logger.warning`, :meth:`~Logger.error`, :meth:`~Logger.exception`,
-:meth:`~Logger.critical`, :meth:`~Logger.log`, :meth:`~Logger.isEnabledFor`,
-:meth:`~Logger.getEffectiveLevel`, :meth:`~Logger.setLevel` and
-:meth:`~Logger.hasHandlers`. These methods have the same signatures as their
-counterparts in :class:`Logger`, so you can use the two types of instances
-interchangeably.
+   .. attribute:: manager
 
-.. versionchanged:: 3.2
-   The :meth:`~Logger.isEnabledFor`, :meth:`~Logger.getEffectiveLevel`,
-   :meth:`~Logger.setLevel` and :meth:`~Logger.hasHandlers` methods were added
-   to :class:`LoggerAdapter`.  These methods delegate to the underlying logger.
+      Delegates to the underlying :attr:`!manager`` on *logger*.
 
-.. versionchanged:: 3.6
-   Attribute :attr:`manager` and method :meth:`_log` were added, which
-   delegate to the underlying logger and allow adapters to be nested.
+   .. attribute:: _log
+
+      Delegates to the underlying :meth:`!_log`` method on *logger*.
+
+   In addition to the above, :class:`LoggerAdapter` supports the following
+   methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
+   :meth:`~Logger.warning`, :meth:`~Logger.error`, :meth:`~Logger.exception`,
+   :meth:`~Logger.critical`, :meth:`~Logger.log`, :meth:`~Logger.isEnabledFor`,
+   :meth:`~Logger.getEffectiveLevel`, :meth:`~Logger.setLevel` and
+   :meth:`~Logger.hasHandlers`. These methods have the same signatures as their
+   counterparts in :class:`Logger`, so you can use the two types of instances
+   interchangeably.
+
+   .. versionchanged:: 3.2
+
+      The :meth:`~Logger.isEnabledFor`, :meth:`~Logger.getEffectiveLevel`,
+      :meth:`~Logger.setLevel` and :meth:`~Logger.hasHandlers` methods were added
+      to :class:`LoggerAdapter`.  These methods delegate to the underlying logger.
+
+   .. versionchanged:: 3.6
+
+      Attribute :attr:`!manager` and method :meth:`!_log` were added, which
+      delegate to the underlying logger and allow adapters to be nested.
 
 
 Thread Safety
@@ -1397,8 +1425,8 @@ functions.
 .. function:: setLoggerClass(klass)
 
    Tells the logging system to use the class *klass* when instantiating a logger.
-   The class should define :meth:`__init__` such that only a name argument is
-   required, and the :meth:`__init__` should call :meth:`Logger.__init__`. This
+   The class should define :meth:`!__init__` such that only a name argument is
+   required, and the :meth:`!__init__` should call :meth:`!Logger.__init__`. This
    function is typically called before any loggers are instantiated by applications
    which need to use custom logger behavior. After this call, as at any other
    time, do not instantiate loggers directly using the subclass: continue to use

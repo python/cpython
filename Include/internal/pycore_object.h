@@ -58,6 +58,9 @@ extern void _Py_DecRefTotal(PyInterpreterState *);
 // Increment reference count by n
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
@@ -72,6 +75,21 @@ static inline void _Py_SetImmortal(PyObject *op)
     }
 }
 #define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+
+/* _Py_ClearImmortal() should only be used during runtime finalization. */
+static inline void _Py_ClearImmortal(PyObject *op)
+{
+    if (op) {
+        assert(op->ob_refcnt == _Py_IMMORTAL_REFCNT);
+        op->ob_refcnt = 1;
+        Py_DECREF(op);
+    }
+}
+#define _Py_ClearImmortal(op) \
+    do { \
+        _Py_ClearImmortal(_PyObject_CAST(op)); \
+        op = NULL; \
+    } while (0)
 
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
@@ -134,6 +152,7 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
+extern void _PyObject_InitState(PyInterpreterState *interp);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
@@ -253,8 +272,8 @@ extern void _PyDebug_PrintTotalRefs(void);
 
 #ifdef Py_TRACE_REFS
 extern void _Py_AddToAllObjects(PyObject *op, int force);
-extern void _Py_PrintReferences(FILE *);
-extern void _Py_PrintReferenceAddresses(FILE *);
+extern void _Py_PrintReferences(PyInterpreterState *, FILE *);
+extern void _Py_PrintReferenceAddresses(PyInterpreterState *, FILE *);
 #endif
 
 
@@ -272,8 +291,9 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
     if (PyType_Check(op) &&
             ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         static_builtin_state *state = _PyStaticType_GetState(
-                                                        (PyTypeObject *)op);
+                                                interp, (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
     // Essentially _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET():
@@ -329,10 +349,6 @@ extern int _Py_CheckSlotResult(
     PyObject *obj,
     const char *slot_name,
     int success);
-
-// PyType_Ready() must be called if _PyType_IsReady() is false.
-// See also the Py_TPFLAGS_READY flag.
-#define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
 // Test if a type supports weak references
 static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
@@ -391,13 +407,6 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
-extern int _PyType_HasSubclasses(PyTypeObject *);
-extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
-
-// Access macro to the members which are floating "behind" the object
-static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {
-    return (PyMemberDef*)((char*)etype + Py_TYPE(etype)->tp_basicsize);
-}
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
