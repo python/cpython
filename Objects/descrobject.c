@@ -1107,8 +1107,9 @@ static PySequenceMethods mappingproxy_as_sequence = {
 };
 
 static PyObject *
-mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs)
+mappingproxy_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
+    mappingproxyobject *pp = (mappingproxyobject *)self;
     /* newargs: mapping, key, default=None */
     PyObject *newargs[3];
     newargs[0] = pp->mapping;
