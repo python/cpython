@@ -3109,9 +3109,9 @@ _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 }
 
 static PyObject *
-dict_copy(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
+dict_copy(PyObject *mp, PyObject *Py_UNUSED(ignored))
 {
-    return PyDict_Copy((PyObject*)mp);
+    return PyDict_Copy(mp);
 }
 
 PyObject *
@@ -3513,9 +3513,9 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 }
 
 static PyObject *
-dict_clear(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
+dict_clear(PyObject *mp, PyObject *Py_UNUSED(ignored))
 {
-    PyDict_Clear((PyObject *)mp);
+    PyDict_Clear(mp);
     Py_RETURN_NONE;
 }
 
@@ -3704,8 +3704,9 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 }
 
 static PyObject *
-dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
+dict_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    PyDictObject *mp = (PyDictObject *)self;
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
 
@@ -3769,7 +3770,7 @@ static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
     {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
-    {"__sizeof__",      _PyCFunction_CAST(dict_sizeof),       METH_NOARGS,
+    {"__sizeof__",      dict_sizeof,                    METH_NOARGS,
      sizeof__doc__},
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
@@ -3784,9 +3785,9 @@ static PyMethodDef mapp_methods[] = {
     {"update",          _PyCFunction_CAST(dict_update), METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
-    {"clear",           (PyCFunction)dict_clear,        METH_NOARGS,
+    {"clear",           dict_clear,                     METH_NOARGS,
      clear__doc__},
-    {"copy",            (PyCFunction)dict_copy,         METH_NOARGS,
+    {"copy",            dict_copy,                      METH_NOARGS,
      copy__doc__},
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
@@ -4153,8 +4154,9 @@ dictiter_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-dictiter_len(dictiterobject *di, PyObject *Py_UNUSED(ignored))
+dictiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    dictiterobject *di = (dictiterobject *)self;
     Py_ssize_t len = 0;
     if (di->di_dict != NULL && di->di_used == di->di_dict->ma_used)
         len = di->len;
@@ -4165,14 +4167,14 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored));
+dictiter_reduce(PyObject *di, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef dictiter_methods[] = {
-    {"__length_hint__", _PyCFunction_CAST(dictiter_len), METH_NOARGS,
+    {"__length_hint__", dictiter_len,                   METH_NOARGS,
      length_hint_doc},
-     {"__reduce__", _PyCFunction_CAST(dictiter_reduce), METH_NOARGS,
+     {"__reduce__",     dictiter_reduce,                METH_NOARGS,
      reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -4635,8 +4637,9 @@ dict___reversed___impl(PyDictObject *self)
 }
 
 static PyObject *
-dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
+dictiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    dictiterobject *di = (dictiterobject *)self;
     /* copy the iterator state */
     dictiterobject tmp = *di;
     Py_XINCREF(tmp.di_dict);
@@ -5214,15 +5217,15 @@ dictviews_isdisjoint(PyObject *self, PyObject *other)
 PyDoc_STRVAR(isdisjoint_doc,
 "Return True if the view and the given iterable have a null intersection.");
 
-static PyObject* dictkeys_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored));
+static PyObject* dictkeys_reversed(PyObject *dv, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reversed_keys_doc,
 "Return a reverse iterator over the dict keys.");
 
 static PyMethodDef dictkeys_methods[] = {
-    {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
+    {"isdisjoint",      dictviews_isdisjoint,           METH_O,
      isdisjoint_doc},
-    {"__reversed__",    _PyCFunction_CAST(dictkeys_reversed),    METH_NOARGS,
+    {"__reversed__",    dictkeys_reversed,              METH_NOARGS,
      reversed_keys_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -5267,8 +5270,9 @@ dictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dictkeys_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
+dictkeys_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -5318,15 +5322,15 @@ static PySequenceMethods dictitems_as_sequence = {
     dictitems_contains,                 /* sq_contains */
 };
 
-static PyObject* dictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored));
+static PyObject* dictitems_reversed(PyObject *dv, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reversed_items_doc,
 "Return a reverse iterator over the dict items.");
 
 static PyMethodDef dictitems_methods[] = {
-    {"isdisjoint",      (PyCFunction)dictviews_isdisjoint,  METH_O,
+    {"isdisjoint",      dictviews_isdisjoint,           METH_O,
      isdisjoint_doc},
-    {"__reversed__",    (PyCFunction)dictitems_reversed,    METH_NOARGS,
+    {"__reversed__",    dictitems_reversed,             METH_NOARGS,
      reversed_items_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -5371,8 +5375,9 @@ dictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
+dictitems_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -5402,13 +5407,13 @@ static PySequenceMethods dictvalues_as_sequence = {
     (objobjproc)0,                      /* sq_contains */
 };
 
-static PyObject* dictvalues_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored));
+static PyObject* dictvalues_reversed(PyObject *dv, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reversed_values_doc,
 "Return a reverse iterator over the dict values.");
 
 static PyMethodDef dictvalues_methods[] = {
-    {"__reversed__",    (PyCFunction)dictvalues_reversed,    METH_NOARGS,
+    {"__reversed__",    dictvalues_reversed,            METH_NOARGS,
      reversed_values_doc},
     {NULL,              NULL}           /* sentinel */
 };
@@ -5453,8 +5458,9 @@ dictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dictvalues_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
+dictvalues_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
