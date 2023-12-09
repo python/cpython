@@ -4505,8 +4505,9 @@ PyTypeObject PyDictIterItem_Type = {
 /* dictreviter */
 
 static PyObject *
-dictreviter_iternext(dictiterobject *di)
+dictreviter_iternext(PyObject *self)
 {
+    dictiterobject *di = (dictiterobject *)self;
     PyDictObject *d = di->di_dict;
 
     if (d == NULL) {
@@ -4611,7 +4612,7 @@ PyTypeObject PyDictRevIterKey_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)dictreviter_iternext,
+    .tp_iternext = dictreviter_iternext,
     .tp_methods = dictiter_methods
 };
 
@@ -4652,7 +4653,7 @@ PyTypeObject PyDictRevIterItem_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)dictreviter_iternext,
+    .tp_iternext = dictreviter_iternext,
     .tp_methods = dictiter_methods
 };
 
@@ -4664,7 +4665,7 @@ PyTypeObject PyDictRevIterValue_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)dictreviter_iternext,
+    .tp_iternext = dictreviter_iternext,
     .tp_methods = dictiter_methods
 };
 
