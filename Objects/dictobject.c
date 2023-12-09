@@ -4870,8 +4870,9 @@ dictkeys_iter(_PyDictViewObject *dv)
 }
 
 static int
-dictkeys_contains(_PyDictViewObject *dv, PyObject *obj)
+dictkeys_contains(PyObject *self, PyObject *obj)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     if (dv->dv_dict == NULL)
         return 0;
     return PyDict_Contains((PyObject *)dv->dv_dict, obj);
@@ -4885,7 +4886,7 @@ static PySequenceMethods dictkeys_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)dictkeys_contains,      /* sq_contains */
+    dictkeys_contains,                  /* sq_contains */
 };
 
 // Create a set object from dictviews object.
@@ -4925,7 +4926,7 @@ dictviews_sub(PyObject *self, PyObject *other)
 }
 
 static int
-dictitems_contains(_PyDictViewObject *dv, PyObject *obj);
+dictitems_contains(PyObject *dv, PyObject *obj);
 
 PyObject *
 _PyDictView_Intersect(PyObject* self, PyObject *other)
@@ -4935,7 +4936,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     PyObject *key;
     Py_ssize_t len_self;
     int rv;
-    int (*dict_contains)(_PyDictViewObject *, PyObject *);
+    objobjproc dict_contains;
 
     /* Python interpreter swaps parameters when dict view
        is on right side of & */
@@ -4987,7 +4988,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     }
 
     while ((key = PyIter_Next(it)) != NULL) {
-        rv = dict_contains((_PyDictViewObject *)self, key);
+        rv = dict_contains(self, key);
         if (rv < 0) {
             goto error;
         }
@@ -5282,8 +5283,9 @@ dictitems_iter(PyObject *self)
 }
 
 static int
-dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
+dictitems_contains(PyObject *self, PyObject *obj)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     int result;
     PyObject *key, *value, *found;
     if (dv->dv_dict == NULL)
@@ -5308,7 +5310,7 @@ static PySequenceMethods dictitems_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)dictitems_contains,     /* sq_contains */
+    dictitems_contains,                 /* sq_contains */
 };
 
 static PyObject* dictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored));
