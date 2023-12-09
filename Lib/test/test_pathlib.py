@@ -51,7 +51,7 @@ if hasattr(os, 'geteuid'):
 
 
 class PurePathBaseTest(unittest.TestCase):
-    cls = pathlib._PurePathBase
+    cls = pathlib._abc.PurePathBase
 
     def test_magic_methods(self):
         P = self.cls
@@ -66,7 +66,7 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__ge__, object.__ge__)
 
 
-class DummyPurePath(pathlib._PurePathBase):
+class DummyPurePath(pathlib._abc.PurePathBase):
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
             return NotImplemented
@@ -1586,7 +1586,7 @@ class PurePathSubclassTest(PurePathTest):
 #
 
 class PathBaseTest(PurePathBaseTest):
-    cls = pathlib._PathBase
+    cls = pathlib._abc.PathBase
 
     def test_unsupported_operation(self):
         P = self.cls
@@ -1667,7 +1667,7 @@ class DummyPathIO(io.BytesIO):
         super().close()
 
 
-class DummyPath(pathlib._PathBase):
+class DummyPath(pathlib._abc.PathBase):
     """
     Simple implementation of PathBase that keeps files and directories in
     memory.
