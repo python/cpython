@@ -4174,8 +4174,9 @@ static PyMethodDef dictiter_methods[] = {
 };
 
 static PyObject*
-dictiter_iternextkey(dictiterobject *di)
+dictiter_iternextkey(PyObject *self)
 {
+    dictiterobject *di = (dictiterobject *)self;
     PyObject *key;
     Py_ssize_t i;
     PyDictKeysObject *k;
@@ -4269,7 +4270,7 @@ PyTypeObject PyDictIterKey_Type = {
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)dictiter_iternextkey,         /* tp_iternext */
+    dictiter_iternextkey,                       /* tp_iternext */
     dictiter_methods,                           /* tp_methods */
     0,
 };
