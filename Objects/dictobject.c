@@ -4278,8 +4278,9 @@ PyTypeObject PyDictIterKey_Type = {
 };
 
 static PyObject *
-dictiter_iternextvalue(dictiterobject *di)
+dictiter_iternextvalue(PyObject *self)
 {
+    dictiterobject *di = (dictiterobject *)self;
     PyObject *value;
     Py_ssize_t i;
     PyDictObject *d = di->di_dict;
@@ -4371,7 +4372,7 @@ PyTypeObject PyDictIterValue_Type = {
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)dictiter_iternextvalue,       /* tp_iternext */
+    dictiter_iternextvalue,                     /* tp_iternext */
     dictiter_methods,                           /* tp_methods */
     0,
 };
