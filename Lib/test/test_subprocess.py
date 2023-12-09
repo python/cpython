@@ -3371,7 +3371,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # vfork() when possible.
         strace_binary = "/usr/bin/strace"
         # The only system calls we are interested in.
-        strace_filter = "--trace=execve,clone,clone3,fork,vfork,exit,exit_group"
+        strace_filter = "--trace=clone,clone2,clone3,fork,vfork,exit,exit_group"
         true_binary = "/bin/true"
         strace_command = [strace_binary, strace_filter]
 
