@@ -85,7 +85,13 @@ Important deprecations, removals or restrictions:
 New Features
 ============
 
+Improved Error Messages
+-----------------------
 
+* The interpreter now colorizes error messages when displaying tracebacks by default.
+  This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variables. (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 Other Language Changes
 ======================
@@ -270,9 +276,11 @@ pathlib
   (Contributed by Barney Gale in :gh:`73435`.)
 
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
-  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
-  :meth:`~pathlib.Path.is_dir`.
-  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
+  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
+  :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
+  :meth:`~pathlib.Path.group`.
+  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
+  Kamil Turek in :gh:`107962`).
 
 pdb
 ---
@@ -296,6 +304,13 @@ sqlite3
 * A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
+sys
+---
+
+* Add the :func:`sys._is_interned` function to test if the string was interned.
+  This function is not guaranteed to exist in all implementations of Python.
+  (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
 tkinter
 -------
@@ -563,7 +578,8 @@ Pending Removal in Python 3.14
   * date and datetime adapter, date and timestamp converter:
     see the :mod:`sqlite3` documentation for suggested replacement recipes.
 
-* :class:`types.CodeType`: Accessing ``co_lnotab`` was deprecated in :pep:`626`
+* :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+  deprecated in :pep:`626`
   since 3.10 and was planned to be removed in 3.12,
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.14.
@@ -726,7 +742,7 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
-* ``types.CodeType.co_lnotab``: use the ``co_lines`` attribute instead.
+* :attr:`~codeobject.co_lnotab`: use the ``co_lines`` attribute instead.
 
 * :class:`typing.Text` (:gh:`92332`).
 
@@ -1066,6 +1082,16 @@ Changes in the Python API
   retrieve a username, instead of :exc:`ImportError` on non-Unix platforms or
   :exc:`KeyError` on Unix platforms where the password database is empty.
 
+* The :mod:`threading` module now expects the :mod:`!_thread` module to have
+  an ``_is_main_interpreter`` attribute.  It is a function with no
+  arguments that returns ``True`` if the current interpreter is the
+  main interpreter.
+
+  Any library or application that provides a custom ``_thread`` module
+  must provide ``_is_main_interpreter()``, just like the module's
+  other "private" attributes.
+  (See :gh:`112826`.)
+
 
 Build Changes
 =============
@@ -1103,6 +1129,16 @@ New Features
   :ref:`format codes <arg-parsing-string-and-buffers>`.
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
+
+* The *keywords* parameter of :c:func:`PyArg_ParseTupleAndKeywords` and
+  :c:func:`PyArg_VaParseTupleAndKeywords` has now type :c:expr:`char * const *`
+  in C and :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
+  It makes these functions compatible with arguments of type
+  :c:expr:`const char * const *`, :c:expr:`const char **` or
+  :c:expr:`char * const *` in C++ and :c:expr:`char * const *` in C
+  without an explicit type cast.
+  This can be overridden with the :c:macro:`PY_CXX_CONST` macro.
+  (Contributed by Serhiy Storchaka in :gh:`65210`.)
 
 * Add :c:func:`PyImport_AddModuleRef`: similar to
   :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
@@ -1229,6 +1265,9 @@ New Features
   similar to :meth:`dict.pop`, but without the default value and not raising
   :exc:`KeyError` if the key missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
+
+* Add :c:func:`Py_HashPointer` function to hash a pointer.
+  (Contributed by Victor Stinner in :gh:`111545`.)
 
 
 Porting to Python 3.13

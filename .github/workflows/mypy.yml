@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/mypy.yml"
       - "Lib/test/libregrtest/**"
+      - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
       - "Tools/peg_generator/**"
@@ -34,6 +35,7 @@ jobs:
       matrix:
         target: [
           "Lib/test/libregrtest",
+          "Tools/build/",
           "Tools/cases_generator",
           "Tools/clinic",
           "Tools/peg_generator",
