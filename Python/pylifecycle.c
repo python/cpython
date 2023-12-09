@@ -820,6 +820,11 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
+    status = _PyDtoa_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     // The GC must be initialized before the first GC collection.
     status = _PyGC_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1776,6 +1781,7 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
+    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -3050,13 +3056,13 @@ wait_for_thread_shutdown(PyThreadState *tstate)
 int Py_AtExit(void (*func)(void))
 {
     struct _atexit_runtime_state *state = &_PyRuntime.atexit;
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     if (state->ncallbacks >= NEXITFUNCS) {
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         return -1;
     }
     state->callbacks[state->ncallbacks++] = func;
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
     return 0;
 }
 
@@ -3066,18 +3072,18 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
     atexit_callbackfunc exitfunc;
     struct _atexit_runtime_state *state = &runtime->atexit;
 
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     while (state->ncallbacks > 0) {
         /* pop last function from the list */
         state->ncallbacks--;
         exitfunc = state->callbacks[state->ncallbacks];
         state->callbacks[state->ncallbacks] = NULL;
 
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         exitfunc();
-        PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+        PyMutex_Lock(&state->mutex);
     }
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
 
     fflush(stdout);
     fflush(stderr);
