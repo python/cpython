@@ -1660,7 +1660,6 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_tarfile_vs_tar(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-
         with no_chdir:
             tarball = make_archive(base_name, 'gztar', root_dir, base_dir)
 
@@ -1684,8 +1683,6 @@ class TestArchives(BaseTest, unittest.TestCase):
                 tar_cmd.insert(1, '--no-mac-metadata')
         subprocess.check_call(tar_cmd, cwd=root_dir,
                               stdout=subprocess.DEVNULL)
-
-
 
         self.assertTrue(os.path.isfile(tarball2))
         # let's compare both tarballs
