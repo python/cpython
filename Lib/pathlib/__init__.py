@@ -71,6 +71,11 @@ class PurePath(_abc.PurePathBase):
         return object.__new__(cls)
 
     def _load_args(self, args):
+        """Type-checks and returns the given *args*. TypeError is raised if
+        any argument does not implement the os.PathLike interface, or
+        implements it but doesn't return a string. This method is called from
+        PurePathBase.__init__().
+        """
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
