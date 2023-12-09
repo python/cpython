@@ -9,7 +9,10 @@ import sys
 import doctest
 import unittest
 import io
+import textwrap
 from test import support
+from test.support.import_helper import import_module
+from test.support.pty_helper import run_pty
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -243,6 +246,48 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) \n"
              "(Cmd) *** Unknown syntax: EOF\n"))
 
+
+class CmdPrintExceptionClass(cmd.Cmd):
+    """
+    GH-80731
+    cmd.Cmd should print the correct exception in default()
+    >>> mycmd = CmdPrintExceptionClass()
+    >>> try:
+    ...     raise ValueError("test")
+    ... except ValueError:
+    ...     mycmd.onecmd("not important")
+    (<class 'ValueError'>, ValueError('test'))
+    """
+
+    def default(self, line):
+        print(sys.exc_info()[:2])
+
+
+@support.requires_subprocess()
+class CmdTestReadline(unittest.TestCase):
+    def setUpClass():
+        # Ensure that the readline module is loaded
+        # If this fails, the test is skipped because SkipTest will be raised
+        readline = import_module('readline')
+
+    def test_basic_completion(self):
+        script = textwrap.dedent("""
+            import cmd
+            class simplecmd(cmd.Cmd):
+                def do_tab_completion_test(self, args):
+                    print('tab completion success')
+                    return True
+
+            simplecmd().cmdloop()
+        """)
+
+        # 't' and complete 'ab_completion_test' to 'tab_completion_test'
+        input = b"t\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'ab_completion_test', output)
+        self.assertIn(b'tab completion success', output)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())

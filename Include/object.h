@@ -88,7 +88,7 @@ having all the lower 32 bits set, which will avoid the reference count to go
 beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 */
-#define _Py_IMMORTAL_REFCNT UINT_MAX
+#define _Py_IMMORTAL_REFCNT _Py_CAST(Py_ssize_t, UINT_MAX)
 
 #else
 /*
@@ -103,23 +103,26 @@ immortality, but the execution would still be correct.
 Reference count increases and decreases will first go through an immortality
 check by comparing the reference count field to the immortality reference count.
 */
-#define _Py_IMMORTAL_REFCNT (UINT_MAX >> 2)
+#define _Py_IMMORTAL_REFCNT _Py_CAST(Py_ssize_t, UINT_MAX >> 2)
 #endif
 
-// Py_NOGIL builds indicate immortal objects using `ob_ref_local`, which is
+// Py_GIL_DISABLED builds indicate immortal objects using `ob_ref_local`, which is
 // always 32-bits.
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 #define _Py_IMMORTAL_REFCNT_LOCAL UINT32_MAX
 #endif
 
+// Kept for backward compatibility. It was needed by Py_TRACE_REFS build.
+#define _PyObject_EXTRA_INIT
+
 // Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
 // C-API expectation that the refcnt will be set to 1.
-#if defined(Py_NOGIL)
+#if defined(Py_GIL_DISABLED)
 #define PyObject_HEAD_INIT(type)    \
     {                               \
         0,                          \
         0,                          \
-        0,                          \
+        { 0 },                      \
         0,                          \
         _Py_IMMORTAL_REFCNT_LOCAL,  \
         0,                          \
@@ -159,7 +162,7 @@ check by comparing the reference count field to the immortality reference count.
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
 struct _object {
 #if (defined(__GNUC__) || defined(__clang__)) \
         && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
@@ -204,10 +207,14 @@ struct _object {
 // Create a shared field from a refcnt and desired flags
 #define _Py_REF_SHARED(refcnt, flags) (((refcnt) << _Py_REF_SHARED_SHIFT) + (flags))
 
+// NOTE: In non-free-threaded builds, `struct _PyMutex` is defined in
+// pycore_lock.h. See pycore_lock.h for more details.
+struct _PyMutex { uint8_t v; };
+
 struct _object {
     uintptr_t ob_tid;           // thread id (or zero)
     uint16_t _padding;
-    uint8_t ob_mutex;           // per-object lock
+    struct _PyMutex ob_mutex;   // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
@@ -231,7 +238,7 @@ typedef struct {
 PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
-#if defined(Py_NOGIL) && !defined(Py_LIMITED_API)
+#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -254,6 +261,28 @@ _Py_ThreadId(void)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
 #elif defined(__aarch64__)
     __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
+#elif defined(__powerpc64__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
+    register uintptr_t tp __asm__ ("r13");
+    __asm__("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__powerpc__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
+    register uintptr_t tp __asm__ ("r2");
+    __asm__ ("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__s390__) && defined(__GNUC__)
+    // Both GCC and Clang have supported __builtin_thread_pointer
+    // for s390 from long time ago.
+    tid = (uintptr_t)__builtin_thread_pointer();
 #else
   # error "define _Py_ThreadId for this platform"
 #endif
@@ -268,7 +297,7 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 #endif
 
 static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
     return ob->ob_refcnt;
 #else
     uint32_t local = _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local);
@@ -309,12 +338,12 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
-#if defined(Py_NOGIL)
-    return op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL;
+#if defined(Py_GIL_DISABLED)
+    return (op->ob_ref_local == _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
-    return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
+    return (_Py_CAST(PY_INT32_T, op->ob_refcnt) < 0);
 #else
-    return op->ob_refcnt == _Py_IMMORTAL_REFCNT;
+    return (op->ob_refcnt == _Py_IMMORTAL_REFCNT);
 #endif
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
@@ -343,15 +372,23 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     if (_Py_IsImmortal(ob)) {
         return;
     }
-#ifndef Py_NOGIL
+
+#ifndef Py_GIL_DISABLED
     ob->ob_refcnt = refcnt;
 #else
     if (_Py_IsOwnedByCurrentThread(ob)) {
-        // Set local refcount to desired refcount and shared refcount to zero,
-        // but preserve the shared refcount flags.
-        assert(refcnt < UINT32_MAX);
-        ob->ob_ref_local = _Py_STATIC_CAST(uint32_t, refcnt);
-        ob->ob_ref_shared &= _Py_REF_SHARED_FLAG_MASK;
+        if ((size_t)refcnt > (size_t)UINT32_MAX) {
+            // On overflow, make the object immortal
+            ob->ob_tid = _Py_UNOWNED_TID;
+            ob->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
+            ob->ob_ref_shared = 0;
+        }
+        else {
+            // Set local refcount to desired refcount and shared refcount
+            // to zero, but preserve the shared refcount flags.
+            ob->ob_ref_local = _Py_STATIC_CAST(uint32_t, refcnt);
+            ob->ob_ref_shared &= _Py_REF_SHARED_FLAG_MASK;
+        }
     }
     else {
         // Set local refcount to zero and shared refcount to desired refcount.
@@ -360,7 +397,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         ob->ob_ref_local = 0;
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
-#endif  // Py_NOGIL
+#endif  // Py_GIL_DISABLED
 #endif  // Py_LIMITED_API+0 < 0x030d0000
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
@@ -739,10 +776,11 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
-#if defined(Py_NOGIL)
+#if defined(Py_GIL_DISABLED)
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     uint32_t new_local = local + 1;
     if (new_local == 0) {
+        // local is equal to _Py_IMMORTAL_REFCNT: do nothing
         return;
     }
     if (_Py_IsOwnedByCurrentThread(op)) {
@@ -756,6 +794,8 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
     PY_UINT32_T new_refcnt = cur_refcnt + 1;
     if (new_refcnt == 0) {
+        // cur_refcnt is equal to _Py_IMMORTAL_REFCNT: the object is immortal,
+        // do nothing
         return;
     }
     op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
@@ -777,7 +817,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
 
 
-#if !defined(Py_LIMITED_API) && defined(Py_NOGIL)
+#if !defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
 // Implements Py_DECREF on objects not owned by the current thread.
 PyAPI_FUNC(void) _Py_DecRefShared(PyObject *);
 PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
@@ -803,7 +843,7 @@ static inline void Py_DECREF(PyObject *op) {
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
-#elif defined(Py_NOGIL) && defined(Py_REF_DEBUG)
+#elif defined(Py_GIL_DISABLED) && defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
@@ -828,7 +868,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 }
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
-#elif defined(Py_NOGIL)
+#elif defined(Py_GIL_DISABLED)
 static inline void Py_DECREF(PyObject *op)
 {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);

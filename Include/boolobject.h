@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 
-PyAPI_DATA(PyTypeObject) PyBool_Type;
+// PyBool_Type is declared by object.h
 
 #define PyBool_Check(x) Py_IS_TYPE((x), &PyBool_Type)
 

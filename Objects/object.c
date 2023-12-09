@@ -296,16 +296,18 @@ _Py_DecRef(PyObject *o)
     Py_DECREF(o);
 }
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
+# ifdef Py_REF_DEBUG
 static inline int
 is_shared_refcnt_dead(Py_ssize_t shared)
 {
-#if SIZEOF_SIZE_T == 8
+#  if SIZEOF_SIZE_T == 8
     return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
-#else
+#  else
     return shared == (Py_ssize_t)0xDDDDDDDD;
-#endif
+#  endif
 }
+# endif
 
 void
 _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
@@ -412,7 +414,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     return refcnt;
 }
-#endif
+#endif  /* Py_GIL_DISABLED */
 
 
 /**************************************/
@@ -1040,7 +1042,10 @@ PyObject_HasAttrString(PyObject *obj, const char *name)
 {
     int rc = PyObject_HasAttrStringWithError(obj, name);
     if (rc < 0) {
-        PyErr_Clear();
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyObject_HasAttrString(); consider using "
+            "PyObject_HasAttrStringWithError(), "
+            "PyObject_GetOptionalAttrString() or PyObject_GetAttrString()");
         return 0;
     }
     return rc;
@@ -1275,7 +1280,10 @@ PyObject_HasAttr(PyObject *obj, PyObject *name)
 {
     int rc = PyObject_HasAttrWithError(obj, name);
     if (rc < 0) {
-        PyErr_Clear();
+        PyErr_FormatUnraisable(
+            "Exception ignored in PyObject_HasAttr(); consider using "
+            "PyObject_HasAttrWithError(), "
+            "PyObject_GetOptionalAttr() or PyObject_GetAttr()");
         return 0;
     }
     return rc;
@@ -1482,19 +1490,14 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        PyObject *attr = PyDict_GetItemWithError(dict, name);
-        if (attr != NULL) {
-            *method = Py_NewRef(attr);
+        if (PyDict_GetItemRef(dict, name, method) != 0) {
+            // found or error
             Py_DECREF(dict);
             Py_XDECREF(descr);
             return 0;
         }
+        // not found
         Py_DECREF(dict);
-
-        if (PyErr_Occurred()) {
-            Py_XDECREF(descr);
-            return 0;
-        }
     }
 
     if (meth_found) {
@@ -1599,21 +1602,17 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        res = PyDict_GetItemWithError(dict, name);
+        int rc = PyDict_GetItemRef(dict, name, &res);
+        Py_DECREF(dict);
         if (res != NULL) {
-            Py_INCREF(res);
-            Py_DECREF(dict);
             goto done;
         }
-        else {
-            Py_DECREF(dict);
-            if (PyErr_Occurred()) {
-                if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    PyErr_Clear();
-                }
-                else {
-                    goto done;
-                }
+        else if (rc < 0) {
+            if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                goto done;
             }
         }
     }
@@ -2027,7 +2026,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
-    0,                  /*tp_richcompare */
+    _Py_BaseObject_RichCompare, /*tp_richcompare */
     0,                  /*tp_weaklistoffset */
     0,                  /*tp_iter */
     0,                  /*tp_iternext */
@@ -2360,12 +2359,12 @@ new_reference(PyObject *op)
         _PyTraceMalloc_NewReference(op);
     }
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
     op->ob_refcnt = 1;
 #else
     op->ob_tid = _Py_ThreadId();
     op->_padding = 0;
-    op->ob_mutex = 0;
+    op->ob_mutex = (struct _PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
     op->ob_ref_shared = 0;
