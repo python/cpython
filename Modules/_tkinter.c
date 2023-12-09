@@ -749,8 +749,9 @@ PyDoc_STRVAR(PyTclObject_string__doc__,
 "the string representation of this object, either as str or bytes");
 
 static PyObject *
-PyTclObject_string(PyTclObject *self, void *ignored)
+PyTclObject_string(PyObject *_self, void *ignored)
 {
+    PyTclObject *self = (PyTclObject *)_self;
     if (!self->string) {
         self->string = unicodeFromTclObj(self->value);
         if (!self->string)
@@ -817,7 +818,7 @@ get_typename(PyTclObject* obj, void* ignored)
 
 static PyGetSetDef PyTclObject_getsetlist[] = {
     {"typename", (getter)get_typename, NULL, get_typename__doc__},
-    {"string", (getter)PyTclObject_string, NULL,
+    {"string", PyTclObject_string, NULL,
      PyTclObject_string__doc__},
     {0},
 };
