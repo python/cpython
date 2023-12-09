@@ -761,8 +761,9 @@ PyTclObject_string(PyObject *_self, void *ignored)
 }
 
 static PyObject *
-PyTclObject_str(PyTclObject *self)
+PyTclObject_str(PyObject *_self)
 {
+    PyTclObject *self = (PyTclObject *)_self;
     if (self->string) {
         return Py_NewRef(self->string);
     }
@@ -774,7 +775,7 @@ static PyObject *
 PyTclObject_repr(PyObject *_self)
 {
     PyTclObject *self = (PyTclObject *)_self;
-    PyObject *repr, *str = PyTclObject_str(self);
+    PyObject *repr, *str = PyTclObject_str(_self);
     if (str == NULL)
         return NULL;
     repr = PyUnicode_FromFormat("<%s object: %R>",
@@ -828,7 +829,7 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 static PyType_Slot PyTclObject_Type_slots[] = {
     {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
     {Py_tp_repr, PyTclObject_repr},
-    {Py_tp_str, (reprfunc)PyTclObject_str},
+    {Py_tp_str, PyTclObject_str},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_richcompare, PyTclObject_richcompare},
     {Py_tp_getset, PyTclObject_getsetlist},
