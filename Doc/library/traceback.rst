@@ -16,7 +16,8 @@ interpreter.
 
 .. index:: pair: object; traceback
 
-The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
+The module uses :ref:`traceback objects <traceback-objects>` --- these are
+objects of type :class:`types.TracebackType`,
 which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.
 
 .. seealso::

@@ -1244,8 +1244,9 @@ Frame objects
 
 .. index:: pair: object; frame
 
-Frame objects represent execution frames.  They may occur in traceback objects
-(see below), and are also passed to registered trace functions.
+Frame objects represent execution frames.  They may occur in
+:ref:`traceback objects <traceback-objects>`,
+and are also passed to registered trace functions.
 
 .. index::
    single: f_back (frame attribute)
@@ -1357,9 +1358,13 @@ Traceback objects
    single: sys.exception
    single: sys.last_traceback
 
-Traceback objects represent a stack trace of an exception.  A traceback object
+Traceback objects represent the stack trace of an :ref:`exception <tut-errors>`.
+A traceback object
 is implicitly created when an exception occurs, and may also be explicitly
 created by calling :class:`types.TracebackType`.
+
+.. versionchanged:: 3.7
+   Traceback objects can now be explicitly instantiated from Python code.
 
 For implicitly created tracebacks, when the search for an exception handler
 unwinds the execution stack, at each unwound level a traceback object is
@@ -1413,13 +1418,12 @@ occurred in a
 
 .. attribute:: traceback.tb_next
 
-   The special writable attribute: :attr:`!tb_next` is the next level in the
+   The special writable attribute :attr:`!tb_next` is the next level in the
    stack trace (towards the frame where the exception occurred), or ``None`` if
    there is no next level.
 
-.. versionchanged:: 3.7
-   Traceback objects can now be explicitly instantiated from Python code,
-   and the ``tb_next`` attribute of existing instances can be updated.
+   .. versionchanged:: 3.7
+      This attribute is now writable
 
 
 Slice objects
