@@ -206,9 +206,13 @@ class PurePathBase:
     )
     pathmod = os.path
 
-    def __init__(self, *paths):
-        self._raw_paths = paths
+    def __init__(self, *args):
+        self._raw_paths = self._load_args(args)
         self._resolving = False
+
+    def _load_args(self, args):
+        # overridden in pathlib.PurePath
+        return args
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.

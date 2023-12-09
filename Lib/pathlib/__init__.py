@@ -70,7 +70,7 @@ class PurePath(_abc.PurePathBase):
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
         return object.__new__(cls)
 
-    def __init__(self, *args):
+    def _load_args(self, args):
         paths = []
         for arg in args:
             if isinstance(arg, PurePath):
@@ -90,7 +90,7 @@ class PurePath(_abc.PurePathBase):
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
                 paths.append(path)
-        super().__init__(*paths)
+        return paths
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
