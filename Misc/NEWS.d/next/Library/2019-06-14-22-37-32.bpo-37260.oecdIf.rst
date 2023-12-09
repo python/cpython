@@ -1,0 +1,2 @@
+Fixed a race condition in :func:`shutil.rmtree` in which directory entries removed by another process or thread while ``shutil.rmtree()`` is running can cause it to raise FileNotFoundError.  Patch by Jeffrey Kintscher.
+

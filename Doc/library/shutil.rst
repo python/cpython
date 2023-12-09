@@ -343,6 +343,12 @@ Directory and files operations
    .. versionchanged:: 3.12
       Added the *onexc* parameter, deprecated *onerror*.
 
+   .. versionchanged:: 3.13
+      :func:`!rmtree` now ignores :exc:`FileNotFoundError` exceptions for all
+      but the top-level path.
+      Exceptions other than :exc:`OSError` and subclasses of :exc:`!OSError`
+      are now always propagated to the caller.
+
    .. attribute:: rmtree.avoids_symlink_attacks
 
       Indicates whether the current platform and implementation provides a
