@@ -130,7 +130,10 @@ abstract_sockets_supported = _platform_supports_abstract_sockets()
 #
 
 def _remove_temp_dir(rmtree, tempdir):
-    rmtree(tempdir)
+    def onerror(func, path, err_info):
+        if not issubclass(err_info[0], FileNotFoundError):
+            raise
+    rmtree(tempdir, onerror=onerror)
 
     current_process = process.current_process()
     # current_process() can be None if the finalizer is called
