@@ -4131,8 +4131,9 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
 }
 
 static void
-dictiter_dealloc(dictiterobject *di)
+dictiter_dealloc(PyObject *self)
 {
+    dictiterobject *di = (dictiterobject *)self;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     _PyObject_GC_UNTRACK(di);
     Py_XDECREF(di->di_dict);
@@ -4249,7 +4250,7 @@ PyTypeObject PyDictIterKey_Type = {
     sizeof(dictiterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)dictiter_dealloc,               /* tp_dealloc */
+    dictiter_dealloc,                           /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -4348,7 +4349,7 @@ PyTypeObject PyDictIterValue_Type = {
     sizeof(dictiterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)dictiter_dealloc,               /* tp_dealloc */
+    dictiter_dealloc,                           /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -4472,7 +4473,7 @@ PyTypeObject PyDictIterItem_Type = {
     sizeof(dictiterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)dictiter_dealloc,               /* tp_dealloc */
+    dictiter_dealloc,                           /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -4605,7 +4606,7 @@ PyTypeObject PyDictRevIterKey_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "dict_reversekeyiterator",
     sizeof(dictiterobject),
-    .tp_dealloc = (destructor)dictiter_dealloc,
+    .tp_dealloc = dictiter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
@@ -4646,7 +4647,7 @@ PyTypeObject PyDictRevIterItem_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "dict_reverseitemiterator",
     sizeof(dictiterobject),
-    .tp_dealloc = (destructor)dictiter_dealloc,
+    .tp_dealloc = dictiter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
@@ -4658,7 +4659,7 @@ PyTypeObject PyDictRevIterValue_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "dict_reversevalueiterator",
     sizeof(dictiterobject),
-    .tp_dealloc = (destructor)dictiter_dealloc,
+    .tp_dealloc = dictiter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = dictiter_traverse,
     .tp_iter = PyObject_SelfIter,
