@@ -237,7 +237,7 @@ equally good collision statistics, needed less code & used less memory.
 static int dictresize(PyInterpreterState *interp, PyDictObject *mp,
                       uint8_t log_newsize, int unicode);
 
-static PyObject* dict_iter(PyDictObject *dict);
+static PyObject* dict_iter(PyObject *dict);
 
 #include "clinic/dictobject.c.h"
 
@@ -792,7 +792,7 @@ static PyDictKeysObject *
 clone_combined_dict_keys(PyDictObject *orig)
 {
     assert(PyDict_Check(orig));
-    assert(Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter);
+    assert(Py_TYPE(orig)->tp_iter == dict_iter);
     assert(orig->ma_values == NULL);
     assert(orig->ma_keys != Py_EMPTY_KEYS);
     assert(orig->ma_keys->dk_refcnt == 1);
@@ -2927,7 +2927,7 @@ dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
         return -1;
     }
     mp = (PyDictObject*)a;
-    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
+    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
         other = (PyDictObject*)b;
         if (other == mp || other->ma_used == 0)
             /* a.update(a) or a.update({}); nothing to do */
@@ -3157,7 +3157,7 @@ PyDict_Copy(PyObject *o)
         return (PyObject *)split_copy;
     }
 
-    if (Py_TYPE(mp)->tp_iter == (getiterfunc)dict_iter &&
+    if (Py_TYPE(mp)->tp_iter == dict_iter &&
             mp->ma_values == NULL &&
             (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3))
     {
@@ -3939,8 +3939,9 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static PyObject *
-dict_iter(PyDictObject *dict)
+dict_iter(PyObject *self)
 {
+    PyDictObject *dict = (PyDictObject *)self;
     return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
@@ -3983,7 +3984,7 @@ PyTypeObject PyDict_Type = {
     dict_tp_clear,                              /* tp_clear */
     dict_richcompare,                           /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
-    (getiterfunc)dict_iter,                     /* tp_iter */
+    dict_iter,                                  /* tp_iter */
     0,                                          /* tp_iternext */
     mapp_methods,                               /* tp_methods */
     0,                                          /* tp_members */
