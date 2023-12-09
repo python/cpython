@@ -2627,18 +2627,18 @@ dict_subscript(PyObject *self, PyObject *key)
 }
 
 static int
-dict_ass_sub(PyDictObject *mp, PyObject *v, PyObject *w)
+dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
 {
     if (w == NULL)
-        return PyDict_DelItem((PyObject *)mp, v);
+        return PyDict_DelItem(mp, v);
     else
-        return PyDict_SetItem((PyObject *)mp, v, w);
+        return PyDict_SetItem(mp, v, w);
 }
 
 static PyMappingMethods dict_as_mapping = {
     dict_length, /*mp_length*/
     dict_subscript, /*mp_subscript*/
-    (objobjargproc)dict_ass_sub, /*mp_ass_subscript*/
+    dict_ass_sub, /*mp_ass_subscript*/
 };
 
 static PyObject *
