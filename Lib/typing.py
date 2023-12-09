@@ -1137,7 +1137,10 @@ class _BaseGenericAlias(_Final, _root=True):
             res.append(self.__origin__)
         i = bases.index(self)
         for b in bases[i+1:]:
-            if isinstance(b, _BaseGenericAlias) or issubclass(b, Generic):
+            if (
+                isinstance(b, (_BaseGenericAlias, GenericAlias))
+                or issubclass(b, Generic)
+            ):
                 break
         else:
             res.append(Generic)

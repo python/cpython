@@ -4886,6 +4886,20 @@ class GenericTests(BaseTestCase):
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
 
+    def test_multiple_inheritance_gh112903(self):
+        # https://github.com/python/cpython/issues/112903
+        K = TypeVar("K")
+        V = TypeVar("V")
+
+        class BaseMap(typing.Mapping[K, V]): ...
+        class MutableMap(BaseMap[K, V], typing.MutableMapping[K, V]): ...
+        # This should not raise:
+        class MyMap1(Dict[K, V], MutableMap[K, V]): ...
+        class MyMap2(MutableMap[K, V], Dict[K, V]): ...
+
+        self.assertIn(Generic, MyMap1.__mro__)
+        self.assertIn(Generic, MyMap2.__mro__)
+
     def test_init_subclass_super_called(self):
         class FinalException(Exception):
             pass
