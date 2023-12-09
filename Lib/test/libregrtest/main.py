@@ -295,7 +295,9 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
-            result.covered_lines = list(tracer.counts)
+            # Mypy doesn't know about this attribute yet,
+            # but it will do soon: https://github.com/python/typeshed/pull/11091
+            result.covered_lines = list(tracer.counts)  # type: ignore[attr-defined]
         else:
             result = run_single_test(test_name, runtests)
 
@@ -309,7 +311,7 @@ class Regrtest:
         else:
             tracer = None
 
-        save_modules = sys.modules.keys()
+        save_modules = set(sys.modules)
 
         jobs = runtests.get_jobs()
         if jobs is not None:
@@ -333,10 +335,18 @@ class Regrtest:
 
             result = self.run_test(test_name, runtests, tracer)
 
-            # Unload the newly imported modules (best effort finalization)
-            for module in sys.modules.keys():
-                if module not in save_modules and module.startswith("test."):
-                    support.unload(module)
+            # Unload the newly imported test modules (best effort finalization)
+            new_modules = [module for module in sys.modules
+                           if module not in save_modules and
+                                module.startswith(("test.", "test_"))]
+            for module in new_modules:
+                sys.modules.pop(module, None)
+                # Remove the attribute of the parent module.
+                parent, _, name = module.rpartition('.')
+                try:
+                    delattr(sys.modules[parent], name)
+                except (KeyError, AttributeError):
+                    pass
 
             if result.must_stop(self.fail_fast, self.fail_env_changed):
                 break
@@ -371,7 +381,8 @@ class Regrtest:
                 os.unlink(self.next_single_filename)
 
         if coverage is not None:
-            coverage.write_results(show_missing=True, summary=True,
+            # uses a new-in-Python 3.13 keyword argument that mypy doesn't know about yet:
+            coverage.write_results(show_missing=True, summary=True,  # type: ignore[call-arg]
                                    coverdir=self.coverage_dir,
                                    ignore_missing_files=True)
 
@@ -420,7 +431,6 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
-            json_file=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -432,7 +442,10 @@ class Regrtest:
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests
             # that like to sleep
-            self.num_workers = (os.process_cpu_count() or 1) + 2
+            #
+            # os.process.cpu_count() is new in Python 3.13;
+            # mypy doesn't know about it yet
+            self.num_workers = (os.process_cpu_count() or 1) + 2  # type: ignore[attr-defined]
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header

@@ -186,7 +186,12 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
             }, \
         }, \
-        ._initial_thread = _PyThreadState_INIT, \
+        ._initial_thread = _PyThreadStateImpl_INIT, \
+    }
+
+#define _PyThreadStateImpl_INIT \
+    { \
+        .base = _PyThreadState_INIT, \
     }
 
 #define _PyThreadState_INIT \
