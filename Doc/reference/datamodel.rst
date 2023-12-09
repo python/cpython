@@ -1244,8 +1244,9 @@ Frame objects
 
 .. index:: pair: object; frame
 
-Frame objects represent execution frames.  They may occur in traceback objects
-(see below), and are also passed to registered trace functions.
+Frame objects represent execution frames.  They may occur in
+:ref:`traceback objects <traceback-objects>`,
+and are also passed to registered trace functions.
 
 .. index::
    single: f_back (frame attribute)
@@ -1352,26 +1353,30 @@ Traceback objects
    single: sys.exception
    single: sys.last_traceback
 
-Traceback objects represent a stack trace of an exception.  A traceback object
+Traceback objects represent the stack trace of an :ref:`exception <tut-errors>`.
+A traceback object
 is implicitly created when an exception occurs, and may also be explicitly
 created by calling :class:`types.TracebackType`.
+
+.. versionchanged:: 3.7
+   Traceback objects can now be explicitly instantiated from Python code.
 
 For implicitly created tracebacks, when the search for an exception handler
 unwinds the execution stack, at each unwound level a traceback object is
 inserted in front of the current traceback.  When an exception handler is
 entered, the stack trace is made available to the program. (See section
 :ref:`try`.) It is accessible as the third item of the
-tuple returned by ``sys.exc_info()``, and as the ``__traceback__`` attribute
+tuple returned by :func:`sys.exc_info`, and as the ``__traceback__`` attribute
 of the caught exception.
 
 When the program contains no suitable
 handler, the stack trace is written (nicely formatted) to the standard error
 stream; if the interpreter is interactive, it is also made available to the user
-as ``sys.last_traceback``.
+as :data:`sys.last_traceback`.
 
 For explicitly created tracebacks, it is up to the creator of the traceback
-to determine how the ``tb_next`` attributes should be linked to form a
-full stack trace.
+to determine how the :attr:`~traceback.tb_next` attributes should be linked to
+form a full stack trace.
 
 .. index::
    single: tb_frame (traceback attribute)
@@ -1380,27 +1385,40 @@ full stack trace.
    pair: statement; try
 
 Special read-only attributes:
-:attr:`tb_frame` points to the execution frame of the current level;
-:attr:`tb_lineno` gives the line number where the exception occurred;
-:attr:`tb_lasti` indicates the precise instruction.
-The line number and last instruction in the traceback may differ from the
-line number of its frame object if the exception occurred in a
-:keyword:`try` statement with no matching except clause or with a
-finally clause.
 
-Accessing ``tb_frame`` raises an :ref:`auditing event <auditing>`
-``object.__getattr__`` with arguments ``obj`` and ``"tb_frame"``.
+.. list-table::
+
+   * - .. attribute:: traceback.tb_frame
+     - Points to the execution :ref:`frame <frame-objects>` of the current
+       level.
+
+       Accessing this attribute raises an
+       :ref:`auditing event <auditing>` ``object.__getattr__`` with arguments
+       ``obj`` and ``"tb_frame"``.
+
+   * - .. attribute:: traceback.tb_lineno
+     - Gives the line number where the exception occurred
+
+   * - .. attribute:: traceback.tb_lasti
+     - Indicates the "precise instruction".
+
+The line number and last instruction in the traceback may differ from the
+line number of its :ref:`frame object <frame-objects>` if the exception
+occurred in a
+:keyword:`try` statement with no matching except clause or with a
+:keyword:`finally` clause.
 
 .. index::
    single: tb_next (traceback attribute)
 
-Special writable attribute: :attr:`tb_next` is the next level in the stack
-trace (towards the frame where the exception occurred), or ``None`` if
-there is no next level.
+.. attribute:: traceback.tb_next
 
-.. versionchanged:: 3.7
-   Traceback objects can now be explicitly instantiated from Python code,
-   and the ``tb_next`` attribute of existing instances can be updated.
+   The special writable attribute :attr:`!tb_next` is the next level in the
+   stack trace (towards the frame where the exception occurred), or ``None`` if
+   there is no next level.
+
+   .. versionchanged:: 3.7
+      This attribute is now writable
 
 
 Slice objects

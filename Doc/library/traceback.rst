@@ -16,7 +16,8 @@ interpreter.
 
 .. index:: pair: object; traceback
 
-The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
+The module uses :ref:`traceback objects <traceback-objects>` --- these are
+objects of type :class:`types.TracebackType`,
 which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.
 
 .. seealso::
@@ -205,7 +206,8 @@ The module defines the following functions:
 
 .. function:: walk_tb(tb)
 
-   Walk a traceback following ``tb_next`` yielding the frame and line number
+   Walk a traceback following :attr:`~traceback.tb_next` yielding the frame and
+   line number
    for each frame. This helper is used with :meth:`StackSummary.extract`.
 
    .. versionadded:: 3.5
