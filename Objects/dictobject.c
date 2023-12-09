@@ -4687,8 +4687,9 @@ dictview_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static Py_ssize_t
-dictview_len(_PyDictViewObject *dv)
+dictview_len(PyObject *self)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     Py_ssize_t len = 0;
     if (dv->dv_dict != NULL)
         len = dv->dv_dict->ma_used;
@@ -4870,7 +4871,7 @@ dictkeys_contains(_PyDictViewObject *dv, PyObject *obj)
 }
 
 static PySequenceMethods dictkeys_as_sequence = {
-    (lenfunc)dictview_len,              /* sq_length */
+    dictview_len,                       /* sq_length */
     0,                                  /* sq_concat */
     0,                                  /* sq_repeat */
     0,                                  /* sq_item */
@@ -4937,7 +4938,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
         self = tmp;
     }
 
-    len_self = dictview_len((_PyDictViewObject *)self);
+    len_self = dictview_len(self);
 
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
@@ -4949,7 +4950,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     /* if other is another dict view, and it is bigger than self,
        swap them */
     if (PyDictViewSet_Check(other)) {
-        Py_ssize_t len_other = dictview_len((_PyDictViewObject *)other);
+        Py_ssize_t len_other = dictview_len(other);
         if (len_other > len_self) {
             PyObject *tmp = other;
             other = self;
@@ -5153,7 +5154,7 @@ dictviews_isdisjoint(PyObject *self, PyObject *other)
     PyObject *item = NULL;
 
     if (self == other) {
-        if (dictview_len((_PyDictViewObject *)self) == 0)
+        if (dictview_len(self) == 0)
             Py_RETURN_TRUE;
         else
             Py_RETURN_FALSE;
@@ -5162,7 +5163,7 @@ dictviews_isdisjoint(PyObject *self, PyObject *other)
     /* Iterate over the shorter object (only if other is a set,
      * because PySequence_Contains may be expensive otherwise): */
     if (PyAnySet_Check(other) || PyDictViewSet_Check(other)) {
-        Py_ssize_t len_self = dictview_len((_PyDictViewObject *)self);
+        Py_ssize_t len_self = dictview_len(self);
         Py_ssize_t len_other = PyObject_Size(other);
         if (len_other == -1)
             return NULL;
@@ -5292,7 +5293,7 @@ dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
 }
 
 static PySequenceMethods dictitems_as_sequence = {
-    (lenfunc)dictview_len,              /* sq_length */
+    dictview_len,                       /* sq_length */
     0,                                  /* sq_concat */
     0,                                  /* sq_repeat */
     0,                                  /* sq_item */
@@ -5376,7 +5377,7 @@ dictvalues_iter(PyObject *self)
 }
 
 static PySequenceMethods dictvalues_as_sequence = {
-    (lenfunc)dictview_len,              /* sq_length */
+    dictview_len,                       /* sq_length */
     0,                                  /* sq_concat */
     0,                                  /* sq_repeat */
     0,                                  /* sq_item */
