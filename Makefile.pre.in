@@ -2164,6 +2164,7 @@ LIBSUBDIRS=	asyncio \
 		json \
 		logging \
 		multiprocessing multiprocessing/dummy \
+		pathlib \
 		pydoc_data \
 		re \
 		site-packages \
