@@ -1054,7 +1054,7 @@ class EditorWindow:
         else:
             title = "untitled"
         icon = short or long or title
-        if not self.get_saved():
+        if not self.get_saved() and not macosx.isCocoaTk():
             title = "*%s*" % title
             icon = "*%s" % icon
         self.top.wm_title(title)
@@ -1063,6 +1063,9 @@ class EditorWindow:
         if macosx.isCocoaTk():
             # Add a proxy icon to the window title
             self.top.wm_attributes("-titlepath", long)
+
+            # Maintain the modification status for the window
+            self.top.wm_attributes("-modified", not self.get_saved())
 
     def get_saved(self):
         return self.undo.get_saved()
