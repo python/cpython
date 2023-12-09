@@ -107,7 +107,6 @@ Doc/library/sunau.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
 Doc/library/telnetlib.rst
-Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
 Doc/library/tkinter.rst
