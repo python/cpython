@@ -735,8 +735,9 @@ newPyTclObject(Tcl_Obj *arg)
 }
 
 static void
-PyTclObject_dealloc(PyTclObject *self)
+PyTclObject_dealloc(PyObject *_self)
 {
+    PyTclObject *self = (PyTclObject *)_self;
     PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
@@ -827,7 +828,7 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 };
 
 static PyType_Slot PyTclObject_Type_slots[] = {
-    {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
+    {Py_tp_dealloc, PyTclObject_dealloc},
     {Py_tp_repr, PyTclObject_repr},
     {Py_tp_str, PyTclObject_str},
     {Py_tp_getattro, PyObject_GenericGetAttr},
