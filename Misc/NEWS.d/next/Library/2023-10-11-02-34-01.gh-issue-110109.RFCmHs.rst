@@ -1,0 +1,3 @@
+Add private ``pathlib._PurePathBase`` class: a base class for
+:class:`pathlib.PurePath` that omits certain magic methods. It may be made
+public (along with ``_PathBase``) in future.
