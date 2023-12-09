@@ -2500,8 +2500,9 @@ dict_dealloc(PyObject *self)
 
 
 static PyObject *
-dict_repr(PyDictObject *mp)
+dict_repr(PyObject *self)
 {
+    PyDictObject *mp = (PyDictObject *)self;
     Py_ssize_t i;
     PyObject *key = NULL, *value = NULL;
     _PyUnicodeWriter writer;
@@ -3964,7 +3965,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)dict_repr,                        /* tp_repr */
+    dict_repr,                                  /* tp_repr */
     &dict_as_number,                            /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
     &dict_as_mapping,                           /* tp_as_mapping */
