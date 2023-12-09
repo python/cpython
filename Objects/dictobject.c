@@ -4829,8 +4829,9 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static PyObject *
-dictview_repr(_PyDictViewObject *dv)
+dictview_repr(PyObject *self)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     PyObject *seq;
     PyObject *result = NULL;
     Py_ssize_t rc;
@@ -5225,7 +5226,7 @@ PyTypeObject PyDictKeys_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)dictview_repr,                    /* tp_repr */
+    dictview_repr,                              /* tp_repr */
     &dictviews_as_number,                       /* tp_as_number */
     &dictkeys_as_sequence,                      /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -5327,7 +5328,7 @@ PyTypeObject PyDictItems_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)dictview_repr,                    /* tp_repr */
+    dictview_repr,                              /* tp_repr */
     &dictviews_as_number,                       /* tp_as_number */
     &dictitems_as_sequence,                     /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -5409,7 +5410,7 @@ PyTypeObject PyDictValues_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)dictview_repr,                    /* tp_repr */
+    dictview_repr,                              /* tp_repr */
     0,                                          /* tp_as_number */
     &dictvalues_as_sequence,                    /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
