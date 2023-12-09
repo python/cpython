@@ -2591,8 +2591,9 @@ dict_length(PyObject *self)
 }
 
 static PyObject *
-dict_subscript(PyDictObject *mp, PyObject *key)
+dict_subscript(PyObject *self, PyObject *key)
 {
+    PyDictObject *mp = (PyDictObject *)self;
     Py_ssize_t ix;
     Py_hash_t hash;
     PyObject *value;
@@ -2636,7 +2637,7 @@ dict_ass_sub(PyDictObject *mp, PyObject *v, PyObject *w)
 
 static PyMappingMethods dict_as_mapping = {
     dict_length, /*mp_length*/
-    (binaryfunc)dict_subscript, /*mp_subscript*/
+    dict_subscript, /*mp_subscript*/
     (objobjargproc)dict_ass_sub, /*mp_ass_subscript*/
 };
 
@@ -3766,7 +3767,7 @@ PyDoc_STRVAR(values__doc__,
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__", _PyCFunction_CAST(dict_subscript),        METH_O | METH_COEXIST,
+    {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
     {"__sizeof__",      _PyCFunction_CAST(dict_sizeof),       METH_NOARGS,
      sizeof__doc__},
