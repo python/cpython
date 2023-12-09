@@ -5365,8 +5365,9 @@ dictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 /*** dict_values ***/
 
 static PyObject *
-dictvalues_iter(_PyDictViewObject *dv)
+dictvalues_iter(PyObject *self)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject *)self;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -5422,7 +5423,7 @@ PyTypeObject PyDictValues_Type = {
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
-    (getiterfunc)dictvalues_iter,               /* tp_iter */
+    dictvalues_iter,                            /* tp_iter */
     0,                                          /* tp_iternext */
     dictvalues_methods,                         /* tp_methods */
     .tp_getset = dictview_getset,
