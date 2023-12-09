@@ -2231,6 +2231,8 @@ loghelper(PyObject* arg, double (*func)(double))
 
         x = PyLong_AsDouble(arg);
         if (x == -1.0) {
+            if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+                return NULL;
             /* Here the conversion to double overflowed, but it's possible
                to compute the log anyway.  Clear the exception and continue. */
             PyErr_Clear();
