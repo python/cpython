@@ -2584,8 +2584,9 @@ error:
 }
 
 static Py_ssize_t
-dict_length(PyDictObject *mp)
+dict_length(PyObject *self)
 {
+    PyDictObject *mp = (PyDictObject *)self;
     return mp->ma_used;
 }
 
@@ -2634,7 +2635,7 @@ dict_ass_sub(PyDictObject *mp, PyObject *v, PyObject *w)
 }
 
 static PyMappingMethods dict_as_mapping = {
-    (lenfunc)dict_length, /*mp_length*/
+    dict_length, /*mp_length*/
     (binaryfunc)dict_subscript, /*mp_subscript*/
     (objobjargproc)dict_ass_sub, /*mp_ass_subscript*/
 };
