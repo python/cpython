@@ -1,2 +1,0 @@
-Fix an issue where some :term:`bytecode` instructions could ignore
-:pep:`523` when "inlining" calls.

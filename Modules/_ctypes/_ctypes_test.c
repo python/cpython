@@ -1,10 +1,27 @@
-#include <Python.h>
-
-#ifdef MS_WIN32
-#include <windows.h>
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_GIL_DISABLED
 #endif
 
+#ifndef Py_GIL_DISABLED
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
+#endif
+
+// gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
+// linking the extension to python3.lib (which fails). Py_BUILD_CORE_MODULE is
+// needed to import Python symbols. Then Python.h undefines Py_BUILD_CORE and
+// Py_BUILD_CORE_MODULE if Py_LIMITED_API is defined.
+#define Py_BUILD_CORE
+#define Py_BUILD_CORE_MODULE
+
+#include <Python.h>
+
+#include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
+#include <string.h>               // memset()
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
 
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
 
@@ -131,6 +148,42 @@ _testfunc_array_in_struct2a(Test3B in)
      */
     memset(in.data, 0, sizeof(in.data));
     return result;
+}
+
+/*
+ * See gh-110190. structs containing arrays of up to four floating point types
+ * (max 32 bytes) are passed in registers on Arm.
+ */
+
+typedef struct {
+    double data[4];
+} Test3C;
+
+EXPORT(Test3C)
+_testfunc_array_in_struct_set_defaults_3C(void)
+{
+    Test3C s;
+    s.data[0] = 1.0;
+    s.data[1] = 2.0;
+    s.data[2] = 3.0;
+    s.data[3] = 4.0;
+    return s;
+}
+
+typedef struct {
+    double data[5];
+} Test3D;
+
+EXPORT(Test3D)
+_testfunc_array_in_struct_set_defaults_3D(void)
+{
+    Test3D s;
+    s.data[0] = 1.0;
+    s.data[1] = 2.0;
+    s.data[2] = 3.0;
+    s.data[3] = 4.0;
+    s.data[4] = 5.0;
+    return s;
 }
 
 typedef union {

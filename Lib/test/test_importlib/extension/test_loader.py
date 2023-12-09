@@ -1,4 +1,3 @@
-from warnings import catch_warnings
 from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
@@ -10,7 +9,6 @@ import unittest
 import warnings
 import importlib.util
 import importlib
-from test.support.script_helper import assert_python_failure
 
 
 class LoaderTests:

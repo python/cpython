@@ -40,7 +40,7 @@ pthread_cond_init(pthread_cond_t *restrict cond,
     return 0;
 }
 
-PyAPI_FUNC(int)pthread_cond_destroy(pthread_cond_t *cond)
+PyAPI_FUNC(int) pthread_cond_destroy(pthread_cond_t *cond)
 {
     return 0;
 }
@@ -91,6 +91,15 @@ pthread_create(pthread_t *restrict thread,
 int
 pthread_detach(pthread_t thread)
 {
+    return 0;
+}
+
+int
+pthread_join(pthread_t thread, void** value_ptr)
+{
+    if (value_ptr) {
+        *value_ptr = NULL;
+    }
     return 0;
 }
 

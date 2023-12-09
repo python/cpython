@@ -153,7 +153,7 @@ Allow an unparenthesized walrus in subscript indexes.
 .. section: Core and Builtins
 
 Make sure that the compiler front-end produces a well-formed control flow
-graph. Be be more aggressive in the compiler back-end, as it is now safe to
+graph. Be more aggressive in the compiler back-end, as it is now safe to
 do so.
 
 ..
@@ -394,7 +394,7 @@ Removed the ``formatter`` module, which was deprecated in Python 3.4. It is
 somewhat obsolete, little used, and not tested. It was originally scheduled
 to be removed in Python 3.6, but such removals were delayed until after
 Python 2.7 EOL. Existing users should copy whatever classes they use into
-their code. Patch by Dong-hee Na and and Terry J. Reedy.
+their code. Patch by Donghee Na and and Terry J. Reedy.
 
 ..
 
@@ -1296,7 +1296,7 @@ Port _struct extension module to multiphase initialization (:pep:`489`)
 .. nonce: 6F9o6L
 .. section: C API
 
-Port :mod:`spwd` extension module to multiphase initialization (:pep:`489`)
+Port :mod:`!spwd` extension module to multiphase initialization (:pep:`489`)
 
 ..
 
@@ -1466,7 +1466,7 @@ success. Patch by Victor Stinner.
 .. nonce: S3FWTP
 .. section: C API
 
-The :c:data:`METH_FASTCALL` calling convention is added to the limited API.
+The :c:macro:`METH_FASTCALL` calling convention is added to the limited API.
 The functions  :c:func:`PyModule_AddType`,
 :c:func:`PyType_FromModuleAndSpec`, :c:func:`PyType_GetModule` and
 :c:func:`PyType_GetModuleState` are added to the limited API on Windows.

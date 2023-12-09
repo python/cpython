@@ -6,7 +6,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
+
 
 #include "clinic/_functoolsmodule.c.h"
 /*[clinic input]
@@ -276,7 +276,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (_PyVectorcall_Function(pto->fn) == NULL) {
+    if (PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -340,18 +340,18 @@ PyDoc_STRVAR(partial_doc,
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
-    {"func",            T_OBJECT,       OFF(fn),        READONLY,
+    {"func",            _Py_T_OBJECT,       OFF(fn),        Py_READONLY,
      "function object to use in future partial calls"},
-    {"args",            T_OBJECT,       OFF(args),      READONLY,
+    {"args",            _Py_T_OBJECT,       OFF(args),      Py_READONLY,
      "tuple of arguments to future partial calls"},
-    {"keywords",        T_OBJECT,       OFF(kw),        READONLY,
+    {"keywords",        _Py_T_OBJECT,       OFF(kw),        Py_READONLY,
      "dictionary of keyword arguments to future partial calls"},
-    {"__weaklistoffset__", T_PYSSIZET,
-     offsetof(partialobject, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET,
-     offsetof(partialobject, dict), READONLY},
-    {"__vectorcalloffset__", T_PYSSIZET,
-     offsetof(partialobject, vectorcall), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, dict), Py_READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, vectorcall), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -540,7 +540,7 @@ keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 }
 
 static PyMemberDef keyobject_members[] = {
-    {"obj", T_OBJECT,
+    {"obj", _Py_T_OBJECT,
      offsetof(keyobject, object), 0,
      PyDoc_STR("Value wrapped by a key function.")},
     {NULL}
@@ -594,21 +594,15 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op)
 {
-    PyObject *res;
-    PyObject *x;
-    PyObject *y;
-    PyObject *compare;
-    PyObject *answer;
-    PyObject* stack[2];
-
     if (!Py_IS_TYPE(other, Py_TYPE(ko))) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
-    compare = ((keyobject *) ko)->cmp;
+
+    PyObject *compare = ((keyobject *) ko)->cmp;
     assert(compare != NULL);
-    x = ((keyobject *) ko)->object;
-    y = ((keyobject *) other)->object;
+    PyObject *x = ((keyobject *) ko)->object;
+    PyObject *y = ((keyobject *) other)->object;
     if (!x || !y){
         PyErr_Format(PyExc_AttributeError, "object");
         return NULL;
@@ -617,14 +611,13 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     /* Call the user's comparison function and translate the 3-way
      * result into true or false (or error).
      */
-    stack[0] = x;
-    stack[1] = y;
-    res = _PyObject_FastCall(compare, stack, 2);
+    PyObject* args[2] = {x, y};
+    PyObject *res = PyObject_Vectorcall(compare, args, 2, NULL);
     if (res == NULL) {
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
+    PyObject *answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
     Py_DECREF(res);
     return answer;
 }
@@ -732,7 +725,7 @@ Fail:
 }
 
 PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial]) -> value\n\
+"reduce(function, iterable[, initial], /) -> value\n\
 \n\
 Apply a function of two arguments cumulatively to the items of a sequence\n\
 or iterable, from left to right, so as to reduce the iterable to a single\n\
@@ -1094,19 +1087,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
        The cache dict holds one reference to the link.
        We created one other reference when the link was created.
        The linked list only has borrowed references. */
-    popresult = _PyDict_Pop_KnownHash(self->cache, link->key,
-                                      link->hash, Py_None);
-    if (popresult == Py_None) {
-        /* Getting here means that the user function call or another
-           thread has already removed the old key from the dictionary.
-           This link is now an orphan.  Since we don't want to leave the
-           cache in an inconsistent state, we don't restore the link. */
-        Py_DECREF(popresult);
-        Py_DECREF(link);
-        Py_DECREF(key);
-        return result;
-    }
-    if (popresult == NULL) {
+    int res = _PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
+                                    link->hash, &popresult);
+    if (res < 0) {
         /* An error arose while trying to remove the oldest key (the one
            being evicted) from the cache.  We restore the link to its
            original position as the oldest link.  Then we allow the
@@ -1117,10 +1100,22 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         Py_DECREF(result);
         return NULL;
     }
+    if (res == 0) {
+        /* Getting here means that the user function call or another
+           thread has already removed the old key from the dictionary.
+           This link is now an orphan.  Since we don't want to leave the
+           cache in an inconsistent state, we don't restore the link. */
+        assert(popresult == NULL);
+        Py_DECREF(link);
+        Py_DECREF(key);
+        return result;
+    }
+
     /* Keep a reference to the old key and old result to prevent their
        ref counts from going to zero during the update. That will
        prevent potentially arbitrary object clean-up code (i.e. __del__)
        from running while we're still adjusting the links. */
+    assert(popresult != NULL);
     oldkey = link->key;
     oldresult = link->result;
 
@@ -1279,7 +1274,11 @@ lru_cache_dealloc(lru_cache_object *obj)
 static PyObject *
 lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    return self->wrapper(self, args, kwds);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = self->wrapper(self, args, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
@@ -1292,6 +1291,7 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_info
 
 Report cache statistics
@@ -1299,7 +1299,7 @@ Report cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
-/*[clinic end generated code: output=cc796a0b06dbd717 input=f05e5b6ebfe38645]*/
+/*[clinic end generated code: output=cc796a0b06dbd717 input=00e1acb31aa21ecc]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     if (_self->maxsize == -1) {
@@ -1313,6 +1313,7 @@ _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _functools._lru_cache_wrapper.cache_clear
 
 Clear the cache and cache statistics
@@ -1320,7 +1321,7 @@ Clear the cache and cache statistics
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
-/*[clinic end generated code: output=58423b35efc3e381 input=6ca59dba09b12584]*/
+/*[clinic end generated code: output=58423b35efc3e381 input=dfa33acbecf8b4b2]*/
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     lru_list_elem *list = lru_cache_unlink_list(_self);
@@ -1401,10 +1402,10 @@ static PyGetSetDef lru_cache_getsetlist[] = {
 };
 
 static PyMemberDef lru_cache_memberlist[] = {
-    {"__dictoffset__", T_PYSSIZET,
-     offsetof(lru_cache_object, dict), READONLY},
-    {"__weaklistoffset__", T_PYSSIZET,
-     offsetof(lru_cache_object, weakreflist), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET,
+     offsetof(lru_cache_object, dict), Py_READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+     offsetof(lru_cache_object, weakreflist), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

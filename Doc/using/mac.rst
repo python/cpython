@@ -125,13 +125,9 @@ http://www.hashcollision.org/hkn/python/idle_intro/index.html.
 Installing Additional Python Packages
 =====================================
 
-There are several methods to install additional Python packages:
+This section has moved to the `Python Packaging User Guide`_.
 
-* Packages can be installed via the standard Python distutils mode (``python
-  setup.py install``).
-
-* Many packages can also be installed via the :program:`setuptools` extension
-  or :program:`pip` wrapper, see https://pip.pypa.io/.
+.. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/installing-packages/
 
 
 GUI Programming on the Mac
@@ -144,8 +140,8 @@ the foundation of most modern Mac development. Information on PyObjC is
 available from https://pypi.org/project/pyobjc/.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
-Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with OS
-X by Apple, and the latest version can be downloaded and installed from
+Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with
+macOS by Apple, and the latest version can be downloaded and installed from
 https://www.activestate.com; it can also be built from source.
 
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
