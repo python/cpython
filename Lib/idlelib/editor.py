@@ -1058,6 +1058,10 @@ class EditorWindow:
         self.top.wm_title(title)
         self.top.wm_iconname(icon)
 
+        if macosx.isCocoaTk():
+            # Add a proxy icon to the window title
+            self.top.wm_attributes("-titlepath", long)
+
     def get_saved(self):
         return self.undo.get_saved()
 
