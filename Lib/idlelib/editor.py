@@ -1043,7 +1043,9 @@ class EditorWindow:
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
-        if short and long:
+        if short and long and not macosx.isCocoaTk():
+            # Don't use both values on macOS because
+            # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
             title = short
