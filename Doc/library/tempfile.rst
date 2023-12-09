@@ -18,7 +18,7 @@ This module creates temporary files and directories.  It works on all
 supported platforms. :class:`TemporaryFile`, :class:`NamedTemporaryFile`,
 :class:`TemporaryDirectory`, and :class:`SpooledTemporaryFile` are high-level
 interfaces which provide automatic cleanup and can be used as
-:term:`context manager`\s. :func:`mkstemp` and
+:term:`context managers <context manager>`. :func:`mkstemp` and
 :func:`mkdtemp` are lower-level functions which require manual cleanup.
 
 All the user-callable functions and constructors take additional arguments which
