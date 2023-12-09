@@ -525,8 +525,8 @@ Other Language Changes
 
 * In order to better support dynamic creation of stack traces,
   :class:`types.TracebackType` can now be instantiated from Python code, and
-  the ``tb_next`` attribute on :ref:`tracebacks <traceback-objects>` is now
-  writable.
+  the :attr:`~traceback.tb_next` attribute on
+  :ref:`tracebacks <traceback-objects>` is now writable.
   (Contributed by Nathaniel J. Smith in :issue:`30579`.)
 
 * When using the :option:`-m` switch, ``sys.path[0]`` is now eagerly expanded
