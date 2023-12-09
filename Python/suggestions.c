@@ -245,14 +245,12 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
             goto error;
         }
 
-        PyObject *value;
-        res = PyObject_GetOptionalAttr(self, name, &value);
+        res = PyObject_HasAttrWithError(self, name);
         Py_DECREF(locals);
         if (res < 0) {
             goto error;
         }
-        if (value) {
-            Py_DECREF(value);
+        if (res) {
             Py_DECREF(dir);
             return PyUnicode_FromFormat("self.%U", name);
         }

@@ -76,6 +76,13 @@ except ImportError:
     pass
 
 
+# gh-89363: Skip fork() test if Python is built with Address Sanitizer (ASAN)
+# to work around a libasan race condition, dead lock in pthread_create().
+skip_if_asan_fork = unittest.skipIf(
+    support.HAVE_ASAN_FORK_BUG,
+    "libasan has a pthread_create() dead lock related to thread+fork")
+
+
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -90,8 +97,7 @@ class BaseTest(unittest.TestCase):
         self._threading_key = threading_helper.threading_setup()
 
         logger_dict = logging.getLogger().manager.loggerDict
-        logging._acquireLock()
-        try:
+        with logging._lock:
             self.saved_handlers = logging._handlers.copy()
             self.saved_handler_list = logging._handlerList[:]
             self.saved_loggers = saved_loggers = logger_dict.copy()
@@ -101,8 +107,6 @@ class BaseTest(unittest.TestCase):
             for name in saved_loggers:
                 logger_states[name] = getattr(saved_loggers[name],
                                               'disabled', None)
-        finally:
-            logging._releaseLock()
 
         # Set two unused loggers
         self.logger1 = logging.getLogger("\xab\xd7\xbb")
@@ -136,8 +140,7 @@ class BaseTest(unittest.TestCase):
             self.root_logger.removeHandler(h)
             h.close()
         self.root_logger.setLevel(self.original_logging_level)
-        logging._acquireLock()
-        try:
+        with logging._lock:
             logging._levelToName.clear()
             logging._levelToName.update(self.saved_level_to_name)
             logging._nameToLevel.clear()
@@ -154,8 +157,6 @@ class BaseTest(unittest.TestCase):
             for name in self.logger_states:
                 if logger_states[name] is not None:
                     self.saved_loggers[name].disabled = logger_states[name]
-        finally:
-            logging._releaseLock()
 
         self.doCleanups()
         threading_helper.threading_cleanup(*self._threading_key)
@@ -730,6 +731,7 @@ class HandlerTest(BaseTest):
     # register_at_fork mechanism is also present and used.
     @support.requires_fork()
     @threading_helper.requires_working_threading()
+    @skip_if_asan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -739,11 +741,8 @@ class HandlerTest(BaseTest):
                     stream=open('/dev/null', 'wt', encoding='utf-8'))
 
             def emit(self, record):
-                self.sub_handler.acquire()
-                try:
+                with self.sub_handler.lock:
                     self.sub_handler.emit(record)
-                finally:
-                    self.sub_handler.release()
 
         self.assertEqual(len(logging._handlers), 0)
         refed_h = _OurHandler()
@@ -759,29 +758,22 @@ class HandlerTest(BaseTest):
         fork_happened__release_locks_and_end_thread = threading.Event()
 
         def lock_holder_thread_fn():
-            logging._acquireLock()
-            try:
-                refed_h.acquire()
-                try:
-                    # Tell the main thread to do the fork.
-                    locks_held__ready_to_fork.set()
+            with logging._lock, refed_h.lock:
+                # Tell the main thread to do the fork.
+                locks_held__ready_to_fork.set()
 
-                    # If the deadlock bug exists, the fork will happen
-                    # without dealing with the locks we hold, deadlocking
-                    # the child.
+                # If the deadlock bug exists, the fork will happen
+                # without dealing with the locks we hold, deadlocking
+                # the child.
 
-                    # Wait for a successful fork or an unreasonable amount of
-                    # time before releasing our locks.  To avoid a timing based
-                    # test we'd need communication from os.fork() as to when it
-                    # has actually happened.  Given this is a regression test
-                    # for a fixed issue, potentially less reliably detecting
-                    # regression via timing is acceptable for simplicity.
-                    # The test will always take at least this long. :(
-                    fork_happened__release_locks_and_end_thread.wait(0.5)
-                finally:
-                    refed_h.release()
-            finally:
-                logging._releaseLock()
+                # Wait for a successful fork or an unreasonable amount of
+                # time before releasing our locks.  To avoid a timing based
+                # test we'd need communication from os.fork() as to when it
+                # has actually happened.  Given this is a regression test
+                # for a fixed issue, potentially less reliably detecting
+                # regression via timing is acceptable for simplicity.
+                # The test will always take at least this long. :(
+                fork_happened__release_locks_and_end_thread.wait(0.5)
 
         lock_holder_thread = threading.Thread(
                 target=lock_holder_thread_fn,
@@ -2170,7 +2162,7 @@ class HTTPHandlerTest(BaseTest):
                     sslctx = None
                 else:
                     here = os.path.dirname(__file__)
-                    localhost_cert = os.path.join(here, "keycert.pem")
+                    localhost_cert = os.path.join(here, "certdata", "keycert.pem")
                     sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                     sslctx.load_cert_chain(localhost_cert)
 
@@ -3006,6 +2998,39 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    class CustomFormatter(logging.Formatter):
+        custom_property = "."
+
+        def format(self, record):
+            return super().format(record)
+
+    config17 = {
+        'version': 1,
+        'formatters': {
+            "custom": {
+                "()": CustomFormatter,
+                "style": "{",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "format": "{message}", # <-- to force an exception when configuring
+                ".": {
+                    "custom_property": "value"
+                }
+            }
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'custom',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3487,7 +3512,10 @@ class ConfigDictTest(BaseTest):
             {'msg': 'Hello'}))
         self.assertEqual(result, 'Hello ++ defaultvalue')
 
-
+    def test_config17_ok(self):
+        self.apply_config(self.config17)
+        h = logging._handlers['hand1']
+        self.assertEqual(h.formatter.custom_property, 'value')
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")

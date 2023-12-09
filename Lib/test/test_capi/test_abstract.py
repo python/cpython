@@ -1,12 +1,36 @@
 import unittest
-import sys
 from collections import OrderedDict
 from test import support
 from test.support import import_helper
-import _testcapi
 
+_testcapi = import_helper.import_module('_testcapi')
+from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
+
+class StrSubclass(str):
+    pass
+
+class BytesSubclass(bytes):
+    pass
+
+class WithStr:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return self.value
+
+class WithRepr:
+    def __init__(self, value):
+        self.value = value
+    def __repr__(self):
+        return self.value
+
+class WithBytes:
+    def __init__(self, value):
+        self.value = value
+    def __bytes__(self):
+        return self.value
 
 class TestObject:
     @property
@@ -44,6 +68,68 @@ def gen():
 
 
 class CAPITest(unittest.TestCase):
+    def assertTypedEqual(self, actual, expected):
+        self.assertIs(type(actual), type(expected))
+        self.assertEqual(actual, expected)
+
+    def test_object_str(self):
+        # Test PyObject_Str()
+        object_str = _testcapi.object_str
+        self.assertTypedEqual(object_str(''), '')
+        self.assertTypedEqual(object_str('abc'), 'abc')
+        self.assertTypedEqual(object_str('\U0001f40d'), '\U0001f40d')
+        self.assertTypedEqual(object_str(StrSubclass('abc')), 'abc')
+        self.assertTypedEqual(object_str(WithStr('abc')), 'abc')
+        self.assertTypedEqual(object_str(WithStr(StrSubclass('abc'))), StrSubclass('abc'))
+        self.assertTypedEqual(object_str(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(object_str(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_str(NULL), '<NULL>')
+
+    def test_object_repr(self):
+        # Test PyObject_Repr()
+        object_repr = _testcapi.object_repr
+        self.assertTypedEqual(object_repr(''), "''")
+        self.assertTypedEqual(object_repr('abc'), "'abc'")
+        self.assertTypedEqual(object_repr('\U0001f40d'), "'\U0001f40d'")
+        self.assertTypedEqual(object_repr(StrSubclass('abc')), "'abc'")
+        self.assertTypedEqual(object_repr(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_repr(WithRepr('<\U0001f40d>')), '<\U0001f40d>')
+        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<\U0001f40d>'))), StrSubclass('<\U0001f40d>'))
+        self.assertTypedEqual(object_repr(NULL), '<NULL>')
+
+    def test_object_ascii(self):
+        # Test PyObject_ASCII()
+        object_ascii = _testcapi.object_ascii
+        self.assertTypedEqual(object_ascii(''), "''")
+        self.assertTypedEqual(object_ascii('abc'), "'abc'")
+        self.assertTypedEqual(object_ascii('\U0001f40d'), r"'\U0001f40d'")
+        self.assertTypedEqual(object_ascii(StrSubclass('abc')), "'abc'")
+        self.assertTypedEqual(object_ascii(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_ascii(WithRepr('<\U0001f40d>')), r'<\U0001f40d>')
+        self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<\U0001f40d>'))), r'<\U0001f40d>')
+        self.assertTypedEqual(object_ascii(NULL), '<NULL>')
+
+    def test_object_bytes(self):
+        # Test PyObject_Bytes()
+        object_bytes = _testcapi.object_bytes
+        self.assertTypedEqual(object_bytes(b''), b'')
+        self.assertTypedEqual(object_bytes(b'abc'), b'abc')
+        self.assertTypedEqual(object_bytes(BytesSubclass(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes(WithBytes(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes(WithBytes(BytesSubclass(b'abc'))), BytesSubclass(b'abc'))
+        self.assertTypedEqual(object_bytes(bytearray(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes(memoryview(b'abc')), b'abc')
+        self.assertTypedEqual(object_bytes([97, 98, 99]), b'abc')
+        self.assertTypedEqual(object_bytes((97, 98, 99)), b'abc')
+        self.assertTypedEqual(object_bytes(iter([97, 98, 99])), b'abc')
+        self.assertRaises(TypeError, object_bytes, WithBytes(bytearray(b'abc')))
+        self.assertRaises(TypeError, object_bytes, WithBytes([97, 98, 99]))
+        self.assertRaises(TypeError, object_bytes, 3)
+        self.assertRaises(TypeError, object_bytes, 'abc')
+        self.assertRaises(TypeError, object_bytes, object())
+        self.assertTypedEqual(object_bytes(NULL), b'<NULL>')
 
     def test_object_getattr(self):
         xgetattr = _testcapi.object_getattr
@@ -110,8 +196,18 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(xhasattr(obj, 'b'))
         self.assertTrue(xhasattr(obj, '\U0001f40d'))
 
-        self.assertFalse(xhasattr(obj, 'evil'))
-        self.assertFalse(xhasattr(obj, 1))
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(xhasattr(obj, 'evil'))
+            self.assertEqual(cm.unraisable.exc_type, RuntimeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'do not get evil')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(xhasattr(obj, 1))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "attribute name must be string, not 'int'")
+
         # CRASHES xhasattr(obj, NULL)
         # CRASHES xhasattr(NULL, 'a')
 
@@ -124,8 +220,46 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(hasattrstring(obj, b'b'))
         self.assertTrue(hasattrstring(obj, '\U0001f40d'.encode()))
 
-        self.assertFalse(hasattrstring(obj, b'evil'))
-        self.assertFalse(hasattrstring(obj, b'\xff'))
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(hasattrstring(obj, b'evil'))
+            self.assertEqual(cm.unraisable.exc_type, RuntimeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'do not get evil')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(hasattrstring(obj, b'\xff'))
+            self.assertEqual(cm.unraisable.exc_type, UnicodeDecodeError)
+            self.assertRegex(str(cm.unraisable.exc_value),
+                             "'utf-8' codec can't decode")
+
+        # CRASHES hasattrstring(obj, NULL)
+        # CRASHES hasattrstring(NULL, b'a')
+
+    def test_object_hasattrwitherror(self):
+        xhasattr = _testcapi.object_hasattrwitherror
+        obj = TestObject()
+        obj.a = 1
+        setattr(obj, '\U0001f40d', 2)
+        self.assertTrue(xhasattr(obj, 'a'))
+        self.assertFalse(xhasattr(obj, 'b'))
+        self.assertTrue(xhasattr(obj, '\U0001f40d'))
+
+        self.assertRaises(RuntimeError, xhasattr, obj, 'evil')
+        self.assertRaises(TypeError, xhasattr, obj, 1)
+        # CRASHES xhasattr(obj, NULL)
+        # CRASHES xhasattr(NULL, 'a')
+
+    def test_object_hasattrstringwitherror(self):
+        hasattrstring = _testcapi.object_hasattrstringwitherror
+        obj = TestObject()
+        obj.a = 1
+        setattr(obj, '\U0001f40d', 2)
+        self.assertTrue(hasattrstring(obj, b'a'))
+        self.assertFalse(hasattrstring(obj, b'b'))
+        self.assertTrue(hasattrstring(obj, '\U0001f40d'.encode()))
+
+        self.assertRaises(RuntimeError, hasattrstring, obj, b'evil')
+        self.assertRaises(UnicodeDecodeError, hasattrstring, obj, b'\xff')
         # CRASHES hasattrstring(obj, NULL)
         # CRASHES hasattrstring(NULL, b'a')
 
@@ -315,12 +449,41 @@ class CAPITest(unittest.TestCase):
 
         self.assertTrue(haskey(['a', 'b', 'c'], 1))
 
-        self.assertFalse(haskey(42, 'a'))
-        self.assertFalse(haskey({}, []))  # unhashable
-        self.assertFalse(haskey({}, NULL))
-        self.assertFalse(haskey([], 1))
-        self.assertFalse(haskey([], 'a'))
-        self.assertFalse(haskey(NULL, 'a'))
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey(42, 'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "'int' object is not subscriptable")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey({}, []))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "unhashable type: 'list'")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey([], 1))
+            self.assertEqual(cm.unraisable.exc_type, IndexError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'list index out of range')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey([], 'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'list indices must be integers or slices, not str')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey({}, NULL))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'null argument to internal routine')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskey(NULL, 'a'))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'null argument to internal routine')
 
     def test_mapping_haskeystring(self):
         haskeystring = _testcapi.mapping_haskeystring
@@ -333,11 +496,73 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(haskeystring(dct2, b'a'))
         self.assertFalse(haskeystring(dct2, b'b'))
 
-        self.assertFalse(haskeystring(42, b'a'))
-        self.assertFalse(haskeystring({}, b'\xff'))
-        self.assertFalse(haskeystring({}, NULL))
-        self.assertFalse(haskeystring([], b'a'))
-        self.assertFalse(haskeystring(NULL, b'a'))
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskeystring(42, b'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "'int' object is not subscriptable")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskeystring({}, b'\xff'))
+            self.assertEqual(cm.unraisable.exc_type, UnicodeDecodeError)
+            self.assertRegex(str(cm.unraisable.exc_value),
+                             "'utf-8' codec can't decode")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskeystring({}, NULL))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "null argument to internal routine")
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskeystring([], b'a'))
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             'list indices must be integers or slices, not str')
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertFalse(haskeystring(NULL, b'a'))
+            self.assertEqual(cm.unraisable.exc_type, SystemError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "null argument to internal routine")
+
+    def test_mapping_haskeywitherror(self):
+        haskey = _testcapi.mapping_haskeywitherror
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertTrue(haskey(dct, 'a'))
+        self.assertFalse(haskey(dct, 'b'))
+        self.assertTrue(haskey(dct, '\U0001f40d'))
+
+        dct2 = ProxyGetItem(dct)
+        self.assertTrue(haskey(dct2, 'a'))
+        self.assertFalse(haskey(dct2, 'b'))
+
+        self.assertTrue(haskey(['a', 'b', 'c'], 1))
+
+        self.assertRaises(TypeError, haskey, 42, 'a')
+        self.assertRaises(TypeError, haskey, {}, [])  # unhashable
+        self.assertRaises(IndexError, haskey, [], 1)
+        self.assertRaises(TypeError, haskey, [], 'a')
+
+        # CRASHES haskey({}, NULL))
+        # CRASHES haskey(NULL, 'a'))
+
+    def test_mapping_haskeystringwitherror(self):
+        haskeystring = _testcapi.mapping_haskeystringwitherror
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertTrue(haskeystring(dct, b'a'))
+        self.assertFalse(haskeystring(dct, b'b'))
+        self.assertTrue(haskeystring(dct, '\U0001f40d'.encode()))
+
+        dct2 = ProxyGetItem(dct)
+        self.assertTrue(haskeystring(dct2, b'a'))
+        self.assertFalse(haskeystring(dct2, b'b'))
+
+        self.assertRaises(TypeError, haskeystring, 42, b'a')
+        self.assertRaises(UnicodeDecodeError, haskeystring, {}, b'\xff')
+        self.assertRaises(SystemError, haskeystring, {}, NULL)
+        self.assertRaises(TypeError, haskeystring, [], b'a')
+        # CRASHES haskeystring(NULL, b'a')
 
     def test_object_setitem(self):
         setitem = _testcapi.object_setitem
@@ -511,6 +736,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitem(lst, 1), 'b')
         self.assertEqual(getitem(lst, -1), 'c')
         self.assertRaises(IndexError, getitem, lst, 3)
+        self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MAX)
+        self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MIN)
 
         self.assertRaises(TypeError, getitem, 42, 1)
         self.assertRaises(TypeError, getitem, {}, 1)
@@ -535,6 +762,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(repeat(('a', 'b'), 2), ('a', 'b', 'a', 'b'))
         self.assertEqual(repeat(['a', 'b'], 0), [])
         self.assertEqual(repeat(['a', 'b'], -1), [])
+        self.assertEqual(repeat(['a', 'b'], PY_SSIZE_T_MIN), [])
+        self.assertEqual(repeat([], PY_SSIZE_T_MAX), [])
+        self.assertRaises(MemoryError, repeat, ['a', 'b'], PY_SSIZE_T_MAX)
 
         self.assertRaises(TypeError, repeat, set(), 2)
         self.assertRaises(TypeError, repeat, 42, 2)
@@ -568,6 +798,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(inplacerepeat(('a', 'b'), 2), ('a', 'b', 'a', 'b'))
         self.assertEqual(inplacerepeat(['a', 'b'], 0), [])
         self.assertEqual(inplacerepeat(['a', 'b'], -1), [])
+        self.assertEqual(inplacerepeat(['a', 'b'], PY_SSIZE_T_MIN), [])
+        self.assertEqual(inplacerepeat([], PY_SSIZE_T_MAX), [])
+        self.assertRaises(MemoryError, inplacerepeat, ['a', 'b'], PY_SSIZE_T_MAX)
 
         self.assertRaises(TypeError, inplacerepeat, set(), 2)
         self.assertRaises(TypeError, inplacerepeat, 42, 2)
@@ -584,6 +817,8 @@ class CAPITest(unittest.TestCase):
         setitem(lst, 0, NULL)
         self.assertEqual(lst, ['x', 'y'])
         self.assertRaises(IndexError, setitem, lst, 3, 'x')
+        self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MAX, 'x')
+        self.assertRaises(IndexError, setitem, lst, PY_SSIZE_T_MIN, 'x')
 
         self.assertRaises(TypeError, setitem, 42, 1, 'x')
         self.assertRaises(TypeError, setitem, {}, 1, 'x')
@@ -597,6 +832,8 @@ class CAPITest(unittest.TestCase):
         delitem(lst, -1)
         self.assertEqual(lst, ['a'])
         self.assertRaises(IndexError, delitem, lst, 3)
+        self.assertRaises(IndexError, delitem, lst, PY_SSIZE_T_MAX)
+        self.assertRaises(IndexError, delitem, lst, PY_SSIZE_T_MIN)
 
         self.assertRaises(TypeError, delitem, 42, 1)
         self.assertRaises(TypeError, delitem, {}, 1)
@@ -606,13 +843,19 @@ class CAPITest(unittest.TestCase):
         setslice = _testcapi.sequence_setslice
 
         # Correct case:
-        data = [1, 2, 3, 4, 5]
-        data_copy = data.copy()
+        for start in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+            for stop in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+                data = [1, 2, 3, 4, 5]
+                data_copy = [1, 2, 3, 4, 5]
+                setslice(data, start, stop, [8, 9])
+                data_copy[start:stop] = [8, 9]
+                self.assertEqual(data, data_copy)
 
-        setslice(data, 1, 3, [8, 9])
-        data_copy[1:3] = [8, 9]
-        self.assertEqual(data, data_copy)
-        self.assertEqual(data, [1, 8, 9, 4, 5])
+                data = [1, 2, 3, 4, 5]
+                data_copy = [1, 2, 3, 4, 5]
+                setslice(data, start, stop, NULL)
+                del data_copy[start:stop]
+                self.assertEqual(data, data_copy)
 
         # Custom class:
         class Custom:
@@ -638,21 +881,17 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, setslice, object(), 1, 3, 'xy')
         self.assertRaises(SystemError, setslice, NULL, 1, 3, 'xy')
 
-        data_copy = data.copy()
-        setslice(data_copy, 1, 3, NULL)
-        self.assertEqual(data_copy, [1, 4, 5])
-
     def test_sequence_delslice(self):
         delslice = _testcapi.sequence_delslice
 
         # Correct case:
-        data = [1, 2, 3, 4, 5]
-        data_copy = data.copy()
-
-        delslice(data, 1, 3)
-        del data_copy[1:3]
-        self.assertEqual(data, data_copy)
-        self.assertEqual(data, [1, 4, 5])
+        for start in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+            for stop in [*range(-6, 7), PY_SSIZE_T_MIN, PY_SSIZE_T_MAX]:
+                data = [1, 2, 3, 4, 5]
+                data_copy = [1, 2, 3, 4, 5]
+                delslice(data, start, stop)
+                del data_copy[start:stop]
+                self.assertEqual(data, data_copy)
 
         # Custom class:
         class Custom:
@@ -753,6 +992,13 @@ class CAPITest(unittest.TestCase):
 
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
+
+    def test_number_check(self):
+        number_check = _testcapi.number_check
+        self.assertTrue(number_check(1 + 1j))
+        self.assertTrue(number_check(1))
+        self.assertTrue(number_check(0.5))
+        self.assertFalse(number_check("1 + 1j"))
 
 
 if __name__ == "__main__":

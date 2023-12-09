@@ -74,13 +74,20 @@ files. Commands to regenerate all generated files::
 The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
 to regenerate them. Search for ``regen-*`` make targets.
 
-The ``make regen-configure`` command runs `tiran/cpython_autoconf
-<https://github.com/tiran/cpython_autoconf>`_ container for reproducible build;
-see container ``entry.sh`` script. The container is optional, the following
-command can be run locally, the generated files depend on autoconf and aclocal
-versions::
+configure script
+----------------
+
+The ``make regen-configure`` command regenerates the ``aclocal.m4`` file and
+the ``configure`` script using the ``Tools/build/regen-configure.sh`` shell
+script which uses an Ubuntu container to get the same tools versions and have a
+reproducible output.
+
+The container is optional, the following command can be run locally::
 
     autoreconf -ivf -Werror
+
+The generated files can change depending on the exact ``autoconf-archive``,
+``aclocal`` and ``pkg-config`` versions.
 
 
 .. _configure-options:
@@ -97,22 +104,22 @@ See also the :file:`Misc/SpecialBuilds.txt` in the Python source distribution.
 General Options
 ---------------
 
-.. cmdoption:: --enable-loadable-sqlite-extensions
+.. option:: --enable-loadable-sqlite-extensions
 
-   Support loadable extensions in the :mod:`_sqlite` extension module (default
-   is no).
+   Support loadable extensions in the :mod:`!_sqlite` extension module (default
+   is no) of the :mod:`sqlite3` module.
 
    See the :meth:`sqlite3.Connection.enable_load_extension` method of the
    :mod:`sqlite3` module.
 
    .. versionadded:: 3.6
 
-.. cmdoption:: --disable-ipv6
+.. option:: --disable-ipv6
 
    Disable IPv6 support (enabled by default if supported), see the
    :mod:`socket` module.
 
-.. cmdoption:: --enable-big-digits=[15|30]
+.. option:: --enable-big-digits=[15|30]
 
    Define the size in bits of Python :class:`int` digits: 15 or 30 bits.
 
@@ -122,7 +129,7 @@ General Options
 
    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
 
-.. cmdoption:: --with-suffix=SUFFIX
+.. option:: --with-suffix=SUFFIX
 
    Set the Python executable suffix to *SUFFIX*.
 
@@ -135,7 +142,7 @@ General Options
       The default suffix on WASM platform is one of ``.js``, ``.html``
       or ``.wasm``.
 
-.. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
+.. option:: --with-tzpath=<list of absolute paths separated by pathsep>
 
    Select the default time zone search path for :const:`zoneinfo.TZPATH`.
    See the :ref:`Compile-time configuration
@@ -147,7 +154,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --without-decimal-contextvar
+.. option:: --without-decimal-contextvar
 
    Build the ``_decimal`` extension module using a thread-local context rather
    than a coroutine-local context (default), see the :mod:`decimal` module.
@@ -156,7 +163,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-dbmliborder=<list of backend names>
+.. option:: --with-dbmliborder=<list of backend names>
 
    Override order to check db backends for the :mod:`dbm` module
 
@@ -166,7 +173,7 @@ General Options
    * ``gdbm``;
    * ``bdb``.
 
-.. cmdoption:: --without-c-locale-coercion
+.. option:: --without-c-locale-coercion
 
    Disable C locale coercion to a UTF-8 based locale (enabled by default).
 
@@ -174,13 +181,13 @@ General Options
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
 
-.. cmdoption:: --without-freelists
+.. option:: --without-freelists
 
    Disable all freelists except the empty tuple singleton.
 
    .. versionadded:: 3.11
 
-.. cmdoption:: --with-platlibdir=DIRNAME
+.. option:: --with-platlibdir=DIRNAME
 
    Python library directory name (default is ``lib``).
 
@@ -190,7 +197,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-wheel-pkg-dir=PATH
+.. option:: --with-wheel-pkg-dir=PATH
 
    Directory of wheel packages used by the :mod:`ensurepip` module
    (none by default).
@@ -198,11 +205,11 @@ General Options
    Some Linux distribution packaging policies recommend against bundling
    dependencies. For example, Fedora installs wheel packages in the
    ``/usr/share/python-wheels/`` directory and don't install the
-   :mod:`ensurepip._bundled` package.
+   :mod:`!ensurepip._bundled` package.
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --with-pkg-config=[check|yes|no]
+.. option:: --with-pkg-config=[check|yes|no]
 
    Whether configure should use :program:`pkg-config` to detect build
    dependencies.
@@ -213,7 +220,7 @@ General Options
 
    .. versionadded:: 3.11
 
-.. cmdoption:: --enable-pystats
+.. option:: --enable-pystats
 
    Turn on internal Python performance statistics gathering.
 
@@ -280,19 +287,154 @@ General Options
 
    .. versionadded:: 3.11
 
-.. cmdoption:: --disable-gil
+.. _free-threading-build:
+
+.. option:: --disable-gil
 
    Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL).
+   :term:`global interpreter lock` (GIL): free threading build.
+
+   Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
+   :data:`sys.abiflags`.
 
    See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
 
    .. versionadded:: 3.13
 
+.. option:: PKG_CONFIG
+
+   Path to ``pkg-config`` utility.
+
+.. option:: PKG_CONFIG_LIBDIR
+.. option:: PKG_CONFIG_PATH
+
+   ``pkg-config`` options.
+
+
+C compiler options
+------------------
+
+.. option:: CC
+
+   C compiler command.
+
+.. option:: CFLAGS
+
+   C compiler flags.
+
+.. option:: CPP
+
+   C preprocessor command.
+
+.. option:: CPPFLAGS
+
+   C preprocessor flags, e.g. :samp:`-I{include_dir}`.
+
+
+Linker options
+--------------
+
+.. option:: LDFLAGS
+
+   Linker flags, e.g. :samp:`-L{library_directory}`.
+
+.. option:: LIBS
+
+   Libraries to pass to the linker, e.g. :samp:`-l{library}`.
+
+.. option:: MACHDEP
+
+   Name for machine-dependent library files.
+
+
+Options for third-party dependencies
+------------------------------------
+
+.. versionadded:: 3.11
+
+.. option:: BZIP2_CFLAGS
+.. option:: BZIP2_LIBS
+
+   C compiler and linker flags to link Python to ``libbz2``, used by :mod:`bz2`
+   module, overriding ``pkg-config``.
+
+.. option:: CURSES_CFLAGS
+.. option:: CURSES_LIBS
+
+   C compiler and linker flags for ``libncurses`` or ``libncursesw``, used by
+   :mod:`curses` module, overriding ``pkg-config``.
+
+.. option:: GDBM_CFLAGS
+.. option:: GDBM_LIBS
+
+   C compiler and linker flags for ``gdbm``.
+
+.. option:: LIBB2_CFLAGS
+.. option:: LIBB2_LIBS
+
+   C compiler and linker flags for ``libb2`` (:ref:`BLAKE2 <hashlib-blake2>`),
+   used by :mod:`hashlib` module, overriding ``pkg-config``.
+
+.. option:: LIBEDIT_CFLAGS
+.. option:: LIBEDIT_LIBS
+
+   C compiler and linker flags for ``libedit``, used by :mod:`readline` module,
+   overriding ``pkg-config``.
+
+.. option:: LIBFFI_CFLAGS
+.. option:: LIBFFI_LIBS
+
+   C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
+   overriding ``pkg-config``.
+
+.. option:: LIBLZMA_CFLAGS
+.. option:: LIBLZMA_LIBS
+
+   C compiler and linker flags for ``liblzma``, used by :mod:`lzma` module,
+   overriding ``pkg-config``.
+
+.. option:: LIBREADLINE_CFLAGS
+.. option:: LIBREADLINE_LIBS
+
+   C compiler and linker flags for ``libreadline``, used by :mod:`readline`
+   module, overriding ``pkg-config``.
+
+.. option:: LIBSQLITE3_CFLAGS
+.. option:: LIBSQLITE3_LIBS
+
+   C compiler and linker flags for ``libsqlite3``, used by :mod:`sqlite3`
+   module, overriding ``pkg-config``.
+
+.. option:: LIBUUID_CFLAGS
+.. option:: LIBUUID_LIBS
+
+   C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
+   overriding ``pkg-config``.
+
+.. option:: PANEL_CFLAGS
+.. option:: PANEL_LIBS
+
+   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+
+   C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
+   :mod:`curses.panel` module, overriding ``pkg-config``.
+
+.. option:: TCLTK_CFLAGS
+.. option:: TCLTK_LIBS
+
+   C compiler and linker flags for TCLTK, overriding ``pkg-config``.
+
+.. option:: ZLIB_CFLAGS
+.. option:: ZLIB_LIBS
+
+   C compiler and linker flags for ``libzlib``, used by :mod:`gzip` module,
+   overriding ``pkg-config``.
+
+
 WebAssembly Options
 -------------------
 
-.. cmdoption:: --with-emscripten-target=[browser|node]
+.. option:: --with-emscripten-target=[browser|node]
 
    Set build flavor for ``wasm32-emscripten``.
 
@@ -301,7 +443,7 @@ WebAssembly Options
 
    .. versionadded:: 3.11
 
-.. cmdoption:: --enable-wasm-dynamic-linking
+.. option:: --enable-wasm-dynamic-linking
 
    Turn on dynamic linking support for WASM.
 
@@ -310,7 +452,7 @@ WebAssembly Options
 
    .. versionadded:: 3.11
 
-.. cmdoption:: --enable-wasm-pthreads
+.. option:: --enable-wasm-pthreads
 
    Turn on pthreads support for WASM.
 
@@ -320,7 +462,7 @@ WebAssembly Options
 Install Options
 ---------------
 
-.. cmdoption:: --prefix=PREFIX
+.. option:: --prefix=PREFIX
 
    Install architecture-independent files in PREFIX. On Unix, it
    defaults to :file:`/usr/local`.
@@ -330,20 +472,20 @@ Install Options
    As an example, one can use ``--prefix="$HOME/.local/"`` to install
    a Python in its home directory.
 
-.. cmdoption:: --exec-prefix=EPREFIX
+.. option:: --exec-prefix=EPREFIX
 
    Install architecture-dependent files in EPREFIX, defaults to :option:`--prefix`.
 
    This value can be retrieved at runtime using :data:`sys.exec_prefix`.
 
-.. cmdoption:: --disable-test-modules
+.. option:: --disable-test-modules
 
    Don't build nor install test modules, like the :mod:`test` package or the
-   :mod:`_testcapi` extension module (built and installed by default).
+   :mod:`!_testcapi` extension module (built and installed by default).
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --with-ensurepip=[upgrade|install|no]
+.. option:: --with-ensurepip=[upgrade|install|no]
 
    Select the :mod:`ensurepip` command run on Python installation:
 
@@ -362,7 +504,7 @@ Configuring Python using ``--enable-optimizations --with-lto`` (PGO + LTO) is
 recommended for best performance. The experimental ``--enable-bolt`` flag can
 also be used to improve performance.
 
-.. cmdoption:: --enable-optimizations
+.. option:: --enable-optimizations
 
    Enable Profile Guided Optimization (PGO) using :envvar:`PROFILE_TASK`
    (disabled by default).
@@ -388,7 +530,10 @@ also be used to improve performance.
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --with-lto=[full|thin|no|yes]
+   .. versionchanged:: 3.13
+      Task failure is no longer ignored silently.
+
+.. option:: --with-lto=[full|thin|no|yes]
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
@@ -403,7 +548,7 @@ also be used to improve performance.
    .. versionchanged:: 3.12
       Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
 
-.. cmdoption:: --enable-bolt
+.. option:: --enable-bolt
 
    Enable usage of the `BOLT post-link binary optimizer
    <https://github.com/llvm/llvm-project/tree/main/bolt>`_ (disabled by
@@ -428,19 +573,39 @@ also be used to improve performance.
 
    .. versionadded:: 3.12
 
-.. cmdoption:: --with-computed-gotos
+.. option:: BOLT_APPLY_FLAGS
+
+   Arguments to ``llvm-bolt`` when creating a `BOLT optimized binary
+   <https://github.com/facebookarchive/BOLT>`_.
+
+   .. versionadded:: 3.12
+
+.. option:: BOLT_INSTRUMENT_FLAGS
+
+   Arguments to ``llvm-bolt`` when instrumenting binaries.
+
+   .. versionadded:: 3.12
+
+.. option:: --with-computed-gotos
 
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
 
-.. cmdoption:: --without-pymalloc
+.. option:: --without-mimalloc
+
+   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   (enabled by default).
+
+   See also :envvar:`PYTHONMALLOC` environment variable.
+
+.. option:: --without-pymalloc
 
    Disable the specialized Python memory allocator :ref:`pymalloc <pymalloc>`
    (enabled by default).
 
    See also :envvar:`PYTHONMALLOC` environment variable.
 
-.. cmdoption:: --without-doc-strings
+.. option:: --without-doc-strings
 
    Disable static documentation strings to reduce the memory footprint (enabled
    by default). Documentation strings defined in Python are not affected.
@@ -449,11 +614,11 @@ also be used to improve performance.
 
    See the ``PyDoc_STRVAR()`` macro.
 
-.. cmdoption:: --enable-profiling
+.. option:: --enable-profiling
 
    Enable C-level code profiling with ``gprof`` (disabled by default).
 
-.. cmdoption:: --with-strict-overflow
+.. option:: --with-strict-overflow
 
    Add ``-fstrict-overflow`` to the C compiler flags (by default we add
    ``-fno-strict-overflow`` instead).
@@ -472,7 +637,7 @@ Effects of a debug build:
 * Display all warnings by default: the list of default warning filters is empty
   in the :mod:`warnings` module.
 * Add ``d`` to :data:`sys.abiflags`.
-* Add :func:`sys.gettotalrefcount` function.
+* Add :func:`!sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :option:`-d` command line option and :envvar:`PYTHONDEBUG` environment
   variable to debug the parser.
@@ -494,7 +659,7 @@ Effects of a debug build:
   * Check that deallocator functions don't change the current exception.
   * The garbage collector (:func:`gc.collect` function) runs some basic checks
     on objects consistency.
-  * The :c:macro:`Py_SAFE_DOWNCAST()` macro checks for integer underflow and
+  * The :c:macro:`!Py_SAFE_DOWNCAST()` macro checks for integer underflow and
     overflow when downcasting from wide types to narrow types.
 
 See also the :ref:`Python Development Mode <devmode>` and the
@@ -509,19 +674,19 @@ See also the :ref:`Python Development Mode <devmode>` and the
 Debug options
 -------------
 
-.. cmdoption:: --with-pydebug
+.. option:: --with-pydebug
 
    :ref:`Build Python in debug mode <debug-build>`: define the ``Py_DEBUG``
    macro (disabled by default).
 
-.. cmdoption:: --with-trace-refs
+.. option:: --with-trace-refs
 
    Enable tracing references for debugging purpose (disabled by default).
 
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`sys.getobjects` function.
+   * Add :func:`!sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
@@ -535,7 +700,7 @@ Debug options
 
    .. versionadded:: 3.8
 
-.. cmdoption:: --with-assertions
+.. option:: --with-assertions
 
    Build with C assertions enabled (default is no): ``assert(...);`` and
    ``_PyObject_ASSERT(...);``.
@@ -548,11 +713,11 @@ Debug options
 
    .. versionadded:: 3.6
 
-.. cmdoption:: --with-valgrind
+.. option:: --with-valgrind
 
    Enable Valgrind support (default is no).
 
-.. cmdoption:: --with-dtrace
+.. option:: --with-dtrace
 
    Enable DTrace support (default is no).
 
@@ -561,19 +726,19 @@ Debug options
 
    .. versionadded:: 3.6
 
-.. cmdoption:: --with-address-sanitizer
+.. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
 
    .. versionadded:: 3.6
 
-.. cmdoption:: --with-memory-sanitizer
+.. option:: --with-memory-sanitizer
 
    Enable MemorySanitizer allocation error detector, ``msan`` (default is no).
 
    .. versionadded:: 3.6
 
-.. cmdoption:: --with-undefined-behavior-sanitizer
+.. option:: --with-undefined-behavior-sanitizer
 
    Enable UndefinedBehaviorSanitizer undefined behaviour detector, ``ubsan``
    (default is no).
@@ -584,11 +749,11 @@ Debug options
 Linker options
 --------------
 
-.. cmdoption:: --enable-shared
+.. option:: --enable-shared
 
    Enable building a shared Python library: ``libpython`` (default is no).
 
-.. cmdoption:: --without-static-libpython
+.. option:: --without-static-libpython
 
    Do not build ``libpythonMAJOR.MINOR.a`` and do not install ``python.o``
    (built and enabled by default).
@@ -599,31 +764,32 @@ Linker options
 Libraries options
 -----------------
 
-.. cmdoption:: --with-libs='lib1 ...'
+.. option:: --with-libs='lib1 ...'
 
    Link against additional libraries (default is no).
 
-.. cmdoption:: --with-system-expat
+.. option:: --with-system-expat
 
-   Build the :mod:`pyexpat` module using an installed ``expat`` library
+   Build the :mod:`!pyexpat` module using an installed ``expat`` library
    (default is no).
 
-.. cmdoption:: --with-system-libmpdec
+.. option:: --with-system-libmpdec
 
    Build the ``_decimal`` extension module using an installed ``mpdec``
    library, see the :mod:`decimal` module (default is no).
 
    .. versionadded:: 3.3
 
-.. cmdoption:: --with-readline=editline
+.. option:: --with-readline=readline|editline
 
-   Use ``editline`` library for backend of the :mod:`readline` module.
+   Designate a backend library for the :mod:`readline` module.
 
-   Define the ``WITH_EDITLINE`` macro.
+   * readline: Use readline as the backend.
+   * editline: Use editline as the backend.
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --without-readline
+.. option:: --without-readline
 
    Don't build the :mod:`readline` module (built by default).
 
@@ -631,21 +797,21 @@ Libraries options
 
    .. versionadded:: 3.10
 
-.. cmdoption:: --with-libm=STRING
+.. option:: --with-libm=STRING
 
    Override ``libm`` math library to *STRING* (default is system-dependent).
 
-.. cmdoption:: --with-libc=STRING
+.. option:: --with-libc=STRING
 
    Override ``libc`` C library to *STRING* (default is system-dependent).
 
-.. cmdoption:: --with-openssl=DIR
+.. option:: --with-openssl=DIR
 
    Root of the OpenSSL directory.
 
    .. versionadded:: 3.7
 
-.. cmdoption:: --with-openssl-rpath=[no|auto|DIR]
+.. option:: --with-openssl-rpath=[no|auto|DIR]
 
    Set runtime library directory (rpath) for OpenSSL libraries:
 
@@ -660,7 +826,7 @@ Libraries options
 Security Options
 ----------------
 
-.. cmdoption:: --with-hash-algorithm=[fnv|siphash13|siphash24]
+.. option:: --with-hash-algorithm=[fnv|siphash13|siphash24]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
@@ -673,7 +839,7 @@ Security Options
    .. versionadded:: 3.11
       ``siphash13`` is added and it is the new default.
 
-.. cmdoption:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
+.. option:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
 
    Built-in hash modules:
 
@@ -686,7 +852,7 @@ Security Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-ssl-default-suites=[python|openssl|STRING]
+.. option:: --with-ssl-default-suites=[python|openssl|STRING]
 
    Override the OpenSSL default cipher suites string:
 
@@ -708,19 +874,19 @@ macOS Options
 
 See ``Mac/README.rst``.
 
-.. cmdoption:: --enable-universalsdk
-.. cmdoption:: --enable-universalsdk=SDKDIR
+.. option:: --enable-universalsdk
+.. option:: --enable-universalsdk=SDKDIR
 
    Create a universal binary build. *SDKDIR* specifies which macOS SDK should
    be used to perform the build (default is no).
 
-.. cmdoption:: --enable-framework
-.. cmdoption:: --enable-framework=INSTALLDIR
+.. option:: --enable-framework
+.. option:: --enable-framework=INSTALLDIR
 
    Create a Python.framework rather than a traditional Unix install. Optional
    *INSTALLDIR* specifies the installation path (default is no).
 
-.. cmdoption:: --with-universal-archs=ARCH
+.. option:: --with-universal-archs=ARCH
 
    Specify the kind of universal binary that should be created. This option is
    only valid when :option:`--enable-universalsdk` is set.
@@ -736,7 +902,7 @@ See ``Mac/README.rst``.
    * ``intel-64``;
    * ``all``.
 
-.. cmdoption:: --with-framework-name=FRAMEWORK
+.. option:: --with-framework-name=FRAMEWORK
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
@@ -750,21 +916,21 @@ for another CPU architecture or platform. Cross compiling requires a Python
 interpreter for the build platform. The version of the build Python must match
 the version of the cross compiled host Python.
 
-.. cmdoption:: --build=BUILD
+.. option:: --build=BUILD
 
    configure for building on BUILD, usually guessed by :program:`config.guess`.
 
-.. cmdoption:: --host=HOST
+.. option:: --host=HOST
 
    cross-compile to build programs to run on HOST (target platform)
 
-.. cmdoption:: --with-build-python=path/to/python
+.. option:: --with-build-python=path/to/python
 
    path to build ``python`` binary for cross compiling
 
    .. versionadded:: 3.11
 
-.. cmdoption:: CONFIG_SITE=file
+.. option:: CONFIG_SITE=file
 
    An environment variable that points to a file with configure overrides.
 
@@ -774,6 +940,12 @@ the version of the cross compiled host Python.
       ac_cv_buggy_getaddrinfo=no
       ac_cv_file__dev_ptmx=yes
       ac_cv_file__dev_ptc=no
+
+.. option:: HOSTRUNNER
+
+   Program to run CPython for the host platform for cross-compilation.
+
+   .. versionadded:: 3.11
 
 
 Cross compiling example::
@@ -815,9 +987,18 @@ Main Makefile targets
   You can use the configure :option:`--enable-optimizations` option to make
   this the default target of the ``make`` command (``make all`` or just
   ``make``).
-* ``make buildbottest``: Build Python and run the Python test suite, the same
-  way than buildbots test Python. Set ``TESTTIMEOUT`` variable (in seconds)
-  to change the test timeout (1200 by default: 20 minutes).
+
+* ``make test``: Build Python and run the Python test suite with ``--fast-ci``
+  option. Variables:
+
+  * ``TESTOPTS``: additional regrtest command line options.
+  * ``TESTPYTHONOPTS``: additional Python command line options.
+  * ``TESTTIMEOUT``: timeout in seconds (default: 20 minutes).
+
+* ``make buildbottest``: Similar to ``make test``, but use ``--slow-ci``
+  option and default timeout of 20 minutes, instead of ``--fast-ci`` option
+  and a default timeout of 10 minutes.
+
 * ``make install``: Build and install Python.
 * ``make regen-all``: Regenerate (almost) all generated files;
   ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
@@ -855,15 +1036,15 @@ Example on Linux x86-64::
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
-:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/pyport.h` are defined
+The :c:macro:`!PyAPI_FUNC()`, :c:macro:`!PyAPI_DATA()` and
+:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/exports.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
 * Use ``Py_EXPORTED_SYMBOL`` if the ``Py_BUILD_CORE_MODULE`` is defined
 * Use ``Py_IMPORTED_SYMBOL`` otherwise.
 
 If the ``Py_BUILD_CORE_BUILTIN`` macro is used by mistake on a C extension
-built as a shared library, its ``PyInit_xxx()`` function is not exported,
+built as a shared library, its :samp:`PyInit_{xxx}()` function is not exported,
 causing an :exc:`ImportError` on import.
 
 
@@ -884,8 +1065,8 @@ Preprocessor flags
 
 .. envvar:: CPPFLAGS
 
-   (Objective) C/C++ preprocessor flags, e.g. ``-I<include dir>`` if you have
-   headers in a nonstandard directory ``<include dir>``.
+   (Objective) C/C++ preprocessor flags, e.g. :samp:`-I{include_dir}` if you have
+   headers in a nonstandard directory *include_dir*.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
    value to be able to build extension modules using the
@@ -1074,8 +1255,8 @@ Linker flags
 
 .. envvar:: LDFLAGS
 
-   Linker flags, e.g. ``-L<lib dir>`` if you have libraries in a nonstandard
-   directory ``<lib dir>``.
+   Linker flags, e.g. :samp:`-L{lib_dir}` if you have libraries in a nonstandard
+   directory *lib_dir*.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
    value to be able to build extension modules using the

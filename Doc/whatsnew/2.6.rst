@@ -125,7 +125,7 @@ and to C extension code as :c:data:`!Py_Py3kWarningFlag`.
 
 .. seealso::
 
-   The 3xxx series of PEPs, which contains proposals for Python 3.0.
+   The 3\ *xxx* series of PEPs, which contains proposals for Python 3.0.
    :pep:`3000` describes the development process for Python 3.0.
    Start with :pep:`3100` that describes the general goals for Python
    3.0, and then explore the higher-numbered PEPS that propose
@@ -269,15 +269,15 @@ structure is::
        with-block
 
 The expression is evaluated, and it should result in an object that supports the
-context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
+context management protocol (that is, has :meth:`~object.__enter__` and :meth:`~object.__exit__`
 methods).
 
-The object's :meth:`__enter__` is called before *with-block* is executed and
+The object's :meth:`~object.__enter__` is called before *with-block* is executed and
 therefore can run set-up code. It also may return a value that is bound to the
 name *variable*, if given.  (Note carefully that *variable* is *not* assigned
 the result of *expression*.)
 
-After execution of the *with-block* is finished, the object's :meth:`__exit__`
+After execution of the *with-block* is finished, the object's :meth:`~object.__exit__`
 method is called, even if the block raised an exception, and can therefore run
 clean-up code.
 
@@ -296,7 +296,7 @@ part-way through the block.
 .. note::
 
    In this case, *f* is the same object created by :func:`open`, because
-   :meth:`file.__enter__` returns *self*.
+   :meth:`~object.__enter__` returns *self*.
 
 The :mod:`threading` module's locks and condition variables  also support the
 ':keyword:`with`' statement::
@@ -339,16 +339,16 @@ underlying implementation and should keep reading.
 A high-level explanation of the context management protocol is:
 
 * The expression is evaluated and should result in an object called a "context
-  manager".  The context manager must have :meth:`__enter__` and :meth:`__exit__`
+  manager".  The context manager must have :meth:`~object.__enter__` and :meth:`~object.__exit__`
   methods.
 
-* The context manager's :meth:`__enter__` method is called.  The value returned
+* The context manager's :meth:`~object.__enter__` method is called.  The value returned
   is assigned to *VAR*.  If no ``as VAR`` clause is present, the value is simply
   discarded.
 
 * The code in *BLOCK* is executed.
 
-* If *BLOCK* raises an exception, the context manager's :meth:`__exit__` method
+* If *BLOCK* raises an exception, the context manager's :meth:`~object.__exit__` method
   is called with three arguments, the exception details (``type, value, traceback``,
   the same values returned by :func:`sys.exc_info`, which can also be ``None``
   if no exception occurred).  The method's return value controls whether an exception
@@ -357,7 +357,7 @@ A high-level explanation of the context management protocol is:
   if you do the author of the code containing the ':keyword:`with`' statement will
   never realize anything went wrong.
 
-* If *BLOCK* didn't raise an exception,  the :meth:`__exit__` method is still
+* If *BLOCK* didn't raise an exception,  the :meth:`~object.__exit__` method is still
   called, but *type*, *value*, and *traceback* are all ``None``.
 
 Let's think through an example.  I won't present detailed code but will only
@@ -391,7 +391,7 @@ rolled back if there's an exception. Here's the basic interface for
        def rollback(self):
            "Rolls back current transaction"
 
-The :meth:`__enter__` method is pretty easy, having only to start a new
+The :meth:`~object.__enter__` method is pretty easy, having only to start a new
 transaction.  For this application the resulting cursor object would be a useful
 result, so the method will return it.  The user can then add ``as cursor`` to
 their ':keyword:`with`' statement to bind the cursor to a variable name. ::
@@ -403,7 +403,7 @@ their ':keyword:`with`' statement to bind the cursor to a variable name. ::
            cursor = self.cursor()
            return cursor
 
-The :meth:`__exit__` method is the most complicated because it's where most of
+The :meth:`~object.__exit__` method is the most complicated because it's where most of
 the work has to be done.  The method has to check if an exception occurred.  If
 there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
@@ -436,10 +436,10 @@ are useful when writing objects for use with the ':keyword:`with`' statement.
 The decorator is called :func:`contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
-:meth:`__enter__` method, and the value yielded will be the method's return
+:meth:`~object.__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
 :keyword:`!as` clause, if any.  The code after the :keyword:`!yield` will be
-executed in the :meth:`__exit__` method.  Any exception raised in the block will
+executed in the :meth:`~object.__exit__` method.  Any exception raised in the block will
 be raised by the :keyword:`!yield` statement.
 
 Using this decorator, our database example from the previous section
@@ -875,11 +875,11 @@ The signature of the new function is::
 
 The parameters are:
 
- * *args*: positional arguments whose values will be printed out.
- * *sep*: the separator, which will be printed between arguments.
- * *end*: the ending text, which will be printed after all of the
-   arguments have been output.
- * *file*: the file object to which the output will be sent.
+* *args*: positional arguments whose values will be printed out.
+* *sep*: the separator, which will be printed between arguments.
+* *end*: the ending text, which will be printed after all of the
+  arguments have been output.
+* *file*: the file object to which the output will be sent.
 
 .. seealso::
 
@@ -1138,13 +1138,13 @@ indicate that the external caller is done.
 The *flags* argument to :c:func:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
 
- * :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
+* :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
 
- * :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
+* :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
 
- * :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
-   requests a C-contiguous (last dimension varies the fastest) or
-   Fortran-contiguous (first dimension varies the fastest) array layout.
+* :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
+  requests a C-contiguous (last dimension varies the fastest) or
+  Fortran-contiguous (first dimension varies the fastest) array layout.
 
 Two new argument codes for :c:func:`PyArg_ParseTuple`,
 ``s*`` and ``z*``, return locked buffer objects for a parameter.
@@ -1677,8 +1677,9 @@ Some smaller changes made to the core Python language are:
   (:issue:`1591665`)
 
 * Instance method objects have new attributes for the object and function
-  comprising the method; the new synonym for :attr:`im_self` is
-  :attr:`__self__`, and :attr:`im_func` is also available as :attr:`__func__`.
+  comprising the method; the new synonym for :attr:`!im_self` is
+  :attr:`~method.__self__`, and :attr:`!im_func` is also available as
+  :attr:`~method.__func__`.
   The old names are still supported in Python 2.6, but are gone in 3.0.
 
 * An obscure change: when you use the :func:`locals` function inside a
@@ -1737,7 +1738,7 @@ Optimizations
   (Contributed by Antoine Pitrou.)  Memory usage is reduced
   by using pymalloc for the Unicode string's data.
 
-* The ``with`` statement now stores the :meth:`__exit__` method on the stack,
+* The ``with`` statement now stores the :meth:`~object.__exit__` method on the stack,
   producing a small speedup.  (Implemented by Jeffrey Yasskin.)
 
 * To reduce memory usage, the garbage collector will now clear internal
@@ -1850,8 +1851,8 @@ changes, or look through the Subversion logs for all the details.
   special values and floating-point exceptions in a manner consistent
   with Annex 'G' of the C99 standard.
 
-* A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
-  fieldnames)` is a factory function that creates subclasses of the standard tuple
+* A new data type in the :mod:`collections` module: ``namedtuple(typename, fieldnames)``
+  is a factory function that creates subclasses of the standard tuple
   whose fields are accessible by name as well as index.  For example::
 
      >>> var_type = collections.namedtuple('variable',
@@ -1873,7 +1874,7 @@ changes, or look through the Subversion logs for all the details.
      variable(id=1, name='amplitude', type='int', size=4)
 
   Several places in the standard library that returned tuples have
-  been modified to return :class:`namedtuple` instances.  For example,
+  been modified to return :func:`namedtuple` instances.  For example,
   the :meth:`Decimal.as_tuple` method now returns a named tuple with
   :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
 

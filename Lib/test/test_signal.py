@@ -1318,6 +1318,7 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+    @unittest.skipIf(sys.platform == "darwin", "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()
@@ -1339,7 +1340,7 @@ class StressTest(unittest.TestCase):
                 num_sent_signals += 1
 
         def cycle_handlers():
-            while num_sent_signals < 100:
+            while num_sent_signals < 100 or num_received_signals < 1:
                 for i in range(20000):
                     # Cycle between a Python-defined and a non-Python handler
                     for handler in [custom_handler, signal.SIG_IGN]:
@@ -1372,7 +1373,7 @@ class StressTest(unittest.TestCase):
             if not ignored:
                 # Sanity check that some signals were received, but not all
                 self.assertGreater(num_received_signals, 0)
-            self.assertLess(num_received_signals, num_sent_signals)
+            self.assertLessEqual(num_received_signals, num_sent_signals)
         finally:
             do_stop = True
             t.join()

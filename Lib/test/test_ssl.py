@@ -10,6 +10,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+import array
 import re
 import socket
 import select
@@ -60,10 +61,10 @@ for proto, ver in (
     PROTOCOL_TO_TLS_VERSION[proto] = ver
 
 def data_file(*name):
-    return os.path.join(os.path.dirname(__file__), *name)
+    return os.path.join(os.path.dirname(__file__), "certdata", *name)
 
 # The custom key and certificate files used in test_ssl are generated
-# using Lib/test/make_ssl_certs.py.
+# using Lib/test/certdata/make_ssl_certs.py.
 # Other certificates are simply fetched from the internet servers they
 # are meant to authenticate.
 
@@ -641,7 +642,7 @@ class BasicSocketTests(unittest.TestCase):
     def bad_cert_test(self, certfile):
         """Check that trying to use the given client certificate fails"""
         certfile = os.path.join(os.path.dirname(__file__) or os.curdir,
-                                   certfile)
+                                "certdata", certfile)
         sock = socket.socket()
         self.addCleanup(sock.close)
         with self.assertRaises(ssl.SSLError):
@@ -1739,6 +1740,10 @@ class MemoryBIOTests(unittest.TestCase):
         self.assertEqual(bio.read(), b'bar')
         bio.write(memoryview(b'baz'))
         self.assertEqual(bio.read(), b'baz')
+        m = memoryview(bytearray(b'noncontig'))
+        noncontig_writable = m[::-2]
+        with self.assertRaises(BufferError):
+            bio.write(memoryview(noncontig_writable))
 
     def test_error_types(self):
         bio = ssl.MemoryBIO()
@@ -3309,12 +3314,12 @@ class ThreadedTests(unittest.TestCase):
         # try to connect
         if support.verbose:
             sys.stdout.write('\n')
-        with open(CERTFILE, 'rb') as f:
+        # Get this test file itself:
+        with open(__file__, 'rb') as f:
             d1 = f.read()
         d2 = ''
         # now fetch the same data from the HTTPS server
-        url = 'https://localhost:%d/%s' % (
-            server.port, os.path.split(CERTFILE)[1])
+        url = f'https://localhost:{server.port}/test_ssl.py'
         context = ssl.create_default_context(cafile=SIGNING_CA)
         f = urllib.request.urlopen(url, context=context)
         try:
@@ -3512,6 +3517,27 @@ class ThreadedTests(unittest.TestCase):
         s.setblocking(False)
         self.assertEqual(s.recv(0), b"")
         self.assertEqual(s.recv_into(bytearray()), 0)
+
+    def test_recv_into_buffer_protocol_len(self):
+        server = ThreadedEchoServer(CERTFILE)
+        self.enterContext(server)
+        s = socket.create_connection((HOST, server.port))
+        self.addCleanup(s.close)
+        s = test_wrap_socket(s, suppress_ragged_eofs=False)
+        self.addCleanup(s.close)
+
+        s.send(b"data")
+        buf = array.array('I', [0, 0])
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf)[:4], b"data")
+
+        class B(bytearray):
+            def __len__(self):
+                1/0
+        s.send(b"data")
+        buf = B(6)
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf), b"data\0\0")
 
     def test_nonblocking_send(self):
         server = ThreadedEchoServer(CERTFILE,
@@ -4231,6 +4257,107 @@ class ThreadedTests(unittest.TestCase):
                     s.connect((HOST, server.port))
                 self.assertEqual(str(e.exception),
                                  'Session refers to a different SSLContext.')
+
+    @requires_tls_version('TLSv1_2')
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
+    def test_psk(self):
+        psk = bytes.fromhex('deadbeef')
+
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.check_hostname = False
+        client_context.verify_mode = ssl.CERT_NONE
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        client_context.set_ciphers('PSK')
+        client_context.set_psk_client_callback(lambda hint: (None, psk))
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        server_context.set_ciphers('PSK')
+        server_context.set_psk_server_callback(lambda identity: psk)
+
+        # correct PSK should connect
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+
+        # incorrect PSK should fail
+        incorrect_psk = bytes.fromhex('cafebabe')
+        client_context.set_psk_client_callback(lambda hint: (None, incorrect_psk))
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket()) as s:
+                with self.assertRaises(ssl.SSLError):
+                    s.connect((HOST, server.port))
+
+        # identity_hint and client_identity should be sent to the other side
+        identity_hint = 'identity-hint'
+        client_identity = 'client-identity'
+
+        def client_callback(hint):
+            self.assertEqual(hint, identity_hint)
+            return client_identity, psk
+
+        def server_callback(identity):
+            self.assertEqual(identity, client_identity)
+            return psk
+
+        client_context.set_psk_client_callback(client_callback)
+        server_context.set_psk_server_callback(server_callback, identity_hint)
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+
+        # adding client callback to server or vice versa raises an exception
+        with self.assertRaisesRegex(ssl.SSLError, 'Cannot add PSK server callback'):
+            client_context.set_psk_server_callback(server_callback, identity_hint)
+        with self.assertRaisesRegex(ssl.SSLError, 'Cannot add PSK client callback'):
+            server_context.set_psk_client_callback(client_callback)
+
+        # test with UTF-8 identities
+        identity_hint = '身份暗示'  # Translation: "Identity hint"
+        client_identity = '客户身份'  # Translation: "Customer identity"
+
+        client_context.set_psk_client_callback(client_callback)
+        server_context.set_psk_server_callback(server_callback, identity_hint)
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+
+    @requires_tls_version('TLSv1_3')
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
+    def test_psk_tls1_3(self):
+        psk = bytes.fromhex('deadbeef')
+        identity_hint = 'identity-hint'
+        client_identity = 'client-identity'
+
+        def client_callback(hint):
+            # identity_hint is not sent to the client in TLS 1.3
+            self.assertIsNone(hint)
+            return client_identity, psk
+
+        def server_callback(identity):
+            self.assertEqual(identity, client_identity)
+            return psk
+
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.check_hostname = False
+        client_context.verify_mode = ssl.CERT_NONE
+        client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        client_context.set_ciphers('PSK')
+        client_context.set_psk_client_callback(client_callback)
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        server_context.set_ciphers('PSK')
+        server_context.set_psk_server_callback(server_callback, identity_hint)
+
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
 
 
 @unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")

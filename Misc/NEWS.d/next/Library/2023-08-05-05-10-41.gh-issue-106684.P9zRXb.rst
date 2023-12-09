@@ -1,1 +1,0 @@
-Raise :exc:`ResourceWarning` when :class:`asyncio.StreamWriter` is not closed leading to memory leaks. Patch by Kumar Aditya.

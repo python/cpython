@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.11, compared to 3.10.
-
+Python 3.11 was released on October 24, 2022.
 For full details, see the :ref:`changelog <changelog>`.
 
 
@@ -218,7 +218,7 @@ Windows ``py.exe`` launcher improvements
 
 The copy of the :ref:`launcher` included with Python 3.11 has been significantly
 updated. It now supports company/tag syntax as defined in :pep:`514` using the
-``-V:<company>/<tag>`` argument instead of the limited ``-<major>.<minor>``.
+:samp:`-V:{<company>}/{<tag>}` argument instead of the limited :samp:`-{<major>}.{<minor>}`.
 This allows launching distributions other than ``PythonCore``,
 the one hosted on `python.org <https://www.python.org>`_.
 
@@ -227,8 +227,8 @@ installs will be searched. For example, ``-V:OtherPython/`` will select the
 "best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
 will select the "best" distribution with tag ``3.11``.
 
-When using the legacy ``-<major>``, ``-<major>.<minor>``,
-``-<major>-<bitness>`` or ``-<major>.<minor>-<bitness>`` arguments,
+When using the legacy :samp:`-{<major>}`, :samp:`-{<major>}.{<minor>}`,
+:samp:`-{<major>}-{<bitness>}` or :samp:`-{<major>}.{<minor>}-{<bitness>}` arguments,
 all existing behaviour should be preserved from past versions,
 and only releases from ``PythonCore`` will be selected.
 However, the ``-64`` suffix now implies "not 32-bit" (not necessarily x86-64),
@@ -499,7 +499,7 @@ Other CPython Implementation Changes
 * The special methods :meth:`~object.__complex__` for :class:`complex`
   and :meth:`~object.__bytes__` for :class:`bytes` are implemented to support
   the :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
-  (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
+  (Contributed by Mark Dickinson and Donghee Na in :issue:`24234`.)
 
 * ``siphash13`` is added as a new internal hashing algorithm.
   It has similar security properties as ``siphash24``,
@@ -897,7 +897,7 @@ os
 
 * On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
   instead of ``CryptGenRandom()`` which is deprecated.
-  (Contributed by Dong-hee Na in :issue:`44611`.)
+  (Contributed by Donghee Na in :issue:`44611`.)
 
 
 .. _whatsnew311-pathlib:
@@ -1089,7 +1089,7 @@ time
   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
   which has a resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously,
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
+  (Contributed by Benjamin Szőke, Donghee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
 .. _whatsnew311-tkinter:
@@ -1305,7 +1305,7 @@ This section covers specific optimizations independent of the
 
 * :func:`unicodedata.normalize`
   now normalizes pure-ASCII strings in constant time.
-  (Contributed by Dong-hee Na in :issue:`44987`.)
+  (Contributed by Donghee Na in :issue:`44987`.)
 
 
 .. _whatsnew311-faster-cpython:
@@ -1452,7 +1452,7 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 |               |                    |                                                       | (up to)           |                   |
 +===============+====================+=======================================================+===================+===================+
 | Binary        | ``x + x``          | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
-| operations    |                    | such as :class:`int`, :class:`float` and :class:`str` |                   | Dong-hee Na,      |
+| operations    |                    | such as :class:`int`, :class:`float` and :class:`str` |                   | Donghee Na,       |
 |               | ``x - x``          | take custom fast paths for their underlying types.    |                   | Brandt Bucher,    |
 |               |                    |                                                       |                   | Dennis Sweeney    |
 |               | ``x * x``          |                                                       |                   |                   |
@@ -1798,7 +1798,7 @@ Standard Library
   * :func:`importlib.resources.path`
 
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
-  removed in Python 3.13. Use :func:`locale.setlocale`,
+  removed in Python 3.15. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
   (Contributed by Victor Stinner in :gh:`90817`.)
@@ -1839,7 +1839,7 @@ Standard Library
 
 * :class:`!webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested, undocumented, and not used by :mod:`webbrowser` itself.
-  (Contributed by Dong-hee Na in :issue:`42255`.)
+  (Contributed by Donghee Na in :issue:`42255`.)
 
 * The behavior of returning a value from a :class:`~unittest.TestCase` and
   :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
@@ -1984,7 +1984,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   :meth:`!NullTranslations.set_output_charset` methods,
   and the *codeset* parameter of :func:`!translation` and :func:`!install`,
   since they are only used for the :func:`!l*gettext` functions.
-  (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
+  (Contributed by Donghee Na and Serhiy Storchaka in :issue:`44235`.)
 
 * Removed from the :mod:`inspect` module:
 
@@ -2009,7 +2009,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
 * Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
   as it is unusable without the external :mod:`!mailman` package.
-  (Contributed by Dong-hee Na in :issue:`35800`.)
+  (Contributed by Donghee Na in :issue:`35800`.)
 
 * Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
@@ -2151,7 +2151,7 @@ Build Changes
 * CPython can now be built with the
   `ThinLTO <https://clang.llvm.org/docs/ThinLTO.html>`_ option
   via passing ``thin`` to :option:`--with-lto`, i.e. ``--with-lto=thin``.
-  (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
+  (Contributed by Donghee Na and Brett Holman in :issue:`44340`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`--without-freelists` can be used to disable all freelists
@@ -2458,11 +2458,12 @@ Porting to Python 3.11
   * ``f_valuestack``: removed.
 
   The Python frame object is now created lazily. A side effect is that the
-  ``f_back`` member must not be accessed directly, since its value is now also
+  :attr:`~frame.f_back` member must not be accessed directly,
+  since its value is now also
   computed lazily. The :c:func:`PyFrame_GetBack` function must be called
   instead.
 
-  Debuggers that accessed the ``f_locals`` directly *must* call
+  Debuggers that accessed the :attr:`~frame.f_locals` directly *must* call
   :c:func:`PyFrame_GetLocals` instead. They no longer need to call
   :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the

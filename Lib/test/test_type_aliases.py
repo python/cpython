@@ -2,7 +2,7 @@ import pickle
 import types
 import unittest
 from test.support import check_syntax_error, run_code
-from test import mod_generics_cache
+from test.typinganndata import mod_generics_cache
 
 from typing import Callable, TypeAliasType, TypeVar, get_args
 

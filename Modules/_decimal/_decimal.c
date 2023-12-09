@@ -3593,6 +3593,12 @@ dec_format(PyObject *dec, PyObject *args)
     if (replace_fillchar) {
         dec_replace_fillchar(decstring);
     }
+    if (strchr(fmt, 'N') != NULL) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Format specifier 'N' is deprecated", 1) < 0) {
+            goto finish;
+        }
+    }
 
     result = PyUnicode_DecodeUTF8(decstring, size, NULL);
 
@@ -5877,6 +5883,7 @@ error:
     return NULL;
 }
 
+static int minalloc_is_set = 0;
 
 static int
 _decimal_exec(PyObject *m)
@@ -5899,7 +5906,12 @@ _decimal_exec(PyObject *m)
     mpd_reallocfunc = PyMem_Realloc;
     mpd_callocfunc = mpd_callocfunc_em;
     mpd_free = PyMem_Free;
-    mpd_setminalloc(_Py_DEC_MINALLOC);
+
+    /* Suppress the warning caused by multi-phase initialization */
+    if (!minalloc_is_set) {
+        mpd_setminalloc(_Py_DEC_MINALLOC);
+        minalloc_is_set = 1;
+    }
 
     decimal_state *state = get_module_state(m);
 

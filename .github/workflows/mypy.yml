@@ -7,11 +7,14 @@ on:
       - main
   pull_request:
     paths:
-      - "Tools/clinic/**"
+      - ".github/workflows/mypy.yml"
+      - "Lib/test/libregrtest/**"
+      - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
+      - "Tools/clinic/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
-      - ".github/workflows/mypy.yml"
+      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
@@ -31,9 +34,12 @@ jobs:
     strategy:
       matrix:
         target: [
+          "Lib/test/libregrtest",
+          "Tools/build/",
           "Tools/cases_generator",
           "Tools/clinic",
           "Tools/peg_generator",
+          "Tools/wasm",
         ]
     name: Run mypy on ${{ matrix.target }}
     runs-on: ubuntu-latest

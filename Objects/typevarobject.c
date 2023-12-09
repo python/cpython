@@ -200,7 +200,7 @@ typevar_dealloc(PyObject *self)
     Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
     Py_XDECREF(tv->evaluate_constraints);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -216,7 +216,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
     Py_VISIT(tv->evaluate_constraints);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -227,7 +227,7 @@ typevar_clear(typevarobject *self)
     Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->constraints);
     Py_CLEAR(self->evaluate_constraints);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -327,7 +327,6 @@ typevar.__new__ as typevar_new
 
     name: object(subclass_of="&PyUnicode_Type")
     *constraints: object
-    *
     bound: object = None
     covariant: bool = False
     contravariant: bool = False
@@ -340,7 +339,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, int covariant, int contravariant,
                  int infer_variance)
-/*[clinic end generated code: output=1d200450ee99226d input=2c07ab87c94f462b]*/
+/*[clinic end generated code: output=1d200450ee99226d input=41ae33a916bfe76f]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -364,11 +363,7 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
         }
     }
 
-    if (!PyTuple_CheckExact(constraints)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "constraints must be a tuple");
-        return NULL;
-    }
+    assert(PyTuple_CheckExact(constraints));
     Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
     if (n_constraints == 1) {
         PyErr_SetString(PyExc_TypeError,
@@ -744,7 +739,7 @@ paramspec_dealloc(PyObject *self)
 
     Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -757,7 +752,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     paramspecobject *ps = (paramspecobject *)self;
     Py_VISIT(ps->bound);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -765,7 +760,7 @@ static int
 paramspec_clear(paramspecobject *self)
 {
     Py_CLEAR(self->bound);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -806,8 +801,8 @@ paramspec_kwargs(PyObject *self, void *unused)
 }
 
 static PyGetSetDef paramspec_getset[] = {
-    {"args", (getter)paramspec_args, NULL, "Represents positional arguments.", NULL},
-    {"kwargs", (getter)paramspec_kwargs, NULL, "Represents keyword arguments.", NULL},
+    {"args", (getter)paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
+    {"kwargs", (getter)paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
     {0},
 };
 
@@ -1026,7 +1021,7 @@ typevartuple_dealloc(PyObject *self)
     typevartupleobject *tvt = (typevartupleobject *)self;
 
     Py_DECREF(tvt->name);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -1165,14 +1160,14 @@ static int
 typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
 static int
 typevartuple_clear(PyObject *self)
 {
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     return 0;
 }
 

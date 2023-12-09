@@ -2,7 +2,8 @@ import argparse
 import os.path
 import shlex
 import sys
-from test.support import os_helper
+from test.support import os_helper, Py_DEBUG
+from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 
 USAGE = """\
@@ -27,8 +28,10 @@ EPILOG = """\
 Additional option details:
 
 -r randomizes test execution order. You can use --randseed=int to provide an
-int seed value for the randomizer; this is useful for reproducing troublesome
-test orders.
+int seed value for the randomizer. The randseed value will be used
+to set seeds for all random usages in tests
+(including randomizing the tests order if -r is set).
+By default we always set random seed, but do not randomize test order.
 
 -s On the first invocation of regrtest using -s, the first test file found
 or the first test file given on the command line is run, and the name of
@@ -130,21 +133,9 @@ Pattern examples:
 """
 
 
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
-
-# Other resources excluded from --use=all:
-#
-# - extralagefile (ex: test_zipfile64): really too slow to be enabled
-#   "by default"
-# - tzdata: while needed to validate fully test_datetime, it makes
-#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
-#   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs) -> None:
+        self.ci = False
         self.testdir = None
         self.verbose = 0
         self.quiet = False
@@ -161,7 +152,7 @@ class Namespace(argparse.Namespace):
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
-        self.huntrleaks = False
+        self.huntrleaks: tuple[int, int, str] | None = None
         self.rerun = False
         self.verbose3 = False
         self.print_slow = False
@@ -170,8 +161,7 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = None
-        self.ignore_tests = None
+        self.match_tests: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
@@ -181,6 +171,7 @@ class Namespace(argparse.Namespace):
         self.threshold = None
         self.fail_rerun = False
         self.tempdir = None
+        self._add_python_opts = True
 
         super().__init__(**kwargs)
 
@@ -189,6 +180,20 @@ class _ArgParser(argparse.ArgumentParser):
 
     def error(self, message):
         super().error(message + "\nPass -h or --help for complete help.")
+
+
+class FilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        items.append((value, self.const))
+
+
+class FromFileFilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        with open(value, encoding='utf-8') as fp:
+            for line in fp:
+                items.append((line.strip(), self.const))
 
 
 def _create_parser():
@@ -200,6 +205,7 @@ def _create_parser():
                         epilog=EPILOG,
                         add_help=False,
                         formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.set_defaults(match_tests=[])
 
     # Arguments with this clause added to its help are described further in
     # the epilog's "Additional option details" section.
@@ -209,7 +215,13 @@ def _create_parser():
     # We add help explicitly to control what argument group it renders under.
     group.add_argument('-h', '--help', action='help',
                        help='show this help message and exit')
-    group.add_argument('--timeout', metavar='TIMEOUT', type=float,
+    group.add_argument('--fast-ci', action='store_true',
+                       help='Fast Continuous Integration (CI) mode used by '
+                            'GitHub Actions')
+    group.add_argument('--slow-ci', action='store_true',
+                       help='Slow Continuous Integration (CI) mode used by '
+                            'buildbot workers')
+    group.add_argument('--timeout', metavar='TIMEOUT',
                         help='dump the traceback and exit if a test takes '
                              'more than TIMEOUT seconds; disabled if TIMEOUT '
                              'is negative or equals to zero')
@@ -221,6 +233,9 @@ def _create_parser():
                             more_details)
     group.add_argument('-p', '--python', metavar='PYTHON',
                        help='Command to run Python test subprocesses with.')
+    group.add_argument('--randseed', metavar='SEED',
+                       dest='random_seed', type=int,
+                       help='pass a global random seed')
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
@@ -241,10 +256,6 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
-    group.add_argument('--randseed', metavar='SEED',
-                       dest='random_seed', type=int,
-                       help='pass a random seed to reproduce a previous '
-                            'random run')
     group.add_argument('-f', '--fromfile', metavar='FILE',
                        help='read names of tests to run from a file.' +
                             more_details)
@@ -254,17 +265,19 @@ def _create_parser():
                        help='single step through a set of tests.' +
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
-                       dest='match_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=True,
                        help='match test cases and methods with glob pattern PAT')
     group.add_argument('-i', '--ignore', metavar='PAT',
-                       dest='ignore_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern PAT')
     group.add_argument('--matchfile', metavar='FILENAME',
-                       dest='match_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=True,
                        help='similar to --match but get patterns from a '
                             'text file, one pattern per line')
     group.add_argument('--ignorefile', metavar='FILENAME',
-                       dest='ignore_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=False,
                        help='similar to --matchfile but it receives patterns '
                             'from text file to ignore')
     group.add_argument('-G', '--failfast', action='store_true',
@@ -334,6 +347,9 @@ def _create_parser():
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
+    group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
+                       action='store_false',
+                       help="internal option, don't use it")
     return parser
 
 
@@ -384,12 +400,64 @@ def _parse_args(args, **kwargs):
     for arg in ns.args:
         if arg.startswith('-'):
             parser.error("unrecognized arguments: %s" % arg)
-            sys.exit(1)
+
+    if ns.timeout is not None:
+        # Support "--timeout=" (no value) so Makefile.pre.pre TESTTIMEOUT
+        # can be used by "make buildbottest" and "make test".
+        if ns.timeout != "":
+            try:
+                ns.timeout = float(ns.timeout)
+            except ValueError:
+                parser.error(f"invalid timeout value: {ns.timeout!r}")
+        else:
+            ns.timeout = None
+
+    # Continuous Integration (CI): common options for fast/slow CI modes
+    if ns.slow_ci or ns.fast_ci:
+        # Similar to options:
+        #
+        #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
+        #     --slowest --verbose3
+        if ns.use_mp is None:
+            ns.use_mp = 0
+        ns.randomize = True
+        ns.fail_env_changed = True
+        if ns.python is None:
+            ns.rerun = True
+        ns.print_slow = True
+        ns.verbose3 = True
+    else:
+        ns._add_python_opts = False
+
+    # When both --slow-ci and --fast-ci options are present,
+    # --slow-ci has the priority
+    if ns.slow_ci:
+        # Similar to: -u "all" --timeout=1200
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all'])
+        if ns.timeout is None:
+            ns.timeout = 1200  # 20 minutes
+    elif ns.fast_ci:
+        # Similar to: -u "all,-cpu" --timeout=600
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all', '-cpu'])
+        if ns.timeout is None:
+            ns.timeout = 600  # 10 minutes
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
-    if ns.use_mp is not None and ns.trace:
-        parser.error("-T and -j don't go together!")
+    if ns.trace:
+        if ns.use_mp is not None:
+            if not Py_DEBUG:
+                parser.error("need --with-pydebug to use -T and -j together")
+        else:
+            print(
+                "Warning: collecting coverage without -j is imprecise. Configure"
+                " --with-pydebug and run -m test -T -j for best results.",
+                file=sys.stderr
+            )
     if ns.python is not None:
         if ns.use_mp is None:
             parser.error("-p requires -j!")
@@ -433,23 +501,17 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
     if ns.verbose:
         ns.header = True
-    if ns.huntrleaks and ns.verbose3:
+    # When -jN option is used, a worker process does not use --verbose3
+    # and so -R 3:3 -jN --verbose3 just works as expected: there is no false
+    # alarm about memory leak.
+    if ns.huntrleaks and ns.verbose3 and ns.use_mp is None:
         ns.verbose3 = False
+        # run_single_test() replaces sys.stdout with io.StringIO if verbose3
+        # is true. In this case, huntrleaks sees an write into StringIO as
+        # a memory leak, whereas it is not (gh-71290).
         print("WARNING: Disable --verbose3 because it's incompatible with "
-              "--huntrleaks: see http://bugs.python.org/issue27103",
+              "--huntrleaks without -jN option",
               file=sys.stderr)
-    if ns.match_filename:
-        if ns.match_tests is None:
-            ns.match_tests = []
-        with open(ns.match_filename) as fp:
-            for line in fp:
-                ns.match_tests.append(line.strip())
-    if ns.ignore_filename:
-        if ns.ignore_tests is None:
-            ns.ignore_tests = []
-        with open(ns.ignore_filename) as fp:
-            for line in fp:
-                ns.ignore_tests.append(line.strip())
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True

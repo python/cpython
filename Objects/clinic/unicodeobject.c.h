@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(EncodingMap_size__doc__,
 "size($self, /)\n"
@@ -1504,4 +1505,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4acdcfdc93f2a0f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=873d8b3d09af3095 input=a9049054013a1b77]*/

@@ -406,7 +406,11 @@ Accessing attributes of extension types
 .. c:type:: PyMemberDef
 
    Structure which describes an attribute of a type which corresponds to a C
-   struct member.  Its fields are, in order:
+   struct member.
+   When defining a class, put a NULL-terminated array of these
+   structures in the :c:member:`~PyTypeObject.tp_members` slot.
+
+   Its fields are, in order:
 
    .. c:member:: const char* name
 
@@ -588,7 +592,7 @@ Macro name                       C type                        Python type
 
    (*): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;
-   with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
+   with :c:macro:`!Py_T_STRING_INPLACE` the string is stored directly
    in the structure.
 
    (**): String of length 1. Only ASCII is accepted.

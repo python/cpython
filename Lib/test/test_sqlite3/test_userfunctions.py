@@ -29,7 +29,7 @@ from unittest.mock import Mock, patch
 from test.support import bigmemtest, gc_collect
 
 from .util import cx_limit, memory_database
-from .util import with_tracebacks, check_tracebacks
+from .util import with_tracebacks
 
 
 def func_returntext():

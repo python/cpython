@@ -5,7 +5,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
-#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -16,6 +15,11 @@
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "clinic/bltinmodule.c.h"
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
+
 
 static PyObject*
 update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
@@ -136,17 +140,15 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
 
-        meta = _PyDict_GetItemWithError(mkw, &_Py_ID(metaclass));
+        if (PyDict_GetItemRef(mkw, &_Py_ID(metaclass), &meta) < 0) {
+            goto error;
+        }
         if (meta != NULL) {
-            Py_INCREF(meta);
             if (PyDict_DelItem(mkw, &_Py_ID(metaclass)) < 0) {
                 goto error;
             }
             /* metaclass is explicitly given, check if it's indeed a class */
             isclass = PyType_Check(meta);
-        }
-        else if (PyErr_Occurred()) {
-            goto error;
         }
     }
     if (meta == NULL) {
@@ -477,6 +479,7 @@ builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
 PyDoc_STRVAR(breakpoint_doc,
 "breakpoint(*args, **kws)\n\
+--\n\
 \n\
 Call sys.breakpointhook(*args, **kws).  sys.breakpointhook() must accept\n\
 whatever arguments are passed.\n\
@@ -621,7 +624,8 @@ static PyMethodDef filter_methods[] = {
 };
 
 PyDoc_STRVAR(filter_doc,
-"filter(function or None, iterable) --> filter object\n\
+"filter(function, iterable, /)\n\
+--\n\
 \n\
 Return an iterator yielding those items of iterable for which function(item)\n\
 is true. If function is None, return the items that are true.");
@@ -1444,7 +1448,8 @@ static PyMethodDef map_methods[] = {
 
 
 PyDoc_STRVAR(map_doc,
-"map(func, *iterables) --> map object\n\
+"map(function, /, *iterables)\n\
+--\n\
 \n\
 Make an iterator that computes the function using arguments from\n\
 each of the iterables.  Stops when the shortest iterable is exhausted.");
@@ -1883,7 +1888,7 @@ min(arg1, arg2, *args, *[, key=func]) -> value\n\
 With a single iterable argument, return its smallest item. The\n\
 default keyword-only argument specifies an object to return if\n\
 the provided iterable is empty.\n\
-With two or more arguments, return the smallest argument.");
+With two or more positional arguments, return the smallest argument.");
 
 
 /* AC: cannot convert yet, waiting for *args support */
@@ -1900,7 +1905,7 @@ max(arg1, arg2, *args, *[, key=func]) -> value\n\
 With a single iterable argument, return its biggest item. The\n\
 default keyword-only argument specifies an object to return if\n\
 the provided iterable is empty.\n\
-With two or more arguments, return the largest argument.");
+With two or more positional arguments, return the largest argument.");
 
 
 /*[clinic input]
@@ -2083,11 +2088,9 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
     }
 
     if (flush) {
-        PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-        if (tmp == NULL) {
+        if (_PyFile_Flush(file) < 0) {
             return NULL;
         }
-        Py_DECREF(tmp);
     }
 
     Py_RETURN_NONE;
@@ -2146,11 +2149,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     }
 
     /* First of all, flush stderr */
-    tmp = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
-    if (tmp == NULL)
+    if (_PyFile_Flush(ferr) < 0) {
         PyErr_Clear();
-    else
-        Py_DECREF(tmp);
+    }
 
     /* We should only use (GNU) readline if Python's sys.stdin and
        sys.stdout are the same as C's stdin and stdout, because we
@@ -2218,11 +2219,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         if (stdin_errors_str == NULL) {
             goto _readline_errors;
         }
-        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
-        if (tmp == NULL)
+        if (_PyFile_Flush(fout) < 0) {
             PyErr_Clear();
-        else
-            Py_DECREF(tmp);
+        }
         if (prompt != NULL) {
             /* We have a prompt, encode it as stdout would */
             const char *stdout_encoding_str, *stdout_errors_str;
@@ -2263,6 +2262,11 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
                 goto _readline_errors;
             assert(PyBytes_Check(po));
             promptstr = PyBytes_AS_STRING(po);
+            if ((Py_ssize_t)strlen(promptstr) != PyBytes_GET_SIZE(po)) {
+                PyErr_SetString(PyExc_ValueError,
+                        "input: prompt string cannot contain null characters");
+                goto _readline_errors;
+            }
         }
         else {
             po = NULL;
@@ -2325,11 +2329,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         if (PyFile_WriteObject(prompt, fout, Py_PRINT_RAW) != 0)
             return NULL;
     }
-    tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
-    if (tmp == NULL)
+    if (_PyFile_Flush(fout) < 0) {
         PyErr_Clear();
-    else
-        Py_DECREF(tmp);
+    }
     return PyFile_GetLine(fin, -1);
 }
 
@@ -2614,7 +2616,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 // Improved Kahan–Babuška algorithm by Arnold Neumaier
-                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                // Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
+                // zur Summation endlicher Summen.  Z. angew. Math. Mech.,
+                // 54: 39-51. https://doi.org/10.1002/zamm.19740540106
+                // https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
                 double x = PyFloat_AS_DOUBLE(item);
                 double t = f_result + x;
                 if (fabs(f_result) >= fabs(x)) {
@@ -2958,10 +2963,8 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables, strict=False) --> Yield tuples until an input is exhausted.\n\
-\n\
-   >>> list(zip('abcdefg', range(3), range(4)))\n\
-   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]\n\
+"zip(*iterables, strict=False)\n\
+--\n\
 \n\
 The zip object yields n-length tuples, where n is the number of iterables\n\
 passed as positional arguments to zip().  The i-th element in every tuple\n\
@@ -2969,7 +2972,10 @@ comes from the i-th iterable argument to zip().  This continues until the\n\
 shortest argument is exhausted.\n\
 \n\
 If strict is true and one of the arguments is exhausted before the others,\n\
-raise a ValueError.");
+raise a ValueError.\n\
+\n\
+   >>> list(zip('abcdefg', range(3), range(4)))\n\
+   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

@@ -7,6 +7,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
 
 PyDoc_STRVAR(test_empty_function__doc__,
@@ -2813,6 +2814,76 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(null_or_tuple_for_varargs__doc__,
+"null_or_tuple_for_varargs($module, /, name, *constraints,\n"
+"                          covariant=False)\n"
+"--\n"
+"\n"
+"See https://github.com/python/cpython/issues/110864");
+
+#define NULL_OR_TUPLE_FOR_VARARGS_METHODDEF    \
+    {"null_or_tuple_for_varargs", _PyCFunction_CAST(null_or_tuple_for_varargs), METH_FASTCALL|METH_KEYWORDS, null_or_tuple_for_varargs__doc__},
+
+static PyObject *
+null_or_tuple_for_varargs_impl(PyObject *module, PyObject *name,
+                               PyObject *constraints, int covariant);
+
+static PyObject *
+null_or_tuple_for_varargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), &_Py_ID(covariant), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", "covariant", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "null_or_tuple_for_varargs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name;
+    PyObject *constraints = NULL;
+    int covariant = 0;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    name = args[0];
+    constraints = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    covariant = PyObject_IsTrue(args[2]);
+    if (covariant < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = null_or_tuple_for_varargs_impl(module, name, constraints, covariant);
+
+exit:
+    Py_XDECREF(constraints);
+    return return_value;
+}
+
 PyDoc_STRVAR(clone_f1__doc__,
 "clone_f1($module, /, path)\n"
 "--\n"
@@ -3070,4 +3141,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c2a69a08ffdfc466 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90743ac900d60f9f input=a9049054013a1b77]*/

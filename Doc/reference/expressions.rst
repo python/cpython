@@ -499,8 +499,8 @@ the yield expression. It can be either set explicitly when raising
 :exc:`StopIteration`, or automatically when the subiterator is a generator
 (by returning a value from the subgenerator).
 
-   .. versionchanged:: 3.3
-      Added ``yield from <expr>`` to delegate control flow to a subiterator.
+.. versionchanged:: 3.3
+   Added ``yield from <expr>`` to delegate control flow to a subiterator.
 
 The parentheses may be omitted when the yield expression is the sole expression
 on the right hand side of an assignment statement.
@@ -823,12 +823,18 @@ An attribute reference is a primary followed by a period and a name:
 
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
-attribute whose name is the identifier.  This production can be customized by
-overriding the :meth:`__getattr__` method.  If this attribute is not available,
-the exception :exc:`AttributeError` is raised.  Otherwise, the type and value of
-the object produced is determined by the object.  Multiple evaluations of the
-same attribute reference may yield different objects.
+attribute whose name is the identifier. The type and value produced is
+determined by the object.  Multiple evaluations of the same attribute
+reference may yield different objects.
 
+This production can be customized by overriding the
+:meth:`~object.__getattribute__` method or the :meth:`~object.__getattr__`
+method.  The :meth:`!__getattribute__` method is called first and either
+returns a value or raises :exc:`AttributeError` if the attribute is not
+available.
+
+If an :exc:`AttributeError` is raised and the object has a :meth:`!__getattr__`
+method, that method is called as a fallback.
 
 .. _subscriptions:
 
@@ -889,7 +895,7 @@ to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
 resulting value must be a nonnegative integer less than the number of items in
 the sequence, and the subscription selects the item whose index is that value
 (counting from zero). Since the support for negative indices and slicing
-occurs in the object's :meth:`__getitem__` method, subclasses overriding
+occurs in the object's :meth:`~object.__getitem__` method, subclasses overriding
 this method will need to explicitly add that support.
 
 .. index::
@@ -944,7 +950,7 @@ slice list contains no proper slice).
    single: step (slice object attribute)
 
 The semantics for a slicing are as follows.  The primary is indexed (using the
-same :meth:`__getitem__` method as
+same :meth:`~object.__getitem__` method as
 normal subscription) with a key that is constructed from the slice list, as
 follows.  If the slice list contains at least one comma, the key is a tuple
 containing the conversion of the slice items; otherwise, the conversion of the
@@ -1670,7 +1676,7 @@ If an exception is raised during the iteration, it is as if :keyword:`in` raised
 that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
-:meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
+:meth:`~object.__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
 integer index *i* such that ``x is y[i] or x == y[i]``, and no lower integer index
 raises the :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).
@@ -1781,10 +1787,11 @@ Or, when processing a file stream in chunks:
    while chunk := file.read(9000):
        process(chunk)
 
-Assignment expressions must be surrounded by parentheses when used
-as sub-expressions in slicing, conditional, lambda,
-keyword-argument, and comprehension-if expressions
-and in ``assert`` and ``with`` statements.
+Assignment expressions must be surrounded by parentheses when
+used as expression statements and when used as sub-expressions in
+slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions and
+in ``assert``, ``with``, and ``assignment`` statements.
 In all other places where they can be used, parentheses are not required,
 including in ``if`` and ``while`` statements.
 

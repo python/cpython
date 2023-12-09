@@ -1,0 +1,2 @@
+Fix a caching bug relating to :data:`typing.Annotated`.
+``Annotated[str, True]`` is no longer identical to ``Annotated[str, 1]``.

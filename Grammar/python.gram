@@ -19,8 +19,6 @@ _PyPegen_parse(Parser *p)
         result = eval_rule(p);
     } else if (p->start_rule == Py_func_type_input) {
         result = func_type_rule(p);
-    } else if (p->start_rule == Py_fstring_input) {
-        result = fstring_rule(p);
     }
 
     return result;
@@ -89,7 +87,6 @@ file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
 interactive[mod_ty]: a=statement_newline { _PyAST_Interactive(a, p->arena) }
 eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { _PyAST_Expression(a, p->arena) }
 func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMARKER { _PyAST_FunctionType(a, b, p->arena) }
-fstring[expr_ty]: star_expressions
 
 # GENERAL STATEMENTS
 # ==================
@@ -127,6 +124,7 @@ simple_stmt[stmt_ty] (memo):
     | &'nonlocal' nonlocal_stmt
 
 compound_stmt[stmt_ty]:
+    | invalid_compound_stmt
     | &('def' | '@' | 'async') function_def
     | &'if' if_stmt
     | &('class' | '@') class_def
@@ -394,8 +392,8 @@ for_stmt[stmt_ty]:
 
 with_stmt[stmt_ty]:
     | invalid_with_stmt_indent
-    | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
-        CHECK_VERSION(stmt_ty, 9, "Parenthesized context managers are", _PyAST_With(a, b, NULL, EXTRA)) }
+    | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' tc=[TYPE_COMMENT] b=block {
+       CHECK_VERSION(stmt_ty, 9, "Parenthesized context managers are", _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
         _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | 'async' 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
@@ -647,20 +645,20 @@ type_param_seq[asdl_type_param_seq*]: a[asdl_type_param_seq*]=','.type_param+ ['
 
 type_param[type_param_ty] (memo):
     | a=NAME b=[type_param_bound] { _PyAST_TypeVar(a->v.Name.id, b, EXTRA) }
-    | '*' a=NAME colon=":" e=expression {
+    | '*' a=NAME colon=':' e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with TypeVarTuple"
                 : "cannot use bound with TypeVarTuple")
         }
     | '*' a=NAME { _PyAST_TypeVarTuple(a->v.Name.id, EXTRA) }
-    | '**' a=NAME colon=":" e=expression {
+    | '**' a=NAME colon=':' e=expression {
             RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
                 ? "cannot use constraints with ParamSpec"
                 : "cannot use bound with ParamSpec")
         }
     | '**' a=NAME { _PyAST_ParamSpec(a->v.Name.id, EXTRA) }
 
-type_param_bound[expr_ty]: ":" e=expression { e }
+type_param_bound[expr_ty]: ':' e=expression { e }
 
 # EXPRESSIONS
 # -----------
@@ -915,7 +913,7 @@ fstring_middle[expr_ty]:
     | fstring_replacement_field
     | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 fstring_replacement_field[expr_ty]:
-    | '{' a=(yield_expr | star_expressions) debug_expr="="? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
+    | '{' a=(yield_expr | star_expressions) debug_expr='='? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
         _PyPegen_formatted_value(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
     | invalid_replacement_field
 fstring_conversion[ResultTokenWithMetadata*]:
@@ -1131,7 +1129,8 @@ func_type_comment[Token*]:
 
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_arguments:
-    | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
+    | ((','.(starred_expression | ( assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) ',' b='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=NAME b='=' expression for_if_clauses {
@@ -1300,6 +1299,10 @@ invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
 
+invalid_compound_stmt:
+    | a='elif' named_expression ':' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' must match an if-statement here") }
+    | a='else' ':' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' must match a valid statement here") }
+
 invalid_with_stmt:
     | ['async'] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | ['async'] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
@@ -1371,11 +1374,11 @@ invalid_for_stmt:
     | ['async'] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
 invalid_def_raw:
-    | ['async'] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
+    | ['async'] a='def' NAME [type_params] '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
 invalid_class_def_raw:
-    | 'class' NAME ['(' [arguments] ')'] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
-    | a='class' NAME ['(' [arguments] ')'] ':' NEWLINE !INDENT {
+    | 'class' NAME [type_params] ['(' [arguments] ')'] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='class' NAME [type_params] ['(' [arguments] ')'] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after class definition on line %d", a->lineno) }
 
 invalid_double_starred_kvpairs:
