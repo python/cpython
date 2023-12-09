@@ -1306,8 +1306,9 @@ Tkapp_ObjectResult(TkappObject *self)
    hold the Python lock. */
 
 static int
-Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
+Tkapp_CallProc(Tcl_Event *evPtr, int flags)
 {
+    Tkapp_CallEvent *e = (Tkapp_CallEvent *)evPtr;
     Tcl_Obj *objStore[ARGSZ];
     Tcl_Obj **objv;
     int objc;
@@ -1385,7 +1386,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
             PyErr_NoMemory();
             return NULL;
         }
-        ev->ev.proc = (Tcl_EventProc*)Tkapp_CallProc;
+        ev->ev.proc = Tkapp_CallProc;
         ev->self = self;
         ev->args = args;
         ev->res = &res;
@@ -1624,8 +1625,9 @@ var_perform(VarEvent *ev)
 }
 
 static int
-var_proc(VarEvent* ev, int flags)
+var_proc(Tcl_Event *evPtr, int flags)
 {
+    VarEvent *ev = (VarEvent *)evPtr;
     ENTER_PYTHON
     var_perform(ev);
     Tcl_MutexLock(&var_mutex);
@@ -1663,7 +1665,7 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
         ev->res = &res;
         ev->exc = &exc;
         ev->cond = &cond;
-        ev->ev.proc = (Tcl_EventProc*)var_proc;
+        ev->ev.proc = var_proc;
         Tkapp_ThreadSend(self, (Tcl_Event*)ev, &cond, &var_mutex);
         Tcl_ConditionFinalize(&cond);
         if (!res) {
@@ -2236,8 +2238,9 @@ typedef struct CommandEvent{
 } CommandEvent;
 
 static int
-Tkapp_CommandProc(CommandEvent *ev, int flags)
+Tkapp_CommandProc(Tcl_Event *evPtr, int flags)
 {
+    CommandEvent *ev = (CommandEvent *)evPtr;
     if (ev->create)
         *ev->status = Tcl_CreateObjCommand(
             ev->interp, ev->name, PythonCmd,
@@ -2290,7 +2293,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
             PyMem_Free(data);
             return NULL;
         }
-        ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
+        ev->ev.proc = Tkapp_CommandProc;
         ev->interp = self->interp;
         ev->create = 1;
         ev->name = name;
@@ -2343,7 +2346,7 @@ _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
             PyErr_NoMemory();
             return NULL;
         }
-        ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
+        ev->ev.proc = Tkapp_CommandProc;
         ev->interp = self->interp;
         ev->create = 0;
         ev->name = name;
