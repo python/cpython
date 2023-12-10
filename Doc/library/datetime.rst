@@ -1798,7 +1798,7 @@ Other constructor:
    4. Fractional hours and minutes are not supported.
 
    Examples::
-   
+
    .. doctest::
 
        >>> from datetime import time
