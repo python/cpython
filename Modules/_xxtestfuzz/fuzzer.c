@@ -514,13 +514,14 @@ const size_t NUM_OPTIMIZE_VALS = sizeof(optimize_vals) / sizeof(optimize_vals[0]
  * That function is essentially behind the `compile` builtin */
 static int fuzz_pycompile(const char* data, size_t size) {
     // Ignore overly-large inputs, and account for a NUL terminator
-    if (size > sizeof(pycompile_scratch) - 1) {
+    if (size > MAX_PYCOMPILE_TEST_SIZE - 1) {
         return 0;
     }
 
     // Need 2 bytes for parameter selection
-    if (size < 2)
+    if (size < 2) {
         return 0;
+    }
 
     // Use first byte to determine element of `start_vals` to use
     unsigned char start_idx = (unsigned char) data[0];
