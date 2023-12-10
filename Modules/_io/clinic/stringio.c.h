@@ -475,11 +475,11 @@ _io_StringIO___setstate__(stringio *self, PyObject *state)
     return return_value;
 }
 
-#if defined(_IO_STRINGIO_CLOSED_GETSETTERDEF)
-#   undef _IO_STRINGIO_CLOSED_GETSETTERDEF
-#   define _IO_STRINGIO_CLOSED_GETSETTERDEF {"closed", (getter)_io_StringIO_closed_get, (setter)_io_StringIO_closed_set, NULL},
+#if defined(_IO_STRINGIO_CLOSED_GETSETDEF)
+#   undef _IO_STRINGIO_CLOSED_GETSETTDEF
+#   define _IO_STRINGIO_CLOSED_GETSETDEF {"closed", (getter)_io_StringIO_closed_get, (setter)_io_StringIO_closed_set, NULL},
 #else
-#   define _IO_STRINGIO_CLOSED_GETSETTERDEF {"closed", (getter)_io_StringIO_closed_get, NULL, NULL},
+#   define _IO_STRINGIO_CLOSED_GETSETDEF {"closed", (getter)_io_StringIO_closed_get, NULL, NULL},
 #endif
 
 static PyObject *
@@ -497,11 +497,11 @@ _io_StringIO_closed_get(stringio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_IO_STRINGIO_LINE_BUFFERING_GETSETTERDEF)
-#   undef _IO_STRINGIO_LINE_BUFFERING_GETSETTERDEF
-#   define _IO_STRINGIO_LINE_BUFFERING_GETSETTERDEF {"line_buffering", (getter)_io_StringIO_line_buffering_get, (setter)_io_StringIO_line_buffering_set, NULL},
+#if defined(_IO_STRINGIO_LINE_BUFFERING_GETSETDEF)
+#   undef _IO_STRINGIO_LINE_BUFFERING_GETSETTDEF
+#   define _IO_STRINGIO_LINE_BUFFERING_GETSETDEF {"line_buffering", (getter)_io_StringIO_line_buffering_get, (setter)_io_StringIO_line_buffering_set, NULL},
 #else
-#   define _IO_STRINGIO_LINE_BUFFERING_GETSETTERDEF {"line_buffering", (getter)_io_StringIO_line_buffering_get, NULL, NULL},
+#   define _IO_STRINGIO_LINE_BUFFERING_GETSETDEF {"line_buffering", (getter)_io_StringIO_line_buffering_get, NULL, NULL},
 #endif
 
 static PyObject *
@@ -519,11 +519,11 @@ _io_StringIO_line_buffering_get(stringio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_IO_STRINGIO_NEWLINES_GETSETTERDEF)
-#   undef _IO_STRINGIO_NEWLINES_GETSETTERDEF
-#   define _IO_STRINGIO_NEWLINES_GETSETTERDEF {"newlines", (getter)_io_StringIO_newlines_get, (setter)_io_StringIO_newlines_set, NULL},
+#if defined(_IO_STRINGIO_NEWLINES_GETSETDEF)
+#   undef _IO_STRINGIO_NEWLINES_GETSETTDEF
+#   define _IO_STRINGIO_NEWLINES_GETSETDEF {"newlines", (getter)_io_StringIO_newlines_get, (setter)_io_StringIO_newlines_set, NULL},
 #else
-#   define _IO_STRINGIO_NEWLINES_GETSETTERDEF {"newlines", (getter)_io_StringIO_newlines_get, NULL, NULL},
+#   define _IO_STRINGIO_NEWLINES_GETSETDEF {"newlines", (getter)_io_StringIO_newlines_get, NULL, NULL},
 #endif
 
 static PyObject *
@@ -540,4 +540,4 @@ _io_StringIO_newlines_get(stringio *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=db35b529122b2cfc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f1964f017d3ae05 input=a9049054013a1b77]*/

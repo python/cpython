@@ -874,19 +874,19 @@ class CLanguage(Language):
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
-        #if defined({getsetter_name}_GETSETTERDEF)
-        #   undef {getsetter_name}_GETSETTERDEF
-        #   define {getsetter_name}_GETSETTERDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #if defined({getset_name}_GETSETDEF)
+        #   undef {getset_name}_GETSETTDEF
+        #   define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
         #else
-        #   define {getsetter_name}_GETSETTERDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
+        #   define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
         #endif
     """)
     SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
-        #if defined({getsetter_name}_GETSETTERDEF)
-        #   undef {getsetter_name}_GETSETTERDEF
-        #   define {getsetter_name}_GETSETTERDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #if defined({getset_name}_GETSETDEF)
+        #   undef {getset_name}_GETSETDEF
+        #   define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
         #else
-        #   define {getsetter_name}_GETSETTERDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
+        #   define {getset_name}_GETSETTERDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
         #endif
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
@@ -1189,7 +1189,7 @@ class CLanguage(Language):
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
         elif f.kind is SETTER:
-            return_value_declaration = "int return_value;"
+            return_value_declaration = "int {return_value};"
             methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_prototype = docstring_definition = ''
         else:
@@ -1972,7 +1972,7 @@ class CLanguage(Language):
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
         if f.kind in (GETTER, SETTER):
-            template_dict['getsetter_name'] = f.c_basename.upper()
+            template_dict['getset_name'] = f.c_basename.upper()
             template_dict['getset_basename'] = f.c_basename
             if f.kind is GETTER:
                 template_dict['c_basename'] = f.c_basename + "_get"

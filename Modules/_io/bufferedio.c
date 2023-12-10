@@ -2526,9 +2526,9 @@ static PyMemberDef bufferedreader_members[] = {
 };
 
 static PyGetSetDef bufferedreader_getset[] = {
-    _IO__BUFFERED_CLOSED_GETSETTERDEF
-    _IO__BUFFERED_NAME_GETSETTERDEF
-    _IO__BUFFERED_MODE_GETSETTERDEF
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 
@@ -2586,9 +2586,9 @@ static PyMemberDef bufferedwriter_members[] = {
 };
 
 static PyGetSetDef bufferedwriter_getset[] = {
-    _IO__BUFFERED_CLOSED_GETSETTERDEF
-    _IO__BUFFERED_NAME_GETSETTERDEF
-    _IO__BUFFERED_MODE_GETSETTERDEF
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 
@@ -2704,9 +2704,9 @@ static PyMemberDef bufferedrandom_members[] = {
 };
 
 static PyGetSetDef bufferedrandom_getset[] = {
-    _IO__BUFFERED_CLOSED_GETSETTERDEF
-    _IO__BUFFERED_NAME_GETSETTERDEF
-    _IO__BUFFERED_MODE_GETSETTERDEF
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 

@@ -3355,7 +3355,7 @@ static PyGetSetDef textiowrapper_getset[] = {
 */
     {"newlines", (getter)textiowrapper_newlines_get, NULL, NULL},
     {"errors", (getter)textiowrapper_errors_get, NULL, NULL},
-    _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETTERDEF
+    _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
     {NULL}
 };
 
