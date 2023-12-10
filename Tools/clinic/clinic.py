@@ -3217,7 +3217,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type: bltns.type[Any] | tuple[bltns.type[Any], ...] | None = None
+    default_type: bltns.type[object] | tuple[bltns.type[object], ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
@@ -3683,7 +3683,7 @@ legacy_converters: ConverterDict = {}
 ReturnConverterDict = dict[str, ReturnConverterType]
 return_converters: ReturnConverterDict = {}
 
-TypeSet = set[bltns.type[Any]]
+TypeSet = set[bltns.type[object]]
 
 
 class bool_converter(CConverter):
