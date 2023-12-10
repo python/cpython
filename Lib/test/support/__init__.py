@@ -796,7 +796,8 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
-if sysconfig.get_config_var('Py_GIL_DISABLED'):
+Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
+if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
     _header = 'nP'
@@ -2380,7 +2381,8 @@ def _get_c_recursion_limit():
         import _testcapi
         return _testcapi.Py_C_RECURSION_LIMIT
     except (ImportError, AttributeError):
-        return 1500  #  (from Include/cpython/pystate.h)
+        # Originally taken from Include/cpython/pystate.h .
+        return 1500
 
 # The default C recursion limit.
 Py_C_RECURSION_LIMIT = _get_c_recursion_limit()

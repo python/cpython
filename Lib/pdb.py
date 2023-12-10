@@ -142,8 +142,10 @@ class _ScriptTarget(str):
             print('Error:', self.orig, 'is a directory')
             sys.exit(1)
 
-        # Replace pdb's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(self)
+        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # of pdb, and we should replace it with the directory of the script
+        if not sys.flags.safe_path:
+            sys.path[0] = os.path.dirname(self)
 
     @property
     def filename(self):
@@ -203,6 +205,15 @@ class _ModuleTarget(str):
             __spec__=self._spec,
             __builtins__=__builtins__,
         )
+
+
+class _PdbInteractiveConsole(code.InteractiveConsole):
+    def __init__(self, ns, message):
+        self._message = message
+        super().__init__(locals=ns, local_exit=True)
+
+    def write(self, data):
+        self._message(data, end='')
 
 
 # Interaction prompt line will separate file and call info from code
@@ -670,8 +681,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # interface abstraction functions
 
-    def message(self, msg):
-        print(msg, file=self.stdout)
+    def message(self, msg, end='\n'):
+        print(msg, end=end, file=self.stdout)
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
@@ -1784,7 +1795,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns, local_exit=True)
+        console = _PdbInteractiveConsole(ns, message=self.message)
+        console.interact(banner="*pdb interact start*",
+                         exitmsg="*exit from pdb interact command*")
 
     def do_alias(self, arg):
         """alias [name [command]]
