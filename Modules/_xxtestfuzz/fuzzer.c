@@ -513,12 +513,13 @@ const size_t NUM_OPTIMIZE_VALS = sizeof(optimize_vals) / sizeof(optimize_vals[0]
 /* Fuzz `PyCompileStringExFlags` using a variety of input parameters.
  * That function is essentially behind the `compile` builtin */
 static int fuzz_pycompile(const char* data, size_t size) {
-    if (size > sizeof(pycompile_scratch)) {
+    // Ignore overly-large inputs, and account for a NUL terminator
+    if (size > sizeof(pycompile_scratch) - 1) {
         return 0;
     }
 
-    // Need 2 bytes for parameter selection plus 1 for null terminator
-    if (size < 2 + 1)
+    // Need 2 bytes for parameter selection
+    if (size < 2)
         return 0;
 
     // Use first byte to determine element of `start_vals` to use
@@ -529,9 +530,10 @@ static int fuzz_pycompile(const char* data, size_t size) {
     unsigned char optimize_idx = (unsigned char) data[1];
     int optimize = optimize_vals[optimize_idx % NUM_OPTIMIZE_VALS];
 
-    // Create a null-terminated C string from the remaining input
+    // Create a NUL-terminated C string from the remaining input
     memcpy(pycompile_scratch, data + 2, size - 2);
-    pycompile_scratch[size - 2 - 1] = '\0';
+    // Put a NUL terminator just after the copied data. (Space was reserved already.)
+    pycompile_scratch[size - 2] = '\0';
 
     // XXX: instead of always using NULL for the `flags` value to
     // `Py_CompileStringExFlags`, there are many flags that conditionally
