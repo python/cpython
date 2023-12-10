@@ -779,8 +779,8 @@ Operators And Special Methods
 
 * Removed support for :attr:`__members__` and :attr:`__methods__`.
 
-* The function attributes named :attr:`func_X` have been renamed to
-  use the :data:`__X__` form, freeing up these names in the function
+* The function attributes named :attr:`!func_X` have been renamed to
+  use the :attr:`!__X__` form, freeing up these names in the function
   attribute namespace for user-defined attributes.  To wit,
   :attr:`!func_closure`, :attr:`!func_code`, :attr:`!func_defaults`,
   :attr:`!func_dict`, :attr:`!func_doc`, :attr:`!func_globals`,

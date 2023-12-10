@@ -46,7 +46,7 @@ There are a few functions specific to Python functions.
    As :c:func:`PyFunction_New`, but also allows setting the function object's
    :attr:`~function.__qualname__` attribute.
    *qualname* should be a unicode object or ``NULL``;
-   if ``NULL``, the :attr:`__qualname__` attribute is set to the same value as
+   if ``NULL``, the :attr:`!__qualname__` attribute is set to the same value as
    the code object's :attr:`~codeobject.co_qualname` field.
 
    .. versionadded:: 3.3
