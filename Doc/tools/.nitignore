@@ -65,7 +65,6 @@ Doc/library/functools.rst
 Doc/library/getopt.rst
 Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
-Doc/library/http.cookies.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
 Doc/library/inspect.rst
