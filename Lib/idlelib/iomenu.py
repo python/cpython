@@ -182,8 +182,8 @@ class IOBinding:
     def maybesave(self):
         """Return 'yes', 'no', 'cancel' as appropriate.
 
-	Tkinter messagebox.askyesnocancel converts these tk responses
-	to True, False, None.  Convert back, as now expected elsewhere.
+        Tkinter messagebox.askyesnocancel converts these tk responses
+        to True, False, None.  Convert back, as now expected elsewhere.
         """
         if self.get_saved():
             return "yes"
