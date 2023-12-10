@@ -840,7 +840,7 @@ class SysLogHandler(logging.Handler):
         "CRITICAL" : "critical"
     }
 
-    def __init__(self, address=('localhost', SYSLOG_UDP_PORT),
+    def __init__(self, address=('localhost', SYSLOG_UDP_PORT), socket=None,
                  facility=LOG_USER, socktype=None):
         """
         Initialize a handler.
@@ -858,8 +858,12 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
-        self.socket = None
-        self.createSocket()
+        self.socket = socket
+        if not socket:
+            self.createSocket()
+            self._user_socket = False
+        else:
+            self._user_socket = True
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
@@ -950,7 +954,7 @@ class SysLogHandler(logging.Handler):
         """
         with self.lock:
             sock = self.socket
-            if sock:
+            if sock and not self._user_socket:
                 self.socket = None
                 sock.close()
             logging.Handler.close(self)
