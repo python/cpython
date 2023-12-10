@@ -5381,7 +5381,7 @@ class DSLParser:
 
     def at_setter(self) -> None:
         if self.kind in (GETTER, SETTER):
-            fail("@getter and @setter can not be declared at once")
+            fail("only one of @getter or @setter can be used")
         self.kind = SETTER
 
     def at_staticmethod(self) -> None:
