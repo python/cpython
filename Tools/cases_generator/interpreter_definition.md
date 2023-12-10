@@ -108,7 +108,7 @@ and a piece of C code describing its semantics::
     NAME [":" type] [ "if" "(" C-expression ")" ]
 
   type:
-    NAME
+    NAME ["*"]
 
   stream:
     NAME "/" size

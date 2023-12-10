@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(tb_new__doc__,
 "TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)\n"
@@ -65,11 +65,11 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     tb_frame = (PyFrameObject *)fastargs[1];
-    tb_lasti = _PyLong_AsInt(fastargs[2]);
+    tb_lasti = PyLong_AsInt(fastargs[2]);
     if (tb_lasti == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    tb_lineno = _PyLong_AsInt(fastargs[3]);
+    tb_lineno = PyLong_AsInt(fastargs[3]);
     if (tb_lineno == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -78,4 +78,4 @@ tb_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7bc9927e362fdfb7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e2f6b935841b09c input=a9049054013a1b77]*/

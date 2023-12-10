@@ -12,7 +12,10 @@ import token
 import traceback
 from typing import Tuple
 
-from pegen.build import Grammar, Parser, ParserGenerator, Tokenizer
+from pegen.grammar import Grammar
+from pegen.parser import Parser
+from pegen.parser_generator import ParserGenerator
+from pegen.tokenizer import Tokenizer
 from pegen.validator import validate_grammar
 
 

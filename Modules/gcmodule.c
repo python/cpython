@@ -24,6 +24,7 @@
 */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyDict_MaybeUntrack()
 #include "pycore_initconfig.h"
@@ -490,15 +491,16 @@ subtract_refs(PyGC_Head *containers)
         PyObject *op = FROM_GC(gc);
         traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(op,
-                        (visitproc)visit_decref,
+                        visit_decref,
                         op);
     }
 }
 
 /* A traversal callback for move_unreachable. */
 static int
-visit_reachable(PyObject *op, PyGC_Head *reachable)
+visit_reachable(PyObject *op, void *arg)
 {
+    PyGC_Head *reachable = arg;
     OBJECT_STAT_INC(object_visits);
     if (!_PyObject_IS_GC(op)) {
         return 0;
@@ -602,7 +604,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             // NOTE: visit_reachable may change gc->_gc_next when
             // young->_gc_prev == gc.  Don't do gc = GC_NEXT(gc) before!
             (void) traverse(op,
-                    (visitproc)visit_reachable,
+                    visit_reachable,
                     (void *)young);
             // relink gc_prev to prev element.
             _PyGCHead_SET_PREV(gc, prev);
@@ -725,8 +727,9 @@ clear_unreachable_mask(PyGC_Head *unreachable)
 
 /* A traversal callback for move_legacy_finalizer_reachable. */
 static int
-visit_move(PyObject *op, PyGC_Head *tolist)
+visit_move(PyObject *op, void *arg)
 {
+    PyGC_Head *tolist = arg;
     OBJECT_STAT_INC(object_visits);
     if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
@@ -750,7 +753,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
         /* Note that the finalizers list may grow during this. */
         traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
         (void) traverse(FROM_GC(gc),
-                        (visitproc)visit_move,
+                        visit_move,
                         (void *)finalizers);
     }
 }
@@ -1031,8 +1034,8 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
                 Py_INCREF(op);
                 (void) clear(op);
                 if (_PyErr_Occurred(tstate)) {
-                    _PyErr_WriteUnraisableMsg("in tp_clear of",
-                                              (PyObject*)Py_TYPE(op));
+                    PyErr_FormatUnraisable("Exception ignored in tp_clear of %s",
+                                           Py_TYPE(op)->tp_name);
                 }
                 Py_DECREF(op);
             }
@@ -1200,8 +1203,8 @@ gc_collect_main(PyThreadState *tstate, int generation,
 {
     GC_STAT_ADD(generation, collections, 1);
 #ifdef Py_STATS
-    if (_py_stats) {
-        _py_stats->object_stats.object_visits = 0;
+    if (_Py_stats) {
+        _Py_stats->object_stats.object_visits = 0;
     }
 #endif
     int i;
@@ -1343,7 +1346,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
             _PyErr_Clear(tstate);
         }
         else {
-            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
+            PyErr_FormatUnraisable("Exception ignored in garbage collection");
         }
     }
 
@@ -1362,10 +1365,10 @@ gc_collect_main(PyThreadState *tstate, int generation,
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
-    if (_py_stats) {
+    if (_Py_stats) {
         GC_STAT_ADD(generation, object_visits,
-            _py_stats->object_stats.object_visits);
-        _py_stats->object_stats.object_visits = 0;
+            _Py_stats->object_stats.object_visits);
+        _Py_stats->object_stats.object_visits = 0;
     }
 #endif
 
@@ -1402,7 +1405,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
             "collected", collected,
             "uncollectable", uncollectable);
         if (info == NULL) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
             return;
         }
     }
@@ -1410,7 +1413,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
         Py_XDECREF(info);
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
         return;
     }
 
@@ -1683,8 +1686,9 @@ gc_get_count_impl(PyObject *module)
 }
 
 static int
-referrersvisit(PyObject* obj, PyObject *objs)
+referrersvisit(PyObject* obj, void *arg)
 {
+    PyObject *objs = arg;
     Py_ssize_t i;
     for (i = 0; i < PyTuple_GET_SIZE(objs); i++)
         if (PyTuple_GET_ITEM(objs, i) == obj)
@@ -1703,7 +1707,7 @@ gc_referrers_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
         traverse = Py_TYPE(obj)->tp_traverse;
         if (obj == objs || obj == resultlist)
             continue;
-        if (traverse(obj, (visitproc)referrersvisit, objs)) {
+        if (traverse(obj, referrersvisit, objs)) {
             if (PyList_Append(resultlist, obj) < 0)
                 return 0; /* error */
         }
@@ -1739,8 +1743,9 @@ gc_get_referrers(PyObject *self, PyObject *args)
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
 static int
-referentsvisit(PyObject *obj, PyObject *list)
+referentsvisit(PyObject *obj, void *arg)
 {
+    PyObject *list = arg;
     return PyList_Append(list, obj) < 0;
 }
 
@@ -1769,7 +1774,7 @@ gc_get_referents(PyObject *self, PyObject *args)
         traverse = Py_TYPE(obj)->tp_traverse;
         if (! traverse)
             continue;
-        if (traverse(obj, (visitproc)referentsvisit, result)) {
+        if (traverse(obj, referentsvisit, result)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -2274,11 +2279,7 @@ _Py_ScheduleGC(PyInterpreterState *interp)
     if (gcstate->collecting == 1) {
         return;
     }
-    struct _ceval_state *ceval = &interp->ceval;
-    if (!_Py_atomic_load_relaxed(&ceval->gc_scheduled)) {
-        _Py_atomic_store_relaxed(&ceval->gc_scheduled, 1);
-        _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
-    }
+    _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 1);
 }
 
 void
@@ -2399,14 +2400,16 @@ PyObject_GC_Del(void *op)
     size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
+        gc_list_remove(g);
 #ifdef Py_DEBUG
+        PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
                                      "gc", NULL, "Object of type %s is not untracked before destruction",
                                      ((PyObject*)op)->ob_type->tp_name)) {
             PyErr_WriteUnraisable(NULL);
         }
+        PyErr_SetRaisedException(exc);
 #endif
-        gc_list_remove(g);
     }
     GCState *gcstate = get_gc_state();
     if (gcstate->generations[0].count > 0) {

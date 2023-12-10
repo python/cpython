@@ -373,6 +373,14 @@ Initializing and finalizing the interpreter
    :c:func:`Py_Initialize` is called again.
 
 
+.. c:function:: int Py_IsFinalizing()
+
+   Return true (non-zero) if the main Python interpreter is
+   :term:`shutting down <interpreter shutdown>`. Return false (zero) otherwise.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int Py_FinalizeEx()
 
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
@@ -852,7 +860,7 @@ code, or when embedding the Python interpreter:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -861,6 +869,19 @@ code, or when embedding the Python interpreter:
    Return the current thread state.  The global interpreter lock must be held.
    When the current thread state is ``NULL``, this issues a fatal error (so that
    the caller needn't check for ``NULL``).
+
+   See also :c:func:`PyThreadState_GetUnchecked`.
+
+
+.. c:function:: PyThreadState* PyThreadState_GetUnchecked()
+
+   Similar to :c:func:`PyThreadState_Get`, but don't kill the process with a
+   fatal error if it is NULL. The caller is responsible to check if the result
+   is NULL.
+
+   .. versionadded:: 3.13
+      In Python 3.5 to 3.12, the function was private and known as
+      ``_PyThreadState_UncheckedGet()``.
 
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
@@ -898,7 +919,7 @@ with sub-interpreters:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1180,7 +1201,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1464,7 +1485,7 @@ otherwise immutable (e.g. ``None``, ``(1, 5)``) can't normally be shared
 because of the refcount.  One simple but less-efficient approach around
 this is to use a global lock around all use of some state (or object).
 Alternately, effectively immutable objects (like integers or strings)
-can be made safe in spite of their refcounts by making them "immortal".
+can be made safe in spite of their refcounts by making them :term:`immortal`.
 In fact, this has been done for the builtin singletons, small integers,
 and a number of other builtin objects.
 
@@ -1641,7 +1662,8 @@ Python-level trace functions in previous versions.
 
    The value passed as the *what* parameter to a :c:type:`Py_tracefunc` function
    (but not a profiling function) when a line-number event is being reported.
-   It may be disabled for a frame by setting :attr:`f_trace_lines` to *0* on that frame.
+   It may be disabled for a frame by setting :attr:`~frame.f_trace_lines` to
+   *0* on that frame.
 
 
 .. c:var:: int PyTrace_RETURN
@@ -1673,7 +1695,7 @@ Python-level trace functions in previous versions.
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions (but not
    profiling functions) when a new opcode is about to be executed.  This event is
    not emitted by default: it must be explicitly requested by setting
-   :attr:`f_trace_opcodes` to *1* on the frame.
+   :attr:`~frame.f_trace_opcodes` to *1* on the frame.
 
 
 .. c:function:: void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)

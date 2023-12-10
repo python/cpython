@@ -343,6 +343,12 @@ Directory and files operations
    .. versionchanged:: 3.12
       Added the *onexc* parameter, deprecated *onerror*.
 
+   .. versionchanged:: 3.13
+      :func:`!rmtree` now ignores :exc:`FileNotFoundError` exceptions for all
+      but the top-level path.
+      Exceptions other than :exc:`OSError` and subclasses of :exc:`!OSError`
+      are now always propagated to the caller.
+
    .. attribute:: rmtree.avoids_symlink_attacks
 
       Indicates whether the current platform and implementation provides a
@@ -475,6 +481,12 @@ Directory and files operations
       ``PATHEXT`` is used now even when *cmd* includes a directory component
       or ends with an extension that is in ``PATHEXT``; and filenames that
       have no extension can now be found.
+
+   .. versionchanged:: 3.12.1
+      On Windows, if *mode* includes ``os.X_OK``, executables with an
+      extension in ``PATHEXT`` will be preferred over executables without a
+      matching extension.
+      This brings behavior closer to that of Python 3.11.
 
 .. exception:: Error
 

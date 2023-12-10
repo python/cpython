@@ -5,11 +5,6 @@
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 
-#ifdef Py_TRACE_REFS
-/* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-#endif
-
 #ifdef Py_REF_DEBUG
 /* These are useful as debugging aids when chasing down refleaks. */
 PyAPI_FUNC(Py_ssize_t) _Py_GetGlobalRefTotal(void);
@@ -55,6 +50,7 @@ typedef struct _Py_Identifier {
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
 #endif /* !Py_BUILD_CORE */
+
 
 typedef struct {
     /* Number implementations must check *both*
@@ -227,7 +223,7 @@ struct _typeobject {
     vectorcallfunc tp_vectorcall;
 
     /* bitset of which type-watchers care about this type */
-    char tp_watched;
+    unsigned char tp_watched;
 };
 
 /* This struct is used by the specializer
@@ -273,8 +269,6 @@ typedef struct _heaptypeobject {
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyType_LookupId(PyTypeObject *, _Py_Identifier *);
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
@@ -282,8 +276,7 @@ PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
-PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
+PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
@@ -472,7 +465,7 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
         /* If "cond" is false, then _tstate remains NULL and the deallocator \
          * is run normally without involving the trashcan */ \
         if (cond) { \
-            _tstate = _PyThreadState_UncheckedGet(); \
+            _tstate = PyThreadState_GetUnchecked(); \
             if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
                 break; \
             } \
@@ -491,8 +484,8 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
-PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
+PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 #define TYPE_MAX_WATCHERS 8
 

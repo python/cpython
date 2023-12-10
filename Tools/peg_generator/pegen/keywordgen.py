@@ -35,6 +35,7 @@ iskeyword = frozenset(kwlist).__contains__
 issoftkeyword = frozenset(softkwlist).__contains__
 '''.lstrip()
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate the Lib/keywords.py file from the grammar."

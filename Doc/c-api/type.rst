@@ -461,21 +461,34 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      The following fields cannot be set at all using :c:type:`PyType_Spec` and
-      :c:type:`PyType_Slot`:
+      The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
-      * :c:member:`~PyTypeObject.tp_dict`
-      * :c:member:`~PyTypeObject.tp_mro`
-      * :c:member:`~PyTypeObject.tp_cache`
-      * :c:member:`~PyTypeObject.tp_subclasses`
-      * :c:member:`~PyTypeObject.tp_weaklist`
+         * :c:member:`~PyTypeObject.tp_weaklistoffset`
+           (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
+         * :c:member:`~PyTypeObject.tp_dictoffset`
+           (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
+         * :c:member:`~PyTypeObject.tp_vectorcall_offset`
+           (use ``"__vectorcalloffset__"`` in
+           :ref:`PyMemberDef <pymemberdef-offsets>`)
+
+         If it is not possible to switch to a ``MANAGED`` flag (for example,
+         for vectorcall or to support Python older than 3.12), specify the
+         offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+         See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
+         for details.
+
+      The following fields cannot be set at all when creating a heap type:
+
       * :c:member:`~PyTypeObject.tp_vectorcall`
-      * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
-      * :c:member:`~PyTypeObject.tp_dictoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead)
-      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+        (use :c:member:`~PyTypeObject.tp_new` and/or
+        :c:member:`~PyTypeObject.tp_init`)
+
+      * Internal fields:
+        :c:member:`~PyTypeObject.tp_dict`,
+        :c:member:`~PyTypeObject.tp_mro`,
+        :c:member:`~PyTypeObject.tp_cache`,
+        :c:member:`~PyTypeObject.tp_subclasses`, and
+        :c:member:`~PyTypeObject.tp_weaklist`.
 
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
