@@ -2197,6 +2197,30 @@ class ClinicParserTest(TestCase):
                 expected_error = err_template.format(invalid_kind)
                 self.expect_failure(block, expected_error, lineno=3)
 
+    def test_invalid_getset(self):
+        annotations = ["@getter", "@setter"]
+        for annotation in annotations:
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.property -> int
+                """
+                expected_error = "neither @getter nor @setter can define return type"
+                self.expect_failure(block, expected_error, lineno=3)
+
+                block = f"""
+                   module foo
+                   class Foo "" ""
+                   {annotation}
+                   Foo.property
+                       obj: int
+                       /
+                """
+                expected_error = "neither @getter nor @setter can define parameters"
+                self.expect_failure(block, expected_error, lineno=0)
+
     def test_duplicate_coexist(self):
         err = "Called @coexist twice"
         block = """
