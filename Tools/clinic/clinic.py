@@ -851,7 +851,7 @@ class CLanguage(Language):
         {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
     """)
     PARSER_PROTOTYPE_SETTER: Final[str] = normalize_snippet("""
-        static PyObject *
+        static int
         {c_basename}({self_type}{self_name}, PyObject *value, void *Py_UNUSED(context))
     """)
     METH_O_PROTOTYPE: Final[str] = normalize_snippet("""
@@ -1189,6 +1189,7 @@ class CLanguage(Language):
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
         elif f.kind is SETTER:
+            return_value_declaration = "int return_value;"
             methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_prototype = docstring_definition = ''
         else:
@@ -1992,7 +1993,10 @@ class CLanguage(Language):
             converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
-        template_dict['impl_return_type'] = f.return_converter.type
+        if f.kind is SETTER:
+            template_dict['impl_return_type'] = 'int'
+        else:
+            template_dict['impl_return_type'] = f.return_converter.type
 
         template_dict['declarations'] = format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)

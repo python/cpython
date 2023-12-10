@@ -3258,9 +3258,9 @@ _io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
 _io.TextIOWrapper._CHUNK_SIZE
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
-/*[clinic end generated code: output=0d4fc49ae6b8eb87 input=32fc99861db02a0a]*/
+/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);

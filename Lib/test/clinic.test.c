@@ -4988,18 +4988,18 @@ Test.property
 #   define TEST_PROPERTY_GETSETTERDEF {"property", NULL, (setter)Test_property_set, NULL},
 #endif
 
-static PyObject *
+static int
 Test_property_set_impl(TestObj *self, PyObject *value);
 
-static PyObject *
+static int
 Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
 {
     return Test_property_set_impl(self, value);
 }
 
-static PyObject *
+static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=2ba2d4de6020e191 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=e57ae784a4e3382a input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push
