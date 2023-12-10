@@ -1247,7 +1247,7 @@ class CLanguage(Language):
 
         parsearg: str | None
         if f.kind in {GETTER, SETTER} and len(parameters) > 0:
-            raise RuntimeError("@getter, @setter should not define paramters")
+            fail("neither @getter nor @setter can define parameters")
 
         if not parameters:
             parser_code: list[str] | None
@@ -1978,7 +1978,7 @@ class CLanguage(Language):
                 template_dict['c_basename'] = f.c_basename + "_get"
             elif f.kind is SETTER:
                 template_dict['c_basename'] = f.c_basename + "_set"
-                # TODO: Improve handling pararms better way.
+                # Implicitly add the setter value parameter.
                 data.impl_parameters.append("PyObject *value")
                 data.impl_arguments.append("value")
         else:
@@ -1994,6 +1994,7 @@ class CLanguage(Language):
 
         f.return_converter.render(f, data)
         if f.kind is SETTER:
+            # All setters return an int.
             template_dict['impl_return_type'] = 'int'
         else:
             template_dict['impl_return_type'] = f.return_converter.type
@@ -5375,7 +5376,7 @@ class DSLParser:
 
     def at_getter(self) -> None:
         if self.kind in (GETTER, SETTER):
-            fail("@getter and @setter can not be declared at once")
+            fail("only one of @getter or @setter can be used")
         self.kind = GETTER
 
     def at_setter(self) -> None:
