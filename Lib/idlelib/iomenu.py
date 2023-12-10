@@ -187,9 +187,9 @@ class IOBinding:
         """
         if self.get_saved():
             return "yes"
-        message = "Do you want to save "
-                  f"{self.filename or 'this untitled document'}"
-                  " before closing?"
+        message = ("Do you want to save "
+                   f"{self.filename or 'this untitled document'}"
+                   " before closing?")
         confirm = messagebox.askyesnocancel(
                   title="Save On Close",
                   message=message,
