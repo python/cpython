@@ -131,16 +131,6 @@ def addOpenEventSupport(root, flist):
     # one for every file that should be opened.
     root.createcommand("::tk::mac::OpenDocument", doOpenFile)
 
-def addQuitSupport(root, flist):
-    """
-    This ensures that the application will respond properly to quit events,
-    including the "IDLE -> Quit IDLE" menu.
-    """
-    def doQuit():
-        flist.close_all_callback()
-
-    root.createcommand("::tk::mac::Quit", doQuit)
-
 def hideTkConsole(root):
     try:
         root.tk.call('console', 'hide')
@@ -231,7 +221,7 @@ def overrideRootMenu(root, flist):
         # The binding above doesn't reliably work on all versions of Tk
         # on macOS. Adding command definition below does seem to do the
         # right thing for now.
-        root.createcommand('exit', flist.close_all_callback)
+        root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
@@ -280,7 +270,6 @@ def setupApp(root, flist):
         hideTkConsole(root)
         overrideRootMenu(root, flist)
         addOpenEventSupport(root, flist)
-        addQuitSupport(root, flist)
         fixb2context(root)
 
 
