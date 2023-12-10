@@ -23,7 +23,10 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
+import sys, os, time, io, re, warnings, weakref, collections.abc
+
+# Speed up import time by delaying traceback import until needed
+traceback = None
 
 from types import GenericAlias
 from string import Template
@@ -653,6 +656,9 @@ class Formatter(object):
         This default implementation just uses
         traceback.print_exception()
         """
+        global traceback
+        if traceback is None:
+            import traceback
         sio = io.StringIO()
         tb = ei[2]
         # See issues #9427, #1553375. Commented out for now.
@@ -1061,6 +1067,9 @@ class Handler(Filterer):
         The record which was being processed is passed in to this method.
         """
         if raiseExceptions and sys.stderr:  # see issue 13807
+            global traceback
+            if traceback is None:
+                import traceback
             exc = sys.exception()
             try:
                 sys.stderr.write('--- Logging error ---\n')
@@ -1601,6 +1610,9 @@ class Logger(Filterer):
         co = f.f_code
         sinfo = None
         if stack_info:
+            global traceback
+            if traceback is None:
+                import traceback
             with io.StringIO() as sio:
                 sio.write("Stack (most recent call last):\n")
                 traceback.print_stack(f, file=sio)
