@@ -131,6 +131,16 @@ def addOpenEventSupport(root, flist):
     # one for every file that should be opened.
     root.createcommand("::tk::mac::OpenDocument", doOpenFile)
 
+def addQuitSupport(root, flist):
+    """
+    This ensures that the application will respond properly to quit events,
+    including the "IDLE -> Quit IDLE" menu.
+    """
+    def doQuit():
+        flist.close_all_callback()
+
+    root.createcommand("::tk::mac::Quit", doQuit)
+
 def hideTkConsole(root):
     try:
         root.tk.call('console', 'hide')
@@ -270,6 +280,7 @@ def setupApp(root, flist):
         hideTkConsole(root)
         overrideRootMenu(root, flist)
         addOpenEventSupport(root, flist)
+        addQuitSupport(root, flist)
         fixb2context(root)
 
 
