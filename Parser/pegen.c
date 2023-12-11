@@ -18,12 +18,8 @@ _PyPegen_interactive_exit(Parser *p)
 }
 
 Py_ssize_t
-_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+_PyPegen_byte_offset_to_character_offset_raw(const char* str, Py_ssize_t col_offset)
 {
-    const char *str = PyUnicode_AsUTF8(line);
-    if (!str) {
-        return -1;
-    }
     Py_ssize_t len = strlen(str);
     if (col_offset > len + 1) {
         col_offset = len + 1;
@@ -91,6 +87,16 @@ _PyPegen_calculate_display_width(PyObject *line, Py_ssize_t character_offset)
     Py_DECREF(segment);
     Py_DECREF(width_fn);
     return width;
+}
+
+Py_ssize_t
+_PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
+{
+    const char *str = PyUnicode_AsUTF8(line);
+    if (!str) {
+        return -1;
+    }
+    return _PyPegen_byte_offset_to_character_offset_raw(str, col_offset);
 }
 
 // Here, mark is the start of the node, while p->mark is the end.
