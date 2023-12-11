@@ -34,9 +34,9 @@ instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`~Random.random`,
-:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
-Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
+basic generator of your own devising: in that case, override the :meth:`~random.random`,
+:meth:`~random.seed`, :meth:`~random.getstate`, and :meth:`~random.setstate` methods.
+Optionally, a new generator can supply a :meth:`~random.getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
@@ -409,7 +409,7 @@ Alternative Generator
 
    .. deprecated-removed:: 3.9 3.11
       Formerly the *seed* could be any hashable object.  Now it is limited to:
-      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
 .. class:: SystemRandom([seed])
@@ -435,7 +435,7 @@ change across Python versions, but two aspects are guaranteed not to change:
 * If a new seeding method is added, then a backward compatible seeder will be
   offered.
 
-* The generator's :meth:`~Random.random` method will continue to produce the same
+* The generator's :meth:`~random.random` method will continue to produce the same
   sequence when the compatible seeder is given the same seed.
 
 .. _random-examples:
