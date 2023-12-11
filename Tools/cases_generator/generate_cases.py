@@ -381,7 +381,7 @@ class Generator(Analyzer):
             self.write_pseudo_instrs()
 
             self.out.emit("")
-            self.write_uop_items(lambda name, counter: f"#define {name} {counter}")
+            self.out.emit('#include "pycore_uop_ids.h"')
 
             self.write_stack_effect_functions()
 
