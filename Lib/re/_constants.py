@@ -20,7 +20,7 @@ from _sre import MAXREPEAT, MAXGROUPS
 # SRE standard exception (access as sre.error)
 # should this really be here?
 
-class error(Exception):
+class PatternError(Exception):
     """Exception raised for invalid regular expressions.
 
     Attributes:
@@ -52,6 +52,9 @@ class error(Exception):
             self.lineno = self.colno = None
         super().__init__(msg)
 
+
+# Backward compatibility after renaming in 3.13
+error = PatternError
 
 class _NamedIntConstant(int):
     def __new__(cls, value, name):

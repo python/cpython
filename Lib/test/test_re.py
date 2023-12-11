@@ -47,7 +47,7 @@ class ReTests(unittest.TestCase):
         recurse(actual, expect)
 
     def checkPatternError(self, pattern, errmsg, pos=None):
-        with self.assertRaises(re.error) as cm:
+        with self.assertRaises(re.PatternError) as cm:
             re.compile(pattern)
         with self.subTest(pattern=pattern):
             err = cm.exception
@@ -56,13 +56,16 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(err.pos, pos)
 
     def checkTemplateError(self, pattern, repl, string, errmsg, pos=None):
-        with self.assertRaises(re.error) as cm:
+        with self.assertRaises(re.PatternError) as cm:
             re.sub(pattern, repl, string)
         with self.subTest(pattern=pattern, repl=repl):
             err = cm.exception
             self.assertEqual(err.msg, errmsg)
             if pos is not None:
                 self.assertEqual(err.pos, pos)
+
+    def test_error_is_PatternError_alias(self):
+        assert re.error is re.PatternError
 
     def test_keep_buffer(self):
         # See bug 14212
@@ -154,7 +157,7 @@ class ReTests(unittest.TestCase):
                          (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)+chr(8)))
         for c in 'cdehijklmopqsuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':
             with self.subTest(c):
-                with self.assertRaises(re.error):
+                with self.assertRaises(re.PatternError):
                     self.assertEqual(re.sub('a', '\\' + c, 'a'), '\\' + c)
 
         self.assertEqual(re.sub(r'^\s*', 'X', 'test'), 'Xtest')
@@ -836,10 +839,10 @@ class ReTests(unittest.TestCase):
         re.purge()  # for warnings
         for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
             with self.subTest(c):
-                self.assertRaises(re.error, re.compile, '\\%c' % c)
+                self.assertRaises(re.PatternError, re.compile, '\\%c' % c)
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
             with self.subTest(c):
-                self.assertRaises(re.error, re.compile, '[\\%c]' % c)
+                self.assertRaises(re.PatternError, re.compile, '[\\%c]' % c)
 
     def test_named_unicode_escapes(self):
         # test individual Unicode named escapes
@@ -970,14 +973,14 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(r'(?:(a)|(x))b(?<=(?(1)c|x))c', 'abc'))
         self.assertTrue(re.match(r'(?:(a)|(x))b(?<=(?(1)b|x))c', 'abc'))
         # Group used before defined.
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(?(2)b|x))(c)')
+        self.assertRaises(re.PatternError, re.compile, r'(a)b(?<=(?(2)b|x))(c)')
         self.assertIsNone(re.match(r'(a)b(?<=(?(1)c|x))(c)', 'abc'))
         self.assertTrue(re.match(r'(a)b(?<=(?(1)b|x))(c)', 'abc'))
         # Group defined in the same lookbehind pattern
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(.)\2)(c)')
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(?P<a>.)(?P=a))(c)')
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(a)(?(2)b|x))(c)')
-        self.assertRaises(re.error, re.compile, r'(a)b(?<=(.)(?<=\2))(c)')
+        self.assertRaises(re.PatternError, re.compile, r'(a)b(?<=(.)\2)(c)')
+        self.assertRaises(re.PatternError, re.compile, r'(a)b(?<=(?P<a>.)(?P=a))(c)')
+        self.assertRaises(re.PatternError, re.compile, r'(a)b(?<=(a)(?(2)b|x))(c)')
+        self.assertRaises(re.PatternError, re.compile, r'(a)b(?<=(.)(?<=\2))(c)')
 
     def test_ignore_case(self):
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
@@ -1318,8 +1321,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"\x%02x" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"\x%02x0" % i).encode(), bytes([i])+b"0"))
             self.assertTrue(re.match((r"\x%02xz" % i).encode(), bytes([i])+b"z"))
-        self.assertRaises(re.error, re.compile, br"\u1234")
-        self.assertRaises(re.error, re.compile, br"\U00012345")
+        self.assertRaises(re.PatternError, re.compile, br"\u1234")
+        self.assertRaises(re.PatternError, re.compile, br"\U00012345")
         self.assertTrue(re.match(br"\0", b"\000"))
         self.assertTrue(re.match(br"\08", b"\0008"))
         self.assertTrue(re.match(br"\01", b"\001"))
@@ -1341,8 +1344,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"[\x%02x]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02x0]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02xz]" % i).encode(), bytes([i])))
-        self.assertRaises(re.error, re.compile, br"[\u1234]")
-        self.assertRaises(re.error, re.compile, br"[\U00012345]")
+        self.assertRaises(re.PatternError, re.compile, br"[\u1234]")
+        self.assertRaises(re.PatternError, re.compile, br"[\U00012345]")
         self.checkPatternError(br"[\567]",
                                r'octal escape value \567 outside of '
                                r'range 0-0o377', 1)
@@ -1675,11 +1678,11 @@ class ReTests(unittest.TestCase):
             self.assertIsNone(pat.match(b'\xe0'))
         # Incompatibilities
         self.assertRaises(ValueError, re.compile, br'\w', re.UNICODE)
-        self.assertRaises(re.error, re.compile, br'(?u)\w')
+        self.assertRaises(re.PatternError, re.compile, br'(?u)\w')
         self.assertRaises(ValueError, re.compile, r'\w', re.UNICODE | re.ASCII)
         self.assertRaises(ValueError, re.compile, r'(?u)\w', re.ASCII)
         self.assertRaises(ValueError, re.compile, r'(?a)\w', re.UNICODE)
-        self.assertRaises(re.error, re.compile, r'(?au)\w')
+        self.assertRaises(re.PatternError, re.compile, r'(?au)\w')
 
     def test_locale_flag(self):
         enc = locale.getpreferredencoding()
@@ -1720,11 +1723,11 @@ class ReTests(unittest.TestCase):
             self.assertIsNone(pat.match(bletter))
         # Incompatibilities
         self.assertRaises(ValueError, re.compile, '', re.LOCALE)
-        self.assertRaises(re.error, re.compile, '(?L)')
+        self.assertRaises(re.PatternError, re.compile, '(?L)')
         self.assertRaises(ValueError, re.compile, b'', re.LOCALE | re.ASCII)
         self.assertRaises(ValueError, re.compile, b'(?L)', re.ASCII)
         self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
-        self.assertRaises(re.error, re.compile, b'(?aL)')
+        self.assertRaises(re.PatternError, re.compile, b'(?aL)')
 
     def test_scoped_flags(self):
         self.assertTrue(re.match(r'(?i:a)b', 'Ab'))
@@ -2060,7 +2063,7 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(p4.match(b'\xc5\xc5'))
 
     def test_error(self):
-        with self.assertRaises(re.error) as cm:
+        with self.assertRaises(re.PatternError) as cm:
             re.compile('(\u20ac))')
         err = cm.exception
         self.assertIsInstance(err.pattern, str)
@@ -2072,14 +2075,14 @@ class ReTests(unittest.TestCase):
         self.assertIn(' at position 3', str(err))
         self.assertNotIn(' at position 3', err.msg)
         # Bytes pattern
-        with self.assertRaises(re.error) as cm:
+        with self.assertRaises(re.PatternError) as cm:
             re.compile(b'(\xa4))')
         err = cm.exception
         self.assertIsInstance(err.pattern, bytes)
         self.assertEqual(err.pattern, b'(\xa4))')
         self.assertEqual(err.pos, 3)
         # Multiline pattern
-        with self.assertRaises(re.error) as cm:
+        with self.assertRaises(re.PatternError) as cm:
             re.compile("""
                 (
                     abc
@@ -2820,7 +2823,7 @@ class ExternalTests(unittest.TestCase):
 
             with self.subTest(pattern=pattern, string=s):
                 if outcome == SYNTAX_ERROR:  # Expected a syntax error
-                    with self.assertRaises(re.error):
+                    with self.assertRaises(re.PatternError):
                         re.compile(pattern)
                     continue
 
