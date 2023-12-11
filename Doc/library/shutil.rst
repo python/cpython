@@ -346,6 +346,8 @@ Directory and files operations
    .. versionchanged:: 3.13
       :func:`!rmtree` now ignores :exc:`FileNotFoundError` exceptions for all
       but the top-level path.
+      Exceptions other than :exc:`OSError` and subclasses of :exc:`!OSError`
+      are now always propagated to the caller.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 

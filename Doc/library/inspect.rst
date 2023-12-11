@@ -492,7 +492,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
-   :ref:`__func__ <instance-methods>` attribute (etc) when an object passes
+   :attr:`~method.__func__` attribute (etc) when an object passes
    :func:`ismethod`.
 
 
