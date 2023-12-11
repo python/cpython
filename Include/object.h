@@ -279,6 +279,10 @@ _Py_ThreadId(void)
     __asm__ ("" : "=r" (tp));
     tid = tp;
     #endif
+#elif defined(__s390__) && defined(__GNUC__)
+    // Both GCC and Clang have supported __builtin_thread_pointer
+    // for s390 from long time ago.
+    tid = (uintptr_t)__builtin_thread_pointer();
 #else
   # error "define _Py_ThreadId for this platform"
 #endif

@@ -39,7 +39,6 @@ Doc/library/collections.abc.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
-Doc/library/contextlib.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
@@ -58,7 +57,6 @@ Doc/library/ftplib.rst
 Doc/library/functools.rst
 Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
-Doc/library/http.cookies.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
 Doc/library/inspect.rst
@@ -72,7 +70,6 @@ Doc/library/multiprocessing.rst
 Doc/library/multiprocessing.shared_memory.rst
 Doc/library/numbers.rst
 Doc/library/optparse.rst
-Doc/library/os.path.rst
 Doc/library/os.rst
 Doc/library/pickle.rst
 Doc/library/pickletools.rst
@@ -87,7 +84,6 @@ Doc/library/readline.rst
 Doc/library/resource.rst
 Doc/library/rlcompleter.rst
 Doc/library/select.rst
-Doc/library/shelve.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
 Doc/library/socket.rst
@@ -97,7 +93,6 @@ Doc/library/string.rst
 Doc/library/subprocess.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
-Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
 Doc/library/tkinter.rst

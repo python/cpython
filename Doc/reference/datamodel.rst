@@ -519,6 +519,8 @@ These are the types to which the function call operation (see section
 :ref:`calls`) can be applied:
 
 
+.. _user-defined-funcs:
+
 User-defined functions
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -532,9 +534,34 @@ section :ref:`function`).  It should be called with an argument list
 containing the same number of items as the function's formal parameter
 list.
 
-Special attributes:
+Special read-only attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. tabularcolumns:: |l|L|l|
+.. index::
+   single: __closure__ (function attribute)
+   single: __globals__ (function attribute)
+   pair: global; namespace
+
+.. list-table::
+   :header-rows: 1
+
+   * - Attribute
+     - Meaning
+
+   * - .. attribute:: function.__globals__
+     - A reference to the :class:`dictionary <dict>` that holds the function's
+       :ref:`global variables <naming>` -- the global namespace of the module
+       in which the function was defined.
+
+   * - .. attribute:: function.__closure__
+     - ``None`` or a :class:`tuple` of cells that contain bindings for the
+       function's free variables.
+
+       A cell object has the attribute ``cell_contents``.
+       This can be used to get the value of the cell, as well as set the value.
+
+Special writable attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
    single: __doc__ (function attribute)
@@ -542,96 +569,78 @@ Special attributes:
    single: __module__ (function attribute)
    single: __dict__ (function attribute)
    single: __defaults__ (function attribute)
-   single: __closure__ (function attribute)
    single: __code__ (function attribute)
-   single: __globals__ (function attribute)
    single: __annotations__ (function attribute)
    single: __kwdefaults__ (function attribute)
    single: __type_params__ (function attribute)
-   pair: global; namespace
 
-+-------------------------+-------------------------------+-----------+
-| Attribute               | Meaning                       |           |
-+=========================+===============================+===========+
-| :attr:`__doc__`         | The function's documentation  | Writable  |
-|                         | string, or ``None`` if        |           |
-|                         | unavailable; not inherited by |           |
-|                         | subclasses.                   |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`~definition.\    | The function's name.          | Writable  |
-| __name__`               |                               |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`~definition.\    | The function's                | Writable  |
-| __qualname__`           | :term:`qualified name`.       |           |
-|                         |                               |           |
-|                         | .. versionadded:: 3.3         |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__module__`      | The name of the module the    | Writable  |
-|                         | function was defined in, or   |           |
-|                         | ``None`` if unavailable.      |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__defaults__`    | A tuple containing default    | Writable  |
-|                         | argument values for those     |           |
-|                         | arguments that have defaults, |           |
-|                         | or ``None`` if no arguments   |           |
-|                         | have a default value.         |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__code__`        | The code object representing  | Writable  |
-|                         | the compiled function body.   |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__globals__`     | A reference to the dictionary | Read-only |
-|                         | that holds the function's     |           |
-|                         | global variables --- the      |           |
-|                         | global namespace of the       |           |
-|                         | module in which the function  |           |
-|                         | was defined.                  |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`~object.__dict__`| The namespace supporting      | Writable  |
-|                         | arbitrary function            |           |
-|                         | attributes.                   |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__closure__`     | ``None`` or a tuple of cells  | Read-only |
-|                         | that contain bindings for the |           |
-|                         | function's free variables.    |           |
-|                         | See below for information on  |           |
-|                         | the ``cell_contents``         |           |
-|                         | attribute.                    |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__annotations__` | A dict containing annotations | Writable  |
-|                         | of parameters.  The keys of   |           |
-|                         | the dict are the parameter    |           |
-|                         | names, and ``'return'`` for   |           |
-|                         | the return annotation, if     |           |
-|                         | provided.  For more           |           |
-|                         | information on working with   |           |
-|                         | this attribute, see           |           |
-|                         | :ref:`annotations-howto`.     |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
-|                         | for keyword-only parameters.  |           |
-+-------------------------+-------------------------------+-----------+
-| :attr:`__type_params__` | A tuple containing the        | Writable  |
-|                         | :ref:`type parameters         |           |
-|                         | <type-params>` of a           |           |
-|                         | :ref:`generic function        |           |
-|                         | <generic-functions>`.         |           |
-+-------------------------+-------------------------------+-----------+
+Most of these attributes check the type of the assigned value:
 
-Most of the attributes labelled "Writable" check the type of the assigned value.
+.. list-table::
+   :header-rows: 1
+
+   * - Attribute
+     - Meaning
+
+   * - .. attribute:: function.__doc__
+     - The function's documentation string, or ``None`` if unavailable.
+       Not inherited by subclasses.
+
+   * - .. attribute:: function.__name__
+     - The function's name.
+       See also: :attr:`__name__ attributes <definition.__name__>`.
+
+   * - .. attribute:: function.__qualname__
+     - The function's :term:`qualified name`.
+       See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
+
+       .. versionadded:: 3.3
+
+   * - .. attribute:: function.__module__
+     - The name of the module the function was defined in,
+       or ``None`` if unavailable.
+
+   * - .. attribute:: function.__defaults__
+     - A :class:`tuple` containing default parameter values
+       for those parameters that have defaults,
+       or ``None`` if no parameters have a default value.
+
+   * - .. attribute:: function.__code__
+     - The :ref:`code object <code-objects>` representing
+       the compiled function body.
+
+   * - .. attribute:: function.__dict__
+     - The namespace supporting arbitrary function attributes.
+       See also: :attr:`__dict__ attributes <object.__dict__>`.
+
+   * - .. attribute:: function.__annotations__
+     - A :class:`dictionary <dict>` containing annotations of parameters.
+       The keys of the dictionary are the parameter names,
+       and ``'return'`` for the return annotation, if provided.
+       See also: :ref:`annotations-howto`.
+
+   * - .. attribute:: function.__kwdefaults__
+     - A :class:`dictionary <dict>` containing defaults for keyword-only
+       parameters.
+
+   * - .. attribute:: function.__type_params__
+     - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
+       a :ref:`generic function <generic-functions>`.
 
 Function objects also support getting and setting arbitrary attributes, which
 can be used, for example, to attach metadata to functions.  Regular attribute
-dot-notation is used to get and set such attributes. *Note that the current
-implementation only supports function attributes on user-defined functions.
-Function attributes on built-in functions may be supported in the future.*
+dot-notation is used to get and set such attributes.
 
-A cell object has the attribute ``cell_contents``. This can be used to get
-the value of the cell, as well as set the value.
+.. impl-detail::
+
+   CPython's current implementation only supports function attributes
+   on user-defined functions. Function attributes on
+   :ref:`built-in functions <builtin-functions>` may be supported in the
+   future.
 
 Additional information about a function's definition can be retrieved from its
-code object; see the description of internal types below. The
-:data:`cell <types.CellType>` type can be accessed in the :mod:`types`
-module.
+:ref:`code object <code-objects>`
+(accessible via the :attr:`~function.__code__` attribute).
 
 
 .. _instance-methods:
@@ -654,43 +663,66 @@ callable object (normally a user-defined function).
    single: __name__ (method attribute)
    single: __module__ (method attribute)
 
-Special read-only attributes: :attr:`__self__` is the class instance object,
-:attr:`__func__` is the function object; :attr:`__doc__` is the method's
-documentation (same as ``__func__.__doc__``); :attr:`~definition.__name__` is the
-method name (same as ``__func__.__name__``); :attr:`__module__` is the
-name of the module the method was defined in, or ``None`` if unavailable.
+Special read-only attributes:
+
+.. list-table::
+
+   * - .. attribute:: method.__self__
+     - Refers to the class instance object to which the method is
+       :ref:`bound <method-binding>`
+
+   * - .. attribute:: method.__func__
+     - Refers to the original :ref:`function object <user-defined-funcs>`
+
+   * - .. attribute:: method.__doc__
+     - The method's documentation
+       (same as :attr:`method.__func__.__doc__ <function.__doc__>`).
+       A :class:`string <str>` if the original function had a docstring, else
+       ``None``.
+
+   * - .. attribute:: method.__name__
+     - The name of the method
+       (same as :attr:`method.__func__.__name__ <function.__name__>`)
+
+   * - .. attribute:: method.__module__
+     - The name of the module the method was defined in, or ``None`` if
+       unavailable.
 
 Methods also support accessing (but not setting) the arbitrary function
-attributes on the underlying function object.
+attributes on the underlying :ref:`function object <user-defined-funcs>`.
 
 User-defined method objects may be created when getting an attribute of a
 class (perhaps via an instance of that class), if that attribute is a
-user-defined function object or a class method object.
+user-defined :ref:`function object <user-defined-funcs>` or a
+:class:`classmethod` object.
+
+.. _method-binding:
 
 When an instance method object is created by retrieving a user-defined
-function object from a class via one of its instances, its
-:attr:`__self__` attribute is the instance, and the method object is said
-to be bound.  The new method's :attr:`__func__` attribute is the original
-function object.
+:ref:`function object <user-defined-funcs>` from a class via one of its
+instances, its :attr:`~method.__self__` attribute is the instance, and the
+method object is said to be *bound*.  The new method's :attr:`~method.__func__`
+attribute is the original function object.
 
-When an instance method object is created by retrieving a class method
-object from a class or instance, its :attr:`__self__` attribute is the
-class itself, and its :attr:`__func__` attribute is the function object
+When an instance method object is created by retrieving a :class:`classmethod`
+object from a class or instance, its :attr:`~method.__self__` attribute is the
+class itself, and its :attr:`~method.__func__` attribute is the function object
 underlying the class method.
 
 When an instance method object is called, the underlying function
-(:attr:`__func__`) is called, inserting the class instance
-(:attr:`__self__`) in front of the argument list.  For instance, when
+(:attr:`~method.__func__`) is called, inserting the class instance
+(:attr:`~method.__self__`) in front of the argument list.  For instance, when
 :class:`!C` is a class which contains a definition for a function
 :meth:`!f`, and ``x`` is an instance of :class:`!C`, calling ``x.f(1)`` is
 equivalent to calling ``C.f(x, 1)``.
 
-When an instance method object is derived from a class method object, the
-"class instance" stored in :attr:`__self__` will actually be the class
+When an instance method object is derived from a :class:`classmethod` object, the
+"class instance" stored in :attr:`~method.__self__` will actually be the class
 itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
 calling ``f(C,1)`` where ``f`` is the underlying function.
 
-Note that the transformation from function object to instance method
+Note that the transformation from :ref:`function object <user-defined-funcs>`
+to instance method
 object happens each time the attribute is retrieved from the instance.  In
 some cases, a fruitful optimization is to assign the attribute to a local
 variable and call that local variable. Also notice that this
@@ -756,6 +788,8 @@ is raised and the asynchronous iterator will have reached the end of
 the set of values to be yielded.
 
 
+.. _builtin-functions:
+
 Built-in functions
 ^^^^^^^^^^^^^^^^^^
 
@@ -768,11 +802,17 @@ A built-in function object is a wrapper around a C function.  Examples of
 built-in functions are :func:`len` and :func:`math.sin` (:mod:`math` is a
 standard built-in module). The number and type of the arguments are
 determined by the C function. Special read-only attributes:
-:attr:`__doc__` is the function's documentation string, or ``None`` if
-unavailable; :attr:`~definition.__name__` is the function's name; :attr:`__self__` is
-set to ``None`` (but see the next item); :attr:`__module__` is the name of
-the module the function was defined in or ``None`` if unavailable.
 
+* :attr:`!__doc__` is the function's documentation string, or ``None`` if
+  unavailable. See :attr:`function.__doc__`.
+* :attr:`!__name__` is the function's name. See :attr:`function.__name__`.
+* :attr:`!__self__` is set to ``None`` (but see the next item).
+* :attr:`!__module__` is the name of
+  the module the function was defined in or ``None`` if unavailable.
+  See :attr:`function.__module__`.
+
+
+.. _builtin-methods:
 
 Built-in methods
 ^^^^^^^^^^^^^^^^
@@ -785,8 +825,9 @@ Built-in methods
 This is really a different disguise of a built-in function, this time containing
 an object passed to the C function as an implicit extra argument.  An example of
 a built-in method is ``alist.append()``, assuming *alist* is a list object. In
-this case, the special read-only attribute :attr:`__self__` is set to the object
-denoted by *alist*.
+this case, the special read-only attribute :attr:`!__self__` is set to the object
+denoted by *alist*. (The attribute has the same semantics as it does with
+:attr:`other instance methods <method.__self__>`.)
 
 
 Classes
@@ -818,7 +859,8 @@ the :ref:`import system <importsystem>` as invoked either by the
 :keyword:`import` statement, or by calling
 functions such as :func:`importlib.import_module` and built-in
 :func:`__import__`.  A module object has a namespace implemented by a
-dictionary object (this is the dictionary referenced by the ``__globals__``
+:class:`dictionary <dict>` object (this is the dictionary referenced by the
+:attr:`~function.__globals__`
 attribute of functions defined in the module).  Attribute references are
 translated to lookups in this dictionary, e.g., ``m.x`` is equivalent to
 ``m.__dict__["x"]``. A module object does not contain the code object used
@@ -901,8 +943,9 @@ https://www.python.org/download/releases/2.3/mro/.
 
 When a class attribute reference (for class :class:`!C`, say) would yield a
 class method object, it is transformed into an instance method object whose
-:attr:`__self__` attribute is :class:`!C`.  When it would yield a static
-method object, it is transformed into the object wrapped by the static method
+:attr:`~method.__self__` attribute is :class:`!C`.
+When it would yield a :class:`staticmethod` object,
+it is transformed into the object wrapped by the static method
 object. See section :ref:`descriptors` for another way in which attributes
 retrieved from a class may differ from those actually contained in its
 :attr:`~object.__dict__`.
@@ -970,7 +1013,7 @@ in which attribute references are searched.  When an attribute is not found
 there, and the instance's class has an attribute by that name, the search
 continues with the class attributes.  If a class attribute is found that is a
 user-defined function object, it is transformed into an instance method
-object whose :attr:`__self__` attribute is the instance.  Static method and
+object whose :attr:`~method.__self__` attribute is the instance.  Static method and
 class method objects are also transformed; see above under "Classes".  See
 section :ref:`descriptors` for another way in which attributes of a class
 retrieved via its instances may differ from the objects actually stored in
@@ -1217,8 +1260,9 @@ Frame objects
 
 .. index:: pair: object; frame
 
-Frame objects represent execution frames.  They may occur in traceback objects
-(see below), and are also passed to registered trace functions.
+Frame objects represent execution frames.  They may occur in
+:ref:`traceback objects <traceback-objects>`,
+and are also passed to registered trace functions.
 
 .. index::
    single: f_back (frame attribute)
@@ -1330,26 +1374,30 @@ Traceback objects
    single: sys.exception
    single: sys.last_traceback
 
-Traceback objects represent a stack trace of an exception.  A traceback object
+Traceback objects represent the stack trace of an :ref:`exception <tut-errors>`.
+A traceback object
 is implicitly created when an exception occurs, and may also be explicitly
 created by calling :class:`types.TracebackType`.
+
+.. versionchanged:: 3.7
+   Traceback objects can now be explicitly instantiated from Python code.
 
 For implicitly created tracebacks, when the search for an exception handler
 unwinds the execution stack, at each unwound level a traceback object is
 inserted in front of the current traceback.  When an exception handler is
 entered, the stack trace is made available to the program. (See section
 :ref:`try`.) It is accessible as the third item of the
-tuple returned by ``sys.exc_info()``, and as the ``__traceback__`` attribute
+tuple returned by :func:`sys.exc_info`, and as the ``__traceback__`` attribute
 of the caught exception.
 
 When the program contains no suitable
 handler, the stack trace is written (nicely formatted) to the standard error
 stream; if the interpreter is interactive, it is also made available to the user
-as ``sys.last_traceback``.
+as :data:`sys.last_traceback`.
 
 For explicitly created tracebacks, it is up to the creator of the traceback
-to determine how the ``tb_next`` attributes should be linked to form a
-full stack trace.
+to determine how the :attr:`~traceback.tb_next` attributes should be linked to
+form a full stack trace.
 
 .. index::
    single: tb_frame (traceback attribute)
@@ -1358,27 +1406,40 @@ full stack trace.
    pair: statement; try
 
 Special read-only attributes:
-:attr:`tb_frame` points to the execution frame of the current level;
-:attr:`tb_lineno` gives the line number where the exception occurred;
-:attr:`tb_lasti` indicates the precise instruction.
-The line number and last instruction in the traceback may differ from the
-line number of its frame object if the exception occurred in a
-:keyword:`try` statement with no matching except clause or with a
-finally clause.
 
-Accessing ``tb_frame`` raises an :ref:`auditing event <auditing>`
-``object.__getattr__`` with arguments ``obj`` and ``"tb_frame"``.
+.. list-table::
+
+   * - .. attribute:: traceback.tb_frame
+     - Points to the execution :ref:`frame <frame-objects>` of the current
+       level.
+
+       Accessing this attribute raises an
+       :ref:`auditing event <auditing>` ``object.__getattr__`` with arguments
+       ``obj`` and ``"tb_frame"``.
+
+   * - .. attribute:: traceback.tb_lineno
+     - Gives the line number where the exception occurred
+
+   * - .. attribute:: traceback.tb_lasti
+     - Indicates the "precise instruction".
+
+The line number and last instruction in the traceback may differ from the
+line number of its :ref:`frame object <frame-objects>` if the exception
+occurred in a
+:keyword:`try` statement with no matching except clause or with a
+:keyword:`finally` clause.
 
 .. index::
    single: tb_next (traceback attribute)
 
-Special writable attribute: :attr:`tb_next` is the next level in the stack
-trace (towards the frame where the exception occurred), or ``None`` if
-there is no next level.
+.. attribute:: traceback.tb_next
 
-.. versionchanged:: 3.7
-   Traceback objects can now be explicitly instantiated from Python code,
-   and the ``tb_next`` attribute of existing instances can be updated.
+   The special writable attribute :attr:`!tb_next` is the next level in the
+   stack trace (towards the frame where the exception occurred), or ``None`` if
+   there is no next level.
+
+   .. versionchanged:: 3.7
+      This attribute is now writable
 
 
 Slice objects
@@ -1846,7 +1907,8 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    .. note::
 
       This method may still be bypassed when looking up special methods as the
-      result of implicit invocation via language syntax or built-in functions.
+      result of implicit invocation via language syntax or
+      :ref:`built-in functions <builtin-functions>`.
       See :ref:`special-lookup`.
 
    .. audit-event:: object.__getattr__ obj,name object.__getattribute__

@@ -336,93 +336,6 @@ class Instruction(_Instruction):
                      covered by this instruction
     """
 
-    @staticmethod
-    def _get_argval_argrepr(op, arg, offset, co_consts, names, varname_from_oparg,
-                            labels_map):
-        get_name = None if names is None else names.__getitem__
-        argval = None
-        argrepr = ''
-        deop = _deoptop(op)
-        if arg is not None:
-            #  Set argval to the dereferenced value of the argument when
-            #  available, and argrepr to the string representation of argval.
-            #    _disassemble_bytes needs the string repr of the
-            #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
-            argval = arg
-            if deop in hasconst:
-                argval, argrepr = _get_const_info(deop, arg, co_consts)
-            elif deop in hasname:
-                if deop == LOAD_GLOBAL:
-                    argval, argrepr = _get_name_info(arg//2, get_name)
-                    if (arg & 1) and argrepr:
-                        argrepr = f"{argrepr} + NULL"
-                elif deop == LOAD_ATTR:
-                    argval, argrepr = _get_name_info(arg//2, get_name)
-                    if (arg & 1) and argrepr:
-                        argrepr = f"{argrepr} + NULL|self"
-                elif deop == LOAD_SUPER_ATTR:
-                    argval, argrepr = _get_name_info(arg//4, get_name)
-                    if (arg & 1) and argrepr:
-                        argrepr = f"{argrepr} + NULL|self"
-                else:
-                    argval, argrepr = _get_name_info(arg, get_name)
-            elif deop in hasjabs:
-                argval = arg*2
-                argrepr = f"to L{labels_map[argval]}"
-            elif deop in hasjrel:
-                signed_arg = -arg if _is_backward_jump(deop) else arg
-                argval = offset + 2 + signed_arg*2
-                caches = _get_cache_size(_all_opname[deop])
-                argval += 2 * caches
-                if deop == ENTER_EXECUTOR:
-                    argval += 2
-                argrepr = f"to L{labels_map[argval]}"
-            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
-                arg1 = arg >> 4
-                arg2 = arg & 15
-                val1, argrepr1 = _get_name_info(arg1, varname_from_oparg)
-                val2, argrepr2 = _get_name_info(arg2, varname_from_oparg)
-                argrepr = argrepr1 + ", " + argrepr2
-                argval = val1, val2
-            elif deop in haslocal or deop in hasfree:
-                argval, argrepr = _get_name_info(arg, varname_from_oparg)
-            elif deop in hascompare:
-                argval = cmp_op[arg >> 5]
-                argrepr = argval
-                if arg & 16:
-                    argrepr = f"bool({argrepr})"
-            elif deop == CONVERT_VALUE:
-                argval = (None, str, repr, ascii)[arg]
-                argrepr = ('', 'str', 'repr', 'ascii')[arg]
-            elif deop == SET_FUNCTION_ATTRIBUTE:
-                argrepr = ', '.join(s for i, s in enumerate(FUNCTION_ATTR_FLAGS)
-                                    if arg & (1<<i))
-            elif deop == BINARY_OP:
-                _, argrepr = _nb_ops[arg]
-            elif deop == CALL_INTRINSIC_1:
-                argrepr = _intrinsic_1_descs[arg]
-            elif deop == CALL_INTRINSIC_2:
-                argrepr = _intrinsic_2_descs[arg]
-        return argval, argrepr
-
-
-    @classmethod
-    def _create(cls, op, arg, offset, start_offset, starts_line, line_number,
-               positions,
-               co_consts=None, varname_from_oparg=None, names=None,
-               labels_map=None, exceptions_map=None):
-
-        argval, argrepr = cls._get_argval_argrepr(
-                               op, arg, offset,
-                               co_consts, names, varname_from_oparg, labels_map)
-        label = labels_map.get(offset, None)
-        instr = Instruction(_all_opname[op], op, arg, argval, argrepr,
-                            offset, start_offset, starts_line, line_number,
-                            label, positions)
-        instr.label_width = 4 + len(str(len(labels_map)))
-        instr.exc_handler = exceptions_map.get(offset, None)
-        return instr
-
     @property
     def oparg(self):
         """Alias for Instruction.arg."""
@@ -467,56 +380,169 @@ class Instruction(_Instruction):
         """True if other code jumps to here, otherwise False"""
         return self.label is not None
 
-    def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=0,
-                           label_width=0):
-        """Format instruction details for inclusion in disassembly output.
+    def __str__(self):
+        output = io.StringIO()
+        formatter = Formatter(file=output)
+        formatter.print_instruction(self, False)
+        return output.getvalue()
 
+
+class Formatter:
+
+    def __init__(self, file=None, lineno_width=0, offset_width=0, label_width=0,
+                       line_offset=0):
+        """Create a Formatter
+
+        *file* where to write the output
         *lineno_width* sets the width of the line number field (0 omits it)
-        *mark_as_current* inserts a '-->' marker arrow as part of the line
         *offset_width* sets the width of the instruction offset field
         *label_width* sets the width of the label field
+
+        *line_offset* the line number (within the code unit)
         """
+        self.file = file
+        self.lineno_width = lineno_width
+        self.offset_width = offset_width
+        self.label_width = label_width
+
+
+    def print_instruction(self, instr, mark_as_current=False):
+        """Format instruction details for inclusion in disassembly output."""
+        lineno_width = self.lineno_width
+        offset_width = self.offset_width
+        label_width = self.label_width
+
+        new_source_line = (lineno_width > 0 and
+                           instr.starts_line and
+                           instr.offset > 0)
+        if new_source_line:
+            print(file=self.file)
+
         fields = []
         # Column: Source code line number
         if lineno_width:
-            if self.starts_line:
-                lineno_fmt = "%%%dd" if self.line_number is not None else "%%%ds"
+            if instr.starts_line:
+                lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
                 lineno_fmt = lineno_fmt % lineno_width
-                lineno = self.line_number if self.line_number is not None else '--'
+                lineno = _NO_LINENO if instr.line_number is None else instr.line_number
                 fields.append(lineno_fmt % lineno)
             else:
                 fields.append(' ' * lineno_width)
         # Column: Label
-        if self.label is not None:
-            lbl = f"L{self.label}:"
+        if instr.label is not None:
+            lbl = f"L{instr.label}:"
             fields.append(f"{lbl:>{label_width}}")
         else:
             fields.append(' ' * label_width)
         # Column: Instruction offset from start of code sequence
         if offset_width > 0:
-            fields.append(f"{repr(self.offset):>{offset_width}}  ")
+            fields.append(f"{repr(instr.offset):>{offset_width}}  ")
         # Column: Current instruction indicator
         if mark_as_current:
             fields.append('-->')
         else:
             fields.append('   ')
         # Column: Opcode name
-        fields.append(self.opname.ljust(_OPNAME_WIDTH))
+        fields.append(instr.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
-        if self.arg is not None:
-            arg = repr(self.arg)
+        if instr.arg is not None:
+            arg = repr(instr.arg)
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
-            opname_excess = max(0, len(self.opname) - _OPNAME_WIDTH)
-            fields.append(repr(self.arg).rjust(_OPARG_WIDTH - opname_excess))
+            opname_excess = max(0, len(instr.opname) - _OPNAME_WIDTH)
+            fields.append(repr(instr.arg).rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
-            if self.argrepr:
-                fields.append('(' + self.argrepr + ')')
-        return ' '.join(fields).rstrip()
+            if instr.argrepr:
+                fields.append('(' + instr.argrepr + ')')
+        print(' '.join(fields).rstrip(), file=self.file)
 
-    def __str__(self):
-        return self._disassemble()
+    def print_exception_table(self, exception_entries):
+        file = self.file
+        if exception_entries:
+            print("ExceptionTable:", file=file)
+            for entry in exception_entries:
+                lasti = " lasti" if entry.lasti else ""
+                start = entry.start_label
+                end = entry.end_label
+                target = entry.target_label
+                print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
+
+
+class ArgResolver:
+    def __init__(self, co_consts, names, varname_from_oparg, labels_map):
+        self.co_consts = co_consts
+        self.names = names
+        self.varname_from_oparg = varname_from_oparg
+        self.labels_map = labels_map
+
+    def get_argval_argrepr(self, op, arg, offset):
+        get_name = None if self.names is None else self.names.__getitem__
+        argval = None
+        argrepr = ''
+        deop = _deoptop(op)
+        if arg is not None:
+            #  Set argval to the dereferenced value of the argument when
+            #  available, and argrepr to the string representation of argval.
+            #    _disassemble_bytes needs the string repr of the
+            #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
+            argval = arg
+            if deop in hasconst:
+                argval, argrepr = _get_const_info(deop, arg, self.co_consts)
+            elif deop in hasname:
+                if deop == LOAD_GLOBAL:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL"
+                elif deop == LOAD_ATTR:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL|self"
+                elif deop == LOAD_SUPER_ATTR:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL|self"
+                else:
+                    argval, argrepr = _get_name_info(arg, get_name)
+            elif deop in hasjabs:
+                argval = arg*2
+                argrepr = f"to L{self.labels_map[argval]}"
+            elif deop in hasjrel:
+                signed_arg = -arg if _is_backward_jump(deop) else arg
+                argval = offset + 2 + signed_arg*2
+                caches = _get_cache_size(_all_opname[deop])
+                argval += 2 * caches
+                if deop == ENTER_EXECUTOR:
+                    argval += 2
+                argrepr = f"to L{self.labels_map[argval]}"
+            elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
+                arg1 = arg >> 4
+                arg2 = arg & 15
+                val1, argrepr1 = _get_name_info(arg1, self.varname_from_oparg)
+                val2, argrepr2 = _get_name_info(arg2, self.varname_from_oparg)
+                argrepr = argrepr1 + ", " + argrepr2
+                argval = val1, val2
+            elif deop in haslocal or deop in hasfree:
+                argval, argrepr = _get_name_info(arg, self.varname_from_oparg)
+            elif deop in hascompare:
+                argval = cmp_op[arg >> 5]
+                argrepr = argval
+                if arg & 16:
+                    argrepr = f"bool({argrepr})"
+            elif deop == CONVERT_VALUE:
+                argval = (None, str, repr, ascii)[arg]
+                argrepr = ('', 'str', 'repr', 'ascii')[arg]
+            elif deop == SET_FUNCTION_ATTRIBUTE:
+                argrepr = ', '.join(s for i, s in enumerate(FUNCTION_ATTR_FLAGS)
+                                    if arg & (1<<i))
+            elif deop == BINARY_OP:
+                _, argrepr = _nb_ops[arg]
+            elif deop == CALL_INTRINSIC_1:
+                argrepr = _intrinsic_1_descs[arg]
+            elif deop == CALL_INTRINSIC_2:
+                argrepr = _intrinsic_2_descs[arg]
+        return argval, argrepr
+
 
 def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
     """Iterator for the opcodes in methods, functions or code
@@ -535,13 +561,18 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
         line_offset = first_line - co.co_firstlineno
     else:
         line_offset = 0
+
+    original_code = co.co_code
+    labels_map = _make_labels_map(original_code)
+    arg_resolver = ArgResolver(co.co_consts, co.co_names, co._varname_from_oparg,
+                               labels_map)
     return _get_instructions_bytes(_get_code_array(co, adaptive),
-                                   co._varname_from_oparg,
-                                   co.co_names, co.co_consts,
-                                   linestarts, line_offset,
+                                   linestarts=linestarts,
+                                   line_offset=line_offset,
                                    co_positions=co.co_positions(),
                                    show_caches=show_caches,
-                                   original_code=co.co_code)
+                                   original_code=original_code,
+                                   arg_resolver=arg_resolver)
 
 def _get_const_value(op, arg, co_consts):
     """Helper to get the value of the const in a hasconst op.
@@ -613,17 +644,13 @@ def _is_backward_jump(op):
                           'JUMP_BACKWARD_NO_INTERRUPT',
                           'ENTER_EXECUTOR')
 
-def _get_instructions_bytes(code, varname_from_oparg=None,
-                            names=None, co_consts=None,
-                            linestarts=None, line_offset=0,
-                            exception_entries=(), co_positions=None,
-                            show_caches=False, original_code=None):
+def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
+                            show_caches=False, original_code=None, labels_map=None,
+                            arg_resolver=None):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
-    opcode.  Additional information about the code's runtime environment
-    (e.g. variable names, co_consts) can be specified using optional
-    arguments.
+    opcode.
 
     """
     # Use the basic, unadaptive code for finding labels and actually walking the
@@ -631,30 +658,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
     # mess that logic up pretty badly:
     original_code = original_code or code
     co_positions = co_positions or iter(())
-    get_name = None if names is None else names.__getitem__
 
-    def make_labels_map(original_code, exception_entries):
-        jump_targets = set(findlabels(original_code))
-        labels = set(jump_targets)
-        for start, end, target, _, _ in exception_entries:
-            labels.add(start)
-            labels.add(end)
-            labels.add(target)
-        labels = sorted(labels)
-        labels_map = {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
-        for e in exception_entries:
-            e.start_label = labels_map[e.start]
-            e.end_label = labels_map[e.end]
-            e.target_label = labels_map[e.target]
-        return labels_map
-
-    labels_map = make_labels_map(original_code, exception_entries)
-    label_width = 4 + len(str(len(labels_map)))
-
-    exceptions_map = {}
-    for start, end, target, _, _ in exception_entries:
-        exceptions_map[start] = labels_map[target]
-        exceptions_map[end] = -1
+    labels_map = labels_map or _make_labels_map(original_code)
 
     starts_line = False
     local_line_number = None
@@ -672,10 +677,14 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         deop = _deoptop(op)
         op = code[offset]
 
-        yield Instruction._create(op, arg, offset, start_offset, starts_line, line_number,
-                                  positions, co_consts=co_consts,
-                                  varname_from_oparg=varname_from_oparg, names=names,
-                                  labels_map=labels_map, exceptions_map=exceptions_map)
+        if arg_resolver:
+            argval, argrepr = arg_resolver.get_argval_argrepr(op, arg, offset)
+        else:
+            argval, argrepr = arg, repr(arg)
+
+        yield Instruction(_all_opname[op], op, arg, argval, argrepr,
+                          offset, start_offset, starts_line, line_number,
+                          labels_map.get(offset, None), positions)
 
         caches = _get_cache_size(_all_opname[deop])
         if not caches:
@@ -726,69 +735,77 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
                     adaptive=adaptive, show_offsets=show_offsets
                 )
 
+
+def _make_labels_map(original_code, exception_entries=()):
+    jump_targets = set(findlabels(original_code))
+    labels = set(jump_targets)
+    for start, end, target, _, _ in exception_entries:
+        labels.add(start)
+        labels.add(end)
+        labels.add(target)
+    labels = sorted(labels)
+    labels_map = {offset: i+1 for (i, offset) in enumerate(sorted(labels))}
+    for e in exception_entries:
+        e.start_label = labels_map[e.start]
+        e.end_label = labels_map[e.end]
+        e.target_label = labels_map[e.target]
+    return labels_map
+
+_NO_LINENO = '  --'
+
+def _get_lineno_width(linestarts):
+    if linestarts is None:
+        return 0
+    maxlineno = max(filter(None, linestarts.values()), default=-1)
+    if maxlineno == -1:
+        # Omit the line number column entirely if we have no line number info
+        return 0
+    lineno_width = max(3, len(str(maxlineno)))
+    if lineno_width < len(_NO_LINENO) and None in linestarts.values():
+        lineno_width = len(_NO_LINENO)
+    return lineno_width
+
+
 def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        names=None, co_consts=None, linestarts=None,
                        *, file=None, line_offset=0, exception_entries=(),
                        co_positions=None, show_caches=False, original_code=None,
                        show_offsets=False):
-    # Omit the line number column entirely if we have no line number info
-    if bool(linestarts):
-        linestarts_ints = [line for line in linestarts.values() if line is not None]
-        show_lineno = len(linestarts_ints) > 0
-    else:
-        show_lineno = False
 
-    if show_lineno:
-        maxlineno = max(linestarts_ints) + line_offset
-        if maxlineno >= 1000:
-            lineno_width = len(str(maxlineno))
-        else:
-            lineno_width = 3
+    offset_width = len(str(max(len(code) - 2, 9999))) if show_offsets else 0
 
-        if lineno_width < len(str(None)) and None in linestarts.values():
-            lineno_width = len(str(None))
-    else:
-        lineno_width = 0
-    if show_offsets:
-        maxoffset = len(code) - 2
-        if maxoffset >= 10000:
-            offset_width = len(str(maxoffset))
-        else:
-            offset_width = 4
-    else:
-        offset_width = 0
+    labels_map = _make_labels_map(original_code or code, exception_entries)
+    label_width = 4 + len(str(len(labels_map)))
 
-    label_width = -1
-    for instr in _get_instructions_bytes(code, varname_from_oparg, names,
-                                         co_consts, linestarts,
-                                         line_offset=line_offset,
-                                         exception_entries=exception_entries,
-                                         co_positions=co_positions,
-                                         show_caches=show_caches,
-                                         original_code=original_code):
-        new_source_line = (show_lineno and
-                           instr.starts_line and
-                           instr.offset > 0)
-        if new_source_line:
-            print(file=file)
+    formatter = Formatter(file=file,
+                          lineno_width=_get_lineno_width(linestarts),
+                          offset_width=offset_width,
+                          label_width=label_width,
+                          line_offset=line_offset)
+
+    arg_resolver = ArgResolver(co_consts, names, varname_from_oparg, labels_map)
+    instrs = _get_instructions_bytes(code, linestarts=linestarts,
+                                           line_offset=line_offset,
+                                           co_positions=co_positions,
+                                           show_caches=show_caches,
+                                           original_code=original_code,
+                                           labels_map=labels_map,
+                                           arg_resolver=arg_resolver)
+
+    print_instructions(instrs, exception_entries, formatter,
+                       show_caches=show_caches, lasti=lasti)
+
+
+def print_instructions(instrs, exception_entries, formatter, show_caches=False, lasti=-1):
+    for instr in instrs:
         if show_caches:
             is_current_instr = instr.offset == lasti
         else:
             # Each CACHE takes 2 bytes
             is_current_instr = instr.offset <= lasti \
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
-        label_width = getattr(instr, 'label_width', label_width)
-        assert label_width >= 0
-        print(instr._disassemble(lineno_width, is_current_instr, offset_width, label_width),
-              file=file)
-    if exception_entries:
-        print("ExceptionTable:", file=file)
-        for entry in exception_entries:
-            lasti = " lasti" if entry.lasti else ""
-            start = entry.start_label
-            end = entry.end_label
-            target = entry.target_label
-            print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
+        formatter.print_instruction(instr, is_current_instr)
+    formatter.print_exception_table(exception_entries)
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
@@ -927,15 +944,18 @@ class Bytecode:
 
     def __iter__(self):
         co = self.codeobj
+        original_code = co.co_code
+        labels_map = _make_labels_map(original_code, self.exception_entries)
+        arg_resolver = ArgResolver(co.co_consts, co.co_names, co._varname_from_oparg,
+                                   labels_map)
         return _get_instructions_bytes(_get_code_array(co, self.adaptive),
-                                       co._varname_from_oparg,
-                                       co.co_names, co.co_consts,
-                                       self._linestarts,
+                                       linestarts=self._linestarts,
                                        line_offset=self._line_offset,
-                                       exception_entries=self.exception_entries,
                                        co_positions=co.co_positions(),
                                        show_caches=self.show_caches,
-                                       original_code=co.co_code)
+                                       original_code=original_code,
+                                       labels_map=labels_map,
+                                       arg_resolver=arg_resolver)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,
