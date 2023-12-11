@@ -404,7 +404,7 @@ arg_parser.add_argument(
 if __name__ == "__main__":
     args = arg_parser.parse_args()
     if len(args.input) == 0:
-        args.input.append(DEFAULT_INPUT)
+        args.input.append(DEFAULT_INPUT.as_posix())
     data = analyze_files(args.input)
     with open(args.output, "w") as outfile:
         generate_tier1(args.input, data, outfile, args.emit_line_directives)
