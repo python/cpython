@@ -109,6 +109,7 @@ class Uop:
     body: list[lexer.Token]
     properties: Properties
     _size: int = -1
+    implicitly_created: bool = False
 
     def dump(self, indent: str) -> None:
         print(
@@ -328,6 +329,7 @@ def desugar_inst(
     assert inst.kind == "inst"
     name = inst.name
     uop = make_uop("_" + inst.name, inst)
+    uop.implicitly_created = True
     uops[inst.name] = uop
     add_instruction(name, [uop], instructions)
 
