@@ -2298,7 +2298,7 @@ func(
 
         # Examples with dencodings
         s = b'# coding=latin\n(aaaaaaaaaaaaaaaaa\naaaaaaaaaaa\xb5'
-        self._check_error(s, "'\(' was never closed")
+        self._check_error(s, r"'\(' was never closed")
 
     def test_error_string_literal(self):
 
