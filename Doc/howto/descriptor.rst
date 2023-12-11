@@ -1332,7 +1332,8 @@ Using the non-data descriptor protocol, a pure Python version of
 The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
 that refers to the underlying function.  Also it carries forward
 the attributes necessary to make the wrapper look like the wrapped
-function: ``__name__``, ``__qualname__``, ``__doc__``, and ``__annotations__``.
+function: :attr:`~function.__name__`, :attr:`~function.__qualname__`,
+:attr:`~function.__doc__`, and :attr:`~function.__annotations__`.
 
 .. testcode::
     :hide:
@@ -1543,8 +1544,9 @@ chained together.  In Python 3.11, this functionality was deprecated.
 The :func:`functools.update_wrapper` call in ``ClassMethod`` adds a
 ``__wrapped__`` attribute that refers to the underlying function.  Also
 it carries forward the attributes necessary to make the wrapper look
-like the wrapped function: ``__name__``, ``__qualname__``, ``__doc__``,
-and ``__annotations__``.
+like the wrapped function: :attr:`~function.__name__`,
+:attr:`~function.__qualname__`, :attr:`~function.__doc__`,
+and :attr:`~function.__annotations__`.
 
 
 Member objects and __slots__
