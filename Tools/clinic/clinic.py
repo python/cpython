@@ -1246,7 +1246,7 @@ class CLanguage(Language):
             limited_capi = False
 
         parsearg: str | None
-        if f.kind in {GETTER, SETTER} and len(parameters) > 0:
+        if f.kind in {GETTER, SETTER} and parameters:
             fail("neither @getter nor @setter can define parameters")
 
         if not parameters:
