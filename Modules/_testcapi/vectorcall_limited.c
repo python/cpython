@@ -1,8 +1,6 @@
 /* Test Vectorcall in the limited API */
 
-#ifndef _MSC_VER
 #include "pyconfig.h"   // Py_GIL_DISABLED
-#endif
 
 #ifndef Py_GIL_DISABLED
 #define Py_LIMITED_API 0x030c0000 // 3.12
