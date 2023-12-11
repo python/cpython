@@ -1269,6 +1269,14 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add new functions to create :class:`tuple` and :class:`list` from arrays:
+
+  * :c:func:`PyTuple_FromArray`.
+  * :c:func:`PyTuple_FromArrayMoveRef`.
+  * :c:func:`PyList_FromArrayMoveRef`.
+
+  (Contributed by Victor Stinner in :gh:`111489`.)
+
 
 Porting to Python 3.13
 ----------------------

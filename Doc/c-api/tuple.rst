@@ -36,6 +36,30 @@ Tuple Objects
    Return a new tuple object of size *len*, or ``NULL`` on failure.
 
 
+.. c:function:: PyObject* PyTuple_FromArray(PyObject *const *array, Py_ssize_t size)
+
+   Create a tuple of *size* items and copy references from *array* to the new
+   tuple.
+
+   * Return a new reference on success.
+   * Set an exception and return NULL on error.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: PyObject* PyTuple_FromArrayMoveRef(PyObject *const *array, Py_ssize_t size)
+
+   Create a tuple of *size* items and move *array* :term:`strong references
+   <strong reference>` to the new tuple.
+
+   * Return a new reference on success. *array* references become :term:`borrowed
+     references <borrowed reference>`.
+   * Set an exception and return ``NULL`` on error. *array* is left unchanged,
+     the caller should clear *array* strong references.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 
    Return a new tuple object of size *n*, or ``NULL`` on failure. The tuple values

@@ -342,3 +342,11 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES list_extend(NULL, [])
         # CRASHES list_extend([], NULL)
+
+    def test_list_fromarraymoveref(self):
+        # Test PyList_FromArrayMoveRef()
+        list_fromarraymoveref = _testcapi.list_fromarraymoveref
+
+        lst = [object() for _ in range(5)]
+        copy = list_fromarraymoveref(lst)
+        self.assertEqual(copy, lst)

@@ -183,6 +183,45 @@ list_extend(PyObject* Py_UNUSED(module), PyObject *args)
 }
 
 
+static PyObject *
+list_fromarraymoveref(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    PyObject *src;
+    if (!PyArg_ParseTuple(args, "O!", &PyList_Type, &src)) {
+        return NULL;
+    }
+
+    Py_ssize_t size = PyList_GET_SIZE(src);
+    PyObject **array = PyMem_Malloc(size * sizeof(PyObject**));
+    if (array == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < size; i++) {
+        array[i] = Py_NewRef(PyList_GET_ITEM(src, i));
+    }
+
+    PyObject *list = PyList_FromArrayMoveRef(array, size);
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        // check that the array is not modified
+        assert(array[i] == PyList_GET_ITEM(src, i));
+
+        // check that the array was copied properly
+        assert(PyList_GET_ITEM(list, i) == array[i]);
+    }
+
+    if (list == NULL) {
+        for (Py_ssize_t i = 0; i < size; i++) {
+            Py_DECREF(array[i]);
+        }
+    }
+    PyMem_Free(array);
+
+    return list;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"list_check", list_check, METH_O},
     {"list_check_exact", list_check_exact, METH_O},
@@ -202,6 +241,7 @@ static PyMethodDef test_methods[] = {
     {"list_astuple", list_astuple, METH_O},
     {"list_clear", list_clear, METH_O},
     {"list_extend", list_extend, METH_VARARGS},
+    {"list_fromarraymoveref", list_fromarraymoveref, METH_VARARGS},
     {NULL},
 };
 

@@ -2622,25 +2622,36 @@ PyList_AsTuple(PyObject *v)
     return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
-PyObject *
-_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+PyObject*
+PyList_FromArrayMoveRef(PyObject *const *array, Py_ssize_t size)
 {
-    if (n == 0) {
+    if (size == 0) {
         return PyList_New(0);
     }
 
-    PyListObject *list = (PyListObject *)PyList_New(n);
-    if (list == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF(src[i]);
-        }
+    PyObject *op = PyList_New(size);
+    if (op == NULL) {
         return NULL;
     }
+    PyListObject *list = (PyListObject *)op;
 
-    PyObject **dst = list->ob_item;
-    memcpy(dst, src, n * sizeof(PyObject *));
+    PyObject **items = list->ob_item;
+    // PyList_New(size) returns NULL is size*sizeof(PyObject*) is greater than
+    // PY_SSIZE_T_MAX. No need to check for integer overflow again.
+    memcpy(items, array, size * sizeof(PyObject *));
+    return op;
+}
 
-    return (PyObject *)list;
+PyObject *
+_PyList_FromArraySteal(PyObject *const *array, Py_ssize_t size)
+{
+    PyObject *list = PyList_FromArrayMoveRef(array, size);
+    if (list == NULL) {
+        for (Py_ssize_t i = 0; i < size; i++) {
+            Py_DECREF(array[i]);
+        }
+    }
+    return list;
 }
 
 /*[clinic input]

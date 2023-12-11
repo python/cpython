@@ -371,45 +371,58 @@ tupleitem(PyTupleObject *a, Py_ssize_t i)
 }
 
 PyObject *
-_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
+PyTuple_FromArray(PyObject *const *array, Py_ssize_t size)
 {
-    if (n == 0) {
+    if (size == 0) {
         return tuple_get_empty();
     }
 
-    PyTupleObject *tuple = tuple_alloc(n);
+    PyTupleObject *tuple = tuple_alloc(size);
     if (tuple == NULL) {
         return NULL;
     }
-    PyObject **dst = tuple->ob_item;
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = src[i];
-        dst[i] = Py_NewRef(item);
+
+    PyObject **items = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        PyObject *item = array[i];
+        items[i] = Py_NewRef(item);
     }
     _PyObject_GC_TRACK(tuple);
     return (PyObject *)tuple;
 }
 
 PyObject *
-_PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
+PyTuple_FromArrayMoveRef(PyObject *const *array, Py_ssize_t size)
 {
-    if (n == 0) {
+    if (size == 0) {
         return tuple_get_empty();
     }
-    PyTupleObject *tuple = tuple_alloc(n);
+    PyTupleObject *tuple = tuple_alloc(size);
     if (tuple == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF(src[i]);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            Py_DECREF(array[i]);
         }
         return NULL;
     }
-    PyObject **dst = tuple->ob_item;
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = src[i];
-        dst[i] = item;
+    PyObject **items = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        PyObject *item = array[i];
+        items[i] = item;
     }
     _PyObject_GC_TRACK(tuple);
     return (PyObject *)tuple;
+}
+
+PyObject *
+_PyTuple_FromArraySteal(PyObject *const *array, Py_ssize_t size)
+{
+    PyObject *tuple = PyTuple_FromArrayMoveRef(array, size);
+    if (tuple == NULL) {
+        for (Py_ssize_t i = 0; i < size; i++) {
+            Py_DECREF(array[i]);
+        }
+    }
+    return tuple;
 }
 
 static PyObject *
@@ -425,7 +438,7 @@ tupleslice(PyTupleObject *a, Py_ssize_t ilow,
     if (ilow == 0 && ihigh == Py_SIZE(a) && PyTuple_CheckExact(a)) {
         return Py_NewRef(a);
     }
-    return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
+    return PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
 
 PyObject *

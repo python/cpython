@@ -1,0 +1,7 @@
+Add new functions to create :class:`tuple` and :class:`list` from arrays:
+
+* :c:func:`PyTuple_FromArray`.
+* :c:func:`PyTuple_FromArrayMoveRef`.
+* :c:func:`PyList_FromArrayMoveRef`.
+
+Patch by Victor Stinner.

@@ -43,6 +43,19 @@ List Objects
       setting all items to a real object with :c:func:`PyList_SetItem`.
 
 
+.. c:function:: PyObject* PyList_FromArrayMoveRef(PyObject *const *array, Py_ssize_t size)
+
+   Create a list of *size* items and move *array* :term:`strong references
+   <strong reference>` to the new list.
+
+   * Return a new reference on success. *array* references become
+     :term:`borrowed references <borrowed reference>`.
+   * Set an exception and return ``NULL`` on error. *array* is left unchanged,
+     the caller should clear *array* strong references.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: Py_ssize_t PyList_Size(PyObject *list)
 
    .. index:: pair: built-in function; len
