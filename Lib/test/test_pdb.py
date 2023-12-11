@@ -2908,8 +2908,9 @@ def bœr():
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
+                env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'},
         ) as proc:
-            stdout, stderr = proc.communicate(str.encode(commands))
+            stdout, _ = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
 
         self.assertEqual(proc.returncode, 0)
