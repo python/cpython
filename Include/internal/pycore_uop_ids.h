@@ -7,6 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #define _EXIT_TRACE 300
 #define _SET_IP 301
 #define _NOP NOP
