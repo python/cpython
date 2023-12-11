@@ -24,6 +24,8 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 
 
+OMIT = { "_CACHE", "_RESERVED", "_EXTENDED_ARG" }
+
 def generate_uop_ids(
     filenames: str, analysis: Analysis, outfile: TextIO, distinct_namespace: bool
 ) -> None:
@@ -45,10 +47,14 @@ extern "C" {
     next_id += 1
     out.emit(f"#define _SET_IP {next_id}\n")
     next_id += 1
-    PRE_DEFINED = {"_EXIT_TRACE", "_SET_IP", "_CACHE", "_RESERVED", "_EXTENDED_ARG"}
+    PRE_DEFINED = {"_EXIT_TRACE", "_SET_IP"}
 
     for uop in analysis.uops.values():
         if uop.name in PRE_DEFINED:
+            continue
+        # We should omit all tier-1 only uops, but
+        # generate_cases.py still generates code for those.
+        if uop.name in OMIT:
             continue
         if uop.implicitly_created and not distinct_namespace:
             out.emit(f"#define {uop.name} {uop.name[1:]}\n")

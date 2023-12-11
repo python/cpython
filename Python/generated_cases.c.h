@@ -725,6 +725,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CACHE);
+            TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
             Py_UNREACHABLE();
         }
@@ -2364,6 +2365,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXTENDED_ARG);
+            TIER_ONE_ONLY
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -4704,6 +4706,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESERVED);
+            TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
         }

@@ -123,7 +123,8 @@ class Stack:
             return ""
         else:
             self.defined.add(var.name)
-        assign = f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
+        cast = f"({var.type})" if (not indirect and var.type) else ""
+        assign = f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
         if var.condition:
             return f"if ({var.condition}) {{ {assign} }}\n"
         return f"{assign}\n"
@@ -142,11 +143,12 @@ class Stack:
     def flush(self, out: CWriter) -> None:
         for var in self.variables:
             if not var.peek:
+                cast = "(PyObject *)" if var.type else ""
                 if var.name != "unused" and not var.is_array():
                     if var.condition:
                         out.emit(f" if ({var.condition}) ")
                     out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {var.name};\n"
+                        f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
                     )
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():

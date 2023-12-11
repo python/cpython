@@ -3967,6 +3967,7 @@ dummy_func(
         }
 
         inst(EXTENDED_ARG, ( -- )) {
+            TIER_ONE_ONLY
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -3975,11 +3976,13 @@ dummy_func(
         }
 
         inst(CACHE, (--)) {
+            TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
             Py_UNREACHABLE();
         }
 
         inst(RESERVED, (--)) {
+            TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
         }

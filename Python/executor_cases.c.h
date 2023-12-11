@@ -2726,14 +2726,14 @@
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = args[i];
             }
-            stack_pointer[-2 - oparg] = new_frame;
+            stack_pointer[-2 - oparg] = (PyObject *)new_frame;
             stack_pointer += -1 - oparg;
             break;
         }
 
         case _PUSH_FRAME: {
             _PyInterpreterFrame *new_frame;
-            new_frame = stack_pointer[-1];
+            new_frame = (_PyInterpreterFrame *)stack_pointer[-1];
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
@@ -3453,25 +3453,6 @@
         /* _INSTRUMENTED_POP_JUMP_IF_NONE is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_NOT_NONE is not a viable micro-op for tier 2 */
-
-        case _EXTENDED_ARG: {
-            oparg = CURRENT_OPARG();
-            assert(oparg);
-            opcode = next_instr->op.code;
-            oparg = oparg << 8 | next_instr->op.arg;
-            PRE_DISPATCH_GOTO();
-            DISPATCH_GOTO();
-        }
-
-        case _CACHE: {
-            assert(0 && "Executing a cache.");
-            Py_UNREACHABLE();
-        }
-
-        case _RESERVED: {
-            assert(0 && "Executing RESERVED instruction.");
-            Py_UNREACHABLE();
-        }
 
         case _GUARD_IS_TRUE_POP: {
             PyObject *flag;

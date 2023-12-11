@@ -133,6 +133,9 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         raise analysis_error(ex.args[0], uop.body[0])
 
 
+SKIPS = (
+    "_EXTENDED_ARG",)
+
 def generate_tier2(
     filenames: str, analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
