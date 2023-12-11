@@ -2922,7 +2922,7 @@ _Py_closerange(int first, int last)
 #ifdef USE_CLOSEFROM
     if (last >= sysconf(_SC_OPEN_MAX)) {
         /* Any errors encountered while closing file descriptors are ignored */
-        closefrom(first);
+        (void)closefrom(first);
     }
     else
 #endif /* USE_CLOSEFROM */
