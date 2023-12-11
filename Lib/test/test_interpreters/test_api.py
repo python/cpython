@@ -557,6 +557,24 @@ class TestInterpreterExecSync(TestBase):
     # Interpreter.exec_sync() behavior.
 
 
+class TestInterpreterRun(TestBase):
+
+    def test_success(self):
+        interp = interpreters.create()
+        script, file = _captured_script('print("it worked!", end="")')
+        with file:
+            t = interp.run(script)
+            t.join()
+            out = file.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_failure(self):
+        interp = interpreters.create()
+        t = interp.run('raise Exception')
+        t.join()
+
+
 class TestIsShareable(TestBase):
 
     def test_default_shareables(self):

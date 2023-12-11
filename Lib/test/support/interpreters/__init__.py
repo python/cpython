@@ -1,5 +1,6 @@
 """Subinterpreters High Level Module."""
 
+import threading
 import weakref
 import _xxsubinterpreters as _interpreters
 
