@@ -130,15 +130,11 @@ typedef struct {
     /* external types (added at runtime by interpreters module) */
     PyTypeObject *queue_type;
 
-    /* QueueError (and its error codes) */
+    /* QueueError (and its subclasses) */
     PyObject *QueueError;
-    struct module_errcodes {
-        // Only some of the error codes are exposed by the module.
-        PyObject *obj_ERR_NO_NEXT_QUEUE_ID;
-        PyObject *obj_ERR_QUEUE_NOT_FOUND;
-        PyObject *obj_ERR_QUEUE_EMPTY;
-        PyObject *obj_ERR_QUEUE_FULL;
-    } errcodes;
+    PyObject *QueueNotFoundError;
+    PyObject *QueueEmpty;
+    PyObject *QueueFull;
 } module_state;
 
 static inline module_state *
@@ -158,10 +154,9 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 
     /* QueueError */
     Py_VISIT(state->QueueError);
-    Py_VISIT(state->errcodes.obj_ERR_NO_NEXT_QUEUE_ID);
-    Py_VISIT(state->errcodes.obj_ERR_QUEUE_NOT_FOUND);
-    Py_VISIT(state->errcodes.obj_ERR_QUEUE_EMPTY);
-    Py_VISIT(state->errcodes.obj_ERR_QUEUE_FULL);
+    Py_VISIT(state->QueueNotFoundError);
+    Py_VISIT(state->QueueEmpty);
+    Py_VISIT(state->QueueFull);
 
     return 0;
 }
@@ -174,10 +169,9 @@ clear_module_state(module_state *state)
 
     /* QueueError */
     Py_CLEAR(state->QueueError);
-    Py_CLEAR(state->errcodes.obj_ERR_NO_NEXT_QUEUE_ID);
-    Py_CLEAR(state->errcodes.obj_ERR_QUEUE_NOT_FOUND);
-    Py_CLEAR(state->errcodes.obj_ERR_QUEUE_EMPTY);
-    Py_CLEAR(state->errcodes.obj_ERR_QUEUE_FULL);
+    Py_CLEAR(state->QueueNotFoundError);
+    Py_CLEAR(state->QueueEmpty);
+    Py_CLEAR(state->QueueFull);
 
     return 0;
 }
@@ -196,166 +190,86 @@ clear_module_state(module_state *state)
 #define ERR_QUEUE_FULL (-22)
 
 static int
-_add_module_errcodes(PyObject *mod, struct module_errcodes *state)
+resolve_module_errcode(module_state *state, int errcode, int64_t qid,
+                       PyObject **p_exctype, PyObject **p_msgobj)
 {
-#define ADD(ERRCODE)                                                \
-    do {                                                            \
-        assert(state->obj_##ERRCODE == NULL);                       \
-        assert(!PyObject_HasAttrStringWithError(mod, #ERRCODE));    \
-        PyObject *obj = PyLong_FromLong(ERRCODE);                   \
-        if (obj == NULL) {                                          \
-            return -1;                                              \
-        }                                                           \
-        state->obj_##ERRCODE = obj;                                 \
-        if (PyModule_AddObjectRef(mod, #ERRCODE, obj) < 0) {        \
-            return -1;                                              \
-        }                                                           \
-    } while (0)
-    ADD(ERR_NO_NEXT_QUEUE_ID);
-    ADD(ERR_QUEUE_NOT_FOUND);
-    ADD(ERR_QUEUE_EMPTY);
-    ADD(ERR_QUEUE_FULL);
-#undef ADD
-    return 0;
-}
-
-static PyObject *
-get_module_errcode(struct module_errcodes *state, int errcode, int64_t qid,
-                   PyObject **p_msgobj)
-{
-    PyObject *obj = NULL;
+    PyObject *exctype = NULL;
     PyObject *msg = NULL;
     switch (errcode) {
-#define CASE(ERRCODE)                   \
-    case ERRCODE:                       \
-        obj = Py_NewRef(state->obj_##ERRCODE);
-    CASE(ERR_NO_NEXT_QUEUE_ID)
+    case ERR_NO_NEXT_QUEUE_ID:
+        exctype = state->QueueError;
         msg = PyUnicode_FromString("ran out of queue IDs");
         break;
-    CASE(ERR_QUEUE_NOT_FOUND)
+    case ERR_QUEUE_NOT_FOUND:
+        exctype = state->QueueNotFoundError;
         msg = PyUnicode_FromFormat("queue %" PRId64 " not found", qid);
         break;
-    CASE(ERR_QUEUE_EMPTY)
+    case ERR_QUEUE_EMPTY:
+        exctype = state->QueueEmpty;
         msg = PyUnicode_FromFormat("queue %" PRId64 " is empty", qid);
         break;
-    CASE(ERR_QUEUE_FULL)
+    case ERR_QUEUE_FULL:
+        exctype = state->QueueFull;
         msg = PyUnicode_FromFormat("queue %" PRId64 " is full", qid);
         break;
-#undef CASE
     default:
         PyErr_Format(PyExc_ValueError,
                      "unsupported error code %d", errcode);
-        return NULL;
+        return -1;
     }
 
     if (msg == NULL) {
         assert(PyErr_Occurred());
-        return NULL;
+        return -1;
     }
+    *p_exctype = exctype;
     *p_msgobj = msg;
-    return obj;
+    return 0;
 }
 
 
 /* QueueError ***************************************************************/
 
-#define QueueError_NAME MODULE_NAME ".QueueError"
-PyDoc_STRVAR(QueueError_doc,
-"Indicates that a queue-related error happened.\n\
-\n\
-The \"errcode\" attribute indicates the specific error, if known.\n\
-It may be one of:\n\
-\n\
- * _queues.ERR_NO_NEXT_QUEUE_ID\n\
- * _queues.ERR_QUEUE_NOT_FOUND\n\
- * _queues.ERR_QUEUE_EMPTY\n\
- * _queues.ERR_QUEUE_FULL\n\
- * None (error code not known)\n\
-\n\
-The \"id\" attribute identifies the targeted queue, if applicable and known.\n\
-It defaults to None.\n\
-");
+static int
+add_exctype(PyObject *mod, PyObject **p_state_field,
+            const char *qualname, const char *doc, PyObject *base)
+{
+    const char *dot = strrchr(qualname, '.');
+    assert(dot != NULL);
+    const char *name = dot+1;
+    assert(*p_state_field == NULL);
+    assert(!PyObject_HasAttrStringWithError(mod, name));
+    PyObject *exctype = PyErr_NewExceptionWithDoc(qualname, doc, base, NULL);
+    if (exctype == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(mod, (PyTypeObject *)exctype) < 0) {
+        Py_DECREF(exctype);
+        return -1;
+    }
+    *p_state_field = exctype;
+    return 0;
+}
 
-static PyObject *
+static int
 add_QueueError(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
-    assert(state->QueueError == NULL);
-    assert(!PyObject_HasAttrStringWithError(mod, QueueError_NAME));
 
-    if (_add_module_errcodes(mod, &state->errcodes) < 0) {
-        return NULL;
+#define PREFIX "test.support.interpreters."
+#define ADD_EXCTYPE(NAME, BASE, DOC)                                    \
+    if (add_exctype(mod, &state->NAME, PREFIX #NAME, DOC, BASE) < 0) {  \
+        return -1;                                                      \
     }
+    ADD_EXCTYPE(QueueError, PyExc_RuntimeError,
+                "Indicates that a queue-related error happened.")
+    ADD_EXCTYPE(QueueNotFoundError, state->QueueError, NULL)
+    ADD_EXCTYPE(QueueEmpty, state->QueueError, NULL)
+    ADD_EXCTYPE(QueueFull, state->QueueError, NULL)
+#undef ADD_EXCTYPE
+#undef PREFIX
 
-    PyObject *exctype = PyErr_NewExceptionWithDoc(
-        QueueError_NAME,
-        QueueError_doc,
-        PyExc_RuntimeError, // base
-        NULL  // definition namespace
-    );
-    if (exctype == NULL) {
-        return NULL;
-    }
-
-    // Set a default "errcode" attribute value.
-    if (PyObject_SetAttrString(exctype, "errcode", Py_None) < 0) {
-        Py_DECREF(exctype);
-        return NULL;
-    }
-
-    // Set a default "id" attribute value.
-    if (PyObject_SetAttrString(exctype, "id", Py_None) < 0) {
-        Py_DECREF(exctype);
-        return NULL;
-    }
-
-    // Add QueueError.
-    if (PyModule_AddType(mod, (PyTypeObject *)exctype) < 0) {
-        Py_DECREF(exctype);
-        return NULL;
-    }
-    state->QueueError = exctype;
-
-    return exctype;
-}
-
-static PyObject *
-new_QueueError(PyObject *exctype, struct module_errcodes *errcodes,
-               int errcode, int64_t qid)
-{
-    int err = 0;
-    PyObject *msg_obj = NULL;
-    PyObject *errcode_obj = NULL;
-    PyObject *exc_obj = NULL;
-
-    // We do errcode first so we can fail early for an unsupported error code.
-    errcode_obj = get_module_errcode(errcodes, errcode, qid, &msg_obj);
-    if (errcode_obj == NULL) {
-        goto error;
-    }
-
-    exc_obj = PyObject_CallOneArg(exctype, msg_obj);
-    if (exc_obj == NULL) {
-        goto error;
-    }
-    err = PyObject_SetAttrString(exc_obj, "msg", msg_obj);
-    Py_CLEAR(msg_obj);
-    if (err < 0) {
-        goto error;
-    }
-    err = PyObject_SetAttrString(exc_obj, "errcode", errcode_obj);
-    Py_CLEAR(errcode_obj);
-    if (err < 0) {
-        goto error;
-    }
-
-    return exc_obj;
-
-error:
-    Py_XDECREF(msg_obj);
-    Py_XDECREF(errcode_obj);
-    Py_XDECREF(exc_obj);
-    return NULL;
+    return 0;
 }
 
 static int
@@ -377,12 +291,18 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
     default:
         state = get_module_state(mod);
         assert(state->QueueError != NULL);
-        PyObject *exctype = state->QueueError;
-        PyObject *exc = new_QueueError(exctype, &state->errcodes, err, qid);
-        if (exc != NULL) {
-            PyErr_SetObject(exctype, exc);
-            Py_DECREF(exc);
+        PyObject *exctype = NULL;
+        PyObject *msg = NULL;
+        if (resolve_module_errcode(state, err, qid, &exctype, &msg) < 0) {
+            return -1;
         }
+        PyObject *exc = PyObject_CallOneArg(exctype, msg);
+        Py_DECREF(msg);
+        if (exc == NULL) {
+            return -1;
+        }
+        PyErr_SetObject(exctype, exc);
+        Py_DECREF(exc);
     }
     return 1;
 }
@@ -1692,7 +1612,7 @@ module_exec(PyObject *mod)
     }
 
     /* Add exception types */
-    if (add_QueueError(mod) == NULL) {
+    if (add_QueueError(mod) < 0) {
         goto error;
     }
 
