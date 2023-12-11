@@ -42,7 +42,7 @@
 @if NOT "%HOST_PYTHON%"=="" @%HOST_PYTHON% -Ec "import sys; assert sys.version_info[:2] >= (3, 9)" >nul 2>nul && (set PYTHON="%HOST_PYTHON%") && (set _Py_Python_Source=found as HOST_PYTHON) && goto :found
 
 @rem If py.exe finds a recent enough version, use that one
-@for %%p in (3.10 3.9) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
+@for %%p in (3.11 3.10 3.9) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
 
 @if NOT exist "%_Py_EXTERNALS_DIR%" mkdir "%_Py_EXTERNALS_DIR%"
 @set _Py_NUGET=%NUGET%
@@ -52,7 +52,7 @@
 @if "%_Py_NUGET%"=="" (set _Py_NUGET=%_Py_EXTERNALS_DIR%\nuget.exe)
 @if "%_Py_NUGET_URL%"=="" (set _Py_NUGET_URL=https://aka.ms/nugetclidl)
 @if NOT exist "%_Py_NUGET%" (
-    @echo Downloading nuget...
+    @if not "%_Py_Quiet%"=="1" @echo Downloading nuget...
     @rem NB: Must use single quotes around NUGET here, NOT double!
     @rem Otherwise, a space in the path would break things
     @rem If it fails, retry with any available copy of Python
@@ -63,7 +63,11 @@
 )
 
 @if not "%_Py_Quiet%"=="1" @echo Installing Python via nuget...
-@"%_Py_NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%_Py_EXTERNALS_DIR%"
+@if not "%_Py_Quiet%"=="1" (
+    @"%_Py_NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%_Py_EXTERNALS_DIR%"
+) else (
+    @"%_Py_NUGET%" install pythonx86 -Verbosity quiet -ExcludeVersion -OutputDirectory "%_Py_EXTERNALS_DIR%"
+)
 @rem Quote it here; it's not quoted later because "py -x.y" wouldn't work
 @if not errorlevel 1 (set PYTHON="%_Py_EXTERNALS_DIR%\pythonx86\tools\python.exe") & (set _Py_Python_Source=found on nuget.org) & goto :found
 

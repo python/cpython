@@ -133,8 +133,8 @@ class PyShellEditorWindow(EditorWindow):
     def __init__(self, *args):
         self.breakpoints = []
         EditorWindow.__init__(self, *args)
-        self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
-        self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
+        self.text.bind("<<set-breakpoint>>", self.set_breakpoint_event)
+        self.text.bind("<<clear-breakpoint>>", self.clear_breakpoint_event)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
         #TODO: don't read/write this from/to .idlerc when testing
@@ -155,8 +155,8 @@ class PyShellEditorWindow(EditorWindow):
         ("Copy", "<<copy>>", "rmenu_check_copy"),
         ("Paste", "<<paste>>", "rmenu_check_paste"),
         (None, None, None),
-        ("Set Breakpoint", "<<set-breakpoint-here>>", None),
-        ("Clear Breakpoint", "<<clear-breakpoint-here>>", None)
+        ("Set Breakpoint", "<<set-breakpoint>>", None),
+        ("Clear Breakpoint", "<<clear-breakpoint>>", None)
     ]
 
     def color_breakpoint_text(self, color=True):
@@ -181,11 +181,11 @@ class PyShellEditorWindow(EditorWindow):
             self.breakpoints.append(lineno)
         try:    # update the subprocess debugger
             debug = self.flist.pyshell.interp.debugger
-            debug.set_breakpoint_here(filename, lineno)
+            debug.set_breakpoint(filename, lineno)
         except: # but debugger may not be active right now....
             pass
 
-    def set_breakpoint_here(self, event=None):
+    def set_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -194,7 +194,7 @@ class PyShellEditorWindow(EditorWindow):
         lineno = int(float(text.index("insert")))
         self.set_breakpoint(lineno)
 
-    def clear_breakpoint_here(self, event=None):
+    def clear_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -209,7 +209,7 @@ class PyShellEditorWindow(EditorWindow):
                         "insert lineend +1char")
         try:
             debug = self.flist.pyshell.interp.debugger
-            debug.clear_breakpoint_here(filename, lineno)
+            debug.clear_breakpoint(filename, lineno)
         except:
             pass
 
@@ -249,7 +249,7 @@ class PyShellEditorWindow(EditorWindow):
         breaks = self.breakpoints
         filename = self.io.filename
         try:
-            with open(self.breakpointPath, "r") as fp:
+            with open(self.breakpointPath) as fp:
                 lines = fp.readlines()
         except OSError:
             lines = []
@@ -279,7 +279,7 @@ class PyShellEditorWindow(EditorWindow):
         if filename is None:
             return
         if os.path.isfile(self.breakpointPath):
-            with open(self.breakpointPath, "r") as fp:
+            with open(self.breakpointPath) as fp:
                 lines = fp.readlines()
             for line in lines:
                 if line.startswith(filename + '='):
@@ -441,7 +441,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # run from the IDLE source directory.
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
-        command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
+        command = f"__import__('idlelib.run').run.main({del_exitf!r})"
         return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
@@ -574,9 +574,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
         self.runcommand("""if 1:
         import sys as _sys
-        _sys.path = %r
+        _sys.path = {!r}
         del _sys
-        \n""" % (path,))
+        \n""".format(path))
 
     active_seq = None
 
@@ -703,14 +703,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def prepend_syspath(self, filename):
         "Prepend sys.path with file's directory if not already included"
         self.runcommand("""if 1:
-            _filename = %r
+            _filename = {!r}
             import sys as _sys
             from os.path import dirname as _dirname
             _dir = _dirname(_filename)
             if not _dir in _sys.path:
                 _sys.path.insert(0, _dir)
             del _filename, _sys, _dirname, _dir
-            \n""" % (filename,))
+            \n""".format(filename))
 
     def showsyntaxerror(self, filename=None):
         """Override Interactive Interpreter method: Use Colorizing
@@ -747,10 +747,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.tkconsole.open_stack_viewer()
 
     def checklinecache(self):
-        c = linecache.cache
-        for key in list(c.keys()):
+        "Remove keys other than '<pyshell#n>'."
+        cache = linecache.cache
+        for key in list(cache):  # Iterate list because mutate cache.
             if key[:1] + key[-1:] != "<>":
-                del c[key]
+                del cache[key]
 
     def runcommand(self, code):
         "Run the code without invoking the debugger"
@@ -1363,19 +1364,19 @@ class PyShell(OutputWindow):
                 self.text.tag_remove(self.user_input_insert_tags, index_before)
             self.shell_sidebar.update_sidebar()
 
-    def open_stack_viewer(self, event=None):
+    def open_stack_viewer(self, event=None):  # -n mode only
         if self.interp.rpcclt:
             return self.interp.remote_stack_viewer()
+
+        from idlelib.stackviewer import StackBrowser
         try:
-            sys.last_traceback
+            StackBrowser(self.root, sys.last_exc, self.flist)
         except:
             messagebox.showerror("No stack trace",
                 "There is no stack trace yet.\n"
-                "(sys.last_traceback is not defined)",
+                "(sys.last_exc is not defined)",
                 parent=self.text)
-            return
-        from idlelib.stackviewer import StackBrowser
-        StackBrowser(self.root, self.flist)
+        return None
 
     def view_restart_mark(self, event=None):
         self.text.see("iomark")
@@ -1536,7 +1537,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
     except getopt.error as msg:
-        print("Error: %s\n%s" % (msg, usage_msg), file=sys.stderr)
+        print(f"Error: {msg}\n{usage_msg}", file=sys.stderr)
         sys.exit(2)
     for o, a in opts:
         if o == '-c':
@@ -1668,9 +1669,9 @@ def main():
     if cmd or script:
         shell.interp.runcommand("""if 1:
             import sys as _sys
-            _sys.argv = %r
+            _sys.argv = {!r}
             del _sys
-            \n""" % (sys.argv,))
+            \n""".format(sys.argv))
         if cmd:
             shell.interp.execsource(cmd)
         elif script:
@@ -1692,6 +1693,7 @@ def main():
         root.mainloop()
     root.destroy()
     capture_warnings(False)
+
 
 if __name__ == "__main__":
     main()

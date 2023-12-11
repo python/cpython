@@ -996,6 +996,36 @@ class PatchTest(unittest.TestCase):
             method.assert_called_once_with()
 
 
+    def test_autospec_staticmethod_signature(self):
+        # Patched methods which are decorated with @staticmethod should have the same signature
+        class Foo:
+            @staticmethod
+            def static_method(a, b=10, *, c): pass
+
+        Foo.static_method(1, 2, c=3)
+
+        with patch.object(Foo, 'static_method', autospec=True) as method:
+            method(1, 2, c=3)
+            self.assertRaises(TypeError, method)
+            self.assertRaises(TypeError, method, 1)
+            self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+
+    def test_autospec_classmethod_signature(self):
+        # Patched methods which are decorated with @classmethod should have the same signature
+        class Foo:
+            @classmethod
+            def class_method(cls, a, b=10, *, c): pass
+
+        Foo.class_method(1, 2, c=3)
+
+        with patch.object(Foo, 'class_method', autospec=True) as method:
+            method(1, 2, c=3)
+            self.assertRaises(TypeError, method)
+            self.assertRaises(TypeError, method, 1)
+            self.assertRaises(TypeError, method, 1, 2, 3, c=4)
+
+
     def test_autospec_with_new(self):
         patcher = patch('%s.function' % __name__, new=3, autospec=True)
         self.assertRaises(TypeError, patcher.start)

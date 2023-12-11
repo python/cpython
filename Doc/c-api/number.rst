@@ -64,7 +64,7 @@ Number Protocol
 
 .. c:function:: PyObject* PyNumber_Divmod(PyObject *o1, PyObject *o2)
 
-   .. index:: builtin: divmod
+   .. index:: pair: built-in function; divmod
 
    See the built-in function :func:`divmod`. Returns ``NULL`` on failure.  This is
    the equivalent of the Python expression ``divmod(o1, o2)``.
@@ -72,7 +72,7 @@ Number Protocol
 
 .. c:function:: PyObject* PyNumber_Power(PyObject *o1, PyObject *o2, PyObject *o3)
 
-   .. index:: builtin: pow
+   .. index:: pair: built-in function; pow
 
    See the built-in function :func:`pow`. Returns ``NULL`` on failure.  This is the
    equivalent of the Python expression ``pow(o1, o2, o3)``, where *o3* is optional.
@@ -94,7 +94,7 @@ Number Protocol
 
 .. c:function:: PyObject* PyNumber_Absolute(PyObject *o)
 
-   .. index:: builtin: abs
+   .. index:: pair: built-in function; abs
 
    Returns the absolute value of *o*, or ``NULL`` on failure.  This is the equivalent
    of the Python expression ``abs(o)``.
@@ -192,7 +192,7 @@ Number Protocol
 
 .. c:function:: PyObject* PyNumber_InPlacePower(PyObject *o1, PyObject *o2, PyObject *o3)
 
-   .. index:: builtin: pow
+   .. index:: pair: built-in function; pow
 
    See the built-in function :func:`pow`. Returns ``NULL`` on failure.  The operation
    is done *in-place* when *o1* supports it.  This is the equivalent of the Python
@@ -238,7 +238,7 @@ Number Protocol
 
 .. c:function:: PyObject* PyNumber_Long(PyObject *o)
 
-   .. index:: builtin: int
+   .. index:: pair: built-in function; int
 
    Returns the *o* converted to an integer object on success, or ``NULL`` on
    failure.  This is the equivalent of the Python expression ``int(o)``.
@@ -246,7 +246,7 @@ Number Protocol
 
 .. c:function:: PyObject* PyNumber_Float(PyObject *o)
 
-   .. index:: builtin: float
+   .. index:: pair: built-in function; float
 
    Returns the *o* converted to a float object on success, or ``NULL`` on failure.
    This is the equivalent of the Python expression ``float(o)``.

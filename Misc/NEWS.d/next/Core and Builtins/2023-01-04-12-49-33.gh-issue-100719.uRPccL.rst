@@ -1,3 +1,0 @@
-Remove gi_code field from generator (and coroutine and async generator)
-objects as it is redundant. The frame already includes a reference to the
-code object.

@@ -901,6 +901,85 @@ class Misc:
         """Ring a display's bell."""
         self.tk.call(('bell',) + self._displayof(displayof))
 
+    def tk_busy_cget(self, option):
+        """Return the value of busy configuration option.
+
+        The widget must have been previously made busy by
+        tk_busy_hold().  Option may have any of the values accepted by
+        tk_busy_hold().
+        """
+        return self.tk.call('tk', 'busy', 'cget', self._w, '-'+option)
+    busy_cget = tk_busy_cget
+
+    def tk_busy_configure(self, cnf=None, **kw):
+        """Query or modify the busy configuration options.
+
+        The widget must have been previously made busy by
+        tk_busy_hold().  Options may have any of the values accepted by
+        tk_busy_hold().
+
+        Please note that the option database is referenced by the widget
+        name or class.  For example, if a Frame widget with name "frame"
+        is to be made busy, the busy cursor can be specified for it by
+        either call:
+
+            w.option_add('*frame.busyCursor', 'gumby')
+            w.option_add('*Frame.BusyCursor', 'gumby')
+        """
+        if kw:
+            cnf = _cnfmerge((cnf, kw))
+        elif cnf:
+            cnf = _cnfmerge(cnf)
+        if cnf is None:
+            return self._getconfigure(
+                        'tk', 'busy', 'configure', self._w)
+        if isinstance(cnf, str):
+            return self._getconfigure1(
+                        'tk', 'busy', 'configure', self._w, '-'+cnf)
+        self.tk.call('tk', 'busy', 'configure', self._w, *self._options(cnf))
+    busy_config = busy_configure = tk_busy_config = tk_busy_configure
+
+    def tk_busy_current(self, pattern=None):
+        """Return a list of widgets that are currently busy.
+
+        If a pattern is given, only busy widgets whose path names match
+        a pattern are returned.
+        """
+        return [self._nametowidget(x) for x in
+                self.tk.splitlist(self.tk.call(
+                   'tk', 'busy', 'current', pattern))]
+    busy_current = tk_busy_current
+
+    def tk_busy_forget(self):
+        """Make this widget no longer busy.
+
+        User events will again be received by the widget.
+        """
+        self.tk.call('tk', 'busy', 'forget', self._w)
+    busy_forget = tk_busy_forget
+
+    def tk_busy_hold(self, **kw):
+        """Make this widget appear busy.
+
+        The specified widget and its descendants will be blocked from
+        user interactions.  Normally update() should be called
+        immediately afterward to insure that the hold operation is in
+        effect before the application starts its processing.
+
+        The only supported configuration option is:
+
+            cursor: the cursor to be displayed when the widget is made
+                    busy.
+        """
+        self.tk.call('tk', 'busy', 'hold', self._w, *self._options(kw))
+    busy = busy_hold = tk_busy = tk_busy_hold
+
+    def tk_busy_status(self):
+        """Return True if the widget is busy, False otherwise."""
+        return self.tk.getboolean(self.tk.call(
+                'tk', 'busy', 'status', self._w))
+    busy_status = tk_busy_status
+
     # Clipboard handling:
     def clipboard_get(self, **kw):
         """Retrieve data from the clipboard on window's display.
@@ -1448,10 +1527,24 @@ class Misc:
         return self._bind(('bind', self._w), sequence, func, add)
 
     def unbind(self, sequence, funcid=None):
-        """Unbind for this widget for event SEQUENCE  the
-        function identified with FUNCID."""
-        self.tk.call('bind', self._w, sequence, '')
-        if funcid:
+        """Unbind for this widget the event SEQUENCE.
+
+        If FUNCID is given, only unbind the function identified with FUNCID
+        and also delete the corresponding Tcl command.
+
+        Otherwise destroy the current binding for SEQUENCE, leaving SEQUENCE
+        unbound.
+        """
+        if funcid is None:
+            self.tk.call('bind', self._w, sequence, '')
+        else:
+            lines = self.tk.call('bind', self._w, sequence).split('\n')
+            prefix = f'if {{"[{funcid} '
+            keep = '\n'.join(line for line in lines
+                             if not line.startswith(prefix))
+            if not keep.strip():
+                keep = ''
+            self.tk.call('bind', self._w, sequence, keep)
             self.deletecommand(funcid)
 
     def bind_all(self, sequence=None, func=None, add=None):
@@ -1459,7 +1552,7 @@ class Misc:
         An additional boolean parameter ADD specifies whether FUNC will
         be called additionally to the other bound function or whether
         it will replace the previous function. See bind for the return value."""
-        return self._bind(('bind', 'all'), sequence, func, add, 0)
+        return self._root()._bind(('bind', 'all'), sequence, func, add, True)
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
@@ -1473,7 +1566,7 @@ class Misc:
         whether it will replace the previous function. See bind for
         the return value."""
 
-        return self._bind(('bind', className), sequence, func, add, 0)
+        return self._root()._bind(('bind', className), sequence, func, add, True)
 
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
@@ -2400,6 +2493,7 @@ class Tk(Misc, Wm):
         should when sys.stderr is None."""
         import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
+        sys.last_exc = val
         sys.last_type = exc
         sys.last_value = val
         sys.last_traceback = tb
@@ -2816,7 +2910,7 @@ class Canvas(Widget, XView, YView):
 
     def coords(self, *args):
         """Return a list of coordinates for the item given in ARGS."""
-        # XXX Should use _flatten on args
+        args = _flatten(args)
         return [self.tk.getdouble(x) for x in
                            self.tk.splitlist(
                    self.tk.call((self._w, 'coords') + args))]
@@ -3429,8 +3523,7 @@ class Menu(Widget):
     def index(self, index):
         """Return the index of a menu item identified by INDEX."""
         i = self.tk.call(self._w, 'index', index)
-        if i == 'none': return None
-        return self.tk.getint(i)
+        return None if i in ('', 'none') else self.tk.getint(i)  # GH-103685.
 
     def invoke(self, index):
         """Invoke a menu item identified by INDEX and execute
@@ -3636,25 +3729,28 @@ class Text(Widget, XView, YView):
         return self.tk.getboolean(self.tk.call(
             self._w, 'compare', index1, op, index2))
 
-    def count(self, index1, index2, *args): # new in Tk 8.5
+    def count(self, index1, index2, *options): # new in Tk 8.5
         """Counts the number of relevant things between the two indices.
-        If index1 is after index2, the result will be a negative number
+
+        If INDEX1 is after INDEX2, the result will be a negative number
         (and this holds for each of the possible options).
 
-        The actual items which are counted depends on the options given by
-        args. The result is a list of integers, one for the result of each
-        counting option given. Valid counting options are "chars",
+        The actual items which are counted depends on the options given.
+        The result is a tuple of integers, one for the result of each
+        counting option given, if more than one option is specified,
+        otherwise it is an integer. Valid counting options are "chars",
         "displaychars", "displayindices", "displaylines", "indices",
-        "lines", "xpixels" and "ypixels". There is an additional possible
+        "lines", "xpixels" and "ypixels". The default value, if no
+        option is specified, is "indices". There is an additional possible
         option "update", which if given then all subsequent options ensure
         that any possible out of date information is recalculated."""
-        args = ['-%s' % arg for arg in args]
-        args += [index1, index2]
-        res = self.tk.call(self._w, 'count', *args) or None
-        if res is not None and len(args) <= 3:
-            return (res, )
-        else:
-            return res
+        options = ['-%s' % arg for arg in options]
+        res = self.tk.call(self._w, 'count', *options, index1, index2)
+        if not isinstance(res, int):
+            res = self._getints(res)
+            if len(res) == 1:
+                res, = res
+        return res
 
     def debug(self, boolean=None):
         """Turn on the internal consistency checks of the B-Tree inside the text
@@ -4069,8 +4165,6 @@ class Image:
         elif kw: cnf = kw
         options = ()
         for k, v in cnf.items():
-            if callable(v):
-                v = self._register(v)
             options = options + ('-'+k, v)
         self.tk.call(('image', 'create', imgtype, name,) + options)
         self.name = name
@@ -4097,8 +4191,6 @@ class Image:
         for k, v in _cnfmerge(kw).items():
             if v is not None:
                 if k[-1] == '_': k = k[:-1]
-                if callable(v):
-                    v = self._register(v)
                 res = res + ('-'+k, v)
         self.tk.call((self.name, 'config') + res)
 

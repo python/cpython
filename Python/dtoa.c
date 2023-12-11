@@ -119,7 +119,7 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
-#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stdlib.h>               // exit()
 
 /* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
@@ -170,10 +170,6 @@ typedef uint64_t ULLong;
 
 #ifdef DEBUG
 #define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 typedef union { double d; ULong L[2]; } U;
@@ -273,11 +269,6 @@ typedef union { double d; ULong L[2]; } U;
 #define Big0 (Frac_mask1 | Exp_msk1*(DBL_MAX_EXP+Bias-1))
 #define Big1 0xffffffff
 
-/* Standard NaN used by _Py_dg_stdnan. */
-
-#define NAN_WORD0 0x7ff80000
-#define NAN_WORD1 0
-
 /* Bits of the representation of positive infinity. */
 
 #define POSINF_WORD0 0x7ff00000
@@ -318,7 +309,7 @@ BCinfo {
 // struct Bigint is defined in pycore_dtoa.h.
 typedef struct Bigint Bigint;
 
-#ifndef Py_USING_MEMORY_DEBUGGER
+#if !defined(Py_GIL_DISABLED) && !defined(Py_USING_MEMORY_DEBUGGER)
 
 /* Memory management: memory is allocated from, and returned to, Kmax+1 pools
    of memory, where pool k (0 <= k <= Kmax) is for Bigints b with b->maxwds ==
@@ -339,9 +330,9 @@ typedef struct Bigint Bigint;
    Bfree to PyMem_Free.  Investigate whether this has any significant
    performance on impact. */
 
-#define freelist _PyRuntime.dtoa.freelist
-#define private_mem _PyRuntime.dtoa.preallocated
-#define pmem_next _PyRuntime.dtoa.preallocated_next
+#define freelist interp->dtoa.freelist
+#define private_mem interp->dtoa.preallocated
+#define pmem_next interp->dtoa.preallocated_next
 
 /* Allocate space for a Bigint with up to 1<<k digits */
 
@@ -351,6 +342,7 @@ Balloc(int k)
     int x;
     Bigint *rv;
     unsigned int len;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (k <= Bigint_Kmax && (rv = freelist[k]))
         freelist[k] = rv->next;
@@ -385,6 +377,7 @@ Bfree(Bigint *v)
         if (v->k > Bigint_Kmax)
             FREE((void*)v);
         else {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
             v->next = freelist[v->k];
             freelist[v->k] = v;
         }
@@ -435,7 +428,7 @@ Bfree(Bigint *v)
     }
 }
 
-#endif /* Py_USING_MEMORY_DEBUGGER */
+#endif /* !defined(Py_GIL_DISABLED) && !defined(Py_USING_MEMORY_DEBUGGER) */
 
 #define Bcopy(x,y) memcpy((char *)&x->sign, (char *)&y->sign,   \
                           y->wds*sizeof(Long) + 2*sizeof(int))
@@ -680,9 +673,16 @@ mult(Bigint *a, Bigint *b)
 static Bigint *
 pow5mult(Bigint *b, int k)
 {
-    Bigint *b1, *p5, *p51;
+    Bigint *b1, *p5, **p5s;
     int i;
     static const int p05[3] = { 5, 25, 125 };
+
+    // For double-to-string conversion, the maximum value of k is limited by
+    // DBL_MAX_10_EXP (308), the maximum decimal base-10 exponent for binary64.
+    // For string-to-double conversion, the extreme case is constrained by our
+    // hardcoded exponent limit before we underflow of -512, adjusted by
+    // STRTOD_DIGLIM-DBL_DIG-1, giving a maximum of k=535.
+    assert(0 <= k && k < 1024);
 
     if ((i = k & 3)) {
         b = multadd(b, p05[i-1], 0);
@@ -692,18 +692,12 @@ pow5mult(Bigint *b, int k)
 
     if (!(k >>= 2))
         return b;
-    p5 = _PyRuntime.dtoa.p5s;
-    if (!p5) {
-        /* first time */
-        p5 = i2b(625);
-        if (p5 == NULL) {
-            Bfree(b);
-            return NULL;
-        }
-        _PyRuntime.dtoa.p5s = p5;
-        p5->next = 0;
-    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    p5s = interp->dtoa.p5s;
     for(;;) {
+        assert(p5s != interp->dtoa.p5s + Bigint_Pow5size);
+        p5 = *p5s;
+        p5s++;
         if (k & 1) {
             b1 = mult(b, p5);
             Bfree(b);
@@ -713,17 +707,6 @@ pow5mult(Bigint *b, int k)
         }
         if (!(k >>= 1))
             break;
-        p51 = p5->next;
-        if (!p51) {
-            p51 = mult(p5,p5);
-            if (p51 == NULL) {
-                Bfree(b);
-                return NULL;
-            }
-            p51->next = 0;
-            p5->next = p51;
-        }
-        p5 = p51;
     }
     return b;
 }
@@ -1396,35 +1379,6 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     return 0;
 }
 
-/* Return a 'standard' NaN value.
-
-   There are exactly two quiet NaNs that don't arise by 'quieting' signaling
-   NaNs (see IEEE 754-2008, section 6.2.1).  If sign == 0, return the one whose
-   sign bit is cleared.  Otherwise, return the one whose sign bit is set.
-*/
-
-double
-_Py_dg_stdnan(int sign)
-{
-    U rv;
-    word0(&rv) = NAN_WORD0;
-    word1(&rv) = NAN_WORD1;
-    if (sign)
-        word0(&rv) |= Sign_bit;
-    return dval(&rv);
-}
-
-/* Return positive or negative infinity, according to the given sign (0 for
- * positive infinity, 1 for negative infinity). */
-
-double
-_Py_dg_infinity(int sign)
-{
-    U rv;
-    word0(&rv) = POSINF_WORD0;
-    word1(&rv) = POSINF_WORD1;
-    return sign ? -dval(&rv) : dval(&rv);
-}
 
 double
 _Py_dg_strtod(const char *s00, char **se)
@@ -2844,8 +2798,44 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         _Py_dg_freedtoa(s0);
     return NULL;
 }
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // _PY_SHORT_FLOAT_REPR == 1
+
+PyStatus
+_PyDtoa_Init(PyInterpreterState *interp)
+{
+#if _PY_SHORT_FLOAT_REPR == 1 && !defined(Py_USING_MEMORY_DEBUGGER)
+    Bigint **p5s = interp->dtoa.p5s;
+
+    // 5**4 = 625
+    Bigint *p5 = i2b(625);
+    if (p5 == NULL) {
+        return PyStatus_NoMemory();
+    }
+    p5s[0] = p5;
+
+    // compute 5**8, 5**16, 5**32, ..., 5**512
+    for (Py_ssize_t i = 1; i < Bigint_Pow5size; i++) {
+        p5 = mult(p5, p5);
+        if (p5 == NULL) {
+            return PyStatus_NoMemory();
+        }
+        p5s[i] = p5;
+    }
+
+#endif
+    return PyStatus_Ok();
+}
+
+void
+_PyDtoa_Fini(PyInterpreterState *interp)
+{
+#if _PY_SHORT_FLOAT_REPR == 1 && !defined(Py_USING_MEMORY_DEBUGGER)
+    Bigint **p5s = interp->dtoa.p5s;
+    for (Py_ssize_t i = 0; i < Bigint_Pow5size; i++) {
+        Bigint *p5 = p5s[i];
+        p5s[i] = NULL;
+        Bfree(p5);
+    }
+#endif
+}
