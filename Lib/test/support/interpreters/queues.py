@@ -7,7 +7,7 @@ import _xxinterpqueues as _queues
 
 # aliases:
 from _xxinterpqueues import (
-    QueueError, QueueNotFoundError,
+    QueueError,
 )
 
 __all__ = [
@@ -15,6 +15,31 @@ __all__ = [
     'Queue',
     'QueueError', 'QueueNotFoundError', 'QueueEmpty', 'QueueFull',
 ]
+
+
+class QueueNotFoundError(QueueError):
+    """Raised any time a requrested queue is missing."""
+
+
+class QueueEmpty(QueueError, queue.Empty):
+    """Raised from get_nowait() when the queue is empty.
+
+    It is also raised from get() if it times out.
+    """
+
+
+class QueueFull(QueueError, queue.Full):
+    """Raised from put_nowait() when the queue is full.
+
+    It is also raised from put() if it times out.
+    """
+
+
+def _apply_subclass(exc):
+    if exc.errcode is _queues.ERR_QUEUE_NOT_FOUND:
+        exc.__class__ = QueueNotFoundError
+    elif exc.errcode is _queues.ERR_QUEUE_EMPTY:
+        exc.__class__ = QueueEmpty
 
 
 def create(maxsize=0):
@@ -32,19 +57,6 @@ def list_all():
     return [Queue(qid)
             for qid in _queues.list_all()]
 
-
-class QueueEmpty(QueueError, queue.Empty):
-    """Raised from get_nowait() when the queue is empty.
-
-    It is also raised from get() if it times out.
-    """
-
-
-class QueueFull(QueueError, queue.Full):
-    """Raised from put_nowait() when the queue is full.
-
-    It is also raised from put() if it times out.
-    """
 
 
 _known_queues = weakref.WeakValueDictionary()
@@ -78,14 +90,23 @@ class Queue:
             self._id = id
             self._maxsize = maxsize
             _known_queues[id] = self
-            _queues.bind(id)
+            try:
+                _queues.bind(id)
+            except QueueError as exc:
+                _apply_subclass(exc)
+                raise  # re-raise
         else:
             if _maxsize is not None:
                 raise Exception('maxsize may not be changed')
         return self
 
     def __del__(self):
-        _queues.release(self._id)
+        try:
+            _queues.release(self._id)
+        except QueueError as exc:
+            if exc.errcode is not _queues.ERR_QUEUE_NOT_FOUND:
+                _apply_subclass(exc)
+                raise  # re-raise
         try:
             del _known_queues[self._id]
         except KeyError:
@@ -114,15 +135,27 @@ class Queue:
         return self.qsize() >= self._maxsize
 
     def qsize(self):
-        return _queues.get_count(self._id)
+        try:
+            return _queues.get_count(self._id)
+        except QueueError as exc:
+            _apply_subclass(exc)
+            raise  # re-raise
 
     def put(self, obj, timeout=None):
         # XXX block if full
-        _queues.put(self._id, obj)
+        try:
+            _queues.put(self._id, obj)
+        except QueueError as exc:
+            _apply_subclass(exc)
+            raise  # re-raise
 
     def put_nowait(self, obj):
         # XXX raise QueueFull if full
-        return _queues.put(self._id, obj)
+        try:
+            return _queues.put(self._id, obj)
+        except QueueError as exc:
+            _apply_subclass(exc)
+            raise  # re-raise
 
     def get(self, timeout=None, *,
              _sentinel=object(),
@@ -137,12 +170,17 @@ class Queue:
             if timeout < 0:
                 raise ValueError(f'timeout value must be non-negative')
             end = time.time() + timeout
-        obj = _queues.get(self._id, _sentinel)
-        while obj is _sentinel:
+        while True:
+            try:
+                obj = _queues.get(self._id, _sentinel)
+            except QueueError as exc:
+                _apply_subclass(exc)
+                raise  # re-raise
+            if obj is not _sentinel:
+                break
             time.sleep(_delay)
             if timeout is not None and time.time() >= end:
                 raise QueueEmpty
-            obj = _queues.get(self._id, _sentinel)
         return obj
 
     def get_nowait(self, *, _sentinel=object()):
@@ -151,7 +189,11 @@ class Queue:
         If the queue is empty then raise QueueEmpty.  Otherwise this
         is the same as get().
         """
-        obj = _queues.get(self._id, _sentinel)
+        try:
+            obj = _queues.get(self._id, _sentinel)
+        except QueueError as exc:
+            _apply_subclass(exc)
+            raise  # re-raise
         if obj is _sentinel:
             raise QueueEmpty
         return obj
