@@ -7,7 +7,7 @@ import _xxinterpqueues as _queues
 
 # aliases:
 from _xxinterpqueues import (
-    QueueError, QueueNotFoundError, QueueFull, QueueEmpty,
+    QueueError, QueueNotFoundError,
 )
 
 __all__ = [
@@ -15,6 +15,20 @@ __all__ = [
     'Queue',
     'QueueError', 'QueueNotFoundError', 'QueueEmpty', 'QueueFull',
 ]
+
+
+class QueueEmpty(_queues.QueueEmpty, queue.Empty):
+    """Raised from get_nowait() when the queue is empty.
+
+    It is also raised from get() if it times out.
+    """
+
+
+class QueueFull(_queues.QueueFull, queue.Full):
+    """Raised from put_nowait() when the queue is full.
+
+    It is also raised from put() if it times out.
+    """
 
 
 def create(maxsize=-1):
@@ -105,15 +119,20 @@ class Queue:
         while True:
             try:
                 _queues.put(self._id, obj)
-            except QueueFull:
+            except _queues.QueueFull as exc:
                 if timeout is not None and time.time() >= end:
+                    exc.__class__ = QueueFull
                     raise  # re-raise
                 time.sleep(_delay)
             else:
                 break
 
     def put_nowait(self, obj):
-        return _queues.put(self._id, obj)
+        try:
+            return _queues.put(self._id, obj)
+        except _queues.QueueFull as exc:
+            exc.__class__ = QueueFull
+            raise  # re-raise
 
     def get(self, timeout=None, *,
             _delay=10 / 1000,  # 10 milliseconds
@@ -130,8 +149,9 @@ class Queue:
         while True:
             try:
                 return _queues.get(self._id)
-            except QueueEmpty:
+            except _queues.QueueEmpty as exc:
                 if timeout is not None and time.time() >= end:
+                    exc.__class__ = QueueEmpty
                     raise  # re-raise
                 time.sleep(_delay)
         return obj
@@ -142,7 +162,11 @@ class Queue:
         If the queue is empty then raise QueueEmpty.  Otherwise this
         is the same as get().
         """
-        return _queues.get(self._id)
+        try:
+            return _queues.get(self._id)
+        except _queues.QueueEmpty as exc:
+            exc.__class__ = QueueEmpty
+            raise  # re-raise
 
 
 _queues._register_queue_type(Queue)
