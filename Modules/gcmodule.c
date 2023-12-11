@@ -1322,11 +1322,6 @@ gc_select_generation(GCState *gcstate)
 static Py_ssize_t
 gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
-#ifdef Py_STATS
-    if (_Py_stats) {
-        _Py_stats->object_stats.object_visits = 0;
-    }
-#endif
     int i;
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
@@ -1362,6 +1357,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     assert(generation >= 0 && generation < NUM_GENERATIONS);
 
+#ifdef Py_STATS
+    if (_Py_stats) {
+        _Py_stats->object_stats.object_visits = 0;
+    }
+#endif
     GC_STAT_ADD(generation, collections, 1);
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
