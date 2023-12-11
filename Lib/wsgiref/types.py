@@ -1,6 +1,6 @@
 """WSGI-related types for static type checking"""
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from types import TracebackType
 from typing import Any, Protocol, TypeAlias
 
@@ -35,7 +35,7 @@ class InputStream(Protocol):
     def read(self, size: int = ..., /) -> bytes: ...
     def readline(self, size: int = ..., /) -> bytes: ...
     def readlines(self, hint: int = ..., /) -> list[bytes]: ...
-    def __iter__(self) -> Iterable[bytes]: ...
+    def __iter__(self) -> Iterator[bytes]: ...
 
 class ErrorStream(Protocol):
     """WSGI error stream as defined in PEP 3333"""

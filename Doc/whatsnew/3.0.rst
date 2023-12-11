@@ -779,17 +779,18 @@ Operators And Special Methods
 
 * Removed support for :attr:`__members__` and :attr:`__methods__`.
 
-* The function attributes named :attr:`func_X` have been renamed to
-  use the :data:`__X__` form, freeing up these names in the function
+* The function attributes named :attr:`!func_X` have been renamed to
+  use the :attr:`!__X__` form, freeing up these names in the function
   attribute namespace for user-defined attributes.  To wit,
-  :attr:`func_closure`, :attr:`func_code`, :attr:`func_defaults`,
-  :attr:`func_dict`, :attr:`func_doc`, :attr:`func_globals`,
-  :attr:`func_name` were renamed to :attr:`__closure__`,
-  :attr:`__code__`, :attr:`__defaults__`, :attr:`~object.__dict__`,
-  :attr:`__doc__`, :attr:`__globals__`, :attr:`~definition.__name__`,
+  :attr:`!func_closure`, :attr:`!func_code`, :attr:`!func_defaults`,
+  :attr:`!func_dict`, :attr:`!func_doc`, :attr:`!func_globals`,
+  :attr:`!func_name` were renamed to :attr:`~function.__closure__`,
+  :attr:`~function.__code__`, :attr:`~function.__defaults__`,
+  :attr:`~function.__dict__`, :attr:`~function.__doc__`,
+  :attr:`~function.__globals__`, :attr:`~function.__name__`,
   respectively.
 
-* :meth:`__nonzero__` is now :meth:`__bool__`.
+* :meth:`!__nonzero__` is now :meth:`~object.__bool__`.
 
 Builtins
 --------
@@ -840,7 +841,7 @@ Builtins
   need it; however, 99 percent of the time an explicit :keyword:`for`
   loop is more readable.
 
-* Removed :func:`reload`.  Use :func:`imp.reload`.
+* Removed :func:`reload`.  Use :func:`!imp.reload`.
 
 * Removed. :meth:`dict.has_key` -- use the :keyword:`in` operator
   instead.
@@ -865,8 +866,8 @@ to the C API.
 
 * No more C API support for restricted execution.
 
-* :c:func:`PyNumber_Coerce`, :c:func:`PyNumber_CoerceEx`,
-  :c:func:`PyMember_Get`, and :c:func:`PyMember_Set` C APIs are removed.
+* :c:func:`!PyNumber_Coerce`, :c:func:`!PyNumber_CoerceEx`,
+  :c:func:`!PyMember_Get`, and :c:func:`!PyMember_Set` C APIs are removed.
 
 * New C API :c:func:`PyImport_ImportModuleNoBlock`, works like
   :c:func:`PyImport_ImportModule` but won't block on the import lock
@@ -875,7 +876,7 @@ to the C API.
 * Renamed the boolean conversion C-level slot and method:
   ``nb_nonzero`` is now ``nb_bool``.
 
-* Removed :c:macro:`METH_OLDARGS` and :c:macro:`WITH_CYCLE_GC` from the C API.
+* Removed :c:macro:`!METH_OLDARGS` and :c:macro:`!WITH_CYCLE_GC` from the C API.
 
 .. ======================================================================
 
@@ -911,7 +912,7 @@ best strategy is the following:
    tests still pass.
 
 3. Run the ``2to3`` source-to-source translator over your source code
-   tree.  (See :ref:`2to3-reference` for more on this tool.)  Run the
+   tree.  Run the
    result of the translation under Python 3.0.  Manually fix up any
    remaining issues, fixing problems until all tests pass again.
 

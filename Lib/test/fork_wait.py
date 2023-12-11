@@ -9,10 +9,11 @@ On some systems (e.g. Solaris without posix threads) we find that all
 active threads survive in the child after a fork(); this is an error.
 """
 
-import os, sys, time, unittest
+import os, time, unittest
 import threading
 from test import support
 from test.support import threading_helper
+import warnings
 
 
 LONGSLEEP = 2
@@ -63,19 +64,17 @@ class ForkWait(unittest.TestCase):
 
         prefork_lives = self.alive.copy()
 
-        if sys.platform in ['unixware7']:
-            cpid = os.fork1()
-        else:
-            cpid = os.fork()
-
-        if cpid == 0:
-            # Child
-            time.sleep(LONGSLEEP)
-            n = 0
-            for key in self.alive:
-                if self.alive[key] != prefork_lives[key]:
-                    n += 1
-            os._exit(n)
-        else:
-            # Parent
-            self.wait_impl(cpid, exitcode=0)
+        # Ignore the warning about fork with threads.
+        with warnings.catch_warnings(category=DeprecationWarning,
+                                     action="ignore"):
+            if (cpid := os.fork()) == 0:
+                # Child
+                time.sleep(LONGSLEEP)
+                n = 0
+                for key in self.alive:
+                    if self.alive[key] != prefork_lives[key]:
+                        n += 1
+                os._exit(n)
+            else:
+                # Parent
+                self.wait_impl(cpid, exitcode=0)
