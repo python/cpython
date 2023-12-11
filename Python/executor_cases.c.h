@@ -12,8 +12,6 @@
             break;
         }
 
-        /* _RESUME is not a viable micro-op for tier 2 */
-
         case _RESUME_CHECK: {
             #if defined(__EMSCRIPTEN__)
             if (_Py_emscripten_signal_clock == 0) goto deoptimize;
@@ -96,8 +94,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_END_FOR is not a viable micro-op for tier 2 */
-
         case _END_SEND: {
             PyObject *value;
             PyObject *receiver;
@@ -108,8 +104,6 @@
             stack_pointer += -1;
             break;
         }
-
-        /* _INSTRUMENTED_END_SEND is not a viable micro-op for tier 2 */
 
         case _UNARY_NEGATIVE: {
             PyObject *value;
@@ -131,8 +125,6 @@
             stack_pointer[-1] = res;
             break;
         }
-
-        /* _SPECIALIZE_TO_BOOL is not a viable micro-op for tier 2 */
 
         case _TO_BOOL: {
             PyObject *value;
@@ -219,7 +211,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            uint32_t version = read_u32(&next_instr[1].operand);
+            uint32_t version = (uint32_t )CURRENT_OPERAND();
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
             if (Py_TYPE(value)->tp_version_tag != version) goto deoptimize;
@@ -415,8 +407,6 @@
             break;
         }
 
-        /* _SPECIALIZE_BINARY_SUBSCR is not a viable micro-op for tier 2 */
-
         case _BINARY_SUBSCR: {
             PyObject *sub;
             PyObject *container;
@@ -598,8 +588,6 @@
             break;
         }
 
-        /* _SPECIALIZE_STORE_SUBSCR is not a viable micro-op for tier 2 */
-
         case _STORE_SUBSCR: {
             PyObject *sub;
             PyObject *container;
@@ -701,8 +689,6 @@
             stack_pointer += -1;
             break;
         }
-
-        /* _RAISE_VARARGS is not a viable micro-op for tier 2 */
 
         case _INTERPRETER_EXIT: {
             PyObject *retval;
@@ -854,8 +840,6 @@
             break;
         }
 
-        /* _SPECIALIZE_SEND is not a viable micro-op for tier 2 */
-
         /* _SEND is not a viable micro-op for tier 2 */
 
         /* _SEND_GEN is not a viable micro-op for tier 2 */
@@ -897,12 +881,6 @@
             stack_pointer += -1;
             break;
         }
-
-        /* _RERAISE is not a viable micro-op for tier 2 */
-
-        /* _END_ASYNC_FOR is not a viable micro-op for tier 2 */
-
-        /* _CLEANUP_THROW is not a viable micro-op for tier 2 */
 
         case _LOAD_ASSERTION_ERROR: {
             PyObject *value;
@@ -968,8 +946,6 @@
             }
             break;
         }
-
-        /* _SPECIALIZE_UNPACK_SEQUENCE is not a viable micro-op for tier 2 */
 
         case _UNPACK_SEQUENCE: {
             PyObject *seq;
@@ -1048,8 +1024,6 @@
             stack_pointer += (oparg >> 8) + (oparg & 0xFF);
             break;
         }
-
-        /* _SPECIALIZE_STORE_ATTR is not a viable micro-op for tier 2 */
 
         case _STORE_ATTR: {
             PyObject *owner;
@@ -1184,8 +1158,6 @@
             break;
         }
 
-        /* _SPECIALIZE_LOAD_GLOBAL is not a viable micro-op for tier 2 */
-
         case _LOAD_GLOBAL: {
             PyObject *res;
             PyObject *null = NULL;
@@ -1231,7 +1203,7 @@
         }
 
         case _GUARD_GLOBALS_VERSION: {
-            uint16_t version = read_u16(&next_instr[1].operand);
+            uint16_t version = (uint16_t )CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             if (!PyDict_CheckExact(dict)) goto deoptimize;
             if (dict->ma_keys->dk_version != version) goto deoptimize;
@@ -1240,7 +1212,7 @@
         }
 
         case _GUARD_BUILTINS_VERSION: {
-            uint16_t version = read_u16(&next_instr[1].operand);
+            uint16_t version = (uint16_t )CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             if (!PyDict_CheckExact(dict)) goto deoptimize;
             if (dict->ma_keys->dk_version != version) goto deoptimize;
@@ -1252,7 +1224,7 @@
             PyObject *res;
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
-            uint16_t index = read_u16(&next_instr[1].operand);
+            uint16_t index = (uint16_t )CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             res = entries[index].me_value;
@@ -1270,7 +1242,7 @@
             PyObject *res;
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
-            uint16_t index = read_u16(&next_instr[1].operand);
+            uint16_t index = (uint16_t )CURRENT_OPERAND();
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             res = entries[index].me_value;
@@ -1613,10 +1585,6 @@
 
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
-        /* _SPECIALIZE_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
-
-        /* _LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
-
         case _LOAD_SUPER_ATTR_ATTR: {
             PyObject *self;
             PyObject *class;
@@ -1678,8 +1646,6 @@
             break;
         }
 
-        /* _SPECIALIZE_LOAD_ATTR is not a viable micro-op for tier 2 */
-
         case _LOAD_ATTR: {
             PyObject *owner;
             PyObject *attr;
@@ -1725,7 +1691,7 @@
         case _GUARD_TYPE_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = read_u32(&next_instr[1].operand);
+            uint32_t type_version = (uint32_t )CURRENT_OPERAND();
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             if (tp->tp_version_tag != type_version) goto deoptimize;
@@ -1748,7 +1714,7 @@
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            uint16_t index = read_u16(&next_instr[1].operand);
+            uint16_t index = (uint16_t )CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
             if (attr == NULL) goto deoptimize;
@@ -1765,7 +1731,7 @@
         case _CHECK_ATTR_MODULE: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = read_u32(&next_instr[1].operand);
+            uint32_t type_version = (uint32_t )CURRENT_OPERAND();
             if (!PyModule_CheckExact(owner)) goto deoptimize;
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
@@ -1779,7 +1745,7 @@
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            uint16_t index = read_u16(&next_instr[1].operand);
+            uint16_t index = (uint16_t )CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < dict->ma_keys->dk_nentries);
@@ -1814,7 +1780,7 @@
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            uint16_t hint = read_u16(&next_instr[1].operand);
+            uint16_t hint = (uint16_t )CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             if (hint >= (size_t)dict->ma_keys->dk_nentries) goto deoptimize;
@@ -1846,7 +1812,7 @@
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            uint16_t index = read_u16(&next_instr[1].operand);
+            uint16_t index = (uint16_t )CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
             if (attr == NULL) goto deoptimize;
@@ -1863,7 +1829,7 @@
         case _CHECK_ATTR_CLASS: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = read_u32(&next_instr[1].operand);
+            uint32_t type_version = (uint32_t )CURRENT_OPERAND();
             if (!PyType_Check(owner)) goto deoptimize;
             assert(type_version != 0);
             if (((PyTypeObject *)owner)->tp_version_tag != type_version) goto deoptimize;
@@ -1876,7 +1842,7 @@
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *descr = read_obj(&next_instr[1].operand);
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
@@ -1906,7 +1872,7 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = read_u16(&next_instr[1].operand);
+            uint16_t index = (uint16_t )CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
@@ -1930,7 +1896,7 @@
             PyObject *value;
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
-            uint16_t index = read_u16(&next_instr[1].operand);
+            uint16_t index = (uint16_t )CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
@@ -1940,8 +1906,6 @@
             stack_pointer += -2;
             break;
         }
-
-        /* _SPECIALIZE_COMPARE_OP is not a viable micro-op for tier 2 */
 
         case _COMPARE_OP: {
             PyObject *right;
@@ -2120,38 +2084,6 @@
             break;
         }
 
-        case _IMPORT_NAME: {
-            PyObject *fromlist;
-            PyObject *level;
-            PyObject *res;
-            oparg = CURRENT_OPARG();
-            fromlist = stack_pointer[-1];
-            level = stack_pointer[-2];
-            TIER_ONE_ONLY
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            res = import_name(tstate, frame, name, fromlist, level);
-            Py_DECREF(level);
-            Py_DECREF(fromlist);
-            if (res == NULL) goto pop_2_error_tier_two;
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _IMPORT_FROM: {
-            PyObject *from;
-            PyObject *res;
-            oparg = CURRENT_OPARG();
-            from = stack_pointer[-1];
-            TIER_ONE_ONLY
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            res = import_from(tstate, from, name);
-            if (res == NULL) goto error_tier_two;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            break;
-        }
-
         case _JUMP_FORWARD: {
             oparg = CURRENT_OPARG();
             JUMPBY(oparg);
@@ -2159,28 +2091,6 @@
         }
 
         /* _JUMP_BACKWARD is not a viable micro-op for tier 2 */
-
-        case _ENTER_EXECUTOR: {
-            oparg = CURRENT_OPARG();
-            TIER_ONE_ONLY
-            CHECK_EVAL_BREAKER();
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
-            JUMPBY(1-original_oparg);
-            frame->instr_ptr = next_instr;
-            Py_INCREF(executor);
-            if (executor->execute == _PyUOpExecute) {
-                current_executor = (_PyUOpExecutorObject *)executor;
-                GOTO_TIER_TWO();
-            }
-            frame = executor->execute(executor, frame, stack_pointer);
-            if (frame == NULL) {
-                frame = tstate->current_frame;
-                goto resume_with_error;
-            }
-            goto enter_tier_one;
-        }
 
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
 
@@ -2334,8 +2244,6 @@
             stack_pointer[-1] = iter;
             break;
         }
-
-        /* _SPECIALIZE_FOR_ITER is not a viable micro-op for tier 2 */
 
         /* _FOR_ITER is not a viable micro-op for tier 2 */
 
@@ -2625,7 +2533,7 @@
         case _GUARD_KEYS_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t keys_version = read_u32(&next_instr[1].operand);
+            uint32_t keys_version = (uint32_t )CURRENT_OPERAND();
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
             if (owner_heap_type->ht_cached_keys->dk_version != keys_version) goto deoptimize;
@@ -2638,7 +2546,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *descr = read_obj(&next_instr[1].operand);
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -2658,7 +2566,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *descr = read_obj(&next_instr[1].operand);
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2677,7 +2585,7 @@
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *descr = read_obj(&next_instr[1].operand);
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2693,7 +2601,7 @@
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *descr = read_obj(&next_instr[1].operand);
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2722,7 +2630,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *descr = read_obj(&next_instr[1].operand);
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2736,8 +2644,6 @@
         }
 
         /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 */
-
-        /* _SPECIALIZE_CALL is not a viable micro-op for tier 2 */
 
         /* _CALL is not a viable micro-op for tier 2 */
 
@@ -2780,7 +2686,7 @@
             oparg = CURRENT_OPARG();
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = read_u32(&next_instr[1].operand);
+            uint32_t func_version = (uint32_t )CURRENT_OPERAND();
             if (!PyFunction_Check(callable)) goto deoptimize;
             PyFunctionObject *func = (PyFunctionObject *)callable;
             if (func->func_version != func_version) goto deoptimize;
@@ -3505,8 +3411,6 @@
             break;
         }
 
-        /* _SPECIALIZE_BINARY_OP is not a viable micro-op for tier 2 */
-
         case _BINARY_OP: {
             PyObject *rhs;
             PyObject *lhs;
@@ -3618,7 +3522,16 @@
             break;
         }
 
-        /* _SAVE_RETURN_OFFSET is not a viable micro-op for tier 2 */
+        case _SAVE_RETURN_OFFSET: {
+            oparg = CURRENT_OPARG();
+            #if TIER_ONE
+            frame->return_offset = (uint16_t)(next_instr - this_instr);
+            #endif
+            #if TIER_TWO
+            frame->return_offset = oparg;
+            #endif
+            break;
+        }
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY

@@ -15,6 +15,7 @@ class Properties:
     needs_this: bool
     always_exits: bool
     stores_sp: bool
+    tier_one_only: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -33,6 +34,7 @@ class Properties:
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
+            tier_one_only=any(p.tier_one_only for p in properties),
         )
 
 
@@ -46,6 +48,7 @@ SKIP_PROPERTIES = Properties(
     needs_this=False,
     always_exits=False,
     stores_sp=False,
+    tier_one_only=False,
 )
 
 
@@ -124,6 +127,8 @@ class Uop:
         return self._size
 
     def is_viable(self) -> bool:
+        if self.name == "_SAVE_RETURN_OFFSET":
+            return True  # Adjusts next_instr, but only in tier 1 code
         if self.properties.needs_this:
             return False
         if "INSTRUMENTED" in self.name:
@@ -304,6 +309,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "STORE_SP"),
+        tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
     )
 
 
