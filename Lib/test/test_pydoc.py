@@ -35,6 +35,7 @@ from test.support import (reap_children, captured_output, captured_stdout,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
+from test import pydocfodder
 
 
 class nonascii:
@@ -102,7 +103,7 @@ CLASSES
      |  ----------------------------------------------------------------------
      |  Class methods defined here:
      |
-     |  __class_getitem__(item) from builtins.type
+     |  __class_getitem__(item)
      |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -166,7 +167,7 @@ class A(builtins.object)
     Methods defined here:
         __init__()
             Wow, I have no function!
-
+    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
@@ -179,6 +180,7 @@ class B(builtins.object)
             dictionary for instance variables
         __weakref__
             list of weak references to the object
+    ----------------------------------------------------------------------
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
         __annotations__ = {'NO_MEANING': <class 'str'>}
@@ -191,8 +193,10 @@ class C(builtins.object)
         is_it_true(self)
             Return self.get_answer()
         say_no(self)
+    ----------------------------------------------------------------------
     Class methods defined here:
-        __class_getitem__(item) from builtins.type
+        __class_getitem__(item)
+    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
@@ -330,6 +334,10 @@ def get_pydoc_html(module):
         loc = "<br><a href=\"" + loc + "\">Module Docs</a>"
     return output.strip(), loc
 
+def clean_text(doc):
+    # clean up the extra text formatting that pydoc performs
+    return re.sub('\b.', '', doc)
+
 def get_pydoc_link(module):
     "Returns a documentation web link of a module"
     abspath = os.path.abspath
@@ -347,10 +355,7 @@ def get_pydoc_text(module):
         loc = "\nMODULE DOCS\n    " + loc + "\n"
 
     output = doc.docmodule(module)
-
-    # clean up the extra text formatting that pydoc performs
-    patt = re.compile('\b.')
-    output = patt.sub('', output)
+    output = clean_text(output)
     return output.strip(), loc
 
 def get_html_title(text):
@@ -367,6 +372,7 @@ def html2text(html):
     Tailored for pydoc tests only.
     """
     html = html.replace("<dd>", "\n")
+    html = html.replace("<hr>", "-"*70)
     html = re.sub("<.*?>", "", html)
     html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
     return html
@@ -798,8 +804,7 @@ class PydocDocTest(unittest.TestCase):
             b_size = A.a_size
 
         doc = pydoc.render_doc(B)
-        # clean up the extra text formatting that pydoc performs
-        doc = re.sub('\b.', '', doc)
+        doc = clean_text(doc)
         self.assertEqual(doc, '''\
 Python Library Documentation: class B in module %s
 
@@ -887,8 +892,7 @@ class B(A)
                 ...
 
         doc = pydoc.render_doc(A)
-        # clean up the extra text formatting that pydoc performs
-        doc = re.sub('\b.', '', doc)
+        doc = clean_text(doc)
         self.assertEqual(doc, '''Python Library Documentation: class A in module %s
 
 class A(builtins.object)
@@ -925,8 +929,7 @@ class A(builtins.object)
             ...
 
         doc = pydoc.render_doc(func)
-        # clean up the extra text formatting that pydoc performs
-        doc = re.sub('\b.', '', doc)
+        doc = clean_text(doc)
         self.assertEqual(doc, '''Python Library Documentation: function func in module %s
 
 func(
@@ -942,8 +945,7 @@ func(
             ...
 
         doc = pydoc.render_doc(function_with_really_long_name_so_annotations_can_be_rather_small)
-        # clean up the extra text formatting that pydoc performs
-        doc = re.sub('\b.', '', doc)
+        doc = clean_text(doc)
         self.assertEqual(doc, '''Python Library Documentation: function function_with_really_long_name_so_annotations_can_be_rather_small in module %s
 
 function_with_really_long_name_so_annotations_can_be_rather_small(
@@ -957,8 +959,7 @@ function_with_really_long_name_so_annotations_can_be_rather_small(
             second_very_long_parameter_name: ...
 
         doc = pydoc.render_doc(does_not_have_name)
-        # clean up the extra text formatting that pydoc performs
-        doc = re.sub('\b.', '', doc)
+        doc = clean_text(doc)
         self.assertEqual(doc, '''Python Library Documentation: function <lambda> in module %s
 
 <lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
@@ -1244,7 +1245,7 @@ class TestDescriptions(unittest.TestCase):
     @requires_docstrings
     def test_unbound_builtin_method(self):
         self.assertEqual(self._get_summary_line(_pickle.Pickler.dump),
-            "dump(self, obj, /)")
+            "dump(self, obj, /) unbound _pickle.Pickler method")
 
     # these no longer include "self"
     def test_bound_python_method(self):
@@ -1296,7 +1297,7 @@ class TestDescriptions(unittest.TestCase):
 
     def test_unbound_builtin_method_noargs(self):
         self.assertEqual(self._get_summary_line(str.lower),
-            "lower(self, /)")
+            "lower(self, /) unbound builtins.str method")
 
     def test_bound_builtin_method_noargs(self):
         self.assertEqual(self._get_summary_line(''.lower),
@@ -1304,7 +1305,7 @@ class TestDescriptions(unittest.TestCase):
 
     def test_unbound_builtin_method_o(self):
         self.assertEqual(self._get_summary_line(set.add),
-            "add(self, object, /)")
+            "add(self, object, /) unbound builtins.set method")
 
     def test_bound_builtin_method_o(self):
         self.assertEqual(self._get_summary_line(set().add),
@@ -1312,7 +1313,7 @@ class TestDescriptions(unittest.TestCase):
 
     def test_unbound_builtin_method_coexist_o(self):
         self.assertEqual(self._get_summary_line(set.__contains__),
-            "__contains__(self, object, /)")
+            "__contains__(self, object, /) unbound builtins.set method")
 
     def test_bound_builtin_method_coexist_o(self):
         self.assertEqual(self._get_summary_line(set().__contains__),
@@ -1320,19 +1321,19 @@ class TestDescriptions(unittest.TestCase):
 
     def test_unbound_builtin_classmethod_noargs(self):
         self.assertEqual(self._get_summary_line(datetime.datetime.__dict__['utcnow']),
-            "utcnow(type, /)")
+            "utcnow(type, /) unbound datetime.datetime method")
 
     def test_bound_builtin_classmethod_noargs(self):
         self.assertEqual(self._get_summary_line(datetime.datetime.utcnow),
-            "utcnow() method of builtins.type instance")
+            "utcnow() class method of datetime.datetime")
 
     def test_unbound_builtin_classmethod_o(self):
         self.assertEqual(self._get_summary_line(dict.__dict__['__class_getitem__']),
-            "__class_getitem__(type, object, /)")
+            "__class_getitem__(type, object, /) unbound builtins.dict method")
 
     def test_bound_builtin_classmethod_o(self):
         self.assertEqual(self._get_summary_line(dict.__class_getitem__),
-            "__class_getitem__(object, /) method of builtins.type instance")
+            "__class_getitem__(object, /) class method of builtins.dict")
 
     @support.cpython_only
     @requires_docstrings
@@ -1356,11 +1357,13 @@ class TestDescriptions(unittest.TestCase):
     @requires_docstrings
     def test_unbound_builtin_method_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(dict.pop),
-            "pop(self, key, default=<unrepresentable>, /)")
+            "pop(self, key, default=<unrepresentable>, /) "
+            "unbound builtins.dict method")
         import _testcapi
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.meth),
-            "meth(self, /, a, b=<x>)")
+            "meth(self, /, a, b=<x>) unbound "
+            "_testcapi.DocStringUnrepresentableSignatureTest method")
 
     @support.cpython_only
     @requires_docstrings
@@ -1381,7 +1384,8 @@ class TestDescriptions(unittest.TestCase):
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         descr = cls.__dict__['classmeth']
         self.assertEqual(self._get_summary_line(descr),
-            "classmeth(type, /, a, b=<x>)")
+            "classmeth(type, /, a, b=<x>) unbound "
+            "_testcapi.DocStringUnrepresentableSignatureTest method")
 
     @support.cpython_only
     @requires_docstrings
@@ -1389,7 +1393,8 @@ class TestDescriptions(unittest.TestCase):
         import _testcapi
         cls = _testcapi.DocStringUnrepresentableSignatureTest
         self.assertEqual(self._get_summary_line(cls.classmeth),
-            "classmeth(a, b=<x>) method of builtins.type instance")
+            "classmeth(a, b=<x>) class method of "
+            "_testcapi.DocStringUnrepresentableSignatureTest")
 
     def test_overridden_text_signature(self):
         class C:
@@ -1423,7 +1428,7 @@ class TestDescriptions(unittest.TestCase):
                         "meth" + bound + " method of test.test_pydoc.C instance")
                 C.cmeth.__func__.__text_signature__ = text_signature
                 self.assertEqual(self._get_summary_line(C.cmeth),
-                        "cmeth" + bound + " method of builtins.type instance")
+                        "cmeth" + bound + " class method of test.test_pydoc.C")
                 C.smeth.__text_signature__ = text_signature
                 self.assertEqual(self._get_summary_line(C.smeth),
                         "smeth" + unbound)
@@ -1460,13 +1465,13 @@ sm(x, y)
                          'cm(...)\n'
                          '    A class method\n')
         self.assertEqual(self._get_summary_lines(X.cm), """\
-cm(x) method of builtins.type instance
+cm(x) class method of test.test_pydoc.X
     A class method
 """)
         self.assertIn("""
  |  Class methods defined here:
  |
- |  cm(x) from builtins.type
+ |  cm(x)
  |      A class method
 """, pydoc.plain(pydoc.render_doc(X)))
 
@@ -1621,6 +1626,128 @@ foo
             '<a href="https://localhost/">https://localhost/</a>',
             html
         )
+
+
+class PydocFodderTest(unittest.TestCase):
+
+    def getsection(self, text, beginline, endline):
+        lines = text.splitlines()
+        beginindex, endindex = 0, None
+        if beginline is not None:
+            beginindex = lines.index(beginline)
+        if endline is not None:
+            endindex = lines.index(endline, beginindex)
+        return lines[beginindex:endindex]
+
+    def test_text_doc_routines_in_class(self, cls=pydocfodder.B):
+        doc = pydoc.TextDoc()
+        result = doc.docclass(cls)
+        result = clean_text(result)
+        where = 'defined here' if cls is pydocfodder.B else 'inherited from B'
+        lines = self.getsection(result, f' |  Methods {where}:', ' |  ' + '-'*70)
+        self.assertIn(' |  A_method_alias = A_method(self)', lines)
+        self.assertIn(' |  B_method_alias = B_method(self)', lines)
+        self.assertIn(' |  A_staticmethod(x, y) from test.pydocfodder.A', lines)
+        self.assertIn(' |  A_staticmethod_alias = A_staticmethod(x, y)', lines)
+        self.assertIn(' |  global_func(x, y) from test.pydocfodder', lines)
+        self.assertIn(' |  global_func_alias = global_func(x, y)', lines)
+        self.assertIn(' |  global_func2_alias = global_func2(x, y) from test.pydocfodder', lines)
+        self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
+        self.assertIn(' |  object_repr = __repr__(self, /)', lines)
+
+        lines = self.getsection(result, f' |  Static methods {where}:', ' |  ' + '-'*70)
+        self.assertIn(' |  A_classmethod_ref = A_classmethod(x) class method of test.pydocfodder.A', lines)
+        note = '' if cls is pydocfodder.B else ' class method of test.pydocfodder.B'
+        self.assertIn(' |  B_classmethod_ref = B_classmethod(x)' + note, lines)
+        self.assertIn(' |  A_method_ref = A_method() method of test.pydocfodder.A instance', lines)
+        self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
+        self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+
+        lines = self.getsection(result, f' |  Class methods {where}:', ' |  ' + '-'*70)
+        self.assertIn(' |  B_classmethod(x)', lines)
+        self.assertIn(' |  B_classmethod_alias = B_classmethod(x)', lines)
+
+    def test_html_doc_routines_in_class(self, cls=pydocfodder.B):
+        doc = pydoc.HTMLDoc()
+        result = doc.docclass(cls)
+        result = html2text(result)
+        where = 'defined here' if cls is pydocfodder.B else 'inherited from B'
+        lines = self.getsection(result, f'Methods {where}:', '-'*70)
+        self.assertIn('A_method_alias = A_method(self)', lines)
+        self.assertIn('B_method_alias = B_method(self)', lines)
+        self.assertIn('A_staticmethod(x, y) from test.pydocfodder.A', lines)
+        self.assertIn('A_staticmethod_alias = A_staticmethod(x, y)', lines)
+        self.assertIn('global_func(x, y) from test.pydocfodder', lines)
+        self.assertIn('global_func_alias = global_func(x, y)', lines)
+        self.assertIn('global_func2_alias = global_func2(x, y) from test.pydocfodder', lines)
+        self.assertIn('__repr__(self, /) from builtins.object', lines)
+        self.assertIn('object_repr = __repr__(self, /)', lines)
+
+        lines = self.getsection(result, f'Static methods {where}:', '-'*70)
+        self.assertIn('A_classmethod_ref = A_classmethod(x) class method of test.pydocfodder.A', lines)
+        note = '' if cls is pydocfodder.B else ' class method of test.pydocfodder.B'
+        self.assertIn('B_classmethod_ref = B_classmethod(x)' + note, lines)
+        self.assertIn('A_method_ref = A_method() method of test.pydocfodder.A instance', lines)
+
+        lines = self.getsection(result, f'Class methods {where}:', '-'*70)
+        self.assertIn('B_classmethod(x)', lines)
+        self.assertIn('B_classmethod_alias = B_classmethod(x)', lines)
+
+    def test_text_doc_inherited_routines_in_class(self):
+        self.test_text_doc_routines_in_class(pydocfodder.D)
+
+    def test_html_doc_inherited_routines_in_class(self):
+        self.test_html_doc_routines_in_class(pydocfodder.D)
+
+    def test_text_doc_routines_in_module(self):
+        doc = pydoc.TextDoc()
+        result = doc.docmodule(pydocfodder)
+        result = clean_text(result)
+        lines = self.getsection(result, 'FUNCTIONS', 'FILE')
+        # function alias
+        self.assertIn('    global_func_alias = global_func(x, y)', lines)
+        self.assertIn('    A_staticmethod(x, y)', lines)
+        self.assertIn('    A_staticmethod_alias = A_staticmethod(x, y)', lines)
+        # bound class methods
+        self.assertIn('    A_classmethod(x) class method of A', lines)
+        self.assertIn('    A_classmethod2 = A_classmethod(x) class method of A', lines)
+        self.assertIn('    A_classmethod3 = A_classmethod(x) class method of B', lines)
+        # bound methods
+        self.assertIn('    A_method() method of A instance', lines)
+        self.assertIn('    A_method2 = A_method() method of A instance', lines)
+        self.assertIn('    A_method3 = A_method() method of B instance', lines)
+        self.assertIn('    A_staticmethod_ref = A_staticmethod(x, y)', lines)
+        self.assertIn('    A_staticmethod_ref2 = A_staticmethod(y) method of B instance', lines)
+        self.assertIn('    get(key, default=None, /) method of builtins.dict instance', lines)
+        self.assertIn('    dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        # unbound methods
+        self.assertIn('    B_method(self)', lines)
+        self.assertIn('    B_method2 = B_method(self)', lines)
+
+    def test_html_doc_routines_in_module(self):
+        doc = pydoc.HTMLDoc()
+        result = doc.docmodule(pydocfodder)
+        result = html2text(result)
+        lines = self.getsection(result, ' Functions', None)
+        # function alias
+        self.assertIn(' global_func_alias = global_func(x, y)', lines)
+        self.assertIn(' A_staticmethod(x, y)', lines)
+        self.assertIn(' A_staticmethod_alias = A_staticmethod(x, y)', lines)
+        # bound class methods
+        self.assertIn('A_classmethod(x) class method of A', lines)
+        self.assertIn(' A_classmethod2 = A_classmethod(x) class method of A', lines)
+        self.assertIn(' A_classmethod3 = A_classmethod(x) class method of B', lines)
+        # bound methods
+        self.assertIn(' A_method() method of A instance', lines)
+        self.assertIn(' A_method2 = A_method() method of A instance', lines)
+        self.assertIn(' A_method3 = A_method() method of B instance', lines)
+        self.assertIn(' A_staticmethod_ref = A_staticmethod(x, y)', lines)
+        self.assertIn(' A_staticmethod_ref2 = A_staticmethod(y) method of B instance', lines)
+        self.assertIn(' get(key, default=None, /) method of builtins.dict instance', lines)
+        self.assertIn(' dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        # unbound methods
+        self.assertIn(' B_method(self)', lines)
+        self.assertIn(' B_method2 = B_method(self)', lines)
 
 
 @unittest.skipIf(
