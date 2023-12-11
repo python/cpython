@@ -1630,8 +1630,8 @@ body of a coroutine function.
    are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
-   transformed into the function's ``__doc__`` attribute and therefore the
-   function's :term:`docstring`.
+   transformed into the function's :attr:`~function.__doc__` attribute and
+   therefore the function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
    transformed into the namespace's ``__doc__`` item and therefore the class's
