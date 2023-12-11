@@ -1049,7 +1049,7 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 }
 
 #if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF)
-#  undef _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETTDEF
+#  undef _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
 #  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", (getter)_io_TextIOWrapper__CHUNK_SIZE_get, (setter)_io_TextIOWrapper__CHUNK_SIZE_set, NULL},
 #else
 #  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", (getter)_io_TextIOWrapper__CHUNK_SIZE_get, NULL, NULL},
@@ -1074,7 +1074,7 @@ _io_TextIOWrapper__CHUNK_SIZE_get(textio *self, void *Py_UNUSED(context))
 #  undef _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
 #  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", (getter)_io_TextIOWrapper__CHUNK_SIZE_get, (setter)_io_TextIOWrapper__CHUNK_SIZE_set, NULL},
 #else
-#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETTERDEF {"_CHUNK_SIZE", NULL, (setter)_io_TextIOWrapper__CHUNK_SIZE_set, NULL},
+#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", NULL, (setter)_io_TextIOWrapper__CHUNK_SIZE_set, NULL},
 #endif
 
 static int
@@ -1091,4 +1091,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(textio *self, PyObject *value, void *Py_UNUSED
 
     return return_value;
 }
-/*[clinic end generated code: output=d7f6e6ae6d81b506 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b312f2d2e2221580 input=a9049054013a1b77]*/

@@ -4957,7 +4957,7 @@ Test.property
 [clinic start generated code]*/
 
 #if defined(TEST_PROPERTY_GETSETDEF)
-#  undef TEST_PROPERTY_GETSETTDEF
+#  undef TEST_PROPERTY_GETSETDEF
 #  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, NULL},
 #else
 #  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, NULL, NULL},
@@ -4974,7 +4974,7 @@ Test_property_get(TestObj *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=c7f18e7848b00cfa input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=af8140b692e0e2f1 input=2d92b3449fbc7d2b]*/
 
 /*[clinic input]
 @setter
@@ -4985,7 +4985,7 @@ Test.property
 #  undef TEST_PROPERTY_GETSETDEF
 #  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, NULL},
 #else
-#  define TEST_PROPERTY_GETSETTERDEF {"property", NULL, (setter)Test_property_set, NULL},
+#  define TEST_PROPERTY_GETSETDEF {"property", NULL, (setter)Test_property_set, NULL},
 #endif
 
 static int
@@ -4999,7 +4999,7 @@ Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=63e670882002b596 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=f3eba6487d7550e2 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push
