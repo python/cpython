@@ -1,0 +1,1 @@
+Fix processing unsaved files when quitting IDLE on macOS.
