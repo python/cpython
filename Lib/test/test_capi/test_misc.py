@@ -2079,7 +2079,7 @@ class InterpreterIDTests(unittest.TestCase):
         with self.assertRaises(_interpreters.InterpreterNotFoundError):
             self.InterpreterID(int(id) + 1)  # unforced
 
-    def test_does_not_exist(self):
+    def test_destroyed(self):
         id = _interpreters.create()
         _interpreters.destroy(id)
         with self.assertRaises(_interpreters.InterpreterNotFoundError):
