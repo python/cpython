@@ -25,95 +25,13 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset
+from stack import StackOffset, Stack, SizeMismatch
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
-
-
-class SizeMismatch(Exception):
-    pass
-
-
-class Stack:
-    def __init__(self) -> None:
-        self.top_offset = StackOffset()
-        self.base_offset = StackOffset()
-        self.peek_offset = StackOffset()
-        self.variables: list[StackItem] = []
-        self.defined: set[str] = set()
-
-    def pop(self, var: StackItem) -> str:
-        self.top_offset.pop(var)
-        if not var.peek:
-            self.peek_offset.pop(var)
-        indirect = "&" if var.is_array() else ""
-        if self.variables:
-            popped = self.variables.pop()
-            if popped.size != var.size:
-                raise SizeMismatch(
-                    f"Size mismatch when popping '{popped.name}' from stack to assign to {var.name}. "
-                    f"Expected {var.size} got {popped.size}"
-                )
-            if popped.name == var.name:
-                return ""
-            elif popped.name == "unused":
-                self.defined.add(var.name)
-                return (
-                    f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
-                )
-            elif var.name == "unused":
-                return ""
-            else:
-                self.defined.add(var.name)
-                return f"{var.name} = {popped.name};\n"
-        self.base_offset.pop(var)
-        if var.name == "unused":
-            return ""
-        else:
-            self.defined.add(var.name)
-        assign = f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
-        if var.condition:
-            return f"if ({var.condition}) {{ {assign} }}\n"
-        return f"{assign}\n"
-
-    def push(self, var: StackItem) -> str:
-        self.variables.append(var)
-        if var.is_array() and var.name not in self.defined and var.name != "unused":
-            c_offset = self.top_offset.to_c()
-            self.top_offset.push(var)
-            self.defined.add(var.name)
-            return f"{var.name} = &stack_pointer[{c_offset}];\n"
-        else:
-            self.top_offset.push(var)
-            return ""
-
-    def flush(self, out: CWriter) -> None:
-        for var in self.variables:
-            if not var.peek:
-                if var.name != "unused" and not var.is_array():
-                    if var.condition:
-                        out.emit(f" if ({var.condition}) ")
-                    out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {var.name};\n"
-                    )
-            self.base_offset.push(var)
-        if self.base_offset.to_c() != self.top_offset.to_c():
-            print("base", self.base_offset.to_c(), "top", self.top_offset.to_c())
-            assert False
-        number = self.base_offset.to_c()
-        if number != "0":
-            out.emit(f"stack_pointer += {number};\n")
-        self.variables = []
-        self.base_offset.clear()
-        self.top_offset.clear()
-        self.peek_offset.clear()
-
-    def as_comment(self) -> str:
-        return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:

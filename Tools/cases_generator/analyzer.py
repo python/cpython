@@ -123,6 +123,19 @@ class Uop:
             self._size = sum(c.size for c in self.caches)
         return self._size
 
+    def is_viable(self) -> bool:
+        if self.properties.needs_this:
+            return False
+        if "INSTRUMENTED" in self.name:
+            return False
+        if "replaced" in self.annotations:
+            return False
+        if self.name in ("INTERPRETER_EXIT", "JUMP_BACKWARD"):
+            return False
+        if len([c for c in self.caches if c.name != "unused"]) > 1:
+            return False
+        return True
+
 
 Part = Uop | Skip
 
