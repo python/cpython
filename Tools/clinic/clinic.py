@@ -875,18 +875,18 @@ class CLanguage(Language):
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #if defined({getset_name}_GETSETDEF)
-        #   undef {getset_name}_GETSETTDEF
-        #   define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  undef {getset_name}_GETSETTDEF
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
         #else
-        #   define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
         #endif
     """)
     SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #if defined({getset_name}_GETSETDEF)
-        #   undef {getset_name}_GETSETDEF
-        #   define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  undef {getset_name}_GETSETDEF
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
         #else
-        #   define {getset_name}_GETSETTERDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
+        #  define {getset_name}_GETSETTERDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
         #endif
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""

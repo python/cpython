@@ -328,10 +328,10 @@ _io__Buffered_simple_flush(buffered *self, PyObject *Py_UNUSED(ignored))
 }
 
 #if defined(_IO__BUFFERED_CLOSED_GETSETDEF)
-#   undef _IO__BUFFERED_CLOSED_GETSETTDEF
-#   define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)_io__Buffered_closed_set, NULL},
+#  undef _IO__BUFFERED_CLOSED_GETSETTDEF
+#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)_io__Buffered_closed_set, NULL},
 #else
-#   define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, NULL, NULL},
+#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, NULL, NULL},
 #endif
 
 static PyObject *
@@ -465,10 +465,10 @@ _io__Buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
 }
 
 #if defined(_IO__BUFFERED_NAME_GETSETDEF)
-#   undef _IO__BUFFERED_NAME_GETSETTDEF
-#   define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)_io__Buffered_name_set, NULL},
+#  undef _IO__BUFFERED_NAME_GETSETTDEF
+#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)_io__Buffered_name_set, NULL},
 #else
-#   define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, NULL, NULL},
+#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, NULL, NULL},
 #endif
 
 static PyObject *
@@ -487,10 +487,10 @@ _io__Buffered_name_get(buffered *self, void *Py_UNUSED(context))
 }
 
 #if defined(_IO__BUFFERED_MODE_GETSETDEF)
-#   undef _IO__BUFFERED_MODE_GETSETTDEF
-#   define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)_io__Buffered_mode_set, NULL},
+#  undef _IO__BUFFERED_MODE_GETSETTDEF
+#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)_io__Buffered_mode_set, NULL},
 #else
-#   define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, NULL, NULL},
+#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, NULL, NULL},
 #endif
 
 static PyObject *
@@ -1230,4 +1230,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d547078bfd4f6e31 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=481b8d69c67b4d55 input=a9049054013a1b77]*/
