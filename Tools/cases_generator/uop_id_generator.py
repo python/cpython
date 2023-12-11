@@ -24,7 +24,9 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 
 
-def generate_uop_ids(filenames: str, analysis: Analysis, outfile: TextIO, distinct_namespace: bool) -> None:
+def generate_uop_ids(
+    filenames: str, analysis: Analysis, outfile: TextIO, distinct_namespace: bool
+) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
     out.emit(
@@ -34,7 +36,8 @@ def generate_uop_ids(filenames: str, analysis: Analysis, outfile: TextIO, distin
 extern "C" {
 #endif
 
-""")
+"""
+    )
 
     next_id = 1 if distinct_namespace else 300
     # These two are first by convention
@@ -42,7 +45,7 @@ extern "C" {
     next_id += 1
     out.emit(f"#define _SET_IP {next_id}\n")
     next_id += 1
-    PRE_DEFINED = { "_EXIT_TRACE", "_SET_IP", "_CACHE", "_RESERVED", "_EXTENDED_ARG" }
+    PRE_DEFINED = {"_EXIT_TRACE", "_SET_IP", "_CACHE", "_RESERVED", "_EXTENDED_ARG"}
 
     for uop in analysis.uops.values():
         if uop.name in PRE_DEFINED:
