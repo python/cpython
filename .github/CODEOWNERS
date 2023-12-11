@@ -78,6 +78,11 @@ Python/traceback.c            @iritkatriel
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
+# Subinterpreters
+Lib/test/support/interpreters/**  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/**  @ericsnowcurrently
+
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
 **/*str*time*                 @pganssle @abalkin
