@@ -7,7 +7,7 @@ from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
-import test.support.interpreters.channel as channels
+from test.support.interpreters import channels
 from .utils import _run_output, TestBase
 
 
@@ -121,7 +121,7 @@ class TestSendRecv(TestBase):
     def test_send_recv_same_interpreter(self):
         interp = interpreters.create()
         interp.exec_sync(dedent("""
-            import test.support.interpreters.channel as channels
+            from test.support.interpreters import channels
             r, s = channels.create()
             orig = b'spam'
             s.send_nowait(orig)
@@ -194,7 +194,7 @@ class TestSendRecv(TestBase):
     def test_send_recv_nowait_same_interpreter(self):
         interp = interpreters.create()
         interp.exec_sync(dedent("""
-            import test.support.interpreters.channel as channels
+            from test.support.interpreters import channels
             r, s = channels.create()
             orig = b'spam'
             s.send_nowait(orig)

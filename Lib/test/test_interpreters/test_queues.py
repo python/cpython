@@ -8,7 +8,7 @@ from test.support import import_helper
 import_helper.import_module('_xxinterpchannels')
 #import_helper.import_module('_xxinterpqueues')
 from test.support import interpreters
-import test.support.interpreters.queue as queues
+from test.support.interpreters import queues
 from .utils import _run_output, TestBase
 
 
@@ -170,7 +170,7 @@ class TestQueueOps(TestBase):
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
         interp.exec_sync(dedent("""
-            import test.support.interpreters.queue as queues
+            from test.support.interpreters import queues
             queue = queues.create()
             orig = b'spam'
             queue.put(orig)

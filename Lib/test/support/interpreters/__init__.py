@@ -8,7 +8,7 @@ from _xxsubinterpreters import (
     InterpreterError, InterpreterNotFoundError,
     is_shareable,
 )
-from .queue import (
+from .queues import (
     create as create_queue,
     Queue, QueueEmpty, QueueFull,
 )
