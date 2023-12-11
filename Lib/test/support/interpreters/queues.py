@@ -31,7 +31,7 @@ class QueueFull(_queues.QueueFull, queue.Full):
     """
 
 
-def create(maxsize=-1):
+def create(maxsize=0):
     """Return a new cross-interpreter queue.
 
     The queue may be used to pass data safely between interpreters.

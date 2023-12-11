@@ -25,7 +25,7 @@ class QueueTests(TestBase):
     def test_create(self):
         with self.subTest('vanilla'):
             queue = queues.create()
-            self.assertEqual(queue.maxsize, -1)
+            self.assertEqual(queue.maxsize, 0)
 
         with self.subTest('small maxsize'):
             queue = queues.create(3)
