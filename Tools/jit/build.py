@@ -505,8 +505,6 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.target.prefix)
-        if name == "_eh_frame":
-            return
         if "SomeInstructions" in flags:
             assert not self.stencil_group.data.body, self.stencil_group.data.body
             self.stencil_group.text.body.extend(
@@ -579,6 +577,9 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
                 addend = 0
             case _:
                 raise NotImplementedError(relocation)
+        # XXX
+        if symbol == "__bzero":
+            symbol = "bzero"
         return Hole(offset, kind, value, symbol, addend)
 
 
@@ -660,6 +661,7 @@ CLANG_FLAGS = [
     f"-I{PYTHON}",
     "-O3",
     "-c",
+    "-fno-asynchronous-unwind-tables",
     # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
     "-fno-jump-tables",
     # Position-independent code adds indirection to every load and jump:
