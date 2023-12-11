@@ -25,7 +25,7 @@ class QueueTests(TestBase):
     def test_create(self):
         with self.subTest('vanilla'):
             queue = queues.create()
-            self.assertEqual(queue.maxsize, 0)
+            self.assertEqual(queue.maxsize, -1)
 
         with self.subTest('small maxsize'):
             queue = queues.create(3)
@@ -40,8 +40,8 @@ class QueueTests(TestBase):
             self.assertEqual(queue.maxsize, 0)
 
         with self.subTest('negative maxsize'):
-            queue = queues.create(-1)
-            self.assertEqual(queue.maxsize, 0)
+            queue = queues.create(-10)
+            self.assertEqual(queue.maxsize, -10)
 
         with self.subTest('bad maxsize'):
             with self.assertRaises(TypeError):
@@ -81,8 +81,6 @@ class QueueTests(TestBase):
             qid = int(out)
             queue5 = queue1.get()
             self.assertEqual(queue5.id, qid)
-
-        # XXX check with maxsize
 
     def test_id_type(self):
         queue = queues.create()
@@ -174,7 +172,6 @@ class TestQueueOps(TestBase):
 
         self.assertEqual(actual, expected)
 
-    @unittest.expectedFailure
     def test_put_timeout(self):
         queue = queues.create(2)
         queue.put(None)
@@ -184,7 +181,6 @@ class TestQueueOps(TestBase):
         queue.get()
         queue.put(None)
 
-    @unittest.expectedFailure
     def test_put_nowait(self):
         queue = queues.create(2)
         queue.put_nowait(None)

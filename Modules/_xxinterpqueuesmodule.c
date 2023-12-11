@@ -137,6 +137,7 @@ typedef struct {
         PyObject *obj_ERR_NO_NEXT_QUEUE_ID;
         PyObject *obj_ERR_QUEUE_NOT_FOUND;
         PyObject *obj_ERR_QUEUE_EMPTY;
+        PyObject *obj_ERR_QUEUE_FULL;
     } errcodes;
 } module_state;
 
@@ -160,6 +161,7 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
     Py_VISIT(state->errcodes.obj_ERR_NO_NEXT_QUEUE_ID);
     Py_VISIT(state->errcodes.obj_ERR_QUEUE_NOT_FOUND);
     Py_VISIT(state->errcodes.obj_ERR_QUEUE_EMPTY);
+    Py_VISIT(state->errcodes.obj_ERR_QUEUE_FULL);
 
     return 0;
 }
@@ -175,6 +177,7 @@ clear_module_state(module_state *state)
     Py_CLEAR(state->errcodes.obj_ERR_NO_NEXT_QUEUE_ID);
     Py_CLEAR(state->errcodes.obj_ERR_QUEUE_NOT_FOUND);
     Py_CLEAR(state->errcodes.obj_ERR_QUEUE_EMPTY);
+    Py_CLEAR(state->errcodes.obj_ERR_QUEUE_FULL);
 
     return 0;
 }
@@ -190,6 +193,7 @@ clear_module_state(module_state *state)
 #define ERR_QUEUE_NOT_FOUND (-14)
 // single-queue errors
 #define ERR_QUEUE_EMPTY (-21)
+#define ERR_QUEUE_FULL (-22)
 
 static int
 _add_module_errcodes(PyObject *mod, struct module_errcodes *state)
@@ -210,6 +214,7 @@ _add_module_errcodes(PyObject *mod, struct module_errcodes *state)
     ADD(ERR_NO_NEXT_QUEUE_ID);
     ADD(ERR_QUEUE_NOT_FOUND);
     ADD(ERR_QUEUE_EMPTY);
+    ADD(ERR_QUEUE_FULL);
 #undef ADD
     return 0;
 }
@@ -232,6 +237,9 @@ get_module_errcode(struct module_errcodes *state, int errcode, int64_t qid,
         break;
     CASE(ERR_QUEUE_EMPTY)
         msg = PyUnicode_FromFormat("queue %" PRId64 " is empty", qid);
+        break;
+    CASE(ERR_QUEUE_FULL)
+        msg = PyUnicode_FromFormat("queue %" PRId64 " is full", qid);
         break;
 #undef CASE
     default:
@@ -261,6 +269,7 @@ It may be one of:\n\
  * _queues.ERR_NO_NEXT_QUEUE_ID\n\
  * _queues.ERR_QUEUE_NOT_FOUND\n\
  * _queues.ERR_QUEUE_EMPTY\n\
+ * _queues.ERR_QUEUE_FULL\n\
  * None (error code not known)\n\
 \n\
 The \"id\" attribute identifies the targeted queue, if applicable and known.\n\
@@ -453,14 +462,15 @@ typedef struct _queue {
     PyThread_type_lock mutex;
     int alive;
     struct _queueitems {
-        int64_t count;
+        Py_ssize_t maxsize;
+        Py_ssize_t count;
         _queueitem *first;
         _queueitem *last;
     } items;
 } _queue;
 
 static int
-_queue_init(_queue *queue)
+_queue_init(_queue *queue, Py_ssize_t maxsize)
 {
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
@@ -469,6 +479,9 @@ _queue_init(_queue *queue)
     *queue = (_queue){
         .mutex = mutex,
         .alive = 1,
+        .items = {
+            .maxsize = maxsize,
+        },
     };
     return 0;
 }
@@ -554,6 +567,15 @@ _queue_add(_queue *queue, _PyCrossInterpreterData *data)
         return err;
     }
 
+    Py_ssize_t maxsize = queue->items.maxsize;
+    if (maxsize <= 0) {
+        maxsize = PY_SSIZE_T_MAX;
+    }
+    if (queue->items.count >= maxsize) {
+        _queue_unlock(queue);
+        return ERR_QUEUE_FULL;
+    }
+
     _queueitem *item = _queueitem_new(data);
     if (item == NULL) {
         _queue_unlock(queue);
@@ -581,6 +603,7 @@ _queue_next(_queue *queue, _PyCrossInterpreterData **p_data)
         return err;
     }
 
+    assert(queue->items.count >= 0);
     _queueitem *item = queue->items.first;
     if (item == NULL) {
         _queue_unlock(queue);
@@ -599,6 +622,35 @@ _queue_next(_queue *queue, _PyCrossInterpreterData **p_data)
 }
 
 static int
+_queue_get_maxsize(_queue *queue, Py_ssize_t *p_maxsize)
+{
+    int err = _queue_lock(queue);
+    if (err < 0) {
+        return err;
+    }
+
+    *p_maxsize = queue->items.maxsize;
+
+    _queue_unlock(queue);
+    return 0;
+}
+
+static int
+_queue_is_full(_queue *queue, int *p_is_full)
+{
+    int err = _queue_lock(queue);
+    if (err < 0) {
+        return err;
+    }
+
+    assert(queue->items.count <= queue->items.maxsize);
+    *p_is_full = queue->items.count == queue->items.maxsize;
+
+    _queue_unlock(queue);
+    return 0;
+}
+
+static int
 _queue_get_count(_queue *queue, Py_ssize_t *p_count)
 {
     int err = _queue_lock(queue);
@@ -606,9 +658,7 @@ _queue_get_count(_queue *queue, Py_ssize_t *p_count)
         return err;
     }
 
-    // Get the number of queued objects.
-    assert(queue->items.count <= PY_SSIZE_T_MAX);
-    *p_count = (Py_ssize_t)queue->items.count;
+    *p_count = queue->items.count;
 
     _queue_unlock(queue);
     return 0;
@@ -914,13 +964,13 @@ _queue_free(_queue *queue)
 
 // Create a new queue.
 static int64_t
-queue_create(_queues *queues)
+queue_create(_queues *queues, Py_ssize_t maxsize)
 {
     _queue *queue = GLOBAL_MALLOC(_queue);
     if (queue == NULL) {
         return ERR_QUEUE_ALLOC;
     }
-    int err = _queue_init(queue);
+    int err = _queue_init(queue, maxsize);
     if (err < 0) {
         GLOBAL_FREE(queue);
         return (int64_t)err;
@@ -1034,6 +1084,31 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
     return 0;
 }
 
+static int
+queue_get_maxsize(_queues *queues, int64_t qid, Py_ssize_t *p_maxsize)
+{
+    _queue *queue = NULL;
+    int err = _queues_lookup(queues, qid, &queue);
+    if (err < 0) {
+        return err;
+    }
+    err = _queue_get_maxsize(queue, p_maxsize);
+    _queue_unmark_waiter(queue, queues->mutex);
+    return err;
+}
+
+static int
+queue_is_full(_queues *queues, int64_t qid, int *p_is_full)
+{
+    _queue *queue = NULL;
+    int err = _queues_lookup(queues, qid, &queue);
+    if (err < 0) {
+        return err;
+    }
+    err = _queue_is_full(queue, p_is_full);
+    _queue_unmark_waiter(queue, queues->mutex);
+    return err;
+}
 
 static int
 queue_get_count(_queues *queues, int64_t qid, Py_ssize_t *p_count)
@@ -1264,20 +1339,30 @@ qidarg_converter(PyObject *arg, void *ptr)
 
 
 static PyObject *
-queuesmod_create(PyObject *self, PyObject *Py_UNUSED(ignored))
+queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    int64_t qid = queue_create(&_globals.queues);
+    static char *kwlist[] = {"maxsize", NULL};
+    Py_ssize_t maxsize = -1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|n:create", kwlist,
+                                     &maxsize)) {
+        return NULL;
+    }
+
+    int64_t qid = queue_create(&_globals.queues, maxsize);
     if (qid < 0) {
-        (void)handle_queue_error(-1, self, qid);
+        (void)handle_queue_error((int)qid, self, qid);
         return NULL;
     }
 
     PyObject *qidobj = PyLong_FromLongLong(qid);
     if (qidobj == NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
         int err = queue_destroy(&_globals.queues, qid);
         if (handle_queue_error(err, self, qid)) {
             // XXX issue a warning?
+            PyErr_Clear();
         }
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
 
@@ -1464,6 +1549,59 @@ Release a reference to the queue.\n\
 The queue is destroyed once there are no references left.");
 
 static PyObject *
+queuesmod_get_maxsize(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"qid", NULL};
+    qidarg_converter_data qidarg;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&:get_maxsize", kwlist,
+                                     qidarg_converter, &qidarg)) {
+        return NULL;
+    }
+    int64_t qid = qidarg.id;
+
+    Py_ssize_t maxsize = -1;
+    int err = queue_get_maxsize(&_globals.queues, qid, &maxsize);
+    if (handle_queue_error(err, self, qid)) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(maxsize);
+}
+
+PyDoc_STRVAR(queuesmod_get_maxsize_doc,
+"get_maxsize(qid)\n\
+\n\
+Return the maximum number of items in the queue.");
+
+static PyObject *
+queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"qid", NULL};
+    qidarg_converter_data qidarg;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&:is_full", kwlist,
+                                     qidarg_converter, &qidarg)) {
+        return NULL;
+    }
+    int64_t qid = qidarg.id;
+
+    int is_full;
+    int err = queue_is_full(&_globals.queues, qid, &is_full);
+    if (handle_queue_error(err, self, qid)) {
+        return NULL;
+    }
+    if (is_full) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+PyDoc_STRVAR(queuesmod_is_full_doc,
+"is_full(qid)\n\
+\n\
+Return true if the queue has a maxsize and has reached it.");
+
+static PyObject *
 queuesmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
@@ -1513,8 +1651,8 @@ queuesmod__register_queue_type(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                     queuesmod_create,
-     METH_NOARGS,                  queuesmod_create_doc},
+    {"create",                     _PyCFunction_CAST(queuesmod_create),
+     METH_VARARGS | METH_KEYWORDS, queuesmod_create_doc},
     {"destroy",                    _PyCFunction_CAST(queuesmod_destroy),
      METH_VARARGS | METH_KEYWORDS, queuesmod_destroy_doc},
     {"list_all",                   queuesmod_list_all,
@@ -1527,6 +1665,10 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, queuesmod_bind_doc},
     {"release",                    _PyCFunction_CAST(queuesmod_release),
      METH_VARARGS | METH_KEYWORDS, queuesmod_release_doc},
+    {"get_maxsize",                _PyCFunction_CAST(queuesmod_get_maxsize),
+     METH_VARARGS | METH_KEYWORDS, queuesmod_get_maxsize_doc},
+    {"is_full",                    _PyCFunction_CAST(queuesmod_is_full),
+     METH_VARARGS | METH_KEYWORDS, queuesmod_is_full_doc},
     {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_count_doc},
     {"_register_queue_type",       _PyCFunction_CAST(queuesmod__register_queue_type),

@@ -40,16 +40,17 @@ def _apply_subclass(exc):
         exc.__class__ = QueueNotFoundError
     elif exc.errcode is _queues.ERR_QUEUE_EMPTY:
         exc.__class__ = QueueEmpty
+    elif exc.errcode is _queues.ERR_QUEUE_FULL:
+        exc.__class__ = QueueFull
 
 
-def create(maxsize=0):
+def create(maxsize=-1):
     """Return a new cross-interpreter queue.
 
     The queue may be used to pass data safely between interpreters.
     """
-    # XXX honor maxsize
-    qid = _queues.create()
-    return Queue(qid, _maxsize=maxsize)
+    qid = _queues.create(maxsize)
+    return Queue(qid)
 
 
 def list_all():
@@ -64,19 +65,7 @@ _known_queues = weakref.WeakValueDictionary()
 class Queue:
     """A cross-interpreter queue."""
 
-    @classmethod
-    def _resolve_maxsize(cls, maxsize):
-        if maxsize is None:
-            maxsize = 0
-        elif not isinstance(maxsize, int):
-            raise TypeError(f'maxsize must be an int, got {maxsize!r}')
-        elif maxsize < 0:
-            maxsize = 0
-        else:
-            maxsize = int(maxsize)
-        return maxsize
-
-    def __new__(cls, id, /, *, _maxsize=None):
+    def __new__(cls, id, /):
         # There is only one instance for any given ID.
         if isinstance(id, int):
             id = int(id)
@@ -85,19 +74,14 @@ class Queue:
         try:
             self = _known_queues[id]
         except KeyError:
-            maxsize = cls._resolve_maxsize(_maxsize)
             self = super().__new__(cls)
             self._id = id
-            self._maxsize = maxsize
             _known_queues[id] = self
             try:
                 _queues.bind(id)
             except QueueError as exc:
                 _apply_subclass(exc)
                 raise  # re-raise
-        else:
-            if _maxsize is not None:
-                raise Exception('maxsize may not be changed')
         return self
 
     def __del__(self):
@@ -124,15 +108,17 @@ class Queue:
 
     @property
     def maxsize(self):
-        return self._maxsize
+        try:
+            return self._maxsize
+        except AttributeError:
+            self._maxsize = _queues.get_maxsize(self._id)
+            return self._maxsize
 
     def empty(self):
         return self.qsize() == 0
 
     def full(self):
-        if self._maxsize <= 0:
-            return False
-        return self.qsize() >= self._maxsize
+        return _queues.is_full(self._id)
 
     def qsize(self):
         try:
@@ -141,13 +127,30 @@ class Queue:
             _apply_subclass(exc)
             raise  # re-raise
 
-    def put(self, obj, timeout=None):
-        # XXX block if full
-        try:
-            _queues.put(self._id, obj)
-        except QueueError as exc:
-            _apply_subclass(exc)
-            raise  # re-raise
+    def put(self, obj, timeout=None, *,
+            _delay=10 / 1000,  # 10 milliseconds
+            ):
+        """Add the object to the queue.
+
+        This blocks while the queue is full.
+        """
+        if timeout is not None:
+            timeout = int(timeout)
+            if timeout < 0:
+                raise ValueError(f'timeout value must be non-negative')
+            end = time.time() + timeout
+        while True:
+            try:
+                _queues.put(self._id, obj)
+            except QueueError as exc:
+                if exc.errcode == _queues.ERR_QUEUE_FULL:
+                    if timeout is None or time.time() < end:
+                        time.sleep(_delay)
+                        continue
+                _apply_subclass(exc)
+                raise  # re-raise
+            else:
+                break
 
     def put_nowait(self, obj):
         # XXX raise QueueFull if full
@@ -158,9 +161,9 @@ class Queue:
             raise  # re-raise
 
     def get(self, timeout=None, *,
-             _sentinel=object(),
-             _delay=10 / 1000,  # 10 milliseconds
-             ):
+            _sentinel=object(),
+            _delay=10 / 1000,  # 10 milliseconds
+            ):
         """Return the next object from the queue.
 
         This blocks while the queue is empty.
