@@ -5,7 +5,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
-#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -141,17 +140,15 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
 
-        meta = _PyDict_GetItemWithError(mkw, &_Py_ID(metaclass));
+        if (PyDict_GetItemRef(mkw, &_Py_ID(metaclass), &meta) < 0) {
+            goto error;
+        }
         if (meta != NULL) {
-            Py_INCREF(meta);
             if (PyDict_DelItem(mkw, &_Py_ID(metaclass)) < 0) {
                 goto error;
             }
             /* metaclass is explicitly given, check if it's indeed a class */
             isclass = PyType_Check(meta);
-        }
-        else if (PyErr_Occurred()) {
-            goto error;
         }
     }
     if (meta == NULL) {
@@ -2265,6 +2262,11 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
                 goto _readline_errors;
             assert(PyBytes_Check(po));
             promptstr = PyBytes_AS_STRING(po);
+            if ((Py_ssize_t)strlen(promptstr) != PyBytes_GET_SIZE(po)) {
+                PyErr_SetString(PyExc_ValueError,
+                        "input: prompt string cannot contain null characters");
+                goto _readline_errors;
+            }
         }
         else {
             po = NULL;

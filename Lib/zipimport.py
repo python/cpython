@@ -352,7 +352,7 @@ def _read_directory(archive):
 
     with fp:
         # GH-87235: On macOS all file descriptors for /dev/fd/N share the same
-        # file offset, reset the file offset after scanning the zipfile diretory
+        # file offset, reset the file offset after scanning the zipfile directory
         # to not cause problems when some runs 'python3 /dev/fd/9 9<some_script'
         start_offset = fp.tell()
         try:

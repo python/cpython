@@ -838,8 +838,7 @@ shutil
 
 * :func:`shutil.rmtree` now accepts a new argument *onexc* which is an
   error handler like *onerror* but which expects an exception instance
-  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated and
-  will be removed in Python 3.14.
+  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated.
   (Contributed by Irit Katriel in :gh:`102828`.)
 
 * :func:`shutil.which` now consults the *PATHEXT* environment variable to
@@ -1261,8 +1260,8 @@ Deprecated
   :mod:`concurrent.futures` the fix is to use a different
   :mod:`multiprocessing` start method such as ``"spawn"`` or ``"forkserver"``.
 
-* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated and will be removed
-  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
+* :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated;
+  use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
 * :mod:`sqlite3`:
 
@@ -1324,7 +1323,8 @@ Deprecated
   ``int``, convert to int explicitly: ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
-* Accessing ``co_lnotab`` on code objects was deprecated in Python 3.10 via :pep:`626`,
+* Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
+  Python 3.10 via :pep:`626`,
   but it only got a proper :exc:`DeprecationWarning` in 3.12,
   therefore it will be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
@@ -1431,7 +1431,7 @@ and will be removed in Python 3.14.
 
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
-* The ``co_lnotab`` attribute of code objects.
+* The :attr:`~codeobject.co_lnotab` attribute of code objects.
 
 Pending Removal in Python 3.15
 ------------------------------
@@ -1640,7 +1640,10 @@ locale
   use :func:`locale.format_string` instead.
   (Contributed by Victor Stinner in :gh:`94226`.)
 
-* ``smtpd``: The module has been removed according to the schedule in :pep:`594`,
+smtpd
+-----
+
+* The ``smtpd`` module has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
   Use aiosmtpd_ PyPI module or any other
   :mod:`asyncio`-based server instead.
@@ -1773,6 +1776,14 @@ Others
   (*ssl_context* in :mod:`imaplib`) instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
+* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
+  (Contributed by Nikita Sobolev in :gh:`99482`.)
+
+* Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
+  from :mod:`ctypes` module.
+  (Contributed by Nikita Sobolev in :gh:`99285`.)
+
+
 .. _whatsnew312-porting-to-python312:
 
 Porting to Python 3.12
@@ -1883,6 +1894,15 @@ Changes in the Python API
 
   * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
     raise a :exc:`TabError`.
+
+* The :mod:`threading` module now expects the :mod:`!_thread` module to have
+  an ``_is_main_interpreter`` attribute.  It is a function with no
+  arguments that returns ``True`` if the current interpreter is the
+  main interpreter.
+
+  Any library or application that provides a custom ``_thread`` module
+  should provide ``_is_main_interpreter()``.
+  (See :gh:`112826`.)
 
 Build Changes
 =============
@@ -2424,10 +2444,3 @@ Removed
 
 * Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
-
-* Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
-  (Contributed by Nikita Sobolev in :gh:`99482`.)
-
-* Remove ``_use_broken_old_ctypes_structure_semantics_`` flag
-  from :mod:`ctypes` module.
-  (Contributed by Nikita Sobolev in :gh:`99285`.)

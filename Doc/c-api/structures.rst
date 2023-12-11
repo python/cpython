@@ -419,14 +419,14 @@ Accessing attributes of extension types
 
          The string should be static, no copy is made of it.
 
-   .. c:member:: Py_ssize_t offset
-
-      The offset in bytes that the member is located on the type’s object struct.
-
    .. c:member:: int type
 
       The type of the member in the C struct.
       See :ref:`PyMemberDef-types` for the possible values.
+
+   .. c:member:: Py_ssize_t offset
+
+      The offset in bytes that the member is located on the type’s object struct.
 
    .. c:member:: int flags
 
@@ -592,7 +592,7 @@ Macro name                       C type                        Python type
 
    (*): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;
-   with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
+   with :c:macro:`!Py_T_STRING_INPLACE` the string is stored directly
    in the structure.
 
    (**): String of length 1. Only ASCII is accepted.
