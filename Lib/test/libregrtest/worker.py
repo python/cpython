@@ -4,10 +4,10 @@ import os
 from typing import Any, NoReturn
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, Py_DEBUG
 
 from .setup import setup_process, setup_test_dir
-from .runtests import RunTests, JsonFile, JsonFileType
+from .runtests import WorkerRunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, TestFilter,
@@ -17,7 +17,7 @@ from .utils import (
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
-def create_worker_process(runtests: RunTests, output_fd: int,
+def create_worker_process(runtests: WorkerRunTests, output_fd: int,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
@@ -30,6 +30,8 @@ def create_worker_process(runtests: RunTests, output_fd: int,
         python_opts = [opt for opt in python_opts if opt != "-E"]
     else:
         executable = (sys.executable,)
+    if runtests.coverage:
+        python_opts.append("-Xpresite=test.cov")
     cmd = [*executable, *python_opts,
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.libregrtest.worker',
@@ -71,7 +73,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
 
 
 def worker_process(worker_json: StrJSON) -> NoReturn:
-    runtests = RunTests.from_json(worker_json)
+    runtests = WorkerRunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: TestFilter = runtests.match_tests
     json_file: JsonFile = runtests.json_file
@@ -87,6 +89,18 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
             print(f"Re-running {test_name} in verbose mode", flush=True)
 
     result = run_single_test(test_name, runtests)
+    if runtests.coverage:
+        if "test.cov" in sys.modules:  # imported by -Xpresite=
+            result.covered_lines = list(sys.modules["test.cov"].coverage)
+        elif not Py_DEBUG:
+            print(
+                "Gathering coverage in worker processes requires --with-pydebug",
+                flush=True,
+            )
+        else:
+            raise LookupError(
+                "`test.cov` not found in sys.modules but coverage wanted"
+            )
 
     if json_file.file_type == JsonFileType.STDOUT:
         print()

@@ -906,6 +906,7 @@ def _dump():  # htest # (not really, but ignore in coverage)
     dumpCfg(idleConf.userCfg)
     print('\nlines = ', line, ', crc = ', crc, sep='')
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_config', verbosity=2, exit=False)

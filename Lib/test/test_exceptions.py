@@ -1791,6 +1791,20 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
+    def test_memory_error_in_subinterp(self):
+        # gh-109894: subinterpreters shouldn't count on last resort memory error
+        # when MemoryError is raised through PyErr_NoMemory() call,
+        # and should preallocate memory errors as does the main interpreter.
+        # interp.static_objects.last_resort_memory_error.args
+        # should be initialized to empty tuple to avoid crash on attempt to print it.
+        code = f"""if 1:
+            import _testcapi
+            _testcapi.run_in_subinterp(\"[0]*{sys.maxsize}\")
+            exit(0)
+        """
+        rc, _, err = script_helper.assert_python_ok("-c", code)
+        self.assertIn(b'MemoryError', err)
+
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
@@ -1829,6 +1843,13 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertIn("nonsense", err.getvalue())
         self.assertIn("ZeroDivisionError", err.getvalue())
+
+    def test_gh_111654(self):
+        def f():
+            class TestClass:
+                TestClass
+
+        self.assertRaises(NameError, f)
 
     # Note: name suggestion tests live in `test_traceback`.
 
@@ -2059,6 +2080,7 @@ class AssertionErrorTests(unittest.TestCase):
              """,
                 [
                     '    1 < 2 and',
+                    '    3 > 4',
                     'AssertionError',
                 ],
             ),
@@ -2066,7 +2088,7 @@ class AssertionErrorTests(unittest.TestCase):
         for source, expected in cases:
             with self.subTest(source):
                 result = self.write_source(source)
-                self.assertEqual(result[-2:], expected)
+                self.assertEqual(result[-len(expected):], expected)
 
 
 class SyntaxErrorTests(unittest.TestCase):

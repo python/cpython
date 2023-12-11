@@ -285,11 +285,16 @@ static const char usage_envvars[] =
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
-"PYTHONNODEBUGRANGES: If this variable is set, it disables the inclusion of the \n"
+"PYTHONNODEBUGRANGES: if this variable is set, it disables the inclusion of the \n"
 "   tables mapping extra location information (end line, start column offset \n"
 "   and end column offset) to every instruction in code objects. This is useful \n"
 "   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n"
+"PYTHON_FROZEN_MODULES   : if this variable is set, it determines whether or not \n"
+"   frozen modules should be used. The default is \"on\" (or \"off\" if you are \n"
+"   running a local build).\n"
+"PYTHON_COLORS           : If this variable is set to 1, the interpreter will"
+"   colorize various kinds of output. Setting it to 0 deactivates this behavior.\n"
 "These variables have equivalent command-line parameters (see --help for details):\n"
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
@@ -2130,6 +2135,19 @@ config_init_import(PyConfig *config, int compute_path_config)
     status = _PyConfig_InitPathConfig(config, compute_path_config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    const char *env = config_get_env(config, "PYTHON_FROZEN_MODULES");
+    if (env == NULL) {
+    }
+    else if (strcmp(env, "on") == 0) {
+        config->use_frozen_modules = 1;
+    }
+    else if (strcmp(env, "off") == 0) {
+        config->use_frozen_modules = 0;
+    } else {
+        return PyStatus_Error("bad value for PYTHON_FROZEN_MODULES "
+                              "(expected \"on\" or \"off\")");
     }
 
     /* -X frozen_modules=[on|off] */

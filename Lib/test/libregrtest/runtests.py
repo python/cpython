@@ -33,7 +33,8 @@ class JsonFile:
                 popen_kwargs['pass_fds'] = [self.file]
             case JsonFileType.WINDOWS_HANDLE:
                 # Windows handle
-                startupinfo = subprocess.STARTUPINFO()
+                # We run mypy with `--platform=linux` so it complains about this:
+                startupinfo = subprocess.STARTUPINFO()  # type: ignore[attr-defined]
                 startupinfo.lpAttributeList = {"handle_list": [self.file]}
                 popen_kwargs['startupinfo'] = startupinfo
 
@@ -85,18 +86,23 @@ class RunTests:
     hunt_refleak: HuntRefleak | None
     test_dir: StrPath | None
     use_junit: bool
+    coverage: bool
     memory_limit: str | None
     gc_threshold: int | None
     use_resources: tuple[str, ...]
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
-    json_file: JsonFile | None
 
-    def copy(self, **override):
+    def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)
         state.update(override)
         return RunTests(**state)
+
+    def create_worker_runtests(self, **override):
+        state = dataclasses.asdict(self)
+        state.update(override)
+        return WorkerRunTests(**state)
 
     def get_match_tests(self, test_name) -> FilterTuple | None:
         if self.match_tests_dict is not None:
@@ -118,13 +124,6 @@ class RunTests:
         else:
             yield from self.tests
 
-    def as_json(self) -> StrJSON:
-        return json.dumps(self, cls=_EncodeRunTests)
-
-    @staticmethod
-    def from_json(worker_json: StrJSON) -> 'RunTests':
-        return json.loads(worker_json, object_hook=_decode_runtests)
-
     def json_file_use_stdout(self) -> bool:
         # Use STDOUT in two cases:
         #
@@ -139,9 +138,21 @@ class RunTests:
         )
 
 
+@dataclasses.dataclass(slots=True, frozen=True)
+class WorkerRunTests(RunTests):
+    json_file: JsonFile
+
+    def as_json(self) -> StrJSON:
+        return json.dumps(self, cls=_EncodeRunTests)
+
+    @staticmethod
+    def from_json(worker_json: StrJSON) -> 'WorkerRunTests':
+        return json.loads(worker_json, object_hook=_decode_runtests)
+
+
 class _EncodeRunTests(json.JSONEncoder):
     def default(self, o: Any) -> dict[str, Any]:
-        if isinstance(o, RunTests):
+        if isinstance(o, WorkerRunTests):
             result = dataclasses.asdict(o)
             result["__runtests__"] = True
             return result
@@ -156,6 +167,6 @@ def _decode_runtests(data: dict[str, Any]) -> RunTests | dict[str, Any]:
             data['hunt_refleak'] = HuntRefleak(**data['hunt_refleak'])
         if data['json_file']:
             data['json_file'] = JsonFile(**data['json_file'])
-        return RunTests(**data)
+        return WorkerRunTests(**data)
     else:
         return data
