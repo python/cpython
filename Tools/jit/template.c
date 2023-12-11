@@ -44,13 +44,9 @@
     do {                \
     } while (0)
 
-// Pretend to modify the patched values to keep clang from being clever and
-// optimizing them based on valid extern addresses, which must be in
-// range(1, 2**31 - 2**24):
 #define PATCH_VALUE(TYPE, NAME, ALIAS)  \
     extern void ALIAS;                  \
-    TYPE NAME = (TYPE)(uint64_t)&ALIAS; \
-    asm("" : "+r" (NAME));  // XXX?
+    TYPE NAME = (TYPE)(uint64_t)&ALIAS;
 
 #define PATCH_JUMP(ALIAS)                                    \
     extern void ALIAS;                                       \
