@@ -298,6 +298,11 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+re
+--
+* Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
+  :exc:`!re.error` is kept for backward compatibility.
+
 sqlite3
 -------
 
