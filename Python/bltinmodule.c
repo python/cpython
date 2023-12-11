@@ -1768,7 +1768,7 @@ builtin_locals_impl(PyObject *module)
 static PyObject *
 min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
 {
-    PyObject *it, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
+    PyObject *it = NULL, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
     PyObject *defaultval = NULL;
     static const char * const keywords[] = {"key", "default", NULL};
     static _PyArg_Parser _parser_min = {"|$OO:min", keywords, 0};
@@ -1807,12 +1807,22 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
 
     maxitem = NULL; /* the result */
     maxval = NULL;  /* the value associated with the result */
-    int i = 0;
-    while (positional ?
-            ((i < nargs) && (item = args[i++]))
-            : !!(item = PyIter_Next(it))) {
-        if (positional) {
+    while (1) {
+        if (it == NULL) {
+            if (nargs-- <= 0) {
+                break;
+            }
+            item = *args++;
             Py_INCREF(item);
+        }
+        else {
+            item = PyIter_Next(it);
+            if (item == NULL) {
+                if (PyErr_Occurred()) {
+                    goto Fail_it;
+                }
+                break;
+            }
         }
 
         /* get the value from the key function */
@@ -1848,8 +1858,6 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
             }
         }
     }
-    if (PyErr_Occurred())
-        goto Fail_it;
     if (maxval == NULL) {
         assert(maxitem == NULL);
         if (defaultval != NULL) {
@@ -1861,9 +1869,7 @@ min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
     }
     else
         Py_DECREF(maxval);
-    if (!positional) {
-        Py_DECREF(it);
-    }
+    Py_XDECREF(it);
     return maxitem;
 
 Fail_it_item_and_val:
@@ -1873,9 +1879,7 @@ Fail_it_item:
 Fail_it:
     Py_XDECREF(maxval);
     Py_XDECREF(maxitem);
-    if (!positional) {
-        Py_DECREF(it);
-    }
+    Py_XDECREF(it);
     return NULL;
 }
 
