@@ -129,13 +129,6 @@ arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
 arg_parser.add_argument(
-    "-e",
-    "--executor-cases",
-    type=str,
-    help="Write executor cases to this file",
-    default=DEFAULT_EXECUTOR_OUTPUT,
-)
-arg_parser.add_argument(
     "-a",
     "--abstract-interpreter-cases",
     type=str,
@@ -846,7 +839,6 @@ def main() -> None:
     a.assign_opcode_ids()
     a.write_opcode_targets(args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
-    a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
     a.write_abstract_interpreter_instructions(
         args.abstract_interpreter_cases, args.emit_line_directives
     )
