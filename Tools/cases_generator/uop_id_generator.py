@@ -33,6 +33,7 @@ def generate_uop_ids(filenames: str, analysis: Analysis, outfile: TextIO, distin
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 """)
 
     next_id = 1 if distinct_namespace else 300
