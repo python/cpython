@@ -76,6 +76,7 @@ Include/internal/pycore_ast_state.h                 generated
 Include/internal/pycore_opcode.h                    generated
 Include/internal/pycore_opcode_metadata.h           generated
 Include/internal/pycore_*_generated.h               generated
+Include/internal/pycore_uop_ids.h                   generated
 Include/opcode.h                                    generated
 Include/opcode_ids.h                                generated
 Include/token.h                                     generated
