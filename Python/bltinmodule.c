@@ -3063,8 +3063,8 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
-    {"max", (PyCFunction)(void(*)(void))builtin_max, METH_FASTCALL | METH_KEYWORDS, max_doc},
-    {"min", (PyCFunction)(void(*)(void))builtin_min, METH_FASTCALL | METH_KEYWORDS, min_doc},
+    {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},
+    {"min", _PyCFunction_CAST(builtin_min), METH_FASTCALL | METH_KEYWORDS, min_doc},
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
     BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
