@@ -791,8 +791,9 @@ functools
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
-  be introspected.  It also copies :attr:`__annotations__` if defined.  And now
-  it also gracefully skips over missing attributes such as :attr:`__doc__` which
+  be introspected.  It also copies :attr:`~function.__annotations__` if
+  defined.  And now it also gracefully skips over missing attributes such as
+  :attr:`~function.__doc__` which
   might not be defined for the wrapped callable.
 
   In the above example, the cache can be removed by recovering the original

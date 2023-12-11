@@ -2405,8 +2405,8 @@ Changes in the Python API
   storage).  (:issue:`17094`.)
 
 * Parameter names in ``__annotations__`` dicts are now mangled properly,
-  similarly to ``__kwdefaults__``.  (Contributed by Yury Selivanov in
-  :issue:`20625`.)
+  similarly to :attr:`~function.__kwdefaults__`.
+  (Contributed by Yury Selivanov in :issue:`20625`.)
 
 * :attr:`hashlib.hash.name` now always returns the identifier in lower case.
   Previously some builtin hashes had uppercase names, but now that it is a
