@@ -1108,7 +1108,7 @@ deoptimize:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     // Increment side exit counter for this uop
     int pc = next_uop - 1 - current_executor->trace;
-    uintptr_t *pcounter = current_executor->extra + pc;
+    uint16_t *pcounter = current_executor->counters + pc;
     *pcounter += 1;
     if (*pcounter == 16 &&  // TODO: use resume_threshold
         tstate->interp->optimizer != &_PyOptimizer_Default &&
@@ -1120,7 +1120,7 @@ deoptimize:
         DPRINTF(2, "--> %s @ %d in %p has %d side exits\n",
                 _PyUOpName(uopcode), pc, current_executor, (int)(*pcounter));
         DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[opcode]);
-        // The counter will cycle around in 2**64 executions :-)
+        // The counter will cycle around once the 16 bits overflow
         int optimized = _PyOptimizer_Anywhere(frame, src, dest, stack_pointer);
         if (optimized < 0) {
             goto error_tier_two;
