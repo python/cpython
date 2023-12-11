@@ -2303,9 +2303,11 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(StatisticsError):
             geometric_mean([])                      # empty input
         with self.assertRaises(StatisticsError):
-            geometric_mean([3.5, 0.0, 5.25])        # zero input
-        with self.assertRaises(StatisticsError):
             geometric_mean([3.5, -4.0, 5.25])       # negative input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([0.0, -4.0, 5.25])       # negative input with zero
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, -math.inf, 5.25])  # negative infinity
         with self.assertRaises(StatisticsError):
             geometric_mean(iter([]))                # empty iterator
         with self.assertRaises(TypeError):
@@ -2327,6 +2329,12 @@ class TestGeometricMean(unittest.TestCase):
         self.assertTrue(math.isinf(geometric_mean([10, Inf])), 'infinity')
         with self.assertRaises(ValueError):
             geometric_mean([Inf, -Inf])
+
+        # Cases with zero
+        self.assertEqual(geometric_mean([3, 0.0, 5]), 0.0)         # Any zero gives a zero
+        self.assertEqual(geometric_mean([3, -0.0, 5]), 0.0)        # Negative zero allowed
+        self.assertTrue(math.isnan(geometric_mean([0, NaN])))      # NaN beats zero
+        self.assertTrue(math.isnan(geometric_mean([0, Inf])))      # Because 0.0 * Inf -> NaN
 
     def test_mixed_int_and_float(self):
         # Regression test for b.p.o. issue #28327

@@ -1541,6 +1541,9 @@ property_deleter(PyObject *self, PyObject *deleter)
 
 
 PyDoc_STRVAR(set_name_doc,
+             "__set_name__($self, owner, name, /)\n"
+             "--\n"
+             "\n"
              "Method to set name of a property.");
 
 static PyObject *

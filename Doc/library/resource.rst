@@ -13,7 +13,7 @@
 This module provides basic mechanisms for measuring and controlling system
 resources utilized by a program.
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: Unix, not Emscripten, not WASI.
 
 Symbolic constants are used to specify particular system resources and to
 request usage information about either the current process or its children.

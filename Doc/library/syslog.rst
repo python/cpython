@@ -11,11 +11,11 @@ This module provides an interface to the Unix ``syslog`` library routines.
 Refer to the Unix manual pages for a detailed description of the ``syslog``
 facility.
 
+.. availability:: Unix, not Emscripten, not WASI.
+
 This module wraps the system ``syslog`` family of routines.  A pure Python
 library that can speak to a syslog server is available in the
 :mod:`logging.handlers` module as :class:`SysLogHandler`.
-
-.. include:: ../includes/wasm-notavail.rst
 
 The module defines the following functions:
 

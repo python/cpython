@@ -23,7 +23,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
-:func:`.socket` function returns a :dfn:`socket object` whose methods implement
+:func:`~socket.socket` function returns a :dfn:`socket object` whose methods implement
 the various socket system calls.  Parameter types are somewhat higher-level than
 in the C interface: as with :meth:`read` and :meth:`write` operations on Python
 files, buffer allocation on receive operations is automatic, and buffer length
@@ -185,7 +185,7 @@ created.  Socket addresses are represented as follows:
   .. versionadded:: 3.7
 
 - :const:`AF_PACKET` is a low-level interface directly to network devices.
-  The packets are represented by the tuple
+  The addresses are represented by the tuple
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
@@ -193,7 +193,6 @@ created.  Socket addresses are represented as follows:
     May be :data:`ETH_P_ALL` to capture all protocols,
     one of the :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
     or any other Ethernet protocol number.
-    Value must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -348,7 +347,7 @@ Constants
           AF_INET6
 
    These constants represent the address (and protocol) families, used for the
-   first argument to :func:`.socket`.  If the :const:`AF_UNIX` constant is not
+   first argument to :func:`~socket.socket`.  If the :const:`AF_UNIX` constant is not
    defined then this protocol is unsupported.  More constants may be available
    depending on the system.
 
@@ -365,7 +364,7 @@ Constants
           SOCK_SEQPACKET
 
    These constants represent the socket types, used for the second argument to
-   :func:`.socket`.  More constants may be available depending on the system.
+   :func:`~socket.socket`.  More constants may be available depending on the system.
    (Only :const:`SOCK_STREAM` and :const:`SOCK_DGRAM` appear to be generally
    useful.)
 
@@ -404,7 +403,7 @@ Constants
 
    Many constants of these forms, documented in the Unix documentation on sockets
    and/or the IP protocol, are also defined in the socket module. They are
-   generally used in arguments to the :meth:`setsockopt` and :meth:`getsockopt`
+   generally used in arguments to the :meth:`~socket.setsockopt` and :meth:`~socket.getsockopt`
    methods of socket objects.  In most cases, only those symbols that are defined
    in the Unix header files are defined; for a few symbols, default values are
    provided.
@@ -770,7 +769,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
-   as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
+   as for the :func:`~socket.socket` function above. The default family is :const:`AF_UNIX`
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
 
    The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
@@ -866,7 +865,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
    :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
-   family, socket type and protocol number are as for the :func:`.socket` function
+   family, socket type and protocol number are as for the :func:`~socket.socket` function
    above. The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
    This function is rarely needed, but can be used to get or set socket options on
@@ -931,7 +930,7 @@ The :mod:`socket` module also offers various network-related services:
    ``(family, type, proto, canonname, sockaddr)``
 
    In these tuples, *family*, *type*, *proto* are all integers and are
-   meant to be passed to the :func:`.socket` function.  *canonname* will be
+   meant to be passed to the :func:`~socket.socket` function.  *canonname* will be
    a string representing the canonical name of the *host* if
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
@@ -1047,7 +1046,7 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: getprotobyname(protocolname)
 
    Translate an internet protocol name (for example, ``'icmp'``) to a constant
-   suitable for passing as the (optional) third argument to the :func:`.socket`
+   suitable for passing as the (optional) third argument to the :func:`~socket.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
    automatically if the protocol is omitted or zero.
@@ -1331,7 +1330,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket *sock*.
    The *fds* parameter is a sequence of file descriptors.
-   Consult :meth:`sendmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
@@ -1345,7 +1344,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Receive up to *maxfds* file descriptors from an :const:`AF_UNIX` socket *sock*.
    Return ``(msg, list(fds), flags, addr)``.
-   Consult :meth:`recvmsg` for the documentation of these parameters.
+   Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
@@ -2064,10 +2063,10 @@ Example
 
 Here are four minimal example programs using the TCP/IP protocol: a server that
 echoes all data that it receives back (servicing only one client), and a client
-using it.  Note that a server must perform the sequence :func:`.socket`,
+using it.  Note that a server must perform the sequence :func:`~socket.socket`,
 :meth:`~socket.bind`, :meth:`~socket.listen`, :meth:`~socket.accept` (possibly
 repeating the :meth:`~socket.accept` to service more than one client), while a
-client only needs the sequence :func:`.socket`, :meth:`~socket.connect`.  Also
+client only needs the sequence :func:`~socket.socket`, :meth:`~socket.connect`.  Also
 note that the server does not :meth:`~socket.sendall`/:meth:`~socket.recv` on
 the socket it is listening on but on the new socket returned by
 :meth:`~socket.accept`.

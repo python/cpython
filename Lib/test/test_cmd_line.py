@@ -153,6 +153,17 @@ class CmdLineTest(unittest.TestCase):
                 res = assert_python_ok(*cmd)
                 self.assertRegex(res.out.decode('utf-8'), expected)
 
+    def test_env_var_frozen_modules(self):
+        tests = {
+            ('on', 'FrozenImporter'),
+            ('off', 'SourceFileLoader'),
+        }
+        for raw, expected in tests:
+            cmd = ['-c', 'import os; print(os.__spec__.loader, end="")']
+            with self.subTest(raw):
+                res = assert_python_ok(*cmd, PYTHON_FROZEN_MODULES=raw)
+                self.assertRegex(res.out.decode('utf-8'), expected)
+
     def test_run_module(self):
         # Test expected operation of the '-m' switch
         # Switch needs an argument
@@ -468,8 +479,9 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
         self.assertEqual(120, rc)
-        self.assertRegex(err.decode('ascii', 'ignore'),
-                         'Exception ignored in.*\nOSError: .*')
+        self.assertIn(b'Exception ignored on flushing sys.stdout:\n'
+                      b'OSError: '.replace(b'\n', os.linesep.encode()),
+                      err)
 
     def test_closed_stdout(self):
         # Issue #13444: if stdout has been explicitly closed, we should
@@ -803,6 +815,7 @@ class CmdLineTest(unittest.TestCase):
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()
+        mimalloc = support.with_mimalloc()
         if pymalloc:
             default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
@@ -820,6 +833,11 @@ class CmdLineTest(unittest.TestCase):
             tests.extend((
                 ('pymalloc', 'pymalloc'),
                 ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+        if mimalloc:
+            tests.extend((
+                ('mimalloc', 'mimalloc'),
+                ('mimalloc_debug', 'mimalloc_debug'),
             ))
 
         for env_var, name in tests:

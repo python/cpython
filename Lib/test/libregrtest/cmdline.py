@@ -2,8 +2,8 @@ import argparse
 import os.path
 import shlex
 import sys
-from test.support import os_helper
-from .utils import ALL_RESOURCES, RESOURCE_NAMES
+from test.support import os_helper, Py_DEBUG
+from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 
 USAGE = """\
@@ -161,7 +161,7 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = []
+        self.match_tests: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
@@ -448,8 +448,16 @@ def _parse_args(args, **kwargs):
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
-    if ns.use_mp is not None and ns.trace:
-        parser.error("-T and -j don't go together!")
+    if ns.trace:
+        if ns.use_mp is not None:
+            if not Py_DEBUG:
+                parser.error("need --with-pydebug to use -T and -j together")
+        else:
+            print(
+                "Warning: collecting coverage without -j is imprecise. Configure"
+                " --with-pydebug and run -m test -T -j for best results.",
+                file=sys.stderr
+            )
     if ns.python is not None:
         if ns.use_mp is None:
             parser.error("-p requires -j!")
@@ -493,10 +501,16 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
     if ns.verbose:
         ns.header = True
-    if ns.huntrleaks and ns.verbose3:
+    # When -jN option is used, a worker process does not use --verbose3
+    # and so -R 3:3 -jN --verbose3 just works as expected: there is no false
+    # alarm about memory leak.
+    if ns.huntrleaks and ns.verbose3 and ns.use_mp is None:
         ns.verbose3 = False
+        # run_single_test() replaces sys.stdout with io.StringIO if verbose3
+        # is true. In this case, huntrleaks sees an write into StringIO as
+        # a memory leak, whereas it is not (gh-71290).
         print("WARNING: Disable --verbose3 because it's incompatible with "
-              "--huntrleaks: see http://bugs.python.org/issue27103",
+              "--huntrleaks without -jN option",
               file=sys.stderr)
     if ns.forever:
         # --forever implies --failfast

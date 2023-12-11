@@ -15,6 +15,8 @@ from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
 from test.support import os_helper
+from test.support.import_helper import import_module
+from test.support.pty_helper import run_pty
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
@@ -671,6 +673,14 @@ def test_pdb_alias_command():
     ...     'pi o',
     ...     's',
     ...     'ps',
+    ...     'alias myp p %2',
+    ...     'alias myp',
+    ...     'alias myp p %1',
+    ...     'myp',
+    ...     'myp 1',
+    ...     'myp 1 2',
+    ...     'alias repeat_second_arg p "%* %2"',
+    ...     'repeat_second_arg 1 2 3',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -692,6 +702,20 @@ def test_pdb_alias_command():
     (Pdb) ps
     self.attr1 = 10
     self.attr2 = str
+    (Pdb) alias myp p %2
+    *** Replaceable parameters must be consecutive
+    (Pdb) alias myp
+    *** Unknown alias 'myp'
+    (Pdb) alias myp p %1
+    (Pdb) myp
+    *** Not enough arguments for alias 'myp'
+    (Pdb) myp 1
+    1
+    (Pdb) myp 1 2
+    *** Too many arguments for alias 'myp'
+    (Pdb) alias repeat_second_arg p "%* %2"
+    (Pdb) repeat_second_arg 1 2 3
+    '1 2 3 2'
     (Pdb) continue
     """
 
@@ -751,6 +775,59 @@ def test_pdb_where_command():
     -> g();
       <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    """
+
+def test_pdb_interact_command():
+    """Test interact command
+
+    >>> g = 0
+    >>> dict_g = {}
+
+    >>> def test_function():
+    ...     x = 1
+    ...     lst_local = []
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'interact',
+    ...     'x',
+    ...     'g',
+    ...     'x = 2',
+    ...     'g = 3',
+    ...     'dict_g["a"] = True',
+    ...     'lst_local.append(x)',
+    ...     'exit()',
+    ...     'p x',
+    ...     'p g',
+    ...     'p dict_g',
+    ...     'p lst_local',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_interact_command[2]>(4)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) interact
+    *pdb interact start*
+    ... x
+    1
+    ... g
+    0
+    ... x = 2
+    ... g = 3
+    ... dict_g["a"] = True
+    ... lst_local.append(x)
+    ... exit()
+    *exit from pdb interact command*
+    (Pdb) p x
+    1
+    (Pdb) p g
+    0
+    (Pdb) p dict_g
+    {'a': True}
+    (Pdb) p lst_local
+    [2]
     (Pdb) continue
     """
 
@@ -2327,6 +2404,31 @@ def test_pdb_issue_gh_108976():
     (Pdb) continue
     """
 
+
+def test_pdb_issue_gh_80731():
+    """See GH-80731
+
+    pdb should correctly print exception info if in an except block.
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'import sys',
+    ...     'sys.exc_info()',
+    ...     'continue'
+    ... ]):
+    ...     try:
+    ...         raise ValueError('Correct')
+    ...     except ValueError:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         pass
+    > <doctest test.test_pdb.test_pdb_issue_gh_80731[0]>(10)<module>()
+    -> pass
+    (Pdb) import sys
+    (Pdb) sys.exc_info()
+    (<class 'ValueError'>, ValueError('Correct'), <traceback object at ...>)
+    (Pdb) continue
+    """
+
+
 def test_pdb_ambiguous_statements():
     """See GH-104301
 
@@ -2347,6 +2449,30 @@ def test_pdb_ambiguous_statements():
     The value of n is 42
     > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
     -> with PdbTestInput([
+    (Pdb) continue
+    """
+
+def test_pdb_f_trace_lines():
+    """GH-80675
+
+    pdb should work even if f_trace_lines is set to False on some frames.
+
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import sys
+    ...     frame = sys._getframe()
+    ...     frame.f_trace_lines = False
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     if frame.f_trace_lines != False:
+    ...         print("f_trace_lines is not reset after continue!")
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_f_trace_lines[1]>(6)test_function()
+    -> if frame.f_trace_lines != False:
     (Pdb) continue
     """
 
@@ -2447,15 +2573,21 @@ class PdbTestCase(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.safe_path,
                      'PYTHONSAFEPATH changes default sys.path')
-    def _run_pdb(self, pdb_args, commands, expected_returncode=0):
+    def _run_pdb(self, pdb_args, commands,
+                 expected_returncode=0,
+                 extra_env=None):
         self.addCleanup(os_helper.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
+        if extra_env is not None:
+            env = os.environ | extra_env
+        else:
+            env = os.environ
         with subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+                env = {**env, 'PYTHONIOENCODING': 'utf-8'}
         ) as proc:
             stdout, stderr = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
@@ -2467,13 +2599,15 @@ class PdbTestCase(unittest.TestCase):
         )
         return stdout, stderr
 
-    def run_pdb_script(self, script, commands, expected_returncode=0):
+    def run_pdb_script(self, script, commands,
+                       expected_returncode=0,
+                       extra_env=None):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(os_helper.unlink, filename)
-        return self._run_pdb([filename], commands, expected_returncode)
+        return self._run_pdb([filename], commands, expected_returncode, extra_env)
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
@@ -3058,6 +3192,23 @@ def bœr():
 
             self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
 
+    def test_safe_path(self):
+        """ With safe_path set, pdb should not mangle sys.path[0]"""
+
+        script = textwrap.dedent("""
+            import sys
+            import random
+            print('sys.path[0] is', sys.path[0])
+        """)
+        commands = 'c\n'
+
+
+        with os_helper.temp_cwd() as cwd:
+            stdout, _ = self.run_pdb_script(script, commands, extra_env={'PYTHONSAFEPATH': '1'})
+
+            unexpected = f'sys.path[0] is {os.path.realpath(cwd)}'
+            self.assertNotIn(unexpected, stdout)
+
     def test_issue42383(self):
         with os_helper.temp_cwd() as cwd:
             with open('foo.py', 'w') as f:
@@ -3187,6 +3338,55 @@ class ChecklineTests(unittest.TestCase):
             db = pdb.Pdb()
             for lineno in range(num_lines):
                 self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
+
+
+@support.requires_subprocess()
+class PdbTestReadline(unittest.TestCase):
+    def setUpClass():
+        # Ensure that the readline module is loaded
+        # If this fails, the test is skipped because SkipTest will be raised
+        readline = import_module('readline')
+        if readline.backend == "editline":
+            raise unittest.SkipTest("libedit readline is not supported for pdb")
+
+    def test_basic_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+            # Concatenate strings so that the output doesn't appear in the source
+            print('hello' + '!')
+        """)
+
+        # List everything starting with 'co', there should be multiple matches
+        # then add ntin and complete 'contin' to 'continue'
+        input = b"co\t\tntin\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'commands', output)
+        self.assertIn(b'condition', output)
+        self.assertIn(b'continue', output)
+        self.assertIn(b'hello!', output)
+
+    def test_expression_completion(self):
+        script = textwrap.dedent("""
+            value = "speci"
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # Complete: value + 'al'
+        input = b"val\t + 'al'\n"
+        # Complete: p value + 'es'
+        input += b"p val\t + 'es'\n"
+        # Complete: $_frame
+        input += b"$_fra\t\n"
+        # Continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'special', output)
+        self.assertIn(b'species', output)
+        self.assertIn(b'$_frame', output)
 
 
 def load_tests(loader, tests, pattern):

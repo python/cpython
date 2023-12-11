@@ -306,13 +306,23 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertEqual(ns.use_mp, 2)
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid int value')
-                self.checkError([opt, '2', '-T'], "don't go together")
-                self.checkError([opt, '0', '-T'], "don't go together")
 
-    def test_coverage(self):
+    def test_coverage_sequential(self):
         for opt in '-T', '--coverage':
             with self.subTest(opt=opt):
-                ns = self.parse_args([opt])
+                with support.captured_stderr() as stderr:
+                    ns = self.parse_args([opt])
+                self.assertTrue(ns.trace)
+                self.assertIn(
+                    "collecting coverage without -j is imprecise",
+                    stderr.getvalue(),
+                )
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    def test_coverage_mp(self):
+        for opt in '-T', '--coverage':
+            with self.subTest(opt=opt):
+                ns = self.parse_args([opt, '-j1'])
                 self.assertTrue(ns.trace)
 
     def test_coverdir(self):
@@ -2021,6 +2031,25 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests,
                                   stats=len(tests), parallel=True)
 
+    def test_unload_tests(self):
+        # Test that unloading test modules does not break tests
+        # that import from other tests.
+        # The test execution order matters for this test.
+        # Both test_regrtest_a and test_regrtest_c which are executed before
+        # and after test_regrtest_b import a submodule from the test_regrtest_b
+        # package and use it in testing. test_regrtest_b itself does not import
+        # that submodule.
+        # Previously test_regrtest_c failed because test_regrtest_b.util in
+        # sys.modules was left after test_regrtest_a (making the import
+        # statement no-op), but new test_regrtest_b without the util attribute
+        # was imported for test_regrtest_b.
+        testdir = os.path.join(os.path.dirname(__file__),
+                               'regrtestdata', 'import_from_tests')
+        tests = [f'test_regrtest_{name}' for name in ('a', 'b', 'c')]
+        args = ['-Wd', '-E', '-bb', '-m', 'test', '--testdir=%s' % testdir, *tests]
+        output = self.run_python(args)
+        self.check_executed_tests(output, tests, stats=3)
+
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
         code = textwrap.dedent(r"""
@@ -2119,6 +2148,29 @@ class ArgsTestCase(BaseTestCase):
             exitcode = -int(signal.SIGSEGV)
             self.assertIn(f"Exit code {exitcode} (SIGSEGV)", output)
         self.check_line(output, "just before crash!", full=True, regex=False)
+
+    def test_verbose3(self):
+        code = textwrap.dedent(r"""
+            import unittest
+            from test import support
+
+            class VerboseTests(unittest.TestCase):
+                def test_pass(self):
+                    print("SPAM SPAM SPAM")
+        """)
+        testname = self.create_test(code=code)
+
+        # Run sequentially
+        output = self.run_tests("--verbose3", testname)
+        self.check_executed_tests(output, testname, stats=1)
+        self.assertNotIn('SPAM SPAM SPAM', output)
+
+        # -R option needs a debug build
+        if support.Py_DEBUG:
+            # Check for reference leaks, run in parallel
+            output = self.run_tests("-R", "3:3", "-j1", "--verbose3", testname)
+            self.check_executed_tests(output, testname, stats=1, parallel=True)
+            self.assertNotIn('SPAM SPAM SPAM', output)
 
 
 class TestUtils(unittest.TestCase):

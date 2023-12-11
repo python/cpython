@@ -376,8 +376,8 @@ class ThreadTests(BaseTestCase):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
         def fail_new_thread(*args):
             raise threading.ThreadError()
-        _start_new_thread = threading._start_new_thread
-        threading._start_new_thread = fail_new_thread
+        _start_joinable_thread = threading._start_joinable_thread
+        threading._start_joinable_thread = fail_new_thread
         try:
             t = threading.Thread(target=lambda: None)
             self.assertRaises(threading.ThreadError, t.start)
@@ -385,7 +385,7 @@ class ThreadTests(BaseTestCase):
                 t in threading._limbo,
                 "Failed to cleanup _limbo map on failure of Thread.start().")
         finally:
-            threading._start_new_thread = _start_new_thread
+            threading._start_joinable_thread = _start_joinable_thread
 
     def test_finalize_running_thread(self):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
@@ -481,6 +481,47 @@ class ThreadTests(BaseTestCase):
                     "#1703448 triggered after %d trials: %s" % (i, l))
         finally:
             sys.setswitchinterval(old_interval)
+
+    def test_join_from_multiple_threads(self):
+        # Thread.join() should be thread-safe
+        errors = []
+
+        def worker():
+            time.sleep(0.005)
+
+        def joiner(thread):
+            try:
+                thread.join()
+            except Exception as e:
+                errors.append(e)
+
+        for N in range(2, 20):
+            threads = [threading.Thread(target=worker)]
+            for i in range(N):
+                threads.append(threading.Thread(target=joiner,
+                                                args=(threads[0],)))
+            for t in threads:
+                t.start()
+            time.sleep(0.01)
+            for t in threads:
+                t.join()
+            if errors:
+                raise errors[0]
+
+    def test_join_with_timeout(self):
+        lock = _thread.allocate_lock()
+        lock.acquire()
+
+        def worker():
+            lock.acquire()
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join(timeout=0.01)
+        assert thread.is_alive()
+        lock.release()
+        thread.join()
+        assert not thread.is_alive()
 
     def test_no_refcycle_through_target(self):
         class RunSelfFunction(object):

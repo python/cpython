@@ -10,7 +10,6 @@
 #include "pycore_atexit.h"        // export _Py_AtExit()
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY
 #include "pycore_interp.h"        // PyInterpreterState.atexit
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 
 /* ===================================================================== */
@@ -137,7 +136,8 @@ atexit_callfuncs(struct atexit_state *state)
         PyObject* the_func = Py_NewRef(cb->func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
-            _PyErr_WriteUnraisableMsg("in atexit callback", the_func);
+            PyErr_FormatUnraisable(
+                "Exception ignored in atexit callback %R", the_func);
         }
         else {
             Py_DECREF(res);
