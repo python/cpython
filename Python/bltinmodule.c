@@ -1766,35 +1766,27 @@ builtin_locals_impl(PyObject *module)
 
 
 static PyObject *
-min_max(PyObject *args, PyObject *kwds, int op)
+min_max(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames, int op)
 {
-    PyObject *v, *it, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
-    PyObject *emptytuple, *defaultval = NULL;
-    static char *kwlist[] = {"key", "default", NULL};
-    const char *name = op == Py_LT ? "min" : "max";
-    const int positional = PyTuple_Size(args) > 1;
-    int ret;
+    PyObject *it = NULL, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
+    PyObject *defaultval = NULL;
+    static const char * const keywords[] = {"key", "default", NULL};
+    static _PyArg_Parser _parser_min = {"|$OO:min", keywords, 0};
+    static _PyArg_Parser _parser_max = {"|$OO:max", keywords, 0};
+    const char *name = (op == Py_LT) ? "min" : "max";
+    _PyArg_Parser *_parser = (op == Py_LT) ? &_parser_min : &_parser_max;
 
-    if (positional) {
-        v = args;
-    }
-    else if (!PyArg_UnpackTuple(args, name, 1, 1, &v)) {
-        if (PyExceptionClass_Check(PyExc_TypeError)) {
-            PyErr_Format(PyExc_TypeError, "%s expected at least 1 argument, got 0", name);
-        }
+    if (nargs == 0) {
+        PyErr_Format(PyExc_TypeError, "%s expected at least 1 argument, got 0", name);
         return NULL;
     }
 
-    emptytuple = PyTuple_New(0);
-    if (emptytuple == NULL)
+    if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(args + nargs, 0, kwnames, _parser,
+                                                         &keyfunc, &defaultval)) {
         return NULL;
-    ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds,
-                                      (op == Py_LT) ? "|$OO:min" : "|$OO:max",
-                                      kwlist, &keyfunc, &defaultval);
-    Py_DECREF(emptytuple);
-    if (!ret)
-        return NULL;
+    }
 
+    const int positional = nargs > 1; // False iff nargs == 1
     if (positional && defaultval != NULL) {
         PyErr_Format(PyExc_TypeError,
                         "Cannot specify a default for %s() with multiple "
@@ -1802,9 +1794,11 @@ min_max(PyObject *args, PyObject *kwds, int op)
         return NULL;
     }
 
-    it = PyObject_GetIter(v);
-    if (it == NULL) {
-        return NULL;
+    if (!positional) {
+        it = PyObject_GetIter(args[0]);
+        if (it == NULL) {
+            return NULL;
+        }
     }
 
     if (keyfunc == Py_None) {
@@ -1813,7 +1807,24 @@ min_max(PyObject *args, PyObject *kwds, int op)
 
     maxitem = NULL; /* the result */
     maxval = NULL;  /* the value associated with the result */
-    while (( item = PyIter_Next(it) )) {
+    while (1) {
+        if (it == NULL) {
+            if (nargs-- <= 0) {
+                break;
+            }
+            item = *args++;
+            Py_INCREF(item);
+        }
+        else {
+            item = PyIter_Next(it);
+            if (item == NULL) {
+                if (PyErr_Occurred()) {
+                    goto Fail_it;
+                }
+                break;
+            }
+        }
+
         /* get the value from the key function */
         if (keyfunc != NULL) {
             val = PyObject_CallOneArg(keyfunc, item);
@@ -1847,8 +1858,6 @@ min_max(PyObject *args, PyObject *kwds, int op)
             }
         }
     }
-    if (PyErr_Occurred())
-        goto Fail_it;
     if (maxval == NULL) {
         assert(maxitem == NULL);
         if (defaultval != NULL) {
@@ -1860,7 +1869,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
     }
     else
         Py_DECREF(maxval);
-    Py_DECREF(it);
+    Py_XDECREF(it);
     return maxitem;
 
 Fail_it_item_and_val:
@@ -1870,15 +1879,15 @@ Fail_it_item:
 Fail_it:
     Py_XDECREF(maxval);
     Py_XDECREF(maxitem);
-    Py_DECREF(it);
+    Py_XDECREF(it);
     return NULL;
 }
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-builtin_min(PyObject *self, PyObject *args, PyObject *kwds)
+builtin_min(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return min_max(args, kwds, Py_LT);
+    return min_max(args, nargs, kwnames, Py_LT);
 }
 
 PyDoc_STRVAR(min_doc,
@@ -1893,9 +1902,9 @@ With two or more positional arguments, return the smallest argument.");
 
 /* AC: cannot convert yet, waiting for *args support */
 static PyObject *
-builtin_max(PyObject *self, PyObject *args, PyObject *kwds)
+builtin_max(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return min_max(args, kwds, Py_GT);
+    return min_max(args, nargs, kwnames, Py_GT);
 }
 
 PyDoc_STRVAR(max_doc,
@@ -3054,8 +3063,8 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
-    {"max", _PyCFunction_CAST(builtin_max), METH_VARARGS | METH_KEYWORDS, max_doc},
-    {"min", _PyCFunction_CAST(builtin_min), METH_VARARGS | METH_KEYWORDS, min_doc},
+    {"max", _PyCFunction_CAST(builtin_max), METH_FASTCALL | METH_KEYWORDS, max_doc},
+    {"min", _PyCFunction_CAST(builtin_min), METH_FASTCALL | METH_KEYWORDS, min_doc},
     {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
     BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
