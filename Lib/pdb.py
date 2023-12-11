@@ -762,7 +762,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer()
+        completer = Completer(self.curframe.f_globals | self.curframe_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1

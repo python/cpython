@@ -3351,6 +3351,24 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'special', output)
 
+    def test_local_namespace(self):
+        script = textwrap.dedent("""
+            def f():
+                original = "I live Pythin"
+                import pdb; pdb.Pdb().set_trace()
+            f()
+        """)
+
+        # Complete: original.replace('i', 'o')
+        input = b"orig\t.repl\t('i', 'o')\n"
+
+        # Continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'I love Python', output)
+
     def test_multiline_completion(self):
         script = textwrap.dedent("""
             import pdb; pdb.Pdb().set_trace()
