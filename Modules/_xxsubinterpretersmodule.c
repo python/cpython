@@ -54,7 +54,7 @@ pylong_to_interpid(PyObject *idobj)
         // For now, we don't worry about if LLONG_MAX < INT64_MAX.
         goto bad_id;
     }
-#if LONG_LONG_MAX > INT64_MAX
+#if LLONG_MAX > INT64_MAX
     if (id > INT64_MAX) {
         goto bad_id;
     }
@@ -105,7 +105,7 @@ look_up_interp(PyObject *arg)
 static PyObject *
 interpid_to_pylong(int64_t id)
 {
-    assert(id < LONG_LONG_MAX);
+    assert(id < LLONG_MAX);
     return PyLong_FromLongLong(id);
 }
 
