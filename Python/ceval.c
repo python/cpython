@@ -2614,11 +2614,10 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
-    pkgname = PyObject_GetAttr(v, &_Py_ID(__name__));
-    if (pkgname == NULL) {
-        goto error;
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &pkgname) < 0) {
+        return NULL;
     }
-    if (!PyUnicode_Check(pkgname)) {
+    if (pkgname == NULL || !PyUnicode_Check(pkgname)) {
         Py_CLEAR(pkgname);
         goto error;
     }
@@ -2635,42 +2634,59 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     Py_DECREF(pkgname);
     return x;
  error:
-    pkgpath = PyModule_GetFilenameObject(v);
     if (pkgname == NULL) {
         pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
         if (pkgname_or_unknown == NULL) {
-            Py_XDECREF(pkgpath);
             return NULL;
         }
     } else {
         pkgname_or_unknown = pkgname;
     }
 
+    pkgpath = NULL;
+    if (PyModule_Check(v)) {
+        pkgpath = PyModule_GetFilenameObject(v);
+        if (pkgpath == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(pkgname_or_unknown);
+                return NULL;
+            }
+            // module filename missing
+            _PyErr_Clear(tstate);
+        }
+    }
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
-        _PyErr_Clear(tstate);
+        Py_CLEAR(pkgpath);
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (unknown location)",
             name, pkgname_or_unknown
         );
-        /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, NULL, name);
     }
     else {
-        PyObject *spec = PyObject_GetAttr(v, &_Py_ID(__spec__));
+        PyObject *spec;
+        int rc = PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec);
+        if (rc > 0) {
+            rc = _PyModuleSpec_IsInitializing(spec);
+            Py_DECREF(spec);
+        }
+        if (rc < 0) {
+            Py_DECREF(pkgname_or_unknown);
+            Py_DECREF(pkgpath);
+            return NULL;
+        }
         const char *fmt =
-            _PyModuleSpec_IsInitializing(spec) ?
+            rc ?
             "cannot import name %R from partially initialized module %R "
             "(most likely due to a circular import) (%S)" :
             "cannot import name %R from %R (%S)";
-        Py_XDECREF(spec);
 
         errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
-        /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
     }
+    /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
+    _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
 
     Py_XDECREF(errmsg);
-    Py_XDECREF(pkgname_or_unknown);
+    Py_DECREF(pkgname_or_unknown);
     Py_XDECREF(pkgpath);
     return NULL;
 }

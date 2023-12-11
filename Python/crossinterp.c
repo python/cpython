@@ -456,16 +456,17 @@ _xidregistry_clear(struct _xidregistry *xidregistry)
 static void
 _xidregistry_lock(struct _xidregistry *registry)
 {
-    if (registry->mutex != NULL) {
-        PyThread_acquire_lock(registry->mutex, WAIT_LOCK);
+    if (registry->global) {
+        PyMutex_Lock(&registry->mutex);
     }
+    // else: Within an interpreter we rely on the GIL instead of a separate lock.
 }
 
 static void
 _xidregistry_unlock(struct _xidregistry *registry)
 {
-    if (registry->mutex != NULL) {
-        PyThread_release_lock(registry->mutex);
+    if (registry->global) {
+        PyMutex_Unlock(&registry->mutex);
     }
 }
 
@@ -874,18 +875,9 @@ _xidregistry_init(struct _xidregistry *registry)
     registry->initialized = 1;
 
     if (registry->global) {
-        // We manage the mutex lifecycle in pystate.c.
-        assert(registry->mutex != NULL);
-
         // Registering the builtins is cheap so we don't bother doing it lazily.
         assert(registry->head == NULL);
         _register_builtins_for_crossinterpreter_data(registry);
-    }
-    else {
-        // Within an interpreter we rely on the GIL instead of a separate lock.
-        assert(registry->mutex == NULL);
-
-        // There's nothing else to initialize.
     }
 }
 
@@ -898,17 +890,6 @@ _xidregistry_fini(struct _xidregistry *registry)
     registry->initialized = 0;
 
     _xidregistry_clear(registry);
-
-    if (registry->global) {
-        // We manage the mutex lifecycle in pystate.c.
-        assert(registry->mutex != NULL);
-    }
-    else {
-        // There's nothing else to finalize.
-
-        // Within an interpreter we rely on the GIL instead of a separate lock.
-        assert(registry->mutex == NULL);
-    }
 }
 
 

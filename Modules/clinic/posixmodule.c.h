@@ -5997,8 +5997,6 @@ exit:
 
 #endif /* defined(HAVE_SYMLINK) */
 
-#if defined(HAVE_TIMES)
-
 PyDoc_STRVAR(os_times__doc__,
 "times($module, /)\n"
 "--\n"
@@ -6020,8 +6018,6 @@ os_times(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return os_times_impl(module);
 }
-
-#endif /* defined(HAVE_TIMES) */
 
 #if defined(HAVE_TIMERFD_CREATE)
 
@@ -11760,6 +11756,28 @@ exit:
 
 #endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__supports_virtual_terminal__doc__,
+"_supports_virtual_terminal($module, /)\n"
+"--\n"
+"\n"
+"Checks if virtual terminal is supported in windows");
+
+#define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF    \
+    {"_supports_virtual_terminal", (PyCFunction)os__supports_virtual_terminal, METH_NOARGS, os__supports_virtual_terminal__doc__},
+
+static PyObject *
+os__supports_virtual_terminal_impl(PyObject *module);
+
+static PyObject *
+os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__supports_virtual_terminal_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -12116,10 +12134,6 @@ exit:
     #define OS_SYMLINK_METHODDEF
 #endif /* !defined(OS_SYMLINK_METHODDEF) */
 
-#ifndef OS_TIMES_METHODDEF
-    #define OS_TIMES_METHODDEF
-#endif /* !defined(OS_TIMES_METHODDEF) */
-
 #ifndef OS_TIMERFD_CREATE_METHODDEF
     #define OS_TIMERFD_CREATE_METHODDEF
 #endif /* !defined(OS_TIMERFD_CREATE_METHODDEF) */
@@ -12403,4 +12417,8 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=0f216bf44ea358f9 input=a9049054013a1b77]*/
+
+#ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
+    #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
+#endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
+/*[clinic end generated code: output=ff0ec3371de19904 input=a9049054013a1b77]*/

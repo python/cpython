@@ -589,9 +589,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     take_gil(tstate);
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
-    if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
-        return _PyStatus_ERR("Can't reinitialize pending calls lock");
-    }
+    _PyMutex_at_fork_reinit(&pending->mutex);
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(tstate);
@@ -720,13 +718,10 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
         assert(_Py_IsMainInterpreter(interp));
         pending = &_PyRuntime.ceval.pending_mainthread;
     }
-    /* Ensure that _PyEval_InitState() was called
-       and that _PyEval_FiniState() is not called yet. */
-    assert(pending->lock != NULL);
 
-    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    PyMutex_Lock(&pending->mutex);
     int result = _push_pending_call(pending, func, arg, flags);
-    PyThread_release_lock(pending->lock);
+    PyMutex_Unlock(&pending->mutex);
 
     /* signal main loop */
     SIGNAL_PENDING_CALLS(interp);
@@ -768,9 +763,9 @@ _make_pending_calls(struct _pending_calls *pending)
         int flags = 0;
 
         /* pop one item off the queue while holding the lock */
-        PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+        PyMutex_Lock(&pending->mutex);
         _pop_pending_call(pending, &func, &arg, &flags);
-        PyThread_release_lock(pending->lock);
+        PyMutex_Unlock(&pending->mutex);
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
@@ -795,7 +790,7 @@ make_pending_calls(PyInterpreterState *interp)
 
     /* Only one thread (per interpreter) may run the pending calls
        at once.  In the same way, we don't do recursive pending calls. */
-    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    PyMutex_Lock(&pending->mutex);
     if (pending->busy) {
         /* A pending call was added after another thread was already
            handling the pending calls (and had already "unsignaled").
@@ -807,11 +802,11 @@ make_pending_calls(PyInterpreterState *interp)
            care of any remaining pending calls.  Until then, though,
            all the interpreter's threads will be tripping the eval
            breaker every time it's checked. */
-        PyThread_release_lock(pending->lock);
+        PyMutex_Unlock(&pending->mutex);
         return 0;
     }
     pending->busy = 1;
-    PyThread_release_lock(pending->lock);
+    PyMutex_Unlock(&pending->mutex);
 
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
@@ -892,23 +887,9 @@ Py_MakePendingCalls(void)
 }
 
 void
-_PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
+_PyEval_InitState(PyInterpreterState *interp)
 {
     _gil_initialize(&interp->_gil);
-
-    struct _pending_calls *pending = &interp->ceval.pending;
-    assert(pending->lock == NULL);
-    pending->lock = pending_lock;
-}
-
-void
-_PyEval_FiniState(struct _ceval_state *ceval)
-{
-    struct _pending_calls *pending = &ceval->pending;
-    if (pending->lock != NULL) {
-        PyThread_free_lock(pending->lock);
-        pending->lock = NULL;
-    }
 }
 
 

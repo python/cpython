@@ -18,7 +18,7 @@ from test.support import os_helper, MS_WINDOWS
 from .logger import Logger
 from .result import TestResult, State
 from .results import TestResults
-from .runtests import RunTests, JsonFile, JsonFileType
+from .runtests import RunTests, WorkerRunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, TestName,
@@ -162,7 +162,7 @@ class WorkerThread(threading.Thread):
         self._stopped = True
         self._kill()
 
-    def _run_process(self, runtests: RunTests, output_fd: int,
+    def _run_process(self, runtests: WorkerRunTests, output_fd: int,
                      tmp_dir: StrPath | None = None) -> int | None:
         popen = create_worker_process(runtests, output_fd, tmp_dir)
         self._popen = popen
@@ -252,9 +252,7 @@ class WorkerThread(threading.Thread):
                 json_file = JsonFile(json_fd, JsonFileType.UNIX_FD)
         return (json_file, json_tmpfile)
 
-    def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> RunTests:
-        """Create the worker RunTests."""
-
+    def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> WorkerRunTests:
         tests = (test_name,)
         if self.runtests.rerun:
             match_tests = self.runtests.get_match_tests(test_name)
@@ -267,12 +265,12 @@ class WorkerThread(threading.Thread):
         if self.runtests.output_on_failure:
             kwargs['verbose'] = True
             kwargs['output_on_failure'] = False
-        return self.runtests.copy(
+        return self.runtests.create_worker_runtests(
             tests=tests,
             json_file=json_file,
             **kwargs)
 
-    def run_tmp_files(self, worker_runtests: RunTests,
+    def run_tmp_files(self, worker_runtests: WorkerRunTests,
                       stdout_fd: int) -> tuple[int | None, list[StrPath]]:
         # gh-93353: Check for leaked temporary files in the parent process,
         # since the deletion of temporary files can happen late during

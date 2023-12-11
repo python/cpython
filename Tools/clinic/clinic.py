@@ -406,7 +406,7 @@ def version_splitter(s: str) -> tuple[int, ...]:
     flush()
     return tuple(version)
 
-def version_comparitor(version1: str, version2: str) -> Literal[-1, 0, 1]:
+def version_comparator(version1: str, version2: str) -> Literal[-1, 0, 1]:
     iterator = itertools.zip_longest(
         version_splitter(version1), version_splitter(version2), fillvalue=0
     )
@@ -3184,7 +3184,7 @@ def add_legacy_c_converter(
 
 class CConverterAutoRegister(type):
     def __init__(
-        cls, name: str, bases: tuple[type, ...], classdict: dict[str, Any]
+        cls, name: str, bases: tuple[type[object], ...], classdict: dict[str, Any]
     ) -> None:
         converter_cls = cast(type["CConverter"], cls)
         add_c_converter(converter_cls)
@@ -3217,7 +3217,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type: bltns.type[Any] | tuple[bltns.type[Any], ...] | None = None
+    default_type: bltns.type[object] | tuple[bltns.type[object], ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
@@ -3683,7 +3683,7 @@ legacy_converters: ConverterDict = {}
 ReturnConverterDict = dict[str, ReturnConverterType]
 return_converters: ReturnConverterDict = {}
 
-TypeSet = set[bltns.type[Any]]
+TypeSet = set[bltns.type[object]]
 
 
 class bool_converter(CConverter):
@@ -4347,7 +4347,7 @@ class buffer: pass
 class rwbuffer: pass
 class robuffer: pass
 
-StrConverterKeyType = tuple[frozenset[type], bool, bool]
+StrConverterKeyType = tuple[frozenset[type[object]], bool, bool]
 
 def str_converter_key(
     types: TypeSet, encoding: bool | str | None, zeroes: bool
@@ -4846,7 +4846,7 @@ class CReturnConverterAutoRegister(type):
     def __init__(
             cls: ReturnConverterType,
             name: str,
-            bases: tuple[type, ...],
+            bases: tuple[type[object], ...],
             classdict: dict[str, Any]
     ) -> None:
         add_c_return_converter(cls)
@@ -5203,7 +5203,7 @@ class DSLParser:
 
     def directive_version(self, required: str) -> None:
         global version
-        if version_comparitor(version, required) < 0:
+        if version_comparator(version, required) < 0:
             fail("Insufficient Clinic version!\n"
                  f"  Version: {version}\n"
                  f"  Required: {required}")

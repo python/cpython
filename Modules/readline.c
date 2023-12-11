@@ -1043,10 +1043,8 @@ on_hook(PyObject *func)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
-#elif defined(WITH_APPLE_EDITLINE)
-on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_startup_hook(void)
+on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #endif
 {
     int r;
@@ -1065,10 +1063,8 @@ on_startup_hook(void)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
-#elif defined(WITH_APPLE_EDITLINE)
-on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_pre_input_hook(void)
+on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #endif
 {
     int r;
@@ -1538,6 +1534,7 @@ static struct PyModuleDef readlinemodule = {
 PyMODINIT_FUNC
 PyInit_readline(void)
 {
+    const char *backend = "readline";
     PyObject *m;
     readlinestate *mod_state;
 
@@ -1545,8 +1542,10 @@ PyInit_readline(void)
         using_libedit_emulation = 1;
     }
 
-    if (using_libedit_emulation)
+    if (using_libedit_emulation) {
         readlinemodule.m_doc = doc_module_le;
+        backend = "editline";
+    }
 
 
     m = PyModule_Create(&readlinemodule);
@@ -1565,6 +1564,10 @@ PyInit_readline(void)
     if (PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION",
                                    rl_library_version) < 0)
     {
+        goto error;
+    }
+
+    if (PyModule_AddStringConstant(m, "backend", backend) < 0) {
         goto error;
     }
 

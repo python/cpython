@@ -117,6 +117,8 @@ class TestResults:
             self.worker_bug = True
 
         if result.has_meaningful_duration() and not rerun:
+            if result.duration is None:
+                raise ValueError("result.duration is None")
             self.test_times.append((result.duration, test_name))
         if result.stats is not None:
             self.stats.accumulate(result.stats)
