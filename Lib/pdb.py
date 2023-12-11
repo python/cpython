@@ -222,6 +222,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # but in case there are recursions, we stop at 999.
     MAX_CHAINED_EXCEPTION_DEPTH = 999
 
+    _file_mtime_table = {}
+
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
@@ -274,8 +276,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
-
-        self._file_mtime_table = {}
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:

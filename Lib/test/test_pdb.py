@@ -2884,6 +2884,38 @@ def bœr():
         self.assertIn("WARNING:", stdout)
         self.assertIn("changed after pdb started", stdout)
 
+    def test_file_modified_after_execution_with_multiple_instances(self):
+        script = """
+            import pdb; pdb.Pdb().set_trace()
+            with open(__file__, "w") as f:
+                f.write("print('goodbye')\\n" * 5)
+            import pdb; pdb.Pdb().set_trace()
+        """
+
+        commands = """
+            continue
+            continue
+        """
+
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(os_helper.unlink, filename)
+        self.addCleanup(os_helper.rmtree, '__pycache__')
+        cmd = [sys.executable, filename]
+        with subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+        ) as proc:
+            stdout, stderr = proc.communicate(str.encode(commands))
+        stdout = stdout and bytes.decode(stdout)
+
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("WARNING:", stdout)
+        self.assertIn("changed after pdb started", stdout)
+
     def test_relative_imports(self):
         self.module_name = 't_main'
         os_helper.rmtree(self.module_name)
