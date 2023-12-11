@@ -1,6 +1,6 @@
-#include "Python.h"
-
 #ifdef _Py_JIT
+
+#include "Python.h"
 
 #include "pycore_abstract.h"
 #include "pycore_call.h"
@@ -38,11 +38,11 @@ static void
 jit_warn(const char *message)
 {
 #ifdef MS_WINDOWS
-    int code = GetLastError();
+    int hint = GetLastError();
 #else
-    int code = errno;
+    int hint = errno;
 #endif
-    PyErr_WarnFormat(PyExc_RuntimeWarning, 0, "JIT %s (%d)", message, code);
+    PyErr_WarnFormat(PyExc_RuntimeWarning, 0, "JIT %s (%d)", message, hint);
 }
 
 static char *
@@ -51,10 +51,12 @@ jit_alloc(size_t size)
     assert(size);
     assert(size % get_page_size() == 0);
 #ifdef MS_WINDOWS
-    char *memory = VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    int flags = MEM_COMMIT | MEM_RESERVE;
+    char *memory = VirtualAlloc(NULL, size, flags, PAGE_READWRITE);
     int failed = memory == NULL;
 #else
-    char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    int flags = MAP_ANONYMOUS | MAP_PRIVATE;
+    char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
@@ -91,7 +93,7 @@ mark_executable(char *memory, size_t size)
         jit_warn("unable to flush instruction cache");
         return -1;
     }
-    DWORD old;
+    int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE, &old);
 #else
     __builtin___clear_cache((char *)memory, (char *)memory + size);
@@ -211,10 +213,13 @@ emit(const StencilGroup *stencil_group, uint64_t patches[])
 }
 
 static _PyInterpreterFrame *
-execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
+        PyObject **stack_pointer)
 {
+    PyThreadState *tstate = PyThreadState_Get();
     assert(PyObject_TypeCheck(executor, &_PyUOpExecutor_Type));
-    frame = ((_PyJITContinueFunction)(((_PyUOpExecutorObject *)(executor))->jit_code))(frame, stack_pointer, PyThreadState_Get());
+    _PyUOpExecutorObject *uop_executor = (_PyUOpExecutorObject *)executor;
+    frame = ((jit_func)uop_executor->jit_code)(frame, stack_pointer, tstate);
     Py_DECREF(executor);
     return frame;
 }

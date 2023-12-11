@@ -52,10 +52,10 @@
     TYPE NAME = (TYPE)(uint64_t)&ALIAS; \
     asm("" : "+r" (NAME));  // XXX?
 
-#define PATCH_JUMP(ALIAS)                                                  \
-    extern void ALIAS;                                                     \
-    __attribute__((musttail))                                              \
-    return ((_PyJITContinueFunction)&ALIAS)(frame, stack_pointer, tstate); \
+#define PATCH_JUMP(ALIAS)                                    \
+    extern void ALIAS;                                       \
+    __attribute__((musttail))                                \
+    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
 
 _PyInterpreterFrame *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,

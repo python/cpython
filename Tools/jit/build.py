@@ -654,12 +654,12 @@ def get_target(host: str) -> Target:
 CLANG_FLAGS = [
     "-DPy_BUILD_CORE",
     "-D_PyJIT_ACTIVE",
+    "-D_Py_JIT",
     f"-I{INCLUDE}",
     f"-I{INCLUDE_INTERNAL}",
     f"-I{PYTHON}",
     "-O3",
     "-c",
-    "-ffreestanding",
     # XXX: SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
     "-fno-jump-tables",
     # Position-independent code adds indirection to every load and jump:

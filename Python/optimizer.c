@@ -837,8 +837,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     }
     assert(dest == -1);
     executor->base.execute = _PyUOpExecute;
-    executor->jit_code = NULL;
-    executor->jit_size = 0;
     _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -890,8 +888,11 @@ uop_optimize(
         return -1;
     }
 #ifdef _Py_JIT
+    _PyUOpExecutorObject *uop_executor = (_PyUOpExecutorObject *)executor;
+    uop_executor->jit_code = NULL;
+    uop_executor->jit_size = 0;
     if (((_PyUOpOptimizerObject *)self)->jit) {
-        err = _PyJIT_Compile((_PyExecutorObject *)executor);
+        err = _PyJIT_Compile(uop_executor);
         if (err <= 0) {
             Py_DECREF(executor);
             return err;
