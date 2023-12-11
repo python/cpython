@@ -307,10 +307,6 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
-    if (!_Py_atomic_load_int_relaxed(&gil->locked)) {
-        goto _ready;
-    }
-
     int drop_requested = 0;
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
@@ -345,7 +341,6 @@ take_gil(PyThreadState *tstate)
         }
     }
 
-_ready:
 #ifdef FORCE_SWITCHING
     /* This mutex must be taken before modifying gil->last_holder:
        see drop_gil(). */
