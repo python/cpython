@@ -2328,20 +2328,18 @@
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
-            JUMPBY(1-original_oparg);
-            frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             if (executor->execute == _PyUOpExecute) {
                 current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
-            frame = executor->execute(executor, frame, stack_pointer);
-            if (frame == NULL) {
-                frame = tstate->current_frame;
+            next_instr = executor->execute(executor, frame, stack_pointer);
+            frame = tstate->current_frame;
+            if (next_instr == NULL) {
                 goto resume_with_error;
             }
-            goto enter_tier_one;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
         }
 
         TARGET(EXIT_INIT_CHECK) {
