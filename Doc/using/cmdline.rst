@@ -577,9 +577,7 @@ Miscellaneous options
 
    .. versionadded:: 3.10
       The ``-X warn_default_encoding`` option.
-
-   .. deprecated-removed:: 3.9 3.10
-      The ``-X oldparser`` option.
+      Removed the ``-X oldparser`` option.
 
    .. versionadded:: 3.11
       The ``-X no_debug_ranges`` option.
