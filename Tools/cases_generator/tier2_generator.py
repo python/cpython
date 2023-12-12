@@ -123,8 +123,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
                 if cache.size == 4:
                     type = "PyObject *"
                 else:
-                    type = f"uint{cache.size*16}_t "
-                out.emit(f"{type}{cache.name} = ({type})CURRENT_OPERAND();\n")
+                    type = f"uint{cache.size*16}_t"
+                out.emit(f"{type} {cache.name} = ({type})CURRENT_OPERAND();\n")
         emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
         if uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
