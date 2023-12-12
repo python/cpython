@@ -685,6 +685,60 @@ PyDoc_STRVAR(get_main_doc,
 \n\
 Return the ID of main interpreter.");
 
+static PyObject *
+interp_set___main___attrs(PyObject *self, PyObject *args)
+{
+    PyObject *id, *updates;
+    if (!PyArg_ParseTuple(args, "OO:" MODULE_NAME ".set___main___attrs",
+                          &id, &updates))
+    {
+        return NULL;
+    }
+
+    // Look up the interpreter.
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    // Check the updates.
+    if (updates != Py_None) {
+        Py_ssize_t size = PyObject_Size(updates);
+        if (size < 0) {
+            return NULL;
+        }
+        if (size == 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "arg 2 must be a non-empty mapping");
+            return NULL;
+        }
+    }
+
+    _PyXI_session session = {0};
+
+    // Prep and switch interpreters, including apply the updates.
+    if (_PyXI_Enter(&session, interp, updates) < 0) {
+        if (!PyErr_Occurred()) {
+            _PyXI_ApplyCapturedException(&session);
+            assert(PyErr_Occurred());
+        }
+        else {
+            assert(!_PyXI_HasCapturedException(&session));
+        }
+        return NULL;
+    }
+
+    // Clean up and switch back.
+    _PyXI_Exit(&session);
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(set___main___attrs_doc,
+"set___main___attrs(id, ns)\n\
+\n\
+Bind the given attributes in the interpreter's __main__ module.");
+
 static PyUnicodeObject *
 convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
                    const char *expected)
@@ -1033,6 +1087,8 @@ static PyMethodDef module_functions[] = {
     {"run_func",                  _PyCFunction_CAST(interp_run_func),
      METH_VARARGS | METH_KEYWORDS, run_func_doc},
 
+    {"set___main___attrs",        _PyCFunction_CAST(interp_set___main___attrs),
+     METH_VARARGS, set___main___attrs_doc},
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 
