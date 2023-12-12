@@ -17226,6 +17226,12 @@ then :
   printf "%s\n" "#define HAVE_CLOCK 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "closefrom" "ac_cv_func_closefrom"
+if test "x$ac_cv_func_closefrom" = xyes
+then :
+  printf "%s\n" "#define HAVE_CLOSEFROM 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "close_range" "ac_cv_func_close_range"
 if test "x$ac_cv_func_close_range" = xyes
 then :
