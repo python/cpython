@@ -575,7 +575,7 @@ init_interp_settings(PyInterpreterState *interp,
     if (config->check_multi_interp_extensions) {
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
-
+    interp->config.site_import = config->site;
     /* We check "gil" in init_interp_create_gil(). */
 
     return _PyStatus_OK();
@@ -645,6 +645,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     // The main interpreter always has its own GIL.
     config.gil = PyInterpreterConfig_OWN_GIL;
+    config.site = interp->config.site_import;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;

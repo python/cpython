@@ -50,6 +50,7 @@ typedef struct {
     int allow_daemon_threads;
     int check_multi_interp_extensions;
     int gil;
+    int site;
 } PyInterpreterConfig;
 
 #define _PyInterpreterConfig_INIT \
@@ -61,6 +62,7 @@ typedef struct {
         .allow_daemon_threads = 0, \
         .check_multi_interp_extensions = 1, \
         .gil = PyInterpreterConfig_OWN_GIL, \
+        .site = 1, \
     }
 
 #define _PyInterpreterConfig_LEGACY_INIT \
@@ -72,6 +74,7 @@ typedef struct {
         .allow_daemon_threads = 1, \
         .check_multi_interp_extensions = 0, \
         .gil = PyInterpreterConfig_SHARED_GIL, \
+        .site = 1, \
     }
 
 PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(

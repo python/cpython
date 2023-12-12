@@ -620,6 +620,26 @@ class RunStringTests(TestBase):
 
             self.assertEqual(out, 'it worked!')
 
+    def test_site_flag_propagates(self):
+        self.assertFalse(sys.flags.no_site)
+        subinterp = interpreters.create()
+        script, file = _captured_script("import sys; print('sys.flags.no_site', sys.flags.no_site)")
+        with file:
+            interpreters.run_string(subinterp, script)
+            out = file.read()
+
+        self.assertEqual(out, 'sys.flags.no_site 1')
+
+    def test_nosite(self):
+        self.assertFalse(sys.flags.no_site)
+        subinterp = interpreters.create(site=False)
+        script, file = _captured_script("import sys; print('sys.flags.no_site', sys.flags.no_site)")
+        with file:
+            interpreters.run_string(subinterp, script)
+            out = file.read()
+
+        self.assertEqual(out, 'sys.flags.no_site 0')
+
     def test_shareable_types(self):
         interp = interpreters.create()
         objects = [
