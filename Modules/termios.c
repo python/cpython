@@ -840,6 +840,9 @@ static struct constant {
 #ifdef CDSR_OFLOW
     {"CDSR_OFLOW", CDSR_OFLOW},
 #endif
+#ifdef CCTS_OFLOW
+    {"CCTS_OFLOW", CCTS_OFLOW},
+#endif
 #ifdef CCAR_OFLOW
     {"CCAR_OFLOW", CCAR_OFLOW},
 #endif
@@ -912,7 +915,7 @@ static struct constant {
     {"VSTOP", VSTOP},
     {"VSUSP", VSUSP},
 #ifdef VDSUSP
-    {"VDSUSP", VREPRINT},
+    {"VDSUSP", VDSUSP},
 #endif
     {"VEOL", VEOL},
 #ifdef VREPRINT
