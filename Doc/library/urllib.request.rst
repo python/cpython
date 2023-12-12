@@ -712,7 +712,7 @@ The following attribute and methods should only be used by classes derived from
 .. note::
 
    The convention has been adopted that subclasses defining
-   :meth:`<protocol>_request` or :meth:`<protocol>_response` methods are named
+   :meth:`!<protocol>_request` or :meth:`!<protocol>_response` methods are named
    :class:`!\*Processor`; all others are named :class:`!\*Handler`.
 
 
