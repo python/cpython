@@ -358,7 +358,6 @@ if not home and not py_setpath:
         venv_prefix = None
         pyvenvcfg = []
 
-    warn(f"{base_executable=} {venv_prefix=}")
     for line in pyvenvcfg:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
@@ -368,7 +367,6 @@ if not home and not py_setpath:
                 # more accurate than assuming the executable in 'home'.
                 try:
                     base_executable = realpath(executable)
-                    warn(f"{base_executable=} {executable=}")
                     if base_executable == executable:
                         # No change, so probably not a link. Clear it and fall back
                         base_executable = ''
