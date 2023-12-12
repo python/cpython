@@ -1,0 +1,1 @@
+Reduce the import time of :mod:`logging` module by ~15%. Patch by Daniel Hollas.
