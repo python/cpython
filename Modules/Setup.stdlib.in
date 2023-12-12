@@ -41,8 +41,11 @@
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
 @MODULE__STRUCT_TRUE@_struct _struct.c
+
+# build supports subinterpreters
 @MODULE__XXSUBINTERPRETERS_TRUE@_xxsubinterpreters _xxsubinterpretersmodule.c
 @MODULE__XXINTERPCHANNELS_TRUE@_xxinterpchannels _xxinterpchannelsmodule.c
+@MODULE__XXINTERPQUEUES_TRUE@_xxinterpqueues _xxinterpqueuesmodule.c
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
