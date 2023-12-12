@@ -88,7 +88,7 @@ Bookkeeping functions
 
    .. versionchanged:: 3.11
       The *seed* must be one of the following types:
-      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
 .. function:: getstate()
@@ -409,7 +409,7 @@ Alternative Generator
 
    .. deprecated-removed:: 3.9 3.11
       Formerly the *seed* could be any hashable object.  Now it is limited to:
-      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
 .. class:: SystemRandom([seed])
