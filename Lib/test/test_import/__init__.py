@@ -1968,6 +1968,7 @@ class SubinterpImportTests(unittest.TestCase):
             print(_testsinglephase)
             ''')
         interpid = _interpreters.create()
+        self.addCleanup(lambda: _interpreters.destroy(interpid))
 
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
@@ -2102,12 +2103,18 @@ class SinglephaseInitTests(unittest.TestCase):
 
     def add_subinterpreter(self):
         interpid = _interpreters.create(isolated=False)
-        _interpreters.run_string(interpid, textwrap.dedent('''
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        _interpreters.exec(interpid, textwrap.dedent('''
             import sys
             import _testinternalcapi
             '''))
         def clean_up():
-            _interpreters.run_string(interpid, textwrap.dedent(f'''
+            _interpreters.exec(interpid, textwrap.dedent(f'''
                 name = {self.NAME!r}
                 if name in sys.modules:
                     sys.modules.pop(name)._clear_globals()
