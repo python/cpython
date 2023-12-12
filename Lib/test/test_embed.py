@@ -23,6 +23,12 @@ MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
+PYMEM_ALLOCATOR_MIMALLOC = 7
+if support.Py_GIL_DISABLED:
+    ALLOCATOR_FOR_CONFIG = PYMEM_ALLOCATOR_MIMALLOC
+else:
+    ALLOCATOR_FOR_CONFIG = PYMEM_ALLOCATOR_MALLOC
+
 Py_STATS = hasattr(sys, '_stats_on')
 
 # _PyCoreConfig_InitCompatConfig()
@@ -841,7 +847,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_from_config(self):
         preconfig = {
-            'allocator': PYMEM_ALLOCATOR_MALLOC,
+            'allocator': ALLOCATOR_FOR_CONFIG,
             'utf8_mode': 1,
         }
         config = {
@@ -908,7 +914,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_compat_env(self):
         preconfig = {
-            'allocator': PYMEM_ALLOCATOR_MALLOC,
+            'allocator': ALLOCATOR_FOR_CONFIG,
         }
         config = {
             'use_hash_seed': 1,
@@ -942,7 +948,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_python_env(self):
         preconfig = {
-            'allocator': PYMEM_ALLOCATOR_MALLOC,
+            'allocator': ALLOCATOR_FOR_CONFIG,
             'utf8_mode': 1,
         }
         config = {
@@ -984,7 +990,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                api=API_COMPAT)
 
     def test_init_env_dev_mode_alloc(self):
-        preconfig = dict(allocator=PYMEM_ALLOCATOR_MALLOC)
+        preconfig = dict(allocator=ALLOCATOR_FOR_CONFIG)
         config = dict(dev_mode=1,
                       faulthandler=1,
                       warnoptions=['default'])

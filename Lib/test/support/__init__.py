@@ -1844,7 +1844,7 @@ class SaveSignals:
 
 def with_pymalloc():
     import _testcapi
-    return _testcapi.WITH_PYMALLOC
+    return _testcapi.WITH_PYMALLOC and not Py_GIL_DISABLED
 
 
 def with_mimalloc():

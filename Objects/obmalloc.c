@@ -16,6 +16,10 @@
 #  include "mimalloc/internal.h"  // for stats
 #endif
 
+#if defined(Py_GIL_DISABLED) && !defined(WITH_MIMALLOC)
+#  error "Py_GIL_DISABLED requires WITH_MIMALLOC"
+#endif
+
 #undef  uint
 #define uint pymem_uint
 
@@ -153,7 +157,12 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
 #endif  // WITH_PYMALLOC
 
-#if defined(WITH_PYMALLOC)
+#if defined(Py_GIL_DISABLED)
+// Py_GIL_DISABLED requires using mimalloc for "mem" and "obj" domains.
+#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYMEM_ALLOC MIMALLOC_ALLOC
+#  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
+#elif defined(WITH_PYMALLOC)
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYMEM_ALLOC PYMALLOC_ALLOC
 #  define PYOBJ_ALLOC PYMALLOC_ALLOC
@@ -350,7 +359,7 @@ _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
     else if (strcmp(name, "debug") == 0) {
         *allocator = PYMEM_ALLOCATOR_DEBUG;
     }
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) && !defined(Py_GIL_DISABLED)
     else if (strcmp(name, "pymalloc") == 0) {
         *allocator = PYMEM_ALLOCATOR_PYMALLOC;
     }
@@ -366,12 +375,14 @@ _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
         *allocator = PYMEM_ALLOCATOR_MIMALLOC_DEBUG;
     }
 #endif
+#ifndef Py_GIL_DISABLED
     else if (strcmp(name, "malloc") == 0) {
         *allocator = PYMEM_ALLOCATOR_MALLOC;
     }
     else if (strcmp(name, "malloc_debug") == 0) {
         *allocator = PYMEM_ALLOCATOR_MALLOC_DEBUG;
     }
+#endif
     else {
         /* unknown allocator */
         return -1;
