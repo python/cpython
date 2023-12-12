@@ -33,7 +33,7 @@ def _run_output(interp, request, init=None):
     script, rpipe = _captured_script(request)
     with rpipe:
         if init:
-            interp.bind(init)
+            interp.prepare_main(init)
         interp.exec_sync(script)
         return rpipe.read()
 

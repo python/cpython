@@ -130,8 +130,7 @@ class Interpreter:
         """
         return _interpreters.destroy(self._id)
 
-    # XXX setattr?
-    def bind(self, ns=None, /, **kwargs):
+    def prepare_main(self, ns=None, /, **kwargs):
         """Bind the given values into the interpreter's __main__.
 
         The values must be shareable.

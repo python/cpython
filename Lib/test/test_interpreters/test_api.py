@@ -452,17 +452,17 @@ class TestInterpreterClose(TestBase):
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
 
-class TestInterpreterBind(TestBase):
+class TestInterpreterPrepareMain(TestBase):
 
     def test_empty(self):
         interp = interpreters.create()
         with self.assertRaises(ValueError):
-            interp.bind()
+            interp.prepare_main()
 
     def test_dict(self):
         values = {'spam': 42, 'eggs': 'ham'}
         interp = interpreters.create()
-        interp.bind(values)
+        interp.prepare_main(values)
         out = _run_output(interp, dedent("""
             print(spam, eggs)
             """))
@@ -472,7 +472,7 @@ class TestInterpreterBind(TestBase):
         values = {'spam': 42, 'eggs': 'ham'}
         values = tuple(values.items())
         interp = interpreters.create()
-        interp.bind(values)
+        interp.prepare_main(values)
         out = _run_output(interp, dedent("""
             print(spam, eggs)
             """))
@@ -481,7 +481,7 @@ class TestInterpreterBind(TestBase):
     def test_kwargs(self):
         values = {'spam': 42, 'eggs': 'ham'}
         interp = interpreters.create()
-        interp.bind(**values)
+        interp.prepare_main(**values)
         out = _run_output(interp, dedent("""
             print(spam, eggs)
             """))
@@ -490,7 +490,7 @@ class TestInterpreterBind(TestBase):
     def test_dict_and_kwargs(self):
         values = {'spam': 42, 'eggs': 'ham'}
         interp = interpreters.create()
-        interp.bind(values, foo='bar')
+        interp.prepare_main(values, foo='bar')
         out = _run_output(interp, dedent("""
             print(spam, eggs, foo)
             """))
@@ -500,7 +500,7 @@ class TestInterpreterBind(TestBase):
         interp = interpreters.create()
         # XXX TypeError?
         with self.assertRaises(ValueError):
-            interp.bind(spam={'spam': 'eggs', 'foo': 'bar'})
+            interp.prepare_main(spam={'spam': 'eggs', 'foo': 'bar'})
 
         # Make sure neither was actually bound.
         with self.assertRaises(interpreters.ExecFailure):
