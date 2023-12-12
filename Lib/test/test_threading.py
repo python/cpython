@@ -28,7 +28,7 @@ from test import support
 
 try:
     from test.support import interpreters
-except ModuleNotFoundError:
+except ImportError:
     interpreters = None
 
 threading_helper.requires_working_threading(module=True)
