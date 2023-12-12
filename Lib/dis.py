@@ -267,9 +267,10 @@ _Instruction = collections.namedtuple(
         'starts_line',
         'line_number',
         'label',
-        'positions'
+        'positions',
+        'cache_info',
     ],
-    defaults=[None, None]
+    defaults=[None, None, None]
 )
 
 _Instruction.opname.__doc__ = "Human readable name for operation"
@@ -286,6 +287,7 @@ _Instruction.starts_line.__doc__ = "True if this opcode starts a source line, ot
 _Instruction.line_number.__doc__ = "source line number associated with this opcode (if any), otherwise None"
 _Instruction.label.__doc__ = "A label (int > 0) if this instruction is a jump target, otherwise None"
 _Instruction.positions.__doc__ = "dis.Positions object holding the span of source code covered by this instruction"
+_Instruction.cache_info.__doc__ = "list of (name, size, data), one for each cache entry of the instruction"
 
 _ExceptionTableEntryBase = collections.namedtuple("_ExceptionTableEntryBase",
     "start end target depth lasti")
@@ -334,6 +336,8 @@ class Instruction(_Instruction):
          label - A label if this instruction is a jump target, otherwise None
          positions - Optional dis.Positions object holding the span of source code
                      covered by this instruction
+         cache_info - information about the format and content of the instruction's cache
+                        entries (if any)
     """
 
     @property
@@ -689,13 +693,19 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
         # Advance the co_positions iterator:
         for _ in range(caches):
             next(co_positions, ())
-        cache_format = []
+
         if caches:
+            cache_info = []
             for name, size in _cache_format[opname[deop]].items():
                 data = code[offset + 2: offset + 2 + 2 * size]
-                cache_format.append((name, size, data))
-        instr.cache_format = cache_format
-        yield instr
+                cache_info.append((name, size, data))
+        else:
+            cache_info = None
+
+        yield Instruction(_all_opname[op], op, arg, argval, argrepr,
+                          offset, start_offset, starts_line, line_number,
+                          labels_map.get(offset, None), positions, cache_info)
+
 
 
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
@@ -794,9 +804,9 @@ def print_instructions(instrs, exception_entries, formatter, show_caches=False, 
                 <= instr.offset + 2 * _get_cache_size(_all_opname[_deoptop(instr.opcode)])
         formatter.print_instruction(instr, is_current_instr)
         deop = _deoptop(instr.opcode)
-        if show_caches:
+        if show_caches and instr.cache_info:
             offset = instr.offset
-            for name, size, data in getattr(instr, 'cache_format', ()):
+            for name, size, data in instr.cache_info:
                 for i in range(size):
                     offset += 2
                     # Only show the fancy argrepr for a CACHE instruction when it's

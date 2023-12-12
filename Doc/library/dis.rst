@@ -485,6 +485,14 @@ details of bytecode instructions as :class:`Instruction` instances:
       :class:`dis.Positions` object holding the
       start and end locations that are covered by this instruction.
 
+   .. data::cache_info
+
+      Information about the cache entries of this instruction, as
+      triplets of the form ``(name, size, data)``, where the ``name``
+      and ``size`` describe the cache format and data is the contents
+      of the cache. It is ``None`` if the instruction does not have
+      caches.
+
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.11
@@ -496,8 +504,8 @@ details of bytecode instructions as :class:`Instruction` instances:
       Changed field ``starts_line``.
 
       Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
-      ``baseopname``, ``baseopcode``, ``jump_target``, ``oparg``, and
-      ``line_number``.
+      ``baseopname``, ``baseopcode``, ``jump_target``, ``oparg``,
+      ``line_number`` and ``cache_info``.
 
 
 .. class:: Positions

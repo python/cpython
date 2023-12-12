@@ -1777,8 +1777,8 @@ expected_opinfo_simple = [
 class InstructionTestCase(BytecodeTestCase):
 
     def assertInstructionsEqual(self, instrs_1, instrs_2, /):
-        instrs_1 = [instr_1._replace(positions=None) for instr_1 in instrs_1]
-        instrs_2 = [instr_2._replace(positions=None) for instr_2 in instrs_2]
+        instrs_1 = [instr_1._replace(positions=None, cache_info=None) for instr_1 in instrs_1]
+        instrs_2 = [instr_2._replace(positions=None, cache_info=None) for instr_2 in instrs_2]
         self.assertEqual(instrs_1, instrs_2)
 
 class InstructionTests(InstructionTestCase):
@@ -2247,7 +2247,7 @@ def _unroll_caches_as_Instructions(instrs, show_caches=False):
             continue
 
         offset = instr.offset
-        for name, size, data in instr.cache_format:
+        for name, size, data in (instr.cache_info or ()):
             for i in range(size):
                 offset += 2
                 # Only show the fancy argrepr for a CACHE instruction when it's
