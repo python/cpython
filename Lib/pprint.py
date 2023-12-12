@@ -129,7 +129,7 @@ class PrettyPrinter:
             If true, dict keys are sorted.
 
         underscore_numbers
-            If true, The number classes will be separated by underscores.
+            If true, the number classes will be separated by underscores.
 
         """
         indent = int(indent)
