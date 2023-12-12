@@ -570,9 +570,19 @@ class TestInterpreterRun(TestBase):
         self.assertEqual(out, 'it worked!')
 
     def test_failure(self):
-        interp = interpreters.create()
-        t = interp.run('raise Exception')
-        t.join()
+        caught = False
+        def excepthook(args):
+            nonlocal caught
+            caught = True
+        threading.excepthook = excepthook
+        try:
+            interp = interpreters.create()
+            t = interp.run('raise Exception')
+            t.join()
+
+            self.assertTrue(caught)
+        except BaseException:
+            threading.excepthook = threading.__excepthook__
 
 
 class TestIsShareable(TestBase):
