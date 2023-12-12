@@ -38,8 +38,42 @@ Key terms
   is included by default with the Python binary installers.
 * A *virtual environment* is a semi-isolated Python environment that allows
   packages to be installed for use by a particular application, rather than
-  being installed system wide.
-* ``venv`` is the standard tool for creating virtual environments, and has
+  being installed system-wide. Virtual environments are an essential tool for
+  managing project dependencies and ensuring that different projects can have
+  their own isolated set of dependencies.
+
+  When working on multiple projects, using virtual environments helps prevent
+  conflicts between different project requirements. It allows you to create an
+  isolated space where you can install specific versions of packages without
+  affecting the global Python installation.
+
+  To create a virtual environment using the built-in ``venv`` module, you can use
+  the following command:
+
+  .. code-block:: bash
+
+    python -m venv myenv
+
+  This will create a virtual environment named ``myenv`` in the current directory.
+  To activate the virtual environment, use the appropriate command for your
+  operating system:
+
+  - On Windows:
+
+    .. code-block:: bash
+
+      .\myenv\Scripts\activate
+
+  - On macOS/Linux:
+
+    .. code-block:: bash
+
+      source myenv/bin/activate
+
+  Once activated, you can use the virtual environment to install packages specific
+  to your project.
+
+* ``venv`` is the standard tool for creating virtual environments and has
   been part of Python since Python 3.3. Starting with Python 3.4, it
   defaults to installing ``pip`` into all created virtual environments.
 * ``virtualenv`` is a third party alternative (and predecessor) to
