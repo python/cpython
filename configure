@@ -16891,6 +16891,8 @@ printf "%s\n" "#define WITH_MIMALLOC 1" >>confdefs.h
 
   MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
+elif test "$disable_gil" = "yes"; then
+  as_fn_error $? "--disable-gil requires mimalloc memory allocator (--with-mimalloc)." "$LINENO" 5
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
