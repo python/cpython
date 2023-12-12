@@ -129,11 +129,11 @@ class AboutDialog(Toplevel):
         idle.grid(row=12, column=0, sticky=W, padx=10, pady=0)
         idle_buttons = Frame(frame_background, bg=self.bg)
         idle_buttons.grid(row=13, column=0, columnspan=3, sticky=NSEW)
-        self.readme = Button(idle_buttons, text='README', width=8,
+        self.readme = Button(idle_buttons, text='Readme', width=8,
                              highlightbackground=self.bg,
                              command=self.show_readme)
         self.readme.pack(side=LEFT, padx=10, pady=10)
-        self.idle_news = Button(idle_buttons, text='NEWS', width=8,
+        self.idle_news = Button(idle_buttons, text='News', width=8,
                                 highlightbackground=self.bg,
                                 command=self.show_idle_news)
         self.idle_news.pack(side=LEFT, padx=10, pady=10)
@@ -167,7 +167,7 @@ class AboutDialog(Toplevel):
 
     def show_idle_news(self):
         "Handle News button event."
-        self.display_file_text('About - NEWS', 'NEWS.txt', 'utf-8')
+        self.display_file_text('About - News', 'News3.txt', 'utf-8')
 
     def display_printer_text(self, title, printer):
         """Create textview for built-in constants.
