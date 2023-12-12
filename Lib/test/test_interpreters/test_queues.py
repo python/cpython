@@ -5,11 +5,19 @@ import time
 
 from test.support import import_helper
 # Raise SkipTest if subinterpreters not supported.
-import_helper.import_module('_xxinterpchannels')
-#import_helper.import_module('_xxinterpqueues')
+_queues = import_helper.import_module('_xxinterpqueues')
 from test.support import interpreters
 from test.support.interpreters import queues
 from .utils import _run_output, TestBase
+
+
+class TestBase(TestBase):
+    def tearDown(self):
+        for qid in _queues.list_all():
+            try:
+                _queues.destroy(qid)
+            except Exception:
+                pass
 
 
 class QueueTests(TestBase):
@@ -32,20 +40,47 @@ class QueueTests(TestBase):
             self.assertEqual(queue.maxsize, 0)
 
         with self.subTest('negative maxsize'):
-            queue = queues.create(-1)
-            self.assertEqual(queue.maxsize, 0)
+            queue = queues.create(-10)
+            self.assertEqual(queue.maxsize, -10)
 
         with self.subTest('bad maxsize'):
             with self.assertRaises(TypeError):
                 queues.create('1')
 
-    @unittest.expectedFailure
     def test_shareable(self):
         queue1 = queues.create()
-        queue2 = queues.create()
-        queue1.put(queue2)
-        queue3 = queue1.get()
-        self.assertIs(queue3, queue1)
+
+        interp = interpreters.create()
+        interp.exec_sync(dedent(f"""
+            from test.support.interpreters import queues
+            queue1 = queues.Queue({queue1.id})
+            """));
+
+        with self.subTest('same interpreter'):
+            queue2 = queues.create()
+            queue1.put(queue2)
+            queue3 = queue1.get()
+            self.assertIs(queue3, queue2)
+
+        with self.subTest('from current interpreter'):
+            queue4 = queues.create()
+            queue1.put(queue4)
+            out = _run_output(interp, dedent("""
+                queue4 = queue1.get()
+                print(queue4.id)
+                """))
+            qid = int(out)
+            self.assertEqual(qid, queue4.id)
+
+        with self.subTest('from subinterpreter'):
+            out = _run_output(interp, dedent("""
+                queue5 = queues.create()
+                queue1.put(queue5)
+                print(queue5.id)
+                """))
+            qid = int(out)
+            queue5 = queue1.get()
+            self.assertEqual(queue5.id, qid)
 
     def test_id_type(self):
         queue = queues.create()
@@ -137,7 +172,6 @@ class TestQueueOps(TestBase):
 
         self.assertEqual(actual, expected)
 
-    @unittest.expectedFailure
     def test_put_timeout(self):
         queue = queues.create(2)
         queue.put(None)
@@ -147,7 +181,6 @@ class TestQueueOps(TestBase):
         queue.get()
         queue.put(None)
 
-    @unittest.expectedFailure
     def test_put_nowait(self):
         queue = queues.create(2)
         queue.put_nowait(None)
@@ -179,30 +212,63 @@ class TestQueueOps(TestBase):
             assert obj is not orig, 'expected: obj is not orig'
             """))
 
-    @unittest.expectedFailure
     def test_put_get_different_interpreters(self):
+        interp = interpreters.create()
         queue1 = queues.create()
         queue2 = queues.create()
+        self.assertEqual(len(queues.list_all()), 2)
+
         obj1 = b'spam'
         queue1.put(obj1)
+
         out = _run_output(
-            interpreters.create(),
+            interp,
             dedent(f"""
-                import test.support.interpreters.queue as queues
+                from test.support.interpreters import queues
                 queue1 = queues.Queue({queue1.id})
                 queue2 = queues.Queue({queue2.id})
+                assert queue1.qsize() == 1, 'expected: queue1.qsize() == 1'
                 obj = queue1.get()
+                assert queue1.qsize() == 0, 'expected: queue1.qsize() == 0'
                 assert obj == b'spam', 'expected: obj == obj1'
                 # When going to another interpreter we get a copy.
                 assert id(obj) != {id(obj1)}, 'expected: obj is not obj1'
                 obj2 = b'eggs'
                 print(id(obj2))
+                assert queue2.qsize() == 0, 'expected: queue2.qsize() == 0'
                 queue2.put(obj2)
+                assert queue2.qsize() == 1, 'expected: queue2.qsize() == 1'
                 """))
-        obj2 = queue2.get()
+        self.assertEqual(len(queues.list_all()), 2)
+        self.assertEqual(queue1.qsize(), 0)
+        self.assertEqual(queue2.qsize(), 1)
 
+        obj2 = queue2.get()
         self.assertEqual(obj2, b'eggs')
         self.assertNotEqual(id(obj2), int(out))
+
+    def test_put_cleared_with_subinterpreter(self):
+        interp = interpreters.create()
+        queue = queues.create()
+
+        out = _run_output(
+            interp,
+            dedent(f"""
+                from test.support.interpreters import queues
+                queue = queues.Queue({queue.id})
+                obj1 = b'spam'
+                obj2 = b'eggs'
+                queue.put(obj1)
+                queue.put(obj2)
+                """))
+        self.assertEqual(queue.qsize(), 2)
+
+        obj1 = queue.get()
+        self.assertEqual(obj1, b'spam')
+        self.assertEqual(queue.qsize(), 1)
+
+        del interp
+        self.assertEqual(queue.qsize(), 0)
 
     def test_put_get_different_threads(self):
         queue1 = queues.create()

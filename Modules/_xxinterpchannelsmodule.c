@@ -2629,10 +2629,11 @@ _get_current_channelend_type(int end)
         cls = state->recv_channel_type;
     }
     if (cls == NULL) {
-        PyObject *highlevel = PyImport_ImportModule("interpreters");
+        // Force the module to be loaded, to register the type.
+        PyObject *highlevel = PyImport_ImportModule("interpreters.channel");
         if (highlevel == NULL) {
             PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters");
+            highlevel = PyImport_ImportModule("test.support.interpreters.channel");
             if (highlevel == NULL) {
                 return NULL;
             }
