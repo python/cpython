@@ -1311,7 +1311,7 @@ static Py_hash_t
 wrapper_hash(wrapperobject *wp)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(wp->self);
+    x = PyObject_GenericHash(wp->self);
     y = _Py_HashPointer(wp->descr);
     x = x ^ y;
     if (x == -1)
