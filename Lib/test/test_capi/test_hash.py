@@ -120,4 +120,4 @@ class CAPITest(unittest.TestCase):
                 check_number(-x, hash(-x))
 
         # test not-a-number (NaN)
-        self.assertEqual(hash_double(float('nan')), (0, sys.hash_info.nan))
+        self.assertEqual(hash_double(float('nan')), (0, 0))
