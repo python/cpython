@@ -1034,13 +1034,7 @@ always available.
 
    .. attribute:: hash_info.nan
 
-      The hash value returned for not-a-number (NaN).
-
-      This hash value is only used by the :c:func:`Py_HashDouble` C function if
-      the argument is not-a-number (NaN).
-
-      .. versionchanged:: 3.10
-         This hash value is no longer used to hash numbers in Python.
+      (This attribute is no longer used)
 
    .. attribute:: hash_info.imag
 

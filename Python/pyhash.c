@@ -97,7 +97,7 @@ Py_HashDouble(double v, Py_hash_t *result)
         }
         else {
             assert(Py_IS_NAN(v));
-            *result = _PyHASH_NAN;
+            *result = 0;
             return 0;
         }
     }

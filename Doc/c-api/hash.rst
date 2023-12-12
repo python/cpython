@@ -52,10 +52,9 @@ Functions
 
    Hash a C double number.
 
-   * Set *\*result* to the hash and return ``1`` if *value* is finite or is
-     infinity.
-   * Set *\*result* to :data:`sys.hash_info.nan <sys.hash_info>` (``0``) and
-     return ``0`` if *value* is not-a-number (NaN).
+   * Set *\*result* to the hash value and return ``1`` on success.
+   * Set *\*result* to ``0`` and return ``0`` if the hash value cannot be
+     calculated. For example, if value is not-a-number (NaN).
 
    *result* must not be ``NULL``.
 
