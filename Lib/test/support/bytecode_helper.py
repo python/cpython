@@ -15,8 +15,9 @@ def instructions_with_positions(instrs, co_positions):
     co_positions = co_positions or iter(())
     for instr in instrs:
         yield instr, next(co_positions, ())
-        for _ in (instr.cache_info or ()):
-            next(co_positions, ())
+        for _, size, _ in (instr.cache_info or ()):
+            for i in range(size):
+                next(co_positions, ())
 
 class BytecodeTestCase(unittest.TestCase):
     """Custom assertion methods for inspecting bytecode."""
