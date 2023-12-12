@@ -1208,9 +1208,10 @@ Classes and functions
    * If ``obj`` is a class, ``globals`` defaults to
      ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
      to the ``obj`` class namespace.
-   * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
+   * If ``obj`` is a callable, ``globals`` defaults to
+     :attr:`obj.__globals__ <function.__globals__>`,
      although if ``obj`` is a wrapped function (using
-     ``functools.update_wrapper()``) it is first unwrapped.
+     :func:`functools.update_wrapper`) it is first unwrapped.
 
    Calling ``get_annotations`` is best practice for accessing the
    annotations dict of any object.  See :ref:`annotations-howto` for

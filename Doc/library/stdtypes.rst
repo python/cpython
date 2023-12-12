@@ -5381,10 +5381,10 @@ Code objects are used by the implementation to represent "pseudo-compiled"
 executable Python code such as a function body. They differ from function
 objects because they don't contain a reference to their global execution
 environment.  Code objects are returned by the built-in :func:`compile` function
-and can be extracted from function objects through their :attr:`__code__`
-attribute. See also the :mod:`code` module.
+and can be extracted from function objects through their
+:attr:`~function.__code__` attribute. See also the :mod:`code` module.
 
-Accessing ``__code__`` raises an :ref:`auditing event <auditing>`
+Accessing :attr:`~function.__code__` raises an :ref:`auditing event <auditing>`
 ``object.__getattr__`` with arguments ``obj`` and ``"__code__"``.
 
 .. index::
