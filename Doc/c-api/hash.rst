@@ -54,7 +54,7 @@ Functions
 
    * Set *\*result* to the hash value and return ``1`` on success.
    * Set *\*result* to ``0`` and return ``0`` if the hash value cannot be
-     calculated. For example, if value is not-a-number (NaN).
+     calculated. For example, if *value* is not-a-number (NaN).
 
    *result* must not be ``NULL``.
 
