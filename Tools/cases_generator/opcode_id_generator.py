@@ -24,7 +24,7 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/opcode_ids.h"
 
 
-def generate_opcode_header(filenames: str, analysis: Analysis, outfile: TextIO) -> None:
+def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: TextIO) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
     out.emit("\n")
