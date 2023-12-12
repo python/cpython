@@ -4170,7 +4170,7 @@ to be ignored.
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
-   individual parameters simply become additional parameters to the :func:`execl\* <execl>`
+   individual parameters simply become additional parameters to the :func:`!execl\*`
    functions.  The "v" variants are good when the number of parameters is
    variable, with the arguments being passed in a list or tuple as the *args*
    parameter.  In either case, the arguments to the child process should start with
@@ -4708,7 +4708,7 @@ written in Python, such as a mail server's external command delivery program.
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
    individual parameters simply become additional parameters to the
-   :func:`spawnl\* <spawnl>` functions.  The "v" variants are good when the number of
+   :func:`!spawnl\*` functions.  The "v" variants are good when the number of
    parameters is variable, with the arguments being passed in a list or tuple as
    the *args* parameter.  In either case, the arguments to the child process must
    start with the name of the command being run.

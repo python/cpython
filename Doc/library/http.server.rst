@@ -68,7 +68,7 @@ provides three different variants:
    request. For example, for the request method ``SPAM``, the :meth:`!do_SPAM`
    method will be called with no arguments. All of the relevant information is
    stored in instance variables of the handler.  Subclasses should not need to
-   override or extend the :meth:`__init__` method.
+   override or extend the :meth:`!__init__` method.
 
    :class:`BaseHTTPRequestHandler` has the following instance variables:
 
