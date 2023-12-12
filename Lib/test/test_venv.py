@@ -283,6 +283,14 @@ class BasicTest(BaseTest):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
                 out, err = check_output(cmd)
                 self.assertEqual(out.strip(), expected.encode(), err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            ('_base_executable', sys.executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
+                out, err = check_output(cmd)
+                self.assertEqual(out.strip(), expected.encode(), err)
 
     @requireVenvCreate
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
@@ -303,6 +311,14 @@ class BasicTest(BaseTest):
             ('get_config_h_filename()', sysconfig.get_config_h_filename())):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+                out, err = check_output(cmd)
+                self.assertEqual(out.strip(), expected.encode(), err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            ('_base_executable', sys.executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
                 out, err = check_output(cmd)
                 self.assertEqual(out.strip(), expected.encode(), err)
 
