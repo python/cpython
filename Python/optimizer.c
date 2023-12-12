@@ -552,7 +552,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 else {
                     confidence = confidence * (16 - bitcount) / 16;
                 }
-                // TODO: Tweak the confidence cutoff
                 if (confidence < CONFIDENCE_CUTOFF) {
                     DPRINTF(2, "Confidence too low (%d)\n", confidence);
                     OPT_STAT_INC(low_confidence);
