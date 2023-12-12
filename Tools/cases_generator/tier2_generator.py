@@ -32,6 +32,7 @@ from stack import StackOffset, Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
+
 def declare_variables(uop: Uop, out: CWriter) -> None:
     variables = {"unused"}
     for var in reversed(uop.stack.inputs):
@@ -50,6 +51,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
                 out.emit(f"{type}{var.name} = NULL;\n")
             else:
                 out.emit(f"{type}{var.name};\n")
+
 
 def tier2_replace_error(
     out: CWriter,
@@ -81,7 +83,6 @@ def tier2_replace_error(
     out.emit(close)
 
 
-
 def tier2_replace_deopt(
     out: CWriter,
     tkn: Token,
@@ -95,6 +96,7 @@ def tier2_replace_deopt(
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
     out.emit(") goto deoptimize;\n")
+
 
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
@@ -133,8 +135,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         raise analysis_error(ex.args[0], uop.body[0])
 
 
-SKIPS = (
-    "_EXTENDED_ARG",)
+SKIPS = ("_EXTENDED_ARG",)
+
 
 def generate_tier2(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
@@ -172,7 +174,6 @@ def generate_tier2(
         out.emit("}")
         out.emit("\n\n")
     outfile.write("#undef TIER_TWO\n")
-
 
 
 arg_parser = argparse.ArgumentParser(

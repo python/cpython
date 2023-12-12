@@ -124,7 +124,9 @@ class Stack:
         else:
             self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
-        assign = f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
+        assign = (
+            f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
+        )
         if var.condition:
             return f"if ({var.condition}) {{ {assign} }}\n"
         return f"{assign}\n"

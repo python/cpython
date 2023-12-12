@@ -160,9 +160,20 @@ REPLACEMENT_FUNCTIONS = {
     "STORE_SP": replace_store_sp,
 }
 
-ReplacementFunctionType = Callable[[CWriter, Token, Iterator[Token], Uop, Stack, Instruction | None], None]
+ReplacementFunctionType = Callable[
+    [CWriter, Token, Iterator[Token], Uop, Stack, Instruction | None], None
+]
 
-def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction | None, replacement_functions: Mapping[str, ReplacementFunctionType] = REPLACEMENT_FUNCTIONS) -> None:
+
+def emit_tokens(
+    out: CWriter,
+    uop: Uop,
+    stack: Stack,
+    inst: Instruction | None,
+    replacement_functions: Mapping[
+        str, ReplacementFunctionType
+    ] = REPLACEMENT_FUNCTIONS,
+) -> None:
     tkns = uop.body[1:-1]
     if not tkns:
         return
