@@ -3329,7 +3329,7 @@ Foo
 
         # Test utils.getaddresses() and utils.parseaddr() on malformed email
         # addresses: default behavior (strict=True) rejects malformed address,
-        # and strict=True which tolerates malformed address.
+        # and strict=False which tolerates malformed address.
         for invalid_separator, expected_non_strict in (
             ('(', [(f'<{bob}>', alice)]),
             (')', [('', alice), empty, ('', bob)]),
