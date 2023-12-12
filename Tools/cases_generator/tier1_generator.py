@@ -114,7 +114,7 @@ def uses_this(inst: Instruction) -> bool:
 
 
 def generate_tier1(
-    filenames: str, analysis: Analysis, outfile: TextIO, lines: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write(

@@ -27,7 +27,7 @@ DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 OMIT = {"_CACHE", "_RESERVED", "_EXTENDED_ARG"}
 
 def generate_uop_ids(
-    filenames: str, analysis: Analysis, outfile: TextIO, distinct_namespace: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, distinct_namespace: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)

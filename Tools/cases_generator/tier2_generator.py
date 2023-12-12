@@ -137,7 +137,7 @@ SKIPS = (
     "_EXTENDED_ARG",)
 
 def generate_tier2(
-    filenames: str, analysis: Analysis, outfile: TextIO, lines: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write(
