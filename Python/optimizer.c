@@ -409,6 +409,9 @@ BRANCH_TO_GUARD[4][2] = {
 
 #define TRACE_STACK_SIZE 5
 
+#define CONFIDENCE_RANGE 1000
+#define CONFIDENCE_CUTOFF 333
+
 /* Returns 1 on success,
  * 0 if it failed to produce a worthwhile trace,
  * and -1 on an error.
@@ -431,7 +434,7 @@ translate_bytecode_to_trace(
         _Py_CODEUNIT *instr;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
-    float confidence = 1.0;  // Adjusted by branch instructions
+    int confidence = CONFIDENCE_RANGE;  // Adjusted by branch instructions
 
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -544,20 +547,20 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
                 if (jump_likely) {
-                    confidence *= bitcount / 16.0;
+                    confidence = confidence * bitcount / 16;
                 }
                 else {
-                    confidence *= (16 - bitcount) / 16.0;
+                    confidence = confidence * (16 - bitcount) / 16;
                 }
                 // TODO: Tweak the confidence cutoff
-                if (confidence < 0.33) {
-                    DPRINTF(2, "Confidence too low (%.3f)\n", confidence);
+                if (confidence < CONFIDENCE_CUTOFF) {
+                    DPRINTF(2, "Confidence too low (%d)\n", confidence);
                     OPT_STAT_INC(low_confidence);
                     goto done;
                 }
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%.3f, uopcode=%s\n",
+                DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
                         _PyUOpName(opcode), oparg,
                         counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0, target);
