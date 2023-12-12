@@ -30786,7 +30786,7 @@ if test -z "${MODULE__XXINTERPCHANNELS_TRUE}" && test -z "${MODULE__XXINTERPCHAN
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__XXINTERPQUEUES_TRUE}" && test -z "${MODULE__XXINTERPQUEUES_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__XXINTERPQUEUESS\" was never defined.
+  as_fn_error $? "conditional \"MODULE__XXINTERPQUEUES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
