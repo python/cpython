@@ -24,7 +24,7 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 
 
-OMIT = { "_CACHE", "_RESERVED", "_EXTENDED_ARG" }
+OMIT = {"_CACHE", "_RESERVED", "_EXTENDED_ARG"}
 
 def generate_uop_ids(
     filenames: str, analysis: Analysis, outfile: TextIO, distinct_namespace: bool
@@ -52,7 +52,7 @@ extern "C" {
     for uop in analysis.uops.values():
         if uop.name in PRE_DEFINED:
             continue
-        # We should omit all tier-1 only uops, but
+        # TODO: We should omit all tier-1 only uops, but
         # generate_cases.py still generates code for those.
         if uop.name in OMIT:
             continue
@@ -91,7 +91,7 @@ arg_parser.add_argument(
 if __name__ == "__main__":
     args = arg_parser.parse_args()
     if len(args.input) == 0:
-        args.input.append(DEFAULT_INPUT.as_posix())
+        args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
     with open(args.output, "w") as outfile:
         generate_uop_ids(args.input, data, outfile, args.namespace)
