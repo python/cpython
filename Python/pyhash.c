@@ -136,12 +136,12 @@ Py_HashDouble(double v, Py_hash_t *result)
 }
 
 Py_hash_t
-_Py_HashDouble(PyObject *obj, double v)
+_Py_HashDouble(PyObject *obj, double value)
 {
     assert(obj != NULL);
 
     Py_hash_t hash;
-    if (Py_HashDouble(v, &hash) == 0) {
+    if (Py_HashDouble(value, &hash) == 0) {
         hash = Py_HashPointer(obj);
     }
     return hash;
