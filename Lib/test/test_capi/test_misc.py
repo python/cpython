@@ -2985,6 +2985,37 @@ class TestUops(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
+    def test_confidence_score(self):
+        def testfunc(n):
+            bits = 0
+            for i in range(n):
+                if i & 0x01:
+                    bits += 1
+                if i & 0x02:
+                    bits += 1
+                if i&0x04:
+                    bits += 1
+                if i&0x08:
+                    bits += 1
+                if i&0x10:
+                    bits += 1
+                if i&0x20:
+                    bits += 1
+            return bits
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            x = testfunc(20)
+
+        self.assertEqual(x, 40)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        ops = [opname for opname, _, _ in ex]
+        count = ops.count("_GUARD_IS_TRUE_POP")
+        # Because Each 'if' halves the score, the second branch is
+        # too much already.
+        self.assertEqual(count, 1)
+
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
 class TestPyThreadId(unittest.TestCase):
