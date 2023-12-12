@@ -2358,6 +2358,7 @@ dummy_func(
                 GOTO_TIER_TWO();
             }
             next_instr = executor->execute(executor, frame, stack_pointer);
+            frame = tstate->current_frame;
             if (next_instr == NULL) {
                 goto resume_with_error;
             }
