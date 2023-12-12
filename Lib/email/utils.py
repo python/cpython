@@ -153,17 +153,18 @@ def getaddresses(fieldvalues, *, strict=True):
     When parsing fails for a fieldvalue, a 2-tuple of ('', '') is returned in
     its place.
 
-    If strict is True, use a strict parser which rejects malformed inputs.
-    In this case, if the resulting list of parsed addresses is greater than
-    the number of fieldvalues in the input list, a parsing error has occurred
-    and consequently a list containing a single empty 2-tuple [('', '')] is
-    returned in its place. This is done to avoid invalid output.
-
-    Malformed input: getaddresses(['alice@example.com <bob@example.com>'])
-    Invalid output: [('', 'alice@example.com'), ('', 'bob@example.com')]
-    Safe output: [('', '')]
-
+    If strict is true, use a strict parser which rejects malformed inputs.
     """
+
+    # If strict is true, if the resulting list of parsed addresses is greater
+    # than the number of fieldvalues in the input list, a parsing error has
+    # occurred and consequently a list containing a single empty 2-tuple [('',
+    # '')] is returned in its place. This is done to avoid invalid output.
+    #
+    # Malformed input: getaddresses(['alice@example.com <bob@example.com>'])
+    # Invalid output: [('', 'alice@example.com'), ('', 'bob@example.com')]
+    # Safe output: [('', '')]
+
     if not strict:
         all = COMMASPACE.join(str(v) for v in fieldvalues)
         a = _AddressList(all)
