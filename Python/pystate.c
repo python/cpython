@@ -1216,7 +1216,7 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
         HEAD_UNLOCK(runtime);
     }
     if (interp == NULL && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_RuntimeError,
+        PyErr_Format(PyExc_InterpreterNotFoundError,
                      "unrecognized interpreter ID %lld", requested_id);
     }
     return interp;

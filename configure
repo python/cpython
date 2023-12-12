@@ -16891,6 +16891,8 @@ printf "%s\n" "#define WITH_MIMALLOC 1" >>confdefs.h
 
   MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
+elif test "$disable_gil" = "yes"; then
+  as_fn_error $? "--disable-gil requires mimalloc memory allocator (--with-mimalloc)." "$LINENO" 5
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
@@ -17222,6 +17224,12 @@ ac_fn_c_check_func "$LINENO" "clock" "ac_cv_func_clock"
 if test "x$ac_cv_func_clock" = xyes
 then :
   printf "%s\n" "#define HAVE_CLOCK 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "closefrom" "ac_cv_func_closefrom"
+if test "x$ac_cv_func_closefrom" = xyes
+then :
+  printf "%s\n" "#define HAVE_CLOSEFROM 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "close_range" "ac_cv_func_close_range"
