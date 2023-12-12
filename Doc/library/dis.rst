@@ -490,7 +490,7 @@ details of bytecode instructions as :class:`Instruction` instances:
       Information about the cache entries of this instruction, as
       triplets of the form ``(name, size, data)``, where the ``name``
       and ``size`` describe the cache format and data is the contents
-      of the cache. It is ``None`` if the instruction does not have
+      of the cache. ``cache_info`` is ``None`` if the instruction does not have
       caches.
 
    .. versionadded:: 3.4

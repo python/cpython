@@ -577,7 +577,6 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
                                    original_code=original_code,
                                    arg_resolver=arg_resolver)
 
-
 def _get_const_value(op, arg, co_consts):
     """Helper to get the value of the const in a hasconst op.
 
@@ -818,7 +817,7 @@ def print_instructions(instrs, exception_entries, formatter, show_caches=False, 
                     formatter.print_instruction(
                         Instruction("CACHE", CACHE, 0, None, argrepr, offset, offset,
                                     False, None, None, instr.positions),
-                                    is_current_instr)
+                        is_current_instr)
 
     formatter.print_exception_table(exception_entries)
 
