@@ -3676,12 +3676,23 @@ multipart/report
         def check(addr, expected):
             self.assertEqual(utils._strip_quoted_realnames(addr), expected)
 
-        check('Jane Doe <jane@example.net>, John Doe <john@example.net>',
-              'Jane Doe <jane@example.net>, John Doe <john@example.net>')
         check('"Jane Doe" <jane@example.net>, "John Doe" <john@example.net>',
               ' <jane@example.net>,  <john@example.net>')
         check(r'"Jane \"Doe\"." <jane@example.net>',
               ' <jane@example.net>')
+
+        # special cases
+        check(r'before"name"after', 'beforeafter')
+        check(r'before"name"', 'before')
+        check(r'"name"after', 'after')
+
+        # no change
+        for addr in (
+            'Jane Doe <jane@example.net>, John Doe <john@example.net>',
+            'lone " quote',
+        ):
+            self.assertEqual(utils._strip_quoted_realnames(addr), addr)
+
 
     def test_check_parenthesis(self):
         addr = 'alice@example.net'

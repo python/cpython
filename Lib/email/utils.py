@@ -125,22 +125,21 @@ def _strip_quoted_realnames(addr):
         # Fast path
         return addr
 
-    start = None
-    remove = []
+    start = 0
+    open_pos = None
+    result = []
     for pos, ch in _iter_escaped_chars(addr):
         if ch == '"':
-            if start is None:
-                start = pos
+            if open_pos is None:
+                open_pos = pos
             else:
-                remove.append((start, pos))
-                start = None
+                if start != open_pos:
+                    result.append(addr[start:open_pos])
+                start = pos + 1
+                open_pos = None
 
-    result = []
-    pos = 0
-    for start, stop in remove:
-        result.append(addr[pos:start])
-        pos = stop + 1
-    result.append(addr[pos:])
+    if start < (len(addr) - 1):
+        result.append(addr[start:])
 
     return ''.join(result)
 
