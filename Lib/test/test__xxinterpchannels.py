@@ -79,8 +79,7 @@ class Interpreter(namedtuple('Interpreter', 'name id')):
                 name = 'interp'
             elif name == 'main':
                 raise ValueError('name mismatch (unexpected "main")')
-            if not isinstance(id, interpreters.InterpreterID):
-                id = interpreters.InterpreterID(id)
+            assert isinstance(id, int), repr(id)
         elif not name or name == 'main':
             name = 'main'
             id = main

@@ -1,11 +1,9 @@
-"""Subinterpreters High Level Module."""
+"""Cross-interpreter Channels High Level Module."""
 
 import time
-import _xxsubinterpreters as _interpreters
 import _xxinterpchannels as _channels
 
 # aliases:
-from _xxsubinterpreters import is_shareable
 from _xxinterpchannels import (
     ChannelError, ChannelNotFoundError, ChannelClosedError,
     ChannelEmptyError, ChannelNotEmptyError,
@@ -13,123 +11,13 @@ from _xxinterpchannels import (
 
 
 __all__ = [
-    'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
-    'RunFailedError',
+    'create', 'list_all',
     'SendChannel', 'RecvChannel',
-    'create_channel', 'list_all_channels', 'is_shareable',
-    'ChannelError', 'ChannelNotFoundError',
-    'ChannelEmptyError',
-    ]
+    'ChannelError', 'ChannelNotFoundError', 'ChannelEmptyError',
+]
 
 
-class RunFailedError(RuntimeError):
-
-    def __init__(self, excinfo):
-        msg = excinfo.formatted
-        if not msg:
-            if excinfo.type and snapshot.msg:
-                msg = f'{snapshot.type.__name__}: {snapshot.msg}'
-            else:
-                msg = snapshot.type.__name__ or snapshot.msg
-        super().__init__(msg)
-        self.snapshot = excinfo
-
-
-def create(*, isolated=True):
-    """Return a new (idle) Python interpreter."""
-    id = _interpreters.create(isolated=isolated)
-    return Interpreter(id, isolated=isolated)
-
-
-def list_all():
-    """Return all existing interpreters."""
-    return [Interpreter(id) for id in _interpreters.list_all()]
-
-
-def get_current():
-    """Return the currently running interpreter."""
-    id = _interpreters.get_current()
-    return Interpreter(id)
-
-
-def get_main():
-    """Return the main interpreter."""
-    id = _interpreters.get_main()
-    return Interpreter(id)
-
-
-class Interpreter:
-    """A single Python interpreter."""
-
-    def __init__(self, id, *, isolated=None):
-        if not isinstance(id, (int, _interpreters.InterpreterID)):
-            raise TypeError(f'id must be an int, got {id!r}')
-        self._id = id
-        self._isolated = isolated
-
-    def __repr__(self):
-        data = dict(id=int(self._id), isolated=self._isolated)
-        kwargs = (f'{k}={v!r}' for k, v in data.items())
-        return f'{type(self).__name__}({", ".join(kwargs)})'
-
-    def __hash__(self):
-        return hash(self._id)
-
-    def __eq__(self, other):
-        if not isinstance(other, Interpreter):
-            return NotImplemented
-        else:
-            return other._id == self._id
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def isolated(self):
-        if self._isolated is None:
-            # XXX The low-level function has not been added yet.
-            # See bpo-....
-            self._isolated = _interpreters.is_isolated(self._id)
-        return self._isolated
-
-    def is_running(self):
-        """Return whether or not the identified interpreter is running."""
-        return _interpreters.is_running(self._id)
-
-    def close(self):
-        """Finalize and destroy the interpreter.
-
-        Attempting to destroy the current interpreter results
-        in a RuntimeError.
-        """
-        return _interpreters.destroy(self._id)
-
-    # XXX Rename "run" to "exec"?
-    def run(self, src_str, /, channels=None):
-        """Run the given source code in the interpreter.
-
-        This is essentially the same as calling the builtin "exec"
-        with this interpreter, using the __dict__ of its __main__
-        module as both globals and locals.
-
-        There is no return value.
-
-        If the code raises an unhandled exception then a RunFailedError
-        is raised, which summarizes the unhandled exception.  The actual
-        exception is discarded because objects cannot be shared between
-        interpreters.
-
-        This blocks the current Python thread until done.  During
-        that time, the previous interpreter is allowed to run
-        in other threads.
-        """
-        excinfo = _interpreters.exec(self._id, src_str, channels)
-        if excinfo is not None:
-            raise RunFailedError(excinfo)
-
-
-def create_channel():
+def create():
     """Return (recv, send) for a new cross-interpreter channel.
 
     The channel may be used to pass data safely between interpreters.
@@ -139,7 +27,7 @@ def create_channel():
     return recv, send
 
 
-def list_all_channels():
+def list_all():
     """Return a list of (recv, send) for all open channels."""
     return [(RecvChannel(cid), SendChannel(cid))
             for cid in _channels.list_all()]

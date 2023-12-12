@@ -734,6 +734,11 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
+    status = _PyXI_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1742,6 +1747,7 @@ finalize_interp_types(PyInterpreterState *interp)
 {
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
+    _PyXI_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
