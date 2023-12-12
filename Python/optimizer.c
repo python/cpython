@@ -155,11 +155,10 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
     Py_DECREF(old);
 }
 
-// src is where to insert ENTER_EXECUTOR
-// dest is where to start tracing
-static int
-optimizer_wherever(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
+int
+_PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
+    assert(src->op.code == JUMP_BACKWARD);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -190,27 +189,27 @@ optimizer_wherever(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *
     return 1;
 }
 
+// Return an unanchored executor. The caller owns the executor when returning 1.
+// No ENTER_EXECUTOR is inserted, nor is the executor added to the code object.
 int
-_PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
+_PyOptimizer_Unanchored(
+    _PyInterpreterFrame *frame,
+    _Py_CODEUNIT *instr,
+    _PyExecutorObject **pexecutor,
+    PyObject **stack_pointer)
 {
-    assert(src->op.code == JUMP_BACKWARD);
-    return optimizer_wherever(frame, src, dest, stack_pointer);
-}
-
-// Start tracing and insert ENTER_EXECUTOR at the same place.
-// Normally src == dest, but when there's an EXTENDED_ARG involved,
-// dest points at the preceding EXTENDED_ARG.
-// Do not use at JUMP_BACKWARD.  Won't replace ENTER_EXECUTOR.
-int
-_PyOptimizer_Anywhere(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
-{
-    if (src->op.code == JUMP_BACKWARD) {
+    if (instr->op.code == JUMP_BACKWARD || instr->op.code == ENTER_EXECUTOR) {
         return 0;
     }
-    if (src->op.code == ENTER_EXECUTOR) {
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+    assert(PyCode_Check(code));
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyOptimizerObject *opt = interp->optimizer;
+    if (strcmp(opt->ob_base.ob_type->tp_name, "uop_optimizer") != 0) {
         return 0;
     }
-    return optimizer_wherever(frame, src, dest, stack_pointer);
+    *pexecutor = NULL;
+    return opt->optimize(opt, code, instr, pexecutor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
 }
 
 _PyExecutorObject *

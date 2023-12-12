@@ -1108,9 +1108,22 @@ deoptimize:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     // Increment side exit counter for this uop
     int pc = next_uop - 1 - current_executor->trace;
+    _PyExecutorObject **pexecutor = current_executor->executors + pc;
+    if (*pexecutor != NULL) {
+        PyCodeObject *code = _PyFrame_GetCode(frame);
+        DPRINTF(2, "Jumping to new executor for %s (%s:%d) at byte offset %d\n",
+                PyUnicode_AsUTF8(code->co_qualname),
+                PyUnicode_AsUTF8(code->co_filename),
+                code->co_firstlineno,
+                2 * (int)(frame->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(frame))));
+        Py_DECREF(current_executor);
+        current_executor = (_PyUOpExecutorObject *)*pexecutor;
+        Py_INCREF(current_executor);
+        goto enter_tier_two;
+    }
     uint16_t *pcounter = current_executor->counters + pc;
     *pcounter += 1;
-    if (*pcounter == 16 &&  // TODO: use resume_threshold
+    if (*pcounter == 32 &&  // TODO: use resume_threshold
         tstate->interp->optimizer != &_PyOptimizer_Default &&
         (opcode == POP_JUMP_IF_FALSE ||
          opcode == POP_JUMP_IF_TRUE ||
@@ -1121,7 +1134,7 @@ deoptimize:
                 _PyUOpName(uopcode), pc, current_executor, (int)(*pcounter));
         DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[opcode]);
         // The counter will cycle around once the 16 bits overflow
-        int optimized = _PyOptimizer_Anywhere(frame, src, dest, stack_pointer);
+        int optimized = _PyOptimizer_Unanchored(frame, dest, pexecutor, stack_pointer);
         if (optimized < 0) {
             goto error_tier_two;
         }
@@ -1129,6 +1142,24 @@ deoptimize:
             DPRINTF(1, "--> Optimized %s @ %d in %p\n",
                     _PyUOpName(uopcode), pc, current_executor);
             DPRINTF(1, "    T1: %s\n", _PyOpcode_OpName[src->op.code]);
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            DPRINTF(2, "Jumping to fresh executor for %s (%s:%d) at byte offset %d\n",
+                    PyUnicode_AsUTF8(code->co_qualname),
+                    PyUnicode_AsUTF8(code->co_filename),
+                    code->co_firstlineno,
+                    2 * (int)(frame->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(frame))));
+            Py_DECREF(current_executor);
+            current_executor = (_PyUOpExecutorObject *)*pexecutor;
+            if (current_executor->trace[0].opcode != uopcode) {
+                Py_INCREF(current_executor);
+                goto enter_tier_two;
+            }
+            // This is guaranteed to deopt again; forget about it
+            DPRINTF(2, "It's not an improvement -- discarding trace\n");
+            *pexecutor = NULL;
+            Py_DECREF(current_executor);
+            next_instr = frame->instr_ptr;
+            goto resume_frame;
         }
         else {
             DPRINTF(2, "--> Failed to optimize %s @ %d in %p\n",
