@@ -29,10 +29,12 @@ def clean_up_interpreters():
             pass  # already destroyed
 
 
-def _run_output(interp, request, channels=None):
+def _run_output(interp, request, init=None):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interp.exec_sync(script, channels=channels)
+        if init:
+            interp.prepare_main(init)
+        interp.exec_sync(script)
         return rpipe.read()
 
 
