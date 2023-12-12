@@ -258,10 +258,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
-        else {                                                   \
-            /* This is about to be (incorrectly) incremented: */ \
-            STAT_DEC((INSTNAME), deferred);                      \
-        }                                                        \
     } while (0)
 #else
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
