@@ -1,1 +1,0 @@
-Increase reserved stack space to prevent overflow crash on Windows.

@@ -61,7 +61,8 @@ def normalize_encoding(encoding):
         if c.isalnum() or c == '.':
             if punct and chars:
                 chars.append('_')
-            chars.append(c)
+            if c.isascii():
+                chars.append(c)
             punct = False
         else:
             punct = True
@@ -155,6 +156,10 @@ def search_function(encoding):
 codecs.register(search_function)
 
 if sys.platform == 'win32':
+    # bpo-671666, bpo-46668: If Python does not implement a codec for current
+    # Windows ANSI code page, use the "mbcs" codec instead:
+    # WideCharToMultiByte() and MultiByteToWideChar() functions with CP_ACP.
+    # Python does not support custom code pages.
     def _alias_mbcs(encoding):
         try:
             import _winapi

@@ -1,3 +1,0 @@
-The :mod:`ssl` and :mod:`hashlib` modules now actively check that OpenSSL is
-build with thread support. Python 3.7.0 made thread support mandatory and no
-longer works safely with a no-thread builds.
