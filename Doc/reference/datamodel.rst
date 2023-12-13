@@ -1368,7 +1368,8 @@ unwinds the execution stack, at each unwound level a traceback object is
 inserted in front of the current traceback.  When an exception handler is
 entered, the stack trace is made available to the program. (See section
 :ref:`try`.) It is accessible as the third item of the
-tuple returned by :func:`sys.exc_info`, and as the ``__traceback__`` attribute
+tuple returned by :func:`sys.exc_info`, and as the
+:attr:`~BaseException.__traceback__` attribute
 of the caught exception.
 
 When the program contains no suitable
