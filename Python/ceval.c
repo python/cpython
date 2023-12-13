@@ -1106,11 +1106,15 @@ deoptimize:
     }
 
     // Increment and check side exit counter.
+    // (Even though we only need it for certain opcodes.)
     next_instr = frame->instr_ptr;
     uint16_t *pcounter = current_executor->counters + pc;
-    *pcounter += 1;
-    if (*pcounter != 32 ||  // TODO: use resume_threshold
-        tstate->interp->optimizer == &_PyOptimizer_Default)
+    *pcounter += 1 << OPTIMIZER_BITS_IN_COUNTER;
+    /* We are using unsigned values, but we really want signed values, so
+     * do the 2s complement comparison manually */
+    uint16_t ucounter = *pcounter + (1 << 15);
+    uint16_t threshold = tstate->interp->optimizer_resume_threshold + (1 << 15);
+    if (ucounter <= threshold)
     {
         goto resume_frame;
     }
@@ -1160,6 +1164,7 @@ deoptimize:
                 jump_opcode = current_executor->trace[1].opcode;
             }
             if (jump_opcode != uopcode) {
+                *pcounter &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 Py_INCREF(current_executor);
                 goto enter_tier_two;  // All systems go!
             }
@@ -1171,6 +1176,18 @@ deoptimize:
             // It will be decref'ed below.
         }
     }
+
+    // Exponential backoff if we didn't optimize.
+    int backoff = *pcounter & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+    if (backoff < MINIMUM_TIER2_BACKOFF) {
+        backoff = MINIMUM_TIER2_BACKOFF;
+    }
+    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
+        backoff++;
+    }
+    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
+    *pcounter = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
+
     Py_DECREF(current_executor);
     goto resume_frame;
 }
