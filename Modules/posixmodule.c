@@ -3384,9 +3384,8 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         return NULL;
 #endif
 
-    if (PySys_Audit("os.chmod", "OiiO", path->object, mode,
-                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd,
-                    follow_symlinks ? Py_True : Py_False) < 0) {
+    if (PySys_Audit("os.chmod", "Oii", path->object, mode,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -3531,7 +3530,7 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
     int res;
     int async_err = 0;
 
-    if (PySys_Audit("os.chmod", "iiiO", fd, mode, -1, Py_False) < 0) {
+    if (PySys_Audit("os.chmod", "iii", fd, mode, -1) < 0) {
         return NULL;
     }
 
@@ -3566,7 +3565,7 @@ os_lchmod_impl(PyObject *module, path_t *path, int mode)
 /*[clinic end generated code: output=082344022b51a1d5 input=90c5663c7465d24f]*/
 {
     int res;
-    if (PySys_Audit("os.chmod", "OiiO", path->object, mode, -1, Py_False) < 0) {
+    if (PySys_Audit("os.chmod", "Oii", path->object, mode, -1) < 0) {
         return NULL;
     }
 #ifdef MS_WINDOWS

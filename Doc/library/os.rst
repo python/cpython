@@ -999,7 +999,7 @@ as internal buffering of data.
    docs for :func:`chmod` for possible values of *mode*.  As of Python 3.3, this
    is equivalent to ``os.chmod(fd, mode)``.
 
-   .. audit-event:: os.chmod path,mode,dir_fd,follow_symlinks os.fchmod
+   .. audit-event:: os.chmod path,mode,dir_fd os.fchmod
 
    .. availability:: Unix.
 
@@ -2067,7 +2067,7 @@ features:
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
-   .. audit-event:: os.chmod path,mode,dir_fd,follow_symlinks os.chmod
+   .. audit-event:: os.chmod path,mode,dir_fd os.chmod
 
    .. versionadded:: 3.3
       Added support for specifying *path* as an open file descriptor,
@@ -2164,7 +2164,7 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
-   .. audit-event:: os.chmod path,mode,dir_fd,follow_symlinks os.lchmod
+   .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
 
    .. availability:: Unix, Windows.
 
