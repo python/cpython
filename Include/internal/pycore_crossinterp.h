@@ -188,8 +188,7 @@ typedef struct _excinfo {
         const char *module;
     } type;
     const char *msg;
-    const char *pickled;
-    Py_ssize_t pickled_len;
+    const char *errdisplay;
 } _PyXI_excinfo;
 
 
