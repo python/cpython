@@ -116,7 +116,7 @@ except ImportError:
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -1270,10 +1270,14 @@ class SSLSocket(socket):
 
     def recv_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
-        if buffer and (nbytes is None):
-            nbytes = len(buffer)
-        elif nbytes is None:
-            nbytes = 1024
+        if nbytes is None:
+            if buffer is not None:
+                with memoryview(buffer) as view:
+                    nbytes = view.nbytes
+                if not nbytes:
+                    nbytes = 1024
+            else:
+                nbytes = 1024
         if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(

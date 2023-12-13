@@ -559,7 +559,7 @@ listed below.
    functionality, for example getting data associated with a loader.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
-   instead instead of this attribute.
+   instead of this attribute.
 
    .. versionchanged:: 3.12
       The value of ``__loader__`` is expected to be the same as
@@ -580,7 +580,7 @@ listed below.
    relative imports for main modules, as defined in :pep:`366`.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
-   instead instead of this attribute.
+   instead of this attribute.
 
    .. versionchanged:: 3.6
       The value of ``__package__`` is expected to be the same as
@@ -650,7 +650,7 @@ listed below.
    from a file, that atypical scenario may be appropriate.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
-   instead instead of ``__cached__``.
+   instead of ``__cached__``.
 
 .. _package-path-rules:
 

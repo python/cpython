@@ -292,9 +292,15 @@ corresponding Unix manual entries for more information on calls.");
 #  undef HAVE_SCHED_SETAFFINITY
 #endif
 
-#if defined(HAVE_SYS_XATTR_H) && defined(HAVE_LINUX_LIMITS_H) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
-#  define USE_XATTRS
-#  include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
+#if defined(HAVE_SYS_XATTR_H)
+#  if defined(HAVE_LINUX_LIMITS_H) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
+#    define USE_XATTRS
+#    include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
+#  endif
+#  if defined(__CYGWIN__)
+#    define USE_XATTRS
+#    include <cygwin/limits.h>  // Needed for XATTR_SIZE_MAX and XATTR_LIST_MAX.
+#  endif
 #endif
 
 #ifdef USE_XATTRS
@@ -1024,6 +1030,10 @@ typedef struct {
     PyObject *struct_rusage;
 #endif
     PyObject *st_mode;
+#ifndef MS_WINDOWS
+    // times() clock frequency in hertz; used by os.times()
+    long ticks_per_second;
+#endif
 } _posixstate;
 
 
@@ -9980,8 +9990,6 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 #endif /* HAVE_SYMLINK */
 
 
-
-
 static PyStructSequence_Field times_result_fields[] = {
     {"user",    "user time"},
     {"system",   "system time"},
@@ -10006,12 +10014,6 @@ static PyStructSequence_Desc times_result_desc = {
     times_result_fields,
     5
 };
-
-#ifdef MS_WINDOWS
-#define HAVE_TIMES  /* mandatory, for the method table */
-#endif
-
-#ifdef HAVE_TIMES
 
 static PyObject *
 build_times_result(PyObject *module, double user, double system,
@@ -10058,8 +10060,8 @@ All fields are floating point numbers.
 static PyObject *
 os_times_impl(PyObject *module)
 /*[clinic end generated code: output=35f640503557d32a input=2bf9df3d6ab2e48b]*/
-#ifdef MS_WINDOWS
 {
+#ifdef MS_WINDOWS
     FILETIME create, exit, kernel, user;
     HANDLE hProc;
     hProc = GetCurrentProcess();
@@ -10077,28 +10079,26 @@ os_times_impl(PyObject *module)
         (double)0,
         (double)0,
         (double)0);
-}
 #else /* MS_WINDOWS */
-{
-    struct tms t;
-    clock_t c;
+    _posixstate *state = get_posix_state(module);
+    long ticks_per_second = state->ticks_per_second;
+
+    struct tms process;
+    clock_t elapsed;
     errno = 0;
-    c = times(&t);
-    if (c == (clock_t) -1) {
+    elapsed = times(&process);
+    if (elapsed == (clock_t) -1) {
         return posix_error();
     }
-    assert(_PyRuntime.time.ticks_per_second_initialized);
-#define ticks_per_second _PyRuntime.time.ticks_per_second
+
     return build_times_result(module,
-                         (double)t.tms_utime / ticks_per_second,
-                         (double)t.tms_stime / ticks_per_second,
-                         (double)t.tms_cutime / ticks_per_second,
-                         (double)t.tms_cstime / ticks_per_second,
-                         (double)c / ticks_per_second);
-#undef ticks_per_second
-}
+        (double)process.tms_utime / ticks_per_second,
+        (double)process.tms_stime / ticks_per_second,
+        (double)process.tms_cutime / ticks_per_second,
+        (double)process.tms_cstime / ticks_per_second,
+        (double)elapsed / ticks_per_second);
 #endif /* MS_WINDOWS */
-#endif /* HAVE_TIMES */
+}
 
 
 #if defined(HAVE_TIMERFD_CREATE)
@@ -11276,9 +11276,9 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
 
 done:
     #if !defined(HAVE_LARGEFILE_SUPPORT)
-        return Py_BuildValue("l", sbytes);
+        return PyLong_FromLong(sbytes);
     #else
-        return Py_BuildValue("L", sbytes);
+        return PyLong_FromLongLong(sbytes);
     #endif
 
 #else
@@ -11291,7 +11291,7 @@ done:
         } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
         if (ret < 0)
             return (!async_err) ? posix_error() : NULL;
-        return Py_BuildValue("n", ret);
+        return PyLong_FromSsize_t(ret);
     }
 #endif
     off_t offset;
@@ -11312,7 +11312,7 @@ done:
         return (!async_err) ? posix_error() : NULL;
 
     if (offset >= st.st_size) {
-        return Py_BuildValue("i", 0);
+        return PyLong_FromLong(0);
     }
 
     // On illumos specifically sendfile() may perform a partial write but
@@ -11338,7 +11338,7 @@ done:
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
-    return Py_BuildValue("n", ret);
+    return PyLong_FromSsize_t(ret);
 #endif
 }
 #endif /* HAVE_SENDFILE */
@@ -12159,7 +12159,10 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
 #endif
 
 
-#if defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG)
+/* GH-111804: Due to posix_fallocate() not having consistent semantics across
+   OSs, support was dropped in WASI preview2. */
+#if defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && \
+    !defined(__wasi__)
 /*[clinic input]
 os.posix_fallocate
 
@@ -12197,7 +12200,7 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
     errno = result;
     return posix_error();
 }
-#endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG */
+#endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG && !defined(__wasi__) */
 
 
 #if defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)
@@ -12271,7 +12274,6 @@ win32_putenv(PyObject *name, PyObject *value)
     }
 
     Py_ssize_t size;
-    /* PyUnicode_AsWideCharString() rejects embedded null characters */
     wchar_t *env = PyUnicode_AsWideCharString(unicode, &size);
     Py_DECREF(unicode);
 
@@ -12282,6 +12284,12 @@ win32_putenv(PyObject *name, PyObject *value)
         PyErr_Format(PyExc_ValueError,
                      "the environment variable is longer than %u characters",
                      _MAX_ENV);
+        PyMem_Free(env);
+        return NULL;
+    }
+    if (wcslen(env) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null character");
         PyMem_Free(env);
         return NULL;
     }
@@ -14805,6 +14813,7 @@ typedef struct {
 #ifdef MS_WINDOWS
     struct _Py_stat_struct win32_lstat;
     uint64_t win32_file_index;
+    uint64_t win32_file_index_high;
     int got_file_index;
 #else /* POSIX */
 #ifdef HAVE_DIRENT_D_TYPE
@@ -15134,11 +15143,10 @@ os_DirEntry_inode_impl(DirEntry *self)
         }
 
         self->win32_file_index = stat.st_ino;
+        self->win32_file_index_high = stat.st_ino_high;
         self->got_file_index = 1;
     }
-    static_assert(sizeof(unsigned long long) >= sizeof(self->win32_file_index),
-                  "DirEntry.win32_file_index is larger than unsigned long long");
-    return PyLong_FromUnsignedLongLong(self->win32_file_index);
+    return _pystat_l128_from_l64_l64(self->win32_file_index, self->win32_file_index_high);
 #else /* POSIX */
     static_assert(sizeof(unsigned long long) >= sizeof(self->d_ino),
                   "DirEntry.d_ino is larger than unsigned long long");
@@ -16065,6 +16073,26 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 }
 #endif
 
+#if defined(MS_WINDOWS)
+/*[clinic input]
+os._supports_virtual_terminal
+
+Checks if virtual terminal is supported in windows
+[clinic start generated code]*/
+
+static PyObject *
+os__supports_virtual_terminal_impl(PyObject *module)
+/*[clinic end generated code: output=bd0556a6d9d99fe6 input=0752c98e5d321542]*/
+{
+    DWORD mode = 0;
+    HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
+    if (!GetConsoleMode(handle, &mode)) {
+        Py_RETURN_FALSE;
+    }
+    return PyBool_FromLong(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+#endif
+
 
 static PyMethodDef posix_methods[] = {
 
@@ -16269,6 +16297,8 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF
     OS__PATH_EXISTS_METHODDEF
+
+    OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -17264,6 +17294,15 @@ posixmodule_exec(PyObject *m)
             return -1;
         Py_DECREF(unicode);
     }
+
+#ifndef MS_WINDOWS
+    if (_Py_GetTicksPerSecond(&state->ticks_per_second) < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot read ticks_per_second");
+        return -1;
+    }
+    assert(state->ticks_per_second >= 1);
+#endif
 
     return PyModule_Add(m, "_have_functions", list);
 }

@@ -18,7 +18,7 @@ from enum import member, nonmember, _iter_bits_lsb
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, REPO_ROOT
 from test.support import threading_helper
 from datetime import timedelta
 
@@ -26,14 +26,19 @@ python_version = sys.version_info[:2]
 
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
-    if os.path.exists('Doc/library/enum.rst'):
+
+    lib_tests = os.path.join(REPO_ROOT, 'Doc/library/enum.rst')
+    if os.path.exists(lib_tests):
         tests.addTests(doctest.DocFileSuite(
-                '../../Doc/library/enum.rst',
+                lib_tests,
+                module_relative=False,
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
-    if os.path.exists('Doc/howto/enum.rst'):
+    howto_tests = os.path.join(REPO_ROOT, 'Doc/howto/enum.rst')
+    if os.path.exists(howto_tests):
         tests.addTests(doctest.DocFileSuite(
-                '../../Doc/howto/enum.rst',
+                howto_tests,
+                module_relative=False,
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
     return tests
@@ -509,6 +514,7 @@ class _EnumTests:
             self.assertFalse('first' in MainEnum)
         val = MainEnum.dupe
         self.assertIn(val, MainEnum)
+        self.assertNotIn(float('nan'), MainEnum)
         #
         class OtherEnum(Enum):
             one = auto()
@@ -3263,6 +3269,65 @@ class TestSpecial(unittest.TestCase):
                     member._value_ = Base(value)
                     return member
 
+    def test_extra_member_creation(self):
+        class IDEnumMeta(EnumMeta):
+            def __new__(metacls, cls, bases, classdict, **kwds):
+                # add new entries to classdict
+                for name in classdict.member_names:
+                    classdict[f'{name}_DESC'] = f'-{classdict[name]}'
+                return super().__new__(metacls, cls, bases, classdict, **kwds)
+        class IDEnum(StrEnum, metaclass=IDEnumMeta):
+            pass
+        class MyEnum(IDEnum):
+            ID = 'id'
+            NAME = 'name'
+        self.assertEqual(list(MyEnum), [MyEnum.ID, MyEnum.NAME, MyEnum.ID_DESC, MyEnum.NAME_DESC])
+
+    def test_add_alias(self):
+        class mixin:
+            @property
+            def ORG(self):
+                return 'huh'
+        class Color(mixin, Enum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+        Color.RED._add_alias_('ROJO')
+        self.assertIs(Color.RED, Color['ROJO'])
+        self.assertIs(Color.RED, Color.ROJO)
+        Color.BLUE._add_alias_('ORG')
+        self.assertIs(Color.BLUE, Color['ORG'])
+        self.assertIs(Color.BLUE, Color.ORG)
+        self.assertEqual(Color.RED.ORG, 'huh')
+        self.assertEqual(Color.GREEN.ORG, 'huh')
+        self.assertEqual(Color.BLUE.ORG, 'huh')
+        self.assertEqual(Color.ORG.ORG, 'huh')
+
+    def test_add_value_alias_after_creation(self):
+        class Color(Enum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+        Color.RED._add_value_alias_(5)
+        self.assertIs(Color.RED, Color(5))
+
+    def test_add_value_alias_during_creation(self):
+        class Types(Enum):
+            Unknown = 0,
+            Source  = 1, 'src'
+            NetList = 2, 'nl'
+            def __new__(cls, int_value, *value_aliases):
+                member = object.__new__(cls)
+                member._value_ = int_value
+                for alias in value_aliases:
+                    member._add_value_alias_(alias)
+                return member
+        self.assertIs(Types(0), Types.Unknown)
+        self.assertIs(Types(1), Types.Source)
+        self.assertIs(Types('src'), Types.Source)
+        self.assertIs(Types(2), Types.NetList)
+        self.assertIs(Types('nl'), Types.NetList)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -4936,12 +5001,14 @@ class TestStdLib(unittest.TestCase):
             @bltns.property
             def zeroth(self):
                 return 'zeroed %s' % self.name
-        self.assertTrue(_test_simple_enum(CheckedColor, SimpleColor) is None)
+        _test_simple_enum(CheckedColor, SimpleColor)
         SimpleColor.MAGENTA._value_ = 9
         self.assertRaisesRegex(
                 TypeError, "enum mismatch",
                 _test_simple_enum, CheckedColor, SimpleColor,
                 )
+        #
+        #
         class CheckedMissing(IntFlag, boundary=KEEP):
             SIXTY_FOUR = 64
             ONE_TWENTY_EIGHT = 128
@@ -4958,8 +5025,28 @@ class TestStdLib(unittest.TestCase):
             ALL = 2048 + 128 + 64 + 12
         M = Missing
         self.assertEqual(list(CheckedMissing), [M.SIXTY_FOUR, M.ONE_TWENTY_EIGHT, M.TWENTY_FORTY_EIGHT])
-        #
         _test_simple_enum(CheckedMissing, Missing)
+        #
+        #
+        class CheckedUnhashable(Enum):
+            ONE = dict()
+            TWO = set()
+            name = 'python'
+        self.assertIn(dict(), CheckedUnhashable)
+        self.assertIn('python', CheckedUnhashable)
+        self.assertEqual(CheckedUnhashable.name.value, 'python')
+        self.assertEqual(CheckedUnhashable.name.name, 'name')
+        #
+        @_simple_enum()
+        class Unhashable:
+            ONE = dict()
+            TWO = set()
+            name = 'python'
+        self.assertIn(dict(), Unhashable)
+        self.assertIn('python', Unhashable)
+        self.assertEqual(Unhashable.name.value, 'python')
+        self.assertEqual(Unhashable.name.name, 'name')
+        _test_simple_enum(Unhashable, Unhashable)
 
 
 class MiscTestCase(unittest.TestCase):
@@ -5166,7 +5253,7 @@ def member_dir(member):
                     allowed.add(name)
                 else:
                     allowed.discard(name)
-            else:
+            elif name not in member._member_map_:
                 allowed.add(name)
     return sorted(allowed)
 

@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "interpreteridobject.h"
-#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
+#include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 
 #ifdef MS_WINDOWS
@@ -223,8 +223,8 @@ static PyTypeObject *
 add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
              struct xid_class_registry *classes)
 {
-    PyTypeObject *cls = (PyTypeObject *)PyType_FromMetaclass(
-                NULL, mod, spec, NULL);
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
+                mod, spec, NULL);
     if (cls == NULL) {
         return NULL;
     }
@@ -262,136 +262,6 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
 }
 
 
-/* Cross-interpreter Buffer Views *******************************************/
-
-// XXX Release when the original interpreter is destroyed.
-
-typedef struct {
-    PyObject_HEAD
-    Py_buffer *view;
-    int64_t interpid;
-} XIBufferViewObject;
-
-static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
-{
-    assert(data->data != NULL);
-    assert(data->obj == NULL);
-    assert(data->interpid >= 0);
-    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
-    if (self == NULL) {
-        return NULL;
-    }
-    PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)data->data;
-    self->interpid = data->interpid;
-    return (PyObject *)self;
-}
-
-static void
-xibufferview_dealloc(XIBufferViewObject *self)
-{
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
-    /* If the interpreter is no longer alive then we have problems,
-       since other objects may be using the buffer still. */
-    assert(interp != NULL);
-
-    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
-        // XXX Emit a warning?
-        PyErr_Clear();
-    }
-
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free(self);
-    /* "Instances of heap-allocated types hold a reference to their type."
-     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
-     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
-    */
-    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
-    // like we do for _abc._abc_data?
-    Py_DECREF(tp);
-}
-
-static int
-xibufferview_getbuf(XIBufferViewObject *self, Py_buffer *view, int flags)
-{
-    /* Only PyMemoryView_FromObject() should ever call this,
-       via _memoryview_from_xid() below. */
-    *view = *self->view;
-    view->obj = (PyObject *)self;
-    // XXX Should we leave it alone?
-    view->internal = NULL;
-    return 0;
-}
-
-static PyType_Slot XIBufferViewType_slots[] = {
-    {Py_tp_dealloc, (destructor)xibufferview_dealloc},
-    {Py_bf_getbuffer, (getbufferproc)xibufferview_getbuf},
-    // We don't bother with Py_bf_releasebuffer since we don't need it.
-    {0, NULL},
-};
-
-static PyType_Spec XIBufferViewType_spec = {
-    .name = MODULE_NAME ".CrossInterpreterBufferView",
-    .basicsize = sizeof(XIBufferViewObject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = XIBufferViewType_slots,
-};
-
-
-/* extra XID types **********************************************************/
-
-static PyTypeObject * _get_current_xibufferview_type(void);
-
-static PyObject *
-_memoryview_from_xid(_PyCrossInterpreterData *data)
-{
-    PyTypeObject *cls = _get_current_xibufferview_type();
-    if (cls == NULL) {
-        return NULL;
-    }
-    PyObject *obj = xibufferview_from_xid(cls, data);
-    if (obj == NULL) {
-        return NULL;
-    }
-    return PyMemoryView_FromObject(obj);
-}
-
-static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj,
-                   _PyCrossInterpreterData *data)
-{
-    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
-    if (view == NULL) {
-        return -1;
-    }
-    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
-        PyMem_RawFree(view);
-        return -1;
-    }
-    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
-                                 _memoryview_from_xid);
-    return 0;
-}
-
-static int
-register_builtin_xid_types(struct xid_class_registry *classes)
-{
-    PyTypeObject *cls;
-    crossinterpdatafunc func;
-
-    // builtin memoryview
-    cls = &PyMemoryView_Type;
-    func = _memoryview_shared;
-    if (register_xid_class(cls, func, classes)) {
-        return -1;
-    }
-
-    return 0;
-}
-
-
 /* module state *************************************************************/
 
 typedef struct {
@@ -402,8 +272,8 @@ typedef struct {
     PyTypeObject *recv_channel_type;
 
     /* heap types */
+    PyTypeObject *ChannelInfoType;
     PyTypeObject *ChannelIDType;
-    PyTypeObject *XIBufferViewType;
 
     /* exceptions */
     PyObject *ChannelError;
@@ -440,9 +310,13 @@ _get_current_module_state(void)
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
+    /* external types */
+    Py_VISIT(state->send_channel_type);
+    Py_VISIT(state->recv_channel_type);
+
     /* heap types */
+    Py_VISIT(state->ChannelInfoType);
     Py_VISIT(state->ChannelIDType);
-    Py_VISIT(state->XIBufferViewType);
 
     /* exceptions */
     Py_VISIT(state->ChannelError);
@@ -457,15 +331,16 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 static int
 clear_module_state(module_state *state)
 {
+    /* external types */
     Py_CLEAR(state->send_channel_type);
     Py_CLEAR(state->recv_channel_type);
 
     /* heap types */
+    Py_CLEAR(state->ChannelInfoType);
     if (state->ChannelIDType != NULL) {
         (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
     }
     Py_CLEAR(state->ChannelIDType);
-    Py_CLEAR(state->XIBufferViewType);
 
     /* exceptions */
     Py_CLEAR(state->ChannelError);
@@ -475,17 +350,6 @@ clear_module_state(module_state *state)
     Py_CLEAR(state->ChannelNotEmptyError);
 
     return 0;
-}
-
-
-static PyTypeObject *
-_get_current_xibufferview_type(void)
-{
-    module_state *state = _get_current_module_state();
-    if (state == NULL) {
-        return NULL;
-    }
-    return state->XIBufferViewType;
 }
 
 
@@ -2088,6 +1952,236 @@ channel_is_associated(_channels *channels, int64_t cid, int64_t interpid,
 }
 
 
+/* channel info */
+
+struct channel_info {
+    struct {
+        // 1: closed; -1: closing
+        int closed;
+        struct {
+            Py_ssize_t nsend_only;  // not released
+            Py_ssize_t nsend_only_released;
+            Py_ssize_t nrecv_only;  // not released
+            Py_ssize_t nrecv_only_released;
+            Py_ssize_t nboth;  // not released
+            Py_ssize_t nboth_released;
+            Py_ssize_t nboth_send_released;
+            Py_ssize_t nboth_recv_released;
+        } all;
+        struct {
+            // 1: associated; -1: released
+            int send;
+            int recv;
+        } cur;
+    } status;
+    Py_ssize_t count;
+};
+
+static int
+_channel_get_info(_channels *channels, int64_t cid, struct channel_info *info)
+{
+    int err = 0;
+    *info = (struct channel_info){0};
+
+    // Get the current interpreter.
+    PyInterpreterState *interp = _get_current_interp();
+    if (interp == NULL) {
+        return -1;
+    }
+    Py_ssize_t interpid = PyInterpreterState_GetID(interp);
+
+    // Hold the global lock until we're done.
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+
+    // Find the channel.
+    _channelref *ref = _channelref_find(channels->head, cid, NULL);
+    if (ref == NULL) {
+        err = ERR_CHANNEL_NOT_FOUND;
+        goto finally;
+    }
+    _channel_state *chan = ref->chan;
+
+    // Check if open.
+    if (chan == NULL) {
+        info->status.closed = 1;
+        goto finally;
+    }
+    if (!chan->open) {
+        assert(chan->queue->count == 0);
+        info->status.closed = 1;
+        goto finally;
+    }
+    if (chan->closing != NULL) {
+        assert(chan->queue->count > 0);
+        info->status.closed = -1;
+    }
+    else {
+        info->status.closed = 0;
+    }
+
+    // Get the number of queued objects.
+    info->count = chan->queue->count;
+
+    // Get the ends statuses.
+    assert(info->status.cur.send == 0);
+    assert(info->status.cur.recv == 0);
+    _channelend *send = chan->ends->send;
+    while (send != NULL) {
+        if (send->interpid == interpid) {
+            info->status.cur.send = send->open ? 1 : -1;
+        }
+
+        if (send->open) {
+            info->status.all.nsend_only += 1;
+        }
+        else {
+            info->status.all.nsend_only_released += 1;
+        }
+        send = send->next;
+    }
+    _channelend *recv = chan->ends->recv;
+    while (recv != NULL) {
+        if (recv->interpid == interpid) {
+            info->status.cur.recv = recv->open ? 1 : -1;
+        }
+
+        // XXX This is O(n*n).  Why do we have 2 linked lists?
+        _channelend *send = chan->ends->send;
+        while (send != NULL) {
+            if (send->interpid == recv->interpid) {
+                break;
+            }
+            send = send->next;
+        }
+        if (send == NULL) {
+            if (recv->open) {
+                info->status.all.nrecv_only += 1;
+            }
+            else {
+                info->status.all.nrecv_only_released += 1;
+            }
+        }
+        else {
+            if (recv->open) {
+                if (send->open) {
+                    info->status.all.nboth += 1;
+                    info->status.all.nsend_only -= 1;
+                }
+                else {
+                    info->status.all.nboth_recv_released += 1;
+                    info->status.all.nsend_only_released -= 1;
+                }
+            }
+            else {
+                if (send->open) {
+                    info->status.all.nboth_send_released += 1;
+                    info->status.all.nsend_only -= 1;
+                }
+                else {
+                    info->status.all.nboth_released += 1;
+                    info->status.all.nsend_only_released -= 1;
+                }
+            }
+        }
+        recv = recv->next;
+    }
+
+finally:
+    PyThread_release_lock(channels->mutex);
+    return err;
+}
+
+PyDoc_STRVAR(channel_info_doc,
+"ChannelInfo\n\
+\n\
+A named tuple of a channel's state.");
+
+static PyStructSequence_Field channel_info_fields[] = {
+    {"open", "both ends are open"},
+    {"closing", "send is closed, recv is non-empty"},
+    {"closed", "both ends are closed"},
+    {"count", "queued objects"},
+
+    {"num_interp_send", "interpreters bound to the send end"},
+    {"num_interp_send_released",
+     "interpreters bound to the send end and released"},
+
+    {"num_interp_recv", "interpreters bound to the send end"},
+    {"num_interp_recv_released",
+     "interpreters bound to the send end and released"},
+
+    {"num_interp_both", "interpreters bound to both ends"},
+    {"num_interp_both_released",
+     "interpreters bound to both ends and released_from_both"},
+    {"num_interp_both_send_released",
+     "interpreters bound to both ends and released_from_the send end"},
+    {"num_interp_both_recv_released",
+     "interpreters bound to both ends and released_from_the recv end"},
+
+    {"send_associated", "current interpreter is bound to the send end"},
+    {"send_released", "current interpreter *was* bound to the send end"},
+    {"recv_associated", "current interpreter is bound to the recv end"},
+    {"recv_released", "current interpreter *was* bound to the recv end"},
+    {0}
+};
+
+static PyStructSequence_Desc channel_info_desc = {
+    .name = MODULE_NAME ".ChannelInfo",
+    .doc = channel_info_doc,
+    .fields = channel_info_fields,
+    .n_in_sequence = 8,
+};
+
+static PyObject *
+new_channel_info(PyObject *mod, struct channel_info *info)
+{
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    assert(state->ChannelInfoType != NULL);
+    PyObject *self = PyStructSequence_New(state->ChannelInfoType);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    int pos = 0;
+#define SET_BOOL(val) \
+    PyStructSequence_SET_ITEM(self, pos++, \
+                              Py_NewRef(val ? Py_True : Py_False))
+#define SET_COUNT(val) \
+    do { \
+        PyObject *obj = PyLong_FromLongLong(val); \
+        if (obj == NULL) { \
+            Py_CLEAR(info); \
+            return NULL; \
+        } \
+        PyStructSequence_SET_ITEM(self, pos++, obj); \
+    } while(0)
+    SET_BOOL(info->status.closed == 0);
+    SET_BOOL(info->status.closed == -1);
+    SET_BOOL(info->status.closed == 1);
+    SET_COUNT(info->count);
+    SET_COUNT(info->status.all.nsend_only);
+    SET_COUNT(info->status.all.nsend_only_released);
+    SET_COUNT(info->status.all.nrecv_only);
+    SET_COUNT(info->status.all.nrecv_only_released);
+    SET_COUNT(info->status.all.nboth);
+    SET_COUNT(info->status.all.nboth_released);
+    SET_COUNT(info->status.all.nboth_send_released);
+    SET_COUNT(info->status.all.nboth_recv_released);
+    SET_BOOL(info->status.cur.send == 1);
+    SET_BOOL(info->status.cur.send == -1);
+    SET_BOOL(info->status.cur.recv == 1);
+    SET_BOOL(info->status.cur.recv == -1);
+#undef SET_COUNT
+#undef SET_BOOL
+    assert(!PyErr_Occurred());
+    return self;
+}
+
+
 /* ChannelID class */
 
 typedef struct channelid {
@@ -2535,10 +2629,11 @@ _get_current_channelend_type(int end)
         cls = state->recv_channel_type;
     }
     if (cls == NULL) {
-        PyObject *highlevel = PyImport_ImportModule("interpreters");
+        // Force the module to be loaded, to register the type.
+        PyObject *highlevel = PyImport_ImportModule("interpreters.channel");
         if (highlevel == NULL) {
             PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters");
+            highlevel = PyImport_ImportModule("test.support.interpreters.channel");
             if (highlevel == NULL) {
                 return NULL;
             }
@@ -3080,6 +3175,33 @@ Close the channel for the current interpreter.  'send' and 'recv'\n\
 ends are closed.  Closing an already closed end is a noop.");
 
 static PyObject *
+channelsmod_get_info(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", NULL};
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&:_get_info", kwlist,
+                                     channel_id_converter, &cid_data)) {
+        return NULL;
+    }
+    int64_t cid = cid_data.cid;
+
+    struct channel_info info;
+    int err = _channel_get_info(&_globals.channels, cid, &info);
+    if (handle_channel_error(err, self, cid)) {
+        return NULL;
+    }
+    return new_channel_info(self, &info);
+}
+
+PyDoc_STRVAR(channelsmod_get_info_doc,
+"get_info(cid)\n\
+\n\
+Return details about the channel.");
+
+static PyObject *
 channelsmod__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 {
     module_state *state = get_module_state(self);
@@ -3143,6 +3265,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channelsmod_close_doc},
     {"release",                    _PyCFunction_CAST(channelsmod_release),
      METH_VARARGS | METH_KEYWORDS, channelsmod_release_doc},
+    {"get_info",                   _PyCFunction_CAST(channelsmod_get_info),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_get_info_doc},
     {"_channel_id",                _PyCFunction_CAST(channelsmod__channel_id),
      METH_VARARGS | METH_KEYWORDS, NULL},
     {"_register_end_types",        _PyCFunction_CAST(channelsmod__register_end_types),
@@ -3179,20 +3303,19 @@ module_exec(PyObject *mod)
 
     /* Add other types */
 
+    // ChannelInfo
+    state->ChannelInfoType = PyStructSequence_NewType(&channel_info_desc);
+    if (state->ChannelInfoType == NULL) {
+        goto error;
+    }
+    if (PyModule_AddType(mod, state->ChannelInfoType) < 0) {
+        goto error;
+    }
+
     // ChannelID
     state->ChannelIDType = add_new_type(
             mod, &channelid_typespec, _channelid_shared, xid_classes);
     if (state->ChannelIDType == NULL) {
-        goto error;
-    }
-
-    state->XIBufferViewType = add_new_type(mod, &XIBufferViewType_spec, NULL,
-                                           xid_classes);
-    if (state->XIBufferViewType == NULL) {
-        goto error;
-    }
-
-    if (register_builtin_xid_types(xid_classes) < 0) {
         goto error;
     }
 

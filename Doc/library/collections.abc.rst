@@ -192,7 +192,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 .. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
    registered as :class:`Iterable` or that have an :meth:`__iter__`
    method, but it does not detect classes that iterate with the
-   :meth:`__getitem__` method.  The only reliable way to determine
+   :meth:`~object.__getitem__` method.  The only reliable way to determine
    whether an object is :term:`iterable` is to call ``iter(obj)``.
 
 
@@ -222,7 +222,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Checking ``isinstance(obj, Iterable)`` detects classes that are registered
    as :class:`Iterable` or that have an :meth:`__iter__` method, but it does
-   not detect classes that iterate with the :meth:`__getitem__` method.
+   not detect classes that iterate with the :meth:`~object.__getitem__` method.
    The only reliable way to determine whether an object is :term:`iterable`
    is to call ``iter(obj)``.
 
@@ -262,8 +262,8 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Implementation note: Some of the mixin methods, such as
    :meth:`__iter__`, :meth:`__reversed__` and :meth:`index`, make
-   repeated calls to the underlying :meth:`__getitem__` method.
-   Consequently, if :meth:`__getitem__` is implemented with constant
+   repeated calls to the underlying :meth:`~object.__getitem__` method.
+   Consequently, if :meth:`~object.__getitem__` is implemented with constant
    access speed, the mixin methods will have linear performance;
    however, if the underlying method is linear (as it would be with a
    linked list), the mixins will have quadratic performance and will

@@ -83,6 +83,7 @@ PyAPI_FUNC(int) pthread_create(pthread_t *restrict thread,
                                void *(*start_routine)(void *),
                                void *restrict arg);
 PyAPI_FUNC(int) pthread_detach(pthread_t thread);
+PyAPI_FUNC(int) pthread_join(pthread_t thread, void** value_ptr);
 PyAPI_FUNC(pthread_t) pthread_self(void);
 PyAPI_FUNC(int) pthread_exit(void *retval) __attribute__ ((__noreturn__));
 PyAPI_FUNC(int) pthread_attr_init(pthread_attr_t *attr);

@@ -684,6 +684,27 @@ class CmdLineTest(unittest.TestCase):
                     ]
                 )
 
+    def test_source_lines_are_shown_when_running_source(self):
+        _, _, stderr = assert_python_failure("-c", "1/0")
+        expected_lines = [
+            b'Traceback (most recent call last):',
+            b'  File "<string>", line 1, in <module>',
+            b'    1/0',
+            b'    ~^~',
+            b'ZeroDivisionError: division by zero']
+        self.assertEqual(stderr.splitlines(), expected_lines)
+
+    def test_syntaxerror_does_not_crash(self):
+        script = "nonlocal x\n"
+        with os_helper.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
+            # It used to crash in https://github.com/python/cpython/issues/111132
+            self.assertTrue(text.endswith(
+                'SyntaxError: nonlocal declaration not allowed at module level\n',
+            ), text)
+
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
         # sys.path configuration:

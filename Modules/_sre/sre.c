@@ -107,9 +107,11 @@ static unsigned int sre_toupper(unsigned int ch) {
 
 #if VERBOSE == 0
 #  define INIT_TRACE(state)
+#  define DO_TRACE 0
 #  define TRACE(v)
 #elif VERBOSE == 1
 #  define INIT_TRACE(state) int _debug = (state)->debug
+#  define DO_TRACE (_debug)
 #  define TRACE(v) do {     \
         if (_debug) { \
             printf v;       \
@@ -117,6 +119,7 @@ static unsigned int sre_toupper(unsigned int ch) {
     } while (0)
 #elif VERBOSE == 2
 #  define INIT_TRACE(state)
+#  define DO_TRACE 1
 #  define TRACE(v) printf v
 #else
 #  error VERBOSE must be 0, 1 or 2

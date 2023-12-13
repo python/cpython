@@ -4,6 +4,9 @@
     <Filter Include="Include">
       <UniqueIdentifier>{086b0afb-270c-4603-a02a-63d46f0b2b92}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\internal\mimalloc">
+      <UniqueIdentifier>{1dc8d8bd-d493-478e-9b7a-7eb108bb8bd5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Modules">
       <UniqueIdentifier>{8e81609f-13ca-4eae-9fdb-f8af20c710c7}</UniqueIdentifier>
     </Filter>
@@ -18,6 +21,9 @@
     </Filter>
     <Filter Include="Objects">
       <UniqueIdentifier>{ab29a558-143d-4fe7-a039-b431fb429856}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Objects\mimalloc">
+      <UniqueIdentifier>{ad449c55-23cb-44f8-ada4-04b23c9ec388}</UniqueIdentifier>
     </Filter>
     <Filter Include="Parser">
       <UniqueIdentifier>{97349fee-0abf-48b0-a8f5-771bf39b8aee}</UniqueIdentifier>
@@ -462,6 +468,9 @@
     <ClInclude Include="..\Include\cpython\pyframe.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyhash.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -571,6 +580,12 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_context.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_critical_section.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_crossinterp.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_descrobject.h">
@@ -765,6 +780,9 @@
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_tstate.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -782,6 +800,24 @@
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_uops.h">
       <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
+      <Filter>Include\internal\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\atomic.h">
+      <Filter>Include\internal\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\internal.h">
+      <Filter>Include\internal\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\prim.h">
+      <Filter>Include\internal\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\track.h">
+      <Filter>Include\internal\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\types.h">
+      <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
       <Filter>Modules\zlib</Filter>
@@ -1214,6 +1250,12 @@
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\critical_section.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\crossinterp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\dynamic_annotations.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1221,9 +1263,6 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\errors.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\executor.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\fileutils.c">
@@ -1464,6 +1503,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">

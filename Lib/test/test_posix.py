@@ -6,9 +6,6 @@ from test.support import os_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 
-# Skip these tests if there is no posix module.
-posix = import_helper.import_module('posix')
-
 import errno
 import sys
 import signal
@@ -21,6 +18,11 @@ import unittest
 import warnings
 import textwrap
 from contextlib import contextmanager
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 try:
     import pwd
@@ -1013,15 +1015,16 @@ class PosixTester(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.putenv('FRUIT\0VEGETABLE', 'cabbage')
         with self.assertRaises(ValueError):
-            os.putenv(b'FRUIT\0VEGETABLE', b'cabbage')
-        with self.assertRaises(ValueError):
             os.putenv('FRUIT', 'orange\0VEGETABLE=cabbage')
         with self.assertRaises(ValueError):
-            os.putenv(b'FRUIT', b'orange\0VEGETABLE=cabbage')
-        with self.assertRaises(ValueError):
             os.putenv('FRUIT=ORANGE', 'lemon')
-        with self.assertRaises(ValueError):
-            os.putenv(b'FRUIT=ORANGE', b'lemon')
+        if os.name == 'posix':
+            with self.assertRaises(ValueError):
+                os.putenv(b'FRUIT\0VEGETABLE', b'cabbage')
+            with self.assertRaises(ValueError):
+                os.putenv(b'FRUIT', b'orange\0VEGETABLE=cabbage')
+            with self.assertRaises(ValueError):
+                os.putenv(b'FRUIT=ORANGE', b'lemon')
 
     @unittest.skipUnless(hasattr(posix, 'getcwd'), 'test needs posix.getcwd()')
     def test_getcwd_long_pathnames(self):
@@ -1220,6 +1223,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
     @unittest.skipIf(support.is_wasi, "No dynamic linking on WASI")
+    @unittest.skipUnless(os.name == 'posix', "POSIX-only test")
     def test_rtld_constants(self):
         # check presence of major RTLD_* constants
         posix.RTLD_LAZY

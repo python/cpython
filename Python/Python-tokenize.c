@@ -4,7 +4,6 @@
 #include "../Parser/lexer/lexer.h"
 #include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
-#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
 
@@ -226,7 +225,7 @@ tokenizeriter_next(tokenizeriterobject *it)
         col_offset = _PyPegen_byte_offset_to_character_offset(line, token.start - line_start);
     }
     if (token.end != NULL && token.end >= it->tok->line_start) {
-        end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
+        end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, token.end - it->tok->line_start);
     }
 
     if (it->tok->tok_extra_tokens) {

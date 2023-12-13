@@ -1,2 +1,0 @@
-test_gdb: Fix detection of gdb built without Python scripting support. Patch
-by Victor Stinner.

@@ -3163,7 +3163,7 @@ PyDoc_STRVAR(_curses_napms__doc__,
 #define _CURSES_NAPMS_METHODDEF    \
     {"napms", (PyCFunction)_curses_napms, METH_O, _curses_napms__doc__},
 
-static PyObject *
+static int
 _curses_napms_impl(PyObject *module, int ms);
 
 static PyObject *
@@ -3171,12 +3171,17 @@ _curses_napms(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int ms;
+    int _return_value;
 
     ms = PyLong_AsInt(arg);
     if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _curses_napms_impl(module, ms);
+    _return_value = _curses_napms_impl(module, ms);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -4313,4 +4318,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=24ad16254d1eef9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96887782374f070a input=a9049054013a1b77]*/

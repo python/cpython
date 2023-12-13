@@ -2,6 +2,9 @@
 
 #ifndef Py_INTERNAL_AST_STATE_H
 #define Py_INTERNAL_AST_STATE_H
+
+#include "pycore_lock.h"    // _PyOnceFlag
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,7 +14,8 @@ extern "C" {
 #endif
 
 struct ast_state {
-    int initialized;
+    _PyOnceFlag once;
+    int finalized;
     int recursion_depth;
     int recursion_limit;
     PyObject *AST_type;

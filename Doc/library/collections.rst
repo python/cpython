@@ -743,12 +743,12 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         If calling :attr:`default_factory` raises an exception this exception is
         propagated unchanged.
 
-        This method is called by the :meth:`__getitem__` method of the
+        This method is called by the :meth:`~object.__getitem__` method of the
         :class:`dict` class when the requested key is not found; whatever it
-        returns or raises is then returned or raised by :meth:`__getitem__`.
+        returns or raises is then returned or raised by :meth:`~object.__getitem__`.
 
         Note that :meth:`__missing__` is *not* called for any operations besides
-        :meth:`__getitem__`. This means that :meth:`get` will, like normal
+        :meth:`~object.__getitem__`. This means that :meth:`get` will, like normal
         dictionaries, return ``None`` as a default rather than using
         :attr:`default_factory`.
 
@@ -980,6 +980,10 @@ field names, the method and attribute names start with an underscore.
         ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
     Named tuples are also supported by generic function :func:`copy.replace`.
+
+    .. versionchanged:: 3.13
+       Raise :exc:`TypeError` instead of :exc:`ValueError` for invalid
+       keyword arguments.
 
 .. attribute:: somenamedtuple._fields
 
