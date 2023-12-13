@@ -752,10 +752,7 @@ start_frame:
         goto exit_unwind;
     }
 
-// Jump here from ENTER_EXECUTOR and exit_trace.
-enter_tier_one:
     next_instr = frame->instr_ptr;
-
 resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
