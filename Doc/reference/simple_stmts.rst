@@ -607,12 +607,15 @@ exceptions will be printed:
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
-
+   <BLANKLINE>
    The above exception was the direct cause of the following exception:
-
+   <BLANKLINE>
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened") from exc
    RuntimeError: Something bad happened
 
 A similar mechanism works implicitly if a new exception is raised when
@@ -630,12 +633,15 @@ attached as the new exception's :attr:`~BaseException.__context__` attribute:
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
-
+   <BLANKLINE>
    During handling of the above exception, another exception occurred:
-
+   <BLANKLINE>
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened")
    RuntimeError: Something bad happened
 
 Exception chaining can be explicitly suppressed by specifying :const:`None` in
