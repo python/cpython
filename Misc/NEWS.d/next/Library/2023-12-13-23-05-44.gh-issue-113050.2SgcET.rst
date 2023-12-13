@@ -1,0 +1,2 @@
+Ensure ``name`` parameter is passed to task factories set by
+:func:`asyncio.BaseEventLoop.set_task_factory`.

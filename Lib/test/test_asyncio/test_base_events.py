@@ -722,7 +722,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         async def coro():
             pass
 
-        factory = lambda loop, coro: MyTask(coro, loop=loop)
+        factory = lambda loop, coro, **kwargs: MyTask(coro, loop=loop, **kwargs)
 
         self.assertIsNone(self.loop.get_task_factory())
         self.loop.set_task_factory(factory)
@@ -816,8 +816,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             loop.close()
 
     def test_create_named_task_with_custom_factory(self):
-        def task_factory(loop, coro):
-            return asyncio.Task(coro, loop=loop)
+        def task_factory(loop, coro, **kwargs):
+            return asyncio.Task(coro, loop=loop, **kwargs)
 
         async def test():
             pass

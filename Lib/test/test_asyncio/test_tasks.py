@@ -3326,7 +3326,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         """Test coroutine submission from a thread to an event loop
         when the task factory raise an exception."""
 
-        def task_factory(loop, coro):
+        def task_factory(loop, coro, **kwargs):
             raise NameError
 
         run = self.loop.run_in_executor(

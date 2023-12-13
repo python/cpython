@@ -379,8 +379,8 @@ Creating Futures and Tasks
 
    If *factory* is ``None`` the default task factory will be set.
    Otherwise, *factory* must be a *callable* with the signature matching
-   ``(loop, coro, context=None)``, where *loop* is a reference to the active
-   event loop, and *coro* is a coroutine object.  The callable
+   ``(loop, coro, name=None, context=None)``, where *loop* is a reference
+   to the active event loop, and *coro* is a coroutine object. The callable
    must return a :class:`asyncio.Future`-compatible object.
 
 .. method:: loop.get_task_factory()
