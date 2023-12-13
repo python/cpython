@@ -261,6 +261,10 @@ os
   CPU resources of a container system without having to modify the container (application code).
   (Contributed by Donghee Na in :gh:`109595`)
 
+* Add support of :func:`os.lchmod` and the *follow_symlinks* argument
+  in :func:`os.chmod` on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`59616`)
+
 pathlib
 -------
 
