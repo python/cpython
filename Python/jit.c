@@ -201,7 +201,6 @@ copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
     for (uint64_t i = 0; i < stencil->holes_size; i++) {
         patch(base, &stencil->holes[i], patches);
     }
-    POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
 }
 
 static void
