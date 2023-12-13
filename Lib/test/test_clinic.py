@@ -2234,6 +2234,7 @@ class ClinicParserTest(TestCase):
                 expected_error = f"Cannot apply {annotation} twice to the same function!"
                 self.expect_failure(block, expected_error, lineno=3)
 
+    def test_getter_and_setter_disallowed_on_same_function(self):
         dup_annotations = [("@getter", "@setter"), ("@setter", "@getter")]
         for dup in dup_annotations:
             with self.subTest(dup=dup):
