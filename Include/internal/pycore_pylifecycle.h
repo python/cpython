@@ -63,7 +63,7 @@ extern void _PyArg_Fini(void);
 extern void _Py_FinalizeAllocatedBlocks(_PyRuntimeState *);
 
 extern PyStatus _PyGILState_Init(PyInterpreterState *interp);
-extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
+extern void _PyGILState_SetTstate(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyInterpreterState *interp);
 
 extern void _PyGC_DumpShutdownStats(PyInterpreterState *interp);

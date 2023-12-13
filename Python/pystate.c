@@ -1454,6 +1454,7 @@ void
 PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
+    assert(current_fast_get(&_PyRuntime)->interp == tstate->interp);
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
@@ -2150,7 +2151,7 @@ _PyGILState_Fini(PyInterpreterState *interp)
 
 
 // XXX Drop this.
-PyStatus
+void
 _PyGILState_SetTstate(PyThreadState *tstate)
 {
     /* must init with valid states */
@@ -2160,7 +2161,7 @@ _PyGILState_SetTstate(PyThreadState *tstate)
     if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, PyGILState is shared by all interpreters. The main
          * interpreter is responsible to initialize it. */
-        return _PyStatus_OK();
+        return;
     }
 
 #ifndef NDEBUG
@@ -2170,8 +2171,6 @@ _PyGILState_SetTstate(PyThreadState *tstate)
     assert(gilstate_tss_get(runtime) == tstate);
     assert(tstate->gilstate_counter == 1);
 #endif
-
-    return _PyStatus_OK();
 }
 
 PyInterpreterState *

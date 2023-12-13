@@ -547,7 +547,9 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    PyThreadState_Swap(tstate);
     PyThreadState_Clear(tstate);
+    PyThreadState_Swap(save_tstate);
     PyThreadState_Delete(tstate);
 
     _PyInterpreterState_RequireIDRef(interp, 1);
