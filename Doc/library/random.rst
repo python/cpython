@@ -435,7 +435,7 @@ change across Python versions, but two aspects are guaranteed not to change:
 * If a new seeding method is added, then a backward compatible seeder will be
   offered.
 
-* The generator's :meth:`~random.random` method will continue to produce the same
+* The generator's :meth:`!random` method will continue to produce the same
   sequence when the compatible seeder is given the same seed.
 
 .. _random-examples:
