@@ -342,6 +342,11 @@ PyUnstable_Optimizer_NewCounter(void)
 static void
 uop_dealloc(_PyUOpExecutorObject *self) {
     _Py_ExecutorClear((_PyExecutorObject *)self);
+    if (self->executors != NULL) {
+        for (int i = Py_SIZE(self); --i >= 0; ) {
+            Py_XDECREF(self->executors[i]);
+        }
+    }
     PyObject_Free(self);
 }
 
