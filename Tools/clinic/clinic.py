@@ -5375,14 +5375,22 @@ class DSLParser:
         self.critical_section = True
 
     def at_getter(self) -> None:
-        if self.kind in (GETTER, SETTER):
-            fail("only one of @getter or @setter can be used")
-        self.kind = GETTER
+        match self.kind:
+            case FunctionKind.GETTER:
+                fail("Cannot apply @getter twice to the same function!")
+            case FunctionKind.SETTER:
+                fail("Cannot apply both @getter and @setter to the same function!")
+            case _:
+                self.kind = FunctionKind.GETTER
 
     def at_setter(self) -> None:
-        if self.kind in (GETTER, SETTER):
-            fail("only one of @getter or @setter can be used")
-        self.kind = SETTER
+        match self.kind:
+            case FunctionKind.SETTER:
+                fail("Cannot apply @setter twice to the same function!")
+            case FunctionKind.GETTER:
+                fail("Cannot apply both @getter and @setter to the same function!")
+            case _:
+                self.kind = FunctionKind.SETTER
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
