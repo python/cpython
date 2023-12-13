@@ -1842,7 +1842,7 @@
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
@@ -2546,7 +2546,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -2566,7 +2566,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2585,7 +2585,7 @@
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2601,7 +2601,7 @@
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2630,7 +2630,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
