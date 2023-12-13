@@ -598,7 +598,7 @@ resulting exception instance will be attached to the raised exception as the
 :attr:`!__cause__` attribute. If the raised exception is not handled, both
 exceptions will be printed:
 
-.. doctest::
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -610,9 +610,9 @@ exceptions will be printed:
        print(1 / 0)
              ~~^~~
    ZeroDivisionError: division by zero
-   <BLANKLINE>
+
    The above exception was the direct cause of the following exception:
-   <BLANKLINE>
+
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
        raise RuntimeError("Something bad happened") from exc
@@ -624,7 +624,7 @@ when an :keyword:`except` or :keyword:`finally` clause, or a
 :keyword:`with` statement, is used.  The previous exception is then
 attached as the new exception's :attr:`~BaseException.__context__` attribute:
 
-.. doctest::
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -636,9 +636,9 @@ attached as the new exception's :attr:`~BaseException.__context__` attribute:
        print(1 / 0)
              ~~^~~
    ZeroDivisionError: division by zero
-   <BLANKLINE>
+
    During handling of the above exception, another exception occurred:
-   <BLANKLINE>
+
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
        raise RuntimeError("Something bad happened")
