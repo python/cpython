@@ -1417,7 +1417,7 @@ changes, or look through the Subversion logs for all the details.
   :func:`~math.lgamma` for the natural log of the Gamma function.
   (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
 
-* The :mod:`multiprocessing` module's :class:`Manager*` classes
+* The :mod:`multiprocessing` module's :class:`!Manager*` classes
   can now be passed a callable that will be called whenever
   a subprocess is started, along with a set of arguments that will be
   passed to the callable.
