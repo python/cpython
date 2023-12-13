@@ -27,7 +27,6 @@ DEFAULT_OUTPUT = ROOT / "Include/opcode_ids.h"
 def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: TextIO) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
-    out.emit("\n")
     instmap: dict[str, int] = {}
 
     # 0 is reserved for cache entries. This helps debugging.
@@ -103,32 +102,19 @@ def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: Te
 
     assert 255 not in instmap.values()
 
-    out.emit(
-        """#ifndef Py_OPCODE_IDS_H
-#define Py_OPCODE_IDS_H
-#ifdef __cplusplus
-extern "C" {
-#endif
+    with out.header_guard("Py_OPCODE_IDS_H"):
+        out.emit("/* Instruction opcodes for compiled code */\n")
 
-/* Instruction opcodes for compiled code */
-"""
-    )
+        def write_define(name: str, op: int) -> None:
+            out.emit(f"#define {name:<38} {op:>3}\n")
 
-    def write_define(name: str, op: int) -> None:
-        out.emit(f"#define {name:<38} {op:>3}\n")
+        for op, name in sorted([(op, name) for (name, op) in instmap.items()]):
+            write_define(name, op)
 
-    for op, name in sorted([(op, name) for (name, op) in instmap.items()]):
-        write_define(name, op)
+        out.emit("\n")
+        write_define("HAVE_ARGUMENT", len(no_arg))
+        write_define("MIN_INSTRUMENTED_OPCODE", min_instrumented)
 
-    out.emit("\n")
-    write_define("HAVE_ARGUMENT", len(no_arg))
-    write_define("MIN_INSTRUMENTED_OPCODE", min_instrumented)
-
-    out.emit("\n")
-    out.emit("#ifdef __cplusplus\n")
-    out.emit("}\n")
-    out.emit("#endif\n")
-    out.emit("#endif /* !Py_OPCODE_IDS_H */\n")
 
 
 arg_parser = argparse.ArgumentParser(

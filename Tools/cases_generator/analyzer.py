@@ -16,6 +16,9 @@ class Properties:
     always_exits: bool
     stores_sp: bool
     tier_one_only: bool
+    uses_co_consts: bool
+    uses_co_names: bool
+    uses_locals: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -35,6 +38,9 @@ class Properties:
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
             tier_one_only=any(p.tier_one_only for p in properties),
+            uses_co_consts=any(p.uses_co_consts for p in properties),
+            uses_co_names=any(p.uses_co_names for p in properties),
+            uses_locals=any(p.uses_locals for p in properties),
         )
 
 
@@ -49,6 +55,9 @@ SKIP_PROPERTIES = Properties(
     always_exits=False,
     stores_sp=False,
     tier_one_only=False,
+    uses_co_consts=False,
+    uses_co_names=False,
+    uses_locals=False,
 )
 
 
@@ -311,6 +320,9 @@ def compute_properties(op: parser.InstDef) -> Properties:
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "STORE_SP"),
         tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
+        uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
+        uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
+        uses_locals=variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"),
     )
 
 

@@ -10,6 +10,7 @@ from analyzer import (
     Skip,
     StackItem,
     analysis_error,
+    Properties,
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator
@@ -184,3 +185,20 @@ def emit_tokens(
             replacement_functions[tkn.text](out, tkn, tkn_iter, uop, stack, inst)
         else:
             out.emit(tkn)
+
+def cflags(p: Properties) -> str:
+    flags: list[str] = []
+    if p.escapes:
+        flags.append("HAS_ESCAPES_FLAG")
+    if not p.infallible:
+        flags.append("HAS_ERROR_FLAG")
+    if p.deopts:
+        flags.append("HAS_DEOPT_FLAG")
+    if p.jumps:
+        flags.append("HAS_JUMP_FLAG")
+    if p.uses_co_consts:
+        flags.append("HAS_CONST_FLAG")
+    if flags:
+        return " | ".join(flags)
+    else:
+        return "0"

@@ -677,7 +677,7 @@
             PyObject *stop;
             PyObject *start;
             PyObject *slice;
-        if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
+            if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
             stop = stack_pointer[-1 - (((oparg == 3) ? 1 : 0))];
             start = stack_pointer[-2 - (((oparg == 3) ? 1 : 0))];
             slice = PySlice_New(start, stop, step);
@@ -1160,7 +1160,7 @@
             PyObject *callargs;
             PyObject *func;
             PyObject *result;
-        if (oparg & 1) { kwargs = stack_pointer[-((oparg & 1))]; }
+            if (oparg & 1) { kwargs = stack_pointer[-((oparg & 1))]; }
             callargs = stack_pointer[-1 - ((oparg & 1))];
             func = stack_pointer[-3 - ((oparg & 1))];
             // DICT_MERGE is called before this opcode if there are kwargs.

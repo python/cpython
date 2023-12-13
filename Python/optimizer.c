@@ -6,7 +6,9 @@
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_uop_ids.h"
 #include "pycore_uops.h"
+#include "pycore_uop_metadata.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -327,9 +329,6 @@ uop_dealloc(_PyUOpExecutorObject *self) {
 const char *
 _PyUOpName(int index)
 {
-    if (index <= MAX_REAL_OPCODE) {
-        return _PyOpcode_OpName[index];
-    }
     return _PyOpcode_uop_name[index];
 }
 
@@ -388,7 +387,7 @@ PyTypeObject _PyUOpExecutor_Type = {
 
 /* TO DO -- Generate these tables */
 static const uint16_t
-_PyUOp_Replacements[OPCODE_METADATA_SIZE] = {
+_PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,

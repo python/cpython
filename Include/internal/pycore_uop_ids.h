@@ -2,6 +2,7 @@
 // from:
 //   Python/bytecodes.c
 // Do not edit!
+
 #ifndef Py_CORE_UOP_IDS_H
 #define Py_CORE_UOP_IDS_H
 #ifdef __cplusplus
@@ -261,8 +262,9 @@ extern "C" {
 #define _SAVE_RETURN_OFFSET 393
 #define _INSERT 394
 #define _CHECK_VALIDITY 395
+#define MAX_UOP_ID 395
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_OPCODE_IDS_H */
+#endif /* !Py_CORE_UOP_IDS_H */

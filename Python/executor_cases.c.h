@@ -3338,7 +3338,7 @@
             PyObject *start;
             PyObject *slice;
             oparg = CURRENT_OPARG();
-        if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
+            if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
             stop = stack_pointer[-1 - (((oparg == 3) ? 1 : 0))];
             start = stack_pointer[-2 - (((oparg == 3) ? 1 : 0))];
             slice = PySlice_New(start, stop, step);
