@@ -1362,7 +1362,7 @@ complete list of changes, or look through the CVS logs for all the details.
   :mod:`os` module. (Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S.
   Otkidach.)
 
-* In the :mod:`os` module, the :func:`\*stat` family of functions can now report
+* In the :mod:`os` module, the :func:`!\*stat` family of functions can now report
   fractions of a second in a timestamp.  Such time stamps are represented as
   floats, similar to the value returned by :func:`time.time`.
 
