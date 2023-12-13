@@ -1536,7 +1536,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
         #include <stddef.h>
-                          
+
         struct validator {
             int recursion_depth;            /* current recursion depth */
             int recursion_limit;            /* recursion limit */
