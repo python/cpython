@@ -1971,7 +1971,7 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.kind in (GETTER, SETTER):
+        if f.kind in {GETTER, SETTER}:
             template_dict['getset_name'] = f.c_basename.upper()
             template_dict['getset_basename'] = f.c_basename
             if f.kind is GETTER:
@@ -5584,7 +5584,7 @@ class DSLParser:
         return_converter = None
         if returns:
             if self.kind in {GETTER, SETTER}:
-                fail("neither @getter nor @setter can define return type")
+                fail(f"@{self.kind.name.lower()} methods cannot define a return type")
             ast_input = f"def x() -> {returns}: pass"
             try:
                 module_node = ast.parse(ast_input)
