@@ -67,7 +67,8 @@ The module defines the following functions:
 
    The optional *limit* argument has the same meaning as for :func:`print_tb`.
    If *chain* is true (the default), then chained exceptions (the
-   :attr:`__cause__` or :attr:`__context__` attributes of the exception) will be
+   :attr:`~BaseException.__cause__` or :attr:`~BaseException.__context__`
+   attributes of the exception) will be
    printed as well, like the interpreter itself does when printing an unhandled
    exception.
 
@@ -234,10 +235,11 @@ capture data for later printing in a lightweight fashion.
    Capture an exception for later rendering. *limit*, *lookup_lines* and
    *capture_locals* are as for the :class:`StackSummary` class.
 
-   If *compact* is true, only data that is required by :class:`TracebackException`'s
-   ``format`` method is saved in the class attributes. In particular, the
-   ``__context__`` field is calculated only if ``__cause__`` is ``None`` and
-   ``__suppress_context__`` is false.
+   If *compact* is true, only data that is required by
+   :class:`!TracebackException`'s :meth:`format` method
+   is saved in the class attributes. In particular, the
+   :attr:`__context__` field is calculated only if :attr:`__cause__` is
+   ``None`` and :attr:`__suppress_context__` is false.
 
    Note that when locals are captured, they are also shown in the traceback.
 
@@ -255,27 +257,31 @@ capture data for later printing in a lightweight fashion.
 
    .. attribute:: __cause__
 
-      A :class:`TracebackException` of the original ``__cause__``.
+      A :class:`!TracebackException` of the original
+      :attr:`~BaseException.__cause__`.
 
    .. attribute:: __context__
 
-      A :class:`TracebackException` of the original ``__context__``.
+      A :class:`!TracebackException` of the original
+      :attr:`~BaseException.__context__`.
 
    .. attribute:: exceptions
 
       If ``self`` represents an :exc:`ExceptionGroup`, this field holds a list of
-      :class:`TracebackException` instances representing the nested exceptions.
+      :class:`!TracebackException` instances representing the nested exceptions.
       Otherwise it is ``None``.
 
       .. versionadded:: 3.11
 
    .. attribute:: __suppress_context__
 
-      The ``__suppress_context__`` value from the original exception.
+      The :attr:`~BaseException.__suppress_context__` value from the original
+      exception.
 
    .. attribute:: __notes__
 
-      The ``__notes__`` value from the original exception, or ``None``
+      The :attr:`~BaseException.__notes__` value from the original exception,
+      or ``None``
       if the exception does not have any notes. If it is not ``None``
       is it formatted in the traceback after the exception string.
 
@@ -349,8 +355,8 @@ capture data for later printing in a lightweight fashion.
 
       Format the exception.
 
-      If *chain* is not ``True``, ``__cause__`` and ``__context__`` will not
-      be formatted.
+      If *chain* is not ``True``, :attr:`__cause__` and :attr:`__context__`
+      will not be formatted.
 
       The return value is a generator of strings, each ending in a newline and
       some containing internal newlines. :func:`~traceback.print_exception`

@@ -729,7 +729,6 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
                           label, positions, cache_info)
 
 
-
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
                 show_offsets=False):
     """Disassemble a code object."""

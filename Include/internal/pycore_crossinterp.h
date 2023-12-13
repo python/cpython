@@ -188,6 +188,7 @@ typedef struct _excinfo {
         const char *module;
     } type;
     const char *msg;
+    const char *errdisplay;
 } _PyXI_excinfo;
 
 

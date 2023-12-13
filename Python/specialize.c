@@ -233,6 +233,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization trace too short: %" PRIu64 "\n", stats->trace_too_short);
     fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
     fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
+    fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
 
     print_histogram(out, "Trace length", stats->trace_length_hist);
     print_histogram(out, "Trace run length", stats->trace_run_length_hist);

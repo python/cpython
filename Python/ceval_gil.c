@@ -447,7 +447,7 @@ init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
     interp->ceval.own_gil = 1;
 }
 
-PyStatus
+void
 _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 {
     assert(tstate->interp->ceval.gil == NULL);
@@ -466,8 +466,6 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 
     // Lock the GIL and mark the current thread as attached.
     _PyThreadState_Attach(tstate);
-
-    return _PyStatus_OK();
 }
 
 void

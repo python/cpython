@@ -1913,7 +1913,7 @@ Stinner.
 .. nonce: Uxc9al
 .. section: Library
 
-Allow :mod:`venv` to pass along :envvar:`PYTHON*` variables to ``ensurepip``
+Allow :mod:`venv` to pass along :envvar:`!PYTHON*` variables to ``ensurepip``
 and ``pip`` when they do not impact path resolution
 
 ..
