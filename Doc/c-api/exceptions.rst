@@ -794,7 +794,7 @@ Exception Objects
    it.  There is no type check to make sure that *cause* is either an exception
    instance or ``None``.  This steals a reference to *cause*.
 
-   :attr:~BaseException.`__suppress_context__` is implicitly set to ``True`` by
+   :attr:`~BaseException.__suppress_context__` is implicitly set to ``True`` by
    this function.
 
 

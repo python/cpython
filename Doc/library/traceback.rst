@@ -263,7 +263,7 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: __context__
 
       A :class:`!TracebackException` of the original
-      :attr`~BaseException.__context__`.
+      :attr:`~BaseException.__context__`.
 
    .. attribute:: exceptions
 

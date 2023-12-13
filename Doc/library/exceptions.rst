@@ -61,7 +61,7 @@ Exception context
 
    The expression following :keyword:`from<raise>` must be an exception or ``None``. It
    will be set as :attr:`!__cause__` on the raised exception. Setting
-   :attr:!`__cause__` also implicitly sets the :attr:`!__suppress_context__`
+   :attr:`!__cause__` also implicitly sets the :attr:`!__suppress_context__`
    attribute to ``True``, so that using ``raise new_exc from None``
    effectively replaces the old exception with the new one for display
    purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`), while
