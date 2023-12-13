@@ -76,7 +76,6 @@ import bdb
 import dis
 import code
 import glob
-import time
 import codeop
 import pprint
 import signal
