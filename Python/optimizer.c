@@ -848,10 +848,10 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     if (executor == NULL) {
         return NULL;
     }
-    executor->counters = (uint16_t *)(&executor->trace[length]);
-    memset(executor->counters, 0, sizeof(uint16_t) * length);
-    executor->executors = (_PyExecutorObject **)(&executor->counters[length]);
+    executor->executors = (_PyExecutorObject **)(&executor->trace[length]);
+    executor->counters = (uint16_t *)(&executor->executors[length]);
     memset(executor->executors, 0, sizeof(_PyExecutorObject *) * length);
+    memset(executor->counters, 0, sizeof(uint16_t) * length);
     int dest = length - 1;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
