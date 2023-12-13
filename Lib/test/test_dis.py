@@ -1984,8 +1984,7 @@ class InstructionTests(InstructionTestCase):
         self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
 
     def get_instructions(self, code):
-        labels_map = dis._make_labels_map(code)
-        return dis._get_instructions_bytes(code, labels_map=labels_map)
+        return dis._get_instructions_bytes(code)
 
     def test_start_offset(self):
         # When no extended args are present,

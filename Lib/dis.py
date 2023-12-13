@@ -120,7 +120,7 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
                               label_width=label_width,
                               show_caches=show_caches)
         arg_resolver = ArgResolver(labels_map=labels_map)
-        _disassemble_bytes(x, labels_map=labels_map, arg_resolver=arg_resolver, formatter=formatter)
+        _disassemble_bytes(x, arg_resolver=arg_resolver, formatter=formatter)
     elif isinstance(x, str):    # Source code
         _disassemble_str(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
     else:
@@ -503,7 +503,10 @@ class ArgResolver:
         self.co_consts = co_consts
         self.names = names
         self.varname_from_oparg = varname_from_oparg
-        self.labels_map = labels_map
+        self.labels_map = labels_map or {}
+
+    def get_label_for_offset(self, offset):
+        return self.labels_map.get(offset, None)
 
     def get_argval_argrepr(self, op, arg, offset):
         get_name = None if self.names is None else self.names.__getitem__
@@ -591,17 +594,15 @@ def get_instructions(x, *, first_line=None, show_caches=None, adaptive=False):
         line_offset = 0
 
     original_code = co.co_code
-    labels_map = _make_labels_map(original_code)
     arg_resolver = ArgResolver(co_consts=co.co_consts,
                                names=co.co_names,
                                varname_from_oparg=co._varname_from_oparg,
-                               labels_map=labels_map)
+                               labels_map=_make_labels_map(original_code))
     return _get_instructions_bytes(_get_code_array(co, adaptive),
                                    linestarts=linestarts,
                                    line_offset=line_offset,
                                    co_positions=co.co_positions(),
                                    original_code=original_code,
-                                   labels_map=labels_map,
                                    arg_resolver=arg_resolver)
 
 def _get_const_value(op, arg, co_consts):
@@ -675,7 +676,7 @@ def _is_backward_jump(op):
                           'ENTER_EXECUTOR')
 
 def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
-                            original_code=None, labels_map=None, arg_resolver=None):
+                            original_code=None, arg_resolver=None):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
@@ -687,8 +688,6 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
     # mess that logic up pretty badly:
     original_code = original_code or code
     co_positions = co_positions or iter(())
-
-    assert labels_map is not None
 
     starts_line = False
     local_line_number = None
@@ -724,9 +723,10 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
         else:
             cache_info = None
 
+        label = arg_resolver.get_label_for_offset(offset) if arg_resolver else None
         yield Instruction(_all_opname[op], op, arg, argval, argrepr,
                           offset, start_offset, starts_line, line_number,
-                          labels_map.get(offset, None), positions, cache_info)
+                          label, positions, cache_info)
 
 
 
@@ -748,7 +748,7 @@ def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False,
                                labels_map=labels_map)
     _disassemble_bytes(_get_code_array(co, adaptive), lasti, linestarts,
                        exception_entries=exception_entries, co_positions=co.co_positions(),
-                       original_code=co.co_code, labels_map=labels_map, arg_resolver=arg_resolver, formatter=formatter)
+                       original_code=co.co_code, arg_resolver=arg_resolver, formatter=formatter)
 
 def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False, show_offsets=False):
     disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive, show_offsets=show_offsets)
@@ -798,9 +798,8 @@ def _get_lineno_width(linestarts):
 def _disassemble_bytes(code, lasti=-1, linestarts=None,
                        *, line_offset=0, exception_entries=(),
                        co_positions=None, original_code=None,
-                       labels_map=None, arg_resolver=None, formatter=None):
+                       arg_resolver=None, formatter=None):
 
-    assert labels_map is not None
     assert formatter is not None
     assert arg_resolver is not None
 
@@ -808,7 +807,6 @@ def _disassemble_bytes(code, lasti=-1, linestarts=None,
                                            line_offset=line_offset,
                                            co_positions=co_positions,
                                            original_code=original_code,
-                                           labels_map=labels_map,
                                            arg_resolver=arg_resolver)
 
     print_instructions(instrs, exception_entries, formatter, lasti=lasti)
@@ -971,7 +969,6 @@ class Bytecode:
                                        line_offset=self._line_offset,
                                        co_positions=co.co_positions(),
                                        original_code=original_code,
-                                       labels_map=labels_map,
                                        arg_resolver=arg_resolver)
 
     def __repr__(self):
@@ -1023,7 +1020,6 @@ class Bytecode:
                                exception_entries=self.exception_entries,
                                co_positions=co.co_positions(),
                                original_code=co.co_code,
-                               labels_map=labels_map,
                                arg_resolver=arg_resolver,
                                formatter=formatter)
             return output.getvalue()
