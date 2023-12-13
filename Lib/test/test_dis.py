@@ -13,6 +13,7 @@ from test.support.bytecode_helper import BytecodeTestCase
 
 import opcode
 
+CACHE = dis.opmap["CACHE"]
 
 def get_tb():
     def _error():
@@ -1227,9 +1228,9 @@ class DisTests(DisTestBase):
         else:
             # "copy" the code to un-quicken it:
             f.__code__ = f.__code__.replace()
-        for instruction in dis.get_instructions(
+        for instruction in _unroll_caches_as_Instructions(dis.get_instructions(
             f, show_caches=True, adaptive=adaptive
-        ):
+        ), show_caches=True):
             if instruction.opname == "CACHE":
                 yield instruction.argrepr
 
@@ -1262,7 +1263,8 @@ class DisTests(DisTestBase):
         # However, this might change in the future. So we explicitly try to find
         # a CACHE entry in the instructions. If we can't do that, fail the test
 
-        for inst in dis.get_instructions(f, show_caches=True):
+        for inst in _unroll_caches_as_Instructions(
+                dis.get_instructions(f, show_caches=True), show_caches=True):
             if inst.opname == "CACHE":
                 op_offset = inst.offset - 2
                 cache_offset = inst.offset
@@ -1775,8 +1777,8 @@ expected_opinfo_simple = [
 class InstructionTestCase(BytecodeTestCase):
 
     def assertInstructionsEqual(self, instrs_1, instrs_2, /):
-        instrs_1 = [instr_1._replace(positions=None) for instr_1 in instrs_1]
-        instrs_2 = [instr_2._replace(positions=None) for instr_2 in instrs_2]
+        instrs_1 = [instr_1._replace(positions=None, cache_info=None) for instr_1 in instrs_1]
+        instrs_2 = [instr_2._replace(positions=None, cache_info=None) for instr_2 in instrs_2]
         self.assertEqual(instrs_1, instrs_2)
 
 class InstructionTests(InstructionTestCase):
@@ -1890,9 +1892,9 @@ class InstructionTests(InstructionTestCase):
                             instruction.positions.col_offset,
                             instruction.positions.end_col_offset,
                         )
-                        for instruction in dis.get_instructions(
+                        for instruction in _unroll_caches_as_Instructions(dis.get_instructions(
                             code, adaptive=adaptive, show_caches=show_caches
-                        )
+                        ), show_caches=show_caches)
                     ]
                     self.assertEqual(co_positions, dis_positions)
 
@@ -2232,6 +2234,31 @@ class TestDisTracebackWithFile(TestDisTraceback):
         with contextlib.redirect_stdout(output):
             dis.distb(tb, file=output)
         return output.getvalue()
+
+def _unroll_caches_as_Instructions(instrs, show_caches=False):
+    # Cache entries are no longer reported by dis as fake instructions,
+    # but some tests assume that do. We should rewrite the tests to assume
+    # the new API, but it will be clearer to keep the tests working as
+    # before and do that in a separate PR.
+
+    for instr in instrs:
+        yield instr
+        if not show_caches:
+            continue
+
+        offset = instr.offset
+        for name, size, data in (instr.cache_info or ()):
+            for i in range(size):
+                offset += 2
+                # Only show the fancy argrepr for a CACHE instruction when it's
+                # the first entry for a particular cache value:
+                if i == 0:
+                    argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
+                else:
+                    argrepr = ""
+
+                yield Instruction("CACHE", CACHE, 0, None, argrepr, offset, offset,
+                                  False, None, None, instr.positions)
 
 
 if __name__ == "__main__":
