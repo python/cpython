@@ -25,7 +25,7 @@ authentication, redirections, cookies and more.
 
    On macOS it is unsafe to use this module in programs using
    :func:`os.fork` because the :func:`getproxies` implementation for
-   macOS uses a higher-level system API. Set the environement variable
+   macOS uses a higher-level system API. Set the environment variable
    ``no_proxy`` to ``*`` to avoid this problem
    (e.g. ``os.environ["no_proxy"] = "*"``).
 
