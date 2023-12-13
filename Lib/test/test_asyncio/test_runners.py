@@ -506,7 +506,8 @@ class RunnerTests(BaseTest):
 
         async def coro():
             return MyResult()
-        
+
+
         with asyncio.Runner() as runner:
             result = runner.run(coro())
 
