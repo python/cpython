@@ -138,7 +138,7 @@ def _strip_quoted_realnames(addr):
                 start = pos + 1
                 open_pos = None
 
-    if start < (len(addr) - 1):
+    if start < len(addr):
         result.append(addr[start:])
 
     return ''.join(result)

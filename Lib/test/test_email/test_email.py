@@ -3684,7 +3684,10 @@ multipart/report
         # special cases
         check(r'before"name"after', 'beforeafter')
         check(r'before"name"', 'before')
+        check(r'b"name"', 'b')  # single char
         check(r'"name"after', 'after')
+        check(r'"name"a', 'a')  # single char
+        check(r'"name"', '')
 
         # no change
         for addr in (
