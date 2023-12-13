@@ -9,9 +9,44 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>     // bool
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#include <stdbool.h>              // bool
 #include "opcode_ids.h"
+
+
+#define IS_PSEUDO_INSTR(OP)  ( \
+    ((OP) == LOAD_CLOSURE) || \
+    ((OP) == STORE_FAST_MAYBE_NULL) || \
+    ((OP) == LOAD_SUPER_METHOD) || \
+    ((OP) == LOAD_ZERO_SUPER_METHOD) || \
+    ((OP) == LOAD_ZERO_SUPER_ATTR) || \
+    ((OP) == LOAD_METHOD) || \
+    ((OP) == JUMP) || \
+    ((OP) == JUMP_NO_INTERRUPT) || \
+    ((OP) == SETUP_FINALLY) || \
+    ((OP) == SETUP_CLEANUP) || \
+    ((OP) == SETUP_WITH) || \
+    ((OP) == POP_BLOCK) || \
+    0)
+
 #include "pycore_uops.h"
+enum InstructionFormat {
+    INSTR_FMT_IB = 1,
+    INSTR_FMT_IBC = 2,
+    INSTR_FMT_IBC00 = 3,
+    INSTR_FMT_IBC000 = 4,
+    INSTR_FMT_IBC00000000 = 5,
+    INSTR_FMT_IX = 6,
+    INSTR_FMT_IXC = 7,
+    INSTR_FMT_IXC00 = 8,
+    INSTR_FMT_IXC000 = 9,
+};
+
+#define IS_VALID_OPCODE(OP) \
+    (((OP) >= 0) && ((OP) < 256) && \
+    (_PyOpcode_opcode_metadata[(OP)].valid_entry))
+
 #define HAS_ARG_FLAG (1)
 #define HAS_CONST_FLAG (2)
 #define HAS_ERROR_FLAG (4)
@@ -30,35 +65,8 @@ extern "C" {
 #define OPCODE_HAS_DEOPT(OP)  (_PyOpcode_opcode_metadata[OP].flags & (HAS_DEOPT_FLAG))
 #define OPCODE_HAS_ESCAPES(OP)  (_PyOpcode_opcode_metadata[OP].flags & (HAS_ESCAPES_FLAG))
 #define OPCODE_HAS_LOCAL(OP)  (_PyOpcode_opcode_metadata[OP].flags & (HAS_LOCAL_FLAG))
-
-
-#define IS_PSEUDO_INSTR(OP)  ( \
-    ((OP) == LOAD_CLOSURE) || \
-    ((OP) == STORE_FAST_MAYBE_NULL) || \
-    ((OP) == LOAD_SUPER_METHOD) || \
-    ((OP) == LOAD_ZERO_SUPER_METHOD) || \
-    ((OP) == LOAD_ZERO_SUPER_ATTR) || \
-    ((OP) == LOAD_METHOD) || \
-    ((OP) == JUMP) || \
-    ((OP) == JUMP_NO_INTERRUPT) || \
-    ((OP) == SETUP_FINALLY) || \
-    ((OP) == SETUP_CLEANUP) || \
-    ((OP) == SETUP_WITH) || \
-    ((OP) == POP_BLOCK) || \
-    0)
-
-enum InstructionFormat {
-    INSTR_FMT_IB = 1,
-    INSTR_FMT_IBC = 2,
-    INSTR_FMT_IBC00 = 3,
-    INSTR_FMT_IBC000 = 4,
-    INSTR_FMT_IBC00000000 = 5,
-    INSTR_FMT_IX = 6,
-    INSTR_FMT_IXC = 7,
-    INSTR_FMT_IXC00 = 8,
-    INSTR_FMT_IXC000 = 9,
-};
-
+extern const uint8_t _PyOpcode_Deopt[256];
+#ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
     [NOP] = NOP,
     [RESUME] = RESUME,
@@ -269,6 +277,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BINARY_OP] = BINARY_OP,
 };
 
+#endif // NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
     [TO_BOOL_BOOL] = 3,
     [TO_BOOL_INT] = 3,
@@ -583,10 +592,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP] = { true, INSTR_FMT_IBC, HAS_ESCAPES_FLAG | HAS_ERROR_FLAG },
 };
 
-#define IS_VALID_OPCODE(OP) \
-    (((OP) >= 0) && ((OP) < 256) && \
-    (_PyOpcode_opcode_metadata[(OP)].valid_entry))
-
 const char *_PyOpcode_OpName[268] = {
     [BEFORE_ASYNC_WITH] = "BEFORE_ASYNC_WITH",
     [BEFORE_WITH] = "BEFORE_WITH",
@@ -841,6 +846,7 @@ is_pseudo_target(int pseudo, int target) {
     return false;
 }
 
+#endif // Py_BUILD_CORE
 
 #ifdef __cplusplus
 }
