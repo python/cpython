@@ -403,7 +403,13 @@ if not home and not py_setpath:
 # ******************************************************************************
 
 if not base_executable:
-    base_executable = executable or real_executable or ''
+    if executable:
+        try:
+            base_executable = realpath(executable)
+        except OSError:
+            base_executable = executable
+    else:
+        base_executable = real_executable or ''
 
 if not real_executable:
     real_executable = base_executable

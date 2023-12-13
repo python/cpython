@@ -404,16 +404,7 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            # This ought to be as simple as dirname(sys._base_executable), but
-            # if a venv uses symlinks to a build in the source tree, then this
-            # fails. So instead we guess the subdirectory name from sys.winver
-            if sys.winver.endswith('-32'):
-                arch = 'win32'
-            elif sys.winver.endswith('-arm64'):
-                arch = 'arm64'
-            else:
-                arch = 'amd64'
-            inc_dir = os.path.join(_PROJECT_BASE, 'PCbuild', arch)
+            inc_dir = os.path.dirname(sys._base_executable)
         else:
             inc_dir = _PROJECT_BASE
     else:
