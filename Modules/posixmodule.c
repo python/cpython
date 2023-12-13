@@ -3309,6 +3309,27 @@ os_fchdir_impl(PyObject *module, int fd)
 }
 #endif /* HAVE_FCHDIR */
 
+#ifdef MS_WINDOWS
+# define CHMOD_DEFAULT_FOLLOW_SYMLINKS 0
+#else
+# define CHMOD_DEFAULT_FOLLOW_SYMLINKS 1
+#endif
+
+#ifdef MS_WINDOWS
+static int
+win32_lchmod(LPCWSTR path, int mode)
+{
+    DWORD attr = GetFileAttributesW(path);
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        return 0;
+    }
+    if (mode & _S_IWRITE)
+        attr &= ~FILE_ATTRIBUTE_READONLY;
+    else
+        attr |= FILE_ATTRIBUTE_READONLY;
+    return SetFileAttributesW(path, attr);
+}
+#endif
 
 /*[clinic input]
 os.chmod
@@ -3331,7 +3352,7 @@ os.chmod
         and path should be relative; path will then be relative to that
         directory.
 
-    follow_symlinks: bool = True
+    follow_symlinks: bool(c_default="CHMOD_DEFAULT_FOLLOW_SYMLINKS") = _CHMOD_DEFAULT_FOLLOW_SYMLINKS
         If False, and the last element of the path is a symbolic link,
         chmod will modify the symbolic link itself instead of the file
         the link points to.
@@ -3348,43 +3369,55 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=674a14bc998de09d]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=b28ffee79f567860]*/
 {
     int result;
-
-#ifdef MS_WINDOWS
-    DWORD attr;
-#endif
 
 #ifdef HAVE_FCHMODAT
     int fchmodat_nofollow_unsupported = 0;
     int fchmodat_unsupported = 0;
 #endif
 
-#if !(defined(HAVE_FCHMODAT) || defined(HAVE_LCHMOD))
+#if !(defined(HAVE_FCHMODAT) || defined(HAVE_LCHMOD) || defined(MS_WINDOWS))
     if (follow_symlinks_specified("chmod", follow_symlinks))
         return NULL;
 #endif
 
-    if (PySys_Audit("os.chmod", "Oii", path->object, mode,
-                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+    if (PySys_Audit("os.chmod", "OiiO", path->object, mode,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd,
+                    follow_symlinks ? Py_True : Py_False) < 0) {
         return NULL;
     }
 
 #ifdef MS_WINDOWS
+    result = 0;
     Py_BEGIN_ALLOW_THREADS
-    attr = GetFileAttributesW(path->wide);
-    if (attr == INVALID_FILE_ATTRIBUTES)
-        result = 0;
+    if (follow_symlinks) {
+        HANDLE hfile;
+        FILE_BASIC_INFO info;
+
+        hfile = CreateFileW(path->wide,
+                            FILE_READ_ATTRIBUTES|FILE_WRITE_ATTRIBUTES,
+                            0, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            if (GetFileInformationByHandleEx(hfile, FileBasicInfo,
+                                             &info, sizeof(info)))
+            {
+                if (mode & _S_IWRITE)
+                    info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+                else
+                    info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
+                result = SetFileInformationByHandle(hfile, FileBasicInfo,
+                                                    &info, sizeof(info));
+            }
+            CloseHandle(hfile);
+        }
+    }
     else {
-        if (mode & _S_IWRITE)
-            attr &= ~FILE_ATTRIBUTE_READONLY;
-        else
-            attr |= FILE_ATTRIBUTE_READONLY;
-        result = SetFileAttributesW(path->wide, attr);
+        result = win32_lchmod(path->wide, mode);
     }
     Py_END_ALLOW_THREADS
-
     if (!result) {
         return path_error(path);
     }
@@ -3514,7 +3547,7 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
 #endif /* HAVE_FCHMOD */
 
 
-#ifdef HAVE_LCHMOD
+#if defined(HAVE_LCHMOD) || defined(MS_WINDOWS)
 /*[clinic input]
 os.lchmod
 
@@ -3532,9 +3565,18 @@ os_lchmod_impl(PyObject *module, path_t *path, int mode)
 /*[clinic end generated code: output=082344022b51a1d5 input=90c5663c7465d24f]*/
 {
     int res;
-    if (PySys_Audit("os.chmod", "Oii", path->object, mode, -1) < 0) {
+    if (PySys_Audit("os.chmod", "OiiO", path->object, mode, -1, Py_False) < 0) {
         return NULL;
     }
+#ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
+    res = win32_lchmod(path->wide, mode);
+    Py_END_ALLOW_THREADS
+    if (!res) {
+        path_error(path);
+        return NULL;
+    }
+#else /* MS_WINDOWS */
     Py_BEGIN_ALLOW_THREADS
     res = lchmod(path->narrow, mode);
     Py_END_ALLOW_THREADS
@@ -3542,9 +3584,10 @@ os_lchmod_impl(PyObject *module, path_t *path, int mode)
         path_error(path);
         return NULL;
     }
+#endif /* MS_WINDOWS */
     Py_RETURN_NONE;
 }
-#endif /* HAVE_LCHMOD */
+#endif /* HAVE_LCHMOD || MS_WINDOWS */
 
 
 #ifdef HAVE_CHFLAGS
@@ -16927,6 +16970,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_USER_DIRS", LOAD_LIBRARY_SEARCH_USER_DIRS)) return -1;
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR", LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)) return -1;
 #endif
+    if (PyModule_Add(m, "_CHMOD_DEFAULT_FOLLOW_SYMLINKS", PyBool_FromLong(CHMOD_DEFAULT_FOLLOW_SYMLINKS))) return -1;
 
     return 0;
 }

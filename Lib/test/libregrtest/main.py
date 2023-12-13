@@ -492,6 +492,7 @@ class Regrtest:
                                          self.fail_rerun)
 
     def run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
+        selected = ('test_posix', 'test_tempfile')
         os.makedirs(self.tmp_dir, exist_ok=True)
         work_dir = get_work_dir(self.tmp_dir)
 

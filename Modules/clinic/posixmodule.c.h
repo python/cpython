@@ -493,7 +493,8 @@ exit:
 #endif /* defined(HAVE_FCHDIR) */
 
 PyDoc_STRVAR(os_chmod__doc__,
-"chmod($module, /, path, mode, *, dir_fd=None, follow_symlinks=True)\n"
+"chmod($module, /, path, mode, *, dir_fd=None,\n"
+"      follow_symlinks=_CHMOD_DEFAULT_FOLLOW_SYMLINKS)\n"
 "--\n"
 "\n"
 "Change the access permissions of a file.\n"
@@ -677,7 +678,7 @@ exit:
 
 #endif /* defined(HAVE_FCHMOD) */
 
-#if defined(HAVE_LCHMOD)
+#if (defined(HAVE_LCHMOD) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_lchmod__doc__,
 "lchmod($module, /, path, mode)\n"
@@ -747,7 +748,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_LCHMOD) */
+#endif /* (defined(HAVE_LCHMOD) || defined(MS_WINDOWS)) */
 
 #if defined(HAVE_CHFLAGS)
 
@@ -12421,4 +12422,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=ff0ec3371de19904 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3009d169f2bf20e7 input=a9049054013a1b77]*/

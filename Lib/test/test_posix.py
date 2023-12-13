@@ -21,8 +21,10 @@ from contextlib import contextmanager
 
 try:
     import posix
+    nt = None
 except ImportError:
-    import nt as posix
+    import nt
+    posix = nt
 
 try:
     import pwd
@@ -934,6 +936,116 @@ class PosixTester(unittest.TestCase):
                           os_helper.TESTFN, (None, now))
         posix.utime(os_helper.TESTFN, (int(now), int(now)))
         posix.utime(os_helper.TESTFN, (now, now))
+
+    def check_chmod(self, chmod_func, target, **kwargs):
+        mode = os.stat(target).st_mode
+        try:
+            chmod_func(target, mode & ~stat.S_IWRITE, **kwargs)
+            self.assertEqual(os.stat(target).st_mode, mode & ~stat.S_IWRITE)
+            if stat.S_ISREG(mode):
+                try:
+                    with open(target, 'wb+'):
+                        pass
+                except PermissionError:
+                    pass
+            chmod_func(target, mode | stat.S_IWRITE, **kwargs)
+            self.assertEqual(os.stat(target).st_mode, mode | stat.S_IWRITE)
+            if stat.S_ISREG(mode):
+                with open(target, 'wb+'):
+                    pass
+        finally:
+            posix.chmod(target, mode)
+
+    def test_chmod_file(self):
+        self.check_chmod(posix.chmod, os_helper.TESTFN)
+
+    def tempdir(self):
+        target = os_helper.TESTFN + 'd'
+        posix.mkdir(target)
+        self.addCleanup(posix.rmdir, target)
+        return target
+
+    def test_chmod_dir(self):
+        target = self.tempdir()
+        self.check_chmod(posix.chmod, target)
+
+    @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
+    def test_lchmod_file(self):
+        self.check_chmod(posix.lchmod, os_helper.TESTFN)
+        self.check_chmod(posix.chmod, os_helper.TESTFN, follow_symlinks=False)
+
+    @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
+    def test_lchmod_dir(self):
+        target = self.tempdir()
+        self.check_chmod(posix.lchmod, target)
+        self.check_chmod(posix.chmod, target, follow_symlinks=False)
+
+    def check_chmod_link(self, chmod_func, target, link, **kwargs):
+        target_mode = os.stat(target).st_mode
+        link_mode = os.lstat(link).st_mode
+        try:
+            chmod_func(link, target_mode & ~stat.S_IWRITE, **kwargs)
+            self.assertEqual(os.stat(target).st_mode, target_mode & ~stat.S_IWRITE)
+            self.assertEqual(os.lstat(link).st_mode, link_mode)
+            chmod_func(link, target_mode | stat.S_IWRITE)
+            self.assertEqual(os.stat(target).st_mode, target_mode | stat.S_IWRITE)
+            self.assertEqual(os.lstat(link).st_mode, link_mode)
+        finally:
+            posix.chmod(target, target_mode)
+
+    def check_lchmod_link(self, chmod_func, target, link, **kwargs):
+        target_mode = os.stat(target).st_mode
+        link_mode = os.lstat(link).st_mode
+        chmod_func(link, link_mode & ~stat.S_IWRITE, **kwargs)
+        self.assertEqual(os.stat(target).st_mode, target_mode)
+        self.assertEqual(os.lstat(link).st_mode, link_mode & ~stat.S_IWRITE)
+        chmod_func(link, link_mode | stat.S_IWRITE)
+        self.assertEqual(os.stat(target).st_mode, target_mode)
+        self.assertEqual(os.lstat(link).st_mode, link_mode | stat.S_IWRITE)
+
+    @os_helper.skip_unless_symlink
+    def test_chmod_file_symlink(self):
+        target = os_helper.TESTFN
+        link = os_helper.TESTFN + '-link'
+        os.symlink(target, link)
+        self.addCleanup(posix.unlink, link)
+        if os.name == 'nt':
+            self.check_lchmod_link(posix.chmod, target, link)
+        else:
+            self.check_chmod_link(posix.chmod, target, link)
+        self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
+
+    @os_helper.skip_unless_symlink
+    def test_chmod_dir_symlink(self):
+        target = self.tempdir()
+        link = os_helper.TESTFN + '-link'
+        os.symlink(target, link, target_is_directory=True)
+        self.addCleanup(posix.unlink, link)
+        if os.name == 'nt':
+            self.check_lchmod_link(posix.chmod, target, link)
+        else:
+            self.check_chmod_link(posix.chmod, target, link)
+        self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
+
+    @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
+    @os_helper.skip_unless_symlink
+    def test_lchmod_file_symlink(self):
+        target = os_helper.TESTFN
+        link = os_helper.TESTFN + '-link'
+        os.symlink(target, link)
+        self.addCleanup(posix.unlink, link)
+        self.check_lchmod_link(posix.chmod, target, link, follow_symlinks=False)
+        self.check_lchmod_link(posix.lchmod, target, link)
+
+    @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
+    @os_helper.skip_unless_symlink
+    def test_lchmod_dir_symlink(self):
+        target = self.tempdir()
+        link = os_helper.TESTFN + '-link'
+        os.symlink(target, link)
+        self.addCleanup(posix.unlink, link)
+        self.check_lchmod_link(posix.chmod, target, link, follow_symlinks=False)
+        self.check_lchmod_link(posix.lchmod, target, link)
 
     def _test_chflags_regular_file(self, chflags_func, target_file, **kwargs):
         st = os.stat(target_file)
