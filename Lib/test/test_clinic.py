@@ -2219,6 +2219,7 @@ class ClinicParserTest(TestCase):
                        /
                 """
                 expected_error = f"{annotation} method cannot define parameters"
+                self.expect_failure(block, expected_error)
 
     def test_duplicate_getset(self):
         annotations = ["@getter", "@setter"]
