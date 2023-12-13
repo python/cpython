@@ -2245,7 +2245,7 @@ class ClinicParserTest(TestCase):
                     {dup[1]}
                     Foo.property -> int
                 """
-                expected_error = f"Cannot apply both @getter and @setter to the same function!"
+                expected_error = "Cannot apply both @getter and @setter to the same function!"
                 self.expect_failure(block, expected_error, lineno=3)
 
     def test_duplicate_coexist(self):
