@@ -12,6 +12,53 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
+/**************/
+/* exceptions */
+/**************/
+
+/* InterpreterError extends Exception */
+
+static PyTypeObject _PyExc_InterpreterError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "InterpreterError",
+    .tp_doc = PyDoc_STR("An interpreter was not found."),
+    //.tp_base = (PyTypeObject *)PyExc_BaseException,
+};
+PyObject *PyExc_InterpreterError = (PyObject *)&_PyExc_InterpreterError;
+
+/* InterpreterNotFoundError extends InterpreterError */
+
+static PyTypeObject _PyExc_InterpreterNotFoundError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "InterpreterNotFoundError",
+    .tp_doc = PyDoc_STR("An interpreter was not found."),
+    .tp_base = &_PyExc_InterpreterError,
+};
+PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFoundError;
+
+/* lifecycle */
+
+static int
+init_exceptions(PyInterpreterState *interp)
+{
+    _PyExc_InterpreterError.tp_base = (PyTypeObject *)PyExc_BaseException;
+    if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterError) < 0) {
+        return -1;
+    }
+    if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterNotFoundError) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+fini_exceptions(PyInterpreterState *interp)
+{
+    _PyStaticType_Dealloc(interp, &_PyExc_InterpreterNotFoundError);
+    _PyStaticType_Dealloc(interp, &_PyExc_InterpreterError);
+}
+
+
 /***************************/
 /* cross-interpreter calls */
 /***************************/
@@ -898,6 +945,26 @@ _xidregistry_fini(struct _xidregistry *registry)
 /*************************/
 
 static const char *
+_copy_raw_string(const char *str, Py_ssize_t len)
+{
+    size_t size = len + 1;
+    if (len <= 0) {
+        size = strlen(str) + 1;
+    }
+    char *copied = PyMem_RawMalloc(size);
+    if (copied == NULL) {
+        return NULL;
+    }
+    if (len <= 0) {
+        strcpy(copied, str);
+    }
+    else {
+        memcpy(copied, str, size);
+    }
+    return copied;
+}
+
+static const char *
 _copy_string_obj_raw(PyObject *strobj)
 {
     const char *str = PyUnicode_AsUTF8(strobj);
@@ -913,6 +980,80 @@ _copy_string_obj_raw(PyObject *strobj)
     strcpy(copied, str);
     return copied;
 }
+
+
+static int
+_pickle_object(PyObject *obj, const char **p_pickled, Py_ssize_t *p_len)
+{
+    assert(!PyErr_Occurred());
+    PyObject *picklemod = PyImport_ImportModule("_pickle");
+    if (picklemod == NULL) {
+        PyErr_Clear();
+        picklemod = PyImport_ImportModule("pickle");
+        if (picklemod == NULL) {
+            return -1;
+        }
+    }
+    PyObject *dumps = PyObject_GetAttrString(picklemod, "dumps");
+    Py_DECREF(picklemod);
+    if (dumps == NULL) {
+        return -1;
+    }
+    PyObject *pickledobj = PyObject_CallOneArg(dumps, obj);
+    Py_DECREF(dumps);
+    if (pickledobj == NULL) {
+        return -1;
+    }
+
+    char *pickled = NULL;
+    Py_ssize_t len = 0;
+    if (PyBytes_AsStringAndSize(pickledobj, &pickled, &len) < 0) {
+        Py_DECREF(pickledobj);
+        return -1;
+    }
+    const char *copied = _copy_raw_string(pickled, len);
+    Py_DECREF(pickledobj);
+    if (copied == NULL) {
+        return -1;
+    }
+
+    *p_pickled = copied;
+    *p_len = len;
+    return 0;
+}
+
+static int
+_unpickle_object(const char *pickled, Py_ssize_t size, PyObject **p_obj)
+{
+    assert(!PyErr_Occurred());
+    PyObject *picklemod = PyImport_ImportModule("_pickle");
+    if (picklemod == NULL) {
+        PyErr_Clear();
+        picklemod = PyImport_ImportModule("pickle");
+        if (picklemod == NULL) {
+            return -1;
+        }
+    }
+    PyObject *loads = PyObject_GetAttrString(picklemod, "loads");
+    Py_DECREF(picklemod);
+    if (loads == NULL) {
+        return -1;
+    }
+    PyObject *pickledobj = PyBytes_FromStringAndSize(pickled, size);
+    if (pickledobj == NULL) {
+        Py_DECREF(loads);
+        return -1;
+    }
+    PyObject *obj = PyObject_CallOneArg(loads, pickledobj);
+    Py_DECREF(loads);
+    Py_DECREF(pickledobj);
+    if (obj == NULL) {
+        return -1;
+    }
+    *p_obj = obj;
+    return 0;
+}
+
 
 static int
 _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
@@ -1047,6 +1188,9 @@ _PyXI_excinfo_Clear(_PyXI_excinfo *info)
     if (info->msg != NULL) {
         PyMem_RawFree((void *)info->msg);
     }
+    if (info->pickled != NULL) {
+        PyMem_RawFree((void *)info->pickled);
+    }
     *info = (_PyXI_excinfo){{NULL}};
 }
 
@@ -1082,6 +1226,63 @@ _PyXI_excinfo_format(_PyXI_excinfo *info)
     }
 }
 
+static int
+_convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
+{
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *create = NULL;
+
+    // This is inspired by _PyErr_Display().
+    PyObject *tbmod = PyImport_ImportModule("traceback");
+    if (tbmod == NULL) {
+        return -1;
+    }
+    PyObject *tbexc_type = PyObject_GetAttrString(tbmod, "TracebackException");
+    Py_DECREF(tbmod);
+    if (tbexc_type == NULL) {
+        return -1;
+    }
+    create = PyObject_GetAttrString(tbexc_type, "from_exception");
+    Py_DECREF(tbexc_type);
+    if (create == NULL) {
+        return -1;
+    }
+
+    args = PyTuple_Pack(1, exc);
+    if (args == NULL) {
+        goto error;
+    }
+
+    kwargs = PyDict_New();
+    if (kwargs == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "save_exc_type", Py_False) < 0) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "lookup_lines", Py_False) < 0) {
+        goto error;
+    }
+
+    PyObject *tbexc = PyObject_Call(create, args, kwargs);
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_DECREF(create);
+    if (tbexc == NULL) {
+        goto error;
+    }
+
+    *p_tbexc = tbexc;
+    return 0;
+
+error:
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    Py_XDECREF(create);
+    return -1;
+}
+
 static const char *
 _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
 {
@@ -1111,6 +1312,24 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
         goto error;
     }
 
+    // Pickle a traceback.TracebackException.
+    PyObject *tbexc = NULL;
+    if (_convert_exc_to_TracebackException(exc, &tbexc) < 0) {
+#ifdef Py_DEBUG
+        PyErr_FormatUnraisable("Exception ignored while creating TracebackException");
+#endif
+        PyErr_Clear();
+    }
+    else {
+        if (_pickle_object(tbexc, &info->pickled, &info->pickled_len) < 0) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored while pickling TracebackException");
+#endif
+            PyErr_Clear();
+        }
+        Py_DECREF(tbexc);
+    }
+
     return NULL;
 
 error:
@@ -1122,9 +1341,28 @@ error:
 static void
 _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
 {
+    PyObject *tbexc = NULL;
+    if (info->pickled != NULL) {
+        if (_unpickle_object(info->pickled, info->pickled_len, &tbexc) < 0) {
+            PyErr_Clear();
+        }
+    }
+
     PyObject *formatted = _PyXI_excinfo_format(info);
     PyErr_SetObject(exctype, formatted);
     Py_DECREF(formatted);
+
+    if (tbexc != NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyObject_SetAttrString(exc, "_tbexc", tbexc) < 0) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored when setting _tbexc");
+#endif
+            PyErr_Clear();
+        }
+        Py_DECREF(tbexc);
+        PyErr_SetRaisedException(exc);
+    }
 }
 
 static PyObject *
@@ -1228,6 +1466,20 @@ _PyXI_excinfo_AsObject(_PyXI_excinfo *info)
     Py_DECREF(formatted);
     if (res < 0) {
         goto error;
+    }
+
+    if (info->pickled != NULL) {
+        PyObject *tbexc = NULL;
+        if (_unpickle_object(info->pickled, info->pickled_len, &tbexc) < 0) {
+            PyErr_Clear();
+        }
+        else {
+            res = PyObject_SetAttrString(ns, "tbexc", tbexc);
+            Py_DECREF(tbexc);
+            if (res < 0) {
+                goto error;
+            }
+        }
     }
 
     return ns;
@@ -1936,6 +2188,7 @@ _capture_current_exception(_PyXI_session *session)
     }
     else {
         failure = _PyXI_InitError(err, excval, _PyXI_ERR_UNCAUGHT_EXCEPTION);
+        Py_DECREF(excval);
         if (failure == NULL && override != NULL) {
             err->code = errcode;
         }
@@ -1948,18 +2201,6 @@ _capture_current_exception(_PyXI_session *session)
                 "RunFailedError: script raised an uncaught exception (%s)",
                 failure);
         err = NULL;
-    }
-
-    // a temporary hack  (famous last words)
-    if (excval != NULL) {
-        // XXX Store the traceback info (or rendered traceback) on
-        // _PyXI_excinfo, attach it to the exception when applied,
-        // and teach PyErr_Display() to print it.
-#ifdef Py_DEBUG
-        // XXX Drop this once _Py_excinfo picks up the slack.
-        PyErr_Display(NULL, excval, NULL);
-#endif
-        Py_DECREF(excval);
     }
 
     // Finished!
@@ -2098,4 +2339,19 @@ _PyXI_Fini(PyInterpreterState *interp)
     if (_Py_IsMainInterpreter(interp)) {
         _xidregistry_fini(_get_global_xidregistry(interp->runtime));
     }
+}
+
+PyStatus
+_PyXI_InitTypes(PyInterpreterState *interp)
+{
+    if (init_exceptions(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize an exception type");
+    }
+    return _PyStatus_OK();
+}
+
+void
+_PyXI_FiniTypes(PyInterpreterState *interp)
+{
+    fini_exceptions(interp);
 }
