@@ -1247,7 +1247,7 @@ class CLanguage(Language):
 
         parsearg: str | None
         if f.kind in {GETTER, SETTER} and parameters:
-            fail("neither @getter nor @setter can define parameters")
+            fail(f"@{f.kind.name.lower()} method cannot define parameters")
 
         if not parameters:
             parser_code: list[str] | None
