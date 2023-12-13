@@ -752,7 +752,7 @@ start_frame:
         goto exit_unwind;
     }
 
-// Jump here from ENTER_EXECUTOR, and code under the deoptimize label
+// Jump here from ENTER_EXECUTOR and exit_trace.
 enter_tier_one:
     next_instr = frame->instr_ptr;
 
@@ -1083,12 +1083,14 @@ deoptimize:
     int pc = next_uop - 1 - current_executor->trace;
     _PyExecutorObject **pexecutor = current_executor->executors + pc;
     if (*pexecutor != NULL) {
+#ifdef Py_DEBUG
         PyCodeObject *code = _PyFrame_GetCode(frame);
         DPRINTF(2, "Jumping to new executor for %s (%s:%d) at byte offset %d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
                 2 * (int)(frame->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(frame))));
+#endif
         Py_DECREF(current_executor);
         current_executor = (_PyUOpExecutorObject *)*pexecutor;
         Py_INCREF(current_executor);
@@ -1096,21 +1098,19 @@ deoptimize:
     }
 
     // Increment and check side exit counter.
+    next_instr = frame->instr_ptr;
     uint16_t *pcounter = current_executor->counters + pc;
     *pcounter += 1;
     if (*pcounter != 32 ||  // TODO: use resume_threshold
         tstate->interp->optimizer == &_PyOptimizer_Default)
     {
-        goto enter_tier_one;
+        goto resume_frame;
     }
 
     // Decode instruction to look past EXTENDED_ARG.
-    _Py_CODEUNIT *src, *dest;
-    src = dest = frame->instr_ptr;
-    opcode = src->op.code;
+    opcode = next_instr[0].op.code;
     if (opcode == EXTENDED_ARG) {
-        src++;
-        opcode = src->op.code;
+        opcode = next_instr[1].op.code;
     }
 
     // For selected opcodes build a new executor and enter it now.
@@ -1122,39 +1122,49 @@ deoptimize:
         DPRINTF(2, "--> %s @ %d in %p has %d side exits\n",
                 _PyUOpName(uopcode), pc, current_executor, (int)(*pcounter));
         DPRINTF(2, "    T1: %s\n", _PyOpcode_OpName[opcode]);
-        // The counter will cycle around once the 16 bits overflow
-        int optimized = _PyOptimizer_Unanchored(frame, dest, pexecutor, stack_pointer);
+
+        int optimized = _PyOptimizer_Unanchored(frame, next_instr, pexecutor, stack_pointer);
         if (optimized < 0) {
             goto error_tier_two;
         }
+
         if (!optimized) {
             DPRINTF(2, "--> Failed to optimize %s @ %d in %p\n",
                     _PyUOpName(uopcode), pc, current_executor);
         }
         else {
+#ifdef Py_DEBUG
             DPRINTF(1, "--> Optimized %s @ %d in %p\n",
                     _PyUOpName(uopcode), pc, current_executor);
-            DPRINTF(1, "    T1: %s\n", _PyOpcode_OpName[src->op.code]);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             DPRINTF(2, "Jumping to fresh executor for %s (%s:%d) at byte offset %d\n",
                     PyUnicode_AsUTF8(code->co_qualname),
                     PyUnicode_AsUTF8(code->co_filename),
                     code->co_firstlineno,
                     2 * (int)(frame->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(frame))));
+#endif
             Py_DECREF(current_executor);
             current_executor = (_PyUOpExecutorObject *)*pexecutor;
-            // TODO: Check at least two uops: _IS_NONE, _POP_JUMP_IF_TRUE/FALSE.
-            if (current_executor->trace[0].opcode != uopcode) {
-                Py_INCREF(current_executor);
-                goto enter_tier_two;  // Yes!
+
+            // Reject trace if it repeats the uop that just deoptimized.
+            int jump_opcode = current_executor->trace[0].opcode;
+            if (jump_opcode == _IS_NONE) {
+                jump_opcode = current_executor->trace[1].opcode;
             }
-            // This is guaranteed to deopt again; forget about it
-            DPRINTF(2, "Alas, it's the same uop again -- discarding trace\n");
+            if (jump_opcode != uopcode) {
+                Py_INCREF(current_executor);
+                goto enter_tier_two;  // All systems go!
+            }
+
+            // The trace is guaranteed to deopt again; forget about it.
+            DPRINTF(2, "Alas, it's the same uop again (%s) -- discarding trace\n",
+                    _PyUOpName(jump_opcode));
             *pexecutor = NULL;
+            // It will be decref'ed below.
         }
     }
     Py_DECREF(current_executor);
-    goto enter_tier_one;
+    goto resume_frame;
 
 // Jump here from _EXIT_TRACE
 exit_trace:
