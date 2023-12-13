@@ -1,0 +1,2 @@
+The :func:`asyncio.run` and :meth:`asyncio.Runner.run` methods no longer calls
+`repr` on the task results. Patch by Yilei Yang.
