@@ -539,6 +539,27 @@ class TestUops(unittest.TestCase):
         # too much already.
         self.assertEqual(count, 1)
 
+    def test_side_exits(self):
+        def testfunc():
+            for _ in range(100):
+                for i in range(100):
+                    if i >= 70:
+                        i = 0
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc()
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_GUARD_IS_FALSE_POP", uops)
+        subs = [sub for sub in ex.sub_executors() if sub is not None]
+        self.assertGreater(len(subs), 0)
+        sub = subs[0]
+        sub_uops = {opname for opname, _, _ in sub}
+        self.assertIn("_GUARD_IS_TRUE_POP", sub_uops)
+
 
 if __name__ == "__main__":
     unittest.main()
