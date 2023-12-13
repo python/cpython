@@ -3352,7 +3352,8 @@ os.chmod
         and path should be relative; path will then be relative to that
         directory.
 
-    follow_symlinks: bool(c_default="CHMOD_DEFAULT_FOLLOW_SYMLINKS") = _CHMOD_DEFAULT_FOLLOW_SYMLINKS
+    follow_symlinks: bool(c_default="CHMOD_DEFAULT_FOLLOW_SYMLINKS", \
+                          py_default="(os.name != 'nt')") = True
         If False, and the last element of the path is a symbolic link,
         chmod will modify the symbolic link itself instead of the file
         the link points to.
@@ -3369,7 +3370,7 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=b28ffee79f567860]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=5c073e3dff76c1a4]*/
 {
     int result;
 
@@ -16970,7 +16971,6 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_USER_DIRS", LOAD_LIBRARY_SEARCH_USER_DIRS)) return -1;
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR", LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)) return -1;
 #endif
-    if (PyModule_Add(m, "_CHMOD_DEFAULT_FOLLOW_SYMLINKS", PyBool_FromLong(CHMOD_DEFAULT_FOLLOW_SYMLINKS))) return -1;
 
     return 0;
 }
