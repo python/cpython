@@ -643,16 +643,12 @@ dummy_func(
         inst(BINARY_SUBSCR_DICT, (unused/1, dict, sub -- res)) {
             DEOPT_IF(!PyDict_CheckExact(dict));
             STAT_INC(BINARY_SUBSCR, hit);
-            res = PyDict_GetItemWithError(dict, sub);
-            if (res == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_SetKeyError(sub);
-                }
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
+            int rc = PyDict_GetItemRef(dict, sub, &res);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
             }
-            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             DECREF_INPUTS();
+            ERROR_IF(rc <= 0, error); // not found or error
         }
 
         inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub -- unused)) {
@@ -804,11 +800,11 @@ dummy_func(
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
         op(_POP_FRAME, (retval --)) {
-            assert(EMPTY());
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
             STORE_SP();
+            assert(EMPTY());
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -1169,7 +1165,6 @@ dummy_func(
             }
         }
 
-
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
@@ -1214,6 +1209,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
+            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -1349,14 +1345,10 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
                     GOTO_ERROR(error);
                 }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -1383,14 +1375,10 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
                     GOTO_ERROR(error);
                 }
-                else {
+                if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
                         GOTO_ERROR(error);
                     }
@@ -1663,34 +1651,17 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             /* check if __annotations__ in locals()... */
-            if (PyDict_CheckExact(LOCALS())) {
-                ann_dict = _PyDict_GetItemWithError(LOCALS(),
-                                                    &_Py_ID(__annotations__));
-                if (ann_dict == NULL) {
-                    ERROR_IF(_PyErr_Occurred(tstate), error);
-                    /* ...if not, create a new one */
-                    ann_dict = PyDict_New();
-                    ERROR_IF(ann_dict == NULL, error);
-                    err = PyDict_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                         ann_dict);
-                    Py_DECREF(ann_dict);
-                    ERROR_IF(err, error);
-                }
+            ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
+            if (ann_dict == NULL) {
+                ann_dict = PyDict_New();
+                ERROR_IF(ann_dict == NULL, error);
+                err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                       ann_dict);
+                Py_DECREF(ann_dict);
+                ERROR_IF(err, error);
             }
             else {
-                /* do the same if locals() is not a dict */
-                ERROR_IF(PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0, error);
-                if (ann_dict == NULL) {
-                    ann_dict = PyDict_New();
-                    ERROR_IF(ann_dict == NULL, error);
-                    err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
-                                           ann_dict);
-                    Py_DECREF(ann_dict);
-                    ERROR_IF(err, error);
-                }
-                else {
-                    Py_DECREF(ann_dict);
-                }
+                Py_DECREF(ann_dict);
             }
         }
 
@@ -2054,8 +2025,8 @@ dummy_func(
             DEOPT_IF(tstate->interp->eval_frame);
 
             PyTypeObject *cls = Py_TYPE(owner);
-            DEOPT_IF(cls->tp_version_tag != type_version);
             assert(type_version != 0);
+            DEOPT_IF(cls->tp_version_tag != type_version);
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)fget;
             assert(func_version != 0);
@@ -2077,8 +2048,8 @@ dummy_func(
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
             PyTypeObject *cls = Py_TYPE(owner);
-            DEOPT_IF(cls->tp_version_tag != type_version);
             assert(type_version != 0);
+            DEOPT_IF(cls->tp_version_tag != type_version);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
             assert(func_version != 0);
@@ -2381,23 +2352,20 @@ dummy_func(
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
-            JUMPBY(1-original_oparg);
-            frame->instr_ptr = next_instr;
             Py_INCREF(executor);
-            if (executor->execute == _PyUopExecute) {
+            if (executor->execute == _PyUOpExecute) {
                 current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
-            frame = executor->execute(executor, frame, stack_pointer);
-            if (frame == NULL) {
-                frame = tstate->current_frame;
+            next_instr = executor->execute(executor, frame, stack_pointer);
+            frame = tstate->current_frame;
+            if (next_instr == NULL) {
                 goto resume_with_error;
             }
-            goto enter_tier_one;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
         }
 
-        inst(POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
@@ -2406,7 +2374,7 @@ dummy_func(
             JUMPBY(oparg * flag);
         }
 
-        inst(POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
@@ -2425,9 +2393,13 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_NONE) = _IS_NONE + POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_TRUE) = _POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_FALSE) = _POP_JUMP_IF_FALSE;
+
+        macro(POP_JUMP_IF_NONE) = _IS_NONE + _POP_JUMP_IF_TRUE;
+
+        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + _POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
@@ -2537,7 +2509,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_FOR_ITER, (iter -- iter, next)) {
+        replaced op(_FOR_ITER, (iter -- iter, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
@@ -2556,6 +2528,25 @@ dummy_func(
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
                 DISPATCH();
+            }
+            // Common case: no jump, leave it to the code generator
+        }
+
+        op(_FOR_ITER_TIER_TWO, (iter -- iter, next)) {
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        GOTO_ERROR(error);
+                    }
+                    _PyErr_Clear(tstate);
+                }
+                /* iterator ended normally */
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                /* The translator sets the deopt target just past END_FOR */
+                DEOPT_IF(true);
             }
             // Common case: no jump, leave it to the code generator
         }
@@ -2836,15 +2827,15 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        pseudo(SETUP_FINALLY) = {
+        pseudo(SETUP_FINALLY, (HAS_ARG)) = {
             NOP,
         };
 
-        pseudo(SETUP_CLEANUP) = {
+        pseudo(SETUP_CLEANUP, (HAS_ARG)) = {
             NOP,
         };
 
-        pseudo(SETUP_WITH) = {
+        pseudo(SETUP_WITH, (HAS_ARG)) = {
             NOP,
         };
 
@@ -3135,7 +3126,7 @@ dummy_func(
         // The 'unused' output effect represents the return value
         // (which will be pushed when the frame returns).
         // It is needed so CALL_PY_EXACT_ARGS matches its family.
-        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
+        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
@@ -3973,6 +3964,7 @@ dummy_func(
         }
 
         inst(EXTENDED_ARG, ( -- )) {
+            TIER_ONE_ONLY
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -3981,27 +3973,36 @@ dummy_func(
         }
 
         inst(CACHE, (--)) {
+            TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
             Py_UNREACHABLE();
         }
 
         inst(RESERVED, (--)) {
+            TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
         }
 
         ///////// Tier-2 only opcodes /////////
 
-        op(_POP_JUMP_IF_FALSE, (flag -- )) {
-            if (Py_IsFalse(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+        op (_GUARD_IS_TRUE_POP, (flag -- )) {
+            DEOPT_IF(Py_IsFalse(flag));
+            assert(Py_IsTrue(flag));
         }
 
-        op(_POP_JUMP_IF_TRUE, (flag -- )) {
-            if (Py_IsTrue(flag)) {
-                next_uop = current_executor->trace + oparg;
-            }
+        op (_GUARD_IS_FALSE_POP, (flag -- )) {
+            DEOPT_IF(Py_IsTrue(flag));
+            assert(Py_IsFalse(flag));
+        }
+
+        op (_GUARD_IS_NONE_POP, (val -- )) {
+            DEOPT_IF(!Py_IsNone(val));
+        }
+
+        op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
+            DEOPT_IF(Py_IsNone(val));
+            Py_DECREF(val);
         }
 
         op(_JUMP_TO_TOP, (--)) {

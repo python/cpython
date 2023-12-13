@@ -14,6 +14,10 @@ import tempfile
 import textwrap
 import subprocess
 import warnings
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 support.requires_working_socket(module=True)
 
@@ -3033,16 +3037,21 @@ class TestExtendedArgs(unittest.TestCase):
         self.assertEqual(counts, {'call': 1, 'line': 301, 'return': 1})
 
     def test_trace_lots_of_globals(self):
+        count = 1000
+        if _testinternalcapi is not None:
+            remaining = _testinternalcapi.get_c_recursion_remaining()
+            count = min(count, remaining)
+
         code = """if 1:
             def f():
                 return (
                     {}
                 )
-        """.format("\n+\n".join(f"var{i}\n" for i in range(1000)))
-        ns = {f"var{i}": i for i in range(1000)}
+        """.format("\n+\n".join(f"var{i}\n" for i in range(count)))
+        ns = {f"var{i}": i for i in range(count)}
         exec(code, ns)
         counts = self.count_traces(ns["f"])
-        self.assertEqual(counts, {'call': 1, 'line': 2000, 'return': 1})
+        self.assertEqual(counts, {'call': 1, 'line': count * 2, 'return': 1})
 
 
 class TestEdgeCases(unittest.TestCase):

@@ -17,7 +17,7 @@ of Python objects.
 
    Note that the returned value may not actually reflect how many
    references to the object are actually held.  For example, some
-   objects are "immortal" and have a very high refcount that does not
+   objects are :term:`immortal` and have a very high refcount that does not
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
@@ -34,9 +34,10 @@ of Python objects.
 
    Set the object *o* reference counter to *refcnt*.
 
-   Note that this function has no effect on
-   `immortal <https://peps.python.org/pep-0683/>`_
-   objects.
+   On :ref:`Python build with Free Threading <free-threading-build>`, if
+   *refcnt* is larger than ``UINT32_MAX``, the object is made :term:`immortal`.
+
+   This function has no effect on :term:`immortal` objects.
 
    .. versionadded:: 3.9
 
@@ -48,6 +49,8 @@ of Python objects.
 
    Indicate taking a new :term:`strong reference` to object *o*,
    indicating it is in use and should not be destroyed.
+
+   This function has no effect on :term:`immortal` objects.
 
    This function is usually used to convert a :term:`borrowed reference` to a
    :term:`strong reference` in-place. The :c:func:`Py_NewRef` function can be
@@ -112,6 +115,8 @@ of Python objects.
 
    Release a :term:`strong reference` to object *o*, indicating the
    reference is no longer used.
+
+   This function has no effect on :term:`immortal` objects.
 
    Once the last :term:`strong reference` is released
    (i.e. the object's reference count reaches 0),

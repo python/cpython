@@ -798,10 +798,10 @@ which incur interpreter overhead.
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
 
-   def prepend(value, iterator):
-       "Prepend a single value in front of an iterator"
+   def prepend(value, iterable):
+       "Prepend a single value in front of an iterable"
        # prepend(1, [2, 3, 4]) --> 1 2 3 4
-       return chain([value], iterator)
+       return chain([value], iterable)
 
    def tabulate(function, start=0):
        "Return function(0), function(1), ..."
@@ -914,14 +914,15 @@ which incur interpreter overhead.
        # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
        args = [iter(iterable)] * n
-       if incomplete == 'fill':
-           return zip_longest(*args, fillvalue=fillvalue)
-       if incomplete == 'strict':
-           return zip(*args, strict=True)
-       if incomplete == 'ignore':
-           return zip(*args)
-       else:
-           raise ValueError('Expected fill, strict, or ignore')
+       match incomplete:
+           case 'fill':
+               return zip_longest(*args, fillvalue=fillvalue)
+           case 'strict':
+               return zip(*args, strict=True)
+           case 'ignore':
+               return zip(*args)
+           case _:
+               raise ValueError('Expected fill, strict, or ignore')
 
    def sliding_window(iterable, n):
        # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG

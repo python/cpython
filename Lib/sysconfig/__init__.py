@@ -348,7 +348,7 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, and Py_NOGIL
+    # Add EXT_SUFFIX, SOABI, and Py_GIL_DISABLED
     vars.update(_sysconfig.config_vars())
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
@@ -404,7 +404,16 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.join(_PROJECT_BASE, "PC")
+            # This ought to be as simple as dirname(sys._base_executable), but
+            # if a venv uses symlinks to a build in the source tree, then this
+            # fails. So instead we guess the subdirectory name from sys.winver
+            if sys.winver.endswith('-32'):
+                arch = 'win32'
+            elif sys.winver.endswith('-arm64'):
+                arch = 'arm64'
+            else:
+                arch = 'amd64'
+            inc_dir = os.path.join(_PROJECT_BASE, 'PCbuild', arch)
         else:
             inc_dir = _PROJECT_BASE
     else:

@@ -468,6 +468,9 @@
     <ClInclude Include="..\Include\cpython\pyframe.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyhash.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -775,6 +778,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_tstate.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
@@ -1497,6 +1503,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">

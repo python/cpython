@@ -1,9 +1,0 @@
-Merge the Tier 1 (bytecode) and Tier 2 (micro-ops) interpreters together,
-moving the Tier 2 interpreter loop and switch into
-``_PyEval_EvalFrameDefault()`` in ``Python/ceval.c``.
-The ``Python/executor.c`` file is gone.
-Also the ``TIER_ONE`` and ``TIER_TWO`` macros are now handled
-by the code generator.
-
-**Beware!** This changes the environment variables to enable micro-ops and
-their debugging to ``PYTHON_UOPS`` and ``PYTHON_LLTRACE``.

@@ -165,6 +165,7 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
+Modules/_xxinterpqueuesmodule.c	-	_globals	-
 
 # set once during module init
 Modules/_decimal/_decimal.c	-	minalloc_is_set	-
@@ -565,7 +566,6 @@ Modules/_testmultiphase.c	-	def_nonascii_latin	-
 Modules/_testmultiphase.c	-	def_nonmodule	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_methods	-
-Modules/_testmultiphase.c	-	imp_dummy_def	-
 Modules/_testmultiphase.c	-	main_def	-
 Modules/_testmultiphase.c	-	main_slots	-
 Modules/_testmultiphase.c	-	meth_state_access_slots	-
@@ -600,6 +600,9 @@ Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	xmlparser_type	-
+Modules/_xxtestfuzz/fuzzer.c	-	pycompile_scratch	-
+Modules/_xxtestfuzz/fuzzer.c	-	start_vals	-
+Modules/_xxtestfuzz/fuzzer.c	-	optimize_vals	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	JSON_LOADS_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_COMPILE_INITIALIZED	-

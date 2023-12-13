@@ -1904,7 +1904,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
     if (index < 0) {
         struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
-        PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
+        PyMutex_Lock(&rt_ids->mutex);
         // Check again to detect concurrent access. Another thread can have
         // initialized the index while this thread waited for the lock.
         index = _Py_atomic_load_ssize(&id->index);
@@ -1914,7 +1914,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
             rt_ids->next_index++;
             _Py_atomic_store_ssize(&id->index, index);
         }
-        PyThread_release_lock(rt_ids->lock);
+        PyMutex_Unlock(&rt_ids->mutex);
     }
     assert(index >= 0);
 
@@ -5869,6 +5869,23 @@ PyUnicode_AsUTF16String(PyObject *unicode)
     return _PyUnicode_EncodeUTF16(unicode, NULL, 0);
 }
 
+_PyUnicode_Name_CAPI *
+_PyUnicode_GetNameCAPI(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+
+    ucnhash_capi = _Py_atomic_load_ptr(&interp->unicode.ucnhash_capi);
+    if (ucnhash_capi == NULL) {
+        ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+                PyUnicodeData_CAPSULE_NAME, 1);
+
+        // It's fine if we overwite the value here. It's always the same value.
+        _Py_atomic_store_ptr(&interp->unicode.ucnhash_capi, ucnhash_capi);
+    }
+    return ucnhash_capi;
+}
+
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
 PyObject *
@@ -5884,7 +5901,6 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     _PyUnicode_Name_CAPI *ucnhash_capi;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
@@ -6032,19 +6048,13 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 
             /* \N{name} */
         case 'N':
-            ucnhash_capi = interp->unicode.ucnhash_capi;
+            ucnhash_capi = _PyUnicode_GetNameCAPI();
             if (ucnhash_capi == NULL) {
-                /* load the unicode data module */
-                ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
-                                                PyUnicodeData_CAPSULE_NAME, 1);
-                if (ucnhash_capi == NULL) {
-                    PyErr_SetString(
+                PyErr_SetString(
                         PyExc_UnicodeError,
                         "\\N escapes not supported (can't load unicodedata module)"
-                        );
-                    goto onError;
-                }
-                interp->unicode.ucnhash_capi = ucnhash_capi;
+                );
+                goto onError;
             }
 
             message = "malformed \\N character escape";
@@ -13390,15 +13400,17 @@ _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer)
 #include "stringlib/unicode_format.h"
 
 PyDoc_STRVAR(format__doc__,
-             "S.format(*args, **kwargs) -> str\n\
+             "format($self, /, *args, **kwargs)\n\
+--\n\
 \n\
-Return a formatted version of S, using substitutions from args and kwargs.\n\
+Return a formatted version of the string, using substitutions from args and kwargs.\n\
 The substitutions are identified by braces ('{' and '}').");
 
 PyDoc_STRVAR(format_map__doc__,
-             "S.format_map(mapping) -> str\n\
+             "format_map($self, /, mapping)\n\
+--\n\
 \n\
-Return a formatted version of S, using substitutions from mapping.\n\
+Return a formatted version of the string, using substitutions from mapping.\n\
 The substitutions are identified by braces ('{' and '}').");
 
 /*[clinic input]
@@ -14696,7 +14708,7 @@ errors is specified, then the object must expose a data buffer\n\
 that will be decoded using the given encoding and error handler.\n\
 Otherwise, returns the result of object.__str__() (if defined)\n\
 or repr(object).\n\
-encoding defaults to sys.getdefaultencoding().\n\
+encoding defaults to 'utf-8'.\n\
 errors defaults to 'strict'.");
 
 static PyObject *unicode_iter(PyObject *seq);
