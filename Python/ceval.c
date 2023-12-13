@@ -1073,7 +1073,7 @@ exit_trace:
 
 // Jump here from DEOPT_IF()
 deoptimize:
-    // On DEOPT_IF we must repeat the last instruction.
+    // On DEOPT_IF we must execute the target instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     // There are some other things to take care of first, though.
     frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
