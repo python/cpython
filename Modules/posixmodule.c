@@ -3353,7 +3353,7 @@ os.chmod
         directory.
 
     follow_symlinks: bool(c_default="CHMOD_DEFAULT_FOLLOW_SYMLINKS", \
-                          py_default="(os.name != 'nt')") = True
+                          py_default="(os.name != 'nt')") = CHMOD_DEFAULT_FOLLOW_SYMLINKS
         If False, and the last element of the path is a symbolic link,
         chmod will modify the symbolic link itself instead of the file
         the link points to.
@@ -3370,7 +3370,7 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=5c073e3dff76c1a4]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=fcf115d174b9f3d8]*/
 {
     int result;
 
