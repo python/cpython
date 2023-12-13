@@ -2207,7 +2207,7 @@ class ClinicParserTest(TestCase):
                     {annotation}
                     Foo.property -> int
                 """
-                expected_error = "neither @getter nor @setter can define return type"
+                expected_error = f"{annotation} method cannot define a return type"
                 self.expect_failure(block, expected_error, lineno=3)
 
                 block = f"""
@@ -2218,7 +2218,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = "neither @getter nor @setter can define parameters"
+                expected_error = f"{annotation} method cannot define parameters"
                 self.expect_failure(block, expected_error, lineno=0)
 
     def test_duplicate_coexist(self):

@@ -5592,7 +5592,7 @@ class DSLParser:
         return_converter = None
         if returns:
             if self.kind in {GETTER, SETTER}:
-                fail(f"@{self.kind.name.lower()} methods cannot define a return type")
+                fail(f"@{self.kind.name.lower()} method cannot define a return type")
             ast_input = f"def x() -> {returns}: pass"
             try:
                 module_node = ast.parse(ast_input)
