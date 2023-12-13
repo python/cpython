@@ -261,15 +261,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             except (AttributeError, TypeError, ValueError):
                 # This code matches selectors._fileobj_to_fd function.
                 raise ValueError(f"Invalid file object: {fd!r}") from None
-        try:
-            transport = self._transports[fileno]
-        except KeyError:
-            pass
-        else:
-            if not transport.is_closing():
-                raise RuntimeError(
-                    f'File descriptor {fd!r} is used by transport '
-                    f'{transport!r}')
+        transport = self._transports.get(fileno)
+        if transport and not transport.is_closing():
+            raise RuntimeError(
+                f'File descriptor {fd!r} is used by transport '
+                f'{transport!r}')
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
