@@ -168,6 +168,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
+    /* Start optimizing at the destination to guarantee forward progress */
     int err = opt->optimize(opt, code, dest, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
@@ -248,14 +249,13 @@ PyTypeObject _PyCounterExecutor_Type = {
     .tp_methods = executor_methods,
 };
 
-static _PyInterpreterFrame *
+static _Py_CODEUNIT *
 counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     ((_PyCounterExecutorObject *)self)->optimizer->count++;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = ((_PyCounterExecutorObject *)self)->next_instr;
     Py_DECREF(self);
-    return frame;
+    return ((_PyCounterExecutorObject *)self)->next_instr;
 }
 
 static int
@@ -907,7 +907,7 @@ uop_optimize(
 /* Dummy execute() function for UOp Executor.
  * The actual implementation is inlined in ceval.c,
  * in _PyEval_EvalFrameDefault(). */
-_PyInterpreterFrame *
+_Py_CODEUNIT *
 _PyUOpExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
     Py_FatalError("Tier 2 is now inlined into Tier 1");

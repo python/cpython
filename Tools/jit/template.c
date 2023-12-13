@@ -13,7 +13,6 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 
-#define TIER_TWO 2
 #include "ceval_macros.h"
 
 #undef CURRENT_OPARG
@@ -26,7 +25,7 @@
 #define DEOPT_IF(COND, INSTNAME) \
     do {                         \
         if ((COND)) {            \
-            goto exit_trace;     \
+            goto deoptimize;     \
         }                        \
     } while (0)
 
@@ -53,7 +52,7 @@
     __attribute__((musttail))                                \
     return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
 
-_PyInterpreterFrame *
+_Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
            PyThreadState *tstate)
 {
@@ -91,11 +90,9 @@ pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->return_offset = 0;
     return NULL;
+deoptimize:
 exit_trace:
-    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->return_offset = 0;
-    return frame;
+    return _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
 }

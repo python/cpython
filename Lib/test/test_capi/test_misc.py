@@ -1527,6 +1527,7 @@ class TestPendingCalls(unittest.TestCase):
         maxtext = 250
         main_interpid = 0
         interpid = _interpreters.create()
+        self.addCleanup(lambda: _interpreters.destroy(interpid))
         _interpreters.run_string(interpid, f"""if True:
             import json
             import os
@@ -2018,6 +2019,137 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(ret, 0)
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
+
+
+@requires_subinterpreters
+class InterpreterIDTests(unittest.TestCase):
+
+    InterpreterID = _testcapi.get_interpreterid_type()
+
+    def new_interpreter(self):
+        def ensure_destroyed(interpid):
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        id = _interpreters.create()
+        self.addCleanup(lambda: ensure_destroyed(id))
+        return id
+
+    def test_with_int(self):
+        id = self.InterpreterID(10, force=True)
+
+        self.assertEqual(int(id), 10)
+
+    def test_coerce_id(self):
+        class Int(str):
+            def __index__(self):
+                return 10
+
+        id = self.InterpreterID(Int(), force=True)
+        self.assertEqual(int(id), 10)
+
+    def test_bad_id(self):
+        for badid in [
+            object(),
+            10.0,
+            '10',
+            b'10',
+        ]:
+            with self.subTest(badid):
+                with self.assertRaises(TypeError):
+                    self.InterpreterID(badid)
+
+        badid = -1
+        with self.subTest(badid):
+            with self.assertRaises(ValueError):
+                self.InterpreterID(badid)
+
+        badid = 2**64
+        with self.subTest(badid):
+            with self.assertRaises(OverflowError):
+                self.InterpreterID(badid)
+
+    def test_exists(self):
+        id = self.new_interpreter()
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            self.InterpreterID(int(id) + 1)  # unforced
+
+    def test_does_not_exist(self):
+        id = self.new_interpreter()
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            self.InterpreterID(int(id) + 1)  # unforced
+
+    def test_destroyed(self):
+        id = _interpreters.create()
+        _interpreters.destroy(id)
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            self.InterpreterID(id)  # unforced
+
+    def test_str(self):
+        id = self.InterpreterID(10, force=True)
+        self.assertEqual(str(id), '10')
+
+    def test_repr(self):
+        id = self.InterpreterID(10, force=True)
+        self.assertEqual(repr(id), 'InterpreterID(10)')
+
+    def test_equality(self):
+        id1 = self.new_interpreter()
+        id2 = self.InterpreterID(id1)
+        id3 = self.InterpreterID(
+                self.new_interpreter())
+
+        self.assertTrue(id2 == id2)  # identity
+        self.assertTrue(id2 == id1)  # int-equivalent
+        self.assertTrue(id1 == id2)  # reversed
+        self.assertTrue(id2 == int(id2))
+        self.assertTrue(id2 == float(int(id2)))
+        self.assertTrue(float(int(id2)) == id2)
+        self.assertFalse(id2 == float(int(id2)) + 0.1)
+        self.assertFalse(id2 == str(int(id2)))
+        self.assertFalse(id2 == 2**1000)
+        self.assertFalse(id2 == float('inf'))
+        self.assertFalse(id2 == 'spam')
+        self.assertFalse(id2 == id3)
+
+        self.assertFalse(id2 != id2)
+        self.assertFalse(id2 != id1)
+        self.assertFalse(id1 != id2)
+        self.assertTrue(id2 != id3)
+
+    def test_linked_lifecycle(self):
+        id1 = _interpreters.create()
+        _testcapi.unlink_interpreter_refcount(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            0)
+
+        id2 = self.InterpreterID(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            1)
+
+        # The interpreter isn't linked to ID objects, so it isn't destroyed.
+        del id2
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            0)
+
+        _testcapi.link_interpreter_refcount(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            0)
+
+        id3 = self.InterpreterID(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            1)
+
+        # The interpreter is linked now so is destroyed.
+        del id3
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            _testinternalcapi.get_interpreter_refcount(id1)
 
 
 class BuiltinStaticTypesTests(unittest.TestCase):

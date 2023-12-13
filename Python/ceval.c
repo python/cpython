@@ -135,14 +135,14 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
-                    _Py_CODEUNIT *next_instr)
+                    _Py_CODEUNIT *next_instr,
+                    int opcode,
+                    int oparg)
 {
     if (frame->owner == FRAME_OWNED_BY_CSTACK) {
         return;
     }
     dump_stack(frame, stack_pointer);
-    int oparg = next_instr->op.arg;
-    int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
@@ -1051,9 +1051,10 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1));
+            (int)(next_uop - current_executor->trace - 1),
+            _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1064,14 +1065,15 @@ error_tier_two:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1));
+            (int)(next_uop - current_executor->trace - 1),
+            _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     Py_DECREF(current_executor);
     // Fall through
 // Jump here from ENTER_EXECUTOR

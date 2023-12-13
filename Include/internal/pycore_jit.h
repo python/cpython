@@ -13,7 +13,7 @@ extern "C" {
 
 #include "pycore_uops.h"
 
-typedef _PyInterpreterFrame *(*jit_func)(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
+typedef _Py_CODEUNIT *(*jit_func)(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
 
 int _PyJIT_Compile(_PyUOpExecutorObject *executor);
 void _PyJIT_Free(_PyUOpExecutorObject *executor);

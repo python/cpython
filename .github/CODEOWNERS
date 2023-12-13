@@ -78,6 +78,11 @@ Python/traceback.c            @iritkatriel
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
+# Subinterpreters
+Lib/test/support/interpreters/**  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/**  @ericsnowcurrently
+
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
 **/*str*time*                 @pganssle @abalkin
@@ -148,7 +153,15 @@ Doc/c-api/stable.rst          @encukou
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
-**/*queue*                    @rhettinger
+Doc/**/*queue*                @rhettinger
+PCbuild/**/*queue*            @rhettinger
+Modules/_queuemodule.c        @rhettinger
+Lib/*queue*.py                @rhettinger
+Lib/asyncio/*queue*.py        @rhettinger
+Lib/multiprocessing/*queue*.py  @rhettinger
+Lib/test/*queue*.py           @rhettinger
+Lib/test_asyncio/*queue*.py   @rhettinger
+Lib/test_multiprocessing/*queue*.py  @rhettinger
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger

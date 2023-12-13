@@ -201,6 +201,7 @@ copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
     for (uint64_t i = 0; i < stencil->holes_size; i++) {
         patch(base, &stencil->holes[i], patches);
     }
+    POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
 }
 
 static void
@@ -212,16 +213,16 @@ emit(const StencilGroup *stencil_group, uint64_t patches[])
     copy_and_patch(text, &stencil_group->text, patches);
 }
 
-static _PyInterpreterFrame *
+static _Py_CODEUNIT *
 execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
         PyObject **stack_pointer)
 {
     PyThreadState *tstate = PyThreadState_Get();
     assert(PyObject_TypeCheck(executor, &_PyUOpExecutor_Type));
-    _PyUOpExecutorObject *uop_executor = (_PyUOpExecutorObject *)executor;
-    frame = ((jit_func)uop_executor->jit_code)(frame, stack_pointer, tstate);
+    jit_func jitted = ((_PyUOpExecutorObject *)executor)->jit_code;
+    _Py_CODEUNIT *next_instr = jitted(frame, stack_pointer, tstate);
     Py_DECREF(executor);
-    return frame;
+    return next_instr;
 }
 
 void

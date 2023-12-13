@@ -1508,6 +1508,9 @@
     <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">
       <Filter>Parser</Filter>
     </ClCompile>

@@ -31,7 +31,7 @@ typedef struct {
     bool jit;
 } _PyUOpOptimizerObject;
 
-_PyInterpreterFrame *_PyUOpExecute(
+_Py_CODEUNIT *_PyUOpExecute(
     _PyExecutorObject *executor,
     _PyInterpreterFrame *frame,
     PyObject **stack_pointer);
