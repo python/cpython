@@ -914,14 +914,15 @@ which incur interpreter overhead.
        # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
        args = [iter(iterable)] * n
-       if incomplete == 'fill':
-           return zip_longest(*args, fillvalue=fillvalue)
-       elif incomplete == 'strict':
-           return zip(*args, strict=True)
-       elif incomplete == 'ignore':
-           return zip(*args)
-       else:
-           raise ValueError('Expected fill, strict, or ignore')
+       match incomplete:
+           case 'fill':
+               return zip_longest(*args, fillvalue=fillvalue)
+           case 'strict':
+               return zip(*args, strict=True)
+           case 'ignore':
+               return zip(*args)
+           case _:
+               raise ValueError('Expected fill, strict, or ignore')
 
    def sliding_window(iterable, n):
        # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
