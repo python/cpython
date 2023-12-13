@@ -390,8 +390,8 @@ testing code::
            widget = Widget('The widget')
            self.assertEqual(widget.size(), (50, 50))
 
-Note that in order to test something, we use one of the :meth:`assert\*`
-methods provided by the :class:`TestCase` base class.  If the test fails, an
+Note that in order to test something, we use one of the :ref:`assert\* methods <assert-methods>`
+provided by the :class:`TestCase` base class.  If the test fails, an
 exception will be raised with an explanatory message, and :mod:`unittest`
 will identify the test case as a :dfn:`failure`.  Any other exceptions will be
 treated as :dfn:`errors`.
@@ -1940,14 +1940,14 @@ Loading and running tests
       String giving the prefix of method names which will be interpreted as test
       methods.  The default value is ``'test'``.
 
-      This affects :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*`
+      This affects :meth:`getTestCaseNames` and all the ``loadTestsFrom*``
       methods.
 
 
    .. attribute:: sortTestMethodsUsing
 
       Function to be used to compare method names when sorting them in
-      :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*` methods.
+      :meth:`getTestCaseNames` and all the ``loadTestsFrom*`` methods.
 
 
    .. attribute:: suiteClass
@@ -1956,7 +1956,7 @@ Loading and running tests
       methods on the resulting object are needed.  The default value is the
       :class:`TestSuite` class.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
    .. attribute:: testNamePatterns
 
@@ -1969,7 +1969,7 @@ Loading and running tests
       so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
       .. versionadded:: 3.7
 
@@ -2003,7 +2003,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks. Each tuple represents a test where a failure
-      was explicitly signalled using the :meth:`TestCase.assert\*` methods.
+      was explicitly signalled using the :ref:`assert\* methods <assert-methods>`.
 
    .. attribute:: skipped
 
