@@ -755,6 +755,7 @@ start_frame:
     next_instr = frame->instr_ptr;
 resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
+resume_frame_using_stack_pointer:
 
 #ifdef LLTRACE
     lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
@@ -1081,7 +1082,6 @@ deoptimize:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     frame->return_offset = 0;  // Don't leave this random
-    _PyFrame_SetStackPointer(frame, stack_pointer);
 
     // Check if there is a side-exit executor here already.
     int pc = next_uop - 1 - current_executor->trace;
@@ -1113,7 +1113,7 @@ deoptimize:
     if (ucounter <= threshold)
     {
         Py_DECREF(current_executor);
-        goto resume_frame;
+        goto resume_frame_using_stack_pointer;
     }
 
     // Decode instruction to look past EXTENDED_ARG.
@@ -1186,7 +1186,7 @@ deoptimize:
     *pcounter = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
 
     Py_DECREF(current_executor);
-    goto resume_frame;
+    goto resume_frame_using_stack_pointer;
 }
 
 #if defined(__GNUC__)
