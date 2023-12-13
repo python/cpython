@@ -9,8 +9,7 @@ import unittest
 from test import support
 
 
-MS_WINDOWS = (os.name == 'nt')
-if MS_WINDOWS:
+if support.MS_WINDOWS:
     # On Windows, Python is usually built by MSVC. Passing /p:DebugSymbols=true
     # option to MSBuild produces PDB debug symbols, but gdb doesn't support PDB
     # debug symbol files.

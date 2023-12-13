@@ -180,7 +180,7 @@ also provides these miscellaneous utilities:
           print(chunk)
 
    .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+      Support for :meth:`~object.__getitem__` method has been removed.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -201,7 +201,7 @@ manipulation of WSGI response headers using a mapping-like interface.
    an empty list.
 
    :class:`Headers` objects support typical mapping operations including
-   :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
+   :meth:`~object.__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
    :meth:`__delitem__` and :meth:`__contains__`.  For each of
    these methods, the key is the header name (treated case-insensitively), and the
    value is the first value associated with that header name.  Setting a header

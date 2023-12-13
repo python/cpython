@@ -1,9 +1,10 @@
 import os
 import time
 
+from test.support import MS_WINDOWS
 from .results import TestResults
 from .runtests import RunTests
-from .utils import print_warning, MS_WINDOWS
+from .utils import print_warning
 
 if MS_WINDOWS:
     from .win_utils import WindowsLoadTracker

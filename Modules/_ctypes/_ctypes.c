@@ -110,7 +110,9 @@ bytes(cdata)
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
+#ifdef MS_WIN32
+#  include "pycore_modsupport.h"  // _PyArg_NoKeywords()
+#endif
 
 
 #include <ffi.h>
@@ -182,7 +184,7 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
     DictRemoverObject *self = (DictRemoverObject *)myself;
     if (self->key && self->dict) {
         if (-1 == PyDict_DelItem(self->dict, self->key)) {
-            _PyErr_WriteUnraisableMsg("on calling _ctypes.DictRemover", NULL);
+            PyErr_FormatUnraisable("Exception ignored on calling _ctypes.DictRemover");
         }
         Py_CLEAR(self->key);
         Py_CLEAR(self->dict);
@@ -241,26 +243,13 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
 static int
 _PyDict_GetItemProxy(PyObject *dict, PyObject *key, PyObject **presult)
 {
-    PyObject *item = PyDict_GetItemWithError(dict, key);
-    if (item == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
-        *presult = NULL;
-        return 0;
+    int rc = PyDict_GetItemRef(dict, key, presult);
+    PyObject *item = *presult;
+    if (item && PyWeakref_CheckProxy(item)) {
+        rc = PyWeakref_GetRef(item, presult);
+        Py_DECREF(item);
     }
-
-    if (!PyWeakref_CheckProxy(item)) {
-        *presult = Py_NewRef(item);
-        return 0;
-    }
-    PyObject *ref;
-    if (PyWeakref_GetRef(item, &ref) < 0) {
-        return -1;
-    }
-    // ref is NULL if the referenced object was destroyed
-    *presult = ref;
-    return 0;
+    return rc;
 }
 
 /******************************************************************/
@@ -563,17 +552,18 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 
     dict->paramfunc = StructUnionType_paramfunc;
 
-    fields = PyDict_GetItemWithError((PyObject *)dict, &_Py_ID(_fields_));
+    if (PyDict_GetItemRef((PyObject *)dict, &_Py_ID(_fields_), &fields) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
     if (fields) {
         if (PyObject_SetAttr((PyObject *)result, &_Py_ID(_fields_), fields) < 0) {
             Py_DECREF(result);
+            Py_DECREF(fields);
             return NULL;
         }
+        Py_DECREF(fields);
         return (PyObject *)result;
-    }
-    else if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
     }
     else {
         StgDictObject *basedict = PyType_stgdict((PyObject *)result->tp_base);
@@ -1108,11 +1098,15 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->paramfunc = PyCPointerType_paramfunc;
     stgdict->flags |= TYPEFLAG_ISPOINTER;
 
-    proto = PyDict_GetItemWithError(typedict, &_Py_ID(_type_)); /* Borrowed ref */
+    if (PyDict_GetItemRef(typedict, &_Py_ID(_type_), &proto) < 0) {
+        Py_DECREF((PyObject *)stgdict);
+        return NULL;
+    }
     if (proto) {
         StgDictObject *itemdict;
         const char *current_format;
         if (-1 == PyCPointerType_SetProto(stgdict, proto)) {
+            Py_DECREF(proto);
             Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
@@ -1132,14 +1126,11 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         } else {
             stgdict->format = _ctypes_alloc_format_string("&", current_format);
         }
+        Py_DECREF(proto);
         if (stgdict->format == NULL) {
             Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
-    }
-    else if (PyErr_Occurred()) {
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
     }
 
     /* create the new instance (which is a class,
@@ -2459,58 +2450,61 @@ make_funcptrtype_dict(StgDictObject *stgdict)
     stgdict->getfunc = NULL;
     stgdict->ffi_type_pointer = ffi_type_pointer;
 
-    ob = PyDict_GetItemWithError((PyObject *)stgdict, &_Py_ID(_flags_));
+    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_flags_), &ob) < 0) {
+        return -1;
+    }
     if (!ob || !PyLong_Check(ob)) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_TypeError,
                 "class must define _flags_ which must be an integer");
-        }
+        Py_XDECREF(ob);
         return -1;
     }
     stgdict->flags = PyLong_AsUnsignedLongMask(ob) | TYPEFLAG_ISPOINTER;
+    Py_DECREF(ob);
 
     /* _argtypes_ is optional... */
-    ob = PyDict_GetItemWithError((PyObject *)stgdict, &_Py_ID(_argtypes_));
-    if (ob) {
-        converters = converters_from_argtypes(ob);
-        if (!converters)
-            return -1;
-        stgdict->argtypes = Py_NewRef(ob);
-        stgdict->converters = converters;
-    }
-    else if (PyErr_Occurred()) {
+    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_argtypes_), &ob) < 0) {
         return -1;
     }
+    if (ob) {
+        converters = converters_from_argtypes(ob);
+        if (!converters) {
+            Py_DECREF(ob);
+            return -1;
+        }
+        stgdict->argtypes = ob;
+        stgdict->converters = converters;
+    }
 
-    ob = PyDict_GetItemWithError((PyObject *)stgdict, &_Py_ID(_restype_));
+    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_restype_), &ob) < 0) {
+        return -1;
+    }
     if (ob) {
         if (ob != Py_None && !PyType_stgdict(ob) && !PyCallable_Check(ob)) {
             PyErr_SetString(PyExc_TypeError,
                 "_restype_ must be a type, a callable, or None");
+            Py_DECREF(ob);
             return -1;
         }
-        stgdict->restype = Py_NewRef(ob);
+        stgdict->restype = ob;
         if (PyObject_GetOptionalAttr(ob, &_Py_ID(_check_retval_),
                                    &stgdict->checker) < 0)
         {
             return -1;
         }
     }
-    else if (PyErr_Occurred()) {
+/* XXX later, maybe.
+    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py _ID(_errcheck_), &ob) < 0) {
         return -1;
     }
-/* XXX later, maybe.
-    ob = _PyDict_GetItemIdWithError((PyObject *)stgdict, &PyId__errcheck_);
     if (ob) {
         if (!PyCallable_Check(ob)) {
             PyErr_SetString(PyExc_TypeError,
                 "_errcheck_ must be callable");
+            Py_DECREF(ob);
             return -1;
         }
-        stgdict->errcheck = Py_NewRef(ob);
-    }
-    else if (PyErr_Occurred()) {
-        return -1;
+        stgdict->errcheck = ob;
     }
 */
     return 0;
@@ -3810,13 +3804,12 @@ _get_arg(int *pindex, PyObject *name, PyObject *defval, PyObject *inargs, PyObje
         return Py_NewRef(v);
     }
     if (kwds && name) {
-        v = PyDict_GetItemWithError(kwds, name);
+        if (PyDict_GetItemRef(kwds, name, &v) < 0) {
+            return NULL;
+        }
         if (v) {
             ++*pindex;
-            return Py_NewRef(v);
-        }
-        else if (PyErr_Occurred()) {
-            return NULL;
+            return v;
         }
     }
     if (defval) {
@@ -4868,15 +4861,12 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         return NULL;
 
     PyObject *result;
-    if (_PyDict_GetItemProxy(cache, key, &result) < 0) {
-        Py_DECREF(key);
-        return NULL;
-    }
-    if (result) {
+    if (_PyDict_GetItemProxy(cache, key, &result) != 0) {
+        // found or error
         Py_DECREF(key);
         return result;
     }
-
+    // not found
     if (!PyType_Check(itemtype)) {
         PyErr_SetString(PyExc_TypeError,
                         "Expected a type object");

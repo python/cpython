@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_long.h"          // _PyLong_Size_t_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_winapi_Overlapped_GetOverlappedResult__doc__,
 "GetOverlappedResult($self, wait, /)\n"
@@ -704,7 +705,7 @@ _winapi_GetExitCodeProcess(PyObject *module, PyObject *arg)
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -731,7 +732,7 @@ _winapi_GetLastError(PyObject *module, PyObject *Py_UNUSED(ignored))
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -1796,7 +1797,7 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -1970,4 +1971,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=025b2c56d469c899 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3084c671239bbed4 input=a9049054013a1b77]*/

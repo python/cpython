@@ -12,7 +12,6 @@ from instructions import (
     InstructionOrCacheEffect,
     MacroInstruction,
     MacroParts,
-    OverriddenInstructionPlaceHolder,
     PseudoInstruction,
 )
 import parsing
@@ -26,7 +25,7 @@ RESERVED_WORDS = {
     "co_names": "Use FRAME_CO_NAMES.",
 }
 
-RE_PREDICTED = r"^\s*(?:GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+RE_GO_TO_INSTR = r"^\s*GO_TO_INSTRUCTION\((\w+)\);\s*(?://.*)?$"
 
 
 class Analyzer:
@@ -66,7 +65,6 @@ class Analyzer:
         parsing.InstDef
         | parsing.Macro
         | parsing.Pseudo
-        | OverriddenInstructionPlaceHolder
     ]
     instrs: dict[str, Instruction]  # Includes ops
     macros: dict[str, parsing.Macro]
@@ -141,22 +139,17 @@ class Analyzer:
             match thing:
                 case parsing.InstDef(name=name):
                     macro: parsing.Macro | None = None
-                    if thing.kind == "inst":
+                    if thing.kind == "inst" and "override" not in thing.annotations:
                         macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
-                        if not thing.override:
+                        if "override" not in thing.annotations:
                             raise psr.make_syntax_error(
                                 f"Duplicate definition of '{name}' @ {thing.context} "
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
-                        placeholder = OverriddenInstructionPlaceHolder(name=name)
-                        self.everything[instrs_idx[name]] = placeholder
-                        if macro is not None:
-                            self.warning(
-                                f"Overriding desugared {macro.name} may not work", thing
-                            )
-                    if name not in self.instrs and thing.override:
+                        self.everything[instrs_idx[name]] = thing
+                    if name not in self.instrs and "override" in thing.annotations:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
                             "an override but no previous definition exists.",
@@ -187,16 +180,23 @@ class Analyzer:
         Raises SystemExit if there is an error.
         """
         self.analyze_macros_and_pseudos()
-        self.find_predictions()
         self.map_families()
+        self.mark_predictions()
         self.check_families()
 
-    def find_predictions(self) -> None:
-        """Find the instructions that need PREDICTED() labels."""
+    def mark_predictions(self) -> None:
+        """Mark the instructions that need PREDICTED() labels."""
+        # Start with family heads
+        for family in self.families.values():
+            if family.name in self.instrs:
+                self.instrs[family.name].predicted = True
+            if family.name in self.macro_instrs:
+                self.macro_instrs[family.name].predicted = True
+        # Also look for GO_TO_INSTRUCTION() calls
         for instr in self.instrs.values():
             targets: set[str] = set()
             for line in instr.block_text:
-                if m := re.match(RE_PREDICTED, line):
+                if m := re.match(RE_GO_TO_INSTR, line):
                     targets.add(m.group(1))
             for target in targets:
                 if target_instr := self.instrs.get(target):
@@ -225,11 +225,18 @@ class Analyzer:
                         )
                     else:
                         member_instr.family = family
-                elif not self.macro_instrs.get(member):
+                if member_mac := self.macro_instrs.get(member):
+                    assert member_mac.family is None, (member, member_mac.family.name)
+                    member_mac.family = family
+                if not member_instr and not member_mac:
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
                         family,
                     )
+        # A sanctioned exception:
+        # This opcode is a member of the family but it doesn't pass the checks.
+        if mac := self.macro_instrs.get("BINARY_OP_INPLACE_ADD_UNICODE"):
+            mac.family = self.families.get("BINARY_OP")
 
     def check_families(self) -> None:
         """Check each family:
@@ -365,8 +372,8 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    if instr.name != "_SET_IP":
-                        # _SET_IP in a macro is a no-op in Tier 1
+                    if instr.name != "_SAVE_RETURN_OFFSET":
+                        # _SAVE_RETURN_OFFSET's oparg does not transfer
                         flags.add(instr.instr_flags)
                 case _:
                     assert_never(component)
@@ -376,14 +383,21 @@ class Analyzer:
         return MacroInstruction(macro.name, format, flags, macro, parts, offset)
 
     def analyze_pseudo(self, pseudo: parsing.Pseudo) -> PseudoInstruction:
-        targets = [self.instrs[target] for target in pseudo.targets]
+        targets: list[Instruction | MacroInstruction] = []
+        for target_name in pseudo.targets:
+            if target_name in self.instrs:
+                targets.append(self.instrs[target_name])
+            else:
+                targets.append(self.macro_instrs[target_name])
         assert targets
-        # Make sure the targets have the same fmt
-        fmts = list(set([t.instr_fmt for t in targets]))
-        assert len(fmts) == 1
-        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
+        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG",
+                          "HAS_ESCAPES_FLAG"}
         assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
-        return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
+
+        flags = InstructionFlags(**{f"{f}_FLAG" : True for f in pseudo.flags})
+        for t in targets:
+            flags.add(t.instr_flags)
+        return PseudoInstruction(pseudo.name, targets, flags)
 
     def analyze_instruction(
         self, instr: Instruction, offset: int
@@ -425,7 +439,6 @@ class Analyzer:
             "LOAD_FAST_LOAD_FAST",
             "LOAD_CONST_LOAD_FAST",
             "STORE_FAST_STORE_FAST",
-            "_BINARY_OP_INPLACE_ADD_UNICODE",
             "POP_JUMP_IF_TRUE",
             "POP_JUMP_IF_FALSE",
             "_ITER_JUMP_LIST",

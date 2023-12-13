@@ -1,3 +1,0 @@
-Fix race conditions in test_threading lock tests. Wait until a condition is met
-rather than using :func:`time.sleep` with a hardcoded number of seconds. Patch
-by Victor Stinner.

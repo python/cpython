@@ -1936,7 +1936,7 @@ Other Improvements
 * The :ref:`python <using-on-cmdline>` command has a new :ref:`option
   <using-on-misc-options>`, ``-I``, which causes it to run in "isolated mode",
   which means that :data:`sys.path` contains neither the script's directory nor
-  the user's ``site-packages`` directory, and all :envvar:`PYTHON*` environment
+  the user's ``site-packages`` directory, and all :envvar:`!PYTHON*` environment
   variables are ignored (it implies both ``-s`` and ``-E``).  Other
   restrictions may also be applied in the future, with the goal being to
   isolate the execution of a script from the user's environment.  This is
@@ -2405,8 +2405,8 @@ Changes in the Python API
   storage).  (:issue:`17094`.)
 
 * Parameter names in ``__annotations__`` dicts are now mangled properly,
-  similarly to ``__kwdefaults__``.  (Contributed by Yury Selivanov in
-  :issue:`20625`.)
+  similarly to :attr:`~function.__kwdefaults__`.
+  (Contributed by Yury Selivanov in :issue:`20625`.)
 
 * :attr:`hashlib.hash.name` now always returns the identifier in lower case.
   Previously some builtin hashes had uppercase names, but now that it is a

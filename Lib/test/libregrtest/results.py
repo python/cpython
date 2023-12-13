@@ -1,14 +1,14 @@
 import sys
-from test.support import TestStats
+import trace
 
 from .runtests import RunTests
-from .result import State, TestResult
+from .result import State, TestResult, TestStats, Location
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
 
 
-# Python uses exit code 1 when an exception is not catched
+# Python uses exit code 1 when an exception is not caught
 # argparse.ArgumentParser.error() uses exit code 2
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
@@ -30,15 +30,19 @@ class TestResults:
         self.rerun_results: list[TestResult] = []
 
         self.interrupted: bool = False
+        self.worker_bug: bool = False
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[str] = []
+        self.testsuite_xml: list = []
+        # used by -T with -j
+        self.covered_lines: set[Location] = set()
 
     def is_all_good(self):
         return (not self.bad
                 and not self.skipped
-                and not self.interrupted)
+                and not self.interrupted
+                and not self.worker_bug)
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
@@ -60,6 +64,8 @@ class TestResults:
 
         if self.interrupted:
             state.append("INTERRUPTED")
+        if self.worker_bug:
+            state.append("WORKER BUG")
         if not state:
             state.append("SUCCESS")
 
@@ -77,6 +83,8 @@ class TestResults:
             exitcode = EXITCODE_NO_TESTS_RAN
         elif fail_rerun and self.rerun:
             exitcode = EXITCODE_RERUN_FAIL
+        elif self.worker_bug:
+            exitcode = EXITCODE_BAD_TEST
         return exitcode
 
     def accumulate_result(self, result: TestResult, runtests: RunTests):
@@ -105,16 +113,27 @@ class TestResults:
                 else:
                     raise ValueError(f"invalid test state: {result.state!r}")
 
+        if result.state == State.WORKER_BUG:
+            self.worker_bug = True
+
         if result.has_meaningful_duration() and not rerun:
+            if result.duration is None:
+                raise ValueError("result.duration is None")
             self.test_times.append((result.duration, test_name))
         if result.stats is not None:
             self.stats.accumulate(result.stats)
         if rerun:
             self.rerun.append(test_name)
-
+        if result.covered_lines:
+            # we don't care about trace counts so we don't have to sum them up
+            self.covered_lines.update(result.covered_lines)
         xml_data = result.xml_data
         if xml_data:
             self.add_junit(xml_data)
+
+    def get_coverage_results(self) -> trace.CoverageResults:
+        counts = {loc: 1 for loc in self.covered_lines}
+        return trace.CoverageResults(counts=counts)
 
     def need_rerun(self):
         return bool(self.rerun_results)
@@ -173,12 +192,6 @@ class TestResults:
                 f.write(s)
 
     def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
-        omitted = set(tests) - self.get_executed()
-        if omitted:
-            print()
-            print(count(len(omitted), "test"), "omitted:")
-            printlist(omitted)
-
         if print_slowest:
             self.test_times.sort(reverse=True)
             print()
@@ -186,15 +199,20 @@ class TestResults:
             for test_time, test in self.test_times[:10]:
                 print("- %s: %s" % (test, format_duration(test_time)))
 
-        all_tests = [
-            (self.bad, "test", "{} failed:"),
-            (self.env_changed, "test", "{} altered the execution environment (env changed):"),
-        ]
+        all_tests = []
+        omitted = set(tests) - self.get_executed()
+
+        # less important
+        all_tests.append((omitted, "test", "{} omitted:"))
         if not quiet:
             all_tests.append((self.skipped, "test", "{} skipped:"))
             all_tests.append((self.resource_denied, "test", "{} skipped (resource denied):"))
-        all_tests.append((self.rerun, "re-run test", "{}:"))
         all_tests.append((self.run_no_tests, "test", "{} run no tests:"))
+
+        # more important
+        all_tests.append((self.env_changed, "test", "{} altered the execution environment (env changed):"))
+        all_tests.append((self.rerun, "re-run test", "{}:"))
+        all_tests.append((self.bad, "test", "{} failed:"))
 
         for tests_list, count_text, title_format in all_tests:
             if tests_list:

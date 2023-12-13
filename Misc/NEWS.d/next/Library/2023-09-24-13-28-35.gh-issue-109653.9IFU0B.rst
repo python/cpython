@@ -1,2 +1,0 @@
-Improve import time of :mod:`functools` by around 13%. Patch by Alex
-Waygood.

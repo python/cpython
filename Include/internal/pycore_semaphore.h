@@ -7,7 +7,8 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_time.h"            // _PyTime_t
+#include "pycore_pythread.h"      // _POSIX_SEMAPHORES
+#include "pycore_time.h"          // _PyTime_t
 
 #ifdef MS_WINDOWS
 #   define WIN32_LEAN_AND_MEAN
@@ -25,6 +26,7 @@
 #   define _Py_USE_SEMAPHORES
 #   include <semaphore.h>
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {

@@ -48,10 +48,6 @@
 #  define Py_BUILD_CORE
 #endif
 
-#if defined(Py_LIMITED_API) && defined(Py_BUILD_CORE)
-#  error "Py_LIMITED_API is not compatible with Py_BUILD_CORE"
-#endif
-
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
@@ -361,6 +357,15 @@ extern "C" {
 
 #include "exports.h"
 
+#ifdef Py_LIMITED_API
+   // The internal C API must not be used with the limited C API: make sure
+   // that Py_BUILD_CORE macro is not defined in this case. These 3 macros are
+   // used by exports.h, so only undefine them afterwards.
+#  undef Py_BUILD_CORE
+#  undef Py_BUILD_CORE_BUILTIN
+#  undef Py_BUILD_CORE_MODULE
+#endif
+
 /* limits.h constants that may be missing */
 
 #ifndef INT_MAX
@@ -463,6 +468,14 @@ extern "C" {
  */
 #ifndef WITH_THREAD
 #  define WITH_THREAD
+#endif
+
+/* Some WebAssembly platforms do not provide a working pthread implementation.
+ * Thread support is stubbed and any attempt to create a new thread fails.
+ */
+#if (!defined(HAVE_PTHREAD_STUBS) && \
+      (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
+#  define Py_CAN_START_THREADS 1
 #endif
 
 #ifdef WITH_THREAD
@@ -571,6 +584,14 @@ extern "C" {
 #if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
 #   undef ALIGNOF_MAX_ALIGN_T
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
+#endif
+
+#ifndef PY_CXX_CONST
+#  ifdef __cplusplus
+#    define PY_CXX_CONST const
+#  else
+#    define PY_CXX_CONST
+#  endif
 #endif
 
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)

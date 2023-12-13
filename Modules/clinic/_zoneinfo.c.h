@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(zoneinfo_ZoneInfo_from_file__doc__,
 "from_file($type, file_obj, /, key=None)\n"
@@ -371,4 +372,4 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a5384f79d49a593b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a15f32fdd2ab6cd input=a9049054013a1b77]*/

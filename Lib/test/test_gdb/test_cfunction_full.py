@@ -18,7 +18,7 @@ class CFunctionFullTests(CFunctionTests):
         gdb_output = self.get_stack_trace(
             cmd,
             breakpoint=func_name,
-            cmds_after_breakpoint=['py-bt-full'],
+            cmds_after_breakpoint=['bt', 'py-bt-full'],
             # bpo-45207: Ignore 'Function "meth_varargs" not
             # defined.' message in stderr.
             ignore_stderr=True,

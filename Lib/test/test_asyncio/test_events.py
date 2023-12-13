@@ -1693,12 +1693,9 @@ class EventLoopTestsMixin:
                 self.loop.stop()
             return res
 
-        start = time.monotonic()
         t = self.loop.create_task(main())
         self.loop.run_forever()
-        elapsed = time.monotonic() - start
 
-        self.assertLess(elapsed, 0.1)
         self.assertEqual(t.result(), 'cancelled')
         self.assertRaises(asyncio.CancelledError, f.result)
         if ov is not None:

@@ -525,8 +525,8 @@ Other Language Changes
 
 * In order to better support dynamic creation of stack traces,
   :class:`types.TracebackType` can now be instantiated from Python code, and
-  the ``tb_next`` attribute on :ref:`tracebacks <traceback-objects>` is now
-  writable.
+  the :attr:`~traceback.tb_next` attribute on
+  :ref:`tracebacks <traceback-objects>` is now writable.
   (Contributed by Nathaniel J. Smith in :issue:`30579`.)
 
 * When using the :option:`-m` switch, ``sys.path[0]`` is now eagerly expanded
@@ -1580,13 +1580,13 @@ The initialization of the default warnings filters has changed as follows:
 * warnings filters enabled via the command line or the environment now have the
   following order of precedence:
 
-     * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
-     * any filters specified with the :option:`-W` option
-     * any filters specified with the :envvar:`PYTHONWARNINGS` environment
-       variable
-     * any other CPython specific filters (e.g. the ``default`` filter added
-       for the new ``-X dev`` mode)
-     * any implicit filters defined directly by the warnings machinery
+  * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
+  * any filters specified with the :option:`-W` option
+  * any filters specified with the :envvar:`PYTHONWARNINGS` environment
+    variable
+  * any other CPython specific filters (e.g. the ``default`` filter added
+    for the new ``-X dev`` mode)
+  * any implicit filters defined directly by the warnings machinery
 
 * in :ref:`CPython debug builds <debug-build>`, all warnings are now displayed
   by default (the implicit filter list is empty)
@@ -1891,7 +1891,7 @@ Other CPython Implementation Changes
 
 * Trace hooks may now opt out of receiving the ``line`` and opt into receiving
   the ``opcode`` events from the interpreter by setting the corresponding new
-  ``f_trace_lines`` and ``f_trace_opcodes`` attributes on the
+  :attr:`~frame.f_trace_lines` and :attr:`~frame.f_trace_opcodes` attributes on the
   frame being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
 
 * Fixed some consistency problems with namespace package module attributes.
@@ -2144,9 +2144,9 @@ The following features and APIs have been removed from Python 3.7:
 * Removed support of the *exclude* argument in :meth:`tarfile.TarFile.add`.
   It was deprecated in Python 2.7 and 3.2.  Use the *filter* argument instead.
 
-* The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
-  Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
-  function instead.
+* The :func:`!ntpath.splitunc` function was deprecated in
+  Python 3.1, and has now been removed.  Use :func:`~os.path.splitdrive`
+  instead.
 
 * :func:`collections.namedtuple` no longer supports the *verbose* parameter
   or ``_source`` attribute which showed the generated source code for the

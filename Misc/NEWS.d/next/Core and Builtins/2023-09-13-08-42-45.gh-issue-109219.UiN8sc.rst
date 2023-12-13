@@ -1,2 +1,0 @@
-Fix compiling type param scopes that use a name which is also free in an
-inner scope.

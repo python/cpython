@@ -1,4 +1,0 @@
-Add functions :c:func:`PyObject_HasAttrWithError`,
-:c:func:`PyObject_HasAttrStringWithError`,
-:c:func:`PyMapping_HasKeyWithError` and
-:c:func:`PyMapping_HasKeyStringWithError`.

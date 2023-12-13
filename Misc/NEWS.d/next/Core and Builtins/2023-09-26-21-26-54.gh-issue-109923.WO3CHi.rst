@@ -1,1 +1,0 @@
-Set line number on the ``POP_TOP`` that follows a ``RETURN_GENERATOR``.

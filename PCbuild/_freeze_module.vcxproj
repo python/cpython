@@ -89,6 +89,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>Py_NO_ENABLE_SHARED;Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
@@ -172,7 +173,14 @@
     <ClCompile Include="..\Parser\action_helpers.c" />
     <ClCompile Include="..\Parser\string_parser.c" />
     <ClCompile Include="..\Parser\token.c" />
-    <ClCompile Include="..\Parser\tokenizer.c" />
+    <ClCompile Include="..\Parser\lexer\buffer.c" />
+    <ClCompile Include="..\Parser\lexer\state.c" />
+    <ClCompile Include="..\Parser\lexer\lexer.c" />
+    <ClCompile Include="..\Parser\tokenizer\string_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\file_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\utf8_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\readline_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\helpers.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\PC\winreg.c" />
@@ -188,11 +196,12 @@
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
+    <ClCompile Include="..\Python\critical_section.c" />
+    <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
-    <ClCompile Include="..\Python\executor.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
@@ -213,12 +222,14 @@
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />
+    <ClCompile Include="..\Python\lock.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\optimizer.c" />
     <ClCompile Include="..\Python\optimizer_analysis.c" />
+    <ClCompile Include="..\Python\parking_lot.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
@@ -246,6 +257,9 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PC\pyconfig.h.in" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
@@ -374,9 +388,62 @@
       <OutFile>$(PySourcePath)Python\frozen_modules\getpath.h</OutFile>
     </GetPath>
   </ItemGroup>
+  <ItemGroup>
+    <!-- BEGIN freeze mappings -->
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib._bootstrap.h" FrozenId="importlib._bootstrap" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib._bootstrap_external.h" FrozenId="importlib._bootstrap_external" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\zipimport.h" FrozenId="zipimport" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\abc.h" FrozenId="abc" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\codecs.h" FrozenId="codecs" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\io.h" FrozenId="io" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\_collections_abc.h" FrozenId="_collections_abc" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\_sitebuiltins.h" FrozenId="_sitebuiltins" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\genericpath.h" FrozenId="genericpath" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\ntpath.h" FrozenId="ntpath" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\posixpath.h" FrozenId="posixpath" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\os.h" FrozenId="os" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\site.h" FrozenId="site" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\stat.h" FrozenId="stat" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib.util.h" FrozenId="importlib.util" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib.machinery.h" FrozenId="importlib.machinery" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\runpy.h" FrozenId="runpy" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__hello__.h" FrozenId="__hello__" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.h" FrozenId="__phello__" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.ham.h" FrozenId="__phello__.ham" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.ham.eggs.h" FrozenId="__phello__.ham.eggs" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.spam.h" FrozenId="__phello__.spam" />
+    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\frozen_only.h" FrozenId="frozen_only" />
+    <!-- END freeze mappings -->
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+
+  <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
+       own build. All other extension modules will use the copy that pythoncore
+       generates. -->
+  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
+    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
+    <ItemGroup>
+      <PyConfigH Remove="@(PyConfigH)" />
+      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
+    </ItemGroup>
+    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
+    <PropertyGroup>
+      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
+      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
+      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(DisableGil) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
+    </PropertyGroup>
+    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+    <WriteLinesToFile File="$(IntDir)pyconfig.h"
+                      Lines="$(PyConfigHText)"
+                      Overwrite="true"
+                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+  </Target>
+
   <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />
 
@@ -405,32 +472,19 @@
           AfterTargets="_RebuildFrozen"
           DependsOnTargets="FindPythonForBuild"
           Condition="$(Configuration) != 'PGUpdate'">
+    <PropertyGroup>
+      <FreezeMappingsFile>
+        <!-- BEGIN freeze mapping file -->
+$(IntDir)\deepfreeze_mappings.txt
+        <!-- END freeze mapping file -->
+      </FreezeMappingsFile>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(FreezeMappingsFile)"
+      Overwrite="true"
+      Lines="@(FrozenModule->'%(FullPath):%(FrozenId)')" />
     <!-- BEGIN deepfreeze rule -->
-	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" ^
-		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h:importlib._bootstrap" ^
-		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h:importlib._bootstrap_external" ^
-		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
-		 "$(PySourcePath)Python\frozen_modules\abc.h:abc" ^
-		 "$(PySourcePath)Python\frozen_modules\codecs.h:codecs" ^
-		 "$(PySourcePath)Python\frozen_modules\io.h:io" ^
-		 "$(PySourcePath)Python\frozen_modules\_collections_abc.h:_collections_abc" ^
-		 "$(PySourcePath)Python\frozen_modules\_sitebuiltins.h:_sitebuiltins" ^
-		 "$(PySourcePath)Python\frozen_modules\genericpath.h:genericpath" ^
-		 "$(PySourcePath)Python\frozen_modules\ntpath.h:ntpath" ^
-		 "$(PySourcePath)Python\frozen_modules\posixpath.h:posixpath" ^
-		 "$(PySourcePath)Python\frozen_modules\os.h:os" ^
-		 "$(PySourcePath)Python\frozen_modules\site.h:site" ^
-		 "$(PySourcePath)Python\frozen_modules\stat.h:stat" ^
-		 "$(PySourcePath)Python\frozen_modules\importlib.util.h:importlib.util" ^
-		 "$(PySourcePath)Python\frozen_modules\importlib.machinery.h:importlib.machinery" ^
-		 "$(PySourcePath)Python\frozen_modules\runpy.h:runpy" ^
-		 "$(PySourcePath)Python\frozen_modules\__hello__.h:__hello__" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.h:__phello__" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.ham.h:__phello__.ham" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.ham.eggs.h:__phello__.ham.eggs" ^
-		 "$(PySourcePath)Python\frozen_modules\__phello__.spam.h:__phello__.spam" ^
-		 "$(PySourcePath)Python\frozen_modules\frozen_only.h:frozen_only" ^
-		 "-o" "$(PySourcePath)Python\deepfreeze\deepfreeze.c"'/>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" -f "$(IntDir)\deepfreeze_mappings.txt" -o "$(PySourcePath)Python\deepfreeze\deepfreeze.c"' />
     <!-- END deepfreeze rule -->
   </Target>
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">

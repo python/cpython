@@ -37,6 +37,9 @@
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(__APPLE__)
 #  include <mach-o/loader.h>
@@ -525,11 +528,6 @@ pycore_init_runtime(_PyRuntimeState *runtime,
         return status;
     }
 
-    status = _PyTime_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyImport_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -578,44 +576,33 @@ init_interp_settings(PyInterpreterState *interp,
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
 
-    /* We check "gil" in init_interp_create_gil(). */
+    switch (config->gil) {
+    case PyInterpreterConfig_DEFAULT_GIL: break;
+    case PyInterpreterConfig_SHARED_GIL: break;
+    case PyInterpreterConfig_OWN_GIL: break;
+    default:
+        return _PyStatus_ERR("invalid interpreter config 'gil' value");
+    }
 
     return _PyStatus_OK();
 }
 
 
-static PyStatus
+static void
 init_interp_create_gil(PyThreadState *tstate, int gil)
 {
-    PyStatus status;
-
     /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
        only called here. */
     // XXX This is broken with a per-interpreter GIL.
     _PyEval_FiniGIL(tstate->interp);
 
     /* Auto-thread-state API */
-    status = _PyGILState_SetTstate(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    _PyGILState_SetTstate(tstate);
 
-    int own_gil;
-    switch (gil) {
-    case PyInterpreterConfig_DEFAULT_GIL: own_gil = 0; break;
-    case PyInterpreterConfig_SHARED_GIL: own_gil = 0; break;
-    case PyInterpreterConfig_OWN_GIL: own_gil = 1; break;
-    default:
-        return _PyStatus_ERR("invalid interpreter config 'gil' value");
-    }
+    int own_gil = (gil == PyInterpreterConfig_OWN_GIL);
 
     /* Create the GIL and take it */
-    status = _PyEval_InitGIL(tstate, own_gil);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    return _PyStatus_OK();
+    _PyEval_InitGIL(tstate, own_gil);
 }
 
 
@@ -652,18 +639,14 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
     _PyThreadState_Bind(tstate);
-    // XXX For now we do this before the GIL is created.
-    (void) _PyThreadState_SwapNoGIL(tstate);
 
-    status = init_interp_create_gil(tstate, config.gil);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    init_interp_create_gil(tstate, config.gil);
 
     *tstate_p = tstate;
     return _PyStatus_OK();
@@ -736,6 +719,12 @@ pycore_init_types(PyInterpreterState *interp)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+    status = _PyXI_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -822,6 +811,11 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
+    status = _PyDtoa_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     // The GC must be initialized before the first GC collection.
     status = _PyGC_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -848,6 +842,11 @@ pycore_interp_init(PyThreadState *tstate)
     }
 
     status = pycore_init_builtins(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    status = _PyXI_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -1074,6 +1073,38 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 }
 
 
+#ifdef Py_DEBUG
+static void
+run_presite(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+
+    if (!config->run_presite) {
+        return;
+    }
+
+    PyObject *presite_modname = PyUnicode_FromWideChar(
+        config->run_presite,
+        wcslen(config->run_presite)
+    );
+    if (presite_modname == NULL) {
+        fprintf(stderr, "Could not convert pre-site module name to unicode\n");
+        Py_DECREF(presite_modname);
+    }
+    else {
+        PyObject *presite = PyImport_Import(presite_modname);
+        if (presite == NULL) {
+            fprintf(stderr, "pre-site import failed:\n");
+            _PyErr_Print(tstate);
+        }
+        Py_XDECREF(presite);
+        Py_DECREF(presite_modname);
+    }
+}
+#endif
+
+
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
@@ -1155,6 +1186,10 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 
+#ifdef Py_DEBUG
+    run_presite(tstate);
+#endif
+
     status = add_main_module(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1191,7 +1226,7 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
-        char *envvar = Py_GETENV("PYTHONUOPS");
+        char *envvar = Py_GETENV("PYTHON_UOPS");
         int enabled = envvar != NULL && *envvar > '0';
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
             enabled = 1;
@@ -1203,6 +1238,31 @@ init_interp_main(PyThreadState *tstate)
             }
             PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
             Py_DECREF(opt);
+        }
+    }
+
+    if (!is_main_interp) {
+        // The main interpreter is handled in Py_Main(), for now.
+        if (config->sys_path_0 != NULL) {
+            PyObject *path0 = PyUnicode_FromWideChar(config->sys_path_0, -1);
+            if (path0 == NULL) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sysdict = interp->sysdict;
+            if (sysdict == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
+            if (sys_path == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            int res = PyList_Insert(sys_path, 0, path0);
+            Py_DECREF(path0);
+            if (res) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
         }
     }
 
@@ -1350,13 +1410,13 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
         PySys_WriteStderr("# clear builtins._\n");
     }
     if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on setting builtin variable _");
     }
 
     const char * const *p;
     for (p = sys_deletes; *p != NULL; p++) {
         if (_PySys_ClearAttrString(interp, *p, verbose) < 0) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on clearing sys.%s", *p);
         }
     }
     for (p = sys_files; *p != NULL; p+=2) {
@@ -1367,13 +1427,13 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
         }
         PyObject *value;
         if (PyDict_GetItemStringRef(interp->sysdict, orig_name, &value) < 0) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on restoring sys.%s", name);
         }
         if (value == NULL) {
             value = Py_NewRef(Py_None);
         }
         if (PyDict_SetItemString(interp->sysdict, name, value) < 0) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on restoring sys.%s", name);
         }
         Py_DECREF(value);
     }
@@ -1385,7 +1445,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
 {
     PyObject *weaklist = PyList_New(0);
     if (weaklist == NULL) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on removing modules");
     }
 
 #define STORE_MODULE_WEAKREF(name, mod) \
@@ -1394,13 +1454,13 @@ finalize_remove_modules(PyObject *modules, int verbose)
             if (wr) { \
                 PyObject *tup = PyTuple_Pack(2, name, wr); \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
-                    PyErr_WriteUnraisable(NULL); \
+                    PyErr_FormatUnraisable("Exception ignored on removing modules"); \
                 } \
                 Py_XDECREF(tup); \
                 Py_DECREF(wr); \
             } \
             else { \
-                PyErr_WriteUnraisable(NULL); \
+                PyErr_FormatUnraisable("Exception ignored on removing modules"); \
             } \
         }
 
@@ -1411,7 +1471,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
             } \
             STORE_MODULE_WEAKREF(name, mod); \
             if (PyObject_SetItem(modules, name, Py_None) < 0) { \
-                PyErr_WriteUnraisable(NULL); \
+                PyErr_FormatUnraisable("Exception ignored on removing modules"); \
             } \
         }
 
@@ -1425,14 +1485,14 @@ finalize_remove_modules(PyObject *modules, int verbose)
     else {
         PyObject *iterator = PyObject_GetIter(modules);
         if (iterator == NULL) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on removing modules");
         }
         else {
             PyObject *key;
             while ((key = PyIter_Next(iterator))) {
                 PyObject *value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
-                    PyErr_WriteUnraisable(NULL);
+                    PyErr_FormatUnraisable("Exception ignored on removing modules");
                     continue;
                 }
                 CLEAR_MODULE(key, value);
@@ -1440,7 +1500,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
                 Py_DECREF(key);
             }
             if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(NULL);
+                PyErr_FormatUnraisable("Exception ignored on removing modules");
             }
             Py_DECREF(iterator);
         }
@@ -1460,7 +1520,7 @@ finalize_clear_modules_dict(PyObject *modules)
     }
     else {
         if (PyObject_CallMethodNoArgs(modules, &_Py_ID(clear)) == NULL) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
         }
     }
 }
@@ -1472,11 +1532,11 @@ finalize_restore_builtins(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyObject *dict = PyDict_Copy(interp->builtins);
     if (dict == NULL) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on restoring builtins");
     }
     PyDict_Clear(interp->builtins);
     if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on restoring builtins");
     }
     Py_XDECREF(dict);
 }
@@ -1638,7 +1698,7 @@ flush_std_files(void)
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
         if (_PyFile_Flush(fout) < 0) {
-            PyErr_WriteUnraisable(fout);
+            PyErr_FormatUnraisable("Exception ignored on flushing sys.stdout");
             status = -1;
         }
     }
@@ -1673,6 +1733,7 @@ finalize_interp_types(PyInterpreterState *interp)
 {
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
+    _PyXI_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
@@ -1709,8 +1770,10 @@ finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
+    _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
+    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1727,6 +1790,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
+        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
@@ -1784,7 +1848,6 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
-    PyUnstable_PerfMapState_Fini();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -2022,28 +2085,21 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
-    if (tstate == NULL) {
-        PyInterpreterState_Delete(interp);
-        *tstate_p = NULL;
-        return _PyStatus_OK();
-    }
-    _PyThreadState_Bind(tstate);
-
-    // XXX For now we do this before the GIL is created.
-    PyThreadState *save_tstate = _PyThreadState_SwapNoGIL(tstate);
-    int has_gil = 0;
+    // XXX Might new_interpreter() have been called without the GIL held?
+    PyThreadState *save_tstate = _PyThreadState_GET();
+    PyThreadState *tstate = NULL;
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
        (or otherwise exist).  That applies whether or not the new
        interpreter has its own GIL (e.g. the main interpreter). */
+    if (save_tstate != NULL) {
+        _PyThreadState_Detach(save_tstate);
+    }
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *src_config;
     if (save_tstate != NULL) {
-        // XXX Might new_interpreter() have been called without the GIL held?
-        _PyEval_ReleaseLock(save_tstate->interp, save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
@@ -2065,11 +2121,14 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         goto error;
     }
 
-    status = init_interp_create_gil(tstate, config->gil);
-    if (_PyStatus_EXCEPTION(status)) {
+    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INTERP);
+    if (tstate == NULL) {
+        status = _PyStatus_NO_MEMORY();
         goto error;
     }
-    has_gil = 1;
+
+    _PyThreadState_Bind(tstate);
+    init_interp_create_gil(tstate, config->gil);
 
     /* No objects have been created yet. */
 
@@ -2088,17 +2147,14 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 
 error:
     *tstate_p = NULL;
-
-    /* Oops, it didn't work.  Undo it all. */
-    PyErr_PrintEx(0);
-    if (has_gil) {
-        PyThreadState_Swap(save_tstate);
+    if (tstate != NULL) {
+        PyThreadState_Clear(tstate);
+        _PyThreadState_Detach(tstate);
+        PyThreadState_Delete(tstate);
     }
-    else {
-        _PyThreadState_SwapNoGIL(save_tstate);
+    if (save_tstate != NULL) {
+        _PyThreadState_Attach(save_tstate);
     }
-    PyThreadState_Clear(tstate);
-    PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
 
     return status;
@@ -2968,14 +3024,14 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
     if (threading == NULL) {
         if (_PyErr_Occurred(tstate)) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored on threading shutdown");
         }
         /* else: threading not imported */
         return;
     }
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
-        PyErr_WriteUnraisable(threading);
+        PyErr_FormatUnraisable("Exception ignored on threading shutdown");
     }
     else {
         Py_DECREF(result);
@@ -2986,13 +3042,13 @@ wait_for_thread_shutdown(PyThreadState *tstate)
 int Py_AtExit(void (*func)(void))
 {
     struct _atexit_runtime_state *state = &_PyRuntime.atexit;
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     if (state->ncallbacks >= NEXITFUNCS) {
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         return -1;
     }
     state->callbacks[state->ncallbacks++] = func;
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
     return 0;
 }
 
@@ -3002,18 +3058,18 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
     atexit_callbackfunc exitfunc;
     struct _atexit_runtime_state *state = &runtime->atexit;
 
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     while (state->ncallbacks > 0) {
         /* pop last function from the list */
         state->ncallbacks--;
         exitfunc = state->callbacks[state->ncallbacks];
         state->callbacks[state->ncallbacks] = NULL;
 
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         exitfunc();
-        PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+        PyMutex_Lock(&state->mutex);
     }
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
 
     fflush(stdout);
     fflush(stderr);
