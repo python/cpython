@@ -290,7 +290,9 @@ class BasicTest(BaseTest):
                 self.assertEqual(out.strip(), expected, err)
         for attr, expected in (
             ('executable', self.envpy()),
-            ('_base_executable', sys.executable),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            ('_base_executable', sys._base_executable),
         ):
             with self.subTest(attr):
                 cmd[2] = f'import sys; print(sys.{attr})'
@@ -320,7 +322,9 @@ class BasicTest(BaseTest):
                 self.assertEqual(out.strip(), expected, err)
         for attr, expected in (
             ('executable', self.envpy()),
-            ('_base_executable', sys.executable),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            ('_base_executable', sys._base_executable),
         ):
             with self.subTest(attr):
                 cmd[2] = f'import sys; print(sys.{attr})'
