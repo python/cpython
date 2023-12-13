@@ -940,16 +940,18 @@ class PosixTester(unittest.TestCase):
     def check_chmod(self, chmod_func, target, **kwargs):
         mode = os.stat(target).st_mode
         try:
-            chmod_func(target, mode & ~stat.S_IWRITE, **kwargs)
-            self.assertEqual(os.stat(target).st_mode, mode & ~stat.S_IWRITE)
+            new_mode = mode & ~(stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
+            chmod_func(target, new_mode, **kwargs)
+            self.assertEqual(os.stat(target).st_mode, new_mode)
             if stat.S_ISREG(mode):
                 try:
                     with open(target, 'wb+'):
                         pass
                 except PermissionError:
                     pass
-            chmod_func(target, mode | stat.S_IWRITE, **kwargs)
-            self.assertEqual(os.stat(target).st_mode, mode | stat.S_IWRITE)
+            new_mode = mode | (stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
+            chmod_func(target, new_mode, **kwargs)
+            self.assertEqual(os.stat(target).st_mode, new_mode)
             if stat.S_ISREG(mode):
                 with open(target, 'wb+'):
                     pass
@@ -984,11 +986,13 @@ class PosixTester(unittest.TestCase):
         target_mode = os.stat(target).st_mode
         link_mode = os.lstat(link).st_mode
         try:
-            chmod_func(link, target_mode & ~stat.S_IWRITE, **kwargs)
-            self.assertEqual(os.stat(target).st_mode, target_mode & ~stat.S_IWRITE)
+            new_mode = target_mode & ~(stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
+            chmod_func(link, new_mode, **kwargs)
+            self.assertEqual(os.stat(target).st_mode, new_mode)
             self.assertEqual(os.lstat(link).st_mode, link_mode)
-            chmod_func(link, target_mode | stat.S_IWRITE)
-            self.assertEqual(os.stat(target).st_mode, target_mode | stat.S_IWRITE)
+            new_mode = target_mode | (stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
+            chmod_func(link, new_mode, **kwargs)
+            self.assertEqual(os.stat(target).st_mode, new_mode)
             self.assertEqual(os.lstat(link).st_mode, link_mode)
         finally:
             posix.chmod(target, target_mode)
@@ -996,12 +1000,14 @@ class PosixTester(unittest.TestCase):
     def check_lchmod_link(self, chmod_func, target, link, **kwargs):
         target_mode = os.stat(target).st_mode
         link_mode = os.lstat(link).st_mode
-        chmod_func(link, link_mode & ~stat.S_IWRITE, **kwargs)
+        new_mode = link_mode & ~(stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
+        chmod_func(link, new_mode, **kwargs)
         self.assertEqual(os.stat(target).st_mode, target_mode)
-        self.assertEqual(os.lstat(link).st_mode, link_mode & ~stat.S_IWRITE)
-        chmod_func(link, link_mode | stat.S_IWRITE)
+        self.assertEqual(os.lstat(link).st_mode, new_mode)
+        new_mode = link_mode | (stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
+        chmod_func(link, new_mode, **kwargs)
         self.assertEqual(os.stat(target).st_mode, target_mode)
-        self.assertEqual(os.lstat(link).st_mode, link_mode | stat.S_IWRITE)
+        self.assertEqual(os.lstat(link).st_mode, new_mode)
 
     @os_helper.skip_unless_symlink
     def test_chmod_file_symlink(self):
