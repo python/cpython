@@ -752,7 +752,10 @@ start_frame:
         goto exit_unwind;
     }
 
+// Jump here from ENTER_EXECUTOR, and code under the deoptimize label
+enter_tier_one:
     next_instr = frame->instr_ptr;
+
 resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
@@ -1063,8 +1066,9 @@ error_tier_two:
 
 // Jump here from DEOPT_IF()
 deoptimize:
-    // On DEOPT_IF we just repeat the last instruction.
+    // On DEOPT_IF we must repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
+    // There are some other things to take care of first, though.
     frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
@@ -1072,41 +1076,10 @@ deoptimize:
             _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    _Py_CODEUNIT *src, *dest;
-    src = dest = frame->instr_ptr;
-    opcode = src->op.code;
-    oparg = src->op.arg;
-    while (opcode == EXTENDED_ARG) {
-        src++;
-        opcode = src->op.code;
-        oparg = (oparg << 8) | src->op.arg;
-    }
-    if (opcode == ENTER_EXECUTOR) {
-        // frame->instr_ptr --> dest --> EXTENDED_ARG
-        //                       src --> ENTER_EXECUTOR
-        // Avoid recursing into the same executor over and over
-        next_instr = src;
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg & 0xff];
-        if (executor == (_PyExecutorObject *)current_executor) {
-            opcode = _PyOpcode_Deopt[executor->vm_data.opcode];
-            DPRINTF(1, "Avoiding ENTER_EXECUTOR %d/%d in favor of underlying base opcode %s %d\n",
-                    oparg, oparg & 0xff, _PyOpcode_OpName[opcode], (oparg & 0xffffff00) | executor->vm_data.oparg);
-            DPRINTF(1,
-                    " for %s (%s:%d) at byte offset %d\n",
-                    PyUnicode_AsUTF8(code->co_qualname),
-                    PyUnicode_AsUTF8(code->co_filename),
-                    code->co_firstlineno,
-                    2 * (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))));
-            Py_DECREF(current_executor);
-            oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
-            PRE_DISPATCH_GOTO();
-            DISPATCH_GOTO();
-        }
-    }
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    // Increment side exit counter for this uop
+
+    // Check if there is a side-exit executor here already.
     int pc = next_uop - 1 - current_executor->trace;
     _PyExecutorObject **pexecutor = current_executor->executors + pc;
     if (*pexecutor != NULL) {
@@ -1121,14 +1094,30 @@ deoptimize:
         Py_INCREF(current_executor);
         goto enter_tier_two;
     }
+
+    // Increment and check side exit counter.
     uint16_t *pcounter = current_executor->counters + pc;
     *pcounter += 1;
-    if (*pcounter == 32 &&  // TODO: use resume_threshold
-        tstate->interp->optimizer != &_PyOptimizer_Default &&
-        (opcode == POP_JUMP_IF_FALSE ||
-         opcode == POP_JUMP_IF_TRUE ||
-         opcode == POP_JUMP_IF_NONE ||
-         opcode == POP_JUMP_IF_NOT_NONE))
+    if (*pcounter != 32 ||  // TODO: use resume_threshold
+        tstate->interp->optimizer == &_PyOptimizer_Default)
+    {
+        goto enter_tier_one;
+    }
+
+    // Decode instruction to look past EXTENDED_ARG.
+    _Py_CODEUNIT *src, *dest;
+    src = dest = frame->instr_ptr;
+    opcode = src->op.code;
+    if (opcode == EXTENDED_ARG) {
+        src++;
+        opcode = src->op.code;
+    }
+
+    // For selected opcodes build a new executor and enter it now.
+    if (opcode == POP_JUMP_IF_FALSE ||
+        opcode == POP_JUMP_IF_TRUE ||
+        opcode == POP_JUMP_IF_NONE ||
+        opcode == POP_JUMP_IF_NOT_NONE)
     {
         DPRINTF(2, "--> %s @ %d in %p has %d side exits\n",
                 _PyUOpName(uopcode), pc, current_executor, (int)(*pcounter));
@@ -1138,7 +1127,11 @@ deoptimize:
         if (optimized < 0) {
             goto error_tier_two;
         }
-        if (optimized) {
+        if (!optimized) {
+            DPRINTF(2, "--> Failed to optimize %s @ %d in %p\n",
+                    _PyUOpName(uopcode), pc, current_executor);
+        }
+        else {
             DPRINTF(1, "--> Optimized %s @ %d in %p\n",
                     _PyUOpName(uopcode), pc, current_executor);
             DPRINTF(1, "    T1: %s\n", _PyOpcode_OpName[src->op.code]);
@@ -1150,28 +1143,18 @@ deoptimize:
                     2 * (int)(frame->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(frame))));
             Py_DECREF(current_executor);
             current_executor = (_PyUOpExecutorObject *)*pexecutor;
+            // TODO: Check at least two uops: _IS_NONE, _POP_JUMP_IF_TRUE/FALSE.
             if (current_executor->trace[0].opcode != uopcode) {
                 Py_INCREF(current_executor);
-                goto enter_tier_two;
+                goto enter_tier_two;  // Yes!
             }
             // This is guaranteed to deopt again; forget about it
-            DPRINTF(2, "It's not an improvement -- discarding trace\n");
+            DPRINTF(2, "Alas, it's the same uop again -- discarding trace\n");
             *pexecutor = NULL;
-            Py_DECREF(current_executor);
-            next_instr = frame->instr_ptr;
-            goto resume_frame;
-        }
-        else {
-            DPRINTF(2, "--> Failed to optimize %s @ %d in %p\n",
-                    _PyUOpName(uopcode), pc, current_executor);
         }
     }
     Py_DECREF(current_executor);
-    // Fall through
-// Jump here from ENTER_EXECUTOR
-enter_tier_one:
-    next_instr = frame->instr_ptr;
-    goto resume_frame;
+    goto enter_tier_one;
 
 // Jump here from _EXIT_TRACE
 exit_trace:
