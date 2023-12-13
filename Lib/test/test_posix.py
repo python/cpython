@@ -791,7 +791,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises(TypeError, chown_func, first_param, uid, t(gid))
             check_stat(uid, gid)
 
-    @os_helper.skip_unless_working_chmod
+    @unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
     @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_chown(self):
         # raise an OSError if the file does not exist
@@ -956,6 +956,7 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.chmod(target, mode)
 
+    @os_helper.skip_unless_working_chmod
     def test_chmod_file(self):
         self.check_chmod(posix.chmod, os_helper.TESTFN)
 
@@ -965,6 +966,7 @@ class PosixTester(unittest.TestCase):
         self.addCleanup(posix.rmdir, target)
         return target
 
+    @os_helper.skip_unless_working_chmod
     def test_chmod_dir(self):
         target = self.tempdir()
         self.check_chmod(posix.chmod, target)
@@ -1017,7 +1019,7 @@ class PosixTester(unittest.TestCase):
             self.check_lchmod_link(posix.chmod, target, link)
         else:
             self.check_chmod_link(posix.chmod, target, link)
-            self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
+        self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
 
     @os_helper.skip_unless_symlink
     def test_chmod_dir_symlink(self):
@@ -1029,7 +1031,7 @@ class PosixTester(unittest.TestCase):
             self.check_lchmod_link(posix.chmod, target, link)
         else:
             self.check_chmod_link(posix.chmod, target, link)
-            self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
+        self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
 
     @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
     @os_helper.skip_unless_symlink

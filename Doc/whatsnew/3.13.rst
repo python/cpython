@@ -91,7 +91,8 @@ Improved Error Messages
 * The interpreter now colorizes error messages when displaying tracebacks by default.
   This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
   variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
-  variables. (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
+  variables. See also :ref:`using-on-controlling-color`.
+  (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 Other Language Changes
 ======================
@@ -260,6 +261,12 @@ os
   :option:`-X cpu_count <-X>`. This option is useful for users who need to limit
   CPU resources of a container system without having to modify the container (application code).
   (Contributed by Donghee Na in :gh:`109595`)
+
+* Add support of :func:`os.lchmod` and the *follow_symlinks* argument
+  in :func:`os.chmod` on Windows.
+  Note that the default value of *follow_symlinks* in :func:`!os.lchmod` is
+  ``False`` on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`59616`)
 
 pathlib
 -------
