@@ -198,9 +198,7 @@ _PyOptimizer_Unanchored(
     _PyExecutorObject **pexecutor,
     PyObject **stack_pointer)
 {
-    if (instr->op.code == JUMP_BACKWARD || instr->op.code == ENTER_EXECUTOR) {
-        return 0;
-    }
+    assert(instr->op.code != ENTER_EXECUTOR);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
