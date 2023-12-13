@@ -56,7 +56,7 @@ class ExecFailure(RuntimeError):
 
     def __str__(self):
         try:
-            formatted = ''.join(self.excinfo.tbexc.format()).rstrip()
+            formatted = self.excinfo.errdisplay
         except Exception:
             return super().__str__()
         else:
