@@ -34,17 +34,36 @@ def __getattr__(name):
         raise AttributeError(name)
 
 
+_EXEC_FAILURE_STR = """
+{superstr}
+
+Uncaught in the interpreter:
+
+{formatted}
+""".strip()
+
 class ExecFailure(RuntimeError):
 
     def __init__(self, excinfo):
         msg = excinfo.formatted
         if not msg:
-            if excinfo.type and snapshot.msg:
-                msg = f'{snapshot.type.__name__}: {snapshot.msg}'
+            if excinfo.type and excinfo.msg:
+                msg = f'{excinfo.type.__name__}: {excinfo.msg}'
             else:
-                msg = snapshot.type.__name__ or snapshot.msg
+                msg = excinfo.type.__name__ or excinfo.msg
         super().__init__(msg)
-        self.snapshot = excinfo
+        self.excinfo = excinfo
+
+    def __str__(self):
+        try:
+            formatted = self.excinfo.errdisplay
+        except Exception:
+            return super().__str__()
+        else:
+            return _EXEC_FAILURE_STR.format(
+                superstr=super().__str__(),
+                formatted=formatted,
+            )
 
 
 def create():

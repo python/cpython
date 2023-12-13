@@ -1167,10 +1167,10 @@ marked in the following list.
 
 * It's now illegal to mix iterating over a file  with ``for line in file`` and
   calling  the file object's :meth:`read`/:meth:`readline`/:meth:`readlines`
-  methods.  Iteration uses an internal buffer and the  :meth:`read\*` methods
+  methods.  Iteration uses an internal buffer and the  :meth:`!read\*` methods
   don't use that buffer.   Instead they would return the data following the
   buffer, causing the data to appear out of order.  Mixing iteration and these
-  methods will now trigger a :exc:`ValueError` from the :meth:`read\*` method.
+  methods will now trigger a :exc:`ValueError` from the :meth:`!read\*` method.
   (Implemented by Thomas Wouters.)
 
   .. Patch 1397960

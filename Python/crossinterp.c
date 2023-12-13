@@ -945,21 +945,107 @@ _xidregistry_fini(struct _xidregistry *registry)
 /*************************/
 
 static const char *
-_copy_string_obj_raw(PyObject *strobj)
+_copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
 {
-    const char *str = PyUnicode_AsUTF8(strobj);
+    Py_ssize_t size = -1;
+    const char *str = PyUnicode_AsUTF8AndSize(strobj, &size);
     if (str == NULL) {
         return NULL;
     }
 
-    char *copied = PyMem_RawMalloc(strlen(str)+1);
+    char *copied = PyMem_RawMalloc(size+1);
     if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     strcpy(copied, str);
+    if (p_size != NULL) {
+        *p_size = size;
+    }
     return copied;
 }
+
+
+static int
+_convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
+{
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *create = NULL;
+
+    // This is inspired by _PyErr_Display().
+    PyObject *tbmod = PyImport_ImportModule("traceback");
+    if (tbmod == NULL) {
+        return -1;
+    }
+    PyObject *tbexc_type = PyObject_GetAttrString(tbmod, "TracebackException");
+    Py_DECREF(tbmod);
+    if (tbexc_type == NULL) {
+        return -1;
+    }
+    create = PyObject_GetAttrString(tbexc_type, "from_exception");
+    Py_DECREF(tbexc_type);
+    if (create == NULL) {
+        return -1;
+    }
+
+    args = PyTuple_Pack(1, exc);
+    if (args == NULL) {
+        goto error;
+    }
+
+    kwargs = PyDict_New();
+    if (kwargs == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "save_exc_type", Py_False) < 0) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "lookup_lines", Py_False) < 0) {
+        goto error;
+    }
+
+    PyObject *tbexc = PyObject_Call(create, args, kwargs);
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_DECREF(create);
+    if (tbexc == NULL) {
+        goto error;
+    }
+
+    *p_tbexc = tbexc;
+    return 0;
+
+error:
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    Py_XDECREF(create);
+    return -1;
+}
+
+
+static const char *
+_format_TracebackException(PyObject *tbexc)
+{
+    PyObject *lines = PyObject_CallMethod(tbexc, "format", NULL);
+    if (lines == NULL) {
+        return NULL;
+    }
+    PyObject *formatted_obj = PyUnicode_Join(&_Py_STR(empty), lines);
+    Py_DECREF(lines);
+    if (formatted_obj == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t size = -1;
+    const char *formatted = _copy_string_obj_raw(formatted_obj, &size);
+    Py_DECREF(formatted_obj);
+    // We remove trailing the newline added by TracebackException.format().
+    assert(formatted[size-1] == '\n');
+    ((char *)formatted)[size-1] = '\0';
+    return formatted;
+}
+
 
 static int
 _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
@@ -1007,7 +1093,7 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     if (strobj == NULL) {
         return -1;
     }
-    info->name = _copy_string_obj_raw(strobj);
+    info->name = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
     if (info->name == NULL) {
         return -1;
@@ -1018,7 +1104,7 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     if (strobj == NULL) {
         return -1;
     }
-    info->qualname = _copy_string_obj_raw(strobj);
+    info->qualname = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
     if (info->name == NULL) {
         return -1;
@@ -1029,7 +1115,7 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     if (strobj == NULL) {
         return -1;
     }
-    info->module = _copy_string_obj_raw(strobj);
+    info->module = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
     if (info->name == NULL) {
         return -1;
@@ -1094,6 +1180,9 @@ _PyXI_excinfo_Clear(_PyXI_excinfo *info)
     if (info->msg != NULL) {
         PyMem_RawFree((void *)info->msg);
     }
+    if (info->errdisplay != NULL) {
+        PyMem_RawFree((void *)info->errdisplay);
+    }
     *info = (_PyXI_excinfo){{NULL}};
 }
 
@@ -1151,11 +1240,30 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
         failure = "error while formatting exception";
         goto error;
     }
-    info->msg = _copy_string_obj_raw(msgobj);
+    info->msg = _copy_string_obj_raw(msgobj, NULL);
     Py_DECREF(msgobj);
     if (info->msg == NULL) {
         failure = "error while copying exception message";
         goto error;
+    }
+
+    // Pickle a traceback.TracebackException.
+    PyObject *tbexc = NULL;
+    if (_convert_exc_to_TracebackException(exc, &tbexc) < 0) {
+#ifdef Py_DEBUG
+        PyErr_FormatUnraisable("Exception ignored while creating TracebackException");
+#endif
+        PyErr_Clear();
+    }
+    else {
+        info->errdisplay = _format_TracebackException(tbexc);
+        Py_DECREF(tbexc);
+        if (info->errdisplay == NULL) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored while formating TracebackException");
+#endif
+            PyErr_Clear();
+        }
     }
 
     return NULL;
@@ -1169,9 +1277,29 @@ error:
 static void
 _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
 {
+    PyObject *tbexc = NULL;
+    if (info->errdisplay != NULL) {
+        tbexc = PyUnicode_FromString(info->errdisplay);
+        if (tbexc == NULL) {
+            PyErr_Clear();
+        }
+    }
+
     PyObject *formatted = _PyXI_excinfo_format(info);
     PyErr_SetObject(exctype, formatted);
     Py_DECREF(formatted);
+
+    if (tbexc != NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyObject_SetAttrString(exc, "_errdisplay", tbexc) < 0) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored when setting _errdisplay");
+#endif
+            PyErr_Clear();
+        }
+        Py_DECREF(tbexc);
+        PyErr_SetRaisedException(exc);
+    }
 }
 
 static PyObject *
@@ -1275,6 +1403,20 @@ _PyXI_excinfo_AsObject(_PyXI_excinfo *info)
     Py_DECREF(formatted);
     if (res < 0) {
         goto error;
+    }
+
+    if (info->errdisplay != NULL) {
+        PyObject *tbexc = PyUnicode_FromString(info->errdisplay);
+        if (tbexc == NULL) {
+            PyErr_Clear();
+        }
+        else {
+            res = PyObject_SetAttrString(ns, "errdisplay", tbexc);
+            Py_DECREF(tbexc);
+            if (res < 0) {
+                goto error;
+            }
+        }
     }
 
     return ns;
@@ -1441,7 +1583,7 @@ _sharednsitem_is_initialized(_PyXI_namespace_item *item)
 static int
 _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
 {
-    item->name = _copy_string_obj_raw(key);
+    item->name = _copy_string_obj_raw(key, NULL);
     if (item->name == NULL) {
         assert(!_sharednsitem_is_initialized(item));
         return -1;
@@ -1983,6 +2125,7 @@ _capture_current_exception(_PyXI_session *session)
     }
     else {
         failure = _PyXI_InitError(err, excval, _PyXI_ERR_UNCAUGHT_EXCEPTION);
+        Py_DECREF(excval);
         if (failure == NULL && override != NULL) {
             err->code = errcode;
         }
@@ -1995,18 +2138,6 @@ _capture_current_exception(_PyXI_session *session)
                 "RunFailedError: script raised an uncaught exception (%s)",
                 failure);
         err = NULL;
-    }
-
-    // a temporary hack  (famous last words)
-    if (excval != NULL) {
-        // XXX Store the traceback info (or rendered traceback) on
-        // _PyXI_excinfo, attach it to the exception when applied,
-        // and teach PyErr_Display() to print it.
-#ifdef Py_DEBUG
-        // XXX Drop this once _Py_excinfo picks up the slack.
-        PyErr_Display(NULL, excval, NULL);
-#endif
-        Py_DECREF(excval);
     }
 
     // Finished!

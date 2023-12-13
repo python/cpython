@@ -413,6 +413,9 @@ BRANCH_TO_GUARD[4][2] = {
 
 #define TRACE_STACK_SIZE 5
 
+#define CONFIDENCE_RANGE 1000
+#define CONFIDENCE_CUTOFF 333
+
 /* Returns 1 on success,
  * 0 if it failed to produce a worthwhile trace,
  * and -1 on an error.
@@ -435,6 +438,7 @@ translate_bytecode_to_trace(
         _Py_CODEUNIT *instr;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
+    int confidence = CONFIDENCE_RANGE;  // Adjusted by branch instructions
 
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -517,7 +521,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         uint32_t oparg = instr->op.arg;
         uint32_t extras = 0;
 
-
         if (opcode == EXTENDED_ARG) {
             instr++;
             extras += 1;
@@ -547,11 +550,22 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
+                if (jump_likely) {
+                    confidence = confidence * bitcount / 16;
+                }
+                else {
+                    confidence = confidence * (16 - bitcount) / 16;
+                }
+                if (confidence < CONFIDENCE_CUTOFF) {
+                    DPRINTF(2, "Confidence too low (%d)\n", confidence);
+                    OPT_STAT_INC(low_confidence);
+                    goto done;
+                }
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, uopcode=%s\n",
+                DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
                         _PyUOpName(opcode), oparg,
-                        counter, bitcount, jump_likely, _PyUOpName(uopcode));
+                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0, target);
                 if (jump_likely) {
                     _Py_CODEUNIT *target_instr = next_instr + oparg;

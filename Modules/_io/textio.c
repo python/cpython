@@ -3238,33 +3238,37 @@ textiowrapper_errors_get(textio *self, void *context)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper._CHUNK_SIZE
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_chunk_size_get_impl(textio *self, void *context)
+_io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
+/*[clinic end generated code: output=039925cd2df375bc input=e9715b0e06ff0fa6]*/
 {
     CHECK_ATTACHED(self);
     return PyLong_FromSsize_t(self->chunk_size);
 }
 
-static PyObject *
-textiowrapper_chunk_size_get(textio *self, void *context)
-{
-    PyObject *result = NULL;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = textiowrapper_chunk_size_get_impl(self, context);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
+/*[clinic input]
+@critical_section
+@setter
+_io.TextIOWrapper._CHUNK_SIZE
+[clinic start generated code]*/
 
 static int
-textiowrapper_chunk_size_set_impl(textio *self, PyObject *arg, void *context)
+_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
+/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    if (arg == NULL) {
+    if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
-    n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
+    n = PyNumber_AsSsize_t(value, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;
     if (n <= 0) {
@@ -3274,16 +3278,6 @@ textiowrapper_chunk_size_set_impl(textio *self, PyObject *arg, void *context)
     }
     self->chunk_size = n;
     return 0;
-}
-
-static int
-textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
-{
-    int result = 0;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    result = textiowrapper_chunk_size_set_impl(self, arg, context);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static PyMethodDef incrementalnewlinedecoder_methods[] = {
@@ -3361,8 +3355,7 @@ static PyGetSetDef textiowrapper_getset[] = {
 */
     {"newlines", (getter)textiowrapper_newlines_get, NULL, NULL},
     {"errors", (getter)textiowrapper_errors_get, NULL, NULL},
-    {"_CHUNK_SIZE", (getter)textiowrapper_chunk_size_get,
-                    (setter)textiowrapper_chunk_size_set, NULL},
+    _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
     {NULL}
 };
 
