@@ -1117,6 +1117,13 @@ Changes in the Python API
   other "private" attributes.
   (See :gh:`112826`.)
 
+* In older Python versions :mod:`shutil` functions :func:`~shutil.copymode`,
+  :func:`~shutil.copystat`, :func:`~shutil.copy` and :func:`~shutil.copy2`
+  worked differenly on Windows if *dst* is a symbolic link:
+  they modified the permission bits of *dst*
+  itself rather than the file it points to if *follow_symlinks* is true
+  or *src* is not a symbolic link, and did not modify the permission bits
+  if *follow_symlinks* is false and *src* is a symbolic link.
 
 Build Changes
 =============
