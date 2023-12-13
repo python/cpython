@@ -2062,6 +2062,7 @@ features:
       Although Windows supports :func:`chmod`, you can only set the file's
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
+      The default value of *follow_symlinks* is ``False`` on Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
@@ -2074,6 +2075,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support for the *follow_symlinks* argument on Windows.
 
 
 .. function:: chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True)
@@ -2160,12 +2164,18 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
+   ``lchmod()`` is not part of POSIX, but Unix implementations may have it if
+   changing the mode of symbolic links is supported.
+
    .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows, not Linux, FreeBSD >= 1.3, NetBSD >= 1.3, not OpenBSD
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support on Windows.
 
 .. function:: lchown(path, uid, gid)
 
