@@ -398,6 +398,32 @@ PySequenceMethods uop_as_sequence = {
     .sq_item = (ssizeargfunc)uop_item,
 };
 
+static PyObject *
+sub_executors(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    _PyUOpExecutorObject *executor = (_PyUOpExecutorObject *)self;
+    Py_ssize_t len = uop_len(executor);
+    PyObject *list = PyList_New(len);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *sub = (PyObject *)executor->executors[i];
+        if (sub == NULL) {
+            sub = Py_None;
+        }
+        Py_INCREF(sub);
+        PyList_SET_ITEM(list, i, (PyObject *)sub);
+    }
+    return list;
+}
+
+static PyMethodDef uop_executor_methods[] = {
+    { "is_valid", is_valid, METH_NOARGS, NULL },
+    { "sub_executors", sub_executors, METH_NOARGS, NULL },
+    { NULL, NULL },
+};
+
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -406,7 +432,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
-    .tp_methods = executor_methods,
+    .tp_methods = uop_executor_methods,
 };
 
 /* TO DO -- Generate these tables */
@@ -960,9 +986,8 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = INT16_MAX;
-    // Need at least 3 iterations to settle specializations.
-    // A few lower bits of the counter are reserved for other flags.
+    // The lower bits are reserved for exponential backoff.
+    opt->resume_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
     opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }
