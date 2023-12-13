@@ -2027,7 +2027,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: chmod(path, mode, *, dir_fd=None, follow_symlinks=(os.name != 'nt'))
+.. function:: chmod(path, mode, *, dir_fd=None, follow_symlinks=True)
 
    Change the mode of *path* to the numeric *mode*. *mode* may take one of the
    following values (as defined in the :mod:`stat` module) or bitwise ORed
@@ -2062,7 +2062,7 @@ features:
       Although Windows supports :func:`chmod`, you can only set the file's
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
-      By default, :func:`chmod` on Windows does not follow symlinks.
+      The default value of *follow_symlinks* on Windows is ``False``.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
