@@ -336,7 +336,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_caches* and *adaptive* parameters.
 
    .. versionchanged:: 3.13
-      The *show_caches* parameter is deprecated and has no effect.
+      The *show_caches* parameter is deprecated and has no effect. The *cache_info*
+      field of each instruction is populated regardless of its value.
 
 
 .. function:: findlinestarts(code)
