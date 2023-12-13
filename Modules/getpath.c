@@ -502,6 +502,45 @@ done:
     PyMem_Free((void *)path);
     PyMem_Free((void *)narrow);
     return r;
+#elif defined(MS_WINDOWS)
+    HANDLE hFile;
+    wchar_t resolved[MAXPATHLEN+1];
+    int len = 0, err;
+    PyObject *result;
+
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, NULL);
+    if (!path) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    hFile = CreateFileW(path, 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        len = GetFinalPathNameByHandleW(hFile, resolved, MAXPATHLEN, VOLUME_NAME_DOS);
+        err = len ? 0 : GetLastError();
+        CloseHandle(hFile);
+    } else {
+        err = GetLastError();
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err) {
+        PyErr_SetFromWindowsErr(err);
+        result = NULL;
+    } else if (len <= MAXPATHLEN) {
+        const wchar_t *p = resolved;
+        if (0 == wcsncmp(p, L"\\\\?\\", 4)) {
+            if (GetFileAttributesW(&p[4]) != INVALID_FILE_ATTRIBUTES) {
+                p += 4;
+                len -= 4;
+            }
+        }
+        result = PyUnicode_FromWideChar(p, len);
+    } else {
+        result = Py_NewRef(pathobj);
+    }
+    PyMem_Free(path);
+    return result;
 #endif
 
     return Py_NewRef(pathobj);

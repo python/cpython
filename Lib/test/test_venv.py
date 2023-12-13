@@ -46,7 +46,8 @@ if is_emscripten or is_wasi:
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stderr=subprocess.PIPE,
+        env={**os.environ, "PYTHONHOME": ""})
     out, err = p.communicate()
     if p.returncode:
         if verbose and err:
@@ -287,6 +288,16 @@ class BasicTest(BaseTest):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
                 out, err = check_output(cmd, encoding='utf-8')
                 self.assertEqual(out.strip(), expected, err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            ('_base_executable', sys._base_executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
 
     @requireVenvCreate
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
@@ -307,6 +318,16 @@ class BasicTest(BaseTest):
             ('get_config_h_filename()', sysconfig.get_config_h_filename())):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            ('_base_executable', sys._base_executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
                 out, err = check_output(cmd, encoding='utf-8')
                 self.assertEqual(out.strip(), expected, err)
 
