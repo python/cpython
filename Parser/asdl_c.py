@@ -545,7 +545,8 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("isinstance = PyObject_IsInstance(obj, tp);", 1)
         self.emit("if (isinstance == -1) {", 1)
         self.emit("return 1;", 2)
-        self.emit("} else if (isinstance == 0 && field != NULL) {", 1)
+        self.emit("}", 1)
+        self.emit("if (!isinstance && field != NULL) {", 1)
         error = "field '%%s' was expecting node of type '%s', got '%%s'" % name
         self.emit("PyErr_Format(PyExc_TypeError, \"%s\", field, _PyType_Name(Py_TYPE(obj)));" % error, 2, reflow=False)
         self.emit("return 1;", 2)
