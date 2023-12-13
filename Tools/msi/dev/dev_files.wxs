@@ -3,7 +3,7 @@
     <Fragment>
         <ComponentGroup Id="dev_pyconfig">
             <Component Id="include_pyconfig.h" Directory="include" Guid="*">
-                <File Id="include_pyconfig.h" Name="pyconfig.h" Source="!(bindpath.src)PC\pyconfig.h" KeyPath="yes" />
+                <File Id="include_pyconfig.h" Name="pyconfig.h" Source="pyconfig.h" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

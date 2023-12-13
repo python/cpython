@@ -472,11 +472,15 @@ class TestSysConfig(unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            # <srcdir>/PC/pyconfig.h always exists even if unused on POSIX.
-            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
+            # <srcdir>/PC/pyconfig.h.in always exists even if unused
+            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
             pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
             self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
+            if os.name == 'nt':
+                # <executable dir>/pyconfig.h exists on Windows in a build tree
+                pyconfig_h = os.path.join(sys.executable, '..', 'pyconfig.h')
+                self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
             # Issue #19340: srcdir has been realpath'ed already
