@@ -1,2 +1,0 @@
-Added the ``NI_IDN`` constant to the :mod:`socket` module when present in C
-at build time for use with :func:`socket.getnameinfo`.

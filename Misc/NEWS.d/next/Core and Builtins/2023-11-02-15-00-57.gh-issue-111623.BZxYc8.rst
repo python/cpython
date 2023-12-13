@@ -1,2 +1,0 @@
-Add support for sharing tuples between interpreters using the cross-interpreter
-API.  Patch by Anthony Shaw.

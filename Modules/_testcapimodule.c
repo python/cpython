@@ -13,6 +13,7 @@
 #include "_testcapi/parts.h"
 
 #include "frameobject.h"          // PyFrame_New()
+#include "interpreteridobject.h"  // PyInterpreterID_Type
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
@@ -568,6 +569,12 @@ static PyType_Spec HeapTypeNameType_Spec = {
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = HeapTypeNameType_slots,
 };
+
+static PyObject *
+get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyType_FromSpec(&HeapTypeNameType_Spec);
+}
 
 static PyObject *
 test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1443,6 +1450,36 @@ run_in_subinterp(PyObject *self, PyObject *args)
     PyThreadState_Swap(mainstate);
 
     return PyLong_FromLong(r);
+}
+
+static PyObject *
+get_interpreterid_type(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_NewRef(&PyInterpreterID_Type);
+}
+
+static PyObject *
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef ml;
@@ -3210,6 +3247,7 @@ static PyMethodDef TestMethods[] = {
     {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
+    {"get_heaptype_for_name",     get_heaptype_for_name,         METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
@@ -3230,6 +3268,9 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
+    {"get_interpreterid_type",  get_interpreterid_type,          METH_NOARGS},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
