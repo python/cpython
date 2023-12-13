@@ -65,10 +65,10 @@ provides three different variants:
 
    The handler will parse the request and the headers, then call a method
    specific to the request type. The method name is constructed from the
-   request. For example, for the request method ``SPAM``, the :meth:`do_SPAM`
+   request. For example, for the request method ``SPAM``, the :meth:`!do_SPAM`
    method will be called with no arguments. All of the relevant information is
    stored in instance variables of the handler.  Subclasses should not need to
-   override or extend the :meth:`__init__` method.
+   override or extend the :meth:`!__init__` method.
 
    :class:`BaseHTTPRequestHandler` has the following instance variables:
 
@@ -187,13 +187,13 @@ provides three different variants:
 
       Calls :meth:`handle_one_request` once (or, if persistent connections are
       enabled, multiple times) to handle incoming HTTP requests. You should
-      never need to override it; instead, implement appropriate :meth:`do_\*`
+      never need to override it; instead, implement appropriate :meth:`!do_\*`
       methods.
 
    .. method:: handle_one_request()
 
       This method will parse and dispatch the request to the appropriate
-      :meth:`do_\*` method.  You should never need to override it.
+      :meth:`!do_\*` method.  You should never need to override it.
 
    .. method:: handle_expect_100()
 

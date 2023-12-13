@@ -739,4 +739,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
 
+/* Define if you want to disable the GIL */
+#undef Py_GIL_DISABLED
+
 #endif /* !Py_CONFIG_H */
