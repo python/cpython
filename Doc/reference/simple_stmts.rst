@@ -578,7 +578,7 @@ The :dfn:`type` of the exception is the exception instance's class, the
 .. index:: pair: object; traceback
 
 A traceback object is normally created automatically when an exception is raised
-and attached to it as the :attr:`__traceback__` attribute, which is writable.
+and attached to it as the :attr:`~BaseException.__traceback__` attribute.
 You can create an exception and set your own traceback in one step using the
 :meth:`~BaseException.with_traceback` exception method (which returns the
 same exception instance, with its traceback set to its argument), like so::
@@ -592,11 +592,13 @@ same exception instance, with its traceback set to its argument), like so::
 The ``from`` clause is used for exception chaining: if given, the second
 *expression* must be another exception class or instance. If the second
 expression is an exception instance, it will be attached to the raised
-exception as the :attr:`__cause__` attribute (which is writable). If the
+exception as the :attr:`~BaseException.__cause__` attribute (which is writable). If the
 expression is an exception class, the class will be instantiated and the
 resulting exception instance will be attached to the raised exception as the
-:attr:`__cause__` attribute. If the raised exception is not handled, both
-exceptions will be printed::
+:attr:!`__cause__` attribute. If the raised exception is not handled, both
+exceptions will be printed:
+
+.. doctest::
 
    >>> try:
    ...     print(1 / 0)
@@ -617,7 +619,9 @@ A similar mechanism works implicitly if a new exception is raised when
 an exception is already being handled.  An exception may be handled
 when an :keyword:`except` or :keyword:`finally` clause, or a
 :keyword:`with` statement, is used.  The previous exception is then
-attached as the new exception's :attr:`__context__` attribute::
+attached as the new exception's :attr:`~BaseException.__context__` attribute:
+
+.. doctest::
 
    >>> try:
    ...     print(1 / 0)
@@ -635,7 +639,9 @@ attached as the new exception's :attr:`__context__` attribute::
    RuntimeError: Something bad happened
 
 Exception chaining can be explicitly suppressed by specifying :const:`None` in
-the ``from`` clause::
+the ``from`` clause:
+
+.. doctest::
 
    >>> try:
    ...     print(1 / 0)
@@ -653,8 +659,8 @@ and information about handling exceptions is in section :ref:`try`.
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
 .. versionadded:: 3.3
-    The ``__suppress_context__`` attribute to suppress automatic display of the
-    exception context.
+    The :attr:`~BaseException.__suppress_context__` attribute to suppress
+    automatic display of the exception context.
 
 .. versionchanged:: 3.11
     If the traceback of the active exception is modified in an :keyword:`except`
