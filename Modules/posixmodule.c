@@ -3531,7 +3531,7 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
     int res;
     int async_err = 0;
 
-    if (PySys_Audit("os.chmod", "iii", fd, mode, -1) < 0) {
+    if (PySys_Audit("os.chmod", "iiiO", fd, mode, -1, Py_False) < 0) {
         return NULL;
     }
 

@@ -999,7 +999,7 @@ as internal buffering of data.
    docs for :func:`chmod` for possible values of *mode*.  As of Python 3.3, this
    is equivalent to ``os.chmod(fd, mode)``.
 
-   .. audit-event:: os.chmod path,mode,dir_fd os.fchmod
+   .. audit-event:: os.chmod path,mode,dir_fd,follow_symlinks os.fchmod
 
    .. availability:: Unix.
 
@@ -2027,7 +2027,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: chmod(path, mode, *, dir_fd=None, follow_symlinks=True)
+.. function:: chmod(path, mode, *, dir_fd=None, follow_symlinks=(os.name != 'nt'))
 
    Change the mode of *path* to the numeric *mode*. *mode* may take one of the
    following values (as defined in the :mod:`stat` module) or bitwise ORed
@@ -2062,11 +2062,12 @@ features:
       Although Windows supports :func:`chmod`, you can only set the file's
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
+      By default, :func:`chmod` on Windows does not follow symlinks.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
-   .. audit-event:: os.chmod path,mode,dir_fd os.chmod
+   .. audit-event:: os.chmod path,mode,dir_fd,follow_symlinks os.chmod
 
    .. versionadded:: 3.3
       Added support for specifying *path* as an open file descriptor,
@@ -2074,6 +2075,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support for the *follow_symlinks* argument on Windows.
 
 
 .. function:: chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True)
@@ -2160,12 +2164,15 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
-   .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
+   .. audit-event:: os.chmod path,mode,dir_fd,follow_symlinks os.lchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support on Windows.
 
 .. function:: lchown(path, uid, gid)
 
