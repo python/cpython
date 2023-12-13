@@ -595,7 +595,7 @@ expression is an exception instance, it will be attached to the raised
 exception as the :attr:`~BaseException.__cause__` attribute (which is writable). If the
 expression is an exception class, the class will be instantiated and the
 resulting exception instance will be attached to the raised exception as the
-:attr:!`__cause__` attribute. If the raised exception is not handled, both
+:attr:`!__cause__` attribute. If the raised exception is not handled, both
 exceptions will be printed:
 
 .. doctest::
