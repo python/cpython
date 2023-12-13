@@ -754,8 +754,8 @@ Exception Objects
 .. c:function:: PyObject* PyException_GetTraceback(PyObject *ex)
 
    Return the traceback associated with the exception as a new reference, as
-   accessible from Python through :attr:`~BaseException.__traceback__`.
-   If there is no
+   accessible from Python through the :attr:`~BaseException.__traceback__`
+   attribute. If there is no
    traceback associated, this returns ``NULL``.
 
 
@@ -769,8 +769,8 @@ Exception Objects
 
    Return the context (another exception instance during whose handling *ex* was
    raised) associated with the exception as a new reference, as accessible from
-   Python through :attr:`~BaseException.__context__`.  If there is no context
-   associated, this returns ``NULL``.
+   Python through the :attr:`~BaseException.__context__` attribute.
+   If there is no context associated, this returns ``NULL``.
 
 
 .. c:function:: void PyException_SetContext(PyObject *ex, PyObject *ctx)
@@ -784,8 +784,8 @@ Exception Objects
 
    Return the cause (either an exception instance, or ``None``,
    set by ``raise ... from ...``) associated with the exception as a new
-   reference, as accessible from Python through
-   :attr:`~BaseException.__cause__`.
+   reference, as accessible from Python through the
+   :attr:`~BaseException.__cause__` attribute.
 
 
 .. c:function:: void PyException_SetCause(PyObject *ex, PyObject *cause)
@@ -794,8 +794,8 @@ Exception Objects
    it.  There is no type check to make sure that *cause* is either an exception
    instance or ``None``.  This steals a reference to *cause*.
 
-   :attr:`~BaseException.__suppress_context__` is implicitly set to ``True`` by
-   this function.
+   The :attr:`~BaseException.__suppress_context__` attribute is implicitly set
+   to ``True`` by this function.
 
 
 .. c:function:: PyObject* PyException_GetArgs(PyObject *ex)

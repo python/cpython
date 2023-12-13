@@ -43,13 +43,16 @@ Exception context
            __context__ (exception attribute)
            __suppress_context__ (exception attribute)
 
+Three attributes on exception objects provide information about the context in
+which an the exception was raised:
+
 .. attribute:: BaseException.__context__
                BaseException.__cause__
                BaseException.__suppress_context__
 
    When raising a new exception while another exception
    is already being handled, the new exception's
-   :attr:`__context__` attribute is automatically set to the handled
+   :attr:`!__context__` attribute is automatically set to the handled
    exception.  An exception may be handled when an :keyword:`except` or
    :keyword:`finally` clause, or a :keyword:`with` statement, is used.
 
@@ -139,7 +142,7 @@ The following exceptions are used mostly as base classes for other exceptions.
 
       A writable field that holds the
       :ref:`traceback object <traceback-objects>` associated with this
-      exception. See also :ref:`raise`.
+      exception. See also: :ref:`raise`.
 
    .. method:: add_note(note)
 

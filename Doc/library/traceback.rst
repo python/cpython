@@ -236,8 +236,8 @@ capture data for later printing in a lightweight fashion.
    *capture_locals* are as for the :class:`StackSummary` class.
 
    If *compact* is true, only data that is required by
-   :class:`!TracebackException`'s
-   ``format`` method is saved in the class attributes. In particular, the
+   :class:`!TracebackException`'s :meth:`format` method
+   is saved in the class attributes. In particular, the
    :attr:`__context__` field is calculated only if :attr:`__cause__` is
    ``None`` and :attr:`__suppress_context__` is false.
 
