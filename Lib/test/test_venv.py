@@ -46,7 +46,8 @@ if is_emscripten or is_wasi:
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stderr=subprocess.PIPE,
+        env={**os.environ, "PYTHONHOME": ""})
     out, err = p.communicate()
     if p.returncode:
         if verbose and err:
