@@ -73,7 +73,7 @@ A :class:`Cmd` instance has the following methods:
 
    This method will return when the :meth:`postcmd` method returns a true value.
    The *stop* argument to :meth:`postcmd` is the return value from the command's
-   corresponding :meth:`do_\*` method.
+   corresponding :meth:`!do_\*` method.
 
    If completion is enabled, completing commands will be done automatically, and
    completing of commands args is done by calling :meth:`complete_foo` with
@@ -88,7 +88,7 @@ A :class:`Cmd` instance has the following methods:
    :meth:`help_bar`, and if that is not present, prints the docstring of
    :meth:`do_bar`, if available.  With no argument, :meth:`do_help` lists all
    available help topics (that is, all commands with corresponding
-   :meth:`help_\*` methods or commands that have docstrings), and also lists any
+   :meth:`!help_\*` methods or commands that have docstrings), and also lists any
    undocumented commands.
 
 
@@ -98,7 +98,7 @@ A :class:`Cmd` instance has the following methods:
    This may be overridden, but should not normally need to be; see the
    :meth:`precmd` and :meth:`postcmd` methods for useful execution hooks.  The
    return value is a flag indicating whether interpretation of commands by the
-   interpreter should stop.  If there is a :meth:`do_\*` method for the command
+   interpreter should stop.  If there is a :meth:`!do_\*` method for the command
    *str*, the return value of that method is returned, otherwise the return value
    from the :meth:`default` method is returned.
 
@@ -118,7 +118,7 @@ A :class:`Cmd` instance has the following methods:
 .. method:: Cmd.completedefault(text, line, begidx, endidx)
 
    Method called to complete an input line when no command-specific
-   :meth:`complete_\*` method is available.  By default, it returns an empty list.
+   :meth:`!complete_\*` method is available.  By default, it returns an empty list.
 
 
 .. method:: Cmd.columnize(list, displaywidth=80)
@@ -199,14 +199,14 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
 .. attribute:: Cmd.misc_header
 
    The header to issue if the help output has a section for miscellaneous  help
-   topics (that is, there are :meth:`help_\*` methods without corresponding
-   :meth:`do_\*` methods).
+   topics (that is, there are :meth:`!help_\*` methods without corresponding
+   :meth:`!do_\*` methods).
 
 
 .. attribute:: Cmd.undoc_header
 
    The header to issue if the help output has a section for undocumented  commands
-   (that is, there are :meth:`do_\*` methods without corresponding :meth:`help_\*`
+   (that is, there are :meth:`!do_\*` methods without corresponding :meth:`!help_\*`
    methods).
 
 

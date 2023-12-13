@@ -309,7 +309,7 @@ The :mod:`locale` module defines the following exception and functions:
 .. function:: getlocale(category=LC_CTYPE)
 
    Returns the current setting for the given locale category as sequence containing
-   *language code*, *encoding*. *category* may be one of the :const:`LC_\*` values
+   *language code*, *encoding*. *category* may be one of the :const:`!LC_\*` values
    except :const:`LC_ALL`.  It defaults to :const:`LC_CTYPE`.
 
    Except for the code ``'C'``, the language code corresponds to :rfc:`1766`.

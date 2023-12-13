@@ -3728,7 +3728,7 @@ to be ignored.
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
-   individual parameters simply become additional parameters to the :func:`execl\*`
+   individual parameters simply become additional parameters to the :func:`!execl\*`
    functions.  The "v" variants are good when the number of parameters is
    variable, with the arguments being passed in a list or tuple as the *args*
    parameter.  In either case, the arguments to the child process should start with
@@ -4228,7 +4228,7 @@ written in Python, such as a mail server's external command delivery program.
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
    individual parameters simply become additional parameters to the
-   :func:`spawnl\*` functions.  The "v" variants are good when the number of
+   :func:`!spawnl\*` functions.  The "v" variants are good when the number of
    parameters is variable, with the arguments being passed in a list or tuple as
    the *args* parameter.  In either case, the arguments to the child process must
    start with the name of the command being run.
@@ -4278,7 +4278,7 @@ written in Python, such as a mail server's external command delivery program.
           P_NOWAITO
 
    Possible values for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
-   functions.  If either of these values is given, the :func:`spawn\*` functions
+   functions.  If either of these values is given, the :func:`spawn\* <spawnl>` functions
    will return as soon as the new process has been created, with the process id as
    the return value.
 
@@ -4288,7 +4288,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: P_WAIT
 
    Possible value for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
-   functions.  If this is given as *mode*, the :func:`spawn\*` functions will not
+   functions.  If this is given as *mode*, the :func:`spawn\* <spawnl>` functions will not
    return until the new process has run to completion and will return the exit code
    of the process the run is successful, or ``-signal`` if a signal kills the
    process.
