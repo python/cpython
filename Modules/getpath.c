@@ -525,9 +525,9 @@ done:
     Py_END_ALLOW_THREADS
 
     if (err) {
-        return PyErr_SetFromWindowsErr(GetLastError());
-    }
-    if (len <= MAXPATHLEN) {
+        PyErr_SetFromWindowsErr(err);
+        result = NULL;
+    } else if (len <= MAXPATHLEN) {
         const wchar_t *p = resolved;
         if (0 == wcsncmp(p, L"\\\\?\\", 4)) {
             if (GetFileAttributesW(&p[4]) != INVALID_FILE_ATTRIBUTES) {
