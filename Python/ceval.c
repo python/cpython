@@ -1112,6 +1112,7 @@ deoptimize:
     uint16_t threshold = tstate->interp->optimizer_resume_threshold + (1 << 15);
     if (ucounter <= threshold)
     {
+        Py_DECREF(current_executor);
         goto resume_frame;
     }
 
