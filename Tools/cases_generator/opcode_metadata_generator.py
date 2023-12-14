@@ -23,6 +23,7 @@ from generators_common import (
 )
 from cwriter import CWriter
 from typing import TextIO
+from stack import get_stack_effect
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
@@ -57,6 +58,39 @@ def generate_flag_macros(out: CWriter) -> None:
         out.emit(f"#define HAS_{flag}_FLAG ({1<<i})\n")
     for i, flag in enumerate(FLAGS):
         out.emit(f"#define OPCODE_HAS_{flag}(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_{flag}_FLAG))\n")
+
+
+def emit_stack_effect_function(
+    out: CWriter, direction: str, data: list[tuple[str, str]]
+) -> None:
+    out.emit(f"extern int _PyOpcode_num_{direction}(int opcode, int oparg);\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
+    out.emit(f"int _PyOpcode_num_{direction}(int opcode, int oparg)  {{\n")
+    out.emit("switch(opcode) {\n")
+    for name, effect in data:
+        out.emit(f"case {name}:\n")
+        out.emit(f"    return {effect};\n")
+    out.emit("default:\n")
+    out.emit("    return -1;\n")
+    out.emit("}\n")
+    out.emit("}\n\n")
+    out.emit("#endif\n\n")
+
+
+def generate_stack_effect_functions(
+    analysis: Analysis, out: CWriter
+) -> None:
+    
+    popped_data: list[tuple[str, str]] = []
+    pushed_data: list[tuple[str, str]] = []
+    for inst in analysis.instructions.values():
+        stack = get_stack_effect(inst)
+        popped = (-stack.base_offset).to_c()
+        pushed = (stack.top_offset - stack.base_offset).to_c()
+        popped_data.append((inst.name, popped))
+        pushed_data.append((inst.name, pushed))
+    emit_stack_effect_function(out, "popped", sorted(popped_data))
+    emit_stack_effect_function(out, "pushed", sorted(pushed_data))
 
 
 def generate_is_pseudo(
@@ -260,6 +294,7 @@ def generate_opcode_metadata(
         out.emit('#include "opcode_ids.h"\n')
         generate_is_pseudo(analysis, out)
         out.emit('#include "pycore_uop_ids.h"\n')
+        generate_stack_effect_functions(analysis, out)
         generate_instruction_formats(analysis, out)
         out.emit("#define IS_VALID_OPCODE(OP) \\\n")
         out.emit("    (((OP) >= 0) && ((OP) < 256) && \\\n")

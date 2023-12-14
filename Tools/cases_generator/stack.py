@@ -1,5 +1,5 @@
 import sys
-from analyzer import StackItem
+from analyzer import StackItem, Instruction, Uop
 from dataclasses import dataclass
 from formatting import maybe_parenthesize
 from cwriter import CWriter
@@ -28,6 +28,18 @@ class StackOffset:
 
     def push(self, item: StackItem) -> None:
         self.pushed.append(var_size(item))
+
+    def __sub__(self, other:"StackOffset") -> "StackOffset":
+        res = StackOffset()
+        res.popped = self.popped + other.pushed
+        res.pushed = self.pushed + other.popped
+        return res
+
+    def __neg__(self) -> "StackOffset":
+        res = StackOffset()
+        res.popped = self.pushed
+        res.pushed = self.popped
+        return res
 
     def simplify(self) -> None:
         "Remove matching values from both the popped and pushed list"
@@ -166,3 +178,14 @@ class Stack:
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
+
+def get_stack_effect(inst: Instruction) -> Stack:
+    stack = Stack()
+    for uop in inst.parts:
+        if not isinstance(uop, Uop):
+            continue
+        for var in reversed(uop.stack.inputs):
+            stack.pop(var)
+        for i, var in enumerate(uop.stack.outputs):
+            stack.push(var)
+    return stack
