@@ -239,7 +239,6 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-
 static inline uintptr_t
 _Py_ThreadId(void)
 {
