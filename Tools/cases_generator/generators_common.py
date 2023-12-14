@@ -231,4 +231,3 @@ def get_have_arg_and_min_instrumented(analysis: Analysis) -> tuple[int, int]:
         if analysis.instructions[name].properties.oparg and op < first_arg:
             first_arg = op
     return first_arg, min_instrumented
-

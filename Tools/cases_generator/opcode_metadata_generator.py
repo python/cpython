@@ -263,7 +263,7 @@ def generate_expansion_table(
     out.emit("_PyOpcode_macro_expansion[256] = {\n")
     for inst_name, expansions in expansions_table.items():
         uops = [f"{{ {name}, {size}, {offset} }}" for (name, size, offset) in expansions]
-        out.emit(f"[{inst_name}] = {{ .nuops = {len(expansions)}, .uops = {{ {", ".join(uops)} }} }},\n")
+        out.emit(f'[{inst_name}] = {{ .nuops = {len(expansions)}, .uops = {{ {", ".join(uops)} }} }},\n')
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
