@@ -201,6 +201,17 @@ def is_viable_expansion(inst: Instruction) -> bool:
     return True
 
 
+def generate_extra_cases(
+    analysis: Analysis, out: CWriter
+) -> None:
+    out.emit("#define EXTRA_CASES \\\n")
+    valid_opcodes = set(analysis.get_instruction_map().values())
+    for op in range(256):
+        if op not in valid_opcodes:
+            out.emit(f"case {op}: \\\n")
+    out.emit("    ;\n")
+
+
 def generate_psuedo_targets(
     analysis: Analysis, out: CWriter
 ) -> None:
@@ -251,9 +262,10 @@ def generate_opcode_metadata(
         generate_flag_macros(out)
         generate_metadata_table(analysis, out)
         generate_expansion_table(analysis, out)
-        generate_deopt_table(analysis, out)
-        generate_cache_table(analysis, out)
         generate_name_table(analysis, out)
+        generate_cache_table(analysis, out)
+        generate_deopt_table(analysis, out)
+        generate_extra_cases(analysis, out)
         generate_psuedo_targets(analysis, out)
 
 

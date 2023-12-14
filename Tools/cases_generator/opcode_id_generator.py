@@ -24,84 +24,11 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/opcode_ids.h"
 
 
+    
 def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: TextIO) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
-    instmap: dict[str, int] = {}
-
-    # 0 is reserved for cache entries. This helps debugging.
-    instmap["CACHE"] = 0
-
-    # 17 is reserved as it is the initial value for the specializing counter.
-    # This helps catch cases where we attempt to execute a cache.
-    instmap["RESERVED"] = 17
-
-    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-    instmap["RESUME"] = 149
-    instmap["INSTRUMENTED_LINE"] = 254
-
-    instrumented = [
-        name for name in analysis.instructions if name.startswith("INSTRUMENTED")
-    ]
-
-    # Special case: this instruction is implemented in ceval.c
-    # rather than bytecodes.c, so we need to add it explicitly
-    # here (at least until we add something to bytecodes.c to
-    # declare external instructions).
-    instrumented.append("INSTRUMENTED_LINE")
-
-    specialized: set[str] = set()
-    no_arg: list[str] = []
-    has_arg: list[str] = []
-
-    for family in analysis.families.values():
-        specialized.update(inst.name for inst in family.members)
-
-    for inst in analysis.instructions.values():
-        name = inst.name
-        if name in specialized:
-            continue
-        if name in instrumented:
-            continue
-        if inst.properties.oparg:
-            has_arg.append(name)
-        else:
-            no_arg.append(name)
-
-    # Specialized ops appear in their own section
-    # Instrumented opcodes are at the end of the valid range
-    min_internal = 150
-    min_instrumented = 254 - (len(instrumented) - 1)
-    assert min_internal + len(specialized) < min_instrumented
-
-    next_opcode = 1
-
-    def add_instruction(name: str) -> None:
-        nonlocal next_opcode
-        if name in instmap:
-            return  # Pre-defined name
-        while next_opcode in instmap.values():
-            next_opcode += 1
-        instmap[name] = next_opcode
-        next_opcode += 1
-
-    for name in sorted(no_arg):
-        add_instruction(name)
-    for name in sorted(has_arg):
-        add_instruction(name)
-    # For compatibility
-    next_opcode = min_internal
-    for name in sorted(specialized):
-        add_instruction(name)
-    next_opcode = min_instrumented
-    for name in instrumented:
-        add_instruction(name)
-
-    for op, name in enumerate(sorted(analysis.pseudos), 256):
-        instmap[name] = op
-
-    assert 255 not in instmap.values()
-
+    instmap = analysis.get_instruction_map()
     with out.header_guard("Py_OPCODE_IDS_H"):
         out.emit("/* Instruction opcodes for compiled code */\n")
 
@@ -112,7 +39,19 @@ def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: Te
             write_define(name, op)
 
         out.emit("\n")
-        write_define("HAVE_ARGUMENT", len(no_arg))
+        min_instrumented = 256
+        first_arg = 256
+        for name, op in instmap.items():
+            if name.startswith("INSTRUMENTED") and op < min_instrumented:
+                min_instrumented = op
+            if name == "INSTRUMENTED_LINE":
+                # INSTRUMENTED_LINE is not defined
+                continue
+            if name in analysis.pseudos:
+                continue
+            if analysis.instructions[name].properties.oparg and op < first_arg:
+                first_arg = op
+        write_define("HAVE_ARGUMENT", first_arg)
         write_define("MIN_INSTRUMENTED_OPCODE", min_instrumented)
 
 
