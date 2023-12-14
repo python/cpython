@@ -21,10 +21,8 @@ from contextlib import contextmanager
 
 try:
     import posix
-    nt = None
 except ImportError:
-    import nt
-    posix = nt
+    import nt as posix
 
 try:
     import pwd
