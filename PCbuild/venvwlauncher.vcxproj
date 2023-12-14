@@ -91,19 +91,19 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>_WINDOWS;VENV_REDIRECT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EXENAME=L"$(PyExeName)$(PyDebugExt).exe";_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>PYW_ICON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pathcch.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\launcher.c" />
+    <ClCompile Include="..\PC\venvlauncher.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\PC\launcher.ico" />
