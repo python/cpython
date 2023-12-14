@@ -1477,7 +1477,7 @@ DocTestRunner objects
    For more information, see section :ref:`doctest-options`.
 
 
-   :class:`DocTestParser` defines the following methods:
+   :class:`DocTestRunner` defines the following methods:
 
 
    .. method:: report_start(out, test, example)
