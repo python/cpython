@@ -111,10 +111,14 @@ PCbuild/*-pgo
 PCbuild/*.VC.db
 PCbuild/*.VC.opendb
 PCbuild/amd64/
+PCbuild/amd64t/
 PCbuild/arm32/
+PCbuild/arm32t/
 PCbuild/arm64/
+PCbuild/arm64t/
 PCbuild/obj/
 PCbuild/win32/
+PCbuild/win32t/
 Tools/unicode/data/
 /autom4te.cache
 /build/
