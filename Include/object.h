@@ -284,9 +284,9 @@ _Py_ThreadId(void)
     // for s390 from long time ago.
     tid = (uintptr_t)__builtin_thread_pointer();
 #elif defined(thread_local) || defined(__GNUC__)
-    # if defined(thread_local)
+    #if defined(thread_local)
     static thread_local int __tp = 0;
-    #elif defined(__GNUC__)
+    #else
     // Assume that we only support C11 compilers.
     static __thread int __tp = 0;
     #endif
