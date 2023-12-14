@@ -1735,7 +1735,7 @@ class MakedirTests(unittest.TestCase):
         os.removedirs(path)
 
 
-@os_helper.skip_unless_working_chmod
+@unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
 class ChownFileTests(unittest.TestCase):
 
     @classmethod

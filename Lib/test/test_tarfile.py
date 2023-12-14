@@ -3429,7 +3429,7 @@ class TestExtractionFilters(unittest.TestCase):
         path = pathlib.Path(os.path.normpath(self.destdir / name))
         self.assertIn(path, self.expected_paths)
         self.expected_paths.remove(path)
-        if mode is not None and os_helper.can_chmod():
+        if mode is not None and os_helper.can_chmod() and os.name != 'nt':
             got = stat.filemode(stat.S_IMODE(path.stat().st_mode))
             self.assertEqual(got, mode)
         if type is None and isinstance(name, str) and name.endswith('/'):
