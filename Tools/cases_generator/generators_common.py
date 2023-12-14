@@ -200,6 +200,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_JUMP_FLAG")
     if p.has_free:
         flags.append("HAS_FREE_FLAG")
+    if p.uses_locals:
+        flags.append("HAS_LOCAL_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
     if p.escapes:
