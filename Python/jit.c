@@ -134,21 +134,24 @@ mark_readable(char *memory, size_t size)
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 
-// value[start : start + width] << shift
+// value[i : i + n]
 static uint32_t
-bits(uint64_t value, uint8_t start, uint8_t width, uint8_t shift)
+bits(uint64_t value, uint8_t i, uint8_t n)
 {
-    assert(width + shift <= 32);
-    uint64_t mask = ((uint64_t)1 << width) - 1;
-    return ((value >> start) & mask) << shift;
+    assert(n <= 32);
+    return (value >> i) & ((1ULL << n) - 1);
 }
 
+// *loc[j : j + n] = value[i : i + n]
 static void
-patch_bits(uint32_t *loc, uint64_t value, uint8_t start, uint8_t width, uint8_t shift)
+patch_bits(uint32_t *loc, uint64_t value, uint8_t i, uint8_t n, uint8_t j)
 {
-    *loc &= ~bits(-1, 0, width, shift);
-    assert(bits(*loc, shift, width, 0) == 0);
-    *loc |= bits(value, start, width, shift);
+    assert(j + n <= 32);
+    // Clear the bits we're about to patch:
+    *loc &= ~(((1ULL << n) - 1) << j);
+    assert(bits(*loc, j, n) == 0);
+    // Patch the bits:
+    *loc |= bits(value, i, n) << j;
 }
 
 // See https://developer.arm.com/documentation/ddi0602/2023-09/Base-Instructions
@@ -178,7 +181,8 @@ patch(char *base, const Hole *hole, uint64_t *patches)
     switch (hole->kind) {
         case HoleKind_IMAGE_REL_I386_DIR32:
             // 32-bit absolute address.
-            assert((uint32_t)value == value);
+            // Check that we're not out of range of 32 unsigned bits:
+            assert(value < (1ULL << 32));
             *loc32 = (uint32_t)value;
             return;
         case HoleKind_ARM64_RELOC_UNSIGNED:
@@ -194,39 +198,39 @@ patch(char *base, const Hole *hole, uint64_t *patches)
             // 28-bit relative branch.
             assert(IS_AARCH64_BRANCH(*loc32));
             value -= (uint64_t)location;
-            // The high 36 bits are ignored, so they must match:
-            assert(bits(value, 28, 32, 0) == bits((uint64_t)location, 28, 32, 0));
-            assert(bits(value, 60, 4, 0) == bits((uint64_t)location, 28, 32, 0));
+            // Check that we're not out of range of 28 signed bits:
+            assert((int64_t)value >= -(1 << 27));
+            assert((int64_t)value < (1 << 27));
             // Since instructions are 4-byte aligned, only use 26 bits:
-            assert(bits(value, 0, 2, 0) == 0);
+            assert(bits(value, 0, 2) == 0);
             patch_bits(loc32, value, 2, 26, 0);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
             // 16-bit low part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 0 of 3"):
-            assert(bits(*loc32, 21, 2, 0) == 0);
+            assert(bits(*loc32, 21, 2) == 0);
             patch_bits(loc32, value, 0, 16, 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
             // 16-bit middle-low part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 1 of 3"):
-            assert(bits(*loc32, 21, 2, 0) == 1);
+            assert(bits(*loc32, 21, 2) == 1);
             patch_bits(loc32, value, 16, 16, 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
             // 16-bit middle-high part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 2 of 3"):
-            assert(bits(*loc32, 21, 2, 0) == 2);
+            assert(bits(*loc32, 21, 2) == 2);
             patch_bits(loc32, value, 32, 16, 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G3:
             // 16-bit high part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 3 of 3"):
-            assert(bits(*loc32, 21, 2, 0) == 3);
+            assert(bits(*loc32, 21, 2) == 3);
             patch_bits(loc32, value, 48, 16, 5);
             return;
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
@@ -235,9 +239,9 @@ patch(char *base, const Hole *hole, uint64_t *patches)
             // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
             assert(IS_AARCH64_ADRP(*loc32));
             // The high 31 bits are ignored, so they must match:
-            assert(bits(value, 33, 31, 0) == bits((uint64_t)location, 33, 31, 0));
+            assert(bits(value, 33, 31) == bits((uint64_t)location, 33, 31));
             // Number of pages between this page and the value's page:
-            value = bits(value, 12, 21, 0) - bits((uint64_t)location, 12, 21, 0);
+            value = bits(value, 12, 21) - bits((uint64_t)location, 12, 21);
             // value[0:2] goes in loc[29:31]:
             patch_bits(loc32, value, 0, 2, 29);
             // value[2:21] goes in loc[5:26]:
@@ -250,13 +254,13 @@ patch(char *base, const Hole *hole, uint64_t *patches)
             // There might be an implicit shift encoded in the instruction:
             uint8_t shift = 0;
             if (IS_AARCH64_LDR_OR_STR(*loc32)) {
-                shift = (uint8_t)bits(*loc32, 30, 2, 0);
+                shift = (uint8_t)bits(*loc32, 30, 2);
                 // If both of these are set, the shift is supposed to be 4.
                 // That's pretty weird, and it's never actually been observed...
-                assert(bits(*loc32, 23, 1, 0) == 0 || bits(*loc32, 26, 1, 0) == 0);
+                assert(bits(*loc32, 23, 1) == 0 || bits(*loc32, 26, 1) == 0);
             }
-            value = bits(value, 0, 12, 0);
-            assert(bits(value, 0, shift, 0) == 0);
+            value = bits(value, 0, 12);
+            assert(bits(value, 0, shift) == 0);
             patch_bits(loc32, value, shift, 12, 10);
             return;
     }
