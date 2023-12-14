@@ -952,11 +952,10 @@ _Py_HandlePending(PyThreadState *tstate)
     /* Stop-the-world */
     if (_Py_eval_breaker_bit_is_set(interp, _PY_EVAL_PLEASE_STOP_BIT)) {
         _Py_set_eval_breaker_bit(interp, _PY_EVAL_PLEASE_STOP_BIT, 0);
-        if (_PyThreadState_Suspend(tstate)) {
-            /* The attach blocks until the stop-the-world event is complete. */
-            _PyThreadState_Attach(tstate);
-        }
-        // else: stale stop-the-world event, ignore it!
+        _PyThreadState_Suspend(tstate);
+
+        /* The attach blocks until the stop-the-world event is complete. */
+        _PyThreadState_Attach(tstate);
     }
 
     /* Pending signals */

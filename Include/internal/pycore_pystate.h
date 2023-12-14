@@ -20,23 +20,23 @@ extern "C" {
 // transitions between "attached" and "detached" on its own PyThreadState.
 //
 // The "suspended" state is used to implement stop-the-world pauses, such as
-// for cyclic garbage collection. It is only used in `--disable-gil` builds. It
-// is similar to the "detached" state, but only the thread performing a
-// stop-the-world pause may transition a thread from the "suspended" state back
-// to the "detached" state. A thread trying to "attach" from the "suspended"
-// state will block until it is transitioned back to "detached" when the
-// stop-the-world pause is complete.
+// for cyclic garbage collection. It is only used in `--disable-gil` builds.
+// The "suspended" state is similar to the "detached" state in that in both
+// states the thread is not allowed to call most Python APIs. However, unlike
+// the "detached" state, a thread may not transition itself out from the
+// "suspended" state. Only the thread performing a stop-the-world pause may
+// transition a thread from the "suspended" state back to the "detached" state.
 //
 // State transition diagram:
 //
 //            (bound thread)        (stop-the-world thread)
 // [attached]       <->       [detached]       <->       [suspended]
-//   +                                                        ^
-//   +--------------------------------------------------------+
+//   |                                                        ^
+//   +---------------------------->---------------------------+
 //                          (bound thread)
 //
-// See `_PyThreadState_Attach()`, `_PyThreadState_Detach()`, and
-// `_PyThreadState_Suspend()`.
+// The (bound thread) and (stop-the-world thread) labels indicate which thread
+// is allowed to perform the transition.
 #define _Py_THREAD_DETACHED     0
 #define _Py_THREAD_ATTACHED     1
 #define _Py_THREAD_SUSPENDED    2
@@ -153,10 +153,9 @@ extern void _PyThreadState_Detach(PyThreadState *tstate);
 // Detaches the current thread to the "suspended" state if a stop-the-world
 // pause is in progress.
 //
-// If there is no stop-the-world pause in progress, then this function is
-// a no-op. Returns one if the thread was switched to the "suspended" state and
-// zero otherwise.
-extern int _PyThreadState_Suspend(PyThreadState *tstate);
+// If there is no stop-the-world pause in progress, then the thread switches
+// to the "detached" state.
+extern void _PyThreadState_Suspend(PyThreadState *tstate);
 
 // Perform a stop-the-world pause for all threads in the all interpreters.
 //

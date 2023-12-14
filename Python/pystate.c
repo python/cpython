@@ -1876,7 +1876,7 @@ _PyThreadState_Detach(PyThreadState *tstate)
     detach_thread(tstate, _Py_THREAD_DETACHED);
 }
 
-int
+void
 _PyThreadState_Suspend(PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -1894,8 +1894,10 @@ _PyThreadState_Suspend(PyThreadState *tstate)
     HEAD_UNLOCK(runtime);
 
     if (stw == NULL) {
-        // Don't suspend if we are not in a stop-the-world event.
-        return 0;
+        // Switch directly to "detached" if there is no active stop-the-world
+        // request.
+        detach_thread(tstate, _Py_THREAD_DETACHED);
+        return;
     }
 
     // Switch to "suspended" state.
@@ -1905,7 +1907,6 @@ _PyThreadState_Suspend(PyThreadState *tstate)
     HEAD_LOCK(runtime);
     decrement_stoptheworld_countdown(stw);
     HEAD_UNLOCK(runtime);
-    return 1;
 }
 
 // Decrease stop-the-world counter of remaining number of threads that need to
