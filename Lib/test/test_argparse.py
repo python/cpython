@@ -2840,12 +2840,12 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         parser = ErrorRaisingArgumentParser(prog="PROG")
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument("-", dest="FOO")
-        group.add_argument("baz", nargs="?")
+        group.add_argument("bar", nargs="?")
         expected = '''\
-            usage: PROG [-h] (- FOO | baz)
+            usage: PROG [-h] (- FOO | bar)
 
             positional arguments:
-              baz
+              bar
 
             options:
               -h, --help  show this help message and exit
@@ -2855,7 +2855,7 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
 
         parser = ErrorRaisingArgumentParser(prog="PROG")
         group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument("baz", nargs="?")
+        group.add_argument("bar", nargs="?")
         group.add_argument("-", dest="FOO")
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
