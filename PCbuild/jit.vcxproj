@@ -29,7 +29,7 @@
       <PyConfigH Remove="@(PyConfigH)" />
       <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
     </ItemGroup>
-    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
+    <!-- <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />  -->  <!-- XXX -->
     <PropertyGroup>
       <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
       <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>

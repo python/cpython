@@ -138,13 +138,13 @@ mark_readable(char *memory, size_t size)
 static uint64_t
 bits(uint64_t value, uint8_t start, uint8_t width, uint8_t shift)
 {
-    uint64_t mask = ((uint64_t)1 << (width & 63)) - 1;
+    uint64_t mask = ((uint64_t)1 << Py_MIN(width, 63)) - 1;
     return ((value >> start) & mask) << shift;
 }
 
 // *loc |= value[start : start + width] << shift
 static void
-patch_32_bits(uint32_t *loc, uint32_t value, uint8_t start, uint8_t width, uint8_t shift)
+patch_32_bits(uint32_t *loc, uint64_t value, uint8_t start, uint8_t width, uint8_t shift)
 {
     assert(bits(*loc, shift, width, 0) == 0);
     *loc |= bits(value, start, width, shift);
