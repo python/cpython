@@ -194,14 +194,14 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_CONST_FLAG")
     if p.uses_co_names:
         flags.append("HAS_NAME_FLAG")
-    if p.deopts:
-        flags.append("HAS_DEOPT_FLAG")
     if p.jumps:
         flags.append("HAS_JUMP_FLAG")
     if p.has_free:
         flags.append("HAS_FREE_FLAG")
-    if p.uses_locals:
+    elif p.uses_locals:
         flags.append("HAS_LOCAL_FLAG")
+    if p.deopts:
+        flags.append("HAS_DEOPT_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
     if p.escapes:
