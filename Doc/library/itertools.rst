@@ -1135,24 +1135,6 @@ The following recipes have a more mathematical flavor:
            n = n // p * (p - 1)
        return n
 
-   def nth_combination(iterable, r, index):
-       "Equivalent to list(combinations(iterable, r))[index]"
-       pool = tuple(iterable)
-       n = len(pool)
-       c = math.comb(n, r)
-       if index < 0:
-           index += c
-       if index < 0 or index >= c:
-           raise IndexError
-       result = []
-       while r:
-           c, n, r = c*r//n, n-1, r-1
-           while index >= c:
-               index -= c
-               c, n = c*(n-r)//n, n-1
-           result.append(pool[-1-n])
-       return tuple(result)
-
 
 .. doctest::
     :hide:
@@ -1576,20 +1558,6 @@ The following recipes have a more mathematical flavor:
     >>> first_true('ABC0DEF1', '9', str.isdigit)
     '0'
 
-    >>> population = 'ABCDEFGH'
-    >>> for r in range(len(population) + 1):
-    ...     seq = list(combinations(population, r))
-    ...     for i in range(len(seq)):
-    ...         assert nth_combination(population, r, i) == seq[i]
-    ...     for i in range(-len(seq), 0):
-    ...         assert nth_combination(population, r, i) == seq[i]
-
-    >>> iterable = 'abcde'
-    >>> r = 3
-    >>> combos = list(combinations(iterable, r))
-    >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
-    True
-
 
 .. testcode::
     :hide:
@@ -1616,6 +1584,24 @@ The following recipes have a more mathematical flavor:
         for (a, _), (b, c) in pairwise(pairwise(iterable)):
             yield a, b, c
 
+    def nth_combination(iterable, r, index):
+        "Equivalent to list(combinations(iterable, r))[index]"
+        pool = tuple(iterable)
+        n = len(pool)
+        c = math.comb(n, r)
+        if index < 0:
+            index += c
+        if index < 0 or index >= c:
+            raise IndexError
+        result = []
+        while r:
+            c, n, r = c*r//n, n-1, r-1
+            while index >= c:
+                index -= c
+                c, n = c*(n-r)//n, n-1
+            result.append(pool[-1-n])
+        return tuple(result)
+
 
 .. doctest::
     :hide:
@@ -1631,3 +1617,17 @@ The following recipes have a more mathematical flavor:
 
     >>> list(triplewise('ABCDEFG'))
     [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
+
+    >>> population = 'ABCDEFGH'
+    >>> for r in range(len(population) + 1):
+    ...     seq = list(combinations(population, r))
+    ...     for i in range(len(seq)):
+    ...         assert nth_combination(population, r, i) == seq[i]
+    ...     for i in range(-len(seq), 0):
+    ...         assert nth_combination(population, r, i) == seq[i]
+
+    >>> iterable = 'abcde'
+    >>> r = 3
+    >>> combos = list(combinations(iterable, r))
+    >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
+    True
