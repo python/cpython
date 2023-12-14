@@ -412,38 +412,6 @@ BRANCH_TO_GUARD[4][2] = {
 #define CONFIDENCE_RANGE 1000
 #define CONFIDENCE_CUTOFF 333
 
-/* Returns 1 on success,
- * 0 if it failed to produce a worthwhile trace,
- * and -1 on an error.
- */
-static int
-translate_bytecode_to_trace(
-    PyCodeObject *code,
-    _Py_CODEUNIT *instr,
-    _PyUOpInstruction *trace,
-    int buffer_size,
-    _PyBloomFilter *dependencies)
-{
-    PyCodeObject *initial_code = code;
-    _Py_BloomFilter_Add(dependencies, initial_code);
-    _Py_CODEUNIT *initial_instr = instr;
-    int trace_length = 0;
-    int max_length = buffer_size;
-    struct {
-        PyCodeObject *code;
-        _Py_CODEUNIT *instr;
-    } trace_stack[TRACE_STACK_SIZE];
-    int trace_stack_depth = 0;
-    int confidence = CONFIDENCE_RANGE;  // Adjusted by branch instructions
-
-#ifdef Py_DEBUG
-    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
-    int lltrace = 0;
-    if (python_lltrace != NULL && *python_lltrace >= '0') {
-        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
-    }
-#endif
-
 #ifdef Py_DEBUG
 #define DPRINTF(level, ...) \
     if (lltrace >= (level)) { printf(__VA_ARGS__); }
@@ -498,6 +466,38 @@ translate_bytecode_to_trace(
     trace_stack_depth--; \
     code = trace_stack[trace_stack_depth].code; \
     instr = trace_stack[trace_stack_depth].instr;
+
+/* Returns 1 on success,
+ * 0 if it failed to produce a worthwhile trace,
+ * and -1 on an error.
+ */
+static int
+translate_bytecode_to_trace(
+    PyCodeObject *code,
+    _Py_CODEUNIT *instr,
+    _PyUOpInstruction *trace,
+    int buffer_size,
+    _PyBloomFilter *dependencies)
+{
+    PyCodeObject *initial_code = code;
+    _Py_BloomFilter_Add(dependencies, initial_code);
+    _Py_CODEUNIT *initial_instr = instr;
+    int trace_length = 0;
+    int max_length = buffer_size;
+    struct {
+        PyCodeObject *code;
+        _Py_CODEUNIT *instr;
+    } trace_stack[TRACE_STACK_SIZE];
+    int trace_stack_depth = 0;
+    int confidence = CONFIDENCE_RANGE;  // Adjusted by branch instructions
+
+#ifdef Py_DEBUG
+    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
+    int lltrace = 0;
+    if (python_lltrace != NULL && *python_lltrace >= '0') {
+        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+    }
+#endif
 
     DPRINTF(4,
             "Optimizing %s (%s:%d) at byte offset %d\n",
