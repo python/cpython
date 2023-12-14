@@ -4,6 +4,7 @@ import unittest
 from email import message_from_string, message_from_bytes
 from email.message import EmailMessage
 from email.generator import Generator, BytesGenerator
+from email.headerregistry import Address
 from email import policy
 from test.test_email import TestEmailBase, parameterize
 
@@ -288,6 +289,27 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
             """).encode('utf-8').replace(b'\n', b'\r\n')
         s = io.BytesIO()
         g = BytesGenerator(s, policy=policy.SMTPUTF8)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_smtp_policy(self):
+        msg = EmailMessage()
+        msg["From"] = Address(addr_spec="foo@bar.com", display_name="Páolo")
+        msg["To"] = Address(addr_spec="bar@foo.com", display_name="Dinsdale")
+        msg["Subject"] = "Nudge nudge, wink, wink"
+        msg.set_content("oh boy, know what I mean, know what I mean?")
+        expected = textwrap.dedent("""\
+            From: =?utf-8?q?P=C3=A1olo?= <foo@bar.com>
+            To: Dinsdale <bar@foo.com>
+            Subject: Nudge nudge, wink, wink
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 7bit
+            MIME-Version: 1.0
+
+            oh boy, know what I mean, know what I mean?
+            """).encode().replace(b"\n", b"\r\n")
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.SMTP)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 

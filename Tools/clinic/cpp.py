@@ -1,7 +1,13 @@
+import dataclasses as dc
 import re
 import sys
+from typing import NoReturn
 
-def negate(condition):
+
+TokenAndCondition = tuple[str, str]
+TokenStack = list[TokenAndCondition]
+
+def negate(condition: str) -> str:
     """
     Returns a CPP conditional that is the opposite of the conditional passed in.
     """
@@ -9,6 +15,11 @@ def negate(condition):
         return condition[1:]
     return "!" + condition
 
+
+is_a_simple_defined = re.compile(r'^defined\s*\(\s*[A-Za-z0-9_]+\s*\)$').match
+
+
+@dc.dataclass(repr=False)
 class Monitor:
     """
     A simple C preprocessor that scans C source and computes, line by line,
@@ -21,35 +32,34 @@ class Monitor:
 
     Anyway this implementation seems to work well enough for the CPython sources.
     """
+    filename: str | None = None
+    _: dc.KW_ONLY
+    verbose: bool = False
 
-    is_a_simple_defined = re.compile(r'^defined\s*\(\s*[A-Za-z0-9_]+\s*\)$').match
-
-    def __init__(self, filename=None, *, verbose=False):
-        self.stack = []
+    def __post_init__(self) -> None:
+        self.stack: TokenStack = []
         self.in_comment = False
-        self.continuation = None
+        self.continuation: str | None = None
         self.line_number = 0
-        self.filename = filename
-        self.verbose = verbose
 
-    def __repr__(self):
-        return ''.join((
-            '<Monitor ',
+    def __repr__(self) -> str:
+        parts = (
             str(id(self)),
-            " line=", str(self.line_number),
-            " condition=", repr(self.condition()),
-            ">"))
+            f"line={self.line_number}",
+            f"condition={self.condition()!r}"
+        )
+        return f"<clinic.Monitor {' '.join(parts)}>"
 
-    def status(self):
+    def status(self) -> str:
         return str(self.line_number).rjust(4) + ": " + self.condition()
 
-    def condition(self):
+    def condition(self) -> str:
         """
         Returns the current preprocessor state, as a single #if condition.
         """
         return " && ".join(condition for token, condition in self.stack)
 
-    def fail(self, *a):
+    def fail(self, *a: object) -> NoReturn:
         if self.filename:
             filename = " " + self.filename
         else:
@@ -58,19 +68,11 @@ class Monitor:
         print("   ", ' '.join(str(x) for x in a))
         sys.exit(-1)
 
-    def close(self):
-        if self.stack:
-            self.fail("Ended file while still in a preprocessor conditional block!")
-
-    def write(self, s):
-        for line in s.split("\n"):
-            self.writeline(line)
-
-    def writeline(self, line):
+    def writeline(self, line: str) -> None:
         self.line_number += 1
         line = line.strip()
 
-        def pop_stack():
+        def pop_stack() -> TokenAndCondition:
             if not self.stack:
                 self.fail("#" + token + " without matching #if / #ifdef / #ifndef!")
             return self.stack.pop()
@@ -141,23 +143,15 @@ class Monitor:
         token = fields[0].lower()
         condition = ' '.join(fields[1:]).strip()
 
-        if_tokens = {'if', 'ifdef', 'ifndef'}
-        all_tokens = if_tokens | {'elif', 'else', 'endif'}
-
-        if token not in all_tokens:
-            return
-
-        # cheat a little here, to reuse the implementation of if
-        if token == 'elif':
-            pop_stack()
-            token = 'if'
-
-        if token in if_tokens:
+        if token in {'if', 'ifdef', 'ifndef', 'elif'}:
             if not condition:
                 self.fail("Invalid format for #" + token + " line: no argument!")
-            if token == 'if':
-                if not self.is_a_simple_defined(condition):
+            if token in {'if', 'elif'}:
+                if not is_a_simple_defined(condition):
                     condition = "(" + condition + ")"
+                if token == 'elif':
+                    previous_token, previous_condition = pop_stack()
+                    self.stack.append((previous_token, negate(previous_condition)))
             else:
                 fields = condition.split()
                 if len(fields) != 1:
@@ -166,26 +160,35 @@ class Monitor:
                 condition = 'defined(' + symbol + ')'
                 if token == 'ifndef':
                     condition = '!' + condition
+                token = 'if'
 
-            self.stack.append(("if", condition))
-            if self.verbose:
-                print(self.status())
+            self.stack.append((token, condition))
+
+        elif token == 'else':
+            previous_token, previous_condition = pop_stack()
+            self.stack.append((previous_token, negate(previous_condition)))
+
+        elif token == 'endif':
+            while pop_stack()[0] != 'if':
+                pass
+
+        else:
             return
 
-        previous_token, previous_condition = pop_stack()
-
-        if token == 'else':
-            self.stack.append(('else', negate(previous_condition)))
-        elif token == 'endif':
-            pass
         if self.verbose:
             print(self.status())
 
-if __name__ == '__main__':
-    for filename in sys.argv[1:]:
-        with open(filename, "rt") as f:
+
+def _main(filenames: list[str] | None = None) -> None:
+    filenames = filenames or sys.argv[1:]
+    for filename in filenames:
+        with open(filename) as f:
             cpp = Monitor(filename, verbose=True)
             print()
             print(filename)
-            for line_number, line in enumerate(f.read().split('\n'), 1):
+            for line in f:
                 cpp.writeline(line)
+
+
+if __name__ == '__main__':
+    _main()

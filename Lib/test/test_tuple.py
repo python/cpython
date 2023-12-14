@@ -19,9 +19,10 @@ class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
     def test_getitem_error(self):
+        t = ()
         msg = "tuple indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            ()['a']
+            t['a']
 
     def test_constructors(self):
         super().test_constructors()
@@ -40,6 +41,33 @@ class TupleTest(seq_tests.CommonTest):
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             tuple(sequence=())
+
+    def test_keywords_in_subclass(self):
+        class subclass(tuple):
+            pass
+        u = subclass([1, 2])
+        self.assertIs(type(u), subclass)
+        self.assertEqual(list(u), [1, 2])
+        with self.assertRaises(TypeError):
+            subclass(sequence=())
+
+        class subclass_with_init(tuple):
+            def __init__(self, arg, newarg=None):
+                self.newarg = newarg
+        u = subclass_with_init([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_init)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
+
+        class subclass_with_new(tuple):
+            def __new__(cls, arg, newarg=None):
+                self = super().__new__(cls, arg)
+                self.newarg = newarg
+                return self
+        u = subclass_with_new([1, 2], newarg=3)
+        self.assertIs(type(u), subclass_with_new)
+        self.assertEqual(list(u), [1, 2])
+        self.assertEqual(u.newarg, 3)
 
     def test_truth(self):
         super().test_truth()

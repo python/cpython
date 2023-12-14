@@ -6,7 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
-from test import support
+from test.support import os_helper
 
 if sys.platform != 'win32':
     raise unittest.SkipTest("test only relevant on win32")
@@ -25,14 +25,12 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertRaisesRegex(ValueError,
             "negative file descriptor", ConIO, -1)
 
-        fd, _ = tempfile.mkstemp()
-        try:
+        with tempfile.TemporaryFile() as tmpfile:
+            fd = tmpfile.fileno()
             # Windows 10: "Cannot open non-console file"
             # Earlier: "Cannot open console output buffer for reading"
             self.assertRaisesRegex(ValueError,
                 "Cannot open (console|non-console file)", ConIO, fd)
-        finally:
-            os.close(fd)
 
         try:
             f = ConIO(0)
@@ -94,9 +92,11 @@ class WindowsConsoleIOTests(unittest.TestCase):
         f.close()
         f.close()
 
-        f = open('C:/con', 'rb', buffering=0)
-        self.assertIsInstance(f, ConIO)
-        f.close()
+        # bpo-45354: Windows 11 changed MS-DOS device name handling
+        if sys.getwindowsversion()[:3] < (10, 0, 22000):
+            f = open('C:/con', 'rb', buffering=0)
+            self.assertIsInstance(f, ConIO)
+            f.close()
 
     @unittest.skipIf(sys.getwindowsversion()[:2] <= (6, 1),
         "test does not work on Windows 7 and earlier")
@@ -111,12 +111,13 @@ class WindowsConsoleIOTests(unittest.TestCase):
 
     def test_conout_path(self):
         temp_path = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, temp_path)
+        self.addCleanup(os_helper.rmtree, temp_path)
 
         conout_path = os.path.join(temp_path, 'CONOUT$')
 
         with open(conout_path, 'wb', buffering=0) as f:
-            if sys.getwindowsversion()[:2] > (6, 1):
+            # bpo-45354: Windows 11 changed MS-DOS device name handling
+            if (6, 1) < sys.getwindowsversion()[:3] < (10, 0, 22000):
                 self.assertIsInstance(f, ConIO)
             else:
                 self.assertNotIsInstance(f, ConIO)
@@ -146,6 +147,10 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertStdinRoundTrip('ϼўТλФЙ')
         # Combining characters
         self.assertStdinRoundTrip('A͏B ﬖ̳AA̝')
+
+    # bpo-38325
+    @unittest.skipIf(True, "Handling Non-BMP characters is broken")
+    def test_input_nonbmp(self):
         # Non-BMP
         self.assertStdinRoundTrip('\U00100000\U0010ffff\U0010fffd')
 
@@ -165,6 +170,8 @@ class WindowsConsoleIOTests(unittest.TestCase):
 
                 self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
 
+    # bpo-38325
+    @unittest.skipIf(True, "Handling Non-BMP characters is broken")
     def test_partial_surrogate_reads(self):
         # Test that reading less than 1 full character works when stdin
         # contains surrogate pairs that cannot be decoded to UTF-8 without

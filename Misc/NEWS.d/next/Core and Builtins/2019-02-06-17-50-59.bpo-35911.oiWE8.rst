@@ -1,3 +1,0 @@
-Enable the creation of cell objects by adding a ``cell.__new__`` method, and
-expose the type ``cell`` in ``Lib/types.py`` under the name CellType. Patch by
-Pierre Glaser.
