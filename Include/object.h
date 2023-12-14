@@ -290,7 +290,7 @@ _Py_ThreadId(void)
     // Assume that we only support C11 compilers.
     static __thread int __tp = 0;
     #endif
-    // Hack: Using characteristics of TLS address mapping.
+    // gh-112535: Using characteristics of TLS address mapping.
     // The address of the thread-local variable is not equal with the actual thread pointer,
     // However, it has the property of being determined by loader at runtime, with no duplication of values
     // between different threads. So it can be used as the similar role of __builtin_thread_pointer().
