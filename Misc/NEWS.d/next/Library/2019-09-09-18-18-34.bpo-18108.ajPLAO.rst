@@ -1,1 +1,1 @@
-shutil.chown now includes dir_fd and follow_symlinks keyword arguments
+:func:`shutil.chown` now includes *dir_fd* and *follow_symlinks* keyword arguments.

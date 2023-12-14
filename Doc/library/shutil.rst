@@ -368,7 +368,7 @@ Directory and files operations
 
    .. availability:: Unix, Windows.
 
-.. function:: chown(path, user=None, group=None, dir_fd=None, \
+.. function:: chown(path, user=None, group=None, *, dir_fd=None, \
                     follow_symlinks=True)
 
    Change owner *user* and/or *group* of the given *path*.
