@@ -154,7 +154,7 @@ def generate_expansion_table(
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         if inst.is_super():
             pieces = inst.name.split("_")
-            assert len(pieces) == 4, f"{name} doesn't look like a super-instr"
+            assert len(pieces) == 4, f"{inst.name} doesn't look like a super-instr"
             name1 = "_".join(pieces[:2])
             name2 = "_".join(pieces[2:])
             assert name1 in analysis.instructions, f"{name1} doesn't match any instr"
@@ -185,7 +185,7 @@ def generate_expansion_table(
     out.emit("const struct opcode_macro_expansion\n")
     out.emit("_PyOpcode_macro_expansion[256] = {\n")
     for inst_name, expansions in expansions_table.items():
-        uops = [f"{{ {name} {size}, {offset} }}" for (name, size, offset) in expansions]
+        uops = [f"{{ {name}, {size}, {offset} }}" for (name, size, offset) in expansions]
         out.emit(f"[{inst_name}] = {{ .nuops = {len(expansions)}, .uops = {{ {", ".join(uops)} }} }},\n")
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
