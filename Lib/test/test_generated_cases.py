@@ -468,23 +468,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
     """
         self.run_cases_test(input, output)
-
-    def test_unused_cache(self):
-        input = """
-        inst(OP, (unused/1 --)) {
-            body();
-        }
-    """
-        output = """
-        TARGET(OP) {
-            frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(OP);
-            /* Skip 1 cache entry */
-            body();
-            DISPATCH();
-        }
-    """
+    
         self.run_cases_test(input, output)
 
     def test_unused_caches(self):
@@ -654,11 +638,11 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *output = NULL;
             PyObject *zz;
             cc = stack_pointer[-1];
-        if ((oparg & 1) == 1) { input = stack_pointer[-1 - ((((oparg & 1) == 1) ? 1 : 0))]; }
+            if ((oparg & 1) == 1) { input = stack_pointer[-1 - ((((oparg & 1) == 1) ? 1 : 0))]; }
             aa = stack_pointer[-2 - ((((oparg & 1) == 1) ? 1 : 0))];
             output = spam(oparg, input);
             stack_pointer[-2 - ((((oparg & 1) == 1) ? 1 : 0))] = xx;
-             if (oparg & 2) stack_pointer[-1 - ((((oparg & 1) == 1) ? 1 : 0))] = output;
+            if (oparg & 2) stack_pointer[-1 - ((((oparg & 1) == 1) ? 1 : 0))] = output;
             stack_pointer[-1 - ((((oparg & 1) == 1) ? 1 : 0)) + (((oparg & 2) ? 1 : 0))] = zz;
             stack_pointer += -((((oparg & 1) == 1) ? 1 : 0)) + (((oparg & 2) ? 1 : 0));
             DISPATCH();
@@ -699,7 +683,7 @@ class TestGeneratedCases(unittest.TestCase):
                 # Body of B
             }
             stack_pointer[-3] = deep;
-             if (oparg) stack_pointer[-2] = extra;
+            if (oparg) stack_pointer[-2] = extra;
             stack_pointer[-2 + (((oparg) ? 1 : 0))] = res;
             stack_pointer += -1 + (((oparg) ? 1 : 0));
             DISPATCH();

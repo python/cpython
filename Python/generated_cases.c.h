@@ -683,7 +683,7 @@
             PyObject *stop;
             PyObject *start;
             PyObject *slice;
-        if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
+            if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
             stop = stack_pointer[-1 - (((oparg == 3) ? 1 : 0))];
             start = stack_pointer[-2 - (((oparg == 3) ? 1 : 0))];
             slice = PySlice_New(start, stop, step);
@@ -1176,7 +1176,7 @@
             PyObject *callargs;
             PyObject *func;
             PyObject *result;
-        if (oparg & 1) { kwargs = stack_pointer[-((oparg & 1))]; }
+            if (oparg & 1) { kwargs = stack_pointer[-((oparg & 1))]; }
             callargs = stack_pointer[-1 - ((oparg & 1))];
             func = stack_pointer[-3 - ((oparg & 1))];
             // DICT_MERGE is called before this opcode if there are kwargs.
@@ -3434,7 +3434,7 @@
                 }
             }
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = self_or_null;
+            if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3467,7 +3467,7 @@
                 Py_DECREF(owner);
             }
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3544,7 +3544,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3586,7 +3586,7 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
+            if (1) stack_pointer[0] = self;
             stack_pointer += (((1) ? 1 : 0));
             DISPATCH();
         }
@@ -3621,7 +3621,7 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
+            if (1) stack_pointer[0] = self;
             stack_pointer += (((1) ? 1 : 0));
             DISPATCH();
         }
@@ -3668,7 +3668,7 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
+            if (1) stack_pointer[0] = self;
             stack_pointer += (((1) ? 1 : 0));
             DISPATCH();
         }
@@ -3707,7 +3707,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3850,7 +3850,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3906,7 +3906,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -4134,7 +4134,7 @@
                 null = NULL;
             }
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
+            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + ((oparg & 1));
             DISPATCH();
         }
@@ -4175,7 +4175,7 @@
                 null = NULL;
             }
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
+            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + ((oparg & 1));
             DISPATCH();
         }
@@ -4209,7 +4209,7 @@
                 null = NULL;
             }
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
+            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + ((oparg & 1));
             DISPATCH();
         }
@@ -4337,7 +4337,7 @@
                 null = NULL;
             }
             stack_pointer[-3] = attr;
-             if (oparg & 1) stack_pointer[-2] = null;
+            if (oparg & 1) stack_pointer[-2] = null;
             stack_pointer += -2 + ((oparg & 1));
             DISPATCH();
         }
