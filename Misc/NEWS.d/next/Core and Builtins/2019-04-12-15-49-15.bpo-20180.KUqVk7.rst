@@ -1,2 +1,0 @@
-``dict.pop()`` is now up to 33% faster thanks to Argument Clinic. Patch by
-Inada Naoki.

@@ -1,4 +1,0 @@
-Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
-convenience functions to automate the necessary tasks usually involved when
-creating a server socket, including accepting both IPv4 and IPv6 connections
-on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)

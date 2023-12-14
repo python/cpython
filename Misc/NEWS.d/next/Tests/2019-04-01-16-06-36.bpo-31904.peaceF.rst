@@ -1,1 +1,0 @@
-Fix test_tabnanny on VxWorks: adjust ENOENT error message.

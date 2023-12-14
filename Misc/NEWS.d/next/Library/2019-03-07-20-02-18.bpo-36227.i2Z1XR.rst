@@ -1,2 +1,0 @@
-Added support for keyword arguments `default_namespace` and `xml_declaration` in functions
-ElementTree.tostring() and ElementTree.tostringlist().

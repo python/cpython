@@ -1,2 +1,0 @@
-Added current version of libffi to cpython-source-deps. 
-Change _ctypes to use current version of libffi on Windows.

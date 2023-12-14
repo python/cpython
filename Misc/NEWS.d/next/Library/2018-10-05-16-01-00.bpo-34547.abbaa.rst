@@ -1,2 +1,0 @@
-:class:`wsgiref.handlers.BaseHandler` now handles abrupt client connection
-terminations gracefully. Patch by Petter Strandmark.

@@ -167,7 +167,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       Return a representation of the message corresponding to *key*. If no such
       message exists, *default* is returned if the method was called as
       :meth:`get` and a :exc:`KeyError` exception is raised if the method was
-      called as :meth:`__getitem__`. The message is represented as an instance
+      called as :meth:`~object.__getitem__`. The message is represented as an instance
       of the appropriate format-specific :class:`Message` subclass unless a
       custom message factory was specified when the :class:`Mailbox` instance
       was initialized.
@@ -308,6 +308,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    representation. If *create* is ``True``, the mailbox is created if it does not
    exist.
 
+   If *create* is ``True`` and the *dirname* path exists, it will be treated as
+   an existing maildir without attempting to verify its directory layout.
+
    It is for historical reasons that *dirname* is named as such rather than *path*.
 
    Maildir is a directory-based mailbox format invented for the qmail mail
@@ -380,6 +383,108 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       last 36 hours. The Maildir specification says that mail-reading programs
       should do this occasionally.
 
+
+   .. method:: get_flags(key)
+
+      Return as a string the flags that are set on the message
+      corresponding to *key*.
+      This is the same as ``get_message(key).get_flags()`` but much
+      faster, because it does not open the message file.
+      Use this method when iterating over the keys to determine which
+      messages are interesting to get.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.get_flags` method instead, because
+      changes made by the message's :meth:`~MaildirMessage.set_flags`,
+      :meth:`~MaildirMessage.add_flag` and :meth:`~MaildirMessage.remove_flag`
+      methods are not reflected here until the mailbox's
+      :meth:`__setitem__` method is called.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: set_flags(key, flags)
+
+      On the message corresponding to *key*, set the flags specified
+      by *flags* and unset all others.
+      Calling ``some_mailbox.set_flags(key, flags)`` is similar to ::
+
+         one_message = some_mailbox.get_message(key)
+         one_message.set_flags(flags)
+         some_mailbox[key] = one_message
+
+      but faster, because it does not open the message file.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.set_flags` method instead, because
+      changes made with this mailbox method will not be visible to the
+      message object's method, :meth:`~MaildirMessage.get_flags`.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: add_flag(key, flag)
+
+      On the message corresponding to *key*, set the flags specified
+      by *flag* without changing other flags. To add more than one
+      flag at a time, *flag* may be a string of more than one character.
+
+      Considerations for using this method versus the message object's
+      :meth:`~MaildirMessage.add_flag` method are similar to
+      those for :meth:`set_flags`; see the discussion there.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: remove_flag(key, flag)
+
+      On the message corresponding to *key*, unset the flags specified
+      by *flag* without changing other flags. To remove more than one
+      flag at a time, *flag* may be a string of more than one character.
+
+      Considerations for using this method versus the message object's
+      :meth:`~MaildirMessage.remove_flag` method are similar to
+      those for :meth:`set_flags`; see the discussion there.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: get_info(key)
+
+      Return a string containing the info for the message
+      corresponding to *key*.
+      This is the same as ``get_message(key).get_info()`` but much
+      faster, because it does not open the message file.
+      Use this method when iterating over the keys to determine which
+      messages are interesting to get.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.get_info` method instead, because
+      changes made by the message's :meth:`~MaildirMessage.set_info` method
+      are not reflected here until the mailbox's :meth:`__setitem__` method
+      is called.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: set_info(key, info)
+
+      Set the info of the message corresponding to *key* to *info*.
+      Calling ``some_mailbox.set_info(key, flags)`` is similar to ::
+
+         one_message = some_mailbox.get_message(key)
+         one_message.set_info(info)
+         some_mailbox[key] = one_message
+
+      but faster, because it does not open the message file.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.set_info` method instead, because
+      changes made with this mailbox method will not be visible to the
+      message object's method, :meth:`~MaildirMessage.get_info`.
+
+      .. versionadded:: 3.13
+
    Some :class:`Mailbox` methods implemented by :class:`Maildir` deserve special
    remarks:
 
@@ -423,16 +528,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `maildir man page from qmail <http://www.qmail.org/man/man5/maildir.html>`_
-      The original specification of the format.
+   `maildir man page from Courier <https://www.courier-mta.org/maildir.html>`_
+      A specification of the format. Describes a common extension for
+      supporting folders.
 
    `Using maildir format <https://cr.yp.to/proto/maildir.html>`_
       Notes on Maildir by its inventor. Includes an updated name-creation scheme and
       details on "info" semantics.
-
-   `maildir man page from Courier <http://www.courier-mta.org/maildir.html>`_
-      Another specification of the format. Describes a common extension for supporting
-      folders.
 
 
 .. _mailbox-mbox:
@@ -477,16 +579,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
 
-   `mbox man page from qmail <http://www.qmail.org/man/man5/mbox.html>`_
-      A specification of the format and its variations.
-
    `mbox man page from tin <http://www.tin.org/bin/man.cgi?section=5&topic=mbox>`_
-      Another specification of the format, with details on locking.
+      A specification of the format, with details on locking.
 
    `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <https://www.jwz.org/doc/content-length.html>`_
       An argument for using the original mbox format rather than a variation.
@@ -591,7 +690,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls. For MH mailboxes, locking
+      :c:func:`!flock` and :c:func:`!lockf` system calls. For MH mailboxes, locking
       the mailbox means locking the :file:`.mh_sequences` file and, only for the
       duration of any operations that affect them, locking individual message
       files.
@@ -617,7 +716,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `nmh - Message Handling System <http://www.nongnu.org/nmh/>`_
+   `nmh - Message Handling System <https://www.nongnu.org/nmh/>`_
       Home page of :program:`nmh`, an updated version of the original :program:`mh`.
 
    `MH & nmh: Email for Users & Programmers <https://rand-mh.sourceforge.io/book/>`_
@@ -689,7 +788,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -740,7 +839,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -841,7 +940,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       .. note::
 
          A message is typically moved from :file:`new` to :file:`cur` after its
-         mailbox has been accessed, whether or not the message is has been
+         mailbox has been accessed, whether or not the message has been
          read. A message ``msg`` has been read if ``"S" in msg.get_flags()`` is
          ``True``.
 
@@ -1513,7 +1612,7 @@ The following exception classes are defined in the :mod:`mailbox` module:
 
    Raised when some mailbox-related condition beyond the control of the program
    causes it to be unable to proceed, such as when failing to acquire a lock that
-   another program already holds a lock, or when a uniquely-generated file name
+   another program already holds a lock, or when a uniquely generated file name
    already exists.
 
 

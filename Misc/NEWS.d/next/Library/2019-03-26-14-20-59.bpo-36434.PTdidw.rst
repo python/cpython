@@ -1,1 +1,0 @@
-Errors during writing to a ZIP file no longer prevent to properly close it.
