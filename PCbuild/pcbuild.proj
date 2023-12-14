@@ -24,7 +24,7 @@
       <BuildTarget>Build</BuildTarget>
       <CleanTarget>Clean</CleanTarget>
       <CleanAllTarget>CleanAll</CleanAllTarget>
-      <BuildInParallel>true</BuildInParallel>
+      <BuildInParallel>false</BuildInParallel>
     </PreFreezeProjects>
     <FreezeProjects>
       <Platform>$(PreferredToolArchitecture)</Platform>

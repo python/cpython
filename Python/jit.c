@@ -195,35 +195,35 @@ patch(char *base, const Hole *hole, uint64_t *patches)
             assert(IS_AARCH64_BRANCH(*loc32));
             value -= (uint64_t)location;
             assert(bits(value, 0, 2, 0) == 0);
-            patch_32_bits(*loc32, value, 2, 26, 0);
+            patch_32_bits(loc32, value, 2, 26, 0);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
             // 16-bit low part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 0 of 3"):
             assert(bits(*loc32, 21, 2, 0) == 0);
-            patch_32_bits(*loc32, value, 0, 16, 5);
+            patch_32_bits(loc32, value, 0, 16, 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
             // 16-bit middle-low part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 1 of 3"):
             assert(bits(*loc32, 21, 2, 0) == 1);
-            patch_32_bits(*loc32, value, 16, 16, 5);
+            patch_32_bits(loc32, value, 16, 16, 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
             // 16-bit middle-high part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 2 of 3"):
             assert(bits(*loc32, 21, 2, 0) == 2);
-            patch_32_bits(*loc32, value, 32, 16, 5);
+            patch_32_bits(loc32, value, 32, 16, 5);
             return;
         case HoleKind_R_AARCH64_MOVW_UABS_G3:
             // 16-bit high part of an absolute address.
             assert(IS_AARCH64_MOV(*loc32));
             // Check the implicit shift (this is "part 3 of 3"):
             assert(bits(*loc32, 21, 2, 0) == 3);
-            patch_32_bits(*loc32, value, 48, 16, 5);
+            patch_32_bits(loc32, value, 48, 16, 5);
             return;
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
             // 21-bit count of pages between this page and an absolute address's
@@ -235,9 +235,9 @@ patch(char *base, const Hole *hole, uint64_t *patches)
             // Number of pages between this page and the value's page:
             value = bits(value, 12, 21, 0) - bits(location, 12, 21, 0);
             // value[0:2] goes in loc[29:31]:
-            patch_32_bits(*loc32, value, 0, 2, 29);
+            patch_32_bits(loc32, value, 0, 2, 29);
             // value[2:21] goes in loc[5:26]:
-            patch_32_bits(*loc32, value, 2, 19, 5);
+            patch_32_bits(loc32, value, 2, 19, 5);
             return;
         case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
             // 12-bit low part of an absolute address. Pairs nicely with
@@ -252,7 +252,7 @@ patch(char *base, const Hole *hole, uint64_t *patches)
             }
             value = bits(value, 0, 12, 0);
             assert(bits(value, 0, shift, 0) == 0);
-            patch_32_bits(*loc32, value, shift, 12, 10);
+            patch_32_bits(loc32, value, shift, 12, 10);
             return;
     }
     Py_UNREACHABLE();
