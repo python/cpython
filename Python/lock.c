@@ -418,7 +418,7 @@ void
 _PyRWMutex_RUnlock(_PyRWMutex *rwmutex)
 {
     uintptr_t bits = _Py_atomic_add_uintptr(&rwmutex->bits, -(1 << _PyRWMutex_READER_SHIFT));
-    assert(rw_mutex_reader_count(bits) > 0 && "lock was not read-locked");
+    assert(rwmutex_reader_count(bits) > 0 && "lock was not read-locked");
     bits -= (1 << _PyRWMutex_READER_SHIFT);
 
     if (rwmutex_reader_count(bits) == 0 && (bits & _Py_HAS_PARKED)) {
