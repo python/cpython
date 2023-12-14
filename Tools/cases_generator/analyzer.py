@@ -444,7 +444,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 if target.text in instructions:
                     instructions[target.text].is_target = True
     # Hack
-    instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
+    if "BINARY_OP_INPLACE_ADD_UNICODE" in instructions:
+        instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
     return Analysis(instructions, uops, families, pseudos)
 
 
