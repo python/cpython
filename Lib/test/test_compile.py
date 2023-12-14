@@ -446,7 +446,7 @@ class TestSpecifics(unittest.TestCase):
 
     def test_condition_expression_with_dead_blocks_compiles(self):
         # See gh-113054
-        compile('if 5 if 5 else T:y', '<eval>', 'exec')
+        compile('if (5 if 5 else T): 0', '<eval>', 'exec')
 
     def test_compile_invalid_namedexpr(self):
         # gh-109351
