@@ -10,13 +10,14 @@
 
 --------------
 
-The :mod:`!rlcompleter` module defines a completion function suitable for the
-:mod:`readline` module by completing valid Python identifiers and keywords.
+The :mod:`!rlcompleter` module defines a completion function suitable to be
+passed to :func:`set_completer` in the :mod:`readline` module.
 
 When this module is imported on a Unix platform with the :mod:`readline` module
 available, an instance of the :class:`Completer` class is automatically created
 and its :meth:`~Completer.complete` method is set as the
-:ref:`readline completer <readline-completion>`.
+:ref:`readline completer <readline-completion>`. The method provides
+completion of valid Python :ref:`identifiers and keywords <identifiers>`.
 
 Example::
 
@@ -46,7 +47,11 @@ this module can still be used for custom purposes.
 
    .. method:: Completer.complete(text, state)
 
-      Return the *state*\ th completion for *text*.
+      Return the next possible completion for *text*.
+
+      When called by the :mod:`readline` module, this method is called
+      successively with ``state == 0, 1, 2, ...`` until the method returns
+      ``None``.
 
       If called for *text* that doesn't include a period character (``'.'``), it will
       complete from names currently defined in :mod:`__main__`, :mod:`builtins` and
