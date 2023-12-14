@@ -210,6 +210,9 @@ class PseudoInstruction:
     def dump(self, indent: str) -> None:
         print(indent, self.name, "->", " or ".join([t.name for t in self.targets]))
 
+    @property
+    def properties(self) -> Properties:
+        return Properties.from_list([i.properties for i in self.targets])
 
 @dataclass
 class Family:

@@ -176,7 +176,7 @@ _specialized_opmap = {
     'UNPACK_SEQUENCE_TWO_TUPLE': 218,
 }
 
-_opmap = {
+opmap = {
     'CACHE': 0,
     'RESERVED': 17,
     'RESUME': 149,

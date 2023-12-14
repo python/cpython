@@ -187,16 +187,23 @@ def generate_name_table(
 def generate_metadata_table(
     analysis: Analysis, out: CWriter
 ) -> None:
+    table_size = 256 + len(analysis.pseudos) 
     out.emit("struct opcode_metadata {\n")
     out.emit("uint8_t valid_entry;\n");
-    out.emit("uint8_t instr_format;\n");
-    out.emit("uint16_t flags;\n");
+    out.emit("int8_t instr_format;\n");
+    out.emit("int16_t flags;\n");
     out.emit("};\n\n")
-    out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];\n")
+    out.emit(f"extern const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
-    out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {\n")
+    out.emit(f"const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}] = {{\n")
     for inst in sorted(analysis.instructions.values(), key = lambda t:t.name):
         out.emit(f"[{inst.name}] = {{ true, {get_format(inst)}, {cflags(inst.properties)} }},\n")
+    for pseudo in sorted(analysis.pseudos.values(), key = lambda t:t.name):
+        if pseudo.flags:
+            flags = " | ".join(f"{flag}_FLAG" for flag in pseudo.flags)
+        else:
+            flags = cflags(pseudo.properties)
+        out.emit(f"[{pseudo.name}] = {{ true, -1, {flags} }},\n")
     out.emit("};\n")
     out.emit("#endif\n\n")
 

@@ -74,7 +74,7 @@ def generate_opmap(
     analysis: Analysis, out: CWriter
 ) -> None:
     specialized = get_specialized(analysis)
-    out.emit("_opmap = {\n")
+    out.emit("opmap = {\n")
     for inst, op in analysis.opmap.items():
         if inst not in specialized:
             out.emit(f"'{inst}': {analysis.opmap[inst]},\n")
