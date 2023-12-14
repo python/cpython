@@ -506,10 +506,15 @@ done:
     HANDLE hFile;
     wchar_t resolved[MAXPATHLEN+1];
     int len = 0, err;
+    Py_ssize_t pathlen;
     PyObject *result;
 
-    wchar_t *path = PyUnicode_AsWideCharString(pathobj, NULL);
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, &pathlen);
     if (!path) {
+        return NULL;
+    }
+    if (wcslen(path) != pathlen) {
+        PyErr_SetString(PyExc_ValueError, "path contains embedded nulls");
         return NULL;
     }
 
@@ -535,7 +540,11 @@ done:
                 len -= 4;
             }
         }
-        result = PyUnicode_FromWideChar(p, len);
+        if (CompareStringOrdinal(path, (int)pathlen, p, len, TRUE) == CSTR_EQUAL) {
+            result = Py_NewRef(pathobj);
+        } else {
+            result = PyUnicode_FromWideChar(p, len);
+        }
     } else {
         result = Py_NewRef(pathobj);
     }
