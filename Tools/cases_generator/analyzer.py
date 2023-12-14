@@ -74,7 +74,6 @@ class Skip:
     def properties(self) -> Properties:
         return SKIP_PROPERTIES
 
-
 @dataclass
 class StackItem:
     name: str
@@ -151,6 +150,12 @@ class Uop:
             return False
         return True
 
+    def is_super(self) -> bool:
+        for tkn in self.body:
+            if tkn.kind == "IDENTIFIER" and tkn.text == "oparg1":
+                return True
+        return False
+
 
 Part = Uop | Skip
 
@@ -179,6 +184,15 @@ class Instruction:
     @property
     def size(self) -> int:
         return 1 + sum(part.size for part in self.parts)
+
+    def is_super(self) -> bool:
+        if len(self.parts) != 1:
+            return False
+        uop = self.parts[0]
+        if isinstance(uop, Uop):
+            return uop.is_super()
+        else:
+            return False
 
 
 @dataclass

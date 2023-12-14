@@ -12,6 +12,7 @@ from analyzer import (
     Instruction,
     analyze_files,
     Skip,
+    Uop,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -23,19 +24,31 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO
 
+# Constants used instead of size for macro expansions.
+# Note: 1, 2, 4 must match actual cache entry sizes.
+OPARG_SIZES = {
+    "OPARG_FULL": 0,
+    "OPARG_CACHE_1": 1,
+    "OPARG_CACHE_2": 2,
+    "OPARG_CACHE_4": 4,
+    "OPARG_TOP": 5,
+    "OPARG_BOTTOM": 6,
+    "OPARG_SAVE_RETURN_OFFSET": 7,
+}
+
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 
 FLAGS = [
     "ARG",
     "CONST",
-    "ERROR",
     "NAME",
-    "FREE",
     "JUMP",
+    "LOCAL",
+    "ERROR",
+    "FREE",
     "DEOPT",
     "ESCAPES",
-    "LOCAL",
 ]
 
 def generate_flag_macros(out: CWriter) -> None:
@@ -131,6 +144,58 @@ def generate_metadata_table(
         out.emit(f"[{inst.name}] = {{ true, {get_format(inst)}, {cflags(inst.properties)} }},\n")
     out.emit("};\n\n")
 
+def generate_expansion_table(
+    analysis: Analysis, out: CWriter
+) -> None:
+    expansions_table: dict[str, list[tuple[str, int, int]]] = {}
+    for inst in sorted(analysis.instructions.values(), key=lambda t:t.name):
+        offset: int = 0  # Cache effect offset
+        expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
+        if inst.is_super():
+            pieces = inst.name.split("_")
+            assert len(pieces) == 4, f"{name} doesn't look like a super-instr"
+            name1 = "_".join(pieces[:2])
+            name2 = "_".join(pieces[2:])
+            assert name1 in analysis.instructions, f"{name1} doesn't match any instr"
+            assert name2 in analysis.instructions, f"{name2} doesn't match any instr"
+            instr1 = analysis.instructions[name1]
+            instr2 = analysis.instructions[name2]
+            assert len(instr1.parts) == 1, f"{name1} is not a good superinstruction part"
+            assert len(instr2.parts) == 1, f"{name2} is not a good superinstruction part"
+            expansions.append((instr1.parts[0].name, OPARG_SIZES["OPARG_TOP"], 0))
+            expansions.append((instr2.parts[0].name, OPARG_SIZES["OPARG_BOTTOM"], 0))
+        elif is_viable_expansion(inst):
+            for part in inst.parts:
+                size = part.size
+                if part.name == "_SAVE_RETURN_OFFSET":
+                    size = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"]
+                expansions.append((part.name, size, offset if size else 0))
+                offset += part.size
+        expansions_table[inst.name] = expansions
+    max_uops = max (len(ex) for ex in expansions_table.values())
+    out.emit(f"#define MAX_UOP_PER_EXPANSION {max_uops}\n")
+    out.emit("struct opcode_macro_expansion {\n")
+    out.emit("int nuops;")
+    out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[MAX_UOP_PER_EXPANSION];\n")
+    out.emit("};\n")
+    out.emit("extern const struct opcode_macro_expansion\n")
+    out.emit("_PyOpcode_macro_expansion[256];\n\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
+    out.emit("const struct opcode_macro_expansion\n")
+    out.emit("_PyOpcode_macro_expansion[256] = {\n")
+    for inst_name, expansions in expansions_table.items():
+        uops = [f"{{ {name} {size}, {offset} }}" for (name, size, offset) in expansions]
+        out.emit(f"[{inst_name}] = {{ .nops = {len(expansions)}, .uops = {{ {", ".join(uops)} }}}},\n")
+    out.emit("};\n")
+    out.emit("#endif // NEED_OPCODE_METADATA\n\n")
+
+def is_viable_expansion(inst: Instruction) -> bool:
+    "An instruction can be expanded if all its parts are viable for tier 2"
+    for part in inst.parts:
+        if isinstance(part, Uop) and not part.is_viable():
+            return False
+    return True
+
 
 def generate_psuedo_targets(
     analysis: Analysis, out: CWriter
@@ -170,6 +235,7 @@ def generate_opcode_metadata(
     with out.header_guard("Py_CORE_OPCODE_METADATA_H"):
         out.emit("#ifndef Py_BUILD_CORE\n")
         out.emit('#  error "this header requires Py_BUILD_CORE define"\n')
+        out.emit("#endif\n")
         out.emit("#include <stdbool.h>              // bool\n")
         out.emit('#include "opcode_ids.h"\n')
         generate_is_pseudo(analysis, out)
@@ -177,14 +243,14 @@ def generate_opcode_metadata(
         generate_instruction_formats(analysis, out)
         out.emit("#define IS_VALID_OPCODE(OP) \\\n")
         out.emit("    (((OP) >= 0) && ((OP) < 256) && \\\n")
-        out.emit("    (_PyOpcode_opcode_metadata[(OP)].valid_entry))\n\n")
+        out.emit("     (_PyOpcode_opcode_metadata[(OP)].valid_entry))\n\n")
         generate_flag_macros(out)
         generate_deopt_table(analysis, out)
         generate_cache_table(analysis, out)
         generate_metadata_table(analysis, out)
+        generate_expansion_table(analysis, out)
         generate_name_table(analysis, out)
         generate_psuedo_targets(analysis, out)
-        out.emit("#endif // Py_BUILD_CORE\n")
 
 
 arg_parser = argparse.ArgumentParser(

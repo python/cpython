@@ -534,15 +534,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
 };
 #endif // NEED_OPCODE_METADATA
 
-extern const struct opcode_macro_expansion
-_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];
-
-#ifdef NEED_OPCODE_METADATA
-const struct opcode_macro_expansion
-_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
-};
-#endif // NEED_OPCODE_METADATA
-
 
 #ifdef __cplusplus
 }

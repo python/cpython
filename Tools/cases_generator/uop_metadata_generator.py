@@ -11,6 +11,7 @@ from analyzer import (
     Analysis,
     Instruction,
     analyze_files,
+    Uop,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -41,19 +42,6 @@ def generate_names_and_flags(
         out.emit(f'[{name}] = "{name}",\n')
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
-
-def generate_expansion_table(
-    analysis: Analysis, out: CWriter
-) -> None:
-    out.emit("extern const struct opcode_macro_expansion\n")
-    out.emit("_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];\n\n")
-    out.emit("#ifdef NEED_OPCODE_METADATA\n")
-    out.emit("const struct opcode_macro_expansion\n")
-    out.emit("_PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {\n")
-
-    
-    out.emit("};\n")
-    out.emit("#endif // NEED_OPCODE_METADATA\n\n")
     
 def generate_uop_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO
@@ -64,7 +52,6 @@ def generate_uop_metadata(
         out.emit('#include <stdint.h>\n')
         out.emit('#include "pycore_uop_ids.h"\n')
         generate_names_and_flags(analysis, out)
-        generate_expansion_table(analysis, out)
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the header file with uop metadata.",
