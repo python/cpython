@@ -343,7 +343,7 @@ static void
 uop_dealloc(_PyUOpExecutorObject *self) {
     _Py_ExecutorClear((_PyExecutorObject *)self);
     if (self->executors != NULL) {
-        for (int i = Py_SIZE(self); --i >= 0; ) {
+        for (Py_ssize_t i = Py_SIZE(self); --i >= 0; ) {
             Py_XDECREF(self->executors[i]);
         }
     }
