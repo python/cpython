@@ -1019,7 +1019,7 @@ class PosixTester(unittest.TestCase):
             self.check_lchmod_link(posix.chmod, target, link)
         else:
             self.check_chmod_link(posix.chmod, target, link)
-            self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
+        self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
 
     @os_helper.skip_unless_symlink
     def test_chmod_dir_symlink(self):
@@ -1031,7 +1031,7 @@ class PosixTester(unittest.TestCase):
             self.check_lchmod_link(posix.chmod, target, link)
         else:
             self.check_chmod_link(posix.chmod, target, link)
-            self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
+        self.check_chmod_link(posix.chmod, target, link, follow_symlinks=True)
 
     @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
     @os_helper.skip_unless_symlink
