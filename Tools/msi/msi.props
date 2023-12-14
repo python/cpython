@@ -115,9 +115,6 @@
         <LinkerBindInputPaths Include="$(PGOBuildPath);$(BuildPath)">
             <BindName></BindName>
         </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(PySourcePath)Doc\build\htmlhelp">
-            <BindName></BindName>
-        </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(PySourcePath)">
             <BindName>src</BindName>
         </LinkerBindInputPaths>
@@ -158,9 +155,6 @@
         </_Uuid>
         <_Uuid Include="PythonwExeComponentGuid">
             <Uri>pythonw.exe</Uri>
-        </_Uuid>
-        <_Uuid Include="RemoveLib2to3PickleComponentGuid">
-            <Uri>lib2to3/pickles</Uri>
         </_Uuid>
         <_Uuid Include="CommonPythonRegComponentGuid">
             <Uri>registry</Uri>

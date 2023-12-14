@@ -8,6 +8,9 @@ Logging HOWTO
 
 .. currentmodule:: logging
 
+This page contains tutorial information. For links to reference information and a
+logging cookbook, please see :ref:`tutorial-ref-links`.
+
 Basic Logging Tutorial
 ----------------------
 
@@ -124,7 +127,7 @@ Logging to a file
 ^^^^^^^^^^^^^^^^^
 
 A very common situation is that of recording logging events in a file, so let's
-look at that next. Be sure to try the following in a newly-started Python
+look at that next. Be sure to try the following in a newly started Python
 interpreter, and don't just continue from the session described above::
 
    import logging
@@ -178,10 +181,11 @@ following example::
        raise ValueError('Invalid log level: %s' % loglevel)
    logging.basicConfig(level=numeric_level, ...)
 
-The call to :func:`basicConfig` should come *before* any calls to :func:`debug`,
-:func:`info` etc. As it's intended as a one-off simple configuration facility,
-only the first call will actually do anything: subsequent calls are effectively
-no-ops.
+The call to :func:`basicConfig` should come *before* any calls to
+:func:`debug`, :func:`info`, etc. Otherwise, those functions will call
+:func:`basicConfig` for you with the default options. As it's intended as a
+one-off simple configuration facility, only the first call will actually do
+anything: subsequent calls are effectively no-ops.
 
 If you run the above script several times, the messages from successive runs
 are appended to the file *example.log*. If you want each run to start afresh,
@@ -335,7 +339,7 @@ favourite beverage and carry on.
 If your logging needs are simple, then use the above examples to incorporate
 logging into your own scripts, and if you run into problems or don't
 understand something, please post a question on the comp.lang.python Usenet
-group (available at https://groups.google.com/forum/#!forum/comp.lang.python) and you
+group (available at https://groups.google.com/g/comp.lang.python) and you
 should receive help before too long.
 
 Still here? You can carry on reading the next few sections, which provide a
@@ -414,6 +418,7 @@ The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
 .. image:: logging_flow.png
+   :class: invert-in-dark-mode
 
 Loggers
 ^^^^^^^
@@ -551,14 +556,14 @@ raw message.  If there is no date format string, the default date format is:
 
     %Y-%m-%d %H:%M:%S
 
-with the milliseconds tacked on at the end. The ``style`` is one of `%`, '{'
-or '$'. If one of these is not specified, then '%' will be used.
+with the milliseconds tacked on at the end. The ``style`` is one of ``'%'``,
+``'{'``, or ``'$'``. If one of these is not specified, then ``'%'`` will be used.
 
-If the ``style`` is '%', the message format string uses
+If the ``style`` is ``'%'``, the message format string uses
 ``%(<dictionary key>)s`` styled string substitution; the possible keys are
-documented in :ref:`logrecord-attributes`. If the style is '{', the message
+documented in :ref:`logrecord-attributes`. If the style is ``'{'``, the message
 format string is assumed to be compatible with :meth:`str.format` (using
-keyword arguments), while if the style is '$' then the message format string
+keyword arguments), while if the style is ``'$'`` then the message format string
 should conform to what is expected by :meth:`string.Template.substitute`.
 
 .. versionchanged:: 3.2
@@ -974,7 +979,7 @@ provided:
 
 #. :class:`NullHandler` instances do nothing with error messages. They are used
    by library developers who want to use logging, but want to avoid the 'No
-   handlers could be found for logger XXX' message which can be displayed if
+   handlers could be found for logger *XXX*' message which can be displayed if
    the library user has not configured logging. See :ref:`library-config` for
    more information.
 
@@ -1100,10 +1105,18 @@ need:
 | Current process name when using ``multiprocessing`` | Set ``logging.logMultiprocessing`` to ``False``.  |
 | to manage multiple processes.                       |                                                   |
 +-----------------------------------------------------+---------------------------------------------------+
+| Current :class:`asyncio.Task` name when using       | Set ``logging.logAsyncioTasks`` to ``False``.     |
+| ``asyncio``.                                        |                                                   |
++-----------------------------------------------------+---------------------------------------------------+
 
 Also note that the core logging module only includes the basic handlers. If
 you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't
 take up any memory.
+
+.. _tutorial-ref-links:
+
+Other resources
+---------------
 
 .. seealso::
 

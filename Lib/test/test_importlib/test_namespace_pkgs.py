@@ -6,7 +6,6 @@ import os
 import sys
 import tempfile
 import unittest
-import warnings
 
 from test.test_importlib import util
 
@@ -65,12 +64,7 @@ class NamespacePackageTest(unittest.TestCase):
         self.resolved_paths = [
             os.path.join(self.root, path) for path in self.paths
         ]
-        self.ctx = namespace_tree_context(path=self.resolved_paths)
-        self.ctx.__enter__()
-
-    def tearDown(self):
-        # TODO: will we ever want to pass exc_info to __exit__?
-        self.ctx.__exit__(None, None, None)
+        self.enterContext(namespace_tree_context(path=self.resolved_paths))
 
 
 class SingleNamespacePackage(NamespacePackageTest):
@@ -84,12 +78,9 @@ class SingleNamespacePackage(NamespacePackageTest):
         with self.assertRaises(ImportError):
             import foo.two
 
-    def test_module_repr(self):
+    def test_simple_repr(self):
         import foo.one
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.assertEqual(foo.__spec__.loader.module_repr(foo),
-                            "<module 'foo' (namespace)>")
+        self.assertTrue(repr(foo).startswith("<module 'foo' (namespace) from ["))
 
 
 class DynamicPathNamespacePackage(NamespacePackageTest):

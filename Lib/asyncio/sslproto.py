@@ -107,8 +107,11 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         protocol's connection_lost() method will (eventually) called
         with None as its argument.
         """
-        self._closed = True
-        self._ssl_protocol._start_shutdown()
+        if not self._closed:
+            self._closed = True
+            self._ssl_protocol._start_shutdown()
+        else:
+            self._ssl_protocol = None
 
     def __del__(self, _warnings=warnings):
         if not self._closed:
@@ -196,12 +199,6 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         """Return the current size of the read buffer."""
         return self._ssl_protocol._get_read_buffer_size()
 
-    def get_write_buffer_limits(self):
-        """Get the high and low watermarks for write flow control.
-        Return a tuple (low, high) where low and high are
-        positive number of bytes."""
-        return self._ssl_protocol._transport.get_write_buffer_limits()
-
     @property
     def _protocol_paused(self):
         # Required for sendfile fallback pause_writing/resume_writing logic
@@ -247,7 +244,8 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         called with None as its argument.
         """
         self._closed = True
-        self._ssl_protocol._abort()
+        if self._ssl_protocol is not None:
+            self._ssl_protocol._abort()
 
     def _force_close(self, exc):
         self._closed = True
@@ -541,7 +539,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         # start handshake timeout count down
         self._handshake_timeout_handle = \
             self._loop.call_later(self._ssl_handshake_timeout,
-                                  lambda: self._check_handshake_timeout())
+                                  self._check_handshake_timeout)
 
         self._do_handshake()
 
@@ -621,7 +619,7 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._set_state(SSLProtocolState.FLUSHING)
             self._shutdown_timeout_handle = self._loop.call_later(
                 self._ssl_shutdown_timeout,
-                lambda: self._check_shutdown_timeout()
+                self._check_shutdown_timeout
             )
             self._do_flush()
 
@@ -760,7 +758,7 @@ class SSLProtocol(protocols.BufferedProtocol):
                     else:
                         break
                 else:
-                    self._loop.call_soon(lambda: self._do_read())
+                    self._loop.call_soon(self._do_read)
         except SSLAgainErrors:
             pass
         if offset > 0:
