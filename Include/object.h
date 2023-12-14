@@ -283,6 +283,13 @@ _Py_ThreadId(void)
     // Both GCC and Clang have supported __builtin_thread_pointer
     // for s390 from long time ago.
     tid = (uintptr_t)__builtin_thread_pointer();
+#elif defined(__riscv)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // tp is Thread Pointer provided by the RISC-V ABI.
+    __asm__ ("mv %0, tp" : "=r" (tid));
+    #endif
 #elif defined(thread_local) || defined(__GNUC__)
     #if defined(thread_local)
     static thread_local int __tp = 0;
