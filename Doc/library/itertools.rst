@@ -1017,6 +1017,8 @@ which incur interpreter overhead.
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
        # unique_justseen('ABBcCAD', str.lower) --> A B c A D
+       if key is None:
+           return map(operator.itemgetter(0), groupby(iterable))
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
 
