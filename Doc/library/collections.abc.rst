@@ -74,11 +74,10 @@ of the API:
    True
 
 In this example, class :class:`!D` does not need to define
-:meth:`~object.__contains__`, :meth:`~container.__iter__`, and
-:meth:`~object.__reversed__` because the
+``__contains__``, ``__iter__``, and ``__reversed__`` because the
 :ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
 logic, and the :func:`reversed` function automatically fall back to
-using :meth:`~object.__getitem__` and :meth:`~object.__len__`.
+using ``__getitem__`` and ``__len__``.
 
 3) Some simple interfaces are directly recognizable by the presence of
 the required methods (unless those methods have been set to
@@ -101,9 +100,9 @@ Complex interfaces do not support this last technique because an
 interface is more than just the presence of method names.  Interfaces
 specify semantics and relationships between methods that cannot be
 inferred solely from the presence of specific method names.  For
-example, knowing that a class supplies :meth:`~object.__getitem__`,
-:meth:`~object.__len__`, and :meth:`~container.__iter__` is insufficient for
-distinguishing a :class:`Sequence` from a :class:`Mapping`.
+example, knowing that a class supplies ``__getitem__``, ``__len__``, and
+``__iter__`` is insufficient for distinguishing a :class:`Sequence` from
+a :class:`Mapping`.
 
 .. versionadded:: 3.9
    These abstract classes now support ``[]``. See :ref:`types-genericalias`
@@ -336,15 +335,14 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: AsyncIterable
 
-   ABC for classes that provide an :meth:`~object.__aiter__` method.  See also
-   the definition of :term:`asynchronous iterable`.
+   ABC for classes that provide an ``__aiter__`` method.  See also the
+   definition of :term:`asynchronous iterable`.
 
    .. versionadded:: 3.5
 
 .. class:: AsyncIterator
 
-   ABC for classes that provide :meth:`~object.__aiter__` and
-   :meth:`~object.__anext__`
+   ABC for classes that provide ``__aiter__`` and ``__anext__``
    methods.  See also the definition of :term:`asynchronous iterator`.
 
    .. versionadded:: 3.5
