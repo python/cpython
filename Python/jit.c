@@ -231,9 +231,9 @@ patch(char *base, const Hole *hole, uint64_t *patches)
             // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
             assert(IS_AARCH64_ADRP(*loc32));
             // The high 31 bits are ignored, so they must match:
-            assert(bits(value, 33, 31, 0) == bits(location, 33, 31, 0));
+            assert(bits(value, 33, 31, 0) == bits((uint64_t)location, 33, 31, 0));
             // Number of pages between this page and the value's page:
-            value = bits(value, 12, 21, 0) - bits(location, 12, 21, 0);
+            value = bits(value, 12, 21, 0) - bits((uint64_t)location, 12, 21, 0);
             // value[0:2] goes in loc[29:31]:
             patch_32_bits(loc32, value, 0, 2, 29);
             // value[2:21] goes in loc[5:26]:

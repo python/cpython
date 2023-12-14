@@ -44,7 +44,7 @@
                       Overwrite="true"
                       Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
   </Target>
-  <Target Name="Build" DependsOnTargets="FindPythonForBuild" Condition="'$(UseJIT)' == 'true'">
+  <Target Name="Build" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild" Condition="'$(UseJIT)' == 'true'">
 	  <Exec Condition="$(Configuration) != 'Debug' and $(Platform) == 'Win32'"
           Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc'
           WorkingDirectory="$(PySourcePath)"/>
