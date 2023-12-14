@@ -7082,9 +7082,9 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         return NULL;
     }
 
-    if (!PyMapping_Check(env)) {
+    if (!PyMapping_Check(env) && env != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "%s: environment must be a mapping object", func_name);
+                     "%s: environment must be a mapping object or None", func_name);
         goto exit;
     }
 
@@ -7098,9 +7098,13 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    envlist = parse_envlist(env, &envc);
-    if (envlist == NULL) {
-        goto exit;
+    if (env == Py_None) {
+        envlist = environ;
+    } else {
+        envlist = parse_envlist(env, &envc);
+        if (envlist == NULL) {
+            goto exit;
+        }
     }
 
     if (file_actions != NULL && file_actions != Py_None) {
@@ -7163,7 +7167,7 @@ exit:
     if (attrp) {
         (void)posix_spawnattr_destroy(attrp);
     }
-    if (envlist) {
+    if (envlist && envlist != environ) {
         free_string_array(envlist, envc);
     }
     if (argvlist) {
