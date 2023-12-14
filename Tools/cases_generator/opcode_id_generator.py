@@ -16,7 +16,6 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
-    get_have_arg_and_min_instrumented,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -40,9 +39,8 @@ def generate_opcode_header(
             write_define(name, op)
 
         out.emit("\n")
-        have_arg, min_instrumented = get_have_arg_and_min_instrumented(analysis)
-        write_define("HAVE_ARGUMENT", have_arg)
-        write_define("MIN_INSTRUMENTED_OPCODE", min_instrumented)
+        write_define("HAVE_ARGUMENT", analysis.have_arg)
+        write_define("MIN_INSTRUMENTED_OPCODE", analysis.min_instrumented)
 
 
 arg_parser = argparse.ArgumentParser(

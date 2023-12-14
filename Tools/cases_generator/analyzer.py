@@ -235,6 +235,8 @@ class Analysis:
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
     opmap: dict[str, int]
+    have_arg: int
+    min_instrumented: int
 
 
 def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
@@ -558,6 +560,26 @@ def assign_opcodes(
     return instmap
 
 
+def get_have_arg_and_min_instrumented(
+    instructions: dict[str, Instruction],
+    pseudos: dict[str, PseudoInstruction],
+    opmap: dict[str, int],
+) -> tuple[int, int]:
+    min_instrumented = 256
+    first_arg = 256
+    for name, op in opmap.items():
+        if name.startswith("INSTRUMENTED") and op < min_instrumented:
+            min_instrumented = op
+        if name == "INSTRUMENTED_LINE":
+            # INSTRUMENTED_LINE is not defined
+            continue
+        if name in pseudos:
+            continue
+        if instructions[name].properties.oparg and op < first_arg:
+            first_arg = op
+    return first_arg, min_instrumented
+
+
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
     uops: dict[str, Uop] = {}
@@ -607,7 +629,12 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         inst.family = families["BINARY_OP"]
         families["BINARY_OP"].members.append(inst)
     opmap = assign_opcodes(instructions, families, pseudos)
-    return Analysis(instructions, uops, families, pseudos, opmap)
+    first_arg, min_instrumented = get_have_arg_and_min_instrumented(
+        instructions, pseudos, opmap
+    )
+    return Analysis(
+        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+    )
 
 
 def analyze_files(filenames: list[str]) -> Analysis:

@@ -17,7 +17,6 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     root_relative_path,
-    get_have_arg_and_min_instrumented,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -84,9 +83,8 @@ def generate_py_metadata(
     generate_specializations(analysis, out)
     generate_specialized_opmap(analysis, out)
     generate_opmap(analysis, out)
-    have_arg, min_instrumented = get_have_arg_and_min_instrumented(analysis)
-    out.emit(f"HAVE_ARGUMENT = {have_arg}\n")
-    out.emit(f"MIN_INSTRUMENTED_OPCODE = {min_instrumented}\n")
+    out.emit(f"HAVE_ARGUMENT = {analysis.have_arg}\n")
+    out.emit(f"MIN_INSTRUMENTED_OPCODE = {analysis.min_instrumented}\n")
 
 
 arg_parser = argparse.ArgumentParser(

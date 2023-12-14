@@ -217,19 +217,3 @@ def cflags(p: Properties) -> str:
         return " | ".join(flags)
     else:
         return "0"
-
-
-def get_have_arg_and_min_instrumented(analysis: Analysis) -> tuple[int, int]:
-    min_instrumented = 256
-    first_arg = 256
-    for name, op in analysis.opmap.items():
-        if name.startswith("INSTRUMENTED") and op < min_instrumented:
-            min_instrumented = op
-        if name == "INSTRUMENTED_LINE":
-            # INSTRUMENTED_LINE is not defined
-            continue
-        if name in analysis.pseudos:
-            continue
-        if analysis.instructions[name].properties.oparg and op < first_arg:
-            first_arg = op
-    return first_arg, min_instrumented
