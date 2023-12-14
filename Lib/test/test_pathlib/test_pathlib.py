@@ -15,7 +15,7 @@ from test.support import import_helper
 from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
-from test.test_pathlib.test_pathlib_abc import DummyPurePathTest, DummyPathTest
+from test.test_pathlib import test_pathlib_abc
 
 try:
     import grp, pwd
@@ -41,7 +41,7 @@ if hasattr(os, 'geteuid'):
 # Tests for the pure classes.
 #
 
-class PurePathTest(DummyPurePathTest):
+class PurePathTest(test_pathlib_abc.DummyPurePathTest):
     cls = pathlib.PurePath
 
     def test_constructor_nested(self):
@@ -930,7 +930,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(DummyPathTest, PurePathTest):
+class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
