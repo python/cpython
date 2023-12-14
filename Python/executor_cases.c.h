@@ -3516,7 +3516,7 @@
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            GOTO_TIER_ONE();
+            if (1) goto deoptimize;
             break;
         }
 
