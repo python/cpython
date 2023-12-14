@@ -3737,7 +3737,7 @@ class bool_converter(CConverter):
             self.format_unit = 'i'
         elif accept != {object}:
             fail(f"bool_converter: illegal 'accept' argument {accept!r}")
-        if self.default is not unspecified:
+        if self.default is not unspecified and self.default is not unknown:
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
 
