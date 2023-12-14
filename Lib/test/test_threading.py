@@ -28,7 +28,7 @@ from test import support
 
 try:
     from test.support import interpreters
-except ModuleNotFoundError:
+except ImportError:
     interpreters = None
 
 threading_helper.requires_working_threading(module=True)
@@ -1365,7 +1365,7 @@ class SubinterpThreadingTests(BaseTestCase):
         DONE = b'D'
 
         interp = interpreters.create()
-        interp.run(f"""if True:
+        interp.exec_sync(f"""if True:
             import os
             import threading
             import time

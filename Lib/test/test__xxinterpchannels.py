@@ -79,8 +79,7 @@ class Interpreter(namedtuple('Interpreter', 'name id')):
                 name = 'interp'
             elif name == 'main':
                 raise ValueError('name mismatch (unexpected "main")')
-            if not isinstance(id, interpreters.InterpreterID):
-                id = interpreters.InterpreterID(id)
+            assert isinstance(id, int), repr(id)
         elif not name or name == 'main':
             name = 'main'
             id = main
@@ -587,12 +586,12 @@ class ChannelTests(TestBase):
         cid = channels.create()
         interp = interpreters.create()
 
+        interpreters.set___main___attrs(interp, dict(cid=cid.send))
         out = _run_output(interp, dedent("""
             import _xxinterpchannels as _channels
             print(cid.end)
             _channels.send(cid, b'spam', blocking=False)
-            """),
-            dict(cid=cid.send))
+            """))
         obj = channels.recv(cid)
 
         self.assertEqual(obj, b'spam')
@@ -1017,16 +1016,16 @@ class ChannelTests(TestBase):
             _channels.recv({cid})
             """))
         channels.close(cid)
-        with self.assertRaises(interpreters.RunFailedError) as cm:
-            interpreters.run_string(id1, dedent(f"""
+
+        excsnap = interpreters.run_string(id1, dedent(f"""
                 _channels.send({cid}, b'spam')
                 """))
-        self.assertIn('ChannelClosedError', str(cm.exception))
-        with self.assertRaises(interpreters.RunFailedError) as cm:
-            interpreters.run_string(id2, dedent(f"""
+        self.assertEqual(excsnap.type.__name__, 'ChannelClosedError')
+
+        excsnap = interpreters.run_string(id2, dedent(f"""
                 _channels.send({cid}, b'spam')
                 """))
-        self.assertIn('ChannelClosedError', str(cm.exception))
+        self.assertEqual(excsnap.type.__name__, 'ChannelClosedError')
 
     def test_close_multiple_times(self):
         cid = channels.create()

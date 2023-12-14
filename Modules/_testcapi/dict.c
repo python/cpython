@@ -331,6 +331,88 @@ dict_mergefromseq2(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+dict_pop(PyObject *self, PyObject *args)
+{
+    // Test PyDict_Pop(dict, key, &value)
+    PyObject *dict, *key;
+    if (!PyArg_ParseTuple(args, "OO", &dict, &key)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    NULLABLE(key);
+    PyObject *result = UNINITIALIZED_PTR;
+    int res = PyDict_Pop(dict, key,  &result);
+    if (res < 0) {
+        assert(result == NULL);
+        return NULL;
+    }
+    if (res == 0) {
+        assert(result == NULL);
+        result = Py_NewRef(Py_None);
+    }
+    else {
+        assert(result != NULL);
+    }
+    return Py_BuildValue("iN", res, result);
+}
+
+
+static PyObject *
+dict_pop_null(PyObject *self, PyObject *args)
+{
+    // Test PyDict_Pop(dict, key, NULL)
+    PyObject *dict, *key;
+    if (!PyArg_ParseTuple(args, "OO", &dict, &key)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    NULLABLE(key);
+    RETURN_INT(PyDict_Pop(dict, key,  NULL));
+}
+
+
+static PyObject *
+dict_popstring(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    const char *key;
+    Py_ssize_t key_size;
+    if (!PyArg_ParseTuple(args, "Oz#", &dict, &key, &key_size)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    PyObject *result = UNINITIALIZED_PTR;
+    int res = PyDict_PopString(dict, key,  &result);
+    if (res < 0) {
+        assert(result == NULL);
+        return NULL;
+    }
+    if (res == 0) {
+        assert(result == NULL);
+        result = Py_NewRef(Py_None);
+    }
+    else {
+        assert(result != NULL);
+    }
+    return Py_BuildValue("iN", res, result);
+}
+
+
+static PyObject *
+dict_popstring_null(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    const char *key;
+    Py_ssize_t key_size;
+    if (!PyArg_ParseTuple(args, "Oz#", &dict, &key, &key_size)) {
+        return NULL;
+    }
+    NULLABLE(dict);
+    RETURN_INT(PyDict_PopString(dict, key,  NULL));
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_check", dict_check, METH_O},
     {"dict_checkexact", dict_checkexact, METH_O},
@@ -358,7 +440,10 @@ static PyMethodDef test_methods[] = {
     {"dict_merge", dict_merge, METH_VARARGS},
     {"dict_update", dict_update, METH_VARARGS},
     {"dict_mergefromseq2", dict_mergefromseq2, METH_VARARGS},
-
+    {"dict_pop", dict_pop, METH_VARARGS},
+    {"dict_pop_null", dict_pop_null, METH_VARARGS},
+    {"dict_popstring", dict_popstring, METH_VARARGS},
+    {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
     {NULL},
 };
 

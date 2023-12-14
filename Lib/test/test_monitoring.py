@@ -1790,3 +1790,28 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
         test_func(1000)
         sys.monitoring.set_local_events(TEST_TOOL, code, 0)
         self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), 0)
+
+class TestTier2Optimizer(CheckEvents):
+
+    def test_monitoring_already_opimized_loop(self):
+        def test_func(recorder):
+            set_events = sys.monitoring.set_events
+            line = E.LINE
+            i = 0
+            for i in range(551):
+                # Turn on events without branching once i reaches 500.
+                set_events(TEST_TOOL, line * int(i >= 500))
+                pass
+                pass
+                pass
+
+        self.assertEqual(sys.monitoring._all_events(), {})
+        events = []
+        recorder = LineRecorder(events)
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, recorder)
+        try:
+            test_func(recorder)
+        finally:
+            sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+            sys.monitoring.set_events(TEST_TOOL, 0)
+        self.assertGreater(len(events), 250)

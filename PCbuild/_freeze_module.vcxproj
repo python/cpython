@@ -89,6 +89,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>Py_NO_ENABLE_SHARED;Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
@@ -195,6 +196,7 @@
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
+    <ClCompile Include="..\Python\critical_section.c" />
     <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
@@ -220,12 +222,14 @@
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />
+    <ClCompile Include="..\Python\lock.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\optimizer.c" />
     <ClCompile Include="..\Python\optimizer_analysis.c" />
+    <ClCompile Include="..\Python\parking_lot.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
@@ -253,6 +257,9 @@
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PC\pyconfig.h.in" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
@@ -411,6 +418,32 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+
+  <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
+       own build. All other extension modules will use the copy that pythoncore
+       generates. -->
+  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
+    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
+    <ItemGroup>
+      <PyConfigH Remove="@(PyConfigH)" />
+      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
+    </ItemGroup>
+    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
+    <PropertyGroup>
+      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
+      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
+      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(DisableGil) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
+    </PropertyGroup>
+    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+    <WriteLinesToFile File="$(IntDir)pyconfig.h"
+                      Lines="$(PyConfigHText)"
+                      Overwrite="true"
+                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+  </Target>
+
   <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />
 

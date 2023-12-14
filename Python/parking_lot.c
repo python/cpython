@@ -118,10 +118,19 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     if (timeout >= 0) {
         struct timespec ts;
 
+#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT)
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+
+        _PyTime_AsTimespec_clamp(deadline, &ts);
+
+        err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
+#else
         _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
-        _PyTime_AsTimespec(deadline, &ts);
+
+        _PyTime_AsTimespec_clamp(deadline, &ts);
 
         err = sem_timedwait(&sema->platform_sem, &ts);
+#endif
     }
     else {
         err = sem_wait(&sema->platform_sem);
@@ -151,7 +160,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
             struct timespec ts;
 
             _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
-            _PyTime_AsTimespec(deadline, &ts);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
 
             err = pthread_cond_timedwait(&sema->cond, &sema->mutex, &ts);
         }

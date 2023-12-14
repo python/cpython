@@ -45,6 +45,7 @@ typedef enum _framestate {
 } PyFrameState;
 
 #define FRAME_STATE_SUSPENDED(S) ((S) == FRAME_SUSPENDED || (S) == FRAME_SUSPENDED_YIELD_FROM)
+#define FRAME_STATE_FINISHED(S) ((S) >= FRAME_COMPLETED)
 
 enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,

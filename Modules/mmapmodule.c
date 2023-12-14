@@ -171,7 +171,7 @@ mmap_object_dealloc(mmap_object *m_obj)
 }
 
 static PyObject *
-mmap_close_method(mmap_object *self, PyObject *unused)
+mmap_close_method(mmap_object *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->exports > 0) {
         PyErr_SetString(PyExc_BufferError, "cannot close "\
@@ -260,7 +260,7 @@ do {                                                                    \
 
 static PyObject *
 mmap_read_byte_method(mmap_object *self,
-                      PyObject *unused)
+                      PyObject *Py_UNUSED(ignored))
 {
     CHECK_VALID(NULL);
     if (self->pos >= self->size) {
@@ -272,7 +272,7 @@ mmap_read_byte_method(mmap_object *self,
 
 static PyObject *
 mmap_read_line_method(mmap_object *self,
-                      PyObject *unused)
+                      PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t remaining;
     char *start, *eol;
@@ -460,7 +460,7 @@ mmap_write_byte_method(mmap_object *self,
 
 static PyObject *
 mmap_size_method(mmap_object *self,
-                 PyObject *unused)
+                 PyObject *Py_UNUSED(ignored))
 {
     CHECK_VALID(NULL);
 
@@ -657,7 +657,7 @@ mmap_resize_method(mmap_object *self,
 }
 
 static PyObject *
-mmap_tell_method(mmap_object *self, PyObject *unused)
+mmap_tell_method(mmap_object *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_VALID(NULL);
     return PyLong_FromSize_t(self->pos);
@@ -729,12 +729,18 @@ mmap_seek_method(mmap_object *self, PyObject *args)
         if (where > self->size || where < 0)
             goto onoutofrange;
         self->pos = where;
-        Py_RETURN_NONE;
+        return PyLong_FromSsize_t(self->pos);
     }
 
   onoutofrange:
     PyErr_SetString(PyExc_ValueError, "seek out of range");
     return NULL;
+}
+
+static PyObject *
+mmap_seekable_method(mmap_object *self, PyObject *Py_UNUSED(ignored))
+{
+    Py_RETURN_TRUE;
 }
 
 static PyObject *
@@ -835,7 +841,7 @@ mmap__repr__method(PyObject *self)
 
 #ifdef MS_WINDOWS
 static PyObject *
-mmap__sizeof__method(mmap_object *self, void *unused)
+mmap__sizeof__method(mmap_object *self, void *Py_UNUSED(ignored))
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->tagname) {
@@ -905,6 +911,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"readline",        (PyCFunction) mmap_read_line_method,    METH_NOARGS},
     {"resize",          (PyCFunction) mmap_resize_method,       METH_VARARGS},
     {"seek",            (PyCFunction) mmap_seek_method,         METH_VARARGS},
+    {"seekable",        (PyCFunction) mmap_seekable_method,     METH_NOARGS},
     {"size",            (PyCFunction) mmap_size_method,         METH_NOARGS},
     {"tell",            (PyCFunction) mmap_tell_method,         METH_NOARGS},
     {"write",           (PyCFunction) mmap_write_method,        METH_VARARGS},

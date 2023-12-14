@@ -227,7 +227,7 @@ students::
     import sys
     from .student import search_students
 
-    student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
+    student_name = sys.argv[1] if len(sys.argv) >= 2 else ''
     print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative

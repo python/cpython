@@ -1261,7 +1261,8 @@ except that the original function is not temporarily bound to the name ``func``.
 A list of :ref:`type parameters <type-params>` may be given in square brackets
 between the function's name and the opening parenthesis for its parameter list.
 This indicates to static type checkers that the function is generic. At runtime,
-the type parameters can be retrieved from the function's ``__type_params__``
+the type parameters can be retrieved from the function's
+:attr:`~function.__type_params__`
 attribute. See :ref:`generic-functions` for more.
 
 .. versionchanged:: 3.12
@@ -1868,8 +1869,8 @@ like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
    are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
-   transformed into the function's ``__doc__`` attribute and therefore the
-   function's :term:`docstring`.
+   transformed into the function's :attr:`~function.__doc__` attribute and
+   therefore the function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
    transformed into the namespace's ``__doc__`` item and therefore the class's

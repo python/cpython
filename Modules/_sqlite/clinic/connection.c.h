@@ -297,16 +297,26 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         _PyArg_BadArgument("blobopen", "argument 1", "str", args[0]);
         goto exit;
     }
-    table = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t table_length;
+    table = PyUnicode_AsUTF8AndSize(args[0], &table_length);
     if (table == NULL) {
+        goto exit;
+    }
+    if (strlen(table) != (size_t)table_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("blobopen", "argument 2", "str", args[1]);
         goto exit;
     }
-    col = PyUnicode_AsUTF8(args[1]);
+    Py_ssize_t col_length;
+    col = PyUnicode_AsUTF8AndSize(args[1], &col_length);
     if (col == NULL) {
+        goto exit;
+    }
+    if (strlen(col) != (size_t)col_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!sqlite3_int64_converter(args[2], &row)) {
@@ -328,8 +338,13 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         _PyArg_BadArgument("blobopen", "argument 'name'", "str", args[4]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[4]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[4], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
@@ -484,8 +499,13 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
         _PyArg_BadArgument("create_function", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     narg = PyLong_AsInt(args[1]);
@@ -562,8 +582,13 @@ create_window_function(pysqlite_Connection *self, PyTypeObject *cls, PyObject *c
         _PyArg_BadArgument("create_window_function", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     num_params = PyLong_AsInt(args[1]);
@@ -663,8 +688,13 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
         _PyArg_BadArgument("create_aggregate", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     n_arg = PyLong_AsInt(args[1]);
@@ -1033,8 +1063,13 @@ pysqlite_connection_load_extension(pysqlite_Connection *self, PyObject *const *a
         _PyArg_BadArgument("load_extension", "argument 1", "str", args[0]);
         goto exit;
     }
-    extension_name = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t extension_name_length;
+    extension_name = PyUnicode_AsUTF8AndSize(args[0], &extension_name_length);
     if (extension_name == NULL) {
+        goto exit;
+    }
+    if (strlen(extension_name) != (size_t)extension_name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -1044,8 +1079,13 @@ pysqlite_connection_load_extension(pysqlite_Connection *self, PyObject *const *a
         entrypoint = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        entrypoint = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t entrypoint_length;
+        entrypoint = PyUnicode_AsUTF8AndSize(args[1], &entrypoint_length);
         if (entrypoint == NULL) {
+            goto exit;
+        }
+        if (strlen(entrypoint) != (size_t)entrypoint_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1266,8 +1306,13 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
             _PyArg_BadArgument("backup", "argument 'name'", "str", args[3]);
             goto exit;
         }
-        name = PyUnicode_AsUTF8(args[3]);
+        Py_ssize_t name_length;
+        name = PyUnicode_AsUTF8AndSize(args[3], &name_length);
         if (name == NULL) {
+            goto exit;
+        }
+        if (strlen(name) != (size_t)name_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1335,8 +1380,13 @@ pysqlite_connection_create_collation(pysqlite_Connection *self, PyTypeObject *cl
         _PyArg_BadArgument("create_collation", "argument 1", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     callable = args[1];
@@ -1412,8 +1462,13 @@ serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, Py
         _PyArg_BadArgument("serialize", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
@@ -1510,8 +1565,13 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         _PyArg_BadArgument("deserialize", "argument 'name'", "str", args[1]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[1]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[1], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_kwonly:
@@ -1758,4 +1818,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=7d2a4d9272f7cb9e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90b5b9c14261b8d7 input=a9049054013a1b77]*/

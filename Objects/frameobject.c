@@ -808,13 +808,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     while (start_stack > best_stack) {
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyThreadState *tstate = _PyThreadState_GET();
-            _PyErr_StackItem *exc_info = tstate->exc_info;
-            PyObject *value = exc_info->exc_value;
             PyObject *exc = _PyFrame_StackPop(f->f_frame);
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
-            exc_info->exc_value = exc;
-            Py_XDECREF(value);
+            PyThreadState *tstate = _PyThreadState_GET();
+            Py_XSETREF(tstate->exc_info->exc_value, exc);
         }
         else {
             PyObject *v = _PyFrame_StackPop(f->f_frame);
@@ -940,6 +937,9 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
         if (gen->gi_frame_state == FRAME_EXECUTING) {
             goto running;
         }
+        if (FRAME_STATE_SUSPENDED(gen->gi_frame_state)) {
+            goto suspended;
+        }
         _PyGen_Finalize((PyObject *)gen);
     }
     else if (f->f_frame->owner == FRAME_OWNED_BY_THREAD) {
@@ -953,6 +953,10 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 running:
     PyErr_SetString(PyExc_RuntimeError,
                     "cannot clear an executing frame");
+    return NULL;
+suspended:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "cannot clear a suspended frame");
     return NULL;
 }
 

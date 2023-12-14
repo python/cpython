@@ -271,8 +271,8 @@ class TestKQueue(unittest.TestCase):
             finally:
                 os._exit(0)
         else:
-            self.assertFalse(kqueue.closed)
             support.wait_process(pid, exitcode=0)
+            self.assertFalse(kqueue.closed)  # child done, we're still open.
 
 
 if __name__ == "__main__":

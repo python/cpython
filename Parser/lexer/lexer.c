@@ -116,13 +116,56 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     if (!tok_mode->f_string_debug || token->metadata) {
         return 0;
     }
+    PyObject *res = NULL;
 
-    PyObject *res = PyUnicode_DecodeUTF8(
-        tok_mode->last_expr_buffer,
-        tok_mode->last_expr_size - tok_mode->last_expr_end,
-        NULL
-    );
-    if (!res) {
+    // Check if there is a # character in the expression
+    int hash_detected = 0;
+    for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
+        if (tok_mode->last_expr_buffer[i] == '#') {
+            hash_detected = 1;
+            break;
+        }
+    }
+
+    if (hash_detected) {
+        Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
+        char *result = (char *)PyObject_Malloc((input_length + 1) * sizeof(char));
+        if (!result) {
+            return -1;
+        }
+
+        Py_ssize_t i = 0;
+        Py_ssize_t j = 0;
+
+        for (i = 0, j = 0; i < input_length; i++) {
+            if (tok_mode->last_expr_buffer[i] == '#') {
+                // Skip characters until newline or end of string
+                while (tok_mode->last_expr_buffer[i] != '\0' && i < input_length) {
+                    if (tok_mode->last_expr_buffer[i] == '\n') {
+                        result[j++] = tok_mode->last_expr_buffer[i];
+                        break;
+                    }
+                    i++;
+                }
+            } else {
+                result[j++] = tok_mode->last_expr_buffer[i];
+            }
+        }
+
+        result[j] = '\0';  // Null-terminate the result string
+        res = PyUnicode_DecodeUTF8(result, j, NULL);
+        PyObject_Free(result);
+    } else {
+        res = PyUnicode_DecodeUTF8(
+            tok_mode->last_expr_buffer,
+            tok_mode->last_expr_size - tok_mode->last_expr_end,
+            NULL
+        );
+
+    }
+
+
+   if (!res) {
         return -1;
     }
     token->metadata = res;

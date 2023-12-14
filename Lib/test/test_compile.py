@@ -12,6 +12,7 @@ import warnings
 from test import support
 from test.support import (script_helper, requires_debug_ranges,
                           requires_specialization, Py_C_RECURSION_LIMIT)
+from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
 class TestSpecifics(unittest.TestCase):
@@ -1346,8 +1347,8 @@ class TestSourcePositions(unittest.TestCase):
     def assertOpcodeSourcePositionIs(self, code, opcode,
             line, end_line, column, end_column, occurrence=1):
 
-        for instr, position in zip(
-            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+        for instr, position in instructions_with_positions(
+            dis.Bytecode(code), code.co_positions()
         ):
             if instr.opname == opcode:
                 occurrence -= 1
