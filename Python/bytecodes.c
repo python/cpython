@@ -330,14 +330,14 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_TO_BOOL, (unused/2, value -- res)) {
+        op(_TO_BOOL, (value -- res)) {
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
             res = err ? Py_True : Py_False;
         }
 
-        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + _TO_BOOL;
+        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + unused/2 + _TO_BOOL;
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
             DEOPT_IF(!PyBool_Check(value));
@@ -1295,14 +1295,14 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_STORE_ATTR, (unused/3, v, owner --)) {
+        op(_STORE_ATTR, (v, owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
-        macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + _STORE_ATTR;
+        macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + unused/3 + _STORE_ATTR;
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1414,7 +1414,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_GLOBAL, (unused/1, unused/1, unused/1 -- res, null if (oparg & 1))) {
+        op(_LOAD_GLOBAL, ( -- res, null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
@@ -1451,7 +1451,12 @@ dummy_func(
             null = NULL;
         }
 
-        macro(LOAD_GLOBAL) = _SPECIALIZE_LOAD_GLOBAL + _LOAD_GLOBAL;
+        macro(LOAD_GLOBAL) =
+            _SPECIALIZE_LOAD_GLOBAL +
+            unused/1 +
+            unused/1 +
+            unused/1 +
+            _LOAD_GLOBAL;
 
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1853,7 +1858,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (unused/8, owner -- attr, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -1886,7 +1891,10 @@ dummy_func(
             }
         }
 
-        macro(LOAD_ATTR) = _SPECIALIZE_LOAD_ATTR + _LOAD_ATTR;
+        macro(LOAD_ATTR) =
+            _SPECIALIZE_LOAD_ATTR +
+            unused/8 +
+            _LOAD_ATTR;
 
         pseudo(LOAD_METHOD) = {
             LOAD_ATTR,
@@ -2369,7 +2377,7 @@ dummy_func(
             stack_pointer = _PyFrame_GetStackPointer(frame);
         }
 
-        replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
@@ -2378,7 +2386,7 @@ dummy_func(
             JUMPBY(oparg * flag);
         }
 
-        replaced op(_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
@@ -2397,13 +2405,13 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_TRUE) = _POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_TRUE) = unused/1 + _POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_FALSE) = _POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_FALSE) = unused/1 + _POP_JUMP_IF_FALSE;
 
-        macro(POP_JUMP_IF_NONE) = _IS_NONE + _POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + _POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_NOT_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             TIER_ONE_ONLY
@@ -3010,7 +3018,7 @@ dummy_func(
         }
 
         // When calling Python, inline the call using DISPATCH_INLINED().
-        op(_CALL, (unused/2, callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL, (callable, self_or_null, args[oparg] -- res)) {
             // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3079,7 +3087,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + _CALL;
+        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             DEOPT_IF(null != NULL);

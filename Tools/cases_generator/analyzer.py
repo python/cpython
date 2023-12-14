@@ -239,7 +239,7 @@ class Analysis:
 def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
     # To do -- support file and line output
     # Construct a SyntaxError instance from message and token
-    return lexer.make_syntax_error(message, "", tkn.line, tkn.column, "")
+    return lexer.make_syntax_error(message, tkn.filename, tkn.line, tkn.column, "")
 
 
 def override_error(
@@ -274,6 +274,11 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     caches: list[parser.CacheEffect] = [
         i for i in inputs if isinstance(i, parser.CacheEffect)
     ]
+    for cache in caches:
+        if cache.name == "unused":
+            raise analysis_error(
+                "Unused cache entry in op. Move to enclosing macro.",
+                cache.tokens[0])
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
