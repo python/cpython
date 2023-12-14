@@ -87,7 +87,7 @@ def emit_stack_effect_function(
 def generate_stack_effect_functions(
     analysis: Analysis, out: CWriter
 ) -> None:
-    
+
     popped_data: list[tuple[str, str]] = []
     pushed_data: list[tuple[str, str]] = []
     for inst in analysis.instructions.values():
@@ -172,7 +172,7 @@ def generate_cache_table(
 def generate_name_table(
     analysis: Analysis, out: CWriter
 ) -> None:
-    table_size = 256 + len(analysis.pseudos) 
+    table_size = 256 + len(analysis.pseudos)
     out.emit(f"extern const char *_PyOpcode_OpName[{table_size}];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
@@ -187,7 +187,7 @@ def generate_name_table(
 def generate_metadata_table(
     analysis: Analysis, out: CWriter
 ) -> None:
-    table_size = 256 + len(analysis.pseudos) 
+    table_size = 256 + len(analysis.pseudos)
     out.emit("struct opcode_metadata {\n")
     out.emit("uint8_t valid_entry;\n");
     out.emit("int8_t instr_format;\n");
@@ -199,10 +199,12 @@ def generate_metadata_table(
     for inst in sorted(analysis.instructions.values(), key = lambda t:t.name):
         out.emit(f"[{inst.name}] = {{ true, {get_format(inst)}, {cflags(inst.properties)} }},\n")
     for pseudo in sorted(analysis.pseudos.values(), key = lambda t:t.name):
-        if pseudo.flags:
-            flags = " | ".join(f"{flag}_FLAG" for flag in pseudo.flags)
-        else:
-            flags = cflags(pseudo.properties)
+        flags = cflags(pseudo.properties)
+        for flag in pseudo.flags:
+            if flags == "0":
+                flags = f"{flag}_FLAG"
+            else:
+                flags += f" | {flag}_FLAG"
         out.emit(f"[{pseudo.name}] = {{ true, -1, {flags} }},\n")
     out.emit("};\n")
     out.emit("#endif\n\n")
@@ -277,7 +279,7 @@ def generate_extra_cases(
 def generate_psuedo_targets(
     analysis: Analysis, out: CWriter
 ) -> None:
-    table_size = len(analysis.pseudos) 
+    table_size = len(analysis.pseudos)
     max_targets = max(len(pseudo.targets) for pseudo in analysis.pseudos.values())
     out.emit("struct pseudo_targets {\n")
     out.emit(f"uint8_t targets[{max_targets + 1}];\n")

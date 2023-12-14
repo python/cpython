@@ -16,7 +16,6 @@ from analyzer import (
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
-    cflags,
     root_relative_path,
     get_have_arg_and_min_instrumented,
 )
