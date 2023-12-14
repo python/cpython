@@ -3323,10 +3323,12 @@ win32_lchmod(LPCWSTR path, int mode)
     if (attr == INVALID_FILE_ATTRIBUTES) {
         return 0;
     }
-    if (mode & _S_IWRITE)
+    if (mode & _S_IWRITE) {
         attr &= ~FILE_ATTRIBUTE_READONLY;
-    else
+    }
+    else {
         attr |= FILE_ATTRIBUTE_READONLY;
+    }
     return SetFileAttributesW(path, attr);
 }
 #endif
@@ -3404,14 +3406,16 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
             if (GetFileInformationByHandleEx(hfile, FileBasicInfo,
                                              &info, sizeof(info)))
             {
-                if (mode & _S_IWRITE)
+                if (mode & _S_IWRITE) {
                     info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
-                else
+                }
+                else {
                     info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
+                }
                 result = SetFileInformationByHandle(hfile, FileBasicInfo,
                                                     &info, sizeof(info));
             }
-            CloseHandle(hfile);
+            (void)CloseHandle(hfile);
         }
     }
     else {
