@@ -7153,11 +7153,8 @@ PyObject *
 _PyEval_GetBuiltin(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *attr = PyDict_GetItemWithError(PyEval_GetBuiltins(), name);
-    if (attr) {
-        Py_INCREF(attr);
-    }
-    else if (!_PyErr_Occurred(tstate)) {
+    PyObject *attr = PyObject_GetItem(PyEval_GetBuiltins(), name);
+    if (attr == NULL && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         _PyErr_SetObject(tstate, PyExc_AttributeError, name);
     }
     return attr;
@@ -7407,9 +7404,9 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    import_func = PyObject_GetItem(frame->f_builtins, &_Py_ID(__import__));
     if (import_func == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
@@ -7417,6 +7414,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     PyObject *locals = frame->f_locals;
     /* Fast path for not overloaded __import__. */
     if (import_func == tstate->interp->import_func) {
+        Py_DECREF(import_func);
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
@@ -7429,8 +7427,6 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
                         ilevel);
         return res;
     }
-
-    Py_INCREF(import_func);
 
     stack[0] = name;
     stack[1] = frame->f_globals;
