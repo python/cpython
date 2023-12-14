@@ -1127,6 +1127,14 @@ The following recipes have a more mathematical flavor:
        if n > 1:
            yield n
 
+   def totient(n):
+       "Count of natural numbers up to n that are coprime to n."
+       # https://mathworld.wolfram.com/TotientFunction.html
+       # totient(12) --> 4 because len([1, 5, 7, 11]) == 4
+       for p in unique_justseen(factor(n)):
+           n = n // p * (p - 1)
+       return n
+
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
        pool = tuple(iterable)
@@ -1426,6 +1434,25 @@ The following recipes have a more mathematical flavor:
     >>> all(set(factor(n)) <= set(sieve(n+1)) for n in range(2_000))
     True
     >>> all(list(factor(n)) == sorted(factor(n)) for n in range(2_000))
+    True
+
+    >>> totient(0)  # https://www.wolframalpha.com/input?i=totient+0
+    0
+    >>> first_totients = [1, 1, 2, 2, 4, 2, 6, 4, 6, 4, 10, 4, 12, 6, 8, 8, 16, 6,
+    ... 18, 8, 12, 10, 22, 8, 20, 12, 18, 12, 28, 8, 30, 16, 20, 16, 24, 12, 36, 18,
+    ... 24, 16, 40, 12, 42, 20, 24, 22, 46, 16, 42, 20, 32, 24, 52, 18, 40, 24, 36,
+    ... 28, 58, 16, 60, 30, 36, 32, 48, 20, 66, 32, 44]  # https://oeis.org/A000010
+    ...
+    >>> list(map(totient, range(1, 70))) == first_totients
+    True
+    >>> reference_totient = lambda n: sum(math.gcd(t, n) == 1 for t in range(1, n+1))
+    >>> all(totient(n) == reference_totient(n) for n in range(1000))
+    True
+    >>> totient(128_884_753_939) == 128_884_753_938  # large prime
+    True
+    >>> totient(999953 * 999983) == 999952 * 999982  # large semiprime
+    True
+    >>> totient(6 ** 20) == 1 * 2**19 * 2 * 3**19    # repeated primes
     True
 
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
