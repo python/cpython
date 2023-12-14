@@ -2232,7 +2232,7 @@ def main():
             print("The program exited via sys.exit(). Exit status:", end=' ')
             print(e)
         except BaseException as e:
-            traceback.print_exc()
+            traceback._print_exception_bltin(e)
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
             pdb.interaction(None, e)
