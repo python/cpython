@@ -44,7 +44,7 @@ Exception context
            __suppress_context__ (exception attribute)
 
 Three attributes on exception objects provide information about the context in
-which an the exception was raised:
+which the exception was raised:
 
 .. attribute:: BaseException.__context__
                BaseException.__cause__
