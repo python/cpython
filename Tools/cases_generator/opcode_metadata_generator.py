@@ -58,6 +58,13 @@ def generate_flag_macros(out: CWriter) -> None:
         out.emit(f"#define HAS_{flag}_FLAG ({1<<i})\n")
     for i, flag in enumerate(FLAGS):
         out.emit(f"#define OPCODE_HAS_{flag}(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_{flag}_FLAG))\n")
+    out.emit("\n")
+
+
+def generate_oparg_macros(out: CWriter) -> None:
+    for name, value in OPARG_SIZES.items():
+        out.emit(f"#define {name} {value}\n")
+    out.emit("\n")
 
 
 def emit_stack_effect_function(
@@ -300,6 +307,7 @@ def generate_opcode_metadata(
         out.emit("    (((OP) >= 0) && ((OP) < 256) && \\\n")
         out.emit("     (_PyOpcode_opcode_metadata[(OP)].valid_entry))\n\n")
         generate_flag_macros(out)
+        generate_oparg_macros(out)
         generate_metadata_table(analysis, out)
         generate_expansion_table(analysis, out)
         generate_name_table(analysis, out)

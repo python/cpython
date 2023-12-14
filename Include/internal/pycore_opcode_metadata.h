@@ -919,6 +919,15 @@ enum InstructionFormat {
 #define OPCODE_HAS_DEOPT(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_DEOPT_FLAG))
 #define OPCODE_HAS_ERROR(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ERROR_FLAG))
 #define OPCODE_HAS_ESCAPES(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ESCAPES_FLAG))
+
+#define OPARG_FULL 0
+#define OPARG_CACHE_1 1
+#define OPARG_CACHE_2 2
+#define OPARG_CACHE_4 4
+#define OPARG_TOP 5
+#define OPARG_BOTTOM 6
+#define OPARG_SAVE_RETURN_OFFSET 7
+
 struct opcode_metadata {
     uint8_t valid_entry;
     uint8_t instr_format;
