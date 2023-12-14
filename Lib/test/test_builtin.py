@@ -812,6 +812,32 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
                                exec, code, {'__builtins__': customdict()})
 
+    def test_eval_builtins_mapping(self):
+        code = compile("superglobal", "test", "eval")
+        # works correctly
+        ns = {'__builtins__': types.MappingProxyType({'superglobal': 1})}
+        self.assertEqual(eval(code, ns), 1)
+        # custom builtins mapping is missing key
+        ns = {'__builtins__': types.MappingProxyType({})}
+        self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
+                               eval, code, ns)
+
+    def test_exec_builtins_mapping_import(self):
+        code = compile("import foo.bar", "test", "exec")
+        ns = {'__builtins__': types.MappingProxyType({})}
+        self.assertRaisesRegex(ImportError, "__import__ not found", exec, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({'__import__': lambda *args: args})}
+        exec(code, ns)
+        self.assertEqual(ns['foo'], ('foo.bar', ns, ns, None, 0))
+
+    def test_eval_builtins_mapping_reduce(self):
+        # list_iterator.__reduce__() calls _PyEval_GetBuiltin("iter")
+        code = compile("x.__reduce__()", "test", "eval")
+        ns = {'__builtins__': types.MappingProxyType({}), 'x': iter([1, 2])}
+        self.assertRaisesRegex(AttributeError, "iter", eval, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({'iter': iter}), 'x': iter([1, 2])}
+        self.assertEqual(eval(code, ns), (iter, ([1, 2],), 0))
+
     def test_exec_redirected(self):
         savestdout = sys.stdout
         sys.stdout = None # Whatever that cannot flush()
