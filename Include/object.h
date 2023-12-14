@@ -240,15 +240,6 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 
-#ifdef thread_local
-static thread_local int __tp = 0;
-# define HAVE_THREAD_ID_FALLBACK 1
-#elif defined(__GNUC__)
-// Assume that we only support C11 compilers.
-static __thread int __tp = 0;
-# define HAVE_THREAD_ID_FALLBACK 1
-#endif
-
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -293,7 +284,13 @@ _Py_ThreadId(void)
     // Both GCC and Clang have supported __builtin_thread_pointer
     // for s390 from long time ago.
     tid = (uintptr_t)__builtin_thread_pointer();
-#elif defined(HAVE_THREAD_ID_FALLBACK)
+#elif defined(thread_local) || defined(__GNUC__)
+    # if defined(thread_local)
+    static thread_local int __tp = 0;
+    #elif defined(__GNUC__)
+    // Assume that we only support C11 compilers.
+    static __thread int __tp = 0;
+    #endif
     // Hack: Using characteristics of TLS address mapping.
     // The address of the thread-local variable is not equal with the actual thread pointer,
     // However, it has the property of being determined by loader at runtime, with no duplication of values
