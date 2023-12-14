@@ -198,7 +198,7 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_JUMP_FLAG")
     if p.has_free:
         flags.append("HAS_FREE_FLAG")
-    elif p.uses_locals:
+    if p.uses_locals:
         flags.append("HAS_LOCAL_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")

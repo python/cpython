@@ -327,10 +327,10 @@ def always_exits(op: parser.InstDef) -> bool:
 
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
-                variable_used(op, "PyCell_New")
-                or variable_used(op, "PyCell_GET")
-                or variable_used(op, "PyCell_SET")
-            )
+        variable_used(op, "PyCell_New")
+        or variable_used(op, "PyCell_GET")
+        or variable_used(op, "PyCell_SET")
+    )
     return Properties(
         escapes=makes_escaping_api_call(op),
         infallible=is_infallible(op),
@@ -344,7 +344,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
-        uses_locals= not has_free and (variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL")),
+        uses_locals= (variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL")) and not has_free,
         has_free=has_free,
     )
 
