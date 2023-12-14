@@ -2312,7 +2312,7 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        inst(JUMP_BACKWARD, (unused/1 --)) {
+        inst(JUMP_BACKWARD, (counter/1 --)) {
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);

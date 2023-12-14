@@ -163,6 +163,10 @@ def generate_cache_table(
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Caches[256] = {\n")
     for inst in analysis.instructions.values():
+        if inst.family and inst.family.name != inst.name:
+            continue
+        if inst.name.startswith("INSTRUMENTED"):
+            continue
         if inst.size > 1:
          out.emit(f"[{inst.name}] = {inst.size-1},\n")
     out.emit("};\n")
