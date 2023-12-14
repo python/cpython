@@ -11,7 +11,7 @@
 --------------
 
 The :mod:`!rlcompleter` module defines a completion function suitable to be
-passed to :func:`set_completer` in the :mod:`readline` module.
+passed to :func:`~readline.set_completer` in the :mod:`readline` module.
 
 When this module is imported on a Unix platform with the :mod:`readline` module
 available, an instance of the :class:`Completer` class is automatically created
