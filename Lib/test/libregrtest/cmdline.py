@@ -442,7 +442,7 @@ def _parse_args(args, **kwargs):
         # Similar to: -u "all,-cpu" --timeout=600
         if ns.use is None:
             ns.use = []
-        ns.use.insert(0, ['all', '-cpu', '-curses'])
+        ns.use.insert(0, ['all', '-cpu'])
         if ns.timeout is None:
             ns.timeout = 600  # 10 minutes
 
