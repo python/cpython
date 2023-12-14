@@ -468,8 +468,6 @@ class TestGeneratedCases(unittest.TestCase):
         }
     """
         self.run_cases_test(input, output)
-    
-        self.run_cases_test(input, output)
 
     def test_unused_caches(self):
         input = """

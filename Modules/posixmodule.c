@@ -6834,6 +6834,9 @@ enum posix_spawn_file_actions_identifier {
     POSIX_SPAWN_OPEN,
     POSIX_SPAWN_CLOSE,
     POSIX_SPAWN_DUP2
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+    ,POSIX_SPAWN_CLOSEFROM
+#endif
 };
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -7074,6 +7077,24 @@ parse_file_actions(PyObject *file_actions,
                 }
                 break;
             }
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+            case POSIX_SPAWN_CLOSEFROM: {
+                int fd;
+                if (!PyArg_ParseTuple(file_action, "Oi"
+                        ";A closefrom file_action tuple must have 2 elements",
+                        &tag_obj, &fd))
+                {
+                    goto fail;
+                }
+                errno = posix_spawn_file_actions_addclosefrom_np(file_actionsp,
+                                                                 fd);
+                if (errno) {
+                    posix_error();
+                    goto fail;
+                }
+                break;
+            }
+#endif
             default: {
                 PyErr_SetString(PyExc_TypeError,
                                 "Unknown file_actions identifier");
@@ -7129,9 +7150,9 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         return NULL;
     }
 
-    if (!PyMapping_Check(env)) {
+    if (!PyMapping_Check(env) && env != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "%s: environment must be a mapping object", func_name);
+                     "%s: environment must be a mapping object or None", func_name);
         goto exit;
     }
 
@@ -7145,9 +7166,13 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    envlist = parse_envlist(env, &envc);
-    if (envlist == NULL) {
-        goto exit;
+    if (env == Py_None) {
+        envlist = environ;
+    } else {
+        envlist = parse_envlist(env, &envc);
+        if (envlist == NULL) {
+            goto exit;
+        }
     }
 
     if (file_actions != NULL && file_actions != Py_None) {
@@ -7210,7 +7235,7 @@ exit:
     if (attrp) {
         (void)posix_spawnattr_destroy(attrp);
     }
-    if (envlist) {
+    if (envlist && envlist != environ) {
         free_string_array(envlist, envc);
     }
     if (argvlist) {
@@ -16770,6 +16795,9 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_OPEN", POSIX_SPAWN_OPEN)) return -1;
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_CLOSE", POSIX_SPAWN_CLOSE)) return -1;
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+    if (PyModule_AddIntMacro(m, POSIX_SPAWN_CLOSEFROM)) return -1;
+#endif
 #endif
 
 #if defined(HAVE_SPAWNV) || defined (HAVE_RTPSPAWN)
