@@ -186,10 +186,13 @@ def generate_metadata_table(
     out.emit("uint8_t instr_format;\n");
     out.emit("uint16_t flags;\n");
     out.emit("};\n\n")
+    out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {\n")
     for inst in sorted(analysis.instructions.values(), key = lambda t:t.name):
         out.emit(f"[{inst.name}] = {{ true, {get_format(inst)}, {cflags(inst.properties)} }},\n")
-    out.emit("};\n\n")
+    out.emit("};\n")
+    out.emit("#endif\n\n")
 
 def generate_expansion_table(
     analysis: Analysis, out: CWriter
@@ -225,11 +228,10 @@ def generate_expansion_table(
     max_uops = max (len(ex) for ex in expansions_table.values())
     out.emit(f"#define MAX_UOP_PER_EXPANSION {max_uops}\n")
     out.emit("struct opcode_macro_expansion {\n")
-    out.emit("int nuops;")
+    out.emit("int nuops;\n")
     out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[MAX_UOP_PER_EXPANSION];\n")
     out.emit("};\n")
-    out.emit("extern const struct opcode_macro_expansion\n")
-    out.emit("_PyOpcode_macro_expansion[256];\n\n")
+    out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];\n\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const struct opcode_macro_expansion\n")
     out.emit("_PyOpcode_macro_expansion[256] = {\n")

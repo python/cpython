@@ -934,6 +934,8 @@ struct opcode_metadata {
     uint16_t flags;
 };
 
+extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
+#ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BEFORE_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1143,13 +1145,14 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [WITH_EXCEPT_START] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [YIELD_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ESCAPES_FLAG },
 };
+#endif
 
 #define MAX_UOP_PER_EXPANSION 8
 struct opcode_macro_expansion {
-    int nuops;struct { int16_t uop; int8_t size; int8_t offset; } uops[MAX_UOP_PER_EXPANSION];
+    int nuops;
+    struct { int16_t uop; int8_t size; int8_t offset; } uops[MAX_UOP_PER_EXPANSION];
 };
-extern const struct opcode_macro_expansion
-_PyOpcode_macro_expansion[256];
+extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion
