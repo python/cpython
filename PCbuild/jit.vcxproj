@@ -47,7 +47,13 @@
                       Overwrite="true"
                       Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
   </Target>
-  <Target Name="Build" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild" Condition="'$(UseJIT)' == 'true'">
+  <Target Name="_CopyPyconfig" Inputs="$(IntDir)pyconfig.h" Outputs="$(OutDir)pyconfig.h" AfterTargets="Build" DependsOnTargets="_UpdatePyconfig">
+    <Copy SourceFiles="$(IntDir)pyconfig.h" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanPyconfig" AfterTargets="Clean">
+    <Delete Files="$(IntDir)pyconfig.h;$(OutDir)pyconfig.h" />
+  </Target>
+  <Target Name="Build" DependsOnTargets="_CopyPyconfig;FindPythonForBuild" Condition="'$(UseJIT)' == 'true'">
 	  <Exec Condition="$(Configuration) != 'Debug' and $(Platform) == 'Win32'"
           Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc'
           WorkingDirectory="$(PySourcePath)"/>
