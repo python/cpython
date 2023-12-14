@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_copy_deepcopy__doc__,
 "deepcopy($module, x, memo=None, /)\n"
 "--\n"
@@ -37,4 +39,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c1d30b4875fef931 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=641369a748545ff8 input=a9049054013a1b77]*/
