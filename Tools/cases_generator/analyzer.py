@@ -350,6 +350,7 @@ def desugar_inst(
     op_inputs: list[parser.InputEffect] = []
     parts: list[Part] = []
     uop_index = -1
+    # Move unused cache entries to the Instruction, removing them from the Uop.
     for input in inst.inputs:
         if isinstance(input, parser.CacheEffect) and input.name == "unused":
             parts.append(Skip(input.size))
@@ -357,6 +358,7 @@ def desugar_inst(
             op_inputs.append(input)
             if uop_index < 0:
                 uop_index = len(parts)
+                # Place holder for the uop.
                 parts.append(Skip(0))
     uop = make_uop("_" + inst.name, inst, op_inputs)
     uop.implicitly_created = True
