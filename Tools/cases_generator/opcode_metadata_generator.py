@@ -165,12 +165,15 @@ def generate_expansion_table(
             assert len(instr2.parts) == 1, f"{name2} is not a good superinstruction part"
             expansions.append((instr1.parts[0].name, OPARG_SIZES["OPARG_TOP"], 0))
             expansions.append((instr2.parts[0].name, OPARG_SIZES["OPARG_BOTTOM"], 0))
-        elif is_viable_expansion(inst):
+        elif not is_viable_expansion(inst):
+            continue
+        else:
             for part in inst.parts:
                 size = part.size
                 if part.name == "_SAVE_RETURN_OFFSET":
                     size = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"]
-                expansions.append((part.name, size, offset if size else 0))
+                if isinstance(part, Uop):
+                    expansions.append((part.name, size, offset if size else 0))
                 offset += part.size
         expansions_table[inst.name] = expansions
     max_uops = max (len(ex) for ex in expansions_table.values())

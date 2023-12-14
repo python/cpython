@@ -452,7 +452,7 @@ dummy_func(
             DEOPT_IF(!PyFloat_CheckExact(right));
         }
 
-        op(_BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval *
@@ -460,7 +460,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        op(_BINARY_OP_ADD_FLOAT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval +
@@ -468,7 +468,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        op(_BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval -
@@ -477,11 +477,11 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_FLOAT) =
-            _GUARD_BOTH_FLOAT + _BINARY_OP_MULTIPLY_FLOAT;
+            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_MULTIPLY_FLOAT;
         macro(BINARY_OP_ADD_FLOAT) =
-            _GUARD_BOTH_FLOAT + _BINARY_OP_ADD_FLOAT;
+            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_ADD_FLOAT;
         macro(BINARY_OP_SUBTRACT_FLOAT) =
-            _GUARD_BOTH_FLOAT + _BINARY_OP_SUBTRACT_FLOAT;
+            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_SUBTRACT_FLOAT;
 
         op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
             DEOPT_IF(!PyUnicode_CheckExact(left));

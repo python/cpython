@@ -153,6 +153,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_ADD_FLOAT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -281,6 +282,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_MULTIPLY_FLOAT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -337,6 +339,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_SUBTRACT_FLOAT
             {
                 STAT_INC(BINARY_OP, hit);
