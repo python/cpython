@@ -296,9 +296,9 @@ _Py_ThreadId(void)
 #elif defined(HAVE_THREAD_ID_FALLBACK)
     // Hack: Using characteristics of TLS address mapping.
     // The address of the thread-local variable is not equal with the actual thread pointer,
-    // However, it has the property of being determined by loader, with no duplication of values
-    // between different threads. But since it requires offset calculation, this hack is more
-    // expensive than __builtin_thread_pointer().
+    // However, it has the property of being determined by loader at runtime, with no duplication of values
+    // between different threads. So it can be used as the similar role of __builtin_thread_pointer().
+    // But since it requires offset calculation, this hack is more expensive than __builtin_thread_pointer().
     tid = (uintptr_t)&__tp;
 #else
   # error "define _Py_ThreadId for this platform"
