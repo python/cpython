@@ -985,55 +985,55 @@ const uint8_t _PyOpcode_Deopt[256] = {
 
 #endif // NEED_OPCODE_METADATA
 #define EXTRA_CASES \
-case 119: \
-case 120: \
-case 121: \
-case 122: \
-case 123: \
-case 124: \
-case 125: \
-case 126: \
-case 127: \
-case 128: \
-case 129: \
-case 130: \
-case 131: \
-case 132: \
-case 133: \
-case 134: \
-case 135: \
-case 136: \
-case 137: \
-case 138: \
-case 139: \
-case 140: \
-case 141: \
-case 142: \
-case 143: \
-case 144: \
-case 145: \
-case 146: \
-case 147: \
-case 148: \
-case 219: \
-case 220: \
-case 221: \
-case 222: \
-case 223: \
-case 224: \
-case 225: \
-case 226: \
-case 227: \
-case 228: \
-case 229: \
-case 230: \
-case 231: \
-case 232: \
-case 233: \
-case 234: \
-case 235: \
-case 255: \
-    ;
+    case 119: \
+    case 120: \
+    case 121: \
+    case 122: \
+    case 123: \
+    case 124: \
+    case 125: \
+    case 126: \
+    case 127: \
+    case 128: \
+    case 129: \
+    case 130: \
+    case 131: \
+    case 132: \
+    case 133: \
+    case 134: \
+    case 135: \
+    case 136: \
+    case 137: \
+    case 138: \
+    case 139: \
+    case 140: \
+    case 141: \
+    case 142: \
+    case 143: \
+    case 144: \
+    case 145: \
+    case 146: \
+    case 147: \
+    case 148: \
+    case 219: \
+    case 220: \
+    case 221: \
+    case 222: \
+    case 223: \
+    case 224: \
+    case 225: \
+    case 226: \
+    case 227: \
+    case 228: \
+    case 229: \
+    case 230: \
+    case 231: \
+    case 232: \
+    case 233: \
+    case 234: \
+    case 235: \
+    case 255: \
+        ;
 struct pseudo_targets {
     uint8_t targets[3];
 };

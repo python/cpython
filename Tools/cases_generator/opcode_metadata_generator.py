@@ -208,8 +208,8 @@ def generate_extra_cases(
     valid_opcodes = set(analysis.get_instruction_map().values())
     for op in range(256):
         if op not in valid_opcodes:
-            out.emit(f"case {op}: \\\n")
-    out.emit("    ;\n")
+            out.emit(f"    case {op}: \\\n")
+    out.emit("        ;\n")
 
 
 def generate_psuedo_targets(
