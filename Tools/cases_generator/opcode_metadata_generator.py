@@ -102,13 +102,17 @@ def generate_deopt_table(
     out.emit("extern const uint8_t _PyOpcode_Deopt[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Deopt[256] = {\n")
-    for inst in sorted(analysis.instructions.values(), key=lambda t:t.name):
+    deopts: list[tuple[str, str]] = []
+    for inst in analysis.instructions.values():
         deopt = inst.name
         if inst.family is not None:
             deopt = inst.family.name
-        out.emit(f"[{inst.name}] = {deopt},\n")
+        deopts.append((inst.name, deopt))
+    deopts.append(("INSTRUMENTED_LINE", "INSTRUMENTED_LINE"))
+    for name, deopt in sorted(deopts):
+        out.emit(f"[{name}] = {deopt},\n")
     out.emit("};\n\n")
-    out.emit("#endif // NEED_OPCODE_METADATA\n")
+    out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
 
 def generate_cache_table(
@@ -127,6 +131,7 @@ def generate_name_table(
     table_size = 256 + len(analysis.pseudos) 
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
     names = list(analysis.instructions) + list(analysis.pseudos)
+    names.append("INSTRUMENTED_LINE")
     for name in sorted(names):
         out.emit(f'[{name}] = "{name}",\n')
     out.emit("};\n\n")
