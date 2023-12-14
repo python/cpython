@@ -1,0 +1,1 @@
+Fix POSIX's stat and makedev issue on FreeBSD when using a ZFS filesystem
