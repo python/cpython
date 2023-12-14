@@ -247,15 +247,15 @@ def can_chmod():
     global _can_chmod
     if _can_chmod is not None:
         return _can_chmod
-    if not hasattr(os, "chown"):
+    if not hasattr(os, "chmod"):
         _can_chmod = False
         return _can_chmod
     try:
         with open(TESTFN, "wb") as f:
             try:
-                os.chmod(TESTFN, 0o777)
+                os.chmod(TESTFN, 0o555)
                 mode1 = os.stat(TESTFN).st_mode
-                os.chmod(TESTFN, 0o666)
+                os.chmod(TESTFN, 0o777)
                 mode2 = os.stat(TESTFN).st_mode
             except OSError as e:
                 can = False
@@ -302,6 +302,10 @@ def can_dac_override():
             else:
                 _can_dac_override = True
     finally:
+        try:
+            os.chmod(TESTFN, 0o700)
+        except OSError:
+            pass
         unlink(TESTFN)
 
     return _can_dac_override
