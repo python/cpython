@@ -35,7 +35,6 @@ Doc/library/bdb.rst
 Doc/library/bisect.rst
 Doc/library/calendar.rst
 Doc/library/cmd.rst
-Doc/library/collections.abc.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
@@ -59,12 +58,10 @@ Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
-Doc/library/inspect.rst
 Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
 Doc/library/lzma.rst
-Doc/library/mailbox.rst
 Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/multiprocessing.shared_memory.rst
@@ -97,7 +94,6 @@ Doc/library/test.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
 Doc/library/tkinter.ttk.rst
-Doc/library/traceback.rst
 Doc/library/unittest.mock.rst
 Doc/library/unittest.rst
 Doc/library/urllib.parse.rst
@@ -116,13 +112,11 @@ Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
 Doc/reference/import.rst
-Doc/reference/simple_stmts.rst
 Doc/tutorial/datastructures.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst
 Doc/whatsnew/2.2.rst
-Doc/whatsnew/2.3.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst
