@@ -161,7 +161,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
             return pairs, end + 1
         elif nextchar != '"':
             raise JSONDecodeError(
-                "Expecting a property name enclosed in double quotes (no trailing comma allowed)", s, end)
+                "Expecting property name enclosed in double quotes", s, end)
     end += 1
     while True:
         key, end = scanstring(s, end, strict)
@@ -203,6 +203,8 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
         end = _w(s, end).end()
         nextchar = s[end:end + 1]
         end += 1
+        if nextchar == '}':
+            raise JSONDecodeError("Trailing commas are not allowed in JSON objects.")
         if nextchar != '"':
             raise JSONDecodeError(
                 "Expecting property name enclosed in double quotes", s, end - 1)
