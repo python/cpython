@@ -44,10 +44,11 @@ FLAGS = [
     "CONST",
     "NAME",
     "JUMP",
-    "LOCAL",
-    "ERROR",
     "FREE",
+    "LOCAL",
+    "EVAL_BREAK",
     "DEOPT",
+    "ERROR",
     "ESCAPES",
 ]
 
@@ -140,7 +141,7 @@ def generate_metadata_table(
     out.emit("uint16_t flags;\n");
     out.emit("};\n\n")
     out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {\n")
-    for inst in analysis.instructions.values():
+    for inst in sorted(analysis.instructions.values(), key = lambda t:t.name):
         out.emit(f"[{inst.name}] = {{ true, {get_format(inst)}, {cflags(inst.properties)} }},\n")
     out.emit("};\n\n")
 
@@ -235,20 +236,20 @@ def generate_opcode_metadata(
     with out.header_guard("Py_CORE_OPCODE_METADATA_H"):
         out.emit("#ifndef Py_BUILD_CORE\n")
         out.emit('#  error "this header requires Py_BUILD_CORE define"\n')
-        out.emit("#endif\n")
+        out.emit("#endif\n\n")
         out.emit("#include <stdbool.h>              // bool\n")
         out.emit('#include "opcode_ids.h"\n')
         generate_is_pseudo(analysis, out)
-        out.emit('#include "pycore_uops.h"\n')
+        out.emit('#include "pycore_uop_ids.h"\n')
         generate_instruction_formats(analysis, out)
         out.emit("#define IS_VALID_OPCODE(OP) \\\n")
         out.emit("    (((OP) >= 0) && ((OP) < 256) && \\\n")
         out.emit("     (_PyOpcode_opcode_metadata[(OP)].valid_entry))\n\n")
         generate_flag_macros(out)
-        generate_deopt_table(analysis, out)
-        generate_cache_table(analysis, out)
         generate_metadata_table(analysis, out)
         generate_expansion_table(analysis, out)
+        generate_deopt_table(analysis, out)
+        generate_cache_table(analysis, out)
         generate_name_table(analysis, out)
         generate_psuedo_targets(analysis, out)
 
