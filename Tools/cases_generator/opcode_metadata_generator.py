@@ -244,8 +244,9 @@ def generate_expansion_table(
 def is_viable_expansion(inst: Instruction) -> bool:
     "An instruction can be expanded if all its parts are viable for tier 2"
     for part in inst.parts:
-        if isinstance(part, Uop) and not part.is_viable():
-            return False
+        if isinstance(part, Uop):
+            if part.properties.tier_one_only or not part.is_viable():
+                return False
     return True
 
 
