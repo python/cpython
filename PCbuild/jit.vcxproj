@@ -19,6 +19,31 @@
     <ProjectConfiguration Include="Release|x64"/>
   </ItemGroup>
   <Import Project="pyproject.props"/>
+  <!-- XXX -->
+  <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
+       own build. All other extension modules will use the copy that pythoncore
+       generates. -->
+  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
+    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
+    <ItemGroup>
+      <PyConfigH Remove="@(PyConfigH)" />
+      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
+    </ItemGroup>
+    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
+    <PropertyGroup>
+      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
+      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
+      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(DisableGil) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
+    </PropertyGroup>
+    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+    <WriteLinesToFile File="$(IntDir)pyconfig.h"
+                      Lines="$(PyConfigHText)"
+                      Overwrite="true"
+                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+  </Target>
   <Target Name="Build" DependsOnTargets="FindPythonForBuild" Condition="'$(UseJIT)' == 'true'">
 	  <Exec Condition="$(Configuration) != 'Debug' and $(Platform) == 'Win32'"
           Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc'

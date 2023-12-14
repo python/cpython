@@ -50,11 +50,10 @@
 #define PATCH_JUMP(ALIAS)                                    \
     extern void ALIAS;                                       \
     __attribute__((musttail))                                \
-    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
+    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate);
 
 _Py_CODEUNIT *
-_JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
-           PyThreadState *tstate)
+_JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyUOpExecutorObject *, current_executor, _JIT_CURRENT_EXECUTOR)
@@ -78,7 +77,9 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
     PATCH_JUMP(_JIT_CONTINUE);
     // Labels that the instruction implementations expect to exist:
 unbound_local_error_tier_two:
-    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG, PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg));
+    _PyEval_FormatExcCheckArg(
+        tstate, PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG,
+        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg));
     goto error_tier_two;
 pop_4_error_tier_two:
     STACK_SHRINK(1);
