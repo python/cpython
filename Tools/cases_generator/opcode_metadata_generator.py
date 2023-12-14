@@ -102,7 +102,7 @@ def generate_deopt_table(
     out.emit("extern const uint8_t _PyOpcode_Deopt[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Deopt[256] = {\n")
-    for inst in analysis.instructions.values():
+    for inst in sorted(analysis.instructions.values(), key=lambda t:t.name):
         deopt = inst.name
         if inst.family is not None:
             deopt = inst.family.name
