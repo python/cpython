@@ -398,13 +398,17 @@ class HelpFormatter(object):
                 raise ValueError(f'empty group {group}')
 
             try:
-                start = actions.index(group._group_actions[0])
+                start = _sys.maxsize
+                for item in group._group_actions:
+                    index = actions.index(item)
+                    if index < start:
+                        start = index
             except ValueError:
                 continue
             else:
                 group_action_count = len(group._group_actions)
                 end = start + group_action_count
-                if actions[start:end] == group._group_actions:
+                if set(actions[start:end]) == set(group._group_actions):
 
                     suppressed_actions_count = 0
                     for action in group._group_actions:
