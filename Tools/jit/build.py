@@ -24,13 +24,11 @@ if sys.version_info < (3, 11):
 TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
-ROOT = TOOLS.parent
-INCLUDE = ROOT / "Include"
+CPYTHON = TOOLS.parent
+INCLUDE = CPYTHON / "Include"
 INCLUDE_INTERNAL = INCLUDE / "internal"
-PC = ROOT / "PC"
-PC_PYCONFIG_H = PC / "pyconfig.h"
-PYCONFIG_H = ROOT / "pyconfig.h"
-PYTHON = ROOT / "Python"
+PC = CPYTHON / "PC"
+PYTHON = CPYTHON / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
@@ -73,9 +71,11 @@ class StencilGroup:
     data: Stencil = dataclasses.field(default_factory=Stencil)
 
 
-def get_llvm_tool_version(name: str) -> int | None:
+def get_llvm_tool_version(name: str, *, echo: bool = False) -> int | None:
     try:
         args = [name, "--version"]
+        if echo:
+            print(shlex.join(args))
         process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
     except FileNotFoundError:
         return None
@@ -84,18 +84,20 @@ def get_llvm_tool_version(name: str) -> int | None:
 
 
 @functools.cache
-def find_llvm_tool(tool: str) -> str | None:
+def find_llvm_tool(tool: str, *, echo: bool = False) -> str | None:
     # Unversioned executables:
     path = tool
-    if get_llvm_tool_version(path) == LLVM_VERSION:
+    if get_llvm_tool_version(path, echo=echo) == LLVM_VERSION:
         return path
     # Versioned executables:
     path = f"{tool}-{LLVM_VERSION}"
-    if get_llvm_tool_version(path) == LLVM_VERSION:
+    if get_llvm_tool_version(path, echo=echo) == LLVM_VERSION:
         return path
     # My homebrew homies:
     try:
         args = ["brew", "--prefix", f"llvm@{LLVM_VERSION}"]
+        if echo:
+            print(shlex.join(args))
         process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None
@@ -106,8 +108,8 @@ def find_llvm_tool(tool: str) -> str | None:
     return None
 
 
-def require_llvm_tool(tool: str) -> str:
-    path = find_llvm_tool(tool)
+def require_llvm_tool(tool: str, *, echo: bool = False) -> str:
+    path = find_llvm_tool(tool, echo=echo)
     if path is not None:
         return path
     raise RuntimeError(f"Can't find {tool}-{LLVM_VERSION}!")
@@ -116,11 +118,14 @@ def require_llvm_tool(tool: str) -> str:
 _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 
-async def run(*args: str | os.PathLike[str], capture: bool = False) -> bytes | None:
+async def run(
+    *args: str | os.PathLike[str], capture: bool = False, echo: bool = False
+) -> bytes | None:
     stdout = subprocess.PIPE if capture else None
     async with _SEMAPHORE:
-        # print(shlex.join(map(str, args)))
-        process = await asyncio.create_subprocess_exec(*args, cwd=ROOT, stdout=stdout)
+        if echo:
+            print(shlex.join(map(str, args)))
+        process = await asyncio.create_subprocess_exec(*args, stdout=stdout)
         out, err = await process.communicate()
     assert err is None, err
     if process.returncode:
@@ -145,7 +150,7 @@ class Parser(typing.Generic[S, R]):
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, target: "Target") -> None:
+    def __init__(self, path: pathlib.Path, options: "Options") -> None:
         self.path = path
         self.stencil_group = StencilGroup()
         self.text_symbols: dict[str, int] = {}
@@ -155,13 +160,14 @@ class Parser(typing.Generic[S, R]):
         self.text_relocations: list[tuple[int, R]] = []
         self.data_relocations: list[tuple[int, R]] = []
         self.global_offset_table: dict[str, int] = {}
-        self.target = target
+        assert options.target.parser is type(self)
+        self.options = options
 
     async def parse(self) -> StencilGroup:
-        objdump = find_llvm_tool("llvm-objdump")
+        objdump = find_llvm_tool("llvm-objdump", echo=self.options.verbose)
         if objdump is not None:
             output = await run(
-                objdump, self.path, "--disassemble", "--reloc", capture=True
+                objdump, self.path, "--disassemble", "--reloc", capture=True, echo=self.options.verbose
             )
             assert output is not None
             self.stencil_group.text.disassembly = [
@@ -170,8 +176,8 @@ class Parser(typing.Generic[S, R]):
             self.stencil_group.text.disassembly = [
                 line for line in self.stencil_group.text.disassembly if line
             ]
-        readobj = require_llvm_tool("llvm-readobj")
-        output = await run(readobj, *self._ARGS, self.path, capture=True)
+        readobj = require_llvm_tool("llvm-readobj", echo=self.options.verbose)
+        output = await run(readobj, *self._ARGS, self.path, capture=True, echo=self.options.verbose)
         assert output is not None
         # --elf-output-style=JSON is only *slightly* broken on Macho...
         output = output.replace(b"PrivateExtern\n", b"\n")
@@ -271,7 +277,7 @@ class Parser(typing.Generic[S, R]):
             else:
                 remaining.append(hole)
         self.stencil_group.text.holes = remaining
-        while len(self.stencil_group.text.body) % self.target.alignment:
+        while len(self.stencil_group.text.body) % self.options.target.alignment:
             self.stencil_group.text.body.append(0)
         for base, relocation in self.data_relocations:
             newhole = self._handle_relocation(
@@ -389,7 +395,7 @@ class ELF(Parser[schema.ELFSection, schema.ELFRelocation]):
                     symbol = wrapped_symbol["Symbol"]
                     offset = len(self.stencil_group.text.body) + symbol["Value"]
                     name = symbol["Name"]["Value"]
-                    name = name.removeprefix(self.target.prefix)
+                    name = name.removeprefix(self.options.target.prefix)
                     assert name not in self.text_symbols
                     self.text_symbols[name] = offset
                 section_data = section["SectionData"]
@@ -400,7 +406,7 @@ class ELF(Parser[schema.ELFSection, schema.ELFRelocation]):
                     symbol = wrapped_symbol["Symbol"]
                     offset = len(self.stencil_group.data.body) + symbol["Value"]
                     name = symbol["Name"]["Value"]
-                    name = name.removeprefix(self.target.prefix)
+                    name = name.removeprefix(self.options.target.prefix)
                     assert name not in self.data_symbols
                     self.data_symbols[name] = offset
                 section_data = section["SectionData"]
@@ -426,7 +432,7 @@ class ELF(Parser[schema.ELFSection, schema.ELFRelocation]):
                 "Addend": addend,
             }:
                 offset += base
-                s = s.removeprefix(self.target.prefix)
+                s = s.removeprefix(self.options.target.prefix)
                 value, symbol = self._symbol_to_value(s)
             case _:
                 raise NotImplementedError(relocation)
@@ -449,7 +455,7 @@ class COFF(Parser[schema.COFFSection, schema.COFFRelocation]):
                 symbol = wrapped_symbol["Symbol"]
                 offset = base + symbol["Value"]
                 name = symbol["Name"]
-                name = name.removeprefix(self.target.prefix)
+                name = name.removeprefix(self.options.target.prefix)
                 self.text_symbols[name] = offset
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
@@ -463,7 +469,7 @@ class COFF(Parser[schema.COFFSection, schema.COFFRelocation]):
                 symbol = wrapped_symbol["Symbol"]
                 offset = base + symbol["Value"]
                 name = symbol["Name"]
-                name = name.removeprefix(self.target.prefix)
+                name = name.removeprefix(self.options.target.prefix)
                 self.data_symbols[name] = offset
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
@@ -481,7 +487,7 @@ class COFF(Parser[schema.COFFSection, schema.COFFRelocation]):
                 "Offset": offset,
             }:
                 offset += base
-                s = s.removeprefix(self.target.prefix)
+                s = s.removeprefix(self.options.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 8], "little")
             case {
@@ -490,7 +496,7 @@ class COFF(Parser[schema.COFFSection, schema.COFFRelocation]):
                 "Offset": offset,
             }:
                 offset += base
-                s = s.removeprefix(self.target.prefix)
+                s = s.removeprefix(self.options.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
             case _:
@@ -504,7 +510,7 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
         section_data = section["SectionData"]
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
-        name = name.removeprefix(self.target.prefix)
+        name = name.removeprefix(self.options.target.prefix)
         if "SomeInstructions" in flags:
             assert not self.stencil_group.data.body, self.stencil_group.data.body
             self.stencil_group.text.body.extend(
@@ -517,7 +523,7 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
                 symbol = wrapped_symbol["Symbol"]
                 offset = symbol["Value"]
                 name = symbol["Name"]["Value"]
-                name = name.removeprefix(self.target.prefix)
+                name = name.removeprefix(self.options.target.prefix)
                 self.text_symbols[name] = offset
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
@@ -540,7 +546,7 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
                 symbol = wrapped_symbol["Symbol"]
                 offset = symbol["Value"] - len(self.stencil_group.text.body)
                 name = symbol["Name"]["Value"]
-                name = name.removeprefix(self.target.prefix)
+                name = name.removeprefix(self.options.target.prefix)
                 self.data_symbols[name] = offset
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
@@ -559,7 +565,7 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
                 "Offset": offset,
             }:
                 offset += base
-                s = s.removeprefix(self.target.prefix)
+                s = s.removeprefix(self.options.target.prefix)
                 value, symbol = HoleValue.DATA, None
                 addend = self._global_offset_table_lookup(s)
             case {
@@ -572,7 +578,7 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
                 "Offset": offset,
             }:
                 offset += base
-                s = s.removeprefix(self.target.prefix)
+                s = s.removeprefix(self.options.target.prefix)
                 value, symbol = self._symbol_to_value(s)
                 addend = 0
             case _:
@@ -587,17 +593,22 @@ class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
 class Target:
     triple: str
     pattern: str
-    pyconfig: pathlib.Path
     alignment: int
     prefix: str
     parser: type[MachO | COFF | ELF]
+
+    def sha256(self) -> bytes:
+        hasher = hashlib.sha256()
+        hasher.update(self.triple.encode())
+        hasher.update(bytes([self.alignment]))
+        hasher.update(self.prefix.encode())
+        return hasher.digest()
 
 
 TARGETS = [
     Target(
         triple="aarch64-apple-darwin",
         pattern=r"aarch64-apple-darwin.*",
-        pyconfig=PYCONFIG_H,
         alignment=8,
         prefix="_",
         parser=MachO,
@@ -605,7 +616,6 @@ TARGETS = [
     Target(
         triple="aarch64-unknown-linux-gnu",
         pattern=r"aarch64-.*-linux-gnu",
-        pyconfig=PYCONFIG_H,
         alignment=8,
         prefix="",
         parser=ELF,
@@ -613,7 +623,6 @@ TARGETS = [
     Target(
         triple="i686-pc-windows-msvc",
         pattern=r"i686-pc-windows-msvc",
-        pyconfig=PC_PYCONFIG_H,
         alignment=1,
         prefix="_",
         parser=COFF,
@@ -621,7 +630,6 @@ TARGETS = [
     Target(
         triple="x86_64-apple-darwin",
         pattern=r"x86_64-apple-darwin.*",
-        pyconfig=PYCONFIG_H,
         alignment=1,
         prefix="_",
         parser=MachO,
@@ -629,7 +637,6 @@ TARGETS = [
     Target(
         triple="x86_64-pc-windows-msvc",
         pattern=r"x86_64-pc-windows-msvc",
-        pyconfig=PC_PYCONFIG_H,
         alignment=1,
         prefix="",
         parser=COFF,
@@ -637,7 +644,6 @@ TARGETS = [
     Target(
         triple="x86_64-unknown-linux-gnu",
         pattern=r"x86_64-.*-linux-gnu",
-        pyconfig=PYCONFIG_H,
         alignment=1,
         prefix="",
         parser=ELF,
@@ -683,6 +689,12 @@ class Options:
     debug: bool
     verbose: bool
 
+    def sha256(self) -> bytes:
+        hasher = hashlib.sha256()
+        hasher.update(self.target.sha256())
+        hasher.update(bytes([self.debug]))
+        return hasher.digest()
+
 
 async def _compile(
     options: Options, opname: str, c: pathlib.Path, tempdir: pathlib.Path
@@ -693,11 +705,11 @@ async def _compile(
         f"--target={options.target.triple}",
         "-D_DEBUG" if options.debug else "-DNDEBUG",  # XXX
         f"-D_JIT_OPCODE={opname}",
-        f"-I{options.target.pyconfig.parent}",
+        f"-I{pathlib.Path.cwd()}",
     ]
-    clang = require_llvm_tool("clang")
-    await run(clang, *flags, "-o", o, c)
-    return await options.target.parser(o, options.target).parse()
+    clang = require_llvm_tool("clang", echo=options.verbose)
+    await run(clang, *flags, "-o", o, c, echo=options.verbose)
+    return await options.target.parser(o, options).parse()
 
 
 async def build(options: Options) -> dict[str, StencilGroup]:
@@ -827,9 +839,10 @@ def format_addend(addend: int) -> str:
 
 def main(target: Target, *, debug: bool, verbose: bool) -> None:
     options = Options(target, debug, verbose)
-    hasher = hashlib.sha256(hash(options).to_bytes(8, signed=True))
+    hasher = hashlib.sha256()
+    hasher.update(options.sha256())
     hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-    hasher.update(target.pyconfig.read_bytes())
+    hasher.update(pathlib.Path("pyconfig.h").resolve().read_bytes())
     for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
         for filename in filenames:
             hasher.update(pathlib.Path(dirpath, filename).read_bytes())
