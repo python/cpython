@@ -19,6 +19,7 @@ class Properties:
     uses_co_consts: bool
     uses_co_names: bool
     uses_locals: bool
+    has_free: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -41,6 +42,7 @@ class Properties:
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
+            has_free=any(p.has_free for p in properties),
         )
 
 
@@ -58,6 +60,7 @@ SKIP_PROPERTIES = Properties(
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
+    has_free=False,
 )
 
 
@@ -337,6 +340,11 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"),
+        has_free = (
+            variable_used(op, "PyCell_New")
+            or variable_used(op, "PyCell_GET")
+            or variable_used(op, "PyCell_SET")
+        ),
     )
 
 
