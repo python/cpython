@@ -4027,7 +4027,7 @@ dummy_func(
 
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
-            GOTO_TIER_ONE();
+            DEOPT_IF(1);
         }
 
         op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {
