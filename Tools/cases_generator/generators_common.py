@@ -7,10 +7,10 @@ from analyzer import (
     Uop,
     Part,
     analyze_files,
+    Properties,
     Skip,
     StackItem,
     analysis_error,
-    Properties,
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator
@@ -26,6 +26,7 @@ def root_relative_path(filename: str) -> str:
     try:
         return Path(filename).absolute().relative_to(ROOT).as_posix()
     except ValueError:
+        # Not relative to root, just return original path.
         return filename
 
 def write_header(generator: str, sources: list[str], outfile: TextIO) -> None:
@@ -188,6 +189,7 @@ def emit_tokens(
         else:
             out.emit(tkn)
 
+
 def cflags(p: Properties) -> str:
     flags: list[str] = []
     if p.oparg:
@@ -212,3 +214,19 @@ def cflags(p: Properties) -> str:
         return " | ".join(flags)
     else:
         return "0"
+
+def get_have_arg_and_min_instrumented(instmap: dict[str, int], analysis: Analysis) -> tuple[int, int]:
+    min_instrumented = 256
+    first_arg = 256
+    for name, op in instmap.items():
+        if name.startswith("INSTRUMENTED") and op < min_instrumented:
+            min_instrumented = op
+        if name == "INSTRUMENTED_LINE":
+            # INSTRUMENTED_LINE is not defined
+            continue
+        if name in analysis.pseudos:
+            continue
+        if analysis.instructions[name].properties.oparg and op < first_arg:
+            first_arg = op
+    return first_arg, min_instrumented
+

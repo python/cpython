@@ -16,6 +16,7 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
+    get_have_arg_and_min_instrumented,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -24,7 +25,7 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/opcode_ids.h"
 
 
-    
+
 def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: TextIO) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
@@ -39,19 +40,8 @@ def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: Te
             write_define(name, op)
 
         out.emit("\n")
-        min_instrumented = 256
-        first_arg = 256
-        for name, op in instmap.items():
-            if name.startswith("INSTRUMENTED") and op < min_instrumented:
-                min_instrumented = op
-            if name == "INSTRUMENTED_LINE":
-                # INSTRUMENTED_LINE is not defined
-                continue
-            if name in analysis.pseudos:
-                continue
-            if analysis.instructions[name].properties.oparg and op < first_arg:
-                first_arg = op
-        write_define("HAVE_ARGUMENT", first_arg)
+        have_arg, min_instrumented = get_have_arg_and_min_instrumented(instmap, analysis)
+        write_define("HAVE_ARGUMENT", have_arg)
         write_define("MIN_INSTRUMENTED_OPCODE", min_instrumented)
 
 

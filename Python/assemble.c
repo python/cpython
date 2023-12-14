@@ -4,7 +4,7 @@
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
 #include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
-#include "pycore_opcode_metadata.h" // IS_PSEUDO_INSTR, _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
 
 
 #define DEFAULT_CODE_SIZE 128

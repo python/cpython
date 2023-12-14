@@ -237,7 +237,12 @@ class Analysis:
 
         # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
         instmap["RESUME"] = 149
+
+        # This is an historical oddity.
+        instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
+
         instmap["INSTRUMENTED_LINE"] = 254
+
 
         instrumented = [
             name for name in self.instructions if name.startswith("INSTRUMENTED")
@@ -557,7 +562,9 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                     instructions[target.text].is_target = True
     # Hack
     if "BINARY_OP_INPLACE_ADD_UNICODE" in instructions:
-        instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
+        inst = instructions["BINARY_OP_INPLACE_ADD_UNICODE"]
+        inst.family = families["BINARY_OP"]
+        families["BINARY_OP"].members.append(inst)
     return Analysis(instructions, uops, families, pseudos)
 
 

@@ -38,13 +38,12 @@ def generate_names_and_flags(
 
     out.emit("};\n\n")
     out.emit("const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {\n")
-    names = [uop.name for uop in analysis.uops.values()]
-    for name in sorted(names):
+    for uop in sorted(analysis.uops.values(), key=lambda t:t.name):
         if uop.is_viable() and not uop.properties.tier_one_only:
-            out.emit(f'[{name}] = "{name}",\n')
+            out.emit(f'[{uop.name}] = "{uop.name}",\n')
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
-    
+
 def generate_uop_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO
 ) -> None:
