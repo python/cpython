@@ -23,6 +23,9 @@
   <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
        own build. All other extension modules will use the copy that pythoncore
        generates. -->
+  <ItemGroup>
+    <ClInclude Include="..\PC\pyconfig.h.in" />
+  </ItemGroup>
   <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
     <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
     <ItemGroup>
