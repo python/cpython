@@ -164,14 +164,14 @@ extern void _PyThreadState_Suspend(PyThreadState *tstate);
 // them from reattaching until the stop-the-world pause is complete.
 //
 // NOTE: This is a no-op outside of Py_GIL_DISABLED builds.
-extern void _PyRuntimeState_StopTheWorld(_PyRuntimeState *runtime);
-extern void _PyRuntimeState_StartTheWorld(_PyRuntimeState *runtime);
+extern void _PyEval_StopTheWorldAll(_PyRuntimeState *runtime);
+extern void _PyEval_StartTheWorldAll(_PyRuntimeState *runtime);
 
 // Perform a stop-the-world pause for threads in the specified interpreter.
 //
 // NOTE: This is a no-op outside of Py_GIL_DISABLED builds.
-extern void _PyInterpreterState_StopTheWorld(PyInterpreterState *interp);
-extern void _PyInterpreterState_StartTheWorld(PyInterpreterState *interp);
+extern void _PyEval_StopTheWorld(PyInterpreterState *interp);
+extern void _PyEval_StartTheWorld(PyInterpreterState *interp);
 
 
 static inline void

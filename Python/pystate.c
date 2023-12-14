@@ -2055,7 +2055,7 @@ start_the_world(struct _stoptheworld_state *stw)
 #endif  // Py_GIL_DISABLED
 
 void
-_PyRuntimeState_StopTheWorld(_PyRuntimeState *runtime)
+_PyEval_StopTheWorldAll(_PyRuntimeState *runtime)
 {
 #ifdef Py_GIL_DISABLED
     stop_the_world(&runtime->stoptheworld);
@@ -2063,7 +2063,7 @@ _PyRuntimeState_StopTheWorld(_PyRuntimeState *runtime)
 }
 
 void
-_PyRuntimeState_StartTheWorld(_PyRuntimeState *runtime)
+_PyEval_StartTheWorldAll(_PyRuntimeState *runtime)
 {
 #ifdef Py_GIL_DISABLED
     start_the_world(&runtime->stoptheworld);
@@ -2071,7 +2071,7 @@ _PyRuntimeState_StartTheWorld(_PyRuntimeState *runtime)
 }
 
 void
-_PyInterpreterState_StopTheWorld(PyInterpreterState *interp)
+_PyEval_StopTheWorld(PyInterpreterState *interp)
 {
 #ifdef Py_GIL_DISABLED
     stop_the_world(&interp->stoptheworld);
@@ -2079,7 +2079,7 @@ _PyInterpreterState_StopTheWorld(PyInterpreterState *interp)
 }
 
 void
-_PyInterpreterState_StartTheWorld(PyInterpreterState *interp)
+_PyEval_StartTheWorld(PyInterpreterState *interp)
 {
 #ifdef Py_GIL_DISABLED
     start_the_world(&interp->stoptheworld);
