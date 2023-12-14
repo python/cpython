@@ -25,9 +25,8 @@ from typing import TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 
-def generate_names_and_flags(
-    analysis: Analysis, out: CWriter
-) -> None:
+
+def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern const uint16_t _PyUop_Flags[MAX_UOP_ID+1];\n")
     out.emit("extern const char * const _PyOpcode_uop_name[MAX_UOP_ID+1];\n\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
@@ -38,11 +37,12 @@ def generate_names_and_flags(
 
     out.emit("};\n\n")
     out.emit("const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {\n")
-    for uop in sorted(analysis.uops.values(), key=lambda t:t.name):
+    for uop in sorted(analysis.uops.values(), key=lambda t: t.name):
         if uop.is_viable() and not uop.properties.tier_one_only:
             out.emit(f'[{uop.name}] = "{uop.name}",\n')
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
+
 
 def generate_uop_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO
@@ -50,9 +50,10 @@ def generate_uop_metadata(
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
     with out.header_guard("Py_CORE_UOP_METADATA_H"):
-        out.emit('#include <stdint.h>\n')
+        out.emit("#include <stdint.h>\n")
         out.emit('#include "pycore_uop_ids.h"\n')
         generate_names_and_flags(analysis, out)
+
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the header file with uop metadata.",

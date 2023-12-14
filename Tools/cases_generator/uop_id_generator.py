@@ -23,6 +23,7 @@ from typing import TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 
+
 def generate_uop_ids(
     filenames: list[str], analysis: Analysis, outfile: TextIO, distinct_namespace: bool
 ) -> None:

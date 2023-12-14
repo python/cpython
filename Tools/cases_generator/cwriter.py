@@ -120,8 +120,9 @@ class CWriter:
         self.last_token = None
 
     @contextlib.contextmanager
-    def header_guard(self, name:str) -> Iterator[None]:
-        self.out.write(f"""
+    def header_guard(self, name: str) -> Iterator[None]:
+        self.out.write(
+            f"""
 #ifndef {name}
 #define {name}
 #ifdef __cplusplus
@@ -131,7 +132,8 @@ extern "C" {{
 """
         )
         yield
-        self.out.write(f"""
+        self.out.write(
+            f"""
 #ifdef __cplusplus
 }}
 #endif

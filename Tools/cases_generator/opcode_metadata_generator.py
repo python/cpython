@@ -36,7 +36,7 @@ OPARG_SIZES = {
     "OPARG_BOTTOM": 6,
     "OPARG_SAVE_RETURN_OFFSET": 7,
     # Skip 8 as the other powers of 2 are sizes
-    "OPARG_REPLACED": 9
+    "OPARG_REPLACED": 9,
 }
 
 
@@ -55,11 +55,14 @@ FLAGS = [
     "ESCAPES",
 ]
 
+
 def generate_flag_macros(out: CWriter) -> None:
     for i, flag in enumerate(FLAGS):
         out.emit(f"#define HAS_{flag}_FLAG ({1<<i})\n")
     for i, flag in enumerate(FLAGS):
-        out.emit(f"#define OPCODE_HAS_{flag}(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_{flag}_FLAG))\n")
+        out.emit(
+            f"#define OPCODE_HAS_{flag}(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_{flag}_FLAG))\n"
+        )
     out.emit("\n")
 
 
@@ -86,10 +89,7 @@ def emit_stack_effect_function(
     out.emit("#endif\n\n")
 
 
-def generate_stack_effect_functions(
-    analysis: Analysis, out: CWriter
-) -> None:
-
+def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     popped_data: list[tuple[str, str]] = []
     pushed_data: list[tuple[str, str]] = []
     for inst in analysis.instructions.values():
@@ -102,9 +102,7 @@ def generate_stack_effect_functions(
     emit_stack_effect_function(out, "pushed", sorted(pushed_data))
 
 
-def generate_is_pseudo(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_is_pseudo(analysis: Analysis, out: CWriter) -> None:
     """Write the IS_PSEUDO_INSTR macro"""
     out.emit("\n\n#define IS_PSEUDO_INSTR(OP)  ( \\\n")
     for op in analysis.pseudos:
@@ -120,13 +118,11 @@ def get_format(inst: Instruction) -> str:
         format = "INSTR_FMT_IX"
     if inst.size > 1:
         format += "C"
-    format += "0" * (inst.size-2)
+    format += "0" * (inst.size - 2)
     return format
 
 
-def generate_instruction_formats(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_instruction_formats(analysis: Analysis, out: CWriter) -> None:
     # Compute the set of all instruction formats.
     formats: set[str] = set()
     for inst in analysis.instructions.values():
@@ -139,9 +135,7 @@ def generate_instruction_formats(
     out.emit("};\n\n")
 
 
-def generate_deopt_table(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern const uint8_t _PyOpcode_Deopt[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Deopt[256] = {\n")
@@ -158,9 +152,7 @@ def generate_deopt_table(
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
 
-def generate_cache_table(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_cache_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern const uint8_t _PyOpcode_Caches[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Caches[256] = {\n")
@@ -170,14 +162,12 @@ def generate_cache_table(
         if inst.name.startswith("INSTRUMENTED"):
             continue
         if inst.size > 1:
-         out.emit(f"[{inst.name}] = {inst.size-1},\n")
+            out.emit(f"[{inst.name}] = {inst.size-1},\n")
     out.emit("};\n")
     out.emit("#endif\n\n")
 
 
-def generate_name_table(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_name_table(analysis: Analysis, out: CWriter) -> None:
     table_size = 256 + len(analysis.pseudos)
     out.emit(f"extern const char *_PyOpcode_OpName[{table_size}];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
@@ -190,21 +180,25 @@ def generate_name_table(
     out.emit("#endif\n\n")
 
 
-def generate_metadata_table(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_metadata_table(analysis: Analysis, out: CWriter) -> None:
     table_size = 256 + len(analysis.pseudos)
     out.emit("struct opcode_metadata {\n")
-    out.emit("uint8_t valid_entry;\n");
-    out.emit("int8_t instr_format;\n");
-    out.emit("int16_t flags;\n");
+    out.emit("uint8_t valid_entry;\n")
+    out.emit("int8_t instr_format;\n")
+    out.emit("int16_t flags;\n")
     out.emit("};\n\n")
-    out.emit(f"extern const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}];\n")
+    out.emit(
+        f"extern const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}];\n"
+    )
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
-    out.emit(f"const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}] = {{\n")
-    for inst in sorted(analysis.instructions.values(), key = lambda t:t.name):
-        out.emit(f"[{inst.name}] = {{ true, {get_format(inst)}, {cflags(inst.properties)} }},\n")
-    for pseudo in sorted(analysis.pseudos.values(), key = lambda t:t.name):
+    out.emit(
+        f"const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}] = {{\n"
+    )
+    for inst in sorted(analysis.instructions.values(), key=lambda t: t.name):
+        out.emit(
+            f"[{inst.name}] = {{ true, {get_format(inst)}, {cflags(inst.properties)} }},\n"
+        )
+    for pseudo in sorted(analysis.pseudos.values(), key=lambda t: t.name):
         flags = cflags(pseudo.properties)
         for flag in pseudo.flags:
             if flags == "0":
@@ -215,11 +209,10 @@ def generate_metadata_table(
     out.emit("};\n")
     out.emit("#endif\n\n")
 
-def generate_expansion_table(
-    analysis: Analysis, out: CWriter
-) -> None:
+
+def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
     expansions_table: dict[str, list[tuple[str, int, int]]] = {}
-    for inst in sorted(analysis.instructions.values(), key=lambda t:t.name):
+    for inst in sorted(analysis.instructions.values(), key=lambda t: t.name):
         offset: int = 0  # Cache effect offset
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         if inst.is_super():
@@ -231,8 +224,12 @@ def generate_expansion_table(
             assert name2 in analysis.instructions, f"{name2} doesn't match any instr"
             instr1 = analysis.instructions[name1]
             instr2 = analysis.instructions[name2]
-            assert len(instr1.parts) == 1, f"{name1} is not a good superinstruction part"
-            assert len(instr2.parts) == 1, f"{name2} is not a good superinstruction part"
+            assert (
+                len(instr1.parts) == 1
+            ), f"{name1} is not a good superinstruction part"
+            assert (
+                len(instr2.parts) == 1
+            ), f"{name2} is not a good superinstruction part"
             expansions.append((instr1.parts[0].name, OPARG_SIZES["OPARG_TOP"], 0))
             expansions.append((instr2.parts[0].name, OPARG_SIZES["OPARG_BOTTOM"], 0))
         elif not is_viable_expansion(inst):
@@ -251,21 +248,30 @@ def generate_expansion_table(
                     expansions.append((part.name, size, offset if size else 0))
                 offset += part.size
         expansions_table[inst.name] = expansions
-    max_uops = max (len(ex) for ex in expansions_table.values())
+    max_uops = max(len(ex) for ex in expansions_table.values())
     out.emit(f"#define MAX_UOP_PER_EXPANSION {max_uops}\n")
     out.emit("struct opcode_macro_expansion {\n")
     out.emit("int nuops;\n")
-    out.emit("struct { int16_t uop; int8_t size; int8_t offset; } uops[MAX_UOP_PER_EXPANSION];\n")
+    out.emit(
+        "struct { int16_t uop; int8_t size; int8_t offset; } uops[MAX_UOP_PER_EXPANSION];\n"
+    )
     out.emit("};\n")
-    out.emit("extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];\n\n")
+    out.emit(
+        "extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];\n\n"
+    )
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const struct opcode_macro_expansion\n")
     out.emit("_PyOpcode_macro_expansion[256] = {\n")
     for inst_name, expansions in expansions_table.items():
-        uops = [f"{{ {name}, {size}, {offset} }}" for (name, size, offset) in expansions]
-        out.emit(f'[{inst_name}] = {{ .nuops = {len(expansions)}, .uops = {{ {", ".join(uops)} }} }},\n')
+        uops = [
+            f"{{ {name}, {size}, {offset} }}" for (name, size, offset) in expansions
+        ]
+        out.emit(
+            f'[{inst_name}] = {{ .nuops = {len(expansions)}, .uops = {{ {", ".join(uops)} }} }},\n'
+        )
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
+
 
 def is_viable_expansion(inst: Instruction) -> bool:
     "An instruction can be expanded if all its parts are viable for tier 2"
@@ -281,9 +287,7 @@ def is_viable_expansion(inst: Instruction) -> bool:
     return True
 
 
-def generate_extra_cases(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_extra_cases(analysis: Analysis, out: CWriter) -> None:
     out.emit("#define EXTRA_CASES \\\n")
     valid_opcodes = set(analysis.opmap.values())
     for op in range(256):
@@ -292,22 +296,24 @@ def generate_extra_cases(
     out.emit("        ;\n")
 
 
-def generate_psuedo_targets(
-    analysis: Analysis, out: CWriter
-) -> None:
+def generate_psuedo_targets(analysis: Analysis, out: CWriter) -> None:
     table_size = len(analysis.pseudos)
     max_targets = max(len(pseudo.targets) for pseudo in analysis.pseudos.values())
     out.emit("struct pseudo_targets {\n")
     out.emit(f"uint8_t targets[{max_targets + 1}];\n")
     out.emit("};\n")
-    out.emit(f"extern const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}];\n")
+    out.emit(
+        f"extern const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}];\n"
+    )
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
-    out.emit(f"const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}] = {{\n")
+    out.emit(
+        f"const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}] = {{\n"
+    )
     for pseudo in analysis.pseudos.values():
-        targets = [ "0" ] * (max_targets + 1)
+        targets = ["0"] * (max_targets + 1)
         for i, target in enumerate(pseudo.targets):
             targets[i] = target.name
-        out.emit(f"[{pseudo.name}-256] = {{ {{ {", ".join(targets)} }} }},\n")
+        out.emit(f"[{pseudo.name}-256] = {{ {{ {', '.join(targets)} }} }},\n")
     out.emit("};\n\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n")
     out.emit("static inline bool\n")
@@ -315,8 +321,12 @@ def generate_psuedo_targets(
     out.emit(f"if (pseudo < 256 || pseudo >= {256+table_size}) {{\n")
     out.emit(f"return false;\n")
     out.emit("}\n")
-    out.emit(f"for (int i = 0; _PyOpcode_PseudoTargets[pseudo-256].targets[i]; i++) {{\n")
-    out.emit(f"if (_PyOpcode_PseudoTargets[pseudo-256].targets[i] == target) return true;\n")
+    out.emit(
+        f"for (int i = 0; _PyOpcode_PseudoTargets[pseudo-256].targets[i]; i++) {{\n"
+    )
+    out.emit(
+        f"if (_PyOpcode_PseudoTargets[pseudo-256].targets[i] == target) return true;\n"
+    )
     out.emit("}\n")
     out.emit(f"return false;\n")
     out.emit("}\n\n")

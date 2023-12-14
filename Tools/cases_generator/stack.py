@@ -29,7 +29,7 @@ class StackOffset:
     def push(self, item: StackItem) -> None:
         self.pushed.append(var_size(item))
 
-    def __sub__(self, other:"StackOffset") -> "StackOffset":
+    def __sub__(self, other: "StackOffset") -> "StackOffset":
         res = StackOffset()
         res.popped = self.popped + other.pushed
         res.pushed = self.pushed + other.popped
@@ -178,6 +178,7 @@ class Stack:
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
+
 
 def get_stack_effect(inst: Instruction) -> Stack:
     stack = Stack()

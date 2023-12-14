@@ -25,8 +25,9 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/opcode_ids.h"
 
 
-
-def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: TextIO) -> None:
+def generate_opcode_header(
+    filenames: list[str], analysis: Analysis, outfile: TextIO
+) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
     with out.header_guard("Py_OPCODE_IDS_H"):
@@ -42,7 +43,6 @@ def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: Te
         have_arg, min_instrumented = get_have_arg_and_min_instrumented(analysis)
         write_define("HAVE_ARGUMENT", have_arg)
         write_define("MIN_INSTRUMENTED_OPCODE", min_instrumented)
-
 
 
 arg_parser = argparse.ArgumentParser(

@@ -80,6 +80,7 @@ class Skip:
     def properties(self) -> Properties:
         return SKIP_PROPERTIES
 
+
 @dataclass
 class StackItem:
     name: str
@@ -202,7 +203,6 @@ class Instruction:
             return False
 
 
-
 @dataclass
 class PseudoInstruction:
     name: str
@@ -216,6 +216,7 @@ class PseudoInstruction:
     @property
     def properties(self) -> Properties:
         return Properties.from_list([i.properties for i in self.targets])
+
 
 @dataclass
 class Family:
@@ -277,8 +278,8 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     for cache in caches:
         if cache.name == "unused":
             raise analysis_error(
-                "Unused cache entry in op. Move to enclosing macro.",
-                cache.tokens[0])
+                "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
+            )
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
@@ -360,7 +361,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
         tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
-        uses_locals= (variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL")) and not has_free,
+        uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
+        and not has_free,
         has_free=has_free,
     )
 
@@ -467,6 +469,7 @@ def add_pseudo(
         pseudo.flags,
     )
 
+
 def assign_opcodes(
     instructions: dict[str, Instruction],
     families: dict[str, Family],
@@ -489,10 +492,7 @@ def assign_opcodes(
 
     instmap["INSTRUMENTED_LINE"] = 254
 
-
-    instrumented = [
-        name for name in instructions if name.startswith("INSTRUMENTED")
-    ]
+    instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
     # Special case: this instruction is implemented in ceval.c
     # rather than bytecodes.c, so we need to add it explicitly
@@ -556,6 +556,7 @@ def assign_opcodes(
 
     assert 255 not in instmap.values()
     return instmap
+
 
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
