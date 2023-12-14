@@ -206,6 +206,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_LOCAL_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
+    if p.eval_breaker:
+        flags.append("HAS_EVAL_BREAK_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
     if p.escapes:
