@@ -351,7 +351,7 @@ If the right hand side is present, an annotated
 assignment performs the actual assignment before evaluating annotations
 (where applicable). If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
-:meth:`~object.__setitem__` or :meth:~object.`__setattr__` call.
+:meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
 .. seealso::
 
