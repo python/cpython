@@ -8,13 +8,8 @@ PyTime C API
 PyTime API
 ----------
 
-The PyTime_t API is written to use timestamp and timeout values stored in
-various formats and to read clocks with a resolution of one nanosecond.
-
-The :c:type:`PyTime_t` type is signed to support negative timestamps. The
-supported range is around [-292.3 years; +292.3 years]. Using the Unix epoch
-(January 1st, 1970) as reference, the supported date range is around
-[1677-09-21; 2262-04-11].
+The PyTime API provides access to system clocks and time conversion functions.
+It is similar to the Python :mod:`time` module.
 
 
 Types
@@ -22,10 +17,15 @@ Types
 
 .. c:type:: PyTime_t
 
-   Timestamp type with subsecond precision: 64-bit signed integer.
+   A timestamp or duration in nanoseconds represented as a 64-bit signed
+   integer.
 
-   This type can be used to store a duration. Indirectly, it can be used to
-   store a date relative to a reference date, such as the UNIX epoch.
+   The reference point for timestamps depends on the clock used. For example,
+   :c:func:`PyTime_Time` returns timestamps relative to the UNIX epoch.
+
+   The supported range is around [-292.3 years; +292.3 years]. Using the Unix
+   epoch (January 1st, 1970) as reference, the supported date range is around
+   [1677-09-21; 2262-04-11].
 
 
 Constants
@@ -56,48 +56,35 @@ Functions
 
 .. c:function:: PyTime_t PyTime_Monotonic(void)
 
-   Get the monotonic clock: clock that cannot go backwards.
-
-   The monotonic clock is not affected by system clock updates. The reference
-   point of the returned value is undefined, so that only the difference
-   between the results of consecutive calls is valid.
-
-   If reading the clock fails, silently ignore the error and return 0.
-
-   On integer overflow, silently ignore the overflow and clamp the clock to
-   the ``[PyTime_MIN; PyTime_MAX]`` range.
-
-   See also the :func:`time.monotonic` function.
-
-
-.. c:function:: PyTime_t PyTime_PerfCounter(void)
-
-   Get the performance counter: clock with the highest available resolution to
-   measure a short duration.
-
-   The performance counter does include time elapsed during sleep and is
-   system-wide. The reference point of the returned value is undefined, so that
-   only the difference between the results of two calls is valid.
-
-   If reading the clock fails, silently ignore the error and return 0.
-
-   On integer overflow, silently ignore the overflow and clamp the clock to
-   the ``[PyTime_MIN; PyTime_MAX]`` range.
-
-   See also the :func:`time.perf_counter` function.
-
-
-.. c:function:: PyTime_t PyTime_Time(void)
-
-   Get the system clock.
-
-   The system clock can be changed automatically (e.g. by a NTP daemon) or
-   manually by the system administrator. So it can also go backward.  Use
-   :c:func:`PyTime_Monotonic` to use a monotonic clock.
+   Return the value in nanoseconds of a monotonic clock, i.e. a clock
+   that cannot go backwards. Similar to :func:`time.monotonic_ns`; see
+   :func:`time.monotonic` for details.
 
    If reading the clock fails, silently ignore the error and return ``0``.
 
    On integer overflow, silently ignore the overflow and clamp the clock to
    the ``[PyTime_MIN; PyTime_MAX]`` range.
 
-   See also the :func:`time.time` function.
+
+.. c:function:: PyTime_t PyTime_PerfCounter(void)
+
+   Return the value in nanoseconds of a performance counter, i.e. a
+   clock with the highest available resolution to measure a short duration.
+   Similar to :func:`time.perf_counter_ns`; see :func:`time.perf_counter` for
+   details.
+
+   If reading the clock fails, silently ignore the error and return ``0``.
+
+   On integer overflow, silently ignore the overflow and clamp the clock to
+   the ``[PyTime_MIN; PyTime_MAX]`` range.
+
+
+.. c:function:: PyTime_t PyTime_Time(void)
+
+   Return the time in nanoseconds since the epoch_. Similar to
+   :func:`time.time_ns`; see :func:`time.time` for details.
+
+   If reading the clock fails, silently ignore the error and return ``0``.
+
+   On integer overflow, silently ignore the overflow and clamp the clock to
+   the ``[PyTime_MIN; PyTime_MAX]`` range.
