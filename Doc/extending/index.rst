@@ -27,8 +27,8 @@ Recommended third party tools
 
 This guide only covers the basic tools for creating extensions provided
 as part of this version of CPython. Third party tools like
-`Cython <http://cython.org/>`_, `cffi <https://cffi.readthedocs.io>`_,
-`SWIG <http://www.swig.org>`_ and `Numba <https://numba.pydata.org/>`_
+`Cython <https://cython.org/>`_, `cffi <https://cffi.readthedocs.io>`_,
+`SWIG <https://www.swig.org>`_ and `Numba <https://numba.pydata.org/>`_
 offer both simpler and more sophisticated approaches to creating C and C++
 extensions for Python.
 

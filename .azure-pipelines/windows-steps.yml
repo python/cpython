@@ -19,9 +19,11 @@ steps:
 
 - script: python.bat -m test.pythoninfo
   displayName: 'Display build info'
+  condition: and(succeeded(), variables['testRunPlatform'])
 
 - script: PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0 --junit-xml="$(Build.BinariesDirectory)\test-results.xml" --tempdir="$(Build.BinariesDirectory)\test"
   displayName: 'Tests'
+  condition: and(succeeded(), variables['testRunPlatform'])
   env:
     PREFIX: $(Py_OutDir)\$(arch)
 
@@ -32,4 +34,4 @@ steps:
     mergeTestResults: true
     testRunTitle: $(testRunTitle)
     platform: $(testRunPlatform)
-  condition: succeededOrFailed()
+  condition: and(succeededOrFailed(), variables['testRunPlatform'])

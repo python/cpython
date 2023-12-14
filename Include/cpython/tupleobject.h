@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
     PyObject_VAR_HEAD
     /* ob_item contains space for 'ob_size' elements.
@@ -15,22 +11,28 @@ typedef struct {
 } PyTupleObject;
 
 PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
-PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
-
-/* Macros trading safety for speed */
 
 /* Cast argument to PyTupleObject* type. */
-#define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
+#define _PyTuple_CAST(op) \
+    (assert(PyTuple_Check(op)), _Py_CAST(PyTupleObject*, (op)))
 
-#define PyTuple_GET_SIZE(op)    Py_SIZE(_PyTuple_CAST(op))
+// Macros and static inline functions, trading safety for speed
 
-#define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
-
-/* Macro, *only* to be used to fill in brand new tuples */
-#define PyTuple_SET_ITEM(op, i, v) (_PyTuple_CAST(op)->ob_item[i] = v)
-
-PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);
-
-#ifdef __cplusplus
+static inline Py_ssize_t PyTuple_GET_SIZE(PyObject *op) {
+    PyTupleObject *tuple = _PyTuple_CAST(op);
+    return Py_SIZE(tuple);
 }
-#endif
+#define PyTuple_GET_SIZE(op) PyTuple_GET_SIZE(_PyObject_CAST(op))
+
+#define PyTuple_GET_ITEM(op, index) (_PyTuple_CAST(op)->ob_item[(index)])
+
+/* Function *only* to be used to fill in brand new tuples */
+static inline void
+PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
+    PyTupleObject *tuple = _PyTuple_CAST(op);
+    assert(0 <= index);
+    assert(index < Py_SIZE(tuple));
+    tuple->ob_item[index] = value;
+}
+#define PyTuple_SET_ITEM(op, index, value) \
+    PyTuple_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))

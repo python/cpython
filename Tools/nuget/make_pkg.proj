@@ -33,7 +33,7 @@
         
         <PackageArguments Condition="$(Packages) != ''">"$(IntermediateOutputPath)pkg\pip.exe" -B -m pip install -U $(Packages)</PackageArguments>
         
-        <NugetPackCommand>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec" -BasePath "$(IntermediateOutputPath)pkg"</NugetPackCommand>
+        <NugetPackCommand>"$(Nuget)" pack "$(IntermediateOutputPath)pkg\python.nuspec" -BasePath "$(IntermediateOutputPath)pkg"</NugetPackCommand>
         <NugetPackSymbolsCommand Condition="Exists('$(MSBuildThisFileDirectory)\$(OutputName).symbols.nuspec')">"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).symbols.nuspec" -BasePath "$(BuildPath.TrimEnd(`\`))"</NugetPackSymbolsCommand>
         <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath.Trim(`\`))"</NugetArguments>
         <NugetArguments>$(NugetArguments) -Version "$(NuspecVersion)"</NugetArguments>

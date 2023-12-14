@@ -1,1 +1,0 @@
-Fix ``SyntaxError`` indicator printing too many spaces for multi-line strings - by Anthony Sottile.

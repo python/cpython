@@ -58,6 +58,15 @@ The following exception classes are defined in the :mod:`email.errors` module:
    :class:`~email.mime.nonmultipart.MIMENonMultipart` (e.g.
    :class:`~email.mime.image.MIMEImage`).
 
+.. exception:: MessageDefect()
+
+   This is the base class for all defects found when parsing email messages.
+   It is derived from :exc:`ValueError`.
+
+.. exception:: HeaderDefect()
+
+   This is the base class for all defects found when parsing email headers.
+   It is derived from :exc:`MessageDefect`.
 
 Here is the list of the defects that the :class:`~email.parser.FeedParser`
 can find while parsing messages.  Note that the defects are added to the message
@@ -99,7 +108,7 @@ All defect classes are subclassed from :class:`email.errors.MessageDefect`.
 * :class:`MultipartInvariantViolationDefect` -- A message claimed to be a
   :mimetype:`multipart`, but no subparts were found.  Note that when a message
   has this defect, its :meth:`~email.message.Message.is_multipart` method may
-  return false even though its content type claims to be :mimetype:`multipart`.
+  return ``False`` even though its content type claims to be :mimetype:`multipart`.
 
 * :class:`InvalidBase64PaddingDefect` -- When decoding a block of base64
   encoded bytes, the padding was not correct.  Enough padding is added to
@@ -112,3 +121,6 @@ All defect classes are subclassed from :class:`email.errors.MessageDefect`.
 * :class:`InvalidBase64LengthDefect` -- When decoding a block of base64 encoded
   bytes, the number of non-padding base64 characters was invalid (1 more than
   a multiple of 4).  The encoded block was kept as-is.
+
+* :class:`InvalidDateDefect` -- When decoding an invalid or unparsable date field.
+  The original value is kept as-is.

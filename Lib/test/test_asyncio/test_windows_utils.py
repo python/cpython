@@ -107,7 +107,8 @@ class PopenTests(unittest.TestCase):
 
         events = [ovin.event, ovout.event, overr.event]
         # Super-long timeout for slow buildbots.
-        res = _winapi.WaitForMultipleObjects(events, True, 10000)
+        res = _winapi.WaitForMultipleObjects(events, True,
+                                             int(support.SHORT_TIMEOUT * 1000))
         self.assertEqual(res, _winapi.WAIT_OBJECT_0)
         self.assertFalse(ovout.pending)
         self.assertFalse(overr.pending)

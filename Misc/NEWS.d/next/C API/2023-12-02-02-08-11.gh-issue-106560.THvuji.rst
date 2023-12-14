@@ -1,0 +1,2 @@
+Fix redundant declarations in the public C API. Declare PyBool_Type,
+PyLong_Type and PySys_Audit() only once. Patch by Victor Stinner.

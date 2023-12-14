@@ -1,0 +1,2 @@
+Deprecate the ``exc_type`` field of :class:`traceback.TracebackException`.
+Add ``exc_type_str`` to replace it.

@@ -1,1 +1,0 @@
-Completing WSA* error codes in :mod:`socket`.

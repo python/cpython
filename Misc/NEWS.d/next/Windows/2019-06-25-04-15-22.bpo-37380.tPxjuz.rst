@@ -1,2 +1,0 @@
-Don't collect unfinished processes with ``subprocess._active`` on Windows to
-cleanup later. Patch by Ruslan Kuprieiev.

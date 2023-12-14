@@ -1,6 +1,6 @@
 # Check every path through every method of UserDict
 
-from test import mapping_tests
+from test import mapping_tests, support
 import unittest
 import collections
 
@@ -213,6 +213,11 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         else:
             self.fail("g[42] didn't raise KeyError")
 
+    # Decorate existing test with recursion limit, because
+    # the test is for C structure, but `UserDict` is a Python structure.
+    test_repr_deep = support.infinite_recursion()(
+        mapping_tests.TestHashMappingProtocol.test_repr_deep,
+    )
 
 
 if __name__ == "__main__":

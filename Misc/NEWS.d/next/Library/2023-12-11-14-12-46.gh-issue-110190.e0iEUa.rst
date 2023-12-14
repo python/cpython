@@ -1,0 +1,1 @@
+Fix ctypes structs with array on PPC64LE platform by setting ``MAX_STRUCT_SIZE`` to 64 in stgdict. Patch by Diego Russo.

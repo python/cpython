@@ -1,1 +1,0 @@
-Removes libpython38.a from standard Windows distribution.

@@ -1,0 +1,6 @@
+Fix the behavior of :mod:`tkinter` widget's ``unbind()`` method with two
+arguments. Previously, ``widget.unbind(sequence, funcid)`` destroyed the
+current binding for *sequence*, leaving *sequence* unbound, and deleted the
+*funcid* command. Now it removes only *funcid* from the binding for
+*sequence*, keeping other commands, and deletes the *funcid* command. It
+leaves *sequence* unbound only if *funcid* was the last bound command.

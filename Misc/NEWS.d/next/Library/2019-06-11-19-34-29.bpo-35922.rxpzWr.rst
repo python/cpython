@@ -1,4 +1,0 @@
-Fix :meth:`RobotFileParser.crawl_delay` and
-:meth:`RobotFileParser.request_rate` to return ``None`` rather than
-raise :exc:`AttributeError` when no relevant rule is defined in the
-robots.txt file.  Patch by Rémi Lapeyre.

@@ -1,10 +1,11 @@
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 from collections import UserList
 
-py_bisect = support.import_fresh_module('bisect', blocked=['_bisect'])
-c_bisect = support.import_fresh_module('bisect', fresh=['_bisect'])
+
+py_bisect = import_helper.import_fresh_module('bisect', blocked=['_bisect'])
+c_bisect = import_helper.import_fresh_module('bisect', fresh=['_bisect'])
 
 class Range(object):
     """A trivial range()-like object that has an insert() method."""
@@ -198,6 +199,97 @@ class TestBisect:
         self.module.insort_right(a=data, x=25, lo=1, hi=3)
         self.module.insort(a=data, x=25, lo=1, hi=3)
         self.assertEqual(data, [10, 20, 25, 25, 25, 30, 40, 50])
+
+    def test_lookups_with_key_function(self):
+        mod = self.module
+
+        # Invariant: Index with a keyfunc on an array
+        # should match the index on an array where
+        # key function has already been applied.
+
+        keyfunc = abs
+        arr = sorted([2, -4, 6, 8, -10], key=keyfunc)
+        precomputed_arr = list(map(keyfunc, arr))
+        for x in precomputed_arr:
+            self.assertEqual(
+                mod.bisect_left(arr, x, key=keyfunc),
+                mod.bisect_left(precomputed_arr, x)
+            )
+            self.assertEqual(
+                mod.bisect_right(arr, x, key=keyfunc),
+                mod.bisect_right(precomputed_arr, x)
+            )
+
+        keyfunc = str.casefold
+        arr = sorted('aBcDeEfgHhiIiij', key=keyfunc)
+        precomputed_arr = list(map(keyfunc, arr))
+        for x in precomputed_arr:
+            self.assertEqual(
+                mod.bisect_left(arr, x, key=keyfunc),
+                mod.bisect_left(precomputed_arr, x)
+            )
+            self.assertEqual(
+                mod.bisect_right(arr, x, key=keyfunc),
+                mod.bisect_right(precomputed_arr, x)
+            )
+
+    def test_insort(self):
+        from random import shuffle
+        mod = self.module
+
+        # Invariant:  As random elements are inserted in
+        # a target list, the targetlist remains sorted.
+        keyfunc = abs
+        data = list(range(-10, 11)) + list(range(-20, 20, 2))
+        shuffle(data)
+        target = []
+        for x in data:
+            mod.insort_left(target, x, key=keyfunc)
+            self.assertEqual(
+                sorted(target, key=keyfunc),
+                target
+            )
+        target = []
+        for x in data:
+            mod.insort_right(target, x, key=keyfunc)
+            self.assertEqual(
+                sorted(target, key=keyfunc),
+                target
+            )
+
+    def test_insort_keynotNone(self):
+        x = []
+        y = {"a": 2, "b": 1}
+        for f in (self.module.insort_left, self.module.insort_right):
+            self.assertRaises(TypeError, f, x, y, key = "b")
+
+    def test_lt_returns_non_bool(self):
+        class A:
+            def __init__(self, val):
+                self.val = val
+            def __lt__(self, other):
+                return "nonempty" if self.val < other.val else ""
+
+        data = [A(i) for i in range(100)]
+        i1 = self.module.bisect_left(data, A(33))
+        i2 = self.module.bisect_right(data, A(33))
+        self.assertEqual(i1, 33)
+        self.assertEqual(i2, 34)
+
+    def test_lt_returns_notimplemented(self):
+        class A:
+            def __init__(self, val):
+                self.val = val
+            def __lt__(self, other):
+                return NotImplemented
+            def __gt__(self, other):
+                return self.val > other.val
+
+        data = [A(i) for i in range(100)]
+        i1 = self.module.bisect_left(data, A(40))
+        i2 = self.module.bisect_right(data, A(40))
+        self.assertEqual(i1, 40)
+        self.assertEqual(i2, 41)
 
 class TestBisectPython(TestBisect, unittest.TestCase):
     module = py_bisect

@@ -1,0 +1,2 @@
+Reduce the time cost for some functions in :mod:`platform` on Windows if
+current user has no permission to the WMI.

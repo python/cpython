@@ -1,5 +1,5 @@
 """Test relative imports (PEP 328)."""
-from .. import util
+from test.test_importlib import util
 import unittest
 import warnings
 
@@ -133,6 +133,7 @@ class RelativeImports:
             self.assertEqual(module.__name__, 'pkg')
             self.assertTrue(hasattr(module, 'subpkg2'))
             self.assertEqual(module.subpkg2.attr, 'pkg.subpkg2.__init__')
+        self.relative_import_test(create, globals_, callback)
 
     def test_deep_import(self):
         # [deep import]

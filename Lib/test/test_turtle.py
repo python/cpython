@@ -1,8 +1,11 @@
 import pickle
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
-turtle = support.import_module('turtle')
+
+turtle = import_helper.import_module('turtle')
 Vec2D = turtle.Vec2D
 
 test_config = """\
@@ -50,10 +53,10 @@ visible = False
 class TurtleConfigTest(unittest.TestCase):
 
     def get_cfg_file(self, cfg_str):
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, 'w') as f:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
             f.write(cfg_str)
-        return support.TESTFN
+        return os_helper.TESTFN
 
     def test_config_dict(self):
 
@@ -126,6 +129,14 @@ class VectorComparisonMixin:
         for idx, (i, j) in enumerate(zip(vec1, vec2)):
             self.assertAlmostEqual(
                 i, j, msg='values at index {} do not match'.format(idx))
+
+class Multiplier:
+
+    def __mul__(self, other):
+        return f'M*{other}'
+
+    def __rmul__(self, other):
+        return f'{other}*M'
 
 
 class TestVec2D(VectorComparisonMixin, unittest.TestCase):
@@ -208,9 +219,15 @@ class TestVec2D(VectorComparisonMixin, unittest.TestCase):
         self.assertAlmostEqual(answer, expected)
 
         vec = Vec2D(0.5, 3)
-        answer = vec * 10
         expected = Vec2D(5, 30)
-        self.assertVectorsAlmostEqual(answer, expected)
+        self.assertVectorsAlmostEqual(vec * 10, expected)
+        self.assertVectorsAlmostEqual(10 * vec, expected)
+        self.assertVectorsAlmostEqual(vec * 10.0, expected)
+        self.assertVectorsAlmostEqual(10.0 * vec, expected)
+
+        M = Multiplier()
+        self.assertEqual(vec * M, Vec2D(f"{vec[0]}*M", f"{vec[1]}*M"))
+        self.assertEqual(M * vec, f'M*{vec}')
 
     def test_vector_negative(self):
         vec = Vec2D(10, -10)
@@ -218,17 +235,9 @@ class TestVec2D(VectorComparisonMixin, unittest.TestCase):
         self.assertVectorsAlmostEqual(-vec, expected)
 
     def test_distance(self):
-        vec = Vec2D(6, 8)
-        expected = 10
-        self.assertEqual(abs(vec), expected)
-
-        vec = Vec2D(0, 0)
-        expected = 0
-        self.assertEqual(abs(vec), expected)
-
-        vec = Vec2D(2.5, 6)
-        expected = 6.5
-        self.assertEqual(abs(vec), expected)
+        self.assertAlmostEqual(abs(Vec2D(6, 8)), 10)
+        self.assertEqual(abs(Vec2D(0, 0)), 0)
+        self.assertAlmostEqual(abs(Vec2D(2.5, 6)), 6.5)
 
     def test_rotate(self):
 
@@ -257,6 +266,14 @@ class TestTNavigator(VectorComparisonMixin, unittest.TestCase):
         self.nav.goto(100, -100)
         self.assertAlmostEqual(self.nav.xcor(), 100)
         self.assertAlmostEqual(self.nav.ycor(), -100)
+
+    def test_teleport(self):
+        self.nav.teleport(20, -30, fill_gap=True)
+        self.assertAlmostEqual(self.nav.xcor(), 20)
+        self.assertAlmostEqual(self.nav.ycor(), -30)
+        self.nav.teleport(-20, 30, fill_gap=False)
+        self.assertAlmostEqual(self.nav.xcor(), -20)
+        self.assertAlmostEqual(self.nav.ycor(), 30)
 
     def test_pos(self):
         self.assertEqual(self.nav.pos(), self.nav._position)
@@ -430,6 +447,38 @@ class TestTPen(unittest.TestCase):
         self.assertFalse(tpen.isvisible())
         tpen.showturtle()
         self.assertTrue(tpen.isvisible())
+
+    def test_teleport(self):
+
+        tpen = turtle.TPen()
+
+        for fill_gap_value in [True, False]:
+            tpen.penup()
+            tpen.teleport(100, 100, fill_gap=fill_gap_value)
+            self.assertFalse(tpen.isdown())
+            tpen.pendown()
+            tpen.teleport(-100, -100, fill_gap=fill_gap_value)
+            self.assertTrue(tpen.isdown())
+
+
+class TestModuleLevel(unittest.TestCase):
+    def test_all_signatures(self):
+        import inspect
+
+        known_signatures = {
+            'teleport':
+                '(x=None, y=None, *, fill_gap: bool = False) -> None',
+            'undo': '()',
+            'goto': '(x, y=None)',
+            'bgcolor': '(*args)',
+            'pen': '(pen=None, **pendict)',
+        }
+
+        for name in known_signatures:
+            with self.subTest(name=name):
+                obj = getattr(turtle, name)
+                sig = inspect.signature(obj)
+                self.assertEqual(str(sig), known_signatures[name])
 
 
 if __name__ == '__main__':

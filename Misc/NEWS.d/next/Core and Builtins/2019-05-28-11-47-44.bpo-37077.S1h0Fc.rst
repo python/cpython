@@ -1,2 +1,0 @@
-Add :func:`threading.get_native_id` support for AIX.
-Patch by M. Felt

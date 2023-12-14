@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -44,10 +43,5 @@ static struct PyModuleDef _fuzzmodule = {
 PyMODINIT_FUNC
 PyInit__xxtestfuzz(void)
 {
-    PyObject *m = NULL;
-
-    if ((m = PyModule_Create(&_fuzzmodule)) == NULL) {
-        return NULL;
-    }
-    return m;
+    return PyModule_Create(&_fuzzmodule);
 }

@@ -1,1 +1,0 @@
-Fix race condition in ThreadPoolExecutor when worker threads are created during interpreter shutdown.

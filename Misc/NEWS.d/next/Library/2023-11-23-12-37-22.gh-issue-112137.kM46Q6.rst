@@ -1,0 +1,1 @@
+Change :mod:`dis` output to display no-lineno as "--" instead of "None".

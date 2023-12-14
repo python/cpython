@@ -7,6 +7,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{1edfe0d0-7b9d-4dc8-a335-b21fef7cc77a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{f8efff18-28ed-4c6b-8e8d-fa816d9a81a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\socketmodule.h">
@@ -17,5 +20,10 @@
     <ClCompile Include="..\Modules\socketmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

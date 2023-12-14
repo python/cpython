@@ -1,4 +1,0 @@
-Adjust "Zoom Height" to individual screens by momentarily maximizing the
-window on first use with a particular screen.  Changing screen settings
-may invalidate the saved height.  While a window is maximized,
-"Zoom Height" has no effect.

@@ -2,8 +2,11 @@ import unittest
 import os
 import socket
 import sys
-from test.support import (TESTFN, import_fresh_module,
-                          skip_unless_bind_unix_socket)
+from test.support import os_helper
+from test.support import socket_helper
+from test.support.import_helper import import_fresh_module
+from test.support.os_helper import TESTFN
+
 
 c_stat = import_fresh_module('stat', fresh=['_stat'])
 py_stat = import_fresh_module('stat', blocked=['_stat'])
@@ -16,10 +19,10 @@ class TestFilemode:
                   'UF_IMMUTABLE', 'UF_NODUMP', 'UF_NOUNLINK', 'UF_OPAQUE'}
 
     formats = {'S_IFBLK', 'S_IFCHR', 'S_IFDIR', 'S_IFIFO', 'S_IFLNK',
-               'S_IFREG', 'S_IFSOCK'}
+               'S_IFREG', 'S_IFSOCK', 'S_IFDOOR', 'S_IFPORT', 'S_IFWHT'}
 
     format_funcs = {'S_ISBLK', 'S_ISCHR', 'S_ISDIR', 'S_ISFIFO', 'S_ISLNK',
-                    'S_ISREG', 'S_ISSOCK'}
+                    'S_ISREG', 'S_ISSOCK', 'S_ISDOOR', 'S_ISPORT', 'S_ISWHT'}
 
     stat_struct = {
         'ST_MODE': 0,
@@ -110,6 +113,7 @@ class TestFilemode:
             else:
                 self.assertFalse(func(mode))
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         with open(TESTFN, 'w'):
             pass
@@ -118,8 +122,11 @@ class TestFilemode:
             st_mode, modestr = self.get_mode()
             self.assertEqual(modestr, '-rwx------')
             self.assertS_IS("REG", st_mode)
-            self.assertEqual(self.statmod.S_IMODE(st_mode),
+            imode = self.statmod.S_IMODE(st_mode)
+            self.assertEqual(imode,
                              self.statmod.S_IRWXU)
+            self.assertEqual(self.statmod.filemode(imode),
+                             '?rwx------')
 
             os.chmod(TESTFN, 0o070)
             st_mode, modestr = self.get_mode()
@@ -141,13 +148,21 @@ class TestFilemode:
             self.assertEqual(modestr, '-r--r--r--')
             self.assertEqual(self.statmod.S_IMODE(st_mode), 0o444)
         else:
+            os.chmod(TESTFN, 0o500)
+            st_mode, modestr = self.get_mode()
+            self.assertEqual(modestr[:3], '-r-')
+            self.assertS_IS("REG", st_mode)
+            self.assertEqual(self.statmod.S_IMODE(st_mode), 0o444)
+
             os.chmod(TESTFN, 0o700)
             st_mode, modestr = self.get_mode()
             self.assertEqual(modestr[:3], '-rw')
             self.assertS_IS("REG", st_mode)
             self.assertEqual(self.statmod.S_IFMT(st_mode),
                              self.statmod.S_IFREG)
+            self.assertEqual(self.statmod.S_IMODE(st_mode), 0o666)
 
+    @os_helper.skip_unless_working_chmod
     def test_directory(self):
         os.mkdir(TESTFN)
         os.chmod(TESTFN, 0o700)
@@ -158,7 +173,7 @@ class TestFilemode:
         else:
             self.assertEqual(modestr[0], 'd')
 
-    @unittest.skipUnless(hasattr(os, 'symlink'), 'os.symlink not available')
+    @os_helper.skip_unless_symlink
     def test_link(self):
         try:
             os.symlink(os.getcwd(), TESTFN)
@@ -171,11 +186,16 @@ class TestFilemode:
 
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'os.mkfifo not available')
     def test_fifo(self):
+        if sys.platform == "vxworks":
+            fifo_path = os.path.join("/fifos/", TESTFN)
+        else:
+            fifo_path = TESTFN
+        self.addCleanup(os_helper.unlink, fifo_path)
         try:
-            os.mkfifo(TESTFN, 0o700)
+            os.mkfifo(fifo_path, 0o700)
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
-        st_mode, modestr = self.get_mode()
+        st_mode, modestr = self.get_mode(fifo_path)
         self.assertEqual(modestr, 'prwx------')
         self.assertS_IS("FIFO", st_mode)
 
@@ -193,7 +213,7 @@ class TestFilemode:
                 self.assertS_IS("BLK", st_mode)
                 break
 
-    @skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_socket(self):
         with socket.socket(socket.AF_UNIX) as s:
             s.bind(TESTFN)
@@ -228,12 +248,9 @@ class TestFilemode:
             self.assertEqual(value, modvalue, key)
 
 
+@unittest.skipIf(c_stat is None, 'need _stat extension')
 class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     statmod = c_stat
-
-    formats = TestFilemode.formats | {'S_IFDOOR', 'S_IFPORT', 'S_IFWHT'}
-    format_funcs = TestFilemode.format_funcs | {'S_ISDOOR', 'S_ISPORT',
-                                                'S_ISWHT'}
 
 
 class TestFilemodePyStat(TestFilemode, unittest.TestCase):

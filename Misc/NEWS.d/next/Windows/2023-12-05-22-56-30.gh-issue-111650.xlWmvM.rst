@@ -1,0 +1,3 @@
+Ensures the ``Py_GIL_DISABLED`` preprocessor variable is defined in
+:file:`pyconfig.h` so that extension modules written in C are able to use
+it.

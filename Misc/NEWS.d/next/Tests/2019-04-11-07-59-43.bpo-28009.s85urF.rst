@@ -1,3 +1,0 @@
-Modify the test_uuid logic to test when a program is available
-AND can be used to obtain a MACADDR as basis for an UUID.
-Patch by M. Felt
