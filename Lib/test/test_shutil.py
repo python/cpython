@@ -2092,7 +2092,6 @@ class TestMisc(BaseTest, unittest.TestCase):
         dirname = self.mkdtemp()
         filename = tempfile.mktemp(dir=dirname)
         linkname = os.path.join(dirname, "chown_link")
-        dirfd = os.open(dirname, os.O_RDONLY)
         write_file(filename, 'testing chown function')
         os.symlink(filename, linkname)
 
@@ -2151,6 +2150,8 @@ class TestMisc(BaseTest, unittest.TestCase):
             shutil.chown(dirname, user, group)
             check_chown(dirname, uid, gid)
 
+        dirfd = os.open(dirname, os.O_RDONLY)
+        self.addCleanup(os.close, dirfd)
         basename = os.path.basename(filename)
         baselinkname = os.path.basename(linkname)
         shutil.chown(basename, uid, gid, dir_fd=dirfd)
