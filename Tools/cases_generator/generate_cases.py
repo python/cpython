@@ -458,7 +458,7 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
-                for mac in sorted(self.macro_instrs.values(), key=lambda t:t.name):
+                for mac in sorted(self.macro_instrs.values(), key=lambda t: t.name):
                     if is_super_instruction(mac):
                         # Special-case the heck out of super-instructions
                         self.write_super_expansions(mac.name)
