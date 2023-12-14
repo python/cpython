@@ -56,7 +56,7 @@ def generate_flag_macros(out: CWriter) -> None:
     for i, flag in enumerate(FLAGS):
         out.emit(f"#define HAS_{flag}_FLAG ({1<<i})\n")
     for i, flag in enumerate(FLAGS):
-        out.emit(f"#define OPCODE_HAS_{flag}(OP)  (_PyOpcode_opcode_metadata[OP].flags & (HAS_{flag}_FLAG))\n")
+        out.emit(f"#define OPCODE_HAS_{flag}(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_{flag}_FLAG))\n")
 
 
 def generate_is_pseudo(

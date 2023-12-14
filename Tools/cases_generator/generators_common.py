@@ -188,14 +188,16 @@ def emit_tokens(
 
 def cflags(p: Properties) -> str:
     flags: list[str] = []
-    if p.escapes:
-        flags.append("HAS_ESCAPES_FLAG")
-    if not p.infallible:
-        flags.append("HAS_ERROR_FLAG")
+    if p.oparg:
+        flags.append("HAS_ARG_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
     if p.jumps:
         flags.append("HAS_JUMP_FLAG")
+    if not p.infallible:
+        flags.append("HAS_ERROR_FLAG")
+    if p.escapes:
+        flags.append("HAS_ESCAPES_FLAG")
     if p.uses_co_consts:
         flags.append("HAS_CONST_FLAG")
     if flags:
