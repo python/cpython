@@ -562,7 +562,6 @@ def assign_opcodes(
 
 def get_have_arg_and_min_instrumented(
     instructions: dict[str, Instruction],
-    pseudos: dict[str, PseudoInstruction],
     opmap: dict[str, int],
 ) -> tuple[int, int]:
     min_instrumented = 256
@@ -573,7 +572,7 @@ def get_have_arg_and_min_instrumented(
         if name == "INSTRUMENTED_LINE":
             # INSTRUMENTED_LINE is not defined
             continue
-        if name in pseudos:
+        if name not in instructions:
             continue
         if instructions[name].properties.oparg and op < first_arg:
             first_arg = op
@@ -630,7 +629,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap = assign_opcodes(instructions, families, pseudos)
     first_arg, min_instrumented = get_have_arg_and_min_instrumented(
-        instructions, pseudos, opmap
+        instructions, opmap
     )
     return Analysis(
         instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
