@@ -38,7 +38,8 @@ The module defines the following functions:
    from the caller's frame) if *limit* is positive.  Otherwise, print the last
    ``abs(limit)`` entries.  If *limit* is omitted or ``None``, all entries are
    printed.  If *file* is omitted or ``None``, the output goes to
-   :data:`sys.stderr`; otherwise it should be an open file or file-like object to
+   :data:`sys.stderr`; otherwise it should be an open
+   :term:`file <file object>` or :term:`file-like object` to
    receive the output.
 
    .. versionchanged:: 3.5
@@ -414,7 +415,7 @@ capture data for later printing in a lightweight fashion.
       objects will not have read their lines in yet, making the cost of
       creating the :class:`!StackSummary` cheaper (which may be valuable if it
       may not actually get formatted). If *capture_locals* is ``True`` the
-      local variables in each :class:`FrameSummary` are captured as object
+      local variables in each :class:`!FrameSummary` are captured as object
       representations.
 
       .. versionchanged:: 3.12
@@ -481,7 +482,7 @@ in a :ref:`traceback <traceback-objects>`.
 
       The filename of the source code for this frame. Equivalent to accessing
       :attr:`f.f_code.co_filename <codeobject.co_filename>` on a
-      :ref:`frame object <frame-objects>`.
+      :ref:`frame object <frame-objects>` *f*.
 
    .. attribute:: FrameSummary.lineno
 
@@ -490,7 +491,7 @@ in a :ref:`traceback <traceback-objects>`.
    .. attribute:: FrameSummary.name
 
       Equivalent to accessing :attr:`f.f_code.co_name <codeobject.co_name>` on
-      a :ref:`frame object <frame-objects>`.
+      a :ref:`frame object <frame-objects>` *f*.
 
    .. attribute:: FrameSummary.line
 
