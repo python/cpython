@@ -1125,12 +1125,14 @@ remove_redundant_jumps(cfg_builder *g) {
             }
             if (last->i_target == b->b_next) {
                 assert(b->b_next->b_iused);
-                INSTR_SET_OP0(last, NOP);
                 if (last->i_loc.lineno == NO_LOCATION.lineno) {
                     b->b_iused--;
                     if (b->b_iused == 0) {
                         remove_empty_blocks = true;
                     }
+                }
+                else {
+                    INSTR_SET_OP0(last, NOP);
                 }
             }
         }
