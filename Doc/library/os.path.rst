@@ -5,24 +5,18 @@
    :synopsis: Operations on pathnames.
 
 **Source code:** :source:`Lib/posixpath.py` (for POSIX) and
-:source:`Lib/ntpath.py` (for Windows NT).
+:source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
 
 --------------
 
-This module implements some useful functions on pathnames. To read or
-write files see :func:`open`, and for accessing the filesystem see the
-:mod:`os` module. The path parameters can be passed as either strings,
-or bytes. Applications are encouraged to represent file names as
-(Unicode) character strings. Unfortunately, some file names may not be
-representable as strings on Unix, so applications that need to support
-arbitrary file names on Unix should use bytes objects to represent
-path names. Vice versa, using bytes objects cannot represent all file
-names on Windows (in the standard ``mbcs`` encoding), hence Windows
-applications should use string objects to access all files.
+This module implements some useful functions on pathnames. To read or write
+files see :func:`open`, and for accessing the filesystem see the :mod:`os`
+module. The path parameters can be passed as strings, or bytes, or any object
+implementing the :class:`os.PathLike` protocol.
 
-Unlike a unix shell, Python does not do any *automatic* path expansions.
+Unlike a Unix shell, Python does not do any *automatic* path expansions.
 Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
 explicitly when an application desires shell-like path expansion.  (See also
 the :mod:`glob` module.)
@@ -37,7 +31,6 @@ the :mod:`glob` module.)
    All of these functions accept either only bytes or only string objects as
    their parameters.  The result is an object of the same type, if a path or
    file name is returned.
-
 
 .. note::
 
@@ -166,7 +159,7 @@ the :mod:`glob` module.)
    On Unix and Windows, return the argument with an initial component of ``~`` or
    ``~user`` replaced by that *user*'s home directory.
 
-   .. index:: module: pwd
+   .. index:: pair: module; pwd
 
    On Unix, an initial ``~`` is replaced by the environment variable :envvar:`HOME`
    if it is set; otherwise the current user's home directory is looked up in the
@@ -175,8 +168,8 @@ the :mod:`glob` module.)
 
    On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
    of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
-   ``~user`` is handled by stripping the last directory component from the created
-   user path derived above.
+   ``~user`` is handled by checking that the last directory component of the current
+   user's home directory matches :envvar:`USERNAME`, and replacing it if so.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
@@ -273,6 +266,15 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isjunction(path)
+
+   Return ``True`` if *path* refers to an :func:`existing <lexists>` directory
+   entry that is a junction.  Always return ``False`` if junctions are not
+   supported on the current platform.
+
+   .. versionadded:: 3.12
+
+
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to an :func:`existing <exists>` directory
@@ -302,20 +304,38 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isdevdrive(path)
+
+   Return ``True`` if pathname *path* is located on a Windows Dev Drive.
+   A Dev Drive is optimized for developer scenarios, and offers faster
+   performance for reading and writing files. It is recommended for use for
+   source code, temporary build directories, package caches, and other
+   IO-intensive operations.
+
+   May raise an error for an invalid path, for example, one without a
+   recognizable drive, but returns ``False`` on platforms that do not support
+   Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
+   for information on enabling and creating Dev Drives.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
+
+
 .. function:: join(path, *paths)
 
-   Join one or more path components intelligently.  The return value is the
-   concatenation of *path* and any members of *\*paths* with exactly one
-   directory separator (``os.sep``) following each non-empty part except the
-   last, meaning that the result will only end in a separator if the last
-   part is empty.  If a component is an absolute path, all previous
-   components are thrown away and joining continues from the absolute path
-   component.
+   Join one or more path segments intelligently.  The return value is the
+   concatenation of *path* and all members of *\*paths*, with exactly one
+   directory separator following each non-empty part, except the last. That is,
+   the result will only end in a separator if the last part is either empty or
+   ends in a separator. If a segment is an absolute path (which on Windows
+   requires both a drive and a root), then all previous segments are ignored and
+   joining continues from the absolute path segment.
 
-   On Windows, the drive letter is not reset when an absolute path component
-   (e.g., ``r'\foo'``) is encountered.  If a component contains a drive
-   letter, all previous components are thrown away and the drive letter is
-   reset.  Note that since there is a current directory for each drive,
+   On Windows, the drive is not reset when a rooted path segment (e.g.,
+   ``r'\foo'``) is encountered. If a segment is on a different drive or is an
+   absolute path, all previous segments are ignored and the drive is reset. Note
+   that since there is a current directory for each drive,
    ``os.path.join("c:", "foo")`` represents a path relative to the current
    directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
 
@@ -341,19 +361,37 @@ the :mod:`glob` module.)
    that contains symbolic links.  On Windows, it converts forward slashes to
    backward slashes. To normalize case, use :func:`normcase`.
 
+  .. note::
+      On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
+      Pathname Resolution <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
+      if a pathname begins with exactly two slashes, the first component
+      following the leading characters may be interpreted in an implementation-defined
+      manner, although more than two leading characters shall be treated as a
+      single character.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
 
-.. function:: realpath(path)
+.. function:: realpath(path, *, strict=False)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating
-   system).
+   system). On Windows, this function will also resolve MS-DOS (also called 8.3)
+   style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
+
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
 
    .. note::
-      When symbolic link cycles occur, the returned path will be one member of
-      the cycle, but no guarantee is made about which member that will be.
+      This function emulates the operating system's procedure for making a path
+      canonical, which differs slightly between Windows and UNIX with respect
+      to how links and subsequent path components interact.
+
+      Operating system APIs make paths canonical as needed, so it's not
+      normally necessary to call this function.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -361,15 +399,19 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.8
       Symbolic links and junctions are now resolved on Windows.
 
+   .. versionchanged:: 3.10
+      The *strict* parameter was added.
+
 
 .. function:: relpath(path, start=os.curdir)
 
    Return a relative filepath to *path* either from the current directory or
    from an optional *start* directory.  This is a path computation:  the
    filesystem is not accessed to confirm the existence or nature of *path* or
-   *start*.
+   *start*.  On Windows, :exc:`ValueError` is raised when *path* and *start*
+   are on different drives.
 
-   *start* defaults to :attr:`os.curdir`.
+   *start* defaults to :data:`os.curdir`.
 
    .. availability:: Unix, Windows.
 
@@ -450,23 +492,80 @@ the :mod:`glob` module.)
    On Windows, splits a pathname into drive/UNC sharepoint and relative path.
 
    If the path contains a drive letter, drive will contain everything
-   up to and including the colon.
-   e.g. ``splitdrive("c:/dir")`` returns ``("c:", "/dir")``
+   up to and including the colon::
+
+      >>> splitdrive("c:/dir")
+      ("c:", "/dir")
 
    If the path contains a UNC path, drive will contain the host name
-   and share, up to but not including the fourth separator.
-   e.g. ``splitdrive("//host/computer/dir")`` returns ``("//host/computer", "/dir")``
+   and share::
+
+      >>> splitdrive("//host/computer/dir")
+      ("//host/computer", "/dir")
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
 
+.. function:: splitroot(path)
+
+   Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where
+   *drive* is a device name or mount point, *root* is a string of separators
+   after the drive, and *tail* is everything after the root. Any of these
+   items may be the empty string. In all cases, ``drive + root + tail`` will
+   be the same as *path*.
+
+   On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
+   relative), a single forward slash (if *path* is absolute), or two forward slashes
+   (implementation-defined per `IEEE Std 1003.1-2017; 4.13 Pathname Resolution
+   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
+   For example::
+
+      >>> splitroot('/home/sam')
+      ('', '/', 'home/sam')
+      >>> splitroot('//home/sam')
+      ('', '//', 'home/sam')
+      >>> splitroot('///home/sam')
+      ('', '/', '//home/sam')
+
+   On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
+   name. The *root* may be empty, a forward slash, or a backward slash. For
+   example::
+
+      >>> splitroot('C:/Users/Sam')
+      ('C:', '/', 'Users/Sam')
+      >>> splitroot('//Server/Share/Users/Sam')
+      ('//Server/Share', '/', 'Users/Sam')
+
+   .. versionadded:: 3.12
+
+
 .. function:: splitext(path)
 
    Split the pathname *path* into a pair ``(root, ext)``  such that ``root + ext ==
-   path``, and *ext* is empty or begins with a period and contains at most one
-   period. Leading periods on the basename are  ignored; ``splitext('.cshrc')``
-   returns  ``('.cshrc', '')``.
+   path``, and the extension, *ext*, is empty or begins with a period and contains at
+   most one period.
+
+   If the path contains no extension, *ext* will be ``''``::
+
+      >>> splitext('bar')
+      ('bar', '')
+
+   If the path contains an extension, then *ext* will be set to this extension,
+   including the leading period. Note that previous periods will be ignored::
+
+      >>> splitext('foo.bar.exe')
+      ('foo.bar', '.exe')
+      >>> splitext('/foo/bar.exe')
+      ('/foo/bar', '.exe')
+
+   Leading periods of the last component of the path are considered to
+   be part of the root::
+
+      >>> splitext('.cshrc')
+      ('.cshrc', '')
+      >>> splitext('/foo/....jpg')
+      ('/foo/....jpg', '')
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.

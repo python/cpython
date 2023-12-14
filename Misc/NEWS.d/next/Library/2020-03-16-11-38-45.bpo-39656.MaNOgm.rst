@@ -1,2 +1,0 @@
-Ensure ``bin/python3.#`` is always present in virtual environments on POSIX
-platforms - by Anthony Sottile.

@@ -2,10 +2,14 @@
 
 import sys
 import unittest
-from test.support import run_unittest, TESTFN, unlink, cpython_only
+from test.support import cpython_only
+from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
 import pickle
 import collections.abc
+import functools
+import contextlib
+import builtins
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -75,6 +79,26 @@ class NoIterClass:
     def __getitem__(self, i):
         return i
     __iter__ = None
+
+class BadIterableClass:
+    def __iter__(self):
+        raise ZeroDivisionError
+
+class CallableIterClass:
+    def __init__(self):
+        self.i = 0
+    def __call__(self):
+        i = self.i
+        self.i = i + 1
+        if i > 100:
+            raise IndexError # Emergency stop
+        return i
+
+class EmptyIterClass:
+    def __len__(self):
+        return 0
+    def __getitem__(self, i):
+        raise StopIteration
 
 # Main test suite
 
@@ -223,6 +247,78 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(empit), [5, 6])
         self.assertEqual(list(a), [0, 1, 2, 3, 4, 5, 6])
 
+    def test_reduce_mutating_builtins_iter(self):
+        # This is a reproducer of issue #101765
+        # where iter `__reduce__` calls could lead to a segfault or SystemError
+        # depending on the order of C argument evaluation, which is undefined
+
+        # Backup builtins
+        builtins_dict = builtins.__dict__
+        orig = {"iter": iter, "reversed": reversed}
+
+        def run(builtin_name, item, sentinel=None):
+            it = iter(item) if sentinel is None else iter(item, sentinel)
+
+            class CustomStr:
+                def __init__(self, name, iterator):
+                    self.name = name
+                    self.iterator = iterator
+                def __hash__(self):
+                    return hash(self.name)
+                def __eq__(self, other):
+                    # Here we exhaust our iterator, possibly changing
+                    # its `it_seq` pointer to NULL
+                    # The `__reduce__` call should correctly get
+                    # the pointers after this call
+                    list(self.iterator)
+                    return other == self.name
+
+            # del is required here
+            # to not prematurely call __eq__ from
+            # the hash collision with the old key
+            del builtins_dict[builtin_name]
+            builtins_dict[CustomStr(builtin_name, it)] = orig[builtin_name]
+
+            return it.__reduce__()
+
+        types = [
+            (EmptyIterClass(),),
+            (bytes(8),),
+            (bytearray(8),),
+            ((1, 2, 3),),
+            (lambda: 0, 0),
+            (tuple[int],)  # GenericAlias
+        ]
+
+        try:
+            run_iter = functools.partial(run, "iter")
+            # The returned value of `__reduce__` should not only be valid
+            # but also *empty*, as `it` was exhausted during `__eq__`
+            # i.e "xyz" returns (iter, ("",))
+            self.assertEqual(run_iter("xyz"), (orig["iter"], ("",)))
+            self.assertEqual(run_iter([1, 2, 3]), (orig["iter"], ([],)))
+
+            # _PyEval_GetBuiltin is also called for `reversed` in a branch of
+            # listiter_reduce_general
+            self.assertEqual(
+                run("reversed", orig["reversed"](list(range(8)))),
+                (iter, ([],))
+            )
+
+            for case in types:
+                self.assertEqual(run_iter(*case), (orig["iter"], ((),)))
+        finally:
+            # Restore original builtins
+            for key, func in orig.items():
+                # need to suppress KeyErrors in case
+                # a failed test deletes the key without setting anything
+                with contextlib.suppress(KeyError):
+                    # del is required here
+                    # to not invoke our custom __eq__ from
+                    # the hash collision with the old key
+                    del builtins_dict[key]
+                builtins_dict[key] = func
+
     # Test a new_style class with __iter__ but no next() method
     def test_new_style_iter_class(self):
         class IterClass(object):
@@ -232,16 +328,7 @@ class TestCase(unittest.TestCase):
 
     # Test two-argument iter() with callable instance
     def test_iter_callable(self):
-        class C:
-            def __init__(self):
-                self.i = 0
-            def __call__(self):
-                i = self.i
-                self.i = i + 1
-                if i > 100:
-                    raise IndexError # Emergency stop
-                return i
-        self.check_iterator(iter(C(), 10), list(range(10)), pickle=False)
+        self.check_iterator(iter(CallableIterClass(), 10), list(range(10)), pickle=True)
 
     # Test two-argument iter() with function
     def test_iter_function(self):
@@ -260,6 +347,31 @@ class TestCase(unittest.TestCase):
             state[0] = i+1
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
+
+    def test_iter_function_concealing_reentrant_exhaustion(self):
+        # gh-101892: Test two-argument iter() with a function that
+        # exhausts its associated iterator but forgets to either return
+        # a sentinel value or raise StopIteration.
+        HAS_MORE = 1
+        NO_MORE = 2
+
+        def exhaust(iterator):
+            """Exhaust an iterator without raising StopIteration."""
+            list(iterator)
+
+        def spam():
+            # Touching the iterator with exhaust() below will call
+            # spam() once again so protect against recursion.
+            if spam.is_recursive_call:
+                return NO_MORE
+            spam.is_recursive_call = True
+            exhaust(spam.iterator)
+            return HAS_MORE
+
+        spam.is_recursive_call = False
+        spam.iterator = iter(spam, NO_MORE)
+        with self.assertRaises(StopIteration):
+            next(spam.iterator)
 
     # Test exception propagation through function iterator
     def test_exception_function(self):
@@ -332,13 +444,13 @@ class TestCase(unittest.TestCase):
 
     # Test a file
     def test_iter_file(self):
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(5):
                 f.write("%d\n" % i)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.check_for_loop(f, ["0\n", "1\n", "2\n", "3\n", "4\n"], pickle=False)
             self.check_for_loop(f, [], pickle=False)
@@ -361,13 +473,13 @@ class TestCase(unittest.TestCase):
         self.assertRaises(TypeError, list, list)
         self.assertRaises(TypeError, list, 42)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(5):
                 f.write("%d\n" % i)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(list(f), ["0\n", "1\n", "2\n", "3\n", "4\n"])
             f.seek(0, 0)
@@ -394,13 +506,13 @@ class TestCase(unittest.TestCase):
         self.assertRaises(TypeError, tuple, list)
         self.assertRaises(TypeError, tuple, 42)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(5):
                 f.write("%d\n" % i)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(tuple(f), ("0\n", "1\n", "2\n", "3\n", "4\n"))
             f.seek(0, 0)
@@ -471,14 +583,14 @@ class TestCase(unittest.TestCase):
         self.assertEqual(max(d.values()), 3)
         self.assertEqual(min(iter(d.values())), 1)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("medium line\n")
             f.write("xtra large line\n")
             f.write("itty-bitty line\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(min(f), "itty-bitty line\n")
             f.seek(0, 0)
@@ -504,13 +616,13 @@ class TestCase(unittest.TestCase):
                      i < len(d) and dkeys[i] or None)
                     for i in range(3)]
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             for i in range(10):
                 f.write("xy" * i + "\n") # line i has len 2*i+1
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(list(map(len, f)), list(range(1, 21, 2)))
         finally:
@@ -551,12 +663,12 @@ class TestCase(unittest.TestCase):
                 self.i = i+1
                 return i
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "bbb\n" "cc\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             self.assertEqual(list(zip(IntsFrom(0), f, IntsFrom(-100))),
                              [(0, "a\n", -100),
@@ -619,13 +731,13 @@ class TestCase(unittest.TestCase):
                     return "fooled you!"
                 return next(self.it)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" + "b\n" + "c\n")
         finally:
             f.close()
 
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         # Nasty:  string.join(s) can't know whether unicode.join() is needed
         # until it's seen all of s's elements.  But in this case, f's
         # iterator cannot be restarted.  So what we're testing here is
@@ -658,6 +770,7 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)
+        self.assertRaises(ZeroDivisionError, lambda: 3 in BadIterableClass())
 
         d = {"one": 1, "two": 2, "three": 3, 1j: 2j}
         for k in d:
@@ -670,12 +783,12 @@ class TestCase(unittest.TestCase):
             self.assertIn((k, v), d.items())
             self.assertNotIn((v, k), d.items())
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "b\n" "c\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             for chunk in "abc":
                 f.seek(0, 0)
@@ -707,12 +820,12 @@ class TestCase(unittest.TestCase):
         self.assertEqual(countOf(d.values(), 2j), 1)
         self.assertEqual(countOf(d.values(), 1j), 0)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "b\n" "c\n" "b\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             for letter, count in ("a", 1), ("b", 2), ("c", 1), ("d", 0):
                 f.seek(0, 0)
@@ -740,13 +853,14 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, indexOf, 42, 1)
         self.assertRaises(TypeError, indexOf, indexOf, indexOf)
+        self.assertRaises(ZeroDivisionError, indexOf, BadIterableClass(), 1)
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         try:
             f.write("a\n" "b\n" "c\n" "d\n" "e\n")
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             fiter = iter(f)
             self.assertEqual(indexOf(fiter, "b\n"), 1)
@@ -767,7 +881,7 @@ class TestCase(unittest.TestCase):
 
     # Test iterators with file.writelines().
     def test_writelines(self):
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
 
         try:
             self.assertRaises(TypeError, f.writelines, None)
@@ -806,7 +920,7 @@ class TestCase(unittest.TestCase):
             f.writelines(Whatever(6, 6+2000))
             f.close()
 
-            f = open(TESTFN)
+            f = open(TESTFN, encoding="utf-8")
             expected = [str(i) + "\n" for i in range(1, 2006)]
             self.assertEqual(list(f), expected)
 
@@ -850,14 +964,14 @@ class TestCase(unittest.TestCase):
         a, b, c = {1: 42, 2: 42, 3: 42}.values()
         self.assertEqual((a, b, c), (42, 42, 42))
 
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding="utf-8")
         lines = ("a\n", "bb\n", "ccc\n")
         try:
             for line in lines:
                 f.write(line)
         finally:
             f.close()
-        f = open(TESTFN, "r")
+        f = open(TESTFN, "r", encoding="utf-8")
         try:
             a, b, c = f
             self.assertEqual((a, b, c), lines)
@@ -1027,11 +1141,8 @@ class TestCase(unittest.TestCase):
     def test_error_iter(self):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
-
-
-def test_main():
-    run_unittest(TestCase)
+        self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

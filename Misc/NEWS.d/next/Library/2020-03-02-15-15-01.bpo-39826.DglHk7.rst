@@ -1,1 +1,0 @@
-Add getConnection method to logging HTTPHandler to enable custom connections.

@@ -1,2 +1,0 @@
-Added starred expressions support to ``return`` and ``yield`` statements for
-``lib2to3``. Patch by Vlad Emelianov.

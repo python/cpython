@@ -1,1 +1,0 @@
-Do not fail test_shutil test_chown test when uid or gid of user cannot be resolved to a name.
