@@ -36,10 +36,11 @@ class CWriter:
         self.out.write(txt)
 
     def maybe_dedent(self, txt: str) -> None:
-        parens = txt.count("(") + txt.count("{") - txt.count(")") - txt.count("}")
+        parens = txt.count("(") - txt.count(")")
         if parens < 0:
             self.indents.pop()
-        elif is_label(txt):
+        braces = txt.count("{") - txt.count("}")
+        if braces < 0 or is_label(txt):
             self.indents.pop()
 
     def maybe_indent(self, txt: str) -> None:
