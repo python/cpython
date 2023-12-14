@@ -1502,7 +1502,7 @@ DocTestRunner objects
    :attr:`failures` and :attr:`skips` attributes. The :meth:`run` and
    :meth:`summarize` methods return a :class:`TestResults` instance.
 
-   :class:`DocTestParser` defines the following methods:
+   :class:`DocTestRunner` defines the following methods:
 
 
    .. method:: report_start(out, test, example)
