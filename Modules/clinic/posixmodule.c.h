@@ -8411,25 +8411,23 @@ PyDoc_STRVAR(os_makedev__doc__,
     {"makedev", _PyCFunction_CAST(os_makedev), METH_FASTCALL, os_makedev__doc__},
 
 static dev_t
-os_makedev_impl(PyObject *module, int major, int minor);
+os_makedev_impl(PyObject *module, unsigned int major, unsigned int minor);
 
 static PyObject *
 os_makedev(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int major;
-    int minor;
+    unsigned int major;
+    unsigned int minor;
     dev_t _return_value;
 
     if (!_PyArg_CheckPositional("makedev", nargs, 2, 2)) {
         goto exit;
     }
-    major = PyLong_AsInt(args[0]);
-    if (major == -1 && PyErr_Occurred()) {
+    if (!_PyLong_UnsignedInt_Converter(args[0], &major)) {
         goto exit;
     }
-    minor = PyLong_AsInt(args[1]);
-    if (minor == -1 && PyErr_Occurred()) {
+    if (!_PyLong_UnsignedInt_Converter(args[1], &minor)) {
         goto exit;
     }
     _return_value = os_makedev_impl(module, major, minor);
@@ -12421,4 +12419,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=ff0ec3371de19904 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df786a0e56cd68a0 input=a9049054013a1b77]*/

@@ -934,7 +934,7 @@ fail:
 #endif /* MS_WINDOWS */
 
 
-#define _PyLong_FromDev PyLong_FromLongLong
+#define _PyLong_FromDev PyLong_FromUnsignedLongLong
 
 
 #if (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)) || defined(HAVE_DEVICE_MACROS)
@@ -12040,16 +12040,16 @@ os_minor_impl(PyObject *module, dev_t device)
 /*[clinic input]
 os.makedev -> dev_t
 
-    major: int
-    minor: int
+    major: unsigned_int
+    minor: unsigned_int
     /
 
 Composes a raw device number from the major and minor device numbers.
 [clinic start generated code]*/
 
 static dev_t
-os_makedev_impl(PyObject *module, int major, int minor)
-/*[clinic end generated code: output=881aaa4aba6f6a52 input=4b9fd8fc73cbe48f]*/
+os_makedev_impl(PyObject *module, unsigned int major, unsigned int minor)
+/*[clinic end generated code: output=19d6d22807bf0d20 input=27d2f0106009da11]*/
 {
     return makedev(major, minor);
 }
