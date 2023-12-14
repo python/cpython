@@ -7,6 +7,7 @@ from parsing import (
     Context,
     CacheEffect,
     StackEffect,
+    InputEffect,
     OpName,
     AstNode,
 )

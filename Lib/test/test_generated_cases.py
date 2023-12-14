@@ -466,6 +466,23 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
+    def test_unused_cache(self):
+        input = """
+        inst(OP, (unused/1 --)) {
+            body();
+        }
+    """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(OP);
+            body();
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
     def test_pseudo_instruction_no_flags(self):
         input = """
         pseudo(OP) = {
