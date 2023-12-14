@@ -896,7 +896,7 @@ enum InstructionFormat {
 };
 
 #define IS_VALID_OPCODE(OP) \
-    (((OP) >= 0) && ((OP) < 256) && \
+    (((OP) >= 0) && ((OP) < 268) && \
      (_PyOpcode_opcode_metadata[(OP)].valid_entry))
 
 #define HAS_ARG_FLAG (1)
@@ -1171,6 +1171,7 @@ const struct opcode_macro_expansion
 _PyOpcode_macro_expansion[256] = {
     [BEFORE_ASYNC_WITH] = { .nuops = 1, .uops = { { _BEFORE_ASYNC_WITH, 0, 0 } } },
     [BEFORE_WITH] = { .nuops = 1, .uops = { { _BEFORE_WITH, 0, 0 } } },
+    [BINARY_OP] = { .nuops = 1, .uops = { { _BINARY_OP, 0, 0 } } },
     [BINARY_OP_ADD_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_ADD_FLOAT, 0, 0 } } },
     [BINARY_OP_ADD_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_ADD_INT, 0, 0 } } },
     [BINARY_OP_ADD_UNICODE] = { .nuops = 2, .uops = { { _GUARD_BOTH_UNICODE, 0, 0 }, { _BINARY_OP_ADD_UNICODE, 0, 0 } } },
@@ -1179,6 +1180,7 @@ _PyOpcode_macro_expansion[256] = {
     [BINARY_OP_SUBTRACT_FLOAT] = { .nuops = 2, .uops = { { _GUARD_BOTH_FLOAT, 0, 0 }, { _BINARY_OP_SUBTRACT_FLOAT, 0, 0 } } },
     [BINARY_OP_SUBTRACT_INT] = { .nuops = 2, .uops = { { _GUARD_BOTH_INT, 0, 0 }, { _BINARY_OP_SUBTRACT_INT, 0, 0 } } },
     [BINARY_SLICE] = { .nuops = 1, .uops = { { _BINARY_SLICE, 0, 0 } } },
+    [BINARY_SUBSCR] = { .nuops = 1, .uops = { { _BINARY_SUBSCR, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_DICT, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_LIST_INT, 0, 0 } } },
     [BINARY_SUBSCR_STR_INT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_STR_INT, 0, 0 } } },
@@ -1209,6 +1211,7 @@ _PyOpcode_macro_expansion[256] = {
     [CALL_TYPE_1] = { .nuops = 1, .uops = { { _CALL_TYPE_1, 0, 0 } } },
     [CHECK_EG_MATCH] = { .nuops = 1, .uops = { { _CHECK_EG_MATCH, 0, 0 } } },
     [CHECK_EXC_MATCH] = { .nuops = 1, .uops = { { _CHECK_EXC_MATCH, 0, 0 } } },
+    [COMPARE_OP] = { .nuops = 1, .uops = { { _COMPARE_OP, 0, 0 } } },
     [COMPARE_OP_FLOAT] = { .nuops = 1, .uops = { { _COMPARE_OP_FLOAT, 0, 0 } } },
     [COMPARE_OP_INT] = { .nuops = 1, .uops = { { _COMPARE_OP_INT, 0, 0 } } },
     [COMPARE_OP_STR] = { .nuops = 1, .uops = { { _COMPARE_OP_STR, 0, 0 } } },
@@ -1239,6 +1242,7 @@ _PyOpcode_macro_expansion[256] = {
     [LIST_APPEND] = { .nuops = 1, .uops = { { _LIST_APPEND, 0, 0 } } },
     [LIST_EXTEND] = { .nuops = 1, .uops = { { _LIST_EXTEND, 0, 0 } } },
     [LOAD_ASSERTION_ERROR] = { .nuops = 1, .uops = { { _LOAD_ASSERTION_ERROR, 0, 0 } } },
+    [LOAD_ATTR] = { .nuops = 1, .uops = { { _LOAD_ATTR, 8, 0 } } },
     [LOAD_ATTR_CLASS] = { .nuops = 2, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _LOAD_ATTR_CLASS, 4, 5 } } },
     [LOAD_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_MANAGED_OBJECT_HAS_VALUES, 0, 0 }, { _LOAD_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_METHOD_LAZY_DICT, 0, 0 }, { _LOAD_ATTR_METHOD_LAZY_DICT, 4, 5 } } },
@@ -1258,6 +1262,7 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { _LOAD_FAST, 5, 0 }, { _LOAD_FAST, 6, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
     [LOAD_FROM_DICT_OR_GLOBALS] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_GLOBALS, 0, 0 } } },
+    [LOAD_GLOBAL] = { .nuops = 1, .uops = { { _LOAD_GLOBAL, 3, 0 } } },
     [LOAD_GLOBAL_BUILTIN] = { .nuops = 3, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION, 1, 2 }, { _LOAD_GLOBAL_BUILTINS, 1, 3 } } },
     [LOAD_GLOBAL_MODULE] = { .nuops = 2, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _LOAD_GLOBAL_MODULE, 1, 3 } } },
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
@@ -1283,6 +1288,7 @@ _PyOpcode_macro_expansion[256] = {
     [SET_ADD] = { .nuops = 1, .uops = { { _SET_ADD, 0, 0 } } },
     [SET_FUNCTION_ATTRIBUTE] = { .nuops = 1, .uops = { { _SET_FUNCTION_ATTRIBUTE, 0, 0 } } },
     [SET_UPDATE] = { .nuops = 1, .uops = { { _SET_UPDATE, 0, 0 } } },
+    [STORE_ATTR] = { .nuops = 1, .uops = { { _STORE_ATTR, 3, 0 } } },
     [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES, 0, 0 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [STORE_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 } } },
     [STORE_DEREF] = { .nuops = 1, .uops = { { _STORE_DEREF, 0, 0 } } },
@@ -1292,9 +1298,11 @@ _PyOpcode_macro_expansion[256] = {
     [STORE_GLOBAL] = { .nuops = 1, .uops = { { _STORE_GLOBAL, 0, 0 } } },
     [STORE_NAME] = { .nuops = 1, .uops = { { _STORE_NAME, 0, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { _STORE_SLICE, 0, 0 } } },
+    [STORE_SUBSCR] = { .nuops = 1, .uops = { { _STORE_SUBSCR, 0, 0 } } },
     [STORE_SUBSCR_DICT] = { .nuops = 1, .uops = { { _STORE_SUBSCR_DICT, 0, 0 } } },
     [STORE_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _STORE_SUBSCR_LIST_INT, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { _SWAP, 0, 0 } } },
+    [TO_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL, 2, 0 } } },
     [TO_BOOL_ALWAYS_TRUE] = { .nuops = 1, .uops = { { _TO_BOOL_ALWAYS_TRUE, 2, 1 } } },
     [TO_BOOL_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL_BOOL, 0, 0 } } },
     [TO_BOOL_INT] = { .nuops = 1, .uops = { { _TO_BOOL_INT, 0, 0 } } },
@@ -1305,6 +1313,7 @@ _PyOpcode_macro_expansion[256] = {
     [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { _UNARY_NEGATIVE, 0, 0 } } },
     [UNARY_NOT] = { .nuops = 1, .uops = { { _UNARY_NOT, 0, 0 } } },
     [UNPACK_EX] = { .nuops = 1, .uops = { { _UNPACK_EX, 0, 0 } } },
+    [UNPACK_SEQUENCE] = { .nuops = 1, .uops = { { _UNPACK_SEQUENCE, 0, 0 } } },
     [UNPACK_SEQUENCE_LIST] = { .nuops = 1, .uops = { { _UNPACK_SEQUENCE_LIST, 0, 0 } } },
     [UNPACK_SEQUENCE_TUPLE] = { .nuops = 1, .uops = { { _UNPACK_SEQUENCE_TUPLE, 0, 0 } } },
     [UNPACK_SEQUENCE_TWO_TUPLE] = { .nuops = 1, .uops = { { _UNPACK_SEQUENCE_TWO_TUPLE, 0, 0 } } },

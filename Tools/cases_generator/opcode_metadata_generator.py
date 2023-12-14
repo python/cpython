@@ -237,6 +237,9 @@ def generate_expansion_table(
                 if part.name == "_SAVE_RETURN_OFFSET":
                     size = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"]
                 if isinstance(part, Uop):
+                    # Skip specializations
+                    if "specializing" in part.annotations:
+                        continue
                     expansions.append((part.name, size, offset if size else 0))
                 offset += part.size
         expansions_table[inst.name] = expansions
@@ -260,6 +263,9 @@ def is_viable_expansion(inst: Instruction) -> bool:
     "An instruction can be expanded if all its parts are viable for tier 2"
     for part in inst.parts:
         if isinstance(part, Uop):
+            # Skip specializations
+            if "specializing" in part.annotations:
+                continue
             if part.properties.tier_one_only or not part.is_viable():
                 return False
     return True
@@ -321,8 +327,9 @@ def generate_opcode_metadata(
         out.emit('#include "pycore_uop_ids.h"\n')
         generate_stack_effect_functions(analysis, out)
         generate_instruction_formats(analysis, out)
+        table_size = 256 + len(analysis.pseudos)
         out.emit("#define IS_VALID_OPCODE(OP) \\\n")
-        out.emit("    (((OP) >= 0) && ((OP) < 256) && \\\n")
+        out.emit(f"    (((OP) >= 0) && ((OP) < {table_size}) && \\\n")
         out.emit("     (_PyOpcode_opcode_metadata[(OP)].valid_entry))\n\n")
         generate_flag_macros(out)
         generate_oparg_macros(out)

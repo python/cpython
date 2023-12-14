@@ -243,7 +243,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertIn(("LOAD_FAST", 259, 0), list(ex))
+        self.assertIn(("_LOAD_FAST", 259, 0), list(ex))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
