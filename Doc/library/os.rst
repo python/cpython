@@ -2062,7 +2062,7 @@ features:
       Although Windows supports :func:`chmod`, you can only set the file's
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
-      The default value of *follow_symlinks* on Windows is ``False``.
+      The default value of *follow_symlinks* is ``False`` on Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
