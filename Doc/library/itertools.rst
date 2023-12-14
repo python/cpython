@@ -1585,23 +1585,23 @@ The following recipes have a more mathematical flavor:
         for (a, _), (b, c) in pairwise(pairwise(iterable)):
             yield a, b, c
 
-   def nth_combination(iterable, r, index):
-       "Equivalent to list(combinations(iterable, r))[index]"
-       pool = tuple(iterable)
-       n = len(pool)
-       c = math.comb(n, r)
-       if index < 0:
-           index += c
-       if index < 0 or index >= c:
-           raise IndexError
-       result = []
-       while r:
-           c, n, r = c*r//n, n-1, r-1
-           while index >= c:
-               index -= c
-               c, n = c*(n-r)//n, n-1
-           result.append(pool[-1-n])
-       return tuple(result)
+    def nth_combination(iterable, r, index):
+        "Equivalent to list(combinations(iterable, r))[index]"
+        pool = tuple(iterable)
+        n = len(pool)
+        c = math.comb(n, r)
+        if index < 0:
+            index += c
+        if index < 0 or index >= c:
+            raise IndexError
+        result = []
+        while r:
+            c, n, r = c*r//n, n-1, r-1
+            while index >= c:
+                index -= c
+                c, n = c*(n-r)//n, n-1
+            result.append(pool[-1-n])
+        return tuple(result)
 
 
 .. doctest::
