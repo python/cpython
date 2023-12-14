@@ -633,14 +633,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                         oparg += extras;
                                     }
                                 }
-                                if (_PyUOp_Replacements[uop]) {
-                                    uop = _PyUOp_Replacements[uop];
-                                    if (uop == _FOR_ITER_TIER_TWO) {
-                                        target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
-                                        assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
-                                               _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
-                                    }
-                                }
                                 break;
                             case OPARG_CACHE_1:
                                 operand = read_u16(&instr[offset].cache);
@@ -661,7 +653,15 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 oparg = offset;
                                 assert(uop == _SAVE_RETURN_OFFSET);
                                 break;
-
+                            case OPARG_REPLACED:
+                                uop = _PyUOp_Replacements[uop];
+                                assert(uop != 0);
+                                if (uop == _FOR_ITER_TIER_TWO) {
+                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
+                                    assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
+                                            _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
+                                }
+                                break;
                             default:
                                 fprintf(stderr,
                                         "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",

@@ -35,6 +35,8 @@ OPARG_SIZES = {
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
     "OPARG_SAVE_RETURN_OFFSET": 7,
+    # Skip 8 as the other powers of 2 are sizes
+    "OPARG_REPLACED": 9
 }
 
 
@@ -244,6 +246,8 @@ def generate_expansion_table(
                     # Skip specializations
                     if "specializing" in part.annotations:
                         continue
+                    if "replaced" in part.annotations:
+                        size = OPARG_SIZES["OPARG_REPLACED"]
                     expansions.append((part.name, size, offset if size else 0))
                 offset += part.size
         expansions_table[inst.name] = expansions
@@ -267,8 +271,10 @@ def is_viable_expansion(inst: Instruction) -> bool:
     "An instruction can be expanded if all its parts are viable for tier 2"
     for part in inst.parts:
         if isinstance(part, Uop):
-            # Skip specializations
+            # Skip specializing and replaced uops
             if "specializing" in part.annotations:
+                continue
+            if "replaced" in part.annotations:
                 continue
             if part.properties.tier_one_only or not part.is_viable():
                 return False
