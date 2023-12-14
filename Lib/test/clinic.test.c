@@ -4951,6 +4951,55 @@ static PyObject *
 Test_meth_coexist_impl(TestObj *self)
 /*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
 
+/*[clinic input]
+@getter
+Test.property
+[clinic start generated code]*/
+
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, NULL},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, NULL, NULL},
+#endif
+
+static PyObject *
+Test_property_get_impl(TestObj *self);
+
+static PyObject *
+Test_property_get(TestObj *self, void *Py_UNUSED(context))
+{
+    return Test_property_get_impl(self);
+}
+
+static PyObject *
+Test_property_get_impl(TestObj *self)
+/*[clinic end generated code: output=af8140b692e0e2f1 input=2d92b3449fbc7d2b]*/
+
+/*[clinic input]
+@setter
+Test.property
+[clinic start generated code]*/
+
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, NULL},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", NULL, (setter)Test_property_set, NULL},
+#endif
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
+{
+    return Test_property_set_impl(self, value);
+}
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=f3eba6487d7550e2 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push
@@ -5542,3 +5591,173 @@ exit:
 static PyObject *
 test_critical_section_meth_o_impl(PyObject *module, PyObject *a)
 /*[clinic end generated code: output=7a9d7420802d1202 input=376533f51eceb6c3]*/
+
+/*[clinic input]
+@critical_section a
+test_critical_section_object
+    a: object(subclass_of="&PyUnicode_Type")
+    /
+test_critical_section_object
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_object__doc__,
+"test_critical_section_object($module, a, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object");
+
+#define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
+    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
+
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_object(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_object", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = test_critical_section_object_impl(module, a);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=ec06df92232b0fb5 input=6f67f91b523c875f]*/
+
+PyDoc_STRVAR(test_critical_section_object__doc__,
+"test_critical_section_object($module, a, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object");
+
+#define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
+    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
+
+static PyObject *
+test_critical_section_object_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+test_critical_section_object(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("test_critical_section_object", "argument", "str", arg);
+        goto exit;
+    }
+    a = arg;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    return_value = test_critical_section_object_impl(module, a);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+/*[clinic input]
+@critical_section a b
+test_critical_section_object2
+    a: object(subclass_of="&PyUnicode_Type")
+    b: object(subclass_of="&PyUnicode_Type")
+    /
+test_critical_section_object2
+[clinic start generated code]*/
+
+PyDoc_STRVAR(test_critical_section_object2__doc__,
+"test_critical_section_object2($module, a, b, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object2");
+
+#define TEST_CRITICAL_SECTION_OBJECT2_METHODDEF    \
+    {"test_critical_section_object2", _PyCFunction_CAST(test_critical_section_object2), METH_FASTCALL, test_critical_section_object2__doc__},
+
+static PyObject *
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b);
+
+static PyObject *
+test_critical_section_object2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+
+    if (!_PyArg_CheckPositional("test_critical_section_object2", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    a = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    b = args[1];
+    Py_BEGIN_CRITICAL_SECTION2(a, b);
+    return_value = test_critical_section_object2_impl(module, a, b);
+    Py_END_CRITICAL_SECTION2();
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b)
+/*[clinic end generated code: output=d73a1657c18df17a input=638824e41419a466]*/
+
+PyDoc_STRVAR(test_critical_section_object2__doc__,
+"test_critical_section_object2($module, a, b, /)\n"
+"--\n"
+"\n"
+"test_critical_section_object2");
+
+#define TEST_CRITICAL_SECTION_OBJECT2_METHODDEF    \
+    {"test_critical_section_object2", _PyCFunction_CAST(test_critical_section_object2), METH_FASTCALL, test_critical_section_object2__doc__},
+
+static PyObject *
+test_critical_section_object2_impl(PyObject *module, PyObject *a,
+                                   PyObject *b);
+
+static PyObject *
+test_critical_section_object2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+
+    if (!_PyArg_CheckPositional("test_critical_section_object2", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    a = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("test_critical_section_object2", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    b = args[1];
+    Py_BEGIN_CRITICAL_SECTION2(a, b);
+    return_value = test_critical_section_object2_impl(module, a, b);
+    Py_END_CRITICAL_SECTION2();
+
+exit:
+    return return_value;
+}

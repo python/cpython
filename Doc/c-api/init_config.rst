@@ -1170,7 +1170,7 @@ PyConfig
 
    .. c:member:: int show_ref_count
 
-      Show total reference count at exit (excluding immortal objects)?
+      Show total reference count at exit (excluding :term:`immortal` objects)?
 
       Set to ``1`` by :option:`-X showrefcount <-X>` command line option.
 

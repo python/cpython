@@ -190,7 +190,7 @@ jobs:
   build_windows_free_threaded:
     name: 'Windows (free-threaded)'
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-windows.yml
     with:
       free-threaded: true
@@ -206,7 +206,7 @@ jobs:
   build_macos_free_threaded:
     name: 'macOS (free-threaded)'
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
@@ -228,7 +228,7 @@ jobs:
   build_ubuntu_free_threaded:
     name: 'Ubuntu (free-threaded)'
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
@@ -521,10 +521,7 @@ jobs:
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
-          build_macos_free_threaded,
-          build_ubuntu_free_threaded,
           build_ubuntu_ssltests,
-          build_windows_free_threaded,
           cifuzz,
           test_hypothesis,
         allowed-skips: >-

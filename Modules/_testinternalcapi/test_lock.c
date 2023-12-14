@@ -341,6 +341,37 @@ test_lock_benchmark(PyObject *module, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static int
+init_maybe_fail(void *arg)
+{
+    int *counter = (int *)arg;
+    (*counter)++;
+    if (*counter < 5) {
+        // failure
+        return -1;
+    }
+    assert(*counter == 5);
+    return 0;
+}
+
+static PyObject *
+test_lock_once(PyObject *self, PyObject *obj)
+{
+    _PyOnceFlag once = {0};
+    int counter = 0;
+    for (int i = 0; i < 10; i++) {
+        int res = _PyOnceFlag_CallOnce(&once, init_maybe_fail, &counter);
+        if (i < 4) {
+            assert(res == -1);
+        }
+        else {
+            assert(res == 0);
+            assert(counter == 5);
+        }
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"test_lock_basic", test_lock_basic, METH_NOARGS},
     {"test_lock_two_threads", test_lock_two_threads, METH_NOARGS},
@@ -348,6 +379,7 @@ static PyMethodDef test_methods[] = {
     {"test_lock_counter_slow", test_lock_counter_slow, METH_NOARGS},
     _TESTINTERNALCAPI_BENCHMARK_LOCKS_METHODDEF
     {"test_lock_benchmark", test_lock_benchmark, METH_NOARGS},
+    {"test_lock_once", test_lock_once, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

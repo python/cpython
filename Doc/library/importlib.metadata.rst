@@ -41,7 +41,7 @@ and metadata defined by the `Core metadata specifications <https://packaging.pyt
    and one top-level *import package*
    may map to multiple *distribution packages*
    if it is a namespace package.
-   You can use :ref:`package_distributions() <package-distributions>`
+   You can use :ref:`packages_distributions() <package-distributions>`
    to get a mapping between them.
 
 By default, distribution metadata can live on the file system

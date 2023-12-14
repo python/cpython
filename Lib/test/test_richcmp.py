@@ -221,7 +221,7 @@ class MiscTest(unittest.TestCase):
             self.assertRaises(Exc, func, Bad())
 
     @support.no_tracing
-    @support.infinite_recursion(25)
+    @support.infinite_recursion()
     def test_recursion(self):
         # Check that comparison for recursive objects fails gracefully
         from collections import UserList
