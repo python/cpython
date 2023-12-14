@@ -416,7 +416,7 @@ dummy_func(
             DEOPT_IF(!PyLong_CheckExact(right));
         }
 
-        op(_BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -424,7 +424,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        op(_BINARY_OP_ADD_INT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_ADD_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -432,7 +432,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        op(_BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -441,11 +441,11 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_INT) =
-            _GUARD_BOTH_INT + _BINARY_OP_MULTIPLY_INT;
+            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_MULTIPLY_INT;
         macro(BINARY_OP_ADD_INT) =
-            _GUARD_BOTH_INT + _BINARY_OP_ADD_INT;
+            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_ADD_INT;
         macro(BINARY_OP_SUBTRACT_INT) =
-            _GUARD_BOTH_INT + _BINARY_OP_SUBTRACT_INT;
+            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_SUBTRACT_INT;
 
         op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             DEOPT_IF(!PyFloat_CheckExact(left));
@@ -488,7 +488,7 @@ dummy_func(
             DEOPT_IF(!PyUnicode_CheckExact(right));
         }
 
-        op(_BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
@@ -497,7 +497,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + _BINARY_OP_ADD_UNICODE;
+            _GUARD_BOTH_UNICODE + unused/1 + _BINARY_OP_ADD_UNICODE;
 
         // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
@@ -505,7 +505,7 @@ dummy_func(
         // So the inputs are the same as for all BINARY_OP
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
-        op(_BINARY_OP_INPLACE_ADD_UNICODE, (unused/1, left, right --)) {
+        op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             assert(next_instr->op.code == STORE_FAST);
             PyObject **target_local = &GETLOCAL(next_instr->op.arg);
             DEOPT_IF(*target_local != left);
@@ -532,7 +532,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
+            _GUARD_BOTH_UNICODE + unused/1 + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         family(BINARY_SUBSCR, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR_DICT,

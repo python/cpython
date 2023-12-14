@@ -182,6 +182,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_ADD_INT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -210,6 +211,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_ADD_UNICODE
             {
                 STAT_INC(BINARY_OP, hit);
@@ -237,6 +239,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
                 assert(next_instr->op.code == STORE_FAST);
@@ -311,6 +314,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_MULTIPLY_INT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -368,6 +372,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_SUBTRACT_INT
             {
                 STAT_INC(BINARY_OP, hit);
