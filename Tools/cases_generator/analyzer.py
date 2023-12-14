@@ -347,7 +347,6 @@ def desugar_inst(
 ) -> None:
     assert inst.kind == "inst"
     name = inst.name
-    
     op_inputs: list[parser.InputEffect] = []
     parts: list[Part] = []
     uop_index = -1
