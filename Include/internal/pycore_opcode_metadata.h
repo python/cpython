@@ -1300,6 +1300,8 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
+extern const char *_PyOpcode_OpName[268];
+#ifdef NEED_OPCODE_METADATA
 const char *_PyOpcode_OpName[268] = {
     [BEFORE_ASYNC_WITH] = "BEFORE_ASYNC_WITH",
     [BEFORE_WITH] = "BEFORE_WITH",
@@ -1522,7 +1524,10 @@ const char *_PyOpcode_OpName[268] = {
     [WITH_EXCEPT_START] = "WITH_EXCEPT_START",
     [YIELD_VALUE] = "YIELD_VALUE",
 };
+#endif
 
+extern const uint8_t _PyOpcode_Caches[256];
+#ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
     [TO_BOOL_BOOL] = 3,
     [TO_BOOL_INT] = 3,
@@ -1620,6 +1625,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [CALL_PY_EXACT_ARGS] = 3,
     [BINARY_OP] = 1,
 };
+#endif
 
 extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
@@ -1889,9 +1895,9 @@ const uint8_t _PyOpcode_Deopt[256] = {
 struct pseudo_targets {
     uint8_t targets[3];
 };
-const struct pseudo_targets pseudo_targets[12];
+extern const struct pseudo_targets _PyOpcode_PseudoTargets[12];
 #ifdef NEED_OPCODE_METADATA
-const struct pseudo_targets pseudo_targets[12] = {
+const struct pseudo_targets _PyOpcode_PseudoTargets[12] = {
     [LOAD_CLOSURE-256] = { { LOAD_FAST, 0, 0 } },
     [STORE_FAST_MAYBE_NULL-256] = { { STORE_FAST, 0, 0 } },
     [LOAD_SUPER_METHOD-256] = { { LOAD_SUPER_ATTR, 0, 0 } },
@@ -1912,8 +1918,8 @@ is_pseudo_target(int pseudo, int target) {
     if (pseudo < 256 || pseudo >= 268) {
         return false;
     }
-    for (int i = 0; pseudo_targets[pseudo-256].targets[i]; i++) {
-        if (pseudo_targets[pseudo-256].targets[i] == target) return true;
+    for (int i = 0; _PyOpcode_PseudoTargets[pseudo-256].targets[i]; i++) {
+        if (_PyOpcode_PseudoTargets[pseudo-256].targets[i] == target) return true;
     }
     return false;
 }

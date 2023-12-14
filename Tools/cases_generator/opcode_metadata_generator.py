@@ -159,23 +159,29 @@ def generate_deopt_table(
 def generate_cache_table(
     analysis: Analysis, out: CWriter
 ) -> None:
+    out.emit("extern const uint8_t _PyOpcode_Caches[256];\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Caches[256] = {\n")
     for inst in analysis.instructions.values():
         if inst.size > 1:
          out.emit(f"[{inst.name}] = {inst.size-1},\n")
-    out.emit("};\n\n")
+    out.emit("};\n")
+    out.emit("#endif\n\n")
 
 
 def generate_name_table(
     analysis: Analysis, out: CWriter
 ) -> None:
     table_size = 256 + len(analysis.pseudos) 
+    out.emit(f"extern const char *_PyOpcode_OpName[{table_size}];\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
     names = list(analysis.instructions) + list(analysis.pseudos)
     names.append("INSTRUMENTED_LINE")
     for name in sorted(names):
         out.emit(f'[{name}] = "{name}",\n')
-    out.emit("};\n\n")
+    out.emit("};\n")
+    out.emit("#endif\n\n")
 
 
 def generate_metadata_table(
@@ -269,9 +275,9 @@ def generate_psuedo_targets(
     out.emit("struct pseudo_targets {\n")
     out.emit(f"uint8_t targets[{max_targets + 1}];\n")
     out.emit("};\n")
-    out.emit(f"const struct pseudo_targets pseudo_targets[{table_size}];\n")
+    out.emit(f"extern const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
-    out.emit(f"const struct pseudo_targets pseudo_targets[{table_size}] = {{\n")
+    out.emit(f"const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}] = {{\n")
     for pseudo in analysis.pseudos.values():
         targets = [ "0" ] * (max_targets + 1)
         for i, target in enumerate(pseudo.targets):
@@ -284,8 +290,8 @@ def generate_psuedo_targets(
     out.emit(f"if (pseudo < 256 || pseudo >= {256+table_size}) {{\n")
     out.emit(f"return false;\n")
     out.emit("}\n")
-    out.emit(f"for (int i = 0; pseudo_targets[pseudo-256].targets[i]; i++) {{\n")
-    out.emit(f"if (pseudo_targets[pseudo-256].targets[i] == target) return true;\n")
+    out.emit(f"for (int i = 0; _PyOpcode_PseudoTargets[pseudo-256].targets[i]; i++) {{\n")
+    out.emit(f"if (_PyOpcode_PseudoTargets[pseudo-256].targets[i] == target) return true;\n")
     out.emit("}\n")
     out.emit(f"return false;\n")
     out.emit("}\n\n")

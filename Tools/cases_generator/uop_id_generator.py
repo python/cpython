@@ -23,10 +23,6 @@ from typing import TextIO
 
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 
-
-OMIT = {"_CACHE", "_RESERVED", "_EXTENDED_ARG"}
-
-
 def generate_uop_ids(
     filenames: list[str], analysis: Analysis, outfile: TextIO, distinct_namespace: bool
 ) -> None:
@@ -44,9 +40,7 @@ def generate_uop_ids(
         for uop in analysis.uops.values():
             if uop.name in PRE_DEFINED:
                 continue
-            # TODO: We should omit all tier-1 only uops, but
-            # generate_cases.py still generates code for those.
-            if uop.name in OMIT:
+            if uop.properties.tier_one_only:
                 continue
             if uop.implicitly_created and not distinct_namespace:
                 out.emit(f"#define {uop.name} {uop.name[1:]}\n")
