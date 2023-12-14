@@ -1062,18 +1062,8 @@ error_tier_two:
     Py_DECREF(current_executor);
     goto resume_with_error;
 
-// Jump here from _EXIT_TRACE
-exit_trace:
-    frame->instr_ptr = next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
-    Py_DECREF(current_executor);
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    DISPATCH();
-
 // Jump here from DEOPT_IF()
 deoptimize:
-    // On DEOPT_IF we must execute the target instruction.
-    // This presumes nothing was popped from the stack (nor pushed).
-    // There are some other things to take care of first, though.
     frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
@@ -2517,7 +2507,7 @@ PyObject *
 _PyEval_GetBuiltin(PyObject *name)
 {
     PyObject *attr;
-    if (PyDict_GetItemRef(PyEval_GetBuiltins(), name, &attr) == 0) {
+    if (PyMapping_GetOptionalItem(PyEval_GetBuiltins(), name, &attr) == 0) {
         PyErr_SetObject(PyExc_AttributeError, name);
     }
     return attr;
@@ -2670,7 +2660,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyDict_GetItemRef(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {

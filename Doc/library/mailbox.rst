@@ -383,46 +383,6 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       last 36 hours. The Maildir specification says that mail-reading programs
       should do this occasionally.
 
-   Some :class:`Mailbox` methods implemented by :class:`Maildir` deserve special
-   remarks:
-
-
-   .. method:: add(message)
-               __setitem__(key, message)
-               update(arg)
-
-      .. warning::
-
-         These methods generate unique file names based upon the current process
-         ID. When using multiple threads, undetected name clashes may occur and
-         cause corruption of the mailbox unless threads are coordinated to avoid
-         using these methods to manipulate the same mailbox simultaneously.
-
-
-   .. method:: flush()
-
-      All changes to Maildir mailboxes are immediately applied, so this method
-      does nothing.
-
-
-   .. method:: lock()
-               unlock()
-
-      Maildir mailboxes do not support (or require) locking, so these methods do
-      nothing.
-
-
-   .. method:: close()
-
-      :class:`Maildir` instances do not keep any open files and the underlying
-      mailboxes do not support locking, so this method does nothing.
-
-
-   .. method:: get_file(key)
-
-      Depending upon the host platform, it may not be possible to modify or
-      remove the underlying message while the returned file remains open.
-
 
    .. method:: get_flags(key)
 
@@ -524,6 +484,46 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       message object's method, :meth:`~MaildirMessage.get_info`.
 
       .. versionadded:: 3.13
+
+   Some :class:`Mailbox` methods implemented by :class:`Maildir` deserve special
+   remarks:
+
+
+   .. method:: add(message)
+               __setitem__(key, message)
+               update(arg)
+
+      .. warning::
+
+         These methods generate unique file names based upon the current process
+         ID. When using multiple threads, undetected name clashes may occur and
+         cause corruption of the mailbox unless threads are coordinated to avoid
+         using these methods to manipulate the same mailbox simultaneously.
+
+
+   .. method:: flush()
+
+      All changes to Maildir mailboxes are immediately applied, so this method
+      does nothing.
+
+
+   .. method:: lock()
+               unlock()
+
+      Maildir mailboxes do not support (or require) locking, so these methods do
+      nothing.
+
+
+   .. method:: close()
+
+      :class:`Maildir` instances do not keep any open files and the underlying
+      mailboxes do not support locking, so this method does nothing.
+
+
+   .. method:: get_file(key)
+
+      Depending upon the host platform, it may not be possible to modify or
+      remove the underlying message while the returned file remains open.
 
 
 .. seealso::
