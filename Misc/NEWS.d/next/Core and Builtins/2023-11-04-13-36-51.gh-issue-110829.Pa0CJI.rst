@@ -1,1 +1,0 @@
-Joining a thread now ensures the underlying OS thread has exited. This is required for safer fork() in multi-threaded processes.

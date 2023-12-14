@@ -324,7 +324,8 @@ function, as previously described.  In other words, ``@A @B @C(args)`` becomes::
 
 Getting this right can be slightly brain-bending, but it's not too difficult.
 
-A small related change makes the :attr:`func_name` attribute of functions
+A small related change makes the :attr:`func_name <function.__name__>`
+attribute of functions
 writable.  This attribute is used to display function names in tracebacks, so
 decorators should change the name of any new function that's constructed and
 returned.
@@ -1163,7 +1164,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * A number of functions were added to the :mod:`locale`  module, such as
   :func:`bind_textdomain_codeset` to specify a particular encoding and a family of
-  :func:`l\*gettext` functions that return messages in the chosen encoding.
+  :func:`!l\*gettext` functions that return messages in the chosen encoding.
   (Contributed by Gustavo Niemeyer.)
 
 * Some keyword arguments were added to the :mod:`logging` package's
