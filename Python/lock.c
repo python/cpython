@@ -388,14 +388,16 @@ _PyRWMutex_RLock(_PyRWMutex *rwmutex)
     uintptr_t bits = _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
     for (;;) {
         if ((bits & _Py_WRITE_LOCKED)) {
-            // The lock is write-locked.
+            // A writer already holds the lock.
             bits = rwmutex_set_parked_and_wait(rwmutex, bits);
             continue;
         }
         else if ((bits & _Py_HAS_PARKED)) {
-            // There is at least one waiting writer. We can't grab the lock
-            // because we don't want to starve the writer. Instead, we park
-            // ourselves and wait for the writer to eventually wake us up.
+            // Reader(s) hold the lock, but there is at least one waiting
+            // writer. We can't grab the lock because we don't want to starve
+            // the writer. Instead, we park ourselves and wait for the writer
+            // to eventually wake us up.
+            assert(rwmutex_reader_count(bits) > 0);
             bits = rwmutex_set_parked_and_wait(rwmutex, bits);
             continue;
         }
@@ -416,6 +418,7 @@ void
 _PyRWMutex_RUnlock(_PyRWMutex *rwmutex)
 {
     uintptr_t bits = _Py_atomic_add_uintptr(&rwmutex->bits, -(1 << _PyRWMutex_READER_SHIFT));
+    assert(rw_mutex_reader_count(bits) > 0 && "lock was not read-locked");
     bits -= (1 << _PyRWMutex_READER_SHIFT);
 
     if (rwmutex_reader_count(bits) == 0 && (bits & _Py_HAS_PARKED)) {
