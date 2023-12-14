@@ -215,10 +215,10 @@ def cflags(p: Properties) -> str:
     else:
         return "0"
 
-def get_have_arg_and_min_instrumented(instmap: dict[str, int], analysis: Analysis) -> tuple[int, int]:
+def get_have_arg_and_min_instrumented(analysis: Analysis) -> tuple[int, int]:
     min_instrumented = 256
     first_arg = 256
-    for name, op in instmap.items():
+    for name, op in analysis.opmap.items():
         if name.startswith("INSTRUMENTED") and op < min_instrumented:
             min_instrumented = op
         if name == "INSTRUMENTED_LINE":

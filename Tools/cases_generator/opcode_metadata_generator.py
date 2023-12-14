@@ -260,7 +260,7 @@ def generate_extra_cases(
     analysis: Analysis, out: CWriter
 ) -> None:
     out.emit("#define EXTRA_CASES \\\n")
-    valid_opcodes = set(analysis.get_instruction_map().values())
+    valid_opcodes = set(analysis.opmap.values())
     for op in range(256):
         if op not in valid_opcodes:
             out.emit(f"    case {op}: \\\n")

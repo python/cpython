@@ -29,18 +29,17 @@ DEFAULT_OUTPUT = ROOT / "Include/opcode_ids.h"
 def generate_opcode_header(filenames: list[str], analysis: Analysis, outfile: TextIO) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
-    instmap = analysis.get_instruction_map()
     with out.header_guard("Py_OPCODE_IDS_H"):
         out.emit("/* Instruction opcodes for compiled code */\n")
 
         def write_define(name: str, op: int) -> None:
             out.emit(f"#define {name:<38} {op:>3}\n")
 
-        for op, name in sorted([(op, name) for (name, op) in instmap.items()]):
+        for op, name in sorted([(op, name) for (name, op) in analysis.opmap.items()]):
             write_define(name, op)
 
         out.emit("\n")
-        have_arg, min_instrumented = get_have_arg_and_min_instrumented(instmap, analysis)
+        have_arg, min_instrumented = get_have_arg_and_min_instrumented(analysis)
         write_define("HAVE_ARGUMENT", have_arg)
         write_define("MIN_INSTRUMENTED_OPCODE", min_instrumented)
 
