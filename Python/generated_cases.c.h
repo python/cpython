@@ -3273,7 +3273,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
-            uint16_t counter = read_u16(&this_instr[1].cache);
+            /* Skip 1 cache entry */
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
