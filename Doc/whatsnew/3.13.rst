@@ -261,6 +261,10 @@ os
   CPU resources of a container system without having to modify the container (application code).
   (Contributed by Donghee Na in :gh:`109595`)
 
+* :func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
+  process use the current process environment.
+  (Contributed by Jakub Kulik in :gh:`113119`.)
+
 pathlib
 -------
 
