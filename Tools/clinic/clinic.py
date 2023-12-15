@@ -871,6 +871,7 @@ class CLanguage(Language):
     GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
         PyDoc_STRVAR({getset_basename}__doc__,
         {docstring});
+        #define {getset_basename}_HAS_DOCSTR
     """)
     IMPL_DEFINITION_PROTOTYPE: Final[str] = normalize_snippet("""
         static {impl_return_type}
@@ -881,17 +882,27 @@ class CLanguage(Language):
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_basename}_HAS_DOCSTR)
+        # define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        # define {getset_basename}_DOCSTR NULL
+        #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}__doc__}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
         #else
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}__doc__}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
         #endif
     """)
     SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_name}_HAS_DOCSTR)
+        # define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        # define {getset_basename}_DOCSTR NULL
+        #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}__doc__}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
         #else
         #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
         #endif
@@ -1194,8 +1205,11 @@ class CLanguage(Language):
             docstring_prototype = docstring_definition = ''
         elif f.kind is GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
-            docstring_prototype = self.GETSET_DOCSTRING_PROTOTYPE_VAR
-            docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
+            if f.docstring:
+                docstring_prototype = self.GETSET_DOCSTRING_PROTOTYPE_VAR
+                docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
+            else:
+                docstring_prototype = docstring_definition = ''
         elif f.kind is SETTER:
             if f.docstring:
                 fail("@setter can not set docstring")
