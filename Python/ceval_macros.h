@@ -81,7 +81,7 @@
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
 #define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
-    lltrace_instruction(frame, stack_pointer, next_instr); }
+    lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -258,10 +258,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
-        else {                                                   \
-            /* This is about to be (incorrectly) incremented: */ \
-            STAT_DEC((INSTNAME), deferred);                      \
-        }                                                        \
     } while (0)
 #else
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
@@ -395,8 +391,6 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 /* Tier-switching macros. */
 
 #define GOTO_TIER_TWO() goto enter_tier_two;
-
-#define GOTO_TIER_ONE() goto exit_trace;
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 

@@ -307,10 +307,6 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
-    if (!_Py_atomic_load_int_relaxed(&gil->locked)) {
-        goto _ready;
-    }
-
     int drop_requested = 0;
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
@@ -345,7 +341,6 @@ take_gil(PyThreadState *tstate)
         }
     }
 
-_ready:
 #ifdef FORCE_SWITCHING
     /* This mutex must be taken before modifying gil->last_holder:
        see drop_gil(). */
@@ -452,7 +447,7 @@ init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
     interp->ceval.own_gil = 1;
 }
 
-PyStatus
+void
 _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 {
     assert(tstate->interp->ceval.gil == NULL);
@@ -471,8 +466,6 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 
     // Lock the GIL and mark the current thread as attached.
     _PyThreadState_Attach(tstate);
-
-    return _PyStatus_OK();
 }
 
 void
