@@ -238,6 +238,7 @@
             }
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
+                TIER_ONE_ONLY
                 assert(next_instr->op.code == STORE_FAST);
                 PyObject **target_local = &GETLOCAL(next_instr->op.arg);
                 DEOPT_IF(*target_local != left, BINARY_OP);
@@ -1446,6 +1447,7 @@
             args = &stack_pointer[-oparg];
             self = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            TIER_ONE_ONLY
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
@@ -3182,6 +3184,7 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             PyObject *retval;
             retval = stack_pointer[-1];
+            TIER_ONE_ONLY
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
@@ -3253,6 +3256,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
+            TIER_ONE_ONLY
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -3266,6 +3270,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_FORWARD);
+            TIER_ONE_ONLY
             JUMPBY(oparg);
             DISPATCH();
         }
@@ -4793,6 +4798,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
+            TIER_ONE_ONLY
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -5764,6 +5770,7 @@
             INSTRUCTION_STATS(YIELD_VALUE);
             PyObject *retval;
             retval = stack_pointer[-1];
+            TIER_ONE_ONLY
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
