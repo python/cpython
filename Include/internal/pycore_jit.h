@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE
-#  error "this header requires Py_BUILD_CORE define"
+#error "this header requires Py_BUILD_CORE define"
 #endif
 
 #ifdef _Py_JIT

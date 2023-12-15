@@ -93,7 +93,6 @@ error_tier_two:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return NULL;
 deoptimize:
-exit_trace:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
 }
