@@ -201,8 +201,8 @@ manipulation of WSGI response headers using a mapping-like interface.
    an empty list.
 
    :class:`Headers` objects support typical mapping operations including
-   :meth:`~object.__getitem__`, :meth:`dict.get`, :meth:`~object.__setitem__`,
-   :meth:`dict.setdefault`,
+   :meth:`~object.__getitem__`, :meth:`~dict.get`, :meth:`~object.__setitem__`,
+   :meth:`~dict.setdefault`,
    :meth:`~object.__delitem__` and :meth:`~object.__contains__`.  For each of
    these methods, the key is the header name (treated case-insensitively), and the
    value is the first value associated with that header name.  Setting a header
