@@ -13,12 +13,11 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define MAX_EXECUTORS_SIZE 256
-
-
 #define NEED_OPCODE_METADATA
 #include "pycore_uop_metadata.h" // Uop tables
 #undef NEED_OPCODE_METADATA
+
+#define MAX_EXECUTORS_SIZE 256
 
 
 static bool
