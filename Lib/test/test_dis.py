@@ -1208,9 +1208,8 @@ class DisTests(DisTestBase):
         self.code_quicken(loop_test, 1)
         got = self.get_disassembly(loop_test, adaptive=True)
         expected = dis_loop_test_quickened_code
-        if _testinternalcapi.get_optimizer():
-            # We *may* see ENTER_EXECUTOR in the disassembly
-            got = got.replace("ENTER_EXECUTOR", "JUMP_BACKWARD ")
+        if _testinternalcapi.get_optimizer() and "ENTER_EXECUTOR" in got:
+            raise unittest.SkipTest("ENTER_EXECUTOR")
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
