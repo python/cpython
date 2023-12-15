@@ -234,11 +234,13 @@ static int
 add_exctype(PyObject *mod, PyObject **p_state_field,
             const char *qualname, const char *doc, PyObject *base)
 {
+#ifndef NDEBUG
     const char *dot = strrchr(qualname, '.');
     assert(dot != NULL);
     const char *name = dot+1;
     assert(*p_state_field == NULL);
     assert(!PyObject_HasAttrStringWithError(mod, name));
+#endif
     PyObject *exctype = PyErr_NewExceptionWithDoc(qualname, doc, base, NULL);
     if (exctype == NULL) {
         return -1;
@@ -1505,7 +1507,7 @@ queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
     }
     int64_t qid = qidarg.id;
 
-    int is_full;
+    int is_full = 0;
     int err = queue_is_full(&_globals.queues, qid, &is_full);
     if (handle_queue_error(err, self, qid)) {
         return NULL;
