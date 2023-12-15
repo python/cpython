@@ -82,7 +82,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case BUILD_SET:
             return oparg;
         case BUILD_SLICE:
-            return 2 + (((oparg == 3) ? 1 : 0));
+            return 2 + ((oparg == 3) ? 1 : 0);
         case BUILD_STRING:
             return oparg;
         case BUILD_TUPLE:
@@ -104,7 +104,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CALL_BUILTIN_O:
             return 2 + oparg;
         case CALL_FUNCTION_EX:
-            return 3 + ((oparg & 1));
+            return 3 + (oparg & 1);
         case CALL_INTRINSIC_1:
             return 1;
         case CALL_INTRINSIC_2:
@@ -519,7 +519,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CALL_ALLOC_AND_ENTER_INIT:
             return 1;
         case CALL_BOUND_METHOD_EXACT_ARGS:
-            return (((0) ? 1 : 0));
+            return ((0) ? 1 : 0);
         case CALL_BUILTIN_CLASS:
             return 1;
         case CALL_BUILTIN_FAST:
@@ -551,7 +551,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CALL_METHOD_DESCRIPTOR_O:
             return 1;
         case CALL_PY_EXACT_ARGS:
-            return (((0) ? 1 : 0));
+            return ((0) ? 1 : 0);
         case CALL_PY_WITH_DEFAULTS:
             return 1;
         case CALL_STR_1:
@@ -659,7 +659,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case INSTRUMENTED_JUMP_FORWARD:
             return 0;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case INSTRUMENTED_POP_JUMP_IF_FALSE:
             return 0;
         case INSTRUMENTED_POP_JUMP_IF_NONE:
@@ -693,31 +693,31 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LOAD_ATTR:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_ATTR_CLASS:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
-            return 1 + (((0) ? 1 : 0));
+            return 1 + ((0) ? 1 : 0);
         case LOAD_ATTR_INSTANCE_VALUE:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return 1 + (((1) ? 1 : 0));
+            return 1 + ((1) ? 1 : 0);
         case LOAD_ATTR_METHOD_NO_DICT:
-            return 1 + (((1) ? 1 : 0));
+            return 1 + ((1) ? 1 : 0);
         case LOAD_ATTR_METHOD_WITH_VALUES:
-            return 1 + (((1) ? 1 : 0));
+            return 1 + ((1) ? 1 : 0);
         case LOAD_ATTR_MODULE:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT:
-            return 1 + (((0) ? 1 : 0));
+            return 1 + ((0) ? 1 : 0);
         case LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES:
-            return 1 + (((0) ? 1 : 0));
+            return 1 + ((0) ? 1 : 0);
         case LOAD_ATTR_PROPERTY:
-            return 1 + (((0) ? 1 : 0));
+            return 1 + ((0) ? 1 : 0);
         case LOAD_ATTR_SLOT:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_ATTR_WITH_HINT:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_BUILD_CLASS:
             return 1;
         case LOAD_CONST:
@@ -737,19 +737,19 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_GLOBAL_BUILTIN:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_GLOBAL_MODULE:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_LOCALS:
             return 1;
         case LOAD_NAME:
             return 1;
         case LOAD_SUPER_ATTR:
-            return 1 + ((oparg & 1));
+            return 1 + (oparg & 1);
         case LOAD_SUPER_ATTR_ATTR:
-            return 1 + (((0) ? 1 : 0));
+            return 1 + ((0) ? 1 : 0);
         case LOAD_SUPER_ATTR_METHOD:
             return 2;
         case MAKE_CELL:
