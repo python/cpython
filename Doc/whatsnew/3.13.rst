@@ -281,6 +281,10 @@ os
   ``False`` on Windows.
   (Contributed by Serhiy Storchaka in :gh:`59616`)
 
+* Add support of :func:`os.fchmod` and a file descriptor
+  in :func:`os.chmod` on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`113191`)
+
 pathlib
 -------
 

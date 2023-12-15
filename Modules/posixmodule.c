@@ -3331,7 +3331,26 @@ win32_lchmod(LPCWSTR path, int mode)
     }
     return SetFileAttributesW(path, attr);
 }
-#endif
+
+static int
+win32_hchmod(HANDLE hfile, int mode)
+{
+    FILE_BASIC_INFO info;
+    if (!GetFileInformationByHandleEx(hfile, FileBasicInfo,
+                                      &info, sizeof(info)))
+    {
+        return 0;
+    }
+    if (mode & _S_IWRITE) {
+        info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+    }
+    else {
+        info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
+    }
+    return SetFileInformationByHandle(hfile, FileBasicInfo,
+                                      &info, sizeof(info));
+}
+#endif /* MS_WINDOWS */
 
 /*[clinic input]
 os.chmod
@@ -3396,26 +3415,21 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     Py_BEGIN_ALLOW_THREADS
     if (follow_symlinks) {
         HANDLE hfile;
-        FILE_BASIC_INFO info;
-
-        hfile = CreateFileW(path->wide,
-                            FILE_READ_ATTRIBUTES|FILE_WRITE_ATTRIBUTES,
-                            0, NULL,
-                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-        if (hfile != INVALID_HANDLE_VALUE) {
-            if (GetFileInformationByHandleEx(hfile, FileBasicInfo,
-                                             &info, sizeof(info)))
-            {
-                if (mode & _S_IWRITE) {
-                    info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
-                }
-                else {
-                    info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
-                }
-                result = SetFileInformationByHandle(hfile, FileBasicInfo,
-                                                    &info, sizeof(info));
+        if (_path->fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(_path->fd);
+            if (hfile != INVALID_HANDLE_VALUE) {
+                result = win32_hchmod(hfile, mode);
             }
-            (void)CloseHandle(hfile);
+        }
+        else {
+            hfile = CreateFileW(path->wide,
+                                FILE_READ_ATTRIBUTES|FILE_WRITE_ATTRIBUTES,
+                                0, NULL,
+                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+            if (hfile != INVALID_HANDLE_VALUE) {
+                result = win32_hchmod(hfile, mode);
+                (void)CloseHandle(hfile);
+            }
         }
     }
     else {
@@ -3510,7 +3524,7 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 }
 
 
-#ifdef HAVE_FCHMOD
+#if defined(HAVE_FCHMOD) || defined(MS_WINDOWS)
 /*[clinic input]
 os.fchmod
 
@@ -3532,12 +3546,24 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
 /*[clinic end generated code: output=afd9bc05b4e426b3 input=b5594618bbbc22df]*/
 {
     int res;
-    int async_err = 0;
 
     if (PySys_Audit("os.chmod", "iii", fd, mode, -1) < 0) {
         return NULL;
     }
 
+#ifdef MS_WINDOWS
+    res = 0;
+    Py_BEGIN_ALLOW_THREADS
+    HANDLE hfile = _Py_get_osfhandle_noraise(fd);
+    if (hfile != INVALID_HANDLE_VALUE) {
+        res = win32_hchmod(hfile, mode);
+    }
+    Py_END_ALLOW_THREADS
+    if (!res) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+#else /* MS_WINDOWS */
+    int async_err = 0;
     do {
         Py_BEGIN_ALLOW_THREADS
         res = fchmod(fd, mode);
@@ -3545,10 +3571,11 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
     } while (res != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (res != 0)
         return (!async_err) ? posix_error() : NULL;
+#endif /* MS_WINDOWS */
 
     Py_RETURN_NONE;
 }
-#endif /* HAVE_FCHMOD */
+#endif /* HAVE_FCHMOD || MS_WINDOWS */
 
 
 #if defined(HAVE_LCHMOD) || defined(MS_WINDOWS)
