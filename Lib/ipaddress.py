@@ -12,6 +12,7 @@ __version__ = '1.0'
 
 
 import functools
+from itertools import combinations
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
@@ -1549,6 +1550,65 @@ class IPv4Network(_BaseV4, _BaseNetwork):
                 not self.is_private)
 
 
+def _address_exclude_many(network, others):
+    """
+    A version of IPv4Network/IPv6Network address_exclude() but for multiple networks
+    to exclude in the same call.
+
+    The following are programming errors and will raise an exception:
+
+    * Network type mismatch (IPv4 vs IPv6)
+    * Networks in `others` overlapping each other
+    * Networks in `others` not ovarlapping the provided `network`
+
+    Returns:
+        A list of networks left after excluding `others` from `network`.
+    """
+    # Precondition checks
+    for o in others:
+        if not network.overlaps(o):
+            raise AssertionError(f"No overlap between {network} and {o}")
+
+    for a, b in combinations(others, 2):
+        if a.overlaps(b):
+            raise AssertionError(f"{a} overlaps {b}")
+
+    networks = [network]
+
+    for o in others:
+        networks = [
+            result_network
+            for input_network in networks
+            for result_network in (
+                input_network.address_exclude(o)
+                if input_network.overlaps(o)
+                else [input_network]
+            )
+        ]
+
+    # Integrity checks to make sure we haven't done something really wrong
+    addresses_started_with = network.num_addresses
+    addresses_excluded = sum(o.num_addresses for o in others)
+    addresses_left = sum(n.num_addresses for n in networks)
+    expected_addresses_left = addresses_started_with - addresses_excluded
+
+    if addresses_left != expected_addresses_left:
+        raise AssertionError(
+            f"Should have {expected_addresses_left} addresses left, got {addresses_left}"
+        )
+
+    for n in networks:
+        for o in others:
+            if n.overlaps(o):
+                raise AssertionError(f"{n} overlaps {o}")
+
+    for a, b in combinations(networks, 2):
+        if a.overlaps(b):
+            raise AssertionError(f'{a} overlaps {b}')
+
+    return networks
+
+
 class _IPv4Constants:
     _linklocal_network = IPv4Network('169.254.0.0/16')
 
@@ -1558,13 +1618,21 @@ class _IPv4Constants:
 
     _public_network = IPv4Network('100.64.0.0/10')
 
+    # Not globally reachable address blocks listed on
+    # https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
     _private_networks = [
         IPv4Network('0.0.0.0/8'),
         IPv4Network('10.0.0.0/8'),
         IPv4Network('127.0.0.0/8'),
         IPv4Network('169.254.0.0/16'),
         IPv4Network('172.16.0.0/12'),
-        IPv4Network('192.0.0.0/29'),
+        *_address_exclude_many(
+            IPv4Network('192.0.0.0/24'),
+            [
+                IPv4Network('192.0.0.9/32'),
+                IPv4Network('192.0.0.10/32'),
+            ],
+        ),
         IPv4Network('192.0.0.170/31'),
         IPv4Network('192.0.2.0/24'),
         IPv4Network('192.168.0.0/16'),
@@ -2310,15 +2378,28 @@ class _IPv6Constants:
 
     _multicast_network = IPv6Network('ff00::/8')
 
+    # Not globally reachable address blocks listed on
+    # https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
     _private_networks = [
         IPv6Network('::1/128'),
         IPv6Network('::/128'),
         IPv6Network('::ffff:0:0/96'),
+        IPv6Network('64:ff9b:1::/48'),
         IPv6Network('100::/64'),
-        IPv6Network('2001::/23'),
-        IPv6Network('2001:2::/48'),
+        *_address_exclude_many(
+            IPv6Network('2001::/23'),
+            [
+                IPv6Network('2001:1::1/128'),
+                IPv6Network('2001:1::2/128'),
+                IPv6Network('2001:3::/32'),
+                IPv6Network('2001:4:112::/48'),
+                IPv6Network('2001:20::/28'),
+                IPv6Network('2001:30::/28'),
+            ],
+        ),
         IPv6Network('2001:db8::/32'),
-        IPv6Network('2001:10::/28'),
+        # IANA says N/A, let's consider it not globally reachable to be safe
+        IPv6Network('2002::/16'),
         IPv6Network('fc00::/7'),
         IPv6Network('fe80::/10'),
         ]
