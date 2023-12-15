@@ -2123,6 +2123,9 @@ def set_recursion_limit(limit):
 
 def infinite_recursion(max_depth=None):
     if max_depth is None:
+        # Pick a number large enough to cause problems
+        # but not take too long for code that can handle
+        # very deep recursion.
         max_depth = 20_000
     elif max_depth < 3:
         raise ValueError("max_depth must be at least 3, got {max_depth}")
@@ -2362,8 +2365,6 @@ def adjust_int_max_str_digits(max_digits):
     finally:
         sys.set_int_max_str_digits(current)
 
-#For recursion tests, easily exceeds default recursion limit
-EXCEEDS_RECURSION_LIMIT = 10_000
 
 def _get_c_recursion_limit():
     try:
@@ -2371,10 +2372,13 @@ def _get_c_recursion_limit():
         return _testcapi.Py_C_RECURSION_LIMIT
     except (ImportError, AttributeError):
         # Originally taken from Include/cpython/pystate.h .
-        return 4500
+        return 7000
 
 # The default C recursion limit.
 Py_C_RECURSION_LIMIT = _get_c_recursion_limit()
+
+#For recursion tests, easily exceeds default recursion limit
+EXCEEDS_RECURSION_LIMIT = Py_C_RECURSION_LIMIT * 3
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
