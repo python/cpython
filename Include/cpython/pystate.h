@@ -256,6 +256,8 @@ struct _ts {
 #    define C_RECURSION_LIMIT 500
 #  elif defined(__s390x__)
 #    define C_RECURSION_LIMIT 1200
+#  elif defined(MS_WINDOWS)
+#    define C_RECURSION_LIMIT 7000
 #  else
     // This value is duplicated in Lib/test/support/__init__.py
 #    define C_RECURSION_LIMIT 8000
