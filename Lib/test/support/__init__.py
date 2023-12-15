@@ -2122,19 +2122,8 @@ def set_recursion_limit(limit):
         sys.setrecursionlimit(original_limit)
 
 def infinite_recursion(max_depth=None):
-    """Set a lower limit for tests that interact with infinite recursions
-    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
-    debug windows builds, due to not enough functions being inlined the
-    stack size might not handle the default recursion limit (1000). See
-    bpo-11105 for details."""
     if max_depth is None:
-        if not python_is_optimized() or Py_DEBUG:
-            # Python built without compiler optimizations or in debug mode
-            # usually consumes more stack memory per function call.
-            # Unoptimized number based on what works under a WASI debug build.
-            max_depth = 50
-        else:
-            max_depth = 100
+        max_depth = 20_000
     elif max_depth < 3:
         raise ValueError("max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
@@ -2374,7 +2363,7 @@ def adjust_int_max_str_digits(max_digits):
         sys.set_int_max_str_digits(current)
 
 #For recursion tests, easily exceeds default recursion limit
-EXCEEDS_RECURSION_LIMIT = 5000
+EXCEEDS_RECURSION_LIMIT = 10_000
 
 def _get_c_recursion_limit():
     try:
@@ -2382,7 +2371,7 @@ def _get_c_recursion_limit():
         return _testcapi.Py_C_RECURSION_LIMIT
     except (ImportError, AttributeError):
         # Originally taken from Include/cpython/pystate.h .
-        return 1500
+        return 4500
 
 # The default C recursion limit.
 Py_C_RECURSION_LIMIT = _get_c_recursion_limit()

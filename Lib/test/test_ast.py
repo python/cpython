@@ -19,7 +19,7 @@ except ImportError:
 
 from test import support
 from test.support.import_helper import import_fresh_module
-from test.support import os_helper, script_helper
+from test.support import os_helper, script_helper, Py_DEBUG
 from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
