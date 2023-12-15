@@ -16,17 +16,17 @@ Typical usage:
     >>> uuid.uuid1()    # doctest: +SKIP
     UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
 
-    # make a UUID using an MD5 hash of a namespace UUID and a name
-    >>> uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
-    UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')
+    # make a UUID using an MD5 hash of a name
+    >>> uuid.uuid3('python.org')
+    UUID('db0fe87d-2a44-35fb-a0f0-6fa792ac61ea')
 
     # make a random UUID
     >>> uuid.uuid4()    # doctest: +SKIP
     UUID('16fd2706-8baf-433b-82eb-8c7fada847da')
 
     # make a UUID using a SHA-1 hash of a namespace UUID and a name
-    >>> uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
-    UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')
+    >>> uuid.uuid5('python.org')
+    UUID('f0087280-16e4-5bd6-b449-56070bb83edb')
 
     # make a UUID from a string of hex digits (braces and hyphens ignored)
     >>> x = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}')
@@ -741,13 +741,7 @@ def main():
         "uuid4": uuid4,
         "uuid5": uuid5
     }
-    uuid_namespace_funcs = ("uuid3", "uuid5")
-    namespaces = {
-        "@dns": NAMESPACE_DNS,
-        "@url": NAMESPACE_URL,
-        "@oid": NAMESPACE_OID,
-        "@x500": NAMESPACE_X500
-    }
+    uuid_name_funcs = ("uuid3", "uuid5")
 
     import argparse
     parser = argparse.ArgumentParser(
@@ -755,39 +749,25 @@ def main():
     parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
                         help="The function to use to generate the uuid. "
                         "By default uuid4 function is used.")
-    parser.add_argument("-n", "--namespace",
-                        help="The namespace is a UUID, or '@ns' where 'ns' is a "
-                        "well-known predefined UUID addressed by namespace name. "
-                        "Such as @dns, @url, @oid, and @x500. "
-                        "Only required for uuid3/uuid5 functions.")
     parser.add_argument("-N", "--name",
                         help="The name used as part of generating the uuid. "
                         "Only required for uuid3/uuid5 functions.")
 
     args = parser.parse_args()
     uuid_func = uuid_funcs[args.uuid]
-    namespace = args.namespace
     name = args.name
 
-    if args.uuid in uuid_namespace_funcs:
-        if not namespace or not name:
+    if args.uuid in uuid_name_funcs:
+        if not name:
             parser.error(
                 "Incorrect number of arguments. "
-                f"{args.uuid} requires a namespace and a name. "
+                f"{args.uuid} requires a name. "
                 "Run 'python -m uuid -h' for more information."
             )
-        namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
-        print(uuid_func(namespace, name))
+        print(uuid_func(name))
     else:
         print(uuid_func())
 
-
-# The following standard UUIDs are for use with uuid3() or uuid5().
-
-NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
-NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
-NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
-NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
 
 if __name__ == "__main__":
     main()
