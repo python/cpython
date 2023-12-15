@@ -457,7 +457,6 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         envpy = self.envpy(real_env_dir=True)
-        os.system(f'type "{self.env_dir}\\pyvenv.cfg"')
         out, err = check_output([envpy, '-c',
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())

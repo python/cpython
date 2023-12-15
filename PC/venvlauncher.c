@@ -26,19 +26,22 @@
 
 #define RC_NO_STD_HANDLES   100
 #define RC_CREATE_PROCESS   101
-#define RC_BAD_VIRTUAL_PATH 102
 #define RC_NO_PYTHON        103
 #define RC_NO_MEMORY        104
-#define RC_NO_SCRIPT        105
 #define RC_NO_VENV_CFG      106
 #define RC_BAD_VENV_CFG     107
 #define RC_NO_COMMANDLINE   108
 #define RC_INTERNAL_ERROR   109
-#define RC_DUPLICATE_ITEM   110
-#define RC_INSTALLING       111
-#define RC_NO_PYTHON_AT_ALL 112
-#define RC_NO_SHEBANG       113
-#define RC_RECURSIVE_SHEBANG 114
+
+// This should always be defined when we build for real,
+// but it's handy to have a definition for quick testing
+#ifndef EXENAME
+#define EXENAME L"python.exe"
+#endif
+
+#ifndef CFGNAME
+#define CFGNAME L"pyvenv.cfg"
+#endif
 
 static FILE * log_fp = NULL;
 
@@ -57,7 +60,7 @@ debug(wchar_t * format, ...)
         if (r <= 0) {
             return;
         }
-        fputws(buffer, log_fp);
+        fwprintf(log_fp, L"%ls\n", buffer);
         while (r && isspace(buffer[r])) {
             buffer[r--] = L'\0';
         }
@@ -96,12 +99,12 @@ winerror(int err, wchar_t * format, ... )
 
     formatWinerror(err, win_message, MSGSIZE);
     if (len >= 0) {
-        _snwprintf_s(&message[len], MSGSIZE - len, _TRUNCATE, L": %s",
+        _snwprintf_s(&message[len], MSGSIZE - len, _TRUNCATE, L": %ls",
                      win_message);
     }
 
 #if !defined(_WINDOWS)
-    fwprintf(stderr, L"%s\n", message);
+    fwprintf(stderr, L"%ls\n", message);
 #else
     MessageBoxW(NULL, message, L"Python venv launcher is sorry to say ...",
                MB_OK);
@@ -120,7 +123,7 @@ error(wchar_t * format, ... )
     va_end(va);
 
 #if !defined(_WINDOWS)
-    fwprintf(stderr, L"%s\n", message);
+    fwprintf(stderr, L"%ls\n", message);
 #else
     MessageBoxW(NULL, message, L"Python venv launcher is sorry to say ...",
                MB_OK);
@@ -154,31 +157,39 @@ split_parent(wchar_t *buffer, size_t bufferLength)
 }
 
 
+/*
+ * Path calculation
+ */
+
 int
 calculate_pyvenvcfg_path(const wchar_t *argv0, wchar_t *pyvenvcfg_path, size_t maxlen)
 {
+    if (!pyvenvcfg_path) {
+        error(L"invalid buffer provided");
+        return RC_INTERNAL_ERROR;
+    }
     if ((DWORD)maxlen != maxlen) {
-        // TODO: error message
-        return RC_NO_MEMORY;
+        error(L"path buffer is too large");
+        return RC_INTERNAL_ERROR;
     }
     if (!GetCurrentDirectoryW((DWORD)maxlen, pyvenvcfg_path)) {
-        // TODO: error message
+        winerror(GetLastError(), L"failed to read current directory");
         return RC_NO_COMMANDLINE;
     }
     // Trailing quote will be included, but we're about to reduce the path
     // anyway so it will go away
     if (!join(pyvenvcfg_path, maxlen, &argv0[argv0[0] == L'"' ? 1 : 0])) {
-        // TODO: error message
+        error(L"failed to abspath('%ls')", argv0);
         return RC_NO_COMMANDLINE;
     }
     // Remove 'python.exe' from our path
     if (!split_parent(pyvenvcfg_path, maxlen)) {
-        // TODO: error message
+        error(L"failed to remove segment from '%ls'", pyvenvcfg_path);
         return RC_NO_COMMANDLINE;
     }
     // Replace with 'pyvenv.cfg'
-    if (!join(pyvenvcfg_path, maxlen, L"pyvenv.cfg")) {
-        // TODO: error message
+    if (!join(pyvenvcfg_path, maxlen, CFGNAME)) {
+        error(L"failed to append '%ls' to '%ls'", CFGNAME, pyvenvcfg_path);
         return RC_NO_MEMORY;
     }
     // If it exists, return
@@ -188,12 +199,12 @@ calculate_pyvenvcfg_path(const wchar_t *argv0, wchar_t *pyvenvcfg_path, size_t m
     // Otherwise, remove 'pyvenv.cfg' and (probably) 'Scripts'
     if (!split_parent(pyvenvcfg_path, maxlen) ||
         !split_parent(pyvenvcfg_path, maxlen)) {
-        // TODO: error message
+        error(L"failed to remove segments from '%ls'", pyvenvcfg_path);
         return RC_NO_COMMANDLINE;
     }
     // Replace 'pyvenv.cfg'
-    if (!join(pyvenvcfg_path, maxlen, L"pyvenv.cfg")) {
-        // TODO: error message
+    if (!join(pyvenvcfg_path, maxlen, CFGNAME)) {
+        error(L"failed to append '%ls' to '%ls'", CFGNAME, pyvenvcfg_path);
         return RC_NO_MEMORY;
     }
     // If it exists, return
@@ -201,15 +212,26 @@ calculate_pyvenvcfg_path(const wchar_t *argv0, wchar_t *pyvenvcfg_path, size_t m
         return 0;
     }
     // Otherwise, we fail
-    // TODO: error message
+    winerror(GetLastError(), L"failed to locate %ls", CFGNAME);
     return RC_NO_VENV_CFG;
 }
 
 
+/*
+ * pyvenv.cfg parsing
+ */
+
 static int
-find_home_value(const char *buffer, const char **start, DWORD *length)
+find_home_value(const char *buffer, DWORD maxlen, const char **start, DWORD *length)
 {
-    for (const char *s = strstr(buffer, "home"); s; s = strstr(s + 1, "\nhome")) {
+    if (!buffer || !start || !length) {
+        error(L"invalid find_home_value parameters()");
+        return 0;
+    }
+    for (const char *s = strstr(buffer, "home");
+         s && ((ptrdiff_t)s - (ptrdiff_t)buffer) < maxlen;
+         s = strstr(s + 1, "\nhome")
+    ) {
         if (*s == '\n') {
             ++s;
         }
@@ -250,7 +272,7 @@ read_home(const wchar_t *pyvenv_cfg, wchar_t *home_path, size_t maxlen)
         NULL, OPEN_EXISTING, 0, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
-        // TODO: error message
+        winerror(GetLastError(), L"failed to open '%ls'", pyvenv_cfg);
         return RC_BAD_VENV_CFG;
     }
 
@@ -258,17 +280,19 @@ read_home(const wchar_t *pyvenv_cfg, wchar_t *home_path, size_t maxlen)
     // (doubled compared to the old implementation!)
     char buffer[8192];
     DWORD len;
-    if (!ReadFile(hFile, buffer, sizeof(buffer), &len, NULL)) {
-        // TODO: error message
+    if (!ReadFile(hFile, buffer, sizeof(buffer) - 1, &len, NULL)) {
+        winerror(GetLastError(), L"failed to read '%ls'", pyvenv_cfg);
         CloseHandle(hFile);
         return RC_BAD_VENV_CFG;
     }
     CloseHandle(hFile);
+    // Ensure null termination
+    buffer[len] = '\0';
 
     char *home;
     DWORD home_len;
-    if (!find_home_value(buffer, &home, &home_len)) {
-        // TODO: error message
+    if (!find_home_value(buffer, sizeof(buffer), &home, &home_len)) {
+        error(L"no home= specified in '%ls'", pyvenv_cfg);
         return RC_BAD_VENV_CFG;
     }
 
@@ -277,7 +301,7 @@ read_home(const wchar_t *pyvenv_cfg, wchar_t *home_path, size_t maxlen)
     }
     len = MultiByteToWideChar(CP_UTF8, 0, home, home_len, home_path, (DWORD)maxlen);
     if (!len) {
-        // TODO: error message
+        winerror(GetLastError(), L"failed to decode home setting in '%ls'", pyvenv_cfg);
         return RC_BAD_VENV_CFG;
     }
     home_path[len] = L'\0';
@@ -290,12 +314,12 @@ int
 locate_python(wchar_t *path, size_t maxlen)
 {
     if (!join(path, maxlen, EXENAME)) {
-        // TODO: error message
+        error(L"failed to append %ls to '%ls'", EXENAME, path);
         return RC_NO_MEMORY;
     }
 
     if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES) {
-        // TODO: error message
+        winerror(GetLastError(), L"did not find executable at '%ls'", path);
         return RC_NO_PYTHON;
     }
 
@@ -304,11 +328,11 @@ locate_python(wchar_t *path, size_t maxlen)
 
 
 /*
- * Process creation code
+ * Process creation
  */
 
 static BOOL
-safe_duplicate_handle(HANDLE in, HANDLE * pout)
+safe_duplicate_handle(HANDLE in, HANDLE * pout, const wchar_t *name)
 {
     BOOL ok;
     HANDLE process = GetCurrentProcess();
@@ -320,11 +344,11 @@ safe_duplicate_handle(HANDLE in, HANDLE * pout)
     if (!ok) {
         rc = GetLastError();
         if (rc == ERROR_INVALID_HANDLE) {
-            debug(L"DuplicateHandle returned ERROR_INVALID_HANDLE\n");
+            debug(L"DuplicateHandle(%ls) returned ERROR_INVALID_HANDLE\n", name);
             ok = TRUE;
         }
         else {
-            debug(L"DuplicateHandle returned %d\n", rc);
+            debug(L"DuplicateHandle(%ls) returned %d\n", name, rc);
         }
     }
     return ok;
@@ -367,7 +391,7 @@ launch(const wchar_t *executable, wchar_t *cmdline)
     ok = QueryInformationJobObject(job, JobObjectExtendedLimitInformation,
                                    &info, sizeof(info), &rc);
     if (!ok || (rc != sizeof(info)) || !job) {
-        error(L"Job information querying failed");
+        winerror(GetLastError(), L"Job information querying failed");
         return RC_CREATE_PROCESS;
     }
     info.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE |
@@ -375,30 +399,27 @@ launch(const wchar_t *executable, wchar_t *cmdline)
     ok = SetInformationJobObject(job, JobObjectExtendedLimitInformation, &info,
                                  sizeof(info));
     if (!ok) {
-        error(L"Job information setting failed");
+        winerror(GetLastError(), L"Job information setting failed");
         return RC_CREATE_PROCESS;
     }
     memset(&si, 0, sizeof(si));
     GetStartupInfoW(&si);
-    ok = safe_duplicate_handle(GetStdHandle(STD_INPUT_HANDLE), &si.hStdInput);
+    ok = safe_duplicate_handle(GetStdHandle(STD_INPUT_HANDLE), &si.hStdInput, L"stdin");
     if (!ok) {
-        error(L"stdin duplication failed");
         return RC_NO_STD_HANDLES;
     }
-    ok = safe_duplicate_handle(GetStdHandle(STD_OUTPUT_HANDLE), &si.hStdOutput);
+    ok = safe_duplicate_handle(GetStdHandle(STD_OUTPUT_HANDLE), &si.hStdOutput, L"stdout");
     if (!ok) {
-        error(L"stdout duplication failed");
         return RC_NO_STD_HANDLES;
     }
-    ok = safe_duplicate_handle(GetStdHandle(STD_ERROR_HANDLE), &si.hStdError);
+    ok = safe_duplicate_handle(GetStdHandle(STD_ERROR_HANDLE), &si.hStdError, L"stderr");
     if (!ok) {
-        error(L"stderr duplication failed");
         return RC_NO_STD_HANDLES;
     }
 
     ok = SetConsoleCtrlHandler(ctrl_c_handler, TRUE);
     if (!ok) {
-        error(L"control handler setting failed");
+        winerror(GetLastError(), L"control handler setting failed");
         return RC_CREATE_PROCESS;
     }
 
@@ -406,7 +427,7 @@ launch(const wchar_t *executable, wchar_t *cmdline)
     ok = CreateProcessW(executable, cmdline, NULL, NULL, TRUE,
                         0, NULL, NULL, &si, &pi);
     if (!ok) {
-        error(L"Unable to create process using '%ls'", cmdline);
+        winerror(GetLastError(), L"Unable to create process using '%ls'", cmdline);
         return RC_CREATE_PROCESS;
     }
     AssignProcessToJobObject(job, pi.hProcess);
@@ -414,10 +435,10 @@ launch(const wchar_t *executable, wchar_t *cmdline)
     WaitForSingleObjectEx(pi.hProcess, INFINITE, FALSE);
     ok = GetExitCodeProcess(pi.hProcess, &rc);
     if (!ok) {
-        error(L"Failed to get exit code of process");
+        winerror(GetLastError(), L"Failed to get exit code of process");
         return RC_CREATE_PROCESS;
     }
-    debug(L"child process exit code: %d\n", rc);
+    debug(L"child process exit code: %d", rc);
     return rc;
 }
 

@@ -271,9 +271,9 @@ class EnvBuilder:
                 if basename.endswith('_d'):
                     ext = '_d' + ext
                     basename = basename[:-2]
-                if basename == 'python':
+                if basename.startswith('python'):
                     basename = 'venvlauncher'
-                elif basename == 'pythonw':
+                elif basename.startswith('pythonw'):
                     basename = 'venvwlauncher'
                 src = os.path.join(os.path.dirname(src), basename + ext)
             else:
@@ -337,7 +337,12 @@ class EnvBuilder:
                         os.path.normcase(f).startswith(('python', 'vcruntime'))
                     ]
             else:
-                suffixes = {'python.exe', 'python_d.exe', 'pythonw.exe', 'pythonw_d.exe'}
+                if sysconfig.get_config_var("Py_GIL_DISABLED"):
+                    v = f'{sys.version_info.major}.{sys.version_info.minor}t'
+                else:
+                    v = ''
+                suffixes = {f'python{v}.exe', f'python{v}_d.exe',
+                            f'pythonw{v}.exe', f'pythonw{v}_d.exe'}
                 base_exe = os.path.basename(context.env_exe)
                 suffixes.add(base_exe)
 
