@@ -476,7 +476,9 @@ def assign_opcodes(
     instructions: dict[str, Instruction],
     families: dict[str, Family],
     pseudos: dict[str, PseudoInstruction],
-) -> dict[str, int]:
+) -> tuple[dict[str, int], int, int]:
+    """Assigns opcodes, then returns the opmap, 
+    have_arg and min_instrumented values"""
     instmap: dict[str, int] = {}
 
     # 0 is reserved for cache entries. This helps debugging.
@@ -556,27 +558,7 @@ def assign_opcodes(
         instmap[name] = op
         pseudos[name].opcode = op
 
-    assert 255 not in instmap.values()
-    return instmap
-
-
-def get_have_arg_and_min_instrumented(
-    instructions: dict[str, Instruction],
-    opmap: dict[str, int],
-) -> tuple[int, int]:
-    min_instrumented = 256
-    first_arg = 256
-    for name, op in opmap.items():
-        if name.startswith("INSTRUMENTED") and op < min_instrumented:
-            min_instrumented = op
-        if name == "INSTRUMENTED_LINE":
-            # INSTRUMENTED_LINE is not defined
-            continue
-        if name not in instructions:
-            continue
-        if instructions[name].properties.oparg and op < first_arg:
-            first_arg = op
-    return first_arg, min_instrumented
+    return instmap, len(no_arg), min_instrumented
 
 
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
@@ -627,9 +609,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         inst = instructions["BINARY_OP_INPLACE_ADD_UNICODE"]
         inst.family = families["BINARY_OP"]
         families["BINARY_OP"].members.append(inst)
-    opmap = assign_opcodes(instructions, families, pseudos)
-    first_arg, min_instrumented = get_have_arg_and_min_instrumented(
-        instructions, opmap
+    opmap, first_arg, min_instrumented = assign_opcodes(
+        instructions, families, pseudos
     )
     return Analysis(
         instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
