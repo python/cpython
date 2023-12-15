@@ -2317,12 +2317,18 @@ dummy_func(
             // Double-check that the opcode isn't instrumented or something:
             if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
-                int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
+                _Py_CODEUNIT *start = this_instr;
+                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                while (oparg > 255) {
+                    oparg >>= 8;
+                    start--;
+                }
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
                     // Rewind and enter the executor:
-                    assert(this_instr->op.code == ENTER_EXECUTOR);
-                    next_instr = this_instr;
+                    assert(start->op.code == ENTER_EXECUTOR);
+                    next_instr = start;
                     this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
                 else {

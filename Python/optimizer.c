@@ -156,24 +156,23 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 }
 
 int
-_PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
+_PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer)
 {
-    assert(src->op.code == JUMP_BACKWARD);
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!has_space_for_executor(code, src)) {
+    if (!has_space_for_executor(code, start)) {
         return 0;
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
     /* Start optimizing at the destination to guarantee forward progress */
-    int err = opt->optimize(opt, code, dest, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+    int err = opt->optimize(opt, code, start, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
         return err;
     }
-    int index = get_index_for_executor(code, src);
+    int index = get_index_for_executor(code, start);
     if (index < 0) {
         /* Out of memory. Don't raise and assume that the
          * error will show up elsewhere.
@@ -184,7 +183,7 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
         Py_DECREF(executor);
         return 0;
     }
-    insert_executor(code, src, index, executor);
+    insert_executor(code, start, index, executor);
     Py_DECREF(executor);
     return 1;
 }
@@ -266,6 +265,9 @@ counter_optimize(
     int Py_UNUSED(curr_stackentries)
 )
 {
+    if (instr->op.code != JUMP_BACKWARD) {
+        PyErr_Format(PyExc_ValueError, "Counter optimizer can only handle backward edges");
+    }
     _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&_PyCounterExecutor_Type);
     if (executor == NULL) {
         return -1;
@@ -273,7 +275,7 @@ counter_optimize(
     executor->executor.execute = counter_execute;
     Py_INCREF(self);
     executor->optimizer = (_PyCounterOptimizerObject *)self;
-    executor->next_instr = instr;
+    executor->next_instr = instr + 2 - instr->op.arg;
     *exec_ptr = (_PyExecutorObject *)executor;
     _PyBloomFilter empty;
     _Py_BloomFilter_Init(&empty);
@@ -479,6 +481,7 @@ translate_bytecode_to_trace(
     int buffer_size,
     _PyBloomFilter *dependencies)
 {
+    bool progress_needed = true;
     PyCodeObject *initial_code = code;
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
@@ -506,6 +509,7 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
     uint32_t target = 0;
+
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
@@ -534,6 +538,24 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             opcode = executor->vm_data.opcode;
             DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
             oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
+        }
+
+        if (progress_needed) {
+            progress_needed = false;
+            /* Special case the first instruction, so that we can guarantee
+            * forward progress */
+            if (opcode == JUMP_BACKWARD) {
+                instr += 2 - oparg;
+                continue;
+            }
+            else {
+                if (OPCODE_HAS_DEOPT(opcode)) {
+                    opcode = _PyOpcode_Deopt[opcode];
+                }
+                if (OPCODE_HAS_DEOPT(opcode)) {
+                    return 0;
+                }
+            }
         }
 
         switch (opcode) {
@@ -575,14 +597,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
             case JUMP_BACKWARD:
             {
-                if (instr + 2 - oparg == initial_instr && code == initial_code) {
-                    RESERVE(1);
-                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
-                }
-                else {
-                    OPT_STAT_INC(inner_loop);
-                    DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
-                }
+                OPT_STAT_INC(inner_loop);
+                DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
                 goto done;
             }
 
@@ -736,6 +752,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+        progress_needed = false;
+        /* Stop if we have reached the start */
+        if (instr == initial_instr) {
+            RESERVE(1);
+            ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
+        }
     }  // End for (;;)
 
 done:
