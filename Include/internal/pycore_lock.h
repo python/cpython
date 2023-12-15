@@ -229,6 +229,7 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
 // 0b000..00000: unlocked
 // 0bnnn..nnn00: nnn..nnn readers holding the lock
 // 0bnnn..nnn10: nnn..nnn readers holding the lock and a writer is waiting
+// 0b00000..010: unlocked with awoken writer about to acquire lock
 // 0b00000..001: write-locked
 // 0b00000..011: write-locked and readers or other writers are waiting
 //
