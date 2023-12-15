@@ -865,6 +865,13 @@ class CLanguage(Language):
         PyDoc_STRVAR({c_basename}__doc__,
         {docstring});
     """)
+    GETSET_DOCSTRING_PROTOTYPE_VAR: Final[str] = normalize_snippet("""
+        PyDoc_VAR({getset_basename}__doc__);
+    """)
+    GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
+        PyDoc_STRVAR({getset_basename}__doc__,
+        {docstring});
+    """)
     IMPL_DEFINITION_PROTOTYPE: Final[str] = normalize_snippet("""
         static {impl_return_type}
         {c_basename}_impl({impl_parameters})
@@ -876,15 +883,15 @@ class CLanguage(Language):
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}__doc__}},
         #else
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}__doc__}},
         #endif
     """)
     SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}__doc__}},
         #else
         #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
         #endif
@@ -1187,11 +1194,14 @@ class CLanguage(Language):
             docstring_prototype = docstring_definition = ''
         elif f.kind is GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
-            docstring_prototype = docstring_definition = ''
+            docstring_prototype = self.GETSET_DOCSTRING_PROTOTYPE_VAR
+            docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
         elif f.kind is SETTER:
+            if f.docstring:
+                fail("@setter can not set docstring")
             return_value_declaration = "int {return_value};"
             methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
-            docstring_prototype = docstring_prototype = docstring_definition = ''
+            docstring_prototype = docstring_definition = ''
         else:
             docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
             docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
@@ -6251,6 +6261,8 @@ class DSLParser:
         add(f.displayname)
         if self.forced_text_signature:
             add(self.forced_text_signature)
+        elif f.kind in {GETTER, SETTER}:
+            return ''
         else:
             add('(')
 
@@ -6424,6 +6436,9 @@ class DSLParser:
         assert self.function is not None
         f = self.function
         if f.kind.new_or_init and not f.docstring:
+            # don't render a docstring at all, no signature, nothing.
+            return f.docstring
+        if f.kind in {GETTER, SETTER} and not f.docstring:
             # don't render a docstring at all, no signature, nothing.
             return f.docstring
 
