@@ -1863,6 +1863,7 @@ class TestLRU:
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 
     @support.skip_on_s390x
+    @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
     def test_lru_recursion(self):
 
         @self.module.lru_cache
