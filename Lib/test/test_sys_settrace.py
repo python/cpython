@@ -7,7 +7,7 @@ import difflib
 import gc
 from functools import wraps
 import asyncio
-from test.support import import_helper
+from test.support import import_helper, Py_DEBUG
 import contextlib
 import warnings
 
@@ -2964,6 +2964,7 @@ class TestExtendedArgs(unittest.TestCase):
         counts = self.count_traces(ns["f"])
         self.assertEqual(counts, {'call': 1, 'line': 301, 'return': 1})
 
+    @unittest.skipIf(Py_DEBUG, "Debug build cannot handle deep recursion")
     def test_trace_lots_of_globals(self):
         code = """if 1:
             def f():

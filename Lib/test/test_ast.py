@@ -1089,7 +1089,7 @@ class AST_Tests(unittest.TestCase):
     def test_ast_recursion_limit(self):
         fail_depth = support.EXCEEDS_RECURSION_LIMIT
         crash_depth = 100_000
-        success_depth = 1200
+        success_depth = support.C_RECURSION_LIMIT
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth

@@ -252,12 +252,14 @@ struct _ts {
    layout, optimization, and WASI runtime. Wasmtime can handle about 700
    recursions, sometimes less. 500 is a more conservative limit. */
 #ifndef C_RECURSION_LIMIT
-#  ifdef __wasi__
+#  ifdef Py_DEBUG
+     // A debug build is likely built with low optimization level which implies
+     // higher stack memory usage than a release build: use a lower limit.
+#    define C_RECURSION_LIMIT 500
+#  elif defined(__wasi__)
 #    define C_RECURSION_LIMIT 500
 #  elif defined(__s390x__)
 #    define C_RECURSION_LIMIT 1200
-#  elif defined(MS_WINDOWS)
-#    define C_RECURSION_LIMIT 6500
 #  else
     // This value is duplicated in Lib/test/support/__init__.py
 #    define C_RECURSION_LIMIT 8000

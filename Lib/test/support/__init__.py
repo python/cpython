@@ -2353,7 +2353,10 @@ def adjust_int_max_str_digits(max_digits):
 
 
 # The default C recursion limit (from Include/cpython/pystate.h).
-C_RECURSION_LIMIT = 8000
+if Py_DEBUG:
+    C_RECURSION_LIMIT = 500
+else:
+    C_RECURSION_LIMIT = 8000
 
 #For recursion tests, easily exceeds default recursion limit
 EXCEEDS_RECURSION_LIMIT = C_RECURSION_LIMIT * 3
