@@ -22,7 +22,11 @@
 #endif
 
 /* Reference the precompiled getpath.py */
+#ifdef MS_WINDOWS
+#include "../Python/frozen_modules/getpath.h"
+#else
 #include "Python/frozen_modules/getpath.h"
+#endif
 
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
         || !defined(VERSION) || !defined(VPATH) \
