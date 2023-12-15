@@ -477,7 +477,7 @@ def assign_opcodes(
     families: dict[str, Family],
     pseudos: dict[str, PseudoInstruction],
 ) -> tuple[dict[str, int], int, int]:
-    """Assigns opcodes, then returns the opmap, 
+    """Assigns opcodes, then returns the opmap,
     have_arg and min_instrumented values"""
     instmap: dict[str, int] = {}
 
