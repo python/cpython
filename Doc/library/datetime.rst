@@ -1976,7 +1976,8 @@ Examples of working with a :class:`.time` object::
    American EST and EDT.
 
    Special requirement for pickling:  A :class:`tzinfo` subclass must have an
-   :meth:`__init__` method that can be called with no arguments, otherwise it can be
+   :meth:`~object.__init__` method that can be called with no arguments,
+   otherwise it can be
    pickled but possibly not unpickled again. This is a technical requirement that
    may be relaxed in the future.
 
