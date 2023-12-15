@@ -84,7 +84,6 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
-Python/abstract_interp_cases.c.h
 
 # not actually source
 Python/bytecodes.c
