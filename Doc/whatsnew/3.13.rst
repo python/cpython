@@ -85,7 +85,14 @@ Important deprecations, removals or restrictions:
 New Features
 ============
 
+Improved Error Messages
+-----------------------
 
+* The interpreter now colorizes error messages when displaying tracebacks by default.
+  This feature can be controlled via the new :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
+  variables. See also :ref:`using-on-controlling-color`.
+  (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 Other Language Changes
 ======================
@@ -192,6 +199,19 @@ doctest
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
 
+email
+-----
+
+* :func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now return
+  ``('', '')`` 2-tuples in more situations where invalid email addresses are
+  encountered instead of potentially inaccurate values. Add optional *strict*
+  parameter to these two functions: use ``strict=False`` to get the old
+  behavior, accept malformed inputs.
+  ``getattr(email.utils, 'supports_strict_parsing', False)`` can be use to
+  check if the *strict* paramater is available.
+  (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
+  the CVE-2023-27043 fix.)
+
 fractions
 ---------
 
@@ -263,6 +283,12 @@ os
   CPU resources of a container system without having to modify the container (application code).
   (Contributed by Donghee Na in :gh:`109595`)
 
+* Add support of :func:`os.lchmod` and the *follow_symlinks* argument
+  in :func:`os.chmod` on Windows.
+  Note that the default value of *follow_symlinks* in :func:`!os.lchmod` is
+  ``False`` on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`59616`)
+
 pathlib
 -------
 
@@ -278,9 +304,11 @@ pathlib
   (Contributed by Barney Gale in :gh:`73435`.)
 
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
-  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`, and
-  :meth:`~pathlib.Path.is_dir`.
-  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
+  :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
+  :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
+  :meth:`~pathlib.Path.group`.
+  (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
+  Kamil Turek in :gh:`107962`).
 
 pdb
 ---
@@ -293,12 +321,29 @@ pdb
   identified and executed.
   (Contributed by Tian Gao in :gh:`108464`.)
 
+* ``sys.path[0]`` will no longer be replaced by the directory of the script
+  being debugged when ``sys.flags.safe_path`` is set (via the :option:`-P`
+  command line option or :envvar:`PYTHONSAFEPATH` environment variable).
+  (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
+
+re
+--
+* Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
+  :exc:`!re.error` is kept for backward compatibility.
+
 sqlite3
 -------
 
 * A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
+sys
+---
+
+* Add the :func:`sys._is_interned` function to test if the string was interned.
+  This function is not guaranteed to exist in all implementations of Python.
+  (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
 tkinter
 -------
@@ -309,12 +354,23 @@ tkinter
   :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
   (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
 
+* Add support of the "vsapi" element type in
+  the :meth:`~tkinter.ttk.Style.element_create` method of
+  :class:`tkinter.ttk.Style`.
+  (Contributed by Serhiy Storchaka in :gh:`68166`.)
+
 traceback
 ---------
 
 * Add *show_group* parameter to :func:`traceback.TracebackException.format_exception_only`
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
+
+* Add the field *exc_type_str* to :class:`~traceback.TracebackException`, which
+  holds a string display of the *exc_type*. Deprecate the field *exc_type*
+  which holds the type object itself. Add parameter *save_exc_type* (default
+  ``True``) to indicate whether ``exc_type`` should be saved.
+  (Contributed by Irit Katriel in :gh:`112332`.)
 
 typing
 ------
@@ -339,6 +395,15 @@ venv
   (:class:`venv.EnvBuilder` and :func:`venv.create`), and opt-out via the CLI
   (using ``--without-scm-ignore-files``). (Contributed by Brett Cannon in
   :gh:`108125`.)
+
+warnings
+--------
+
+* The new :func:`warnings.deprecated` decorator provides a way to communicate
+  deprecations to :term:`static type checkers <static type checker>` and
+  to warn on usage of deprecated classes and functions. A runtime deprecation
+  warning may also be emitted when a decorated function or class is used at runtime.
+  See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
 
 Optimizations
 =============
@@ -374,6 +439,11 @@ Deprecated
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`traceback`:
+
+  * The field *exc_type* of :class:`traceback.TracebackException` is
+    deprecated. Use *exc_type_str* instead.
 
 * :mod:`typing`:
 
@@ -446,7 +516,7 @@ Deprecated
   (as has always been the case for an executing frame).
   (Contributed by Irit Katriel in :gh:`79932`.)
 
-* Assignment to a function's ``__code__`` attribute where the new code
+* Assignment to a function's :attr:`~function.__code__` attribute where the new code
   object's type does not match the function's type, is deprecated. The
   different types are: plain function, generator, async generator and
   coroutine.
@@ -541,7 +611,8 @@ Pending Removal in Python 3.14
   * date and datetime adapter, date and timestamp converter:
     see the :mod:`sqlite3` documentation for suggested replacement recipes.
 
-* :class:`types.CodeType`: Accessing ``co_lnotab`` was deprecated in :pep:`626`
+* :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+  deprecated in :pep:`626`
   since 3.10 and was planned to be removed in 3.12,
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.14.
@@ -704,7 +775,7 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
-* ``types.CodeType.co_lnotab``: use the ``co_lines`` attribute instead.
+* :attr:`~codeobject.co_lnotab`: use the ``co_lines`` attribute instead.
 
 * :class:`typing.Text` (:gh:`92332`).
 
@@ -1040,6 +1111,20 @@ Changes in the Python API
   recomended in the documentation.
   (Contributed by Serhiy Storchaka in :gh:`106672`.)
 
+* An :exc:`OSError` is now raised by :func:`getpass.getuser` for any failure to
+  retrieve a username, instead of :exc:`ImportError` on non-Unix platforms or
+  :exc:`KeyError` on Unix platforms where the password database is empty.
+
+* The :mod:`threading` module now expects the :mod:`!_thread` module to have
+  an ``_is_main_interpreter`` attribute.  It is a function with no
+  arguments that returns ``True`` if the current interpreter is the
+  main interpreter.
+
+  Any library or application that provides a custom ``_thread`` module
+  must provide ``_is_main_interpreter()``, just like the module's
+  other "private" attributes.
+  (See :gh:`112826`.)
+
 
 Build Changes
 =============
@@ -1077,6 +1162,16 @@ New Features
   :ref:`format codes <arg-parsing-string-and-buffers>`.
   APIs accepting the format codes always use ``Py_ssize_t`` for ``#`` formats.
   (Contributed by Inada Naoki in :gh:`104922`.)
+
+* The *keywords* parameter of :c:func:`PyArg_ParseTupleAndKeywords` and
+  :c:func:`PyArg_VaParseTupleAndKeywords` has now type :c:expr:`char * const *`
+  in C and :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
+  It makes these functions compatible with arguments of type
+  :c:expr:`const char * const *`, :c:expr:`const char **` or
+  :c:expr:`char * const *` in C++ and :c:expr:`char * const *` in C
+  without an explicit type cast.
+  This can be overridden with the :c:macro:`PY_CXX_CONST` macro.
+  (Contributed by Serhiy Storchaka in :gh:`65210`.)
 
 * Add :c:func:`PyImport_AddModuleRef`: similar to
   :c:func:`PyImport_AddModule`, but return a :term:`strong reference` instead
@@ -1203,6 +1298,9 @@ New Features
   similar to :meth:`dict.pop`, but without the default value and not raising
   :exc:`KeyError` if the key missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
+
+* Add :c:func:`Py_HashPointer` function to hash a pointer.
+  (Contributed by Victor Stinner in :gh:`111545`.)
 
 
 Porting to Python 3.13

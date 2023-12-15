@@ -46,7 +46,10 @@ The :mod:`getpass` module provides two functions:
    :envvar:`USER`, :envvar:`!LNAME` and :envvar:`USERNAME`, in order, and
    returns the value of the first one which is set to a non-empty string.  If
    none are set, the login name from the password database is returned on
-   systems which support the :mod:`pwd` module, otherwise, an exception is
-   raised.
+   systems which support the :mod:`pwd` module, otherwise, an :exc:`OSError`
+   is raised.
 
    In general, this function should be preferred over :func:`os.getlogin()`.
+
+   .. versionchanged:: 3.13
+      Previously, various exceptions beyond just :exc:`OSError` were raised.

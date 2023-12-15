@@ -1145,7 +1145,7 @@ find and load modules.
       .. versionadded:: 3.4
 
 
-.. class:: NamespaceLoader(name, path, path_finder):
+.. class:: NamespaceLoader(name, path, path_finder)
 
    A concrete implementation of :class:`importlib.abc.InspectLoader` for
    namespace packages.  This is an alias for a private class and is only made

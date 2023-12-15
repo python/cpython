@@ -406,7 +406,7 @@ def version_splitter(s: str) -> tuple[int, ...]:
     flush()
     return tuple(version)
 
-def version_comparitor(version1: str, version2: str) -> Literal[-1, 0, 1]:
+def version_comparator(version1: str, version2: str) -> Literal[-1, 0, 1]:
     iterator = itertools.zip_longest(
         version_splitter(version1), version_splitter(version2), fillvalue=0
     )
@@ -846,6 +846,14 @@ class CLanguage(Language):
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
     """)
+    PARSER_PROTOTYPE_GETTER: Final[str] = normalize_snippet("""
+        static PyObject *
+        {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
+    """)
+    PARSER_PROTOTYPE_SETTER: Final[str] = normalize_snippet("""
+        static int
+        {c_basename}({self_type}{self_name}, PyObject *value, void *Py_UNUSED(context))
+    """)
     METH_O_PROTOTYPE: Final[str] = normalize_snippet("""
         static PyObject *
         {c_basename}({impl_parameters})
@@ -864,6 +872,22 @@ class CLanguage(Language):
     METHODDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #define {methoddef_name}    \
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
+    """)
+    GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_name}_GETSETDEF)
+        #  undef {getset_name}_GETSETDEF
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #else
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
+        #endif
+    """)
+    SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_name}_GETSETDEF)
+        #  undef {getset_name}_GETSETDEF
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #else
+        #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
+        #endif
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
         #ifndef {methoddef_name}
@@ -1161,6 +1185,13 @@ class CLanguage(Language):
         methoddef_define = self.METHODDEF_PROTOTYPE_DEFINE
         if new_or_init and not f.docstring:
             docstring_prototype = docstring_definition = ''
+        elif f.kind is GETTER:
+            methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
+            docstring_prototype = docstring_definition = ''
+        elif f.kind is SETTER:
+            return_value_declaration = "int {return_value};"
+            methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
+            docstring_prototype = docstring_prototype = docstring_definition = ''
         else:
             docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
             docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
@@ -1215,9 +1246,20 @@ class CLanguage(Language):
             limited_capi = False
 
         parsearg: str | None
+        if f.kind in {GETTER, SETTER} and parameters:
+            fail(f"@{f.kind.name.lower()} method cannot define parameters")
+
         if not parameters:
             parser_code: list[str] | None
-            if not requires_defining_class:
+            if f.kind is GETTER:
+                flags = "" # This should end up unused
+                parser_prototype = self.PARSER_PROTOTYPE_GETTER
+                parser_code = []
+            elif f.kind is SETTER:
+                flags = ""
+                parser_prototype = self.PARSER_PROTOTYPE_SETTER
+                parser_code = []
+            elif not requires_defining_class:
                 # no parameters, METH_NOARGS
                 flags = "METH_NOARGS"
                 parser_prototype = self.PARSER_PROTOTYPE_NOARGS
@@ -1670,6 +1712,8 @@ class CLanguage(Language):
         methoddef_cast_end = ""
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
+        elif f.kind is GETTER:
+            methoddef_cast = "" # This should end up unused
         elif limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
         else:
@@ -1927,8 +1971,19 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        template_dict['c_basename'] = f.c_basename
-        template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
+        if f.kind in {GETTER, SETTER}:
+            template_dict['getset_name'] = f.c_basename.upper()
+            template_dict['getset_basename'] = f.c_basename
+            if f.kind is GETTER:
+                template_dict['c_basename'] = f.c_basename + "_get"
+            elif f.kind is SETTER:
+                template_dict['c_basename'] = f.c_basename + "_set"
+                # Implicitly add the setter value parameter.
+                data.impl_parameters.append("PyObject *value")
+                data.impl_arguments.append("value")
+        else:
+            template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
+            template_dict['c_basename'] = f.c_basename
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
 
@@ -1938,7 +1993,11 @@ class CLanguage(Language):
             converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
-        template_dict['impl_return_type'] = f.return_converter.type
+        if f.kind is SETTER:
+            # All setters return an int.
+            template_dict['impl_return_type'] = 'int'
+        else:
+            template_dict['impl_return_type'] = f.return_converter.type
 
         template_dict['declarations'] = format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
@@ -2932,6 +2991,8 @@ class FunctionKind(enum.Enum):
     CLASS_METHOD    = enum.auto()
     METHOD_INIT     = enum.auto()
     METHOD_NEW      = enum.auto()
+    GETTER          = enum.auto()
+    SETTER          = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -2947,6 +3008,8 @@ STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
 CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
 METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
+GETTER: Final = FunctionKind.GETTER
+SETTER: Final = FunctionKind.SETTER
 
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
@@ -3033,7 +3096,8 @@ class Function:
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
             case _ as kind:
-                assert kind is FunctionKind.CALLABLE, f"unknown kind: {kind!r}"
+                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER, FunctionKind.SETTER}
+                assert kind in acceptable_kinds, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
@@ -3160,7 +3224,7 @@ def add_legacy_c_converter(
 
 class CConverterAutoRegister(type):
     def __init__(
-        cls, name: str, bases: tuple[type, ...], classdict: dict[str, Any]
+        cls, name: str, bases: tuple[type[object], ...], classdict: dict[str, Any]
     ) -> None:
         converter_cls = cast(type["CConverter"], cls)
         add_c_converter(converter_cls)
@@ -3193,7 +3257,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type: bltns.type[Any] | tuple[bltns.type[Any], ...] | None = None
+    default_type: bltns.type[object] | tuple[bltns.type[object], ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
@@ -3659,7 +3723,7 @@ legacy_converters: ConverterDict = {}
 ReturnConverterDict = dict[str, ReturnConverterType]
 return_converters: ReturnConverterDict = {}
 
-TypeSet = set[bltns.type[Any]]
+TypeSet = set[bltns.type[object]]
 
 
 class bool_converter(CConverter):
@@ -3673,7 +3737,7 @@ class bool_converter(CConverter):
             self.format_unit = 'i'
         elif accept != {object}:
             fail(f"bool_converter: illegal 'accept' argument {accept!r}")
-        if self.default is not unspecified:
+        if self.default is not unspecified and self.default is not unknown:
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
 
@@ -4323,7 +4387,7 @@ class buffer: pass
 class rwbuffer: pass
 class robuffer: pass
 
-StrConverterKeyType = tuple[frozenset[type], bool, bool]
+StrConverterKeyType = tuple[frozenset[type[object]], bool, bool]
 
 def str_converter_key(
     types: TypeSet, encoding: bool | str | None, zeroes: bool
@@ -4678,7 +4742,7 @@ class Py_buffer_converter(CConverter):
 def correct_name_for_self(
         f: Function
 ) -> tuple[str, str]:
-    if f.kind in (CALLABLE, METHOD_INIT):
+    if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
@@ -4822,7 +4886,7 @@ class CReturnConverterAutoRegister(type):
     def __init__(
             cls: ReturnConverterType,
             name: str,
-            bases: tuple[type, ...],
+            bases: tuple[type[object], ...],
             classdict: dict[str, Any]
     ) -> None:
         add_c_return_converter(cls)
@@ -5179,7 +5243,7 @@ class DSLParser:
 
     def directive_version(self, required: str) -> None:
         global version
-        if version_comparitor(version, required) < 0:
+        if version_comparator(version, required) < 0:
             fail("Insufficient Clinic version!\n"
                  f"  Version: {version}\n"
                  f"  Required: {required}")
@@ -5310,6 +5374,24 @@ class DSLParser:
         self.target_critical_section.extend(args)
         self.critical_section = True
 
+    def at_getter(self) -> None:
+        match self.kind:
+            case FunctionKind.GETTER:
+                fail("Cannot apply @getter twice to the same function!")
+            case FunctionKind.SETTER:
+                fail("Cannot apply both @getter and @setter to the same function!")
+            case _:
+                self.kind = FunctionKind.GETTER
+
+    def at_setter(self) -> None:
+        match self.kind:
+            case FunctionKind.SETTER:
+                fail("Cannot apply @setter twice to the same function!")
+            case FunctionKind.GETTER:
+                fail("Cannot apply both @getter and @setter to the same function!")
+            case _:
+                self.kind = FunctionKind.SETTER
+
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
             fail("Can't set @staticmethod, function is not a normal callable")
@@ -5419,14 +5501,20 @@ class DSLParser:
         _, cls = self.clinic._module_and_class(fields)
         if name in unsupported_special_methods:
             fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
+
         if name == '__new__':
-            if (self.kind is not CLASS_METHOD) or (not cls):
+            if (self.kind is CLASS_METHOD) and cls:
+                self.kind = METHOD_NEW
+            else:
                 fail("'__new__' must be a class method!")
-            self.kind = METHOD_NEW
         elif name == '__init__':
-            if (self.kind is not CALLABLE) or (not cls):
-                fail("'__init__' must be a normal method, not a class or static method!")
-            self.kind = METHOD_INIT
+            if (self.kind is CALLABLE) and cls:
+                self.kind = METHOD_INIT
+            else:
+                fail(
+                    "'__init__' must be a normal method; "
+                    f"got '{self.kind}'!"
+                )
 
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
@@ -5503,6 +5591,8 @@ class DSLParser:
 
         return_converter = None
         if returns:
+            if self.kind in {GETTER, SETTER}:
+                fail(f"@{self.kind.name.lower()} method cannot define a return type")
             ast_input = f"def x() -> {returns}: pass"
             try:
                 module_node = ast.parse(ast_input)

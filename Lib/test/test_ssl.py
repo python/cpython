@@ -10,6 +10,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+import array
 import re
 import socket
 import select
@@ -3517,6 +3518,27 @@ class ThreadedTests(unittest.TestCase):
         self.assertEqual(s.recv(0), b"")
         self.assertEqual(s.recv_into(bytearray()), 0)
 
+    def test_recv_into_buffer_protocol_len(self):
+        server = ThreadedEchoServer(CERTFILE)
+        self.enterContext(server)
+        s = socket.create_connection((HOST, server.port))
+        self.addCleanup(s.close)
+        s = test_wrap_socket(s, suppress_ragged_eofs=False)
+        self.addCleanup(s.close)
+
+        s.send(b"data")
+        buf = array.array('I', [0, 0])
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf)[:4], b"data")
+
+        class B(bytearray):
+            def __len__(self):
+                1/0
+        s.send(b"data")
+        buf = B(6)
+        self.assertEqual(s.recv_into(buf), 4)
+        self.assertEqual(bytes(buf), b"data\0\0")
+
     def test_nonblocking_send(self):
         server = ThreadedEchoServer(CERTFILE,
                                     certreqs=ssl.CERT_NONE,
@@ -4237,6 +4259,7 @@ class ThreadedTests(unittest.TestCase):
                                  'Session refers to a different SSLContext.')
 
     @requires_tls_version('TLSv1_2')
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
     def test_psk(self):
         psk = bytes.fromhex('deadbeef')
 
@@ -4304,6 +4327,7 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
 
     @requires_tls_version('TLSv1_3')
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
     def test_psk_tls1_3(self):
         psk = bytes.fromhex('deadbeef')
         identity_hint = 'identity-hint'
