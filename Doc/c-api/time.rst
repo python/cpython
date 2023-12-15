@@ -81,8 +81,8 @@ Functions
 
 .. c:function:: PyTime_t PyTime_Time(void)
 
-   Return the time in nanoseconds since the epoch_. Similar to
-   :func:`time.time_ns`; see :func:`time.time` for details.
+   Return the time in nanoseconds since January 1, 1970, 00:00:00 (UTC).
+   Similar to :func:`time.time_ns`; see :func:`time.time` for details.
 
    If reading the clock fails, silently ignore the error and return ``0``.
 
