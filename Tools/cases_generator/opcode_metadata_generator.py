@@ -39,9 +39,6 @@ OPARG_SIZES = {
     "OPARG_REPLACED": 9,
 }
 
-
-DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
-
 FLAGS = [
     "ARG",
     "CONST",
@@ -127,6 +124,7 @@ def generate_instruction_formats(analysis: Analysis, out: CWriter) -> None:
     formats: set[str] = set()
     for inst in analysis.instructions.values():
         formats.add(get_format(inst))
+    # Generate an enum for it
     out.emit("enum InstructionFormat {\n")
     next_id = 1
     for format in sorted(formats):
@@ -366,6 +364,10 @@ arg_parser = argparse.ArgumentParser(
     description="Generate the header file with opcode metadata.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
+
+
+DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
+
 
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
