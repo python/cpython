@@ -883,9 +883,9 @@ class CLanguage(Language):
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #if defined({getset_basename}_HAS_DOCSTR)
-        # define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
         #else
-        # define {getset_basename}_DOCSTR NULL
+        #  define {getset_basename}_DOCSTR NULL
         #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
@@ -896,9 +896,9 @@ class CLanguage(Language):
     """)
     SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
         #if defined({getset_name}_HAS_DOCSTR)
-        # define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
         #else
-        # define {getset_basename}_DOCSTR NULL
+        #  define {getset_basename}_DOCSTR NULL
         #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
