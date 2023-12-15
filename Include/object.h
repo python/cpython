@@ -239,6 +239,8 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+PyAPI_FUNC(uintptr_t) _Py_TSS_Tstate_Addr(void);
+
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -291,18 +293,12 @@ _Py_ThreadId(void)
     __asm__ ("mv %0, tp" : "=r" (tid));
     #endif
 #elif defined(thread_local) || defined(__GNUC__)
-    #if defined(thread_local)
-    static thread_local int __tp = 0;
-    #else
-    // Assume that we only support C11 compilers.
-    static __thread int __tp = 0;
-    #endif
     // gh-112535: Using characteristics of TLS address mapping.
     // The address of the thread-local variable is not equal with the actual thread pointer,
     // However, it has the property of being determined by loader at runtime, with no duplication of values
     // between different threads. So it can be used as the similar role of __builtin_thread_pointer().
     // But since it requires offset calculation, this hack is more expensive than __builtin_thread_pointer().
-    tid = (uintptr_t)&__tp;
+    tid = _Py_TSS_Tstate_Addr();
 #else
   # error "define _Py_ThreadId for this platform"
 #endif

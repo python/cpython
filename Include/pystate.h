@@ -119,7 +119,6 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
-
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYSTATE_H
 #  include "cpython/pystate.h"
