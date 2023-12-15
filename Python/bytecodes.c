@@ -1453,9 +1453,9 @@ dummy_func(
 
         macro(LOAD_GLOBAL) =
             _SPECIALIZE_LOAD_GLOBAL +
-            unused/1 +
-            unused/1 +
-            unused/1 +
+            counter/1 +
+            globals_version/1 +
+            builtins_version/1 +
             _LOAD_GLOBAL;
 
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
