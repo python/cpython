@@ -604,7 +604,10 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                     continue
                 if target.text in instructions:
                     instructions[target.text].is_target = True
-    # Hack
+    # Special case BINARY_OP_INPLACE_ADD_UNICODE
+    # BINARY_OP_INPLACE_ADD_UNICODE is not a normal family member,
+    # as it is the wrong size, but we need it to maintain an
+    # historical optimization.
     if "BINARY_OP_INPLACE_ADD_UNICODE" in instructions:
         inst = instructions["BINARY_OP_INPLACE_ADD_UNICODE"]
         inst.family = families["BINARY_OP"]
