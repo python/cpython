@@ -916,9 +916,9 @@ which incur interpreter overhead.
        args = [iter(iterable)] * n
        if incomplete == 'fill':
            return zip_longest(*args, fillvalue=fillvalue)
-       if incomplete == 'strict':
+       elif incomplete == 'strict':
            return zip(*args, strict=True)
-       if incomplete == 'ignore':
+       elif incomplete == 'ignore':
            return zip(*args)
        else:
            raise ValueError('Expected fill, strict, or ignore')
