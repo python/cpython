@@ -393,11 +393,10 @@ _PyRWMutex_RLock(_PyRWMutex *rwmutex)
             continue;
         }
         else if ((bits & _Py_HAS_PARKED)) {
-            // Reader(s) hold the lock, but there is at least one waiting
-            // writer. We can't grab the lock because we don't want to starve
-            // the writer. Instead, we park ourselves and wait for the writer
-            // to eventually wake us up.
-            assert(rwmutex_reader_count(bits) > 0);
+            // Reader(s) hold the lock (or just gave up the lock), but there is
+            // at least one waiting writer. We can't grab the lock because we
+            // don't want to starve the writer. Instead, we park ourselves and
+            // wait for the writer to eventually wake us up.
             bits = rwmutex_set_parked_and_wait(rwmutex, bits);
             continue;
         }
