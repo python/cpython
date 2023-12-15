@@ -1120,6 +1120,8 @@ class DocTestFinder:
 
         # Find the line number for functions & methods.
         if inspect.ismethod(obj): obj = obj.__func__
+        if isinstance(obj, property):
+            obj = obj.fget
         if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
             obj = obj.__code__
