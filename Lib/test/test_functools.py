@@ -1862,6 +1862,19 @@ class TestLRU:
         self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 
+    @support.skip_on_s390x
+    def test_lru_recursion(self):
+
+        @self.module.lru_cache
+        def fib(n):
+            if n <= 1:
+                return n
+            return fib(n-1) + fib(n-2)
+
+        if not support.Py_DEBUG:
+            with support.infinite_recursion():
+                fib(2500)
+
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):
