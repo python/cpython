@@ -1,5 +1,3 @@
-# This file is marked as binary in the CVS, to prevent MacCVS from recoding it.
-
 import unittest
 
 class PEP3120Test(unittest.TestCase):
@@ -16,7 +14,7 @@ class PEP3120Test(unittest.TestCase):
 
     def test_badsyntax(self):
         try:
-            import test.badsyntax_pep3120
+            import test.tokenizedata.badsyntax_pep3120
         except SyntaxError as msg:
             msg = str(msg).lower()
             self.assertTrue('utf-8' in msg)

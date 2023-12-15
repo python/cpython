@@ -28,8 +28,8 @@ from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
 
-from tkinter import Toplevel, Frame, Text, Menu
-from tkinter.ttk import Menubutton, Scrollbar
+from tkinter import Toplevel, Text, Menu
+from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
 from tkinter import font as tkfont
 
 from idlelib.config import idleConf
@@ -76,9 +76,9 @@ class HelpParser(HTMLParser):
             if a == 'class':
                 class_ = v
         s = ''
-        if tag == 'div' and class_ == 'section':
+        if tag == 'section' and attrs == [('id', 'idle')]:
             self.show = True    # Start main content.
-        elif tag == 'div' and class_ == 'sphinxsidebar':
+        elif tag == 'div' and class_ == 'clearer':
             self.show = False   # End main content.
         elif tag == 'p' and self.prevtag and not self.prevtag[0]:
             # Begin a new block for <p> tags after a closed tag.
@@ -212,7 +212,9 @@ class HelpFrame(Frame):
     def __init__(self, parent, filename):
         Frame.__init__(self, parent)
         self.text = text = HelpText(self, filename)
-        self['background'] = text['background']
+        self.style = Style(parent)
+        self['style'] = 'helpframe.TFrame'
+        self.style.configure('helpframe.TFrame', background=text['background'])
         self.toc = toc = self.toc_menu(text)
         self.scroll = scroll = Scrollbar(self, command=text.yview)
         text['yscrollcommand'] = scroll.set
@@ -276,7 +278,8 @@ def copy_strip():
             out.write(line.rstrip() + b'\n')
     print(f'{src} copied to {dst}')
 
-def show_idlehelp(parent):
+
+def _helpwindow(parent):
     "Create HelpWindow; called from Idle Help event handler."
     filename = join(abspath(dirname(__file__)), 'help.html')
     if not isfile(filename):
@@ -284,9 +287,10 @@ def show_idlehelp(parent):
         return
     HelpWindow(parent, filename, 'IDLE Help (%s)' % python_version())
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_help', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(show_idlehelp)
+    run(_helpwindow)

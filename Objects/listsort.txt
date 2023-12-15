@@ -318,65 +318,104 @@ merging must be done as (A+B)+C or A+(B+C) instead.
 So merging is always done on two consecutive runs at a time, and in-place,
 although this may require some temp memory (more on that later).
 
-When a run is identified, its base address and length are pushed on a stack
-in the MergeState struct.  merge_collapse() is then called to potentially
-merge runs on that stack.  We would like to delay merging as long as possible
-in order to exploit patterns that may come up later, but we like even more to
-do merging as soon as possible to exploit that the run just found is still
-high in the memory hierarchy.  We also can't delay merging "too long" because
-it consumes memory to remember the runs that are still unmerged, and the
-stack has a fixed size.
+When a run is identified, its length is passed to found_new_run() to
+potentially merge runs on a stack of pending runs.  We would like to delay
+merging as long as possible in order to exploit patterns that may come up
+later, but we like even more to do merging as soon as possible to exploit
+that the run just found is still high in the memory hierarchy.  We also can't
+delay merging "too long" because it consumes memory to remember the runs that
+are still unmerged, and the stack has a fixed size.
 
-What turned out to be a good compromise maintains two invariants on the
-stack entries, where A, B and C are the lengths of the three rightmost not-yet
-merged slices:
+The original version of this code used the first thing I made up that didn't
+obviously suck ;-) It was loosely based on invariants involving the Fibonacci
+sequence.
 
-1.  A > B+C
-2.  B > C
+It worked OK, but it was hard to reason about, and was subtle enough that the
+intended invariants weren't actually preserved.  Researchers discovered that
+when trying to complete a computer-generated correctness proof.  That was
+easily-enough repaired, but the discovery spurred quite a bit of academic
+interest in truly good ways to manage incremental merging on the fly.
 
-Note that, by induction, #2 implies the lengths of pending runs form a
-decreasing sequence.  #1 implies that, reading the lengths right to left,
-the pending-run lengths grow at least as fast as the Fibonacci numbers.
-Therefore the stack can never grow larger than about log_base_phi(N) entries,
-where phi = (1+sqrt(5))/2 ~= 1.618.  Thus a small # of stack slots suffice
-for very large arrays.
+At least a dozen different approaches were developed, some provably having
+near-optimal worst case behavior with respect to the entropy of the
+distribution of run lengths.  Some details can be found in bpo-34561.
 
-If A <= B+C, the smaller of A and C is merged with B (ties favor C, for the
-freshness-in-cache reason), and the new run replaces the A,B or B,C entries;
-e.g., if the last 3 entries are
+The code now uses the "powersort" merge strategy from:
 
-    A:30  B:20  C:10
+    "Nearly-Optimal Mergesorts: Fast, Practical Sorting Methods
+     That Optimally Adapt to Existing Runs"
+    J. Ian Munro and Sebastian Wild
 
-then B is merged with C, leaving
+The code is pretty simple, but the justification is quite involved, as it's
+based on fast approximations to optimal binary search trees, which are
+substantial topics on their own.
 
-    A:30  BC:30
+Here we'll just cover some pragmatic details:
 
-on the stack.  Or if they were
+The `powerloop()` function computes a run's "power". Say two adjacent runs
+begin at index s1. The first run has length n1, and the second run (starting
+at index s1+n1, called "s2" below) has length n2. The list has total length n.
+The "power" of the first run is a small integer, the depth of the node
+connecting the two runs in an ideal binary merge tree, where power 1 is the
+root node, and the power increases by 1 for each level deeper in the tree.
 
-    A:500  B:400:  C:1000
+The power is the least integer L such that the "midpoint interval" contains
+a rational number of the form J/2**L. The midpoint interval is the semi-
+closed interval:
 
-then A is merged with B, leaving
+    ((s1 + n1/2)/n, (s2 + n2/2)/n]
 
-    AB:900  C:1000
+Yes, that's brain-busting at first ;-) Concretely, if (s1 + n1/2)/n and
+(s2 + n2/2)/n are computed to infinite precision in binary, the power L is
+the first position at which the 2**-L bit differs between the expansions.
+Since the left end of the interval is less than the right end, the first
+differing bit must be a 0 bit in the left quotient and a 1 bit in the right
+quotient.
 
-on the stack.
+`powerloop()` emulates these divisions, 1 bit at a time, using comparisons,
+subtractions, and shifts in a loop.
 
-In both examples, the stack configuration after the merge still violates
-invariant #2, and merge_collapse() goes on to continue merging runs until
-both invariants are satisfied.  As an extreme case, suppose we didn't do the
-minrun gimmick, and natural runs were of lengths 128, 64, 32, 16, 8, 4, 2,
-and 2.  Nothing would get merged until the final 2 was seen, and that would
-trigger 7 perfectly balanced merges.
+You'll notice the paper uses an O(1) method instead, but that relies on two
+things we don't have:
 
-The thrust of these rules when they trigger merging is to balance the run
-lengths as closely as possible, while keeping a low bound on the number of
-runs we have to remember.  This is maximally effective for random data,
-where all runs are likely to be of (artificially forced) length minrun, and
-then we get a sequence of perfectly balanced merges (with, perhaps, some
-oddballs at the end).
+- An O(1) "count leading zeroes" primitive. We can find such a thing as a C
+  extension on most platforms, but not all, and there's no uniform spelling
+  on the platforms that support it.
 
-OTOH, one reason this sort is so good for partly ordered data has to do
-with wildly unbalanced run lengths.
+- Integer division on an integer type twice as wide as needed to hold the
+  list length. But the latter is Py_ssize_t for us, and is typically the
+  widest native signed integer type the platform supports.
+
+But since runs in our algorithm are almost never very short, the once-per-run
+overhead of `powerloop()` seems lost in the noise.
+
+Detail: why is Py_ssize_t "wide enough" in `powerloop()`?  We do, after all,
+shift integers of that width left by 1.  How do we know that won't spill into
+the sign bit?  The trick is that we have some slop. `n` (the total list
+length) is the number of list elements, which is at most 4 times (on a 32-box,
+with 4-byte pointers) smaller than than the largest size_t. So at least the
+leading two bits of the integers we're using are clear.
+
+Since we can't compute a run's power before seeing the run that follows it,
+the most-recently identified run is never merged by `found_new_run()`.
+Instead a new run is only used to compute the 2nd-most-recent run's power.
+Then adjacent runs are merged so long as their saved power (tree depth) is
+greater than that newly computed power. When found_new_run() returns, only
+then is a new run pushed on to the stack of pending runs.
+
+A key invariant is that powers on the run stack are strictly decreasing
+(starting from the run at the top of the stack).
+
+Note that even powersort's strategy isn't always truly optimal. It can't be.
+Computing an optimal merge sequence can be done in time quadratic in the
+number of runs, which is very much slower, and also requires finding &
+remembering _all_ the runs' lengths (of which there may be billions) in
+advance.  It's remarkable, though, how close to optimal this strategy gets.
+
+Curious factoid: of all the alternatives I've seen in the literature,
+powersort's is the only one that's always truly optimal for a collection of 3
+run lengths (for three lengths A B C, it's always optimal to first merge the
+shorter of A and C with B).
 
 
 Merge Memory
@@ -758,6 +797,6 @@ OPTIMIZATION OF INDIVIDUAL COMPARISONS
 As noted above, even the simplest Python comparison triggers a large pile of
 C-level pointer dereferences, conditionals, and function calls.  This can be
 partially mitigated by pre-scanning the data to determine whether the data is
-homogenous with respect to type.  If so, it is sometimes possible to
+homogeneous with respect to type.  If so, it is sometimes possible to
 substitute faster type-specific comparisons for the slower, generic
 PyObject_RichCompareBool.

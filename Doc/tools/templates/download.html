@@ -3,6 +3,10 @@
 {% if daily is defined %}
   {% set dlbase = pathto('archives', 1) %}
 {% else %}
+  {#
+    The link below returns HTTP 404 until the first related alpha release.
+    This is expected; use daily documentation builds for CPython development.
+  #}
   {% set dlbase = 'https://docs.python.org/ftp/python/doc/' + release %}
 {% endif %}
 
@@ -40,21 +44,17 @@ Python in one of various formats, follow one of links in this table.</p>
 
 <p>These archives contain all the content in the documentation.</p>
 
-<p>HTML Help (<code>.chm</code>) files are made available in the "Windows" section
-on the <a href="https://www.python.org/downloads/release/python-{{ release.replace('.', '') }}/">Python
-download page</a>.</p>
-
 
 <h2>Unpacking</h2>
 
 <p>Unix users should download the .tar.bz2 archives; these are bzipped tar
 archives and can be handled in the usual way using tar and the bzip2
-program. The <a href="http://www.info-zip.org">InfoZIP</a> unzip program can be
+program. The <a href="https://infozip.sourceforge.net">Info-ZIP</a> unzip program can be
 used to handle the ZIP archives if desired. The .tar.bz2 archives provide the
 best compression and fastest download times.</p>
 
 <p>Windows users can use the ZIP archives since those are customary on that
-platform. These are created on Unix using the InfoZIP zip program.</p>
+platform. These are created on Unix using the Info-ZIP zip program.</p>
 
 
 <h2>Problems</h2>
