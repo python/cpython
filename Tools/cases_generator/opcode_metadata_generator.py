@@ -27,7 +27,7 @@ from stack import get_stack_effect
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
-OPARG_SIZES = {
+OPARG_KINDS = {
     "OPARG_FULL": 0,
     "OPARG_CACHE_1": 1,
     "OPARG_CACHE_2": 2,
@@ -64,7 +64,7 @@ def generate_flag_macros(out: CWriter) -> None:
 
 
 def generate_oparg_macros(out: CWriter) -> None:
-    for name, value in OPARG_SIZES.items():
+    for name, value in OPARG_KINDS.items():
         out.emit(f"#define {name} {value}\n")
     out.emit("\n")
 
@@ -228,21 +228,21 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
             assert (
                 len(instr2.parts) == 1
             ), f"{name2} is not a good superinstruction part"
-            expansions.append((instr1.parts[0].name, OPARG_SIZES["OPARG_TOP"], 0))
-            expansions.append((instr2.parts[0].name, OPARG_SIZES["OPARG_BOTTOM"], 0))
+            expansions.append((instr1.parts[0].name, OPARG_KINDS["OPARG_TOP"], 0))
+            expansions.append((instr2.parts[0].name, OPARG_KINDS["OPARG_BOTTOM"], 0))
         elif not is_viable_expansion(inst):
             continue
         else:
             for part in inst.parts:
                 size = part.size
                 if part.name == "_SAVE_RETURN_OFFSET":
-                    size = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"]
+                    size = OPARG_KINDS["OPARG_SAVE_RETURN_OFFSET"]
                 if isinstance(part, Uop):
                     # Skip specializations
                     if "specializing" in part.annotations:
                         continue
                     if "replaced" in part.annotations:
-                        size = OPARG_SIZES["OPARG_REPLACED"]
+                        size = OPARG_KINDS["OPARG_REPLACED"]
                     expansions.append((part.name, size, offset if size else 0))
                 offset += part.size
         expansions_table[inst.name] = expansions
