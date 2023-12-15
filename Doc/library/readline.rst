@@ -213,6 +213,8 @@ Startup hooks
    if Python was compiled for a version of the library that supports it.
 
 
+.. _readline-completion:
+
 Completion
 ----------
 
