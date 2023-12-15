@@ -1037,12 +1037,12 @@ The following recipes have a more mathematical flavor:
        return math.sumprod(*tee(it))
 
    def reshape(matrix, cols):
-       "Reshape 2-D data to have a given number of columns."
+       "Reshape a 2-D matrix to have a given number of columns."
        # reshape([(0, 1), (2, 3), (4, 5)], 3) -->  (0, 1, 2), (3, 4, 5)
-       return batched(flatten(matrix), cols)
+       return batched(chain.from_iterable(matrix), cols)
 
    def transpose(matrix):
-       "Swap the rows and columns of the input."
+       "Swap the rows and columns of a 2-D matrix."
        # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
        return zip(*matrix, strict=True)
 
