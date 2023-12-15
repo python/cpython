@@ -9,6 +9,8 @@
 .. moduleauthor:: Paul Ganssle <paul@ganssle.io>
 .. sectionauthor:: Paul Ganssle <paul@ganssle.io>
 
+**Source code:** :source:`Lib/zoneinfo`
+
 --------------
 
 The :mod:`zoneinfo` module provides a concrete time zone implementation to
@@ -27,6 +29,7 @@ first-party `tzdata`_ package available on PyPI.
         First-party package maintained by the CPython core developers to supply
         time zone data via PyPI.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using ``ZoneInfo``
 ------------------
@@ -124,8 +127,9 @@ time zone database (except on Windows, where there are no "well-known"
 locations for time zone data). On POSIX systems, downstream distributors and
 those building Python from source who know where their system
 time zone data is deployed may change the default time zone path by specifying
-the compile-time option ``TZPATH`` (or, more likely, the ``configure`` flag
-``--with-tzpath``), which should be a string delimited by :data:`os.pathsep`.
+the compile-time option ``TZPATH`` (or, more likely, the :option:`configure
+flag --with-tzpath <--with-tzpath>`), which should be a string delimited by
+:data:`os.pathsep`.
 
 On all platforms, the configured value is available as the ``TZPATH`` key in
 :func:`sysconfig.get_config_var`.
@@ -237,7 +241,7 @@ The following class methods are also available:
     .. warning::
 
         Invoking this function may change the semantics of datetimes using
-        ``ZoneInfo`` in surprising ways; this modifies process-wide global state
+        ``ZoneInfo`` in surprising ways; this modifies module state
         and thus may have wide-ranging effects. Only use it if you know that you
         need to.
 

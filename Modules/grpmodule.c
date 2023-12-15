@@ -1,10 +1,16 @@
 
 /* UNIX group file access module */
 
+// clinic/grpmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "posixmodule.h"
 
-#include <grp.h>
+#include <grp.h>                  // getgrgid_r()
+#include <unistd.h>               // sysconf()
 
 #include "clinic/grpmodule.c.h"
 /*[clinic input]
@@ -46,28 +52,33 @@ get_grp_state(PyObject *module)
     return (grpmodulestate *)state;
 }
 
-#define modulestate_global get_grp_state(PyState_FindModule(&grpmodule))
-
 static struct PyModuleDef grpmodule;
 
 #define DEFAULT_BUFFER_SIZE 1024
 
 static PyObject *
-mkgrent(struct group *p)
+mkgrent(PyObject *module, struct group *p)
 {
     int setIndex = 0;
     PyObject *v, *w;
     char **member;
 
-    if ((v = PyStructSequence_New(modulestate_global->StructGrpType)) == NULL)
+    v = PyStructSequence_New(get_grp_state(module)->StructGrpType);
+    if (v == NULL)
         return NULL;
 
     if ((w = PyList_New(0)) == NULL) {
         Py_DECREF(v);
         return NULL;
     }
-    for (member = p->gr_mem; *member != NULL; member++) {
-        PyObject *x = PyUnicode_DecodeFSDefault(*member);
+    for (member = p->gr_mem; ; member++) {
+        char *group_member;
+        // member can be misaligned
+        memcpy(&group_member, member, sizeof(group_member));
+        if (group_member == NULL) {
+            break;
+        }
+        PyObject *x = PyUnicode_DecodeFSDefault(group_member);
         if (x == NULL || PyList_Append(w, x) != 0) {
             Py_XDECREF(x);
             Py_DECREF(w);
@@ -170,7 +181,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         Py_DECREF(gid_obj);
         return NULL;
     }
-    retval = mkgrent(p);
+    retval = mkgrent(module, p);
 #ifdef HAVE_GETGRGID_R
     PyMem_RawFree(buf);
 #endif
@@ -248,7 +259,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
         }
         goto out;
     }
-    retval = mkgrent(p);
+    retval = mkgrent(module, p);
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
@@ -275,7 +286,7 @@ grp_getgrall_impl(PyObject *module)
         return NULL;
     setgrent();
     while ((p = getgrent()) != NULL) {
-        PyObject *v = mkgrent(p);
+        PyObject *v = mkgrent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
             Py_DECREF(d);
@@ -311,6 +322,27 @@ users are not explicitly listed as members of the groups they are in\n\
 according to the password database.  Check both databases to get\n\
 complete membership information.)");
 
+static int
+grpmodule_exec(PyObject *module)
+{
+    grpmodulestate *state = get_grp_state(module);
+
+    state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
+    if (state->StructGrpType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->StructGrpType) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot grpmodule_slots[] = {
+    {Py_mod_exec, grpmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
 static int grpmodule_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(get_grp_state(m)->StructGrpType);
     return 0;
@@ -326,37 +358,19 @@ static void grpmodule_free(void *m) {
 }
 
 static struct PyModuleDef grpmodule = {
-        PyModuleDef_HEAD_INIT,
-        "grp",
-        grp__doc__,
-        sizeof(grpmodulestate),
-        grp_methods,
-        NULL,
-        grpmodule_traverse,
-        grpmodule_clear,
-        grpmodule_free,
+    PyModuleDef_HEAD_INIT,
+    .m_name = "grp",
+    .m_doc = grp__doc__,
+    .m_size = sizeof(grpmodulestate),
+    .m_methods = grp_methods,
+    .m_slots = grpmodule_slots,
+    .m_traverse = grpmodule_traverse,
+    .m_clear = grpmodule_clear,
+    .m_free = grpmodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit_grp(void)
 {
-    PyObject *m;
-    if ((m = PyState_FindModule(&grpmodule)) != NULL) {
-        Py_INCREF(m);
-        return m;
-    }
-
-    if ((m = PyModule_Create(&grpmodule)) == NULL) {
-        return NULL;
-    }
-
-    grpmodulestate *state = PyModule_GetState(m);
-    state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
-    if (state->StructGrpType == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF(state->StructGrpType);
-    PyModule_AddObject(m, "struct_group", (PyObject *) state->StructGrpType);
-    return m;
+   return PyModuleDef_Init(&grpmodule);
 }

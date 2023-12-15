@@ -1,0 +1,2 @@
+The :meth:`ssl.SSLSocket.recv_into` method no longer requires the *buffer*
+argument to implement ``__len__`` and supports buffers with arbitrary item size.
