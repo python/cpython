@@ -32,7 +32,7 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     out.emit("};\n")
 
 arg_parser = argparse.ArgumentParser(
-    description="Generate the header file with uop metadata.",
+    description="Generate the file with dispatch targets.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 
