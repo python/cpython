@@ -63,10 +63,10 @@
                 <File Name="libssl$(var.ssltag).pdb" KeyPath="yes" />
             </Component>
             <Component Id="venvlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
-                <File Name="python.pdb" Source="venvlauncher.pdb" KeyPath="yes" />
+                <File Name="venvlauncher.pdb" KeyPath="yes" />
             </Component>
             <Component Id="venvwlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
-                <File Name="pythonw.pdb" Source="venvwlauncher.pdb" KeyPath="yes" />
+                <File Name="venvwlauncher.pdb" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

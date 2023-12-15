@@ -273,8 +273,12 @@ class EnvBuilder:
                     basename = basename[:-2]
                 if basename.startswith('python'):
                     basename = 'venvlauncher'
+                    if sysconfig.get_config_var('Py_GIL_DISABLED'):
+                        basename += 't'
                 elif basename.startswith('pythonw'):
                     basename = 'venvwlauncher'
+                    if sysconfig.get_config_var('Py_GIL_DISABLED'):
+                        basename += 't'
                 src = os.path.join(os.path.dirname(src), basename + ext)
             else:
                 src = srcfn

@@ -23,7 +23,7 @@
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
-  <PropertyGroup>
+  <PropertyGroup Condition="$(TargetExt) != ''">
     <TargetNameExt>$(TargetName)$(TargetExt)</TargetNameExt>
     <_TargetNameSep>$(TargetNameExt.LastIndexOf(`.`))</_TargetNameSep>
     <TargetName>$(TargetNameExt.Substring(0, $(_TargetNameSep)))</TargetName>

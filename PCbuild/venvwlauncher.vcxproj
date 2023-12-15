@@ -69,12 +69,13 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FDB84CBB-2FB6-47C8-A2D6-091E0833239D}</ProjectGuid>
     <RootNamespace>venvwlauncher</RootNamespace>
-    <TargetName>venvwlauncher</TargetName>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetName>venvwlauncher</TargetName>
+    <TargetName Condition="$(DisableGil) == 'true'">$(TargetName)t</TargetName>
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>

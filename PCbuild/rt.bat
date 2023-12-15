@@ -36,14 +36,13 @@ set qmode=
 set dashO=
 set regrtestargs=--fast-ci
 set exe=
-set prefixtail=
 
 :CheckOpts
 if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
 if "%1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
 if "%1"=="-d" (set suffix=_d)    & shift & goto CheckOpts
 rem HACK: Need some way to infer the version number in this script
-if "%1"=="--disable-gil" (set pyname=python3.13t) & (set prefixtail=t) & shift & goto CheckOpts
+if "%1"=="--disable-gil" (set pyname=python3.13t) & shift & goto CheckOpts
 if "%1"=="-win32" (set prefix=%pcbuild%win32) & shift & goto CheckOpts
 if "%1"=="-x64" (set prefix=%pcbuild%amd64) & shift & goto CheckOpts
 if "%1"=="-amd64" (set prefix=%pcbuild%amd64) & shift & goto CheckOpts
@@ -53,7 +52,7 @@ if "%1"=="-p" (call :SetPlatform %~2) & shift & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
 
 if not defined prefix set prefix=%pcbuild%amd64
-set exe=%prefix%%prefixtail%\%pyname%%suffix%.exe
+set exe=%prefix%\%pyname%%suffix%.exe
 set cmd="%exe%" %dashO% -m test %regrtestargs%
 if defined qmode goto Qmode
 
@@ -61,7 +60,7 @@ echo Deleting .pyc files ...
 "%exe%" "%pcbuild%rmpyc.py"
 
 echo Cleaning _pth files ...
-if exist %prefix%%prefixtail%\*._pth del %prefix%%prefixtail%\*._pth
+if exist %prefix%\*._pth del %prefix%\*._pth
 
 echo on
 %cmd%

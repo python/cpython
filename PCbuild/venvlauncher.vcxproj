@@ -69,12 +69,13 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{494BAC80-A60C-43A9-99E7-ACB691CE2C4D}</ProjectGuid>
     <RootNamespace>venvlauncher</RootNamespace>
-    <TargetName>venvlauncher</TargetName>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetName>venvlauncher</TargetName>
+    <TargetName Condition="$(DisableGil) == 'true'">$(TargetName)t</TargetName>
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
