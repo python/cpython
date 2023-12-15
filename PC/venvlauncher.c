@@ -162,7 +162,7 @@ split_parent(wchar_t *buffer, size_t bufferLength)
  */
 
 int
-calculate_pyvenvcfg_path(const wchar_t *argv0, wchar_t *pyvenvcfg_path, size_t maxlen)
+calculate_pyvenvcfg_path(wchar_t *pyvenvcfg_path, size_t maxlen)
 {
     if (!pyvenvcfg_path) {
         error(L"invalid buffer provided");
@@ -172,14 +172,8 @@ calculate_pyvenvcfg_path(const wchar_t *argv0, wchar_t *pyvenvcfg_path, size_t m
         error(L"path buffer is too large");
         return RC_INTERNAL_ERROR;
     }
-    if (!GetCurrentDirectoryW((DWORD)maxlen, pyvenvcfg_path)) {
-        winerror(GetLastError(), L"failed to read current directory");
-        return RC_NO_COMMANDLINE;
-    }
-    // Trailing quote will be included, but we're about to reduce the path
-    // anyway so it will go away
-    if (!join(pyvenvcfg_path, maxlen, &argv0[argv0[0] == L'"' ? 1 : 0])) {
-        error(L"failed to abspath('%ls')", argv0);
+    if (!GetModuleFileNameW(NULL, pyvenvcfg_path, (DWORD)maxlen)) {
+        winerror(GetLastError(), L"failed to read executable directory");
         return RC_NO_COMMANDLINE;
     }
     // Remove 'python.exe' from our path
@@ -455,7 +449,7 @@ process(int argc, wchar_t ** argv)
         log_fp = stderr;
     }
 
-    exitCode = calculate_pyvenvcfg_path(argv[0], pyvenvcfg_path, MAXLEN);
+    exitCode = calculate_pyvenvcfg_path(pyvenvcfg_path, MAXLEN);
     if (exitCode) return exitCode;
 
     exitCode = read_home(pyvenvcfg_path, home_path, MAXLEN);
