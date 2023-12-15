@@ -248,6 +248,7 @@ nitpick_ignore += [
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
     ('py:attr', '__annotations__'),
+    ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]

@@ -1733,7 +1733,7 @@ Grouping tests
    .. method:: __iter__()
 
       Tests grouped by a :class:`TestSuite` are always accessed by iteration.
-      Subclasses can lazily provide tests by overriding :meth:`__iter__`. Note
+      Subclasses can lazily provide tests by overriding :meth:`!__iter__`. Note
       that this method may be called several times on a single suite (for
       example when counting tests or comparing for equality) so the tests
       returned by repeated iterations before :meth:`TestSuite.run` must be the
@@ -1744,7 +1744,7 @@ Grouping tests
 
       .. versionchanged:: 3.2
          In earlier versions the :class:`TestSuite` accessed tests directly rather
-         than through iteration, so overriding :meth:`__iter__` wasn't sufficient
+         than through iteration, so overriding :meth:`!__iter__` wasn't sufficient
          for providing tests.
 
       .. versionchanged:: 3.4
