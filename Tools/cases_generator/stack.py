@@ -15,13 +15,16 @@ def var_size(var: StackItem) -> str:
     else:
         return var.size
 
-
+@dataclass
 class StackOffset:
     "The stack offset of the virtual base of the stack from the physical stack pointer"
 
-    def __init__(self) -> None:
-        self.popped: list[str] = []
-        self.pushed: list[str] = []
+    popped: list[str]
+    pushed: list[str]
+
+    @staticmethod
+    def empty() -> "StackOffset":
+        return StackOffset([], [])
 
     def pop(self, item: StackItem) -> None:
         self.popped.append(var_size(item))
@@ -30,16 +33,13 @@ class StackOffset:
         self.pushed.append(var_size(item))
 
     def __sub__(self, other: "StackOffset") -> "StackOffset":
-        res = StackOffset()
-        res.popped = self.popped + other.pushed
-        res.pushed = self.pushed + other.popped
-        return res
+        return StackOffset(
+            self.popped + other.pushed,
+            self.pushed + other.popped
+        )
 
     def __neg__(self) -> "StackOffset":
-        res = StackOffset()
-        res.popped = self.pushed
-        res.pushed = self.popped
-        return res
+        return StackOffset(self.pushed, self.popped)
 
     def simplify(self) -> None:
         "Remove matching values from both the popped and pushed list"
@@ -100,9 +100,9 @@ class SizeMismatch(Exception):
 
 class Stack:
     def __init__(self) -> None:
-        self.top_offset = StackOffset()
-        self.base_offset = StackOffset()
-        self.peek_offset = StackOffset()
+        self.top_offset = StackOffset.empty()
+        self.base_offset = StackOffset.empty()
+        self.peek_offset = StackOffset.empty()
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
