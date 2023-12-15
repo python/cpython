@@ -164,10 +164,13 @@ loops that truncate the stream.
        Added the optional *initial* parameter.
 
 
-.. function:: batched(iterable, n)
+.. function:: batched(iterable, n, *, strict=False)
 
    Batch data from the *iterable* into tuples of length *n*. The last
    batch may be shorter than *n*.
+
+   If *strict* is true, will raise a :exc:`ValueError` if the final
+   batch is shorter than *n*.
 
    Loops over the input iterable and accumulates data into tuples up to
    size *n*.  The input is consumed lazily, just enough to fill a batch.
@@ -199,6 +202,9 @@ loops that truncate the stream.
               yield batch
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      Added the *strict* option.
 
 
 .. function:: chain(*iterables)
