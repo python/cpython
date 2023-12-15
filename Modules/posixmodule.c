@@ -3415,8 +3415,8 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     Py_BEGIN_ALLOW_THREADS
     if (follow_symlinks) {
         HANDLE hfile;
-        if (_path->fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path->fd);
+        if (path->fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(path->fd);
             if (hfile != INVALID_HANDLE_VALUE) {
                 result = win32_hchmod(hfile, mode);
             }
