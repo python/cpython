@@ -1951,6 +1951,16 @@ _PyThreadState_Bind(PyThreadState *tstate)
     }
 }
 
+#if defined(Py_GIL_DISABLED)
+uintptr_t
+_Py_TSS_Tstate_Addr(void) {
+#ifdef HAVE_THREAD_LOCAL
+    return (uintptr_t)&_Py_tss_tstate;
+#else
+#  error "no supported thread-local variable storage classifier"
+#endif
+}
+#endif
 
 /***********************************/
 /* routines for advanced debuggers */
