@@ -506,6 +506,7 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (unused/1, left, right --)) {
+            TIER_ONE_ONLY
             assert(next_instr->op.code == STORE_FAST);
             PyObject **target_local = &GETLOCAL(next_instr->op.arg);
             DEOPT_IF(*target_local != left);
@@ -786,6 +787,7 @@ dummy_func(
         }
 
         inst(INTERPRETER_EXIT, (retval --)) {
+            TIER_ONE_ONLY
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
@@ -1072,6 +1074,7 @@ dummy_func(
         }
 
         inst(YIELD_VALUE, (retval -- unused)) {
+            TIER_ONE_ONLY
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -2297,6 +2300,7 @@ dummy_func(
         }
 
         inst(JUMP_FORWARD, (--)) {
+            TIER_ONE_ONLY
             JUMPBY(oparg);
         }
 
@@ -2402,6 +2406,7 @@ dummy_func(
         macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + _POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
+            TIER_ONE_ONLY
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -3454,6 +3459,7 @@ dummy_func(
 
         // This is secretly a super-instruction
         inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
+            TIER_ONE_ONLY
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
@@ -3792,6 +3798,7 @@ dummy_func(
         }
 
         inst(RETURN_GENERATOR, (--)) {
+            TIER_ONE_ONLY
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
