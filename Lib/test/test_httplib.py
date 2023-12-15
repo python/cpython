@@ -1577,6 +1577,7 @@ class ExtendedReadTest(TestCase):
                 break
             all.append(data)
         self.assertEqual(b"".join(all), self.lines_expected)
+        self.assertTrue(resp.isclosed())
 
     def test_read1_bounded(self):
         resp = self.resp
@@ -1588,13 +1589,20 @@ class ExtendedReadTest(TestCase):
             self.assertLessEqual(len(data), 10)
             all.append(data)
         self.assertEqual(b"".join(all), self.lines_expected)
+        self.assertTrue(resp.isclosed())
 
     def test_read1_0(self):
         self.assertEqual(self.resp.read1(0), b"")
+        self.assertFalse(self.resp.isclosed())
 
     def test_peek_0(self):
         p = self.resp.peek(0)
         self.assertLessEqual(0, len(p))
+
+
+class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
+    _header, _body = ExtendedReadTest.lines.split('\r\n\r\n', 1)
+    lines = _header + f'Content-Length: {len(_body)}\r\n\r\n' + _body
 
 
 class ExtendedReadTestChunked(ExtendedReadTest):
