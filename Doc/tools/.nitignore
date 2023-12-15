@@ -79,7 +79,6 @@ Doc/library/pyexpat.rst
 Doc/library/random.rst
 Doc/library/readline.rst
 Doc/library/resource.rst
-Doc/library/rlcompleter.rst
 Doc/library/select.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
