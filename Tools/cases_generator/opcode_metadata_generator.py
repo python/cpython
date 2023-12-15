@@ -296,7 +296,7 @@ def generate_extra_cases(analysis: Analysis, out: CWriter) -> None:
     out.emit("        ;\n")
 
 
-def generate_psuedo_targets(analysis: Analysis, out: CWriter) -> None:
+def generate_pseudo_targets(analysis: Analysis, out: CWriter) -> None:
     table_size = len(analysis.pseudos)
     max_targets = max(len(pseudo.targets) for pseudo in analysis.pseudos.values())
     out.emit("struct pseudo_targets {\n")
@@ -359,7 +359,7 @@ def generate_opcode_metadata(
         generate_cache_table(analysis, out)
         generate_deopt_table(analysis, out)
         generate_extra_cases(analysis, out)
-        generate_psuedo_targets(analysis, out)
+        generate_pseudo_targets(analysis, out)
 
 
 arg_parser = argparse.ArgumentParser(

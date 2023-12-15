@@ -2,15 +2,11 @@ from pathlib import Path
 from typing import TextIO
 
 from analyzer import (
-    Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
     Properties,
     Skip,
-    StackItem,
-    analysis_error,
 )
 from cwriter import CWriter
 from typing import Callable, Mapping, TextIO, Iterator

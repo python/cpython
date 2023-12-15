@@ -4,14 +4,10 @@ Writes the metadata to pycore_uop_metadata.h by default.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
-    Instruction,
     analyze_files,
-    Uop,
 )
 from generators_common import (
     DEFAULT_INPUT,
