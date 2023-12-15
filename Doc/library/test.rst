@@ -159,6 +159,9 @@ guidelines to be followed:
 Running tests using the command-line interface
 ----------------------------------------------
 
+.. module:: test.regrtest
+   :synopsis: Drives the regression test suite.
+
 The :mod:`test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
@@ -472,7 +475,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: with_pymalloc()
 
-   Return :data:`_testcapi.WITH_PYMALLOC`.
+   Return :const:`_testcapi.WITH_PYMALLOC`.
 
 
 .. function:: requires(resource, msg=None)
@@ -498,42 +501,11 @@ The :mod:`test.support` module defines the following functions:
    rather than looking directly in the path directories.
 
 
-.. function:: match_test(test)
+.. function:: get_pagesize()
 
-   Determine whether *test* matches the patterns set in :func:`set_match_tests`.
+   Get size of a page in bytes.
 
-
-.. function:: set_match_tests(accept_patterns=None, ignore_patterns=None)
-
-   Define match patterns on test filenames and test method names for filtering tests.
-
-
-.. function:: run_unittest(*classes)
-
-   Execute :class:`unittest.TestCase` subclasses passed to the function. The
-   function scans the classes for methods starting with the prefix ``test_``
-   and executes the tests individually.
-
-   It is also legal to pass strings as parameters; these should be keys in
-   ``sys.modules``. Each associated module will be scanned by
-   ``unittest.TestLoader.loadTestsFromModule()``. This is usually seen in the
-   following :func:`test_main` function::
-
-      def test_main():
-          support.run_unittest(__name__)
-
-   This will run all tests defined in the named module.
-
-
-.. function:: run_doctest(module, verbosity=None, optionflags=0)
-
-   Run :func:`doctest.testmod` on the given *module*.  Return
-   ``(failure_count, test_count)``.
-
-   If *verbosity* is ``None``, :func:`doctest.testmod` is run with verbosity
-   set to :data:`verbose`.  Otherwise, it is run with verbosity set to
-   ``None``.  *optionflags* is passed as ``optionflags`` to
-   :func:`doctest.testmod`.
+   .. versionadded:: 3.12
 
 
 .. function:: setswitchinterval(interval)
@@ -796,7 +768,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_limited_api
 
-   Decorator for only running the test if :ref:`Limited C API <stable>`
+   Decorator for only running the test if :ref:`Limited C API <limited-c-api>`
    is available.
 
 
@@ -1011,6 +983,16 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.10
 
 
+.. function:: adjust_int_max_str_digits(max_digits)
+
+   This function returns a context manager that will change the global
+   :func:`sys.set_int_max_str_digits` setting for the duration of the
+   context to allow execution of test code that needs a different limit
+   on the number of digits when converting between an integer and string.
+
+   .. versionadded:: 3.11
+
+
 The :mod:`test.support` module defines the following classes:
 
 
@@ -1023,10 +1005,10 @@ The :mod:`test.support` module defines the following classes:
    `SetErrorMode <https://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx>`_.
 
    On UNIX, :func:`resource.setrlimit` is used to set
-   :attr:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
+   :const:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
    creation.
 
-   On both platforms, the old value is restored by :meth:`__exit__`.
+   On both platforms, the old value is restored by :meth:`~object.__exit__`.
 
 
 .. class:: SaveSignals()
@@ -1118,7 +1100,7 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
 
 .. function:: bind_unix_socket(sock, addr)
 
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   Bind a Unix socket, raising :exc:`unittest.SkipTest` if
    :exc:`PermissionError` is raised.
 
 
@@ -1672,6 +1654,21 @@ The :mod:`test.support.import_helper` module provides support for import tests.
 The :mod:`test.support.warnings_helper` module provides support for warnings tests.
 
 .. versionadded:: 3.10
+
+
+.. function:: ignore_warnings(*, category)
+
+   Suppress warnings that are instances of *category*,
+   which must be :exc:`Warning` or a subclass.
+   Roughly equivalent to :func:`warnings.catch_warnings`
+   with :meth:`warnings.simplefilter('ignore', category=category) <warnings.simplefilter>`.
+   For example::
+
+      @warning_helper.ignore_warnings(category=DeprecationWarning)
+      def test_suppress_warning():
+          # do something
+
+   .. versionadded:: 3.8
 
 
 .. function:: check_no_resource_warning(testcase)

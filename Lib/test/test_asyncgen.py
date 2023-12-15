@@ -377,6 +377,26 @@ class AsyncGenTest(unittest.TestCase):
 
         self.compare_generators(sync_gen_wrapper(), async_gen_wrapper())
 
+    def test_async_gen_exception_12(self):
+        async def gen():
+            await anext(me)
+            yield 123
+
+        me = gen()
+        ai = me.__aiter__()
+        an = ai.__anext__()
+
+        with self.assertRaisesRegex(RuntimeError,
+                r'anext\(\): asynchronous generator is already running'):
+            an.__next__()
+
+    def test_async_gen_3_arg_deprecation_warning(self):
+        async def gen():
+            yield 123
+
+        with self.assertWarns(DeprecationWarning):
+            gen().athrow(GeneratorExit, GeneratorExit(), None)
+
     def test_async_gen_api_01(self):
         async def gen():
             yield 123
@@ -395,8 +415,9 @@ class AsyncGenTest(unittest.TestCase):
         self.assertIsInstance(g.ag_frame, types.FrameType)
         self.assertFalse(g.ag_running)
         self.assertIsInstance(g.ag_code, types.CodeType)
-
-        self.assertTrue(inspect.isawaitable(g.aclose()))
+        aclose = g.aclose()
+        self.assertTrue(inspect.isawaitable(aclose))
+        aclose.close()
 
 
 class AsyncGenAsyncioTest(unittest.TestCase):
@@ -650,7 +671,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 1)
-                self.assertEqual(g.throw(MyError, MyError(), None), 2)
+                self.assertEqual(g.throw(MyError()), 2)
                 try:
                     g.send(None)
                 except StopIteration as e:
@@ -663,9 +684,9 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 1)
-                self.assertEqual(g.throw(MyError, MyError(), None), 2)
+                self.assertEqual(g.throw(MyError()), 2)
                 with self.assertRaises(MyError):
-                    g.throw(MyError, MyError(), None)
+                    g.throw(MyError())
 
         def test3(anext):
             agen = agenfn()
@@ -692,9 +713,9 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 10)
-                self.assertEqual(g.throw(MyError, MyError(), None), 20)
+                self.assertEqual(g.throw(MyError()), 20)
                 with self.assertRaisesRegex(MyError, 'val'):
-                    g.throw(MyError, MyError('val'), None)
+                    g.throw(MyError('val'))
 
         def test5(anext):
             @types.coroutine
@@ -713,7 +734,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 10)
                 with self.assertRaisesRegex(StopIteration, 'default'):
-                    g.throw(MyError, MyError(), None)
+                    g.throw(MyError())
 
         def test6(anext):
             @types.coroutine
@@ -728,7 +749,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 with self.assertRaises(MyError):
-                    g.throw(MyError, MyError(), None)
+                    g.throw(MyError())
 
         def run_test(test):
             with self.subTest('pure-Python anext()'):
@@ -1037,8 +1058,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 while True:
                     yield 1
             finally:
-                await asyncio.sleep(0.01)
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0)
                 DONE = 1
 
         async def run():
@@ -1048,7 +1068,10 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             del g
             gc_collect()  # For PyPy or other GCs.
 
-            await asyncio.sleep(0.1)
+            # Starts running the aclose task
+            await asyncio.sleep(0)
+            # For asyncio.sleep(0) in finally block
+            await asyncio.sleep(0)
 
         self.loop.run_until_complete(run())
         self.assertEqual(DONE, 1)
@@ -1671,6 +1694,39 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 task.get_stack()
 
         self.loop.run_until_complete(run())
+
+
+class TestUnawaitedWarnings(unittest.TestCase):
+    def test_asend(self):
+        async def gen():
+            yield 1
+
+        msg = f"coroutine method 'asend' of '{gen.__qualname__}' was never awaited"
+        with self.assertWarnsRegex(RuntimeWarning, msg):
+            g = gen()
+            g.asend(None)
+            gc_collect()
+
+    def test_athrow(self):
+        async def gen():
+            yield 1
+
+        msg = f"coroutine method 'athrow' of '{gen.__qualname__}' was never awaited"
+        with self.assertWarnsRegex(RuntimeWarning, msg):
+            g = gen()
+            g.athrow(RuntimeError)
+            gc_collect()
+
+    def test_aclose(self):
+        async def gen():
+            yield 1
+
+        msg = f"coroutine method 'aclose' of '{gen.__qualname__}' was never awaited"
+        with self.assertWarnsRegex(RuntimeWarning, msg):
+            g = gen()
+            g.aclose()
+            gc_collect()
+
 
 
 if __name__ == "__main__":

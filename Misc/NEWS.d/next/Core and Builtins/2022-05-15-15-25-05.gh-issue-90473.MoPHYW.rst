@@ -1,1 +1,0 @@
-Decrease default recursion limit on WASI to address limited call stack size.

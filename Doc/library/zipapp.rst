@@ -54,7 +54,7 @@ The following options are understood:
 
 .. program:: zipapp
 
-.. cmdoption:: -o <output>, --output=<output>
+.. option:: -o <output>, --output=<output>
 
    Write the output to a file named *output*.  If this option is not specified,
    the output filename will be the same as the input *source*, with the
@@ -64,13 +64,13 @@ The following options are understood:
    An output filename must be specified if the *source* is an archive (and in
    that case, *output* must not be the same as *source*).
 
-.. cmdoption:: -p <interpreter>, --python=<interpreter>
+.. option:: -p <interpreter>, --python=<interpreter>
 
    Add a ``#!`` line to the archive specifying *interpreter* as the command
    to run.  Also, on POSIX, make the archive executable.  The default is to
    write no ``#!`` line, and not make the file executable.
 
-.. cmdoption:: -m <mainfn>, --main=<mainfn>
+.. option:: -m <mainfn>, --main=<mainfn>
 
    Write a ``__main__.py`` file to the archive that executes *mainfn*.  The
    *mainfn* argument should have the form "pkg.mod:fn", where "pkg.mod" is a
@@ -79,7 +79,7 @@ The following options are understood:
 
    :option:`--main` cannot be specified when copying an archive.
 
-.. cmdoption:: -c, --compress
+.. option:: -c, --compress
 
    Compress files with the deflate method, reducing the size of the output
    file. By default, files are stored uncompressed in the archive.
@@ -88,13 +88,13 @@ The following options are understood:
 
    .. versionadded:: 3.7
 
-.. cmdoption:: --info
+.. option:: --info
 
    Display the interpreter embedded in the archive, for diagnostic purposes.  In
    this case, any other options are ignored and SOURCE must be an archive, not a
    directory.
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Print a short usage message and exit.
 
@@ -215,7 +215,7 @@ using the :func:`create_archive` function::
    >>> import zipapp
    >>> zipapp.create_archive('old_archive.pyz', 'new_archive.pyz', '/usr/bin/python3')
 
-To update the file in place, do the replacement in memory using a :class:`BytesIO`
+To update the file in place, do the replacement in memory using a :class:`~io.BytesIO`
 object, and then overwrite the source afterwards.  Note that there is a risk
 when overwriting a file in place that an error will result in the loss of
 the original file.  This code does not protect against such errors, but
@@ -281,12 +281,7 @@ The steps to create a standalone archive are as follows:
    file - if not, you can just list the dependencies manually on the pip command
    line).
 
-3. Optionally, delete the ``.dist-info`` directories created by pip in the
-   ``myapp`` directory. These hold metadata for pip to manage the packages, and
-   as you won't be making any further use of pip they aren't required -
-   although it won't do any harm if you leave them.
-
-4. Package the application using:
+3. Package the application using:
 
    .. code-block:: shell-session
 
@@ -303,115 +298,18 @@ the Python interpreter registers the ``.pyz`` and ``.pyzw`` file extensions
 when installed.
 
 
-Making a Windows executable
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-On Windows, registration of the ``.pyz`` extension is optional, and
-furthermore, there are certain places that don't recognise registered
-extensions "transparently" (the simplest example is that
-``subprocess.run(['myapp'])`` won't find your application - you need to
-explicitly specify the extension).
-
-On Windows, therefore, it is often preferable to create an executable from the
-zipapp.  This is relatively easy, although it does require a C compiler.  The
-basic approach relies on the fact that zipfiles can have arbitrary data
-prepended, and Windows exe files can have arbitrary data appended.  So by
-creating a suitable launcher and tacking the ``.pyz`` file onto the end of it,
-you end up with a single-file executable that runs your application.
-
-A suitable launcher can be as simple as the following::
-
-   #define Py_LIMITED_API 1
-   #include "Python.h"
-
-   #define WIN32_LEAN_AND_MEAN
-   #include <windows.h>
-
-   #ifdef WINDOWS
-   int WINAPI wWinMain(
-       HINSTANCE hInstance,      /* handle to current instance */
-       HINSTANCE hPrevInstance,  /* handle to previous instance */
-       LPWSTR lpCmdLine,         /* pointer to command line */
-       int nCmdShow              /* show state of window */
-   )
-   #else
-   int wmain()
-   #endif
-   {
-       wchar_t **myargv = _alloca((__argc + 1) * sizeof(wchar_t*));
-       myargv[0] = __wargv[0];
-       memcpy(myargv + 1, __wargv, __argc * sizeof(wchar_t *));
-       return Py_Main(__argc+1, myargv);
-   }
-
-If you define the ``WINDOWS`` preprocessor symbol, this will generate a
-GUI executable, and without it, a console executable.
-
-To compile the executable, you can either just use the standard MSVC
-command line tools, or you can take advantage of the fact that distutils
-knows how to compile Python source::
-
-   >>> from distutils.ccompiler import new_compiler
-   >>> import distutils.sysconfig
-   >>> import sys
-   >>> import os
-   >>> from pathlib import Path
-
-   >>> def compile(src):
-   >>>     src = Path(src)
-   >>>     cc = new_compiler()
-   >>>     exe = src.stem
-   >>>     cc.add_include_dir(distutils.sysconfig.get_python_inc())
-   >>>     cc.add_library_dir(os.path.join(sys.base_exec_prefix, 'libs'))
-   >>>     # First the CLI executable
-   >>>     objs = cc.compile([str(src)])
-   >>>     cc.link_executable(objs, exe)
-   >>>     # Now the GUI executable
-   >>>     cc.define_macro('WINDOWS')
-   >>>     objs = cc.compile([str(src)])
-   >>>     cc.link_executable(objs, exe + 'w')
-
-   >>> if __name__ == "__main__":
-   >>>     compile("zastub.c")
-
-The resulting launcher uses the "Limited ABI", so it will run unchanged with
-any version of Python 3.x.  All it needs is for Python (``python3.dll``) to be
-on the user's ``PATH``.
-
-For a fully standalone distribution, you can distribute the launcher with your
-application appended, bundled with the Python "embedded" distribution.  This
-will run on any PC with the appropriate architecture (32 bit or 64 bit).
-
-
 Caveats
 ~~~~~~~
 
-There are some limitations to the process of bundling your application into
-a single file.  In most, if not all, cases they can be addressed without
-needing major changes to your application.
-
-1. If your application depends on a package that includes a C extension, that
-   package cannot be run from a zip file (this is an OS limitation, as executable
-   code must be present in the filesystem for the OS loader to load it). In this
-   case, you can exclude that dependency from the zipfile, and either require
-   your users to have it installed, or ship it alongside your zipfile and add code
-   to your ``__main__.py`` to include the directory containing the unzipped
-   module in ``sys.path``. In this case, you will need to make sure to ship
-   appropriate binaries for your target architecture(s) (and potentially pick the
-   correct version to add to ``sys.path`` at runtime, based on the user's machine).
-
-2. If you are shipping a Windows executable as described above, you either need to
-   ensure that your users have ``python3.dll`` on their PATH (which is not the
-   default behaviour of the installer) or you should bundle your application with
-   the embedded distribution.
-
-3. The suggested launcher above uses the Python embedding API.  This means that in
-   your application, ``sys.executable`` will be your application, and *not* a
-   conventional Python interpreter.  Your code and its dependencies need to be
-   prepared for this possibility.  For example, if your application uses the
-   :mod:`multiprocessing` module, it will need to call
-   :func:`multiprocessing.set_executable` to let the module know where to find the
-   standard Python interpreter.
+If your application depends on a package that includes a C extension, that
+package cannot be run from a zip file (this is an OS limitation, as executable
+code must be present in the filesystem for the OS loader to load it). In this
+case, you can exclude that dependency from the zipfile, and either require
+your users to have it installed, or ship it alongside your zipfile and add code
+to your ``__main__.py`` to include the directory containing the unzipped
+module in ``sys.path``. In this case, you will need to make sure to ship
+appropriate binaries for your target architecture(s) (and potentially pick the
+correct version to add to ``sys.path`` at runtime, based on the user's machine).
 
 
 The Python Zip Application Archive Format

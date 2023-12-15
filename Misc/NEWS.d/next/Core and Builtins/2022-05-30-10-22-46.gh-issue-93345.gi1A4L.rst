@@ -1,2 +1,0 @@
-Fix a crash in substitution of a ``TypeVar`` in nested generic alias after
-``TypeVarTuple``.

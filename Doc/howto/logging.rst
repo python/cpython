@@ -418,6 +418,7 @@ The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
 .. image:: logging_flow.png
+   :class: invert-in-dark-mode
 
 Loggers
 ^^^^^^^
@@ -555,14 +556,14 @@ raw message.  If there is no date format string, the default date format is:
 
     %Y-%m-%d %H:%M:%S
 
-with the milliseconds tacked on at the end. The ``style`` is one of `%`, '{'
-or '$'. If one of these is not specified, then '%' will be used.
+with the milliseconds tacked on at the end. The ``style`` is one of ``'%'``,
+``'{'``, or ``'$'``. If one of these is not specified, then ``'%'`` will be used.
 
-If the ``style`` is '%', the message format string uses
+If the ``style`` is ``'%'``, the message format string uses
 ``%(<dictionary key>)s`` styled string substitution; the possible keys are
-documented in :ref:`logrecord-attributes`. If the style is '{', the message
+documented in :ref:`logrecord-attributes`. If the style is ``'{'``, the message
 format string is assumed to be compatible with :meth:`str.format` (using
-keyword arguments), while if the style is '$' then the message format string
+keyword arguments), while if the style is ``'$'`` then the message format string
 should conform to what is expected by :meth:`string.Template.substitute`.
 
 .. versionchanged:: 3.2
@@ -978,7 +979,7 @@ provided:
 
 #. :class:`NullHandler` instances do nothing with error messages. They are used
    by library developers who want to use logging, but want to avoid the 'No
-   handlers could be found for logger XXX' message which can be displayed if
+   handlers could be found for logger *XXX*' message which can be displayed if
    the library user has not configured logging. See :ref:`library-config` for
    more information.
 

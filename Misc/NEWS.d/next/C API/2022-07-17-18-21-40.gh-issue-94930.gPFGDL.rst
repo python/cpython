@@ -1,2 +1,0 @@
-Fix ``SystemError`` raised when :c:func:`PyArg_ParseTupleAndKeywords` is
-used with ``#`` in ``(...)`` but without ``PY_SSIZE_T_CLEAN`` defined.

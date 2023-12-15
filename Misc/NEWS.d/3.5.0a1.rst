@@ -3034,7 +3034,7 @@ by Phil Elson.
 .. nonce: LK_5S1
 .. section: Library
 
-os.read() now uses a :c:func:`Py_ssize_t` type instead of :c:type:`int` for
+os.read() now uses a :c:func:`Py_ssize_t` type instead of :c:expr:`int` for
 the size to support reading more than 2 GB at once. On Windows, the size is
 truncated to INT_MAX. As any call to os.read(), the OS may read less bytes
 than the number of requested bytes.

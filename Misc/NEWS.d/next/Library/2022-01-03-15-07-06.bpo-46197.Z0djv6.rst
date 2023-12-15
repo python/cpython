@@ -1,1 +1,0 @@
-Fix :mod:`ensurepip` environment isolation for subprocess running ``pip``.

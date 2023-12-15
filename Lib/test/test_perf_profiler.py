@@ -1,4 +1,5 @@
 import unittest
+import string
 import subprocess
 import sys
 import sysconfig
@@ -15,6 +16,11 @@ from test.support.os_helper import temp_dir
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
+
+if support.check_sanitizer(address=True, memory=True, ub=True):
+    # gh-109580: Skip the test because it does crash randomly if Python is
+    # built with ASAN.
+    raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
 
 
 def supports_trampoline_profiling():
@@ -70,9 +76,14 @@ class TestPerfTrampoline(unittest.TestCase):
         perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
         self.assertTrue(perf_file.exists())
         perf_file_contents = perf_file.read_text()
-        self.assertIn(f"py::foo:{script}", perf_file_contents)
-        self.assertIn(f"py::bar:{script}", perf_file_contents)
-        self.assertIn(f"py::baz:{script}", perf_file_contents)
+        perf_lines = perf_file_contents.splitlines();
+        expected_symbols = [f"py::foo:{script}", f"py::bar:{script}", f"py::baz:{script}"]
+        for expected_symbol in expected_symbols:
+            perf_line = next((line for line in perf_lines if expected_symbol in line), None)
+            self.assertIsNotNone(perf_line, f"Could not find {expected_symbol} in perf file")
+            perf_addr = perf_line.split(" ")[0]
+            self.assertFalse(perf_addr.startswith("0x"), "Address should not be prefixed with 0x")
+            self.assertTrue(set(perf_addr).issubset(string.hexdigits), "Address should contain only hex characters")
 
     def test_trampoline_works_with_forks(self):
         code = """if 1:
@@ -108,7 +119,7 @@ class TestPerfTrampoline(unittest.TestCase):
             script = make_script(script_dir, "perftest", code)
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
-                universal_newlines=True,
+                text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
             ) as process:
@@ -157,7 +168,7 @@ class TestPerfTrampoline(unittest.TestCase):
             script = make_script(script_dir, "perftest", code)
             with subprocess.Popen(
                 [sys.executable, script],
-                universal_newlines=True,
+                text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
             ) as process:
@@ -211,7 +222,7 @@ def is_unwinding_reliable():
 def perf_command_works():
     try:
         cmd = ["perf", "--help"]
-        stdout = subprocess.check_output(cmd, universal_newlines=True)
+        stdout = subprocess.check_output(cmd, text=True)
     except (subprocess.SubprocessError, OSError):
         return False
 
@@ -237,7 +248,7 @@ def perf_command_works():
                 'print("hello")',
             )
             stdout = subprocess.check_output(
-                cmd, cwd=script_dir, universal_newlines=True, stderr=subprocess.STDOUT
+                cmd, cwd=script_dir, text=True, stderr=subprocess.STDOUT
             )
         except (subprocess.SubprocessError, OSError):
             return False
@@ -281,7 +292,6 @@ def run_perf(cwd, *args, **env_vars):
 
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
 @unittest.skipUnless(is_unwinding_reliable(), "Unwinding is unreliable")
-@support.skip_if_sanitizer(address=True, memory=True, ub=True)
 class TestPerfProfiler(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -342,6 +352,82 @@ class TestPerfProfiler(unittest.TestCase):
             self.assertNotIn(f"py::foo:{script}", stdout)
             self.assertNotIn(f"py::bar:{script}", stdout)
             self.assertNotIn(f"py::baz:{script}", stdout)
+
+    def test_pre_fork_compile(self):
+        code = """if 1:
+                import sys
+                import os
+                import sysconfig
+                from _testinternalcapi import (
+                    compile_perf_trampoline_entry,
+                    perf_trampoline_set_persist_after_fork,
+                )
+
+                def foo_fork():
+                    pass
+
+                def bar_fork():
+                    foo_fork()
+
+                def foo():
+                    pass
+
+                def bar():
+                    foo()
+
+                def compile_trampolines_for_all_functions():
+                    perf_trampoline_set_persist_after_fork(1)
+                    for _, obj in globals().items():
+                        if callable(obj) and hasattr(obj, '__code__'):
+                            compile_perf_trampoline_entry(obj.__code__)
+
+                if __name__ == "__main__":
+                    compile_trampolines_for_all_functions()
+                    pid = os.fork()
+                    if pid == 0:
+                        print(os.getpid())
+                        bar_fork()
+                    else:
+                        bar()
+                """
+
+        with temp_dir() as script_dir:
+            script = make_script(script_dir, "perftest", code)
+            with subprocess.Popen(
+                [sys.executable, "-Xperf", script],
+                universal_newlines=True,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            ) as process:
+                stdout, stderr = process.communicate()
+
+        self.assertEqual(process.returncode, 0)
+        self.assertNotIn("Error:", stderr)
+        child_pid = int(stdout.strip())
+        perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
+        perf_child_file = pathlib.Path(f"/tmp/perf-{child_pid}.map")
+        self.assertTrue(perf_file.exists())
+        self.assertTrue(perf_child_file.exists())
+
+        perf_file_contents = perf_file.read_text()
+        self.assertIn(f"py::foo:{script}", perf_file_contents)
+        self.assertIn(f"py::bar:{script}", perf_file_contents)
+        self.assertIn(f"py::foo_fork:{script}", perf_file_contents)
+        self.assertIn(f"py::bar_fork:{script}", perf_file_contents)
+
+        child_perf_file_contents = perf_child_file.read_text()
+        self.assertIn(f"py::foo_fork:{script}", child_perf_file_contents)
+        self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
+
+        # Pre-compiled perf-map entries of a forked process must be
+        # identical in both the parent and child perf-map files.
+        perf_file_lines = perf_file_contents.split("\n")
+        for line in perf_file_lines:
+            if (
+                f"py::foo_fork:{script}" in line
+                or f"py::bar_fork:{script}" in line
+            ):
+                self.assertIn(line, child_perf_file_contents)
 
 
 if __name__ == "__main__":
