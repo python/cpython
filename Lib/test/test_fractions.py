@@ -849,12 +849,50 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(type(f.denominator), myint)
 
     def test_format_no_presentation_type(self):
-        # Triples (fraction, specification, expected_result)
+        # Triples (fraction, specification, expected_result).
         testcases = [
-            (F(1, 3), '', '1/3'),
-            (F(-1, 3), '', '-1/3'),
-            (F(3), '', '3'),
-            (F(-3), '', '-3'),
+            # Explicit sign handling
+            (F(2, 3), '+', '+2/3'),
+            (F(-2, 3), '+', '-2/3'),
+            (F(3), '+', '+3'),
+            (F(-3), '+', '-3'),
+            (F(2, 3), ' ', ' 2/3'),
+            (F(-2, 3), ' ', '-2/3'),
+            (F(3), ' ', ' 3'),
+            (F(-3), ' ', '-3'),
+            (F(2, 3), '-', '2/3'),
+            (F(-2, 3), '-', '-2/3'),
+            (F(3), '-', '3'),
+            (F(-3), '-', '-3'),
+            # Padding
+            (F(0), '5', '    0'),
+            (F(2, 3), '5', '  2/3'),
+            (F(-2, 3), '5', ' -2/3'),
+            (F(2, 3), '0', '2/3'),
+            (F(2, 3), '1', '2/3'),
+            (F(2, 3), '2', '2/3'),
+            # Alignment
+            (F(2, 3), '<5', '2/3  '),
+            (F(2, 3), '>5', '  2/3'),
+            (F(2, 3), '^5', ' 2/3 '),
+            (F(2, 3), '=5', '  2/3'),
+            (F(-2, 3), '<5', '-2/3 '),
+            (F(-2, 3), '>5', ' -2/3'),
+            (F(-2, 3), '^5', '-2/3 '),
+            (F(-2, 3), '=5', '- 2/3'),
+            # Fill
+            (F(2, 3), 'X>5', 'XX2/3'),
+            (F(-2, 3), '.<5', '-2/3.'),
+            (F(-2, 3), '\n^6', '\n-2/3\n'),
+            # Thousands separators
+            (F(1234, 5679), ',', '1,234/5,679'),
+            (F(-1234, 5679), '_', '-1_234/5_679'),
+            (F(1234567), '_', '1_234_567'),
+            (F(-1234567), ',', '-1,234,567'),
+            # Alternate form forces a slash in the output
+            (F(123), '#', '123/1'),
+            (F(-123), '#', '-123/1'),
+            (F(0), '#', '0/1'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1218,6 +1256,10 @@ class FractionTest(unittest.TestCase):
             '.%',
             # Z instead of z for negative zero suppression
             'Z.2f'
+            # z flag not supported for general formatting
+            'z',
+            # zero padding not supported for general formatting
+            '05',
         ]
         for spec in invalid_specs:
             with self.subTest(spec=spec):
