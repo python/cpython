@@ -598,11 +598,24 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
         return NULL;
     }
     if (Py_IS_TYPE(exc_val, (PyTypeObject *)PyExc_StopIteration)) {
-        Py_DECREF(exc_val);
-        PyErr_SetString(PyExc_TypeError,
-                        "StopIteration interacts badly with generators "
-                        "and cannot be raised into a Future");
-        return NULL;
+        const char *msg = "StopIteration interacts badly with "
+                          "generators and cannot be raised into a "
+                          "Future";
+        PyObject *message = PyUnicode_FromString(msg);
+        PyObject *err = PyObject_CallOneArg(PyExc_RuntimeError, message);
+        if (err == NULL) {
+            Py_DECREF(message);
+            return NULL;
+        }
+        assert(PyExceptionInstance_Check(err));
+
+        PyException_SetCause(err, Py_NewRef(exc_val));
+        PyException_SetContext(err, Py_NewRef(exc_val));
+        PyObject *tb = PyException_GetTraceback(exc_val);
+        if (tb != NULL) {
+            PyException_SetTraceback(err, tb);
+        }
+        exc_val = err;
     }
 
     assert(!fut->fut_exception);

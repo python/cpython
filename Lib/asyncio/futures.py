@@ -273,8 +273,13 @@ class Future:
         if isinstance(exception, type):
             exception = exception()
         if type(exception) is StopIteration:
-            raise TypeError("StopIteration interacts badly with generators "
-                            "and cannot be raised into a Future")
+            new_exc = RuntimeError("StopIteration interacts badly with "
+                                   "generators and cannot be raised into a "
+                                   "Future")
+            new_exc.__cause__ = exception
+            new_exc.__context = exception.__context__
+            new_exc.__traceback__ = exception.__traceback__
+            exception = new_exc
         self._exception = exception
         self._exception_tb = exception.__traceback__
         self._state = _FINISHED
