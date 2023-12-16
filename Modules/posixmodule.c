@@ -16745,7 +16745,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_CLOSE", POSIX_SPAWN_CLOSE)) return -1;
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
 #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
-    if (PyModule_AddIntConstant(m, "POSIX_SPAWN_CLOSEFROM", POSIX_SPAWN_CLOSEFROM)) return -1;
+    if (PyModule_AddIntMacro(m, POSIX_SPAWN_CLOSEFROM)) return -1;
 #endif
 #endif
 
