@@ -6,18 +6,19 @@ extern "C" {
 #endif
 
 // For now we will be using the tp_cache spot for the layout object
-#define Py_LOYOUT(type) type->tp_cache
+#define Py_LAYOUT(type) (PyLayout*)((type)->tp_cache)
 
 typedef struct _layout PyLayout;
 typedef struct _layout_entry PyLayoutEntry;
 
 /* function that takes an object and products a memory address */
-typedef PyObject *(*_layoutfunc)(PyLayout*, PyObject *, PyTypeObject *);
+typedef void *(*_layoutfunc)(PyLayout*, PyObject *, PyObject *);
 
 struct _layout_entry {
-	PyTypeObject* le_type; /* this is a borrowed reference as it is used only for identification of the type */
+	PyObject* le_type; /* this is a borrowed reference as it is used only for identification of the type */
 	int32_t le_offset;    /* this should be negative value describing how far back to go. */
 };
+
 
 struct _layout {
 	PyVarObject ob_base;
@@ -34,21 +35,20 @@ struct _layout {
 	uint32_t ly_search;
 };
 
-static PyObject* PyLayoutType;
+static PyTypeObject* PyLayoutType;
 
 
 void* 
 PyObject_GetData(PyObject* obj, PyTypeObject* type)
 {
-	PyTypeObject* objtype = Py_TYPE(obj);
-	PyLayout* objlayout = Py_LAYOUT(objtype);
+	PyLayout* objlayout = Py_LAYOUT(Py_TYPE(obj));
 	PyLayout* typelayout = Py_LAYOUT(type);
 
 	/* Both the objects type and the type requested must have a layout to proceed. */
 	if (objlayout == NULL || typelayout == NULL)
 		return NULL;
 
-	return  objlayout->ly_cast(objlayout, obj, type);
+	return  objlayout->ly_cast(objlayout, obj, (PyObject*) type);
 }
 
 /**
@@ -58,21 +58,18 @@ PyObject_GetData(PyObject* obj, PyTypeObject* type)
  * Lookup is simple array lookup.
  */
 static void* 
-_layout_cast_ordered(PyLayout* layout, PyObject* obj, PyTypeObject* type)
+_layout_cast_ordered(PyLayout* layout, PyObject* obj, PyObject* type)
 {
 	Py_ssize_t nentries = Py_SIZE(layout);
 	PyLayoutEntry* entries = (PyLayoutEntry*) (&layout[1]);
 	char* bytes = (char*) obj;
 
-	PyLayout* typelayout = Py_LAYOUT(type);
+	PyLayout* typelayout = Py_LAYOUT((PyTypeObject*) type);
 	uint32_t requested = typelayout->ly_order;
 
 	/* If request size outside of defined entries, then fail. */
-	if (requested >= nentries)
-		return NULL;
-
-	/* If the entry type does not match then fail. */	
-	if (entries[request].le_type != type)
+	if (requested >= nentries
+	     || entries[requested].le_type != type)
 		return NULL;
 
 	/* Send the memory with offset */
@@ -83,13 +80,13 @@ _layout_cast_ordered(PyLayout* layout, PyObject* obj, PyTypeObject* type)
  * Find the offset with multiple inheritance.
  */
 static void* 
-_layout_cast_hash(PyLayout* layout, PyObject* obj, PyTypeObject* type)
+_layout_cast_hash(PyLayout* layout, PyObject* obj, PyObject* type)
 {
 	Py_ssize_t nentries = Py_SIZE(layout);
 	PyLayoutEntry* entries = (PyLayoutEntry*) (&layout[1]);
 	char* bytes = (char*) obj;
 
-	PyLayout* typelayout = Py_LAYOUT(type);
+	PyLayout* typelayout = Py_LAYOUT((PyTypeObject*) type);
 	uint32_t requested = typelayout->ly_id;
 
 	requested >>= layout->ly_shift;
@@ -114,24 +111,24 @@ _layout_cast_hash(PyLayout* layout, PyObject* obj, PyTypeObject* type)
 static PyObject* 
 _layout_collect(PyObject* tuple)
 {
-	PyObject* output = PyDict_New();
-	int sz = PyTuple_SIZE(tuple);
+	PyObject* dict = PyDict_New();
+	int sz = PyTuple_Size(tuple);
 	for (int i = 0; i<sz; ++i)
 	{
 		PyTypeObject* base = (PyTypeObject*) PyTuple_GetItem(tuple, i); /* borrowed */
 		PyObject* mro = base->tp_mro;
-		int sz2 = PyTuple_SIZE(mro);
+		int sz2 = PyTuple_Size(mro);
 		for (int j = 0; j<sz2; ++j)
 		{
 			PyTypeObject* type = (PyTypeObject*) PyTuple_GetItem(mro, j); /* borrowed */
 			if (Py_LAYOUT(type) != NULL)
 			{
-				PyDict_SetItem(dict, type, Py_LAYOUT(type));
+				PyDict_SetItem(dict, (PyObject*) type, (PyObject*) Py_LAYOUT(type));
 			}
 		}
 
 	}
-	return output;
+	return dict;
 }
 
 /**
@@ -176,9 +173,9 @@ _layout_fast_hash(PyObject* layouts, Py_ssize_t hash_size, uint32_t id)
 	/* consider up to 16 different hashtable layouts. */
 	int best = 0;
 	int best_cost = hash_size;
-	for (int shift = 0; shift<16; ++i)
+	for (int shift = 0; shift<16; ++shift)
 	{
-		memset(buf, 0, items*2);
+		memset(buf, 0, hash_size);
 
 		/* Place our entry first */
 		uint32_t position = (id>> shift) % hash_size;
@@ -243,11 +240,11 @@ _layout_base(PyTypeObject* type)
 	 * in front of all of it.
 	 */
 	int32_t base = 0;
-	if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT))
+	if (PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT))
 		base += sizeof(void*);
-	if (_PyType_HasFeature(type, Py_TPFLAGS_HAVE_GC))
+	if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_GC))
 		base += sizeof(void*)*2;
-	if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_WEAKREF))
+	if (PyType_HasFeature(type, Py_TPFLAGS_MANAGED_WEAKREF))
 		base += sizeof(void*);
 	return base;
 }
@@ -268,16 +265,15 @@ _layout_fill_ordered(PyLayout* layout, PyTypeObject* type, PyObject* layouts)
 		PyLayout* sub_layout = (PyLayout*) value;
 		uint32_t position = sub_layout->ly_order;
 		offset += _align_up(sub_layout->ly_basesize);
-		entries[position]->le_type = key;
-		entries[position]->le_offset = -base - offset;
+		entries[position].le_type = key;
+		entries[position].le_offset = -base - offset;
 	}
 	/* Store the resulting size in the layout */
 	layout->ly_allocsize = offset;
-	return is_ordered;
 }	
 
 static void 
-_layout_fill_hash(PyLayout* layout, PyObject* layouts)
+_layout_fill_hash(PyLayout* layout, PyTypeObject* type, PyObject* layouts)
 {
 	Py_ssize_t hash_size = Py_SIZE(layout);
 	uint32_t shift = layout->ly_shift;
@@ -285,8 +281,6 @@ _layout_fill_hash(PyLayout* layout, PyObject* layouts)
 	int32_t base = _layout_base(type);
 
 	PyLayoutEntry* entries = (PyLayoutEntry*) &(layout[1]);
-	for (uint32_t i=0; i<hash_size; i++)
-		entries[i]->le_type = NULL;
 
 	/* Fill the entry table and compute the offsets for all required memory */
 	PyObject *key, *value;
@@ -296,8 +290,8 @@ _layout_fill_hash(PyLayout* layout, PyObject* layouts)
 
 		/* Build the hash table */
 	 	uint32_t position = ((sub_layout->ly_id)>> shift) % hash_size;
-		int cost = 1;
-		while (entries[position]->ly_type !=NULL)
+		uint32_t cost = 1;
+		while (entries[position].le_type !=NULL)
 		{
 			cost++;
 			position++;
@@ -308,12 +302,20 @@ _layout_fill_hash(PyLayout* layout, PyObject* layouts)
 			layout->ly_search = cost;
 
 		offset += _align_up(sub_layout->ly_basesize);
-		entries[position]->le_type = key;
-		entries[position]->le_offset = -base-offset;
+		entries[position].le_type = key;
+		entries[position].le_offset = -base-offset;
 	}
 	/* Store the resulting size in the layout */
 	layout->ly_allocsize = offset;
-	return is_ordered;
+}
+
+static void 
+_layout_clear(PyLayout* layout)
+{
+	PyLayoutEntry* entries = (PyLayoutEntry*) &(layout[1]);
+	Py_ssize_t size = Py_SIZE(layout);
+	for (Py_ssize_t i=0; i<size; i++)
+		entries[i].le_type = NULL;
 }
 
 /** 
@@ -327,12 +329,14 @@ _layout_fill_hash(PyLayout* layout, PyObject* layouts)
  * In principle we can share layouts between objects assuming that they don't add
  * a new feature like managed dist, weakref, or GC.  But for now we will assume
  * every type gets its own layout.
+ *
+ * returns a new layout or NULL if no layout is required.
  */
 PyObject* 
 _PyLayout_Create(PyTypeObject* type, PyObject* bases, Py_ssize_t size)
 {
 	/* Collect the layouts that this object will inherit from. */
-	PyObject* layouts = layout_collect(bases);
+	PyObject* layouts = _layout_collect(bases);
 
 	/* We don't yet know how may entries will be required for this object.
 	 * To determine that we must first decide if this is an ordered layout
@@ -346,47 +350,49 @@ _PyLayout_Create(PyTypeObject* type, PyObject* bases, Py_ssize_t size)
 
 	uint32_t entries = order;
 	uint32_t id = rand();
-	layoutfunc cast;
 	PyLayout* result;
 
-	if ( layout_check_ordered(layouts))
+	if ( _layout_check_ordered(layouts))
 	{
 		result = (PyLayout*) PyObject_NewVar(PyLayout, &PyLayoutType, entries);
-		result->ly_cast = layout_cast_ordered;
+		result->ly_cast = _layout_cast_ordered;
 		result->ly_shift = 0;
 	}
 	else
 	{
 		entries *= 2;
 		result = (PyLayout*) PyObject_NewVar(PyLayout, &PyLayoutType, entries);
-		result->ly_cast = layout_cast_hash;
-		result->ly_shift = layout_find_fast_hash(layouts, entries, id);
+		result->ly_cast = _layout_cast_hash;
+		result->ly_shift = _layout_fast_hash(layouts, entries, id);
 	}
 
 	/* Fill out fields */
 	result->ly_id = id;
 	result->ly_order = order;
 	result->ly_basesize = size;
-	result->ly_allocsize = 0;
-	result->ly_search = 1;
+	result->ly_allocsize = 0; /* this will be created by the fill operation */
+	result->ly_search = 1; /* this will be created by the fill operation */
+
+	_layout_clear(result);
 	PyObject_InitVar(result, PyLayoutType, entries);
 
 	/* Add our new layout to the memory allocation. */
 	if (size>0)
-		PyDict_SetItem(layouts, type, result);
+		PyDict_SetItem(layouts, (PyObject*) type, (PyObject*) result);
 
-	if (result->ly_cast == layout_cast_ordered)
+	/* Fill the entries */
+	if (result->ly_cast == _layout_cast_ordered)
 	{
-		layout_fill_ordered(result, type, layouts);
+		_layout_fill_ordered(result, type, layouts);
 	}
 	else
 	{
-		layout_fill_hash(result, type, layouts);
+		_layout_fill_hash(result, type, layouts);
 	}
 
 	/* Check to see if an ordered layout arrangement works */
 	Py_DECREF(layouts);
-	return layout;
+	return results;
 }
 
 static PyType_Slot _layout_slots[] = {
@@ -397,7 +403,7 @@ static PyType_Slot _layout_slots[] = {
 static PyType_Spec _layout_spec = {
 	"layout",
 	sizeof(PyLayout),
-	sizeof(PyLoutEntry),
+	sizeof(PyLayoutEntry),
 	Py_TPFLAGS_DEFAULT,
 	_layout_slots
 };

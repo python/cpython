@@ -573,3 +573,6 @@ PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
  * assigned, or 0 if a new tag could not be assigned.
  */
 PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
+
+PyAPI_FUNC(void*) PyObject_GetData(PyObject *, PyTypeObject* type);
+PyAPI_FUNC(PyObject *) _PyLayout_Create(PyObject *, PyObject *, Py_ssize_t);
