@@ -212,6 +212,14 @@ email
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
   the CVE-2023-27043 fix.)
 
+fractions
+---------
+
+* Formatting for objects of type :class:`fractions.Fraction` now supports
+  the standard format specification mini-language rules for fill, alignment,
+  sign handling, minimum width and grouping. (Contributed by Mark Dickinson
+  in :gh:`111320`)
+
 glob
 ----
 
