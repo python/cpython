@@ -383,6 +383,11 @@ Optimizations
 * :func:`textwrap.indent` is now ~30% faster than before for large input.
   (Contributed by Inada Naoki in :gh:`107369`.)
 
+* The :mod:`subprocess` module can now use the :func:`os.posix_spawn` function
+  with ``close_fds=True`` on platforms where
+  ``posix_spawn_file_actions_addclosefrom_np`` is available.
+  (Contributed by Jakub Kulik in :gh:`113117`.)
+
 
 Deprecated
 ==========
