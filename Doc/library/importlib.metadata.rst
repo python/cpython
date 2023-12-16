@@ -427,12 +427,22 @@ custom importer to provide metadata, it would also need to implement
             for dist_record in self.db.query_distributions(query):
                 yield DatabaseDistribution(dist_record)
 
-
 In this way, ``query_distributions`` would return records for
 each distribution served by the database matching the query. For
 example, if ``requests-1.0`` is in the database, ``find_distributions``
 would yield a ``DatabaseDistribution`` for ``Context(name='requests')``
 or ``Context(name=None)``.
+
+For the sake of simplicity, this example ignores ``context.path``. The
+``path`` attribute defaults to ``sys.path`` and is the set of import paths to
+be considered in the search. A ``DatabaseImporter`` could potentially function
+without any concern for a search path. Assuming the importer does no
+partitioning, the "path" would be irrelevant. In order to illustrate the
+purpose of ``path``, the example would need to illustrate a more complex
+``DatabaseImporter`` whose behavior varied depending on
+``sys.path``/``PYTHONPATH``. In that case, the ``find_distributions`` should
+honor the ``context.path`` and only yield ``Distribution``s pertinent to that
+path.
 
 ``DatabaseDistribution``, then, would look something like::
 
