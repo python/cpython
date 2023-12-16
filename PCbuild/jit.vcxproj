@@ -19,7 +19,6 @@
     <ProjectConfiguration Include="Release|x64"/>
   </ItemGroup>
   <Import Project="pyproject.props"/>
-  <!-- XXX -->
   <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
        own build. All other extension modules will use the copy that pythoncore
        generates. -->
@@ -47,21 +46,15 @@
                       Overwrite="true"
                       Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
   </Target>
-  <Target Name="Build" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild" Condition="'$(UseJIT)' == 'true'">
-	  <Exec Condition="$(Configuration) != 'Debug' and $(Platform) == 'Win32'"
-          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc'
-          WorkingDirectory="$(IntDir)"/>
-	  <Exec Condition="$(Configuration) == 'Debug' and $(Platform) == 'Win32'"
-          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc --debug'
-          WorkingDirectory="$(IntDir)"/>
-	  <Exec Condition="$(Configuration) != 'Debug' and $(Platform) == 'x64'"
-          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc'
-          WorkingDirectory="$(IntDir)"/>
-	  <Exec Condition="$(Configuration) == 'Debug' and $(Platform) == 'x64'"
-          Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc --debug'
-          WorkingDirectory="$(IntDir)"/>
+  <Target Name="Build" Condition="'$(UseJIT)' == 'true'" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild">
+    <PropertyGroup>
+      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
+    </PropertyGroup>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)' WorkingDirectory="$(IntDir)"/>
   </Target>
-  <Target Name="CleanAll">
+  <Target Name="Clean">
     <Delete Files="$(PySourcePath)Python\jit_stencils.h"/>
   </Target>
 </Project>
