@@ -2,8 +2,10 @@ import io
 import os
 import sys
 import errno
+import ntpath
 import pathlib
 import pickle
+import posixpath
 import socket
 import stat
 import tempfile
@@ -43,6 +45,47 @@ if hasattr(os, 'geteuid'):
 
 class PurePathTest(test_pathlib_abc.DummyPurePathTest):
     cls = pathlib.PurePath
+
+    def test_concrete_class(self):
+        if self.cls is pathlib.PurePath:
+            expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
+        else:
+            expected = self.cls
+        p = self.cls('a')
+        self.assertIs(type(p), expected)
+
+    def test_concrete_pathmod(self):
+        if self.cls is pathlib.PurePosixPath:
+            expected = posixpath
+        elif self.cls is pathlib.PureWindowsPath:
+            expected = ntpath
+        else:
+            expected = os.path
+        p = self.cls('a')
+        self.assertIs(p.pathmod, expected)
+
+    def test_different_pathmods_unequal(self):
+        p = self.cls('a')
+        if p.pathmod is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        self.assertNotEqual(p, q)
+
+    def test_different_pathmods_unordered(self):
+        p = self.cls('a')
+        if p.pathmod is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        with self.assertRaises(TypeError):
+            p < q
+        with self.assertRaises(TypeError):
+            p <= q
+        with self.assertRaises(TypeError):
+            p > q
+        with self.assertRaises(TypeError):
+            p >= q
 
     def test_constructor_nested(self):
         P = self.cls

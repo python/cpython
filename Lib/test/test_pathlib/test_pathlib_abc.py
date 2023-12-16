@@ -48,6 +48,9 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__gt__, object.__gt__)
         self.assertIs(P.__ge__, object.__ge__)
 
+    def test_pathmod(self):
+        self.assertIs(self.cls.pathmod, posixpath)
+
 
 class DummyPurePath(pathlib._abc.PurePathBase):
     def __eq__(self, other):
@@ -92,37 +95,6 @@ class DummyPurePathTest(unittest.TestCase):
         P('/a', 'b', 'c')
         P('a/b/c')
         P('/a/b/c')
-
-    def test_concrete_class(self):
-        if self.cls is pathlib.PurePath:
-            expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
-        else:
-            expected = self.cls
-        p = self.cls('a')
-        self.assertIs(type(p), expected)
-
-    def test_different_pathmods_unequal(self):
-        p = self.cls('a')
-        if p.pathmod is posixpath:
-            q = pathlib.PureWindowsPath('a')
-        else:
-            q = pathlib.PurePosixPath('a')
-        self.assertNotEqual(p, q)
-
-    def test_different_pathmods_unordered(self):
-        p = self.cls('a')
-        if p.pathmod is posixpath:
-            q = pathlib.PureWindowsPath('a')
-        else:
-            q = pathlib.PurePosixPath('a')
-        with self.assertRaises(TypeError):
-            p < q
-        with self.assertRaises(TypeError):
-            p <= q
-        with self.assertRaises(TypeError):
-            p > q
-        with self.assertRaises(TypeError):
-            p >= q
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -1420,7 +1392,7 @@ class DummyPathTest(DummyPurePathTest):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB', 'foo', 'in',
                                           'spam'), False)
         p = P(BASE, 'dirA', 'linkC', '..', 'foo', 'in', 'spam')
-        if os.name == 'nt' and isinstance(p, pathlib.Path):
+        if self.cls.pathmod is not posixpath:
             # In Windows, if linkY points to dirB, 'dirA\linkY\..'
             # resolves to 'dirA' without resolving linkY first.
             self._check_resolve_relative(p, P(BASE, 'dirA', 'foo', 'in',
@@ -1440,7 +1412,7 @@ class DummyPathTest(DummyPurePathTest):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'foo', 'in', 'spam'),
                                      False)
         p = P(BASE, 'dirA', 'linkX', 'linkY', '..', 'foo', 'in', 'spam')
-        if os.name == 'nt' and isinstance(p, pathlib.Path):
+        if self.cls.pathmod is not posixpath:
             # In Windows, if linkY points to dirB, 'dirA\linkY\..'
             # resolves to 'dirA' without resolving linkY first.
             self._check_resolve_relative(p, P(d, 'foo', 'in', 'spam'), False)
@@ -1473,7 +1445,7 @@ class DummyPathTest(DummyPurePathTest):
     def test_resolve_loop(self):
         if not self.can_symlink:
             self.skipTest("symlinks required")
-        if os.name == 'nt' and issubclass(self.cls, pathlib.Path):
+        if self.cls.pathmod is not posixpath:
             self.skipTest("symlink loops work differently with concrete Windows paths")
         # Loops with relative symlinks.
         self.cls(BASE, 'linkX').symlink_to('linkX/inside')
