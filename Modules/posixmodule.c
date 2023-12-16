@@ -2808,7 +2808,7 @@ FTRUNCATE
     #define PATH_HAVE_FCHDIR 0
 #endif
 
-#ifdef HAVE_FCHMOD
+#if defined(HAVE_FCHMOD) || defined(MS_WINDOWS)
     #define PATH_HAVE_FCHMOD 1
 #else
     #define PATH_HAVE_FCHMOD 0
@@ -3350,6 +3350,18 @@ win32_hchmod(HANDLE hfile, int mode)
     return SetFileInformationByHandle(hfile, FileBasicInfo,
                                       &info, sizeof(info));
 }
+
+static int
+win32_fchmod(int fd, int mode)
+{
+	HANDLE hfile = _Py_get_osfhandle_noraise(fd);
+	if (hfile == INVALID_HANDLE_VALUE) {
+		SetLastError(ERROR_INVALID_HANDLE);
+        return 0;
+	}
+	return win32_hchmod(hfile, mode);
+}
+
 #endif /* MS_WINDOWS */
 
 /*[clinic input]
@@ -3413,24 +3425,18 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #ifdef MS_WINDOWS
     result = 0;
     Py_BEGIN_ALLOW_THREADS
-    if (follow_symlinks) {
-        HANDLE hfile;
-        if (path->fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(path->fd);
-            if (hfile != INVALID_HANDLE_VALUE) {
-                result = win32_hchmod(hfile, mode);
-            }
-        }
-        else {
-            hfile = CreateFileW(path->wide,
-                                FILE_READ_ATTRIBUTES|FILE_WRITE_ATTRIBUTES,
-                                0, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-            if (hfile != INVALID_HANDLE_VALUE) {
-                result = win32_hchmod(hfile, mode);
-                (void)CloseHandle(hfile);
-            }
-        }
+	if (path->fd != -1) {
+		result = win32_fchmod(path->fd, mode);
+	}
+	else if (follow_symlinks) {
+        HANDLE hfile = CreateFileW(path->wide,
+								   FILE_READ_ATTRIBUTES|FILE_WRITE_ATTRIBUTES,
+								   0, NULL,
+								   OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+		if (hfile != INVALID_HANDLE_VALUE) {
+			result = win32_hchmod(hfile, mode);
+			(void)CloseHandle(hfile);
+		}
     }
     else {
         result = win32_lchmod(path->wide, mode);
@@ -3554,10 +3560,7 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
 #ifdef MS_WINDOWS
     res = 0;
     Py_BEGIN_ALLOW_THREADS
-    HANDLE hfile = _Py_get_osfhandle_noraise(fd);
-    if (hfile != INVALID_HANDLE_VALUE) {
-        res = win32_hchmod(hfile, mode);
-    }
+	res = win32_fchmod(fd, mode);
     Py_END_ALLOW_THREADS
     if (!res) {
         return PyErr_SetFromWindowsErr(0);
