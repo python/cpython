@@ -1047,7 +1047,7 @@ The following recipes have a more mathematical flavor:
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
        # reshape([(0, 1), (2, 3), (4, 5)], 3) -->  (0, 1, 2), (3, 4, 5)
-       return batched(chain.from_iterable(matrix), cols)
+       return batched(chain.from_iterable(matrix), cols, strict=True)
 
    def transpose(matrix):
        "Swap the rows and columns of a 2-D matrix."
@@ -1278,6 +1278,10 @@ The following recipes have a more mathematical flavor:
     [(0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)]
     >>> list(reshape(M, 4))
     [(0, 1, 2, 3), (4, 5, 6, 7), (8, 9, 10, 11)]
+    >>> list(reshape(M, 5))
+    Traceback (most recent call last):
+    ...
+    ValueError: batched(): incomplete batch
     >>> list(reshape(M, 6))
     [(0, 1, 2, 3, 4, 5), (6, 7, 8, 9, 10, 11)]
     >>> list(reshape(M, 12))
