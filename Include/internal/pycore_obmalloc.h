@@ -668,6 +668,15 @@ struct _obmalloc_state {
 #if WITH_PYMALLOC_RADIX_TREE
     struct _obmalloc_usage usage;
 #endif
+    // true if the obmalloc state has been initialized.  This must be done
+    // before the malloc/free functions of obmalloc are called and must be
+    // done only once per obmalloc state.  The function _PyMem_init_obmalloc()
+    // does the initialization.
+    bool initialized;
+    // true if this structure is heap allocated, by PyMem_RawCalloc().  For
+    // the main interpreter, this structure is statically allocated (in the
+    // BSS).  Using the BSS gives some performance win.
+    bool heap_allocated;
 };
 
 

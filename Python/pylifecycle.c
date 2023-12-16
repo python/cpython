@@ -606,6 +606,10 @@ init_interp_create_gil(PyThreadState *tstate, int gil)
 }
 
 
+// defined in obmalloc.c
+int _PyMem_init_obmalloc(PyInterpreterState *interp, _PyRuntimeState *runtime);
+
+
 static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *src_config,
@@ -637,6 +641,13 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (!_PyMem_init_obmalloc(interp, runtime)) {
+        return  _PyStatus_NO_MEMORY();
     }
 
     PyThreadState *tstate = _PyThreadState_New(interp,
@@ -2118,6 +2129,14 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     /* This does not require that the GIL be held. */
     status = init_interp_settings(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
+
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (!_PyMem_init_obmalloc(interp, runtime)) {
+        status = _PyStatus_NO_MEMORY();
         goto error;
     }
 

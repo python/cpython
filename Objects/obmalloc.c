@@ -7,6 +7,7 @@
 #include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
+#include "pycore_obmalloc_init.h"
 
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
@@ -967,6 +968,12 @@ static int running_on_valgrind = -1;
 
 typedef struct _obmalloc_state OMState;
 
+/* obmalloc state for main interpreter and shared by all interpreters without
+ * their own obmalloc state.  By not explicitly initalizing this structure, it
+ * will be allocated in the BSS which is a small performance win.  The radix
+ * tree arrays are fairly large but are sparsely used.  */
+static struct _obmalloc_state obmalloc_state_main;
+
 static inline int
 has_own_state(PyInterpreterState *interp)
 {
@@ -979,10 +986,8 @@ static inline OMState *
 get_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!has_own_state(interp)) {
-        interp = _PyInterpreterState_Main();
-    }
-    return &interp->obmalloc;
+    assert(interp->obmalloc != NULL); // otherwise not initialized or freed
+    return interp->obmalloc;
 }
 
 // These macros all rely on a local "state" variable.
@@ -1030,7 +1035,11 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
                            "the interpreter doesn't have its own allocator");
     }
 #endif
-    OMState *state = &interp->obmalloc;
+    OMState *state = interp->obmalloc;
+
+    if (state == NULL) {
+        return 0;
+    }
 
     Py_ssize_t n = raw_allocated_blocks;
     /* add up allocated blocks for used pools */
@@ -1052,6 +1061,8 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
     return n;
 }
 
+static void free_obmalloc_arenas(PyInterpreterState *interp);
+
 void
 _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 {
@@ -1060,10 +1071,20 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
         return;
     }
 #endif
-    if (has_own_state(interp)) {
+    if (has_own_state(interp) && interp->obmalloc != NULL) {
         Py_ssize_t leaked = _PyInterpreterState_GetAllocatedBlocks(interp);
         assert(has_own_state(interp) || leaked == 0);
         interp->runtime->obmalloc.interpreter_leaks += leaked;
+        if (interp->obmalloc->heap_allocated && leaked == 0) {
+            // free the obmalloc arenas and radix tree nodes.  If leaked > 0
+            // then some of the memory allocated by obmalloc has not been
+            // freed.  It might be safe to free the arenas in that case but
+            // it's possible that extension modules are still using that
+            // memory.  So, it is safer to not free and to leak.  Perhaps there
+            // should be warning when this happens.  It should be possible to
+            // use a tool like "-fsanitize=address" to track down these leaks.
+            free_obmalloc_arenas(interp);
+        }
     }
 }
 
@@ -2612,7 +2633,6 @@ _PyObject_DebugDumpAddress(const void *p)
     _PyMem_DumpTraceback(fileno(stderr), p);
 }
 
-
 static size_t
 printone(FILE *out, const char* msg, size_t value)
 {
@@ -2663,8 +2683,70 @@ _PyDebugAllocatorStats(FILE *out,
     (void)printone(out, buf2, num_blocks * sizeof_block);
 }
 
+int _PyMem_init_obmalloc(PyInterpreterState *interp, _PyRuntimeState *runtime)
+{
+#ifdef WITH_PYMALLOC
+    /* Initialize obmalloc, but only for subinterpreters,
+       since the main interpreter is initialized statically. */
+    if (interp == &runtime->_main_interpreter
+            || (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)) {
+        interp->obmalloc = &obmalloc_state_main;
+        interp->obmalloc->heap_allocated = false;
+    } else {
+        interp->obmalloc = PyMem_RawCalloc(1, sizeof(struct _obmalloc_state));
+        if (interp->obmalloc == NULL) {
+            return 0;
+        }
+        interp->obmalloc->heap_allocated = true;
+    }
+    if (!interp->obmalloc->initialized) {
+        // initialize the obmalloc->pools structure.  This must be done
+        // before the obmalloc alloc/free functions can be called.
+        poolp temp[OBMALLOC_USED_POOLS_SIZE] =
+            _obmalloc_pools_INIT(interp->obmalloc->pools);
+        memcpy(&interp->obmalloc->pools.used, temp, sizeof(temp));
+        interp->obmalloc->initialized = true;
+    }
+#endif /* WITH_PYMALLOC */
+    return 1;
+}
+
 
 #ifdef WITH_PYMALLOC
+
+static void
+free_obmalloc_arenas(PyInterpreterState *interp)
+{
+    OMState *state = interp->obmalloc;
+    for (uint i = 0; i < maxarenas; ++i) {
+        // free each obmalloc memory arena
+        struct arena_object *ao = &allarenas[i];
+        _PyObject_Arena.free(_PyObject_Arena.ctx,
+                             (void *)ao->address, ARENA_SIZE);
+    }
+    // free the array containing pointers to all arenas
+    PyMem_RawFree(allarenas);
+#if WITH_PYMALLOC_RADIX_TREE
+#ifdef USE_INTERIOR_NODES
+    // Free the middle and bottom nodes of the radix tree.  These are allocated
+    // by arena_map_mark_used() but not freed when arenas are freed.
+    for (int i1 = 0; i1 < MAP_TOP_LENGTH; i1++) {
+         arena_map_mid_t *mid = arena_map_root.ptrs[i1];
+         if (mid == NULL) {
+             continue;
+         }
+         for (int i2 = 0; i2 < MAP_MID_LENGTH; i2++) {
+            arena_map_bot_t *bot = arena_map_root.ptrs[i1]->ptrs[i2];
+            if (bot == NULL) {
+                continue;
+            }
+            PyMem_RawFree(bot);
+         }
+         PyMem_RawFree(mid);
+    }
+#endif
+#endif
+}
 
 #ifdef Py_DEBUG
 /* Is target in the list?  The list is traversed via the nextpool pointers.
