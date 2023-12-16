@@ -1085,9 +1085,9 @@ deoptimize:
                 code->co_firstlineno,
                 2 * (int)(frame->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(frame))));
 #endif
+        _PyUOpExecutorObject *new_executor = (_PyUOpExecutorObject *)Py_NewRef(*pexecutor);
         Py_DECREF(current_executor);
-        current_executor = (_PyUOpExecutorObject *)*pexecutor;
-        Py_INCREF(current_executor);
+        current_executor = new_executor;
         goto enter_tier_two;
     }
 
@@ -1142,17 +1142,17 @@ deoptimize:
                     code->co_firstlineno,
                     2 * (int)(frame->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(frame))));
 #endif
-            Py_DECREF(current_executor);
-            current_executor = (_PyUOpExecutorObject *)*pexecutor;
+        _PyUOpExecutorObject *new_executor = (_PyUOpExecutorObject *)Py_NewRef(*pexecutor);
 
             // Reject trace if it repeats the uop that just deoptimized.
-            int jump_opcode = current_executor->trace[0].opcode;
+            int jump_opcode = new_executor->trace[0].opcode;
             if (jump_opcode == _IS_NONE) {
-                jump_opcode = current_executor->trace[1].opcode;
+                jump_opcode = new_executor->trace[1].opcode;
             }
             if (jump_opcode != uopcode) {
                 *pcounter &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                Py_INCREF(current_executor);
+                Py_DECREF(current_executor);
+                current_executor = new_executor;
                 goto enter_tier_two;  // All systems go!
             }
 
@@ -1160,7 +1160,7 @@ deoptimize:
             DPRINTF(2, "Alas, it's the same uop again (%s) -- discarding trace\n",
                     _PyUOpName(jump_opcode));
             *pexecutor = NULL;
-            // It will be decref'ed below.
+            Py_DECREF(new_executor);
         }
     }
 
