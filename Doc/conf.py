@@ -245,6 +245,12 @@ nitpick_ignore += [
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
     ('py:meth', '_SubParsersAction.add_parser'),
+    # Attributes/methods/etc. that definitely should be documented better,
+    # but are deferred for now:
+    ('py:attr', '__annotations__'),
+    ('py:meth', '__missing__'),
+    ('py:attr', '__wrapped__'),
+    ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
 # gh-106948: Copy standard C types declared in the "c:type" domain to the
