@@ -18,6 +18,7 @@
 #include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
@@ -951,7 +952,7 @@ static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
 #ifdef NODEV
-    if (PyLong_Check(obj) && Py_SIZE(obj) < 0) {
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
         int overflow;
         long long result = PyLong_AsLongLongAndOverflow(obj, &overflow);
         if (result == -1 && PyErr_Occurred()) {
@@ -12094,9 +12095,11 @@ os_major_impl(PyObject *module, dev_t device)
 /*[clinic end generated code: output=4071ffee17647891 input=b1a0a14ec9448229]*/
 {
     unsigned int result = major(device);
+#ifdef NODEV
     if (result == (unsigned int)NODEV) {
         return PyLong_FromLong((int)NODEV);
     }
+#endif
     return PyLong_FromUnsignedLong(result);
 }
 
@@ -12115,9 +12118,11 @@ os_minor_impl(PyObject *module, dev_t device)
 /*[clinic end generated code: output=306cb78e3bc5004f input=2f686e463682a9da]*/
 {
     unsigned int result = minor(device);
+#ifdef NODEV
     if (result == (unsigned int)NODEV) {
         return PyLong_FromLong((int)NODEV);
     }
+#endif
     return PyLong_FromUnsignedLong(result);
 }
 
@@ -12136,8 +12141,13 @@ static dev_t
 os_makedev_impl(PyObject *module, dev_t major, dev_t minor)
 /*[clinic end generated code: output=cad6125c51f5af80 input=2146126ec02e55c1]*/
 {
+#ifdef NODEV
     if ((major != NODEV && (dev_t)(unsigned int)major != major) ||
         (minor != NODEV && (dev_t)(unsigned int)minor != minor))
+#else
+    if ((dev_t)(unsigned int)major != major) ||
+        (dev_t)(unsigned int)minor != minor))
+#endif
     {
         PyErr_SetString(PyExc_OverflowError,
                         "Python int too large to convert to C unsigned int");
@@ -17018,6 +17028,10 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_SYSTEM32", LOAD_LIBRARY_SEARCH_SYSTEM32)) return -1;
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_USER_DIRS", LOAD_LIBRARY_SEARCH_USER_DIRS)) return -1;
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR", LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)) return -1;
+#endif
+
+#ifdef NODEV
+    if (PyModule_AddIntConstant(m, "_NODEV", NODEV)) return -1;
 #endif
 
     return 0;

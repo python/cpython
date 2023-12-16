@@ -692,7 +692,6 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'makedev'), 'test needs posix.makedev()')
     def test_makedev(self):
-        NODEV = -1
         st = posix.stat(os_helper.TESTFN)
         dev = st.st_dev
         self.assertIsInstance(dev, int)
@@ -706,7 +705,6 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.major)
         for x in -2, 2**64, -2**63-1:
             self.assertRaises((ValueError, OverflowError), posix.major, x)
-        self.assertEqual(posix.major(NODEV), NODEV)
 
         minor = posix.minor(dev)
         self.assertIsInstance(minor, int)
@@ -716,7 +714,6 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(TypeError, posix.minor)
         for x in -2, 2**64, -2**63-1:
             self.assertRaises((ValueError, OverflowError), posix.minor, x)
-        self.assertEqual(posix.minor(NODEV), NODEV)
 
         self.assertEqual(posix.makedev(major, minor), dev)
         self.assertRaises(TypeError, posix.makedev, float(major), minor)
@@ -726,6 +723,11 @@ class PosixTester(unittest.TestCase):
         for x in -2, 2**32, 2**64, -2**63-1:
             self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
             self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
+
+        if hasattr(posix, '_NODEV'):
+            NODEV = posix._NODEV
+            self.assertEqual(posix.major(NODEV), NODEV)
+            self.assertEqual(posix.minor(NODEV), NODEV)
 
     def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""

@@ -8433,7 +8433,7 @@ exit:
 
 #endif /* defined(HAVE_DEVICE_MACROS) */
 
-#if (defined HAVE_FTRUNCATE || defined MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && (defined HAVE_FTRUNCATE || defined MS_WINDOWS)
 
 PyDoc_STRVAR(os_ftruncate__doc__,
 "ftruncate($module, fd, length, /)\n"
@@ -8470,9 +8470,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined HAVE_FTRUNCATE || defined MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined HAVE_FTRUNCATE || defined MS_WINDOWS) */
 
-#if (defined HAVE_TRUNCATE || defined MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && (defined HAVE_TRUNCATE || defined MS_WINDOWS)
 
 PyDoc_STRVAR(os_truncate__doc__,
 "truncate($module, /, path, length)\n"
@@ -8541,9 +8541,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
 
-#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__))
+#if defined(HAVE_DEVICE_MACROS) && (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__))
 
 PyDoc_STRVAR(os_posix_fallocate__doc__,
 "posix_fallocate($module, fd, offset, length, /)\n"
@@ -8588,9 +8588,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__)) */
 
-#if (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG))
+#if defined(HAVE_DEVICE_MACROS) && (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG))
 
 PyDoc_STRVAR(os_posix_fadvise__doc__,
 "posix_fadvise($module, fd, offset, length, advice, /)\n"
@@ -8645,9 +8645,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -8687,9 +8687,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS) */
 
-#if !defined(MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -8730,9 +8730,9 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && !defined(MS_WINDOWS) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_unsetenv__doc__,
 "unsetenv($module, name, /)\n"
@@ -8763,9 +8763,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS) */
 
-#if !defined(MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_unsetenv__doc__,
 "unsetenv($module, name, /)\n"
@@ -8797,7 +8797,9 @@ exit:
     return return_value;
 }
 
-#endif /* !defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && !defined(MS_WINDOWS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -8827,7 +8829,9 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WCOREDUMP)
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WCOREDUMP)
 
 PyDoc_STRVAR(os_WCOREDUMP__doc__,
 "WCOREDUMP($module, status, /)\n"
@@ -8862,9 +8866,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WCOREDUMP) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WCOREDUMP) */
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WIFCONTINUED)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFCONTINUED)
 
 PyDoc_STRVAR(os_WIFCONTINUED__doc__,
 "WIFCONTINUED($module, /, status)\n"
@@ -8932,9 +8936,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WIFCONTINUED) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFCONTINUED) */
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WIFSTOPPED)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFSTOPPED)
 
 PyDoc_STRVAR(os_WIFSTOPPED__doc__,
 "WIFSTOPPED($module, /, status)\n"
@@ -8999,9 +9003,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WIFSTOPPED) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFSTOPPED) */
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WIFSIGNALED)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFSIGNALED)
 
 PyDoc_STRVAR(os_WIFSIGNALED__doc__,
 "WIFSIGNALED($module, /, status)\n"
@@ -9066,9 +9070,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WIFSIGNALED) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFSIGNALED) */
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WIFEXITED)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFEXITED)
 
 PyDoc_STRVAR(os_WIFEXITED__doc__,
 "WIFEXITED($module, /, status)\n"
@@ -9133,9 +9137,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WIFEXITED) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WIFEXITED) */
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WEXITSTATUS)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WEXITSTATUS)
 
 PyDoc_STRVAR(os_WEXITSTATUS__doc__,
 "WEXITSTATUS($module, /, status)\n"
@@ -9200,9 +9204,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WEXITSTATUS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WEXITSTATUS) */
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WTERMSIG)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WTERMSIG)
 
 PyDoc_STRVAR(os_WTERMSIG__doc__,
 "WTERMSIG($module, /, status)\n"
@@ -9267,9 +9271,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WTERMSIG) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WTERMSIG) */
 
-#if defined(HAVE_SYS_WAIT_H) && defined(WSTOPSIG)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WSTOPSIG)
 
 PyDoc_STRVAR(os_WSTOPSIG__doc__,
 "WSTOPSIG($module, /, status)\n"
@@ -9334,9 +9338,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYS_WAIT_H) && defined(WSTOPSIG) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYS_WAIT_H) && defined(WSTOPSIG) */
 
-#if (defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H))
+#if defined(HAVE_DEVICE_MACROS) && (defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H))
 
 PyDoc_STRVAR(os_fstatvfs__doc__,
 "fstatvfs($module, fd, /)\n"
@@ -9368,9 +9372,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)) */
 
-#if (defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H))
+#if defined(HAVE_DEVICE_MACROS) && (defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H))
 
 PyDoc_STRVAR(os_statvfs__doc__,
 "statvfs($module, /, path)\n"
@@ -9436,9 +9440,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__getdiskusage__doc__,
 "_getdiskusage($module, /, path)\n"
@@ -9500,9 +9504,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS) */
 
-#if defined(HAVE_FPATHCONF)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_FPATHCONF)
 
 PyDoc_STRVAR(os_fpathconf__doc__,
 "fpathconf($module, fd, name, /)\n"
@@ -9545,9 +9549,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_FPATHCONF) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_FPATHCONF) */
 
-#if defined(HAVE_PATHCONF)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_PATHCONF)
 
 PyDoc_STRVAR(os_pathconf__doc__,
 "pathconf($module, /, path, name)\n"
@@ -9622,9 +9626,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PATHCONF) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_PATHCONF) */
 
-#if defined(HAVE_CONFSTR)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_CONFSTR)
 
 PyDoc_STRVAR(os_confstr__doc__,
 "confstr($module, name, /)\n"
@@ -9653,9 +9657,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CONFSTR) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_CONFSTR) */
 
-#if defined(HAVE_SYSCONF)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYSCONF)
 
 PyDoc_STRVAR(os_sysconf__doc__,
 "sysconf($module, name, /)\n"
@@ -9689,7 +9693,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SYSCONF) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SYSCONF) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_abort__doc__,
 "abort($module, /)\n"
@@ -9712,7 +9718,9 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_abort_impl(module);
 }
 
-#if defined(MS_WINDOWS)
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_startfile__doc__,
 "startfile($module, /, filepath, operation=<unrepresentable>,\n"
@@ -9855,9 +9863,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS) */
 
-#if defined(HAVE_GETLOADAVG)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETLOADAVG)
 
 PyDoc_STRVAR(os_getloadavg__doc__,
 "getloadavg($module, /)\n"
@@ -9881,7 +9889,9 @@ os_getloadavg(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_getloadavg_impl(module);
 }
 
-#endif /* defined(HAVE_GETLOADAVG) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETLOADAVG) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_device_encoding__doc__,
 "device_encoding($module, /, fd)\n"
@@ -9944,7 +9954,9 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_SETRESUID)
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SETRESUID)
 
 PyDoc_STRVAR(os_setresuid__doc__,
 "setresuid($module, ruid, euid, suid, /)\n"
@@ -9984,9 +9996,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SETRESUID) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SETRESUID) */
 
-#if defined(HAVE_SETRESGID)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_SETRESGID)
 
 PyDoc_STRVAR(os_setresgid__doc__,
 "setresgid($module, rgid, egid, sgid, /)\n"
@@ -10026,9 +10038,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SETRESGID) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_SETRESGID) */
 
-#if defined(HAVE_GETRESUID)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETRESUID)
 
 PyDoc_STRVAR(os_getresuid__doc__,
 "getresuid($module, /)\n"
@@ -10048,9 +10060,9 @@ os_getresuid(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_getresuid_impl(module);
 }
 
-#endif /* defined(HAVE_GETRESUID) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETRESUID) */
 
-#if defined(HAVE_GETRESGID)
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETRESGID)
 
 PyDoc_STRVAR(os_getresgid__doc__,
 "getresgid($module, /)\n"
@@ -10070,9 +10082,9 @@ os_getresgid(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_getresgid_impl(module);
 }
 
-#endif /* defined(HAVE_GETRESGID) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETRESGID) */
 
-#if defined(USE_XATTRS)
+#if defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS)
 
 PyDoc_STRVAR(os_getxattr__doc__,
 "getxattr($module, /, path, attribute, *, follow_symlinks=True)\n"
@@ -10156,9 +10168,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(USE_XATTRS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS) */
 
-#if defined(USE_XATTRS)
+#if defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS)
 
 PyDoc_STRVAR(os_setxattr__doc__,
 "setxattr($module, /, path, attribute, value, flags=0, *,\n"
@@ -10265,9 +10277,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(USE_XATTRS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS) */
 
-#if defined(USE_XATTRS)
+#if defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS)
 
 PyDoc_STRVAR(os_removexattr__doc__,
 "removexattr($module, /, path, attribute, *, follow_symlinks=True)\n"
@@ -10351,9 +10363,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(USE_XATTRS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS) */
 
-#if defined(USE_XATTRS)
+#if defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS)
 
 PyDoc_STRVAR(os_listxattr__doc__,
 "listxattr($module, /, path=None, *, follow_symlinks=True)\n"
@@ -10440,7 +10452,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(USE_XATTRS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(USE_XATTRS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_urandom__doc__,
 "urandom($module, size, /)\n"
@@ -10478,7 +10492,9 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_MEMFD_CREATE)
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_MEMFD_CREATE)
 
 PyDoc_STRVAR(os_memfd_create__doc__,
 "memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
@@ -10549,9 +10565,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MEMFD_CREATE) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_MEMFD_CREATE) */
 
-#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
+#if defined(HAVE_DEVICE_MACROS) && (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd__doc__,
 "eventfd($module, /, initval, flags=EFD_CLOEXEC)\n"
@@ -10620,9 +10636,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
-#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
+#if defined(HAVE_DEVICE_MACROS) && (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd_read__doc__,
 "eventfd_read($module, /, fd)\n"
@@ -10681,9 +10697,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
-#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
+#if defined(HAVE_DEVICE_MACROS) && (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd_write__doc__,
 "eventfd_write($module, /, fd, value)\n"
@@ -10746,9 +10762,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
-#if (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL))
+#if defined(HAVE_DEVICE_MACROS) && (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL))
 
 PyDoc_STRVAR(os_get_terminal_size__doc__,
 "get_terminal_size($module, fd=<unrepresentable>, /)\n"
@@ -10797,7 +10813,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
@@ -10818,6 +10836,10 @@ os_cpu_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return os_cpu_count_impl(module);
 }
+
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_get_inheritable__doc__,
 "get_inheritable($module, fd, /)\n"
@@ -10851,6 +10873,10 @@ os_get_inheritable(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_set_inheritable__doc__,
 "set_inheritable($module, fd, inheritable, /)\n"
@@ -10888,7 +10914,9 @@ exit:
     return return_value;
 }
 
-#if defined(MS_WINDOWS)
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_get_handle_inheritable__doc__,
 "get_handle_inheritable($module, handle, /)\n"
@@ -10922,9 +10950,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_set_handle_inheritable__doc__,
 "set_handle_inheritable($module, handle, inheritable, /)\n"
@@ -10956,7 +10984,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_get_blocking__doc__,
 "get_blocking($module, fd, /)\n"
@@ -10992,6 +11022,10 @@ os_get_blocking(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_set_blocking__doc__,
 "set_blocking($module, fd, blocking, /)\n"
@@ -11032,6 +11066,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
+
 PyDoc_STRVAR(os_DirEntry_is_symlink__doc__,
 "is_symlink($self, /)\n"
 "--\n"
@@ -11064,6 +11102,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
+
 PyDoc_STRVAR(os_DirEntry_is_junction__doc__,
 "is_junction($self, /)\n"
 "--\n"
@@ -11091,6 +11133,10 @@ os_DirEntry_is_junction(DirEntry *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_DirEntry_stat__doc__,
 "stat($self, /, *, follow_symlinks=True)\n"
@@ -11155,6 +11201,10 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_DirEntry_is_dir__doc__,
 "is_dir($self, /, *, follow_symlinks=True)\n"
@@ -11225,6 +11275,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
+
 PyDoc_STRVAR(os_DirEntry_is_file__doc__,
 "is_file($self, /, *, follow_symlinks=True)\n"
 "--\n"
@@ -11294,6 +11348,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
+
 PyDoc_STRVAR(os_DirEntry_inode__doc__,
 "inode($self, /)\n"
 "--\n"
@@ -11312,6 +11370,10 @@ os_DirEntry_inode(DirEntry *self, PyObject *Py_UNUSED(ignored))
     return os_DirEntry_inode_impl(self);
 }
 
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
+
 PyDoc_STRVAR(os_DirEntry___fspath____doc__,
 "__fspath__($self, /)\n"
 "--\n"
@@ -11329,6 +11391,10 @@ os_DirEntry___fspath__(DirEntry *self, PyObject *Py_UNUSED(ignored))
 {
     return os_DirEntry___fspath___impl(self);
 }
+
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
 
 PyDoc_STRVAR(os_scandir__doc__,
 "scandir($module, /, path=None)\n"
@@ -11401,6 +11467,10 @@ exit:
     return return_value;
 }
 
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS)
+
 PyDoc_STRVAR(os_fspath__doc__,
 "fspath($module, /, path)\n"
 "--\n"
@@ -11460,7 +11530,9 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_GETRANDOM_SYSCALL)
+#endif /* defined(HAVE_DEVICE_MACROS) */
+
+#if defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETRANDOM_SYSCALL)
 
 PyDoc_STRVAR(os_getrandom__doc__,
 "getrandom($module, /, size, flags=0)\n"
@@ -11538,9 +11610,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_GETRANDOM_SYSCALL) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(HAVE_GETRANDOM_SYSCALL) */
 
-#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+#if defined(HAVE_DEVICE_MACROS) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os__add_dll_directory__doc__,
 "_add_dll_directory($module, /, path)\n"
@@ -11609,9 +11681,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
+#if defined(HAVE_DEVICE_MACROS) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os__remove_dll_directory__doc__,
 "_remove_dll_directory($module, /, cookie)\n"
@@ -11672,9 +11744,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if (defined(WIFEXITED) || defined(MS_WINDOWS))
+#if defined(HAVE_DEVICE_MACROS) && (defined(WIFEXITED) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_waitstatus_to_exitcode__doc__,
 "waitstatus_to_exitcode($module, /, status)\n"
@@ -11743,9 +11815,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
+#endif /* defined(HAVE_DEVICE_MACROS) && (defined(WIFEXITED) || defined(MS_WINDOWS)) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__supports_virtual_terminal__doc__,
 "_supports_virtual_terminal($module, /)\n"
@@ -11765,7 +11837,7 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os__supports_virtual_terminal_impl(module);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_DEVICE_MACROS) && defined(MS_WINDOWS) */
 
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
@@ -12263,6 +12335,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS_UNSETENV_METHODDEF
 #endif /* !defined(OS_UNSETENV_METHODDEF) */
 
+#ifndef OS_STRERROR_METHODDEF
+    #define OS_STRERROR_METHODDEF
+#endif /* !defined(OS_STRERROR_METHODDEF) */
+
 #ifndef OS_WCOREDUMP_METHODDEF
     #define OS_WCOREDUMP_METHODDEF
 #endif /* !defined(OS_WCOREDUMP_METHODDEF) */
@@ -12323,6 +12399,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS_SYSCONF_METHODDEF
 #endif /* !defined(OS_SYSCONF_METHODDEF) */
 
+#ifndef OS_ABORT_METHODDEF
+    #define OS_ABORT_METHODDEF
+#endif /* !defined(OS_ABORT_METHODDEF) */
+
 #ifndef OS_STARTFILE_METHODDEF
     #define OS_STARTFILE_METHODDEF
 #endif /* !defined(OS_STARTFILE_METHODDEF) */
@@ -12330,6 +12410,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS_GETLOADAVG_METHODDEF
     #define OS_GETLOADAVG_METHODDEF
 #endif /* !defined(OS_GETLOADAVG_METHODDEF) */
+
+#ifndef OS_DEVICE_ENCODING_METHODDEF
+    #define OS_DEVICE_ENCODING_METHODDEF
+#endif /* !defined(OS_DEVICE_ENCODING_METHODDEF) */
 
 #ifndef OS_SETRESUID_METHODDEF
     #define OS_SETRESUID_METHODDEF
@@ -12363,6 +12447,10 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS_LISTXATTR_METHODDEF
 #endif /* !defined(OS_LISTXATTR_METHODDEF) */
 
+#ifndef OS_URANDOM_METHODDEF
+    #define OS_URANDOM_METHODDEF
+#endif /* !defined(OS_URANDOM_METHODDEF) */
+
 #ifndef OS_MEMFD_CREATE_METHODDEF
     #define OS_MEMFD_CREATE_METHODDEF
 #endif /* !defined(OS_MEMFD_CREATE_METHODDEF) */
@@ -12383,6 +12471,18 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define OS_GET_TERMINAL_SIZE_METHODDEF
 #endif /* !defined(OS_GET_TERMINAL_SIZE_METHODDEF) */
 
+#ifndef OS_CPU_COUNT_METHODDEF
+    #define OS_CPU_COUNT_METHODDEF
+#endif /* !defined(OS_CPU_COUNT_METHODDEF) */
+
+#ifndef OS_GET_INHERITABLE_METHODDEF
+    #define OS_GET_INHERITABLE_METHODDEF
+#endif /* !defined(OS_GET_INHERITABLE_METHODDEF) */
+
+#ifndef OS_SET_INHERITABLE_METHODDEF
+    #define OS_SET_INHERITABLE_METHODDEF
+#endif /* !defined(OS_SET_INHERITABLE_METHODDEF) */
+
 #ifndef OS_GET_HANDLE_INHERITABLE_METHODDEF
     #define OS_GET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_GET_HANDLE_INHERITABLE_METHODDEF) */
@@ -12390,6 +12490,50 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
+
+#ifndef OS_GET_BLOCKING_METHODDEF
+    #define OS_GET_BLOCKING_METHODDEF
+#endif /* !defined(OS_GET_BLOCKING_METHODDEF) */
+
+#ifndef OS_SET_BLOCKING_METHODDEF
+    #define OS_SET_BLOCKING_METHODDEF
+#endif /* !defined(OS_SET_BLOCKING_METHODDEF) */
+
+#ifndef OS_DIRENTRY_IS_SYMLINK_METHODDEF
+    #define OS_DIRENTRY_IS_SYMLINK_METHODDEF
+#endif /* !defined(OS_DIRENTRY_IS_SYMLINK_METHODDEF) */
+
+#ifndef OS_DIRENTRY_IS_JUNCTION_METHODDEF
+    #define OS_DIRENTRY_IS_JUNCTION_METHODDEF
+#endif /* !defined(OS_DIRENTRY_IS_JUNCTION_METHODDEF) */
+
+#ifndef OS_DIRENTRY_STAT_METHODDEF
+    #define OS_DIRENTRY_STAT_METHODDEF
+#endif /* !defined(OS_DIRENTRY_STAT_METHODDEF) */
+
+#ifndef OS_DIRENTRY_IS_DIR_METHODDEF
+    #define OS_DIRENTRY_IS_DIR_METHODDEF
+#endif /* !defined(OS_DIRENTRY_IS_DIR_METHODDEF) */
+
+#ifndef OS_DIRENTRY_IS_FILE_METHODDEF
+    #define OS_DIRENTRY_IS_FILE_METHODDEF
+#endif /* !defined(OS_DIRENTRY_IS_FILE_METHODDEF) */
+
+#ifndef OS_DIRENTRY_INODE_METHODDEF
+    #define OS_DIRENTRY_INODE_METHODDEF
+#endif /* !defined(OS_DIRENTRY_INODE_METHODDEF) */
+
+#ifndef OS_DIRENTRY___FSPATH___METHODDEF
+    #define OS_DIRENTRY___FSPATH___METHODDEF
+#endif /* !defined(OS_DIRENTRY___FSPATH___METHODDEF) */
+
+#ifndef OS_SCANDIR_METHODDEF
+    #define OS_SCANDIR_METHODDEF
+#endif /* !defined(OS_SCANDIR_METHODDEF) */
+
+#ifndef OS_FSPATH_METHODDEF
+    #define OS_FSPATH_METHODDEF
+#endif /* !defined(OS_FSPATH_METHODDEF) */
 
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
@@ -12410,4 +12554,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=dfcaffd690b9a556 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b80228806fba7dc3 input=a9049054013a1b77]*/
