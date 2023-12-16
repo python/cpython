@@ -193,12 +193,14 @@ loops that truncate the stream.
 
    Roughly equivalent to::
 
-      def batched(iterable, n):
+      def batched(iterable, n, *, strict=False):
           # batched('ABCDEFG', 3) --> ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
           it = iter(iterable)
           while batch := tuple(islice(it, n)):
+              if strict and len(batch) != n:
+                  raise ValueError('batched(): incomplete batch')
               yield batch
 
    .. versionadded:: 3.12
