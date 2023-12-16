@@ -372,6 +372,104 @@ test_lock_once(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+struct test_rwlock_data {
+    Py_ssize_t nthreads;
+    _PyRWMutex rw;
+    PyEvent step1;
+    PyEvent step2;
+    PyEvent step3;
+    PyEvent done;
+};
+
+static void
+rdlock_thread(void *arg)
+{
+    struct test_rwlock_data *test_data = arg;
+
+    // Acquire the lock in read mode
+    _PyRWMutex_RLock(&test_data->rw);
+    PyEvent_Wait(&test_data->step1);
+    _PyRWMutex_RUnlock(&test_data->rw);
+
+    _PyRWMutex_RLock(&test_data->rw);
+    PyEvent_Wait(&test_data->step3);
+    _PyRWMutex_RUnlock(&test_data->rw);
+
+    if (_Py_atomic_add_ssize(&test_data->nthreads, -1) == 1) {
+        _PyEvent_Notify(&test_data->done);
+    }
+}
+static void
+wrlock_thread(void *arg)
+{
+    struct test_rwlock_data *test_data = arg;
+
+    // First acquire the lock in write mode
+    _PyRWMutex_Lock(&test_data->rw);
+    PyEvent_Wait(&test_data->step2);
+    _PyRWMutex_Unlock(&test_data->rw);
+
+    if (_Py_atomic_add_ssize(&test_data->nthreads, -1) == 1) {
+        _PyEvent_Notify(&test_data->done);
+    }
+}
+
+static void
+wait_until(uintptr_t *ptr, uintptr_t value)
+{
+    // wait up to two seconds for *ptr == value
+    int iters = 0;
+    uintptr_t bits;
+    do {
+        pysleep(10);
+        bits = _Py_atomic_load_uintptr(ptr);
+        iters++;
+    } while (bits != value && iters < 200);
+}
+
+static PyObject *
+test_lock_rwlock(PyObject *self, PyObject *obj)
+{
+    struct test_rwlock_data test_data = {.nthreads = 3};
+
+    _PyRWMutex_Lock(&test_data.rw);
+    assert(test_data.rw.bits == 1);
+
+    _PyRWMutex_Unlock(&test_data.rw);
+    assert(test_data.rw.bits == 0);
+
+    // Start two readers
+    PyThread_start_new_thread(rdlock_thread, &test_data);
+    PyThread_start_new_thread(rdlock_thread, &test_data);
+
+    // wait up to two seconds for the threads to attempt to read-lock "rw"
+    wait_until(&test_data.rw.bits, 8);
+    assert(test_data.rw.bits == 8);
+
+    // start writer (while readers hold lock)
+    PyThread_start_new_thread(wrlock_thread, &test_data);
+    wait_until(&test_data.rw.bits, 10);
+    assert(test_data.rw.bits == 10);
+
+    // readers release lock, writer should acquire it
+    _PyEvent_Notify(&test_data.step1);
+    wait_until(&test_data.rw.bits, 3);
+    assert(test_data.rw.bits == 3);
+
+    // writer releases lock, readers acquire it
+    _PyEvent_Notify(&test_data.step2);
+    wait_until(&test_data.rw.bits, 8);
+    assert(test_data.rw.bits == 8);
+
+    // readers release lock again
+    _PyEvent_Notify(&test_data.step3);
+    wait_until(&test_data.rw.bits, 0);
+    assert(test_data.rw.bits == 0);
+
+    PyEvent_Wait(&test_data.done);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"test_lock_basic", test_lock_basic, METH_NOARGS},
     {"test_lock_two_threads", test_lock_two_threads, METH_NOARGS},
@@ -380,6 +478,7 @@ static PyMethodDef test_methods[] = {
     _TESTINTERNALCAPI_BENCHMARK_LOCKS_METHODDEF
     {"test_lock_benchmark", test_lock_benchmark, METH_NOARGS},
     {"test_lock_once", test_lock_once, METH_NOARGS},
+    {"test_lock_rwlock", test_lock_rwlock, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
