@@ -1,0 +1,2 @@
+:meth:`asyncio.futures.Future.set_exception()` now silently transforms
+``StopIteration`` into ``RuntimeError``. Patch contributed by Jamie Phan.
