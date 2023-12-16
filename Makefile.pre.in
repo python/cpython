@@ -2272,6 +2272,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/source \
 		test/test_json \
 		test/test_module \
+		test/test_pathlib \
 		test/test_peg_generator \
 		test/test_sqlite3 \
 		test/test_tkinter \
