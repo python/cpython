@@ -2808,7 +2808,7 @@ FTRUNCATE
     #define PATH_HAVE_FCHDIR 0
 #endif
 
-#if defined(HAVE_FCHMOD) || defined(MS_WINDOWS)
+#ifdef HAVE_FCHMOD
     #define PATH_HAVE_FCHMOD 1
 #else
     #define PATH_HAVE_FCHMOD 0
@@ -2854,6 +2854,8 @@ FTRUNCATE
 #ifdef MS_WINDOWS
     #undef PATH_HAVE_FTRUNCATE
     #define PATH_HAVE_FTRUNCATE 1
+    #undef PATH_HAVE_FCHMOD
+    #define PATH_HAVE_FCHMOD 1
 #endif
 
 /*[python input]
