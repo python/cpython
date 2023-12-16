@@ -471,6 +471,10 @@ packages served by the ``DatabaseImporter``, assuming that the
 ``record`` supplies suitable ``.name``, ``.version``, and
 ``.entry_points`` attributes.
 
+The ``DatabaseDistribution`` may also provide other metadata files, like
+``RECORD`` (required for ``Distribution.files``) or override the
+implementation of ``Distribution.files``. See the source for more inspiration.
+
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
