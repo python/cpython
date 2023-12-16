@@ -989,6 +989,19 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.addCleanup(os_helper.rmtree, d)
         return d
 
+    def test_matches_pathbase_api(self):
+        our_names = {name for name in dir(self.cls) if name[0] != '_'}
+        path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
+        self.assertEqual(our_names, path_names)
+        for attr_name in our_names:
+            if attr_name == 'pathmod':
+                # On Windows, Path.pathmod is ntpath, but PathBase.pathmod is
+                # posixpath, and so their docstrings differ.
+                continue
+            our_attr = getattr(self.cls, attr_name)
+            path_attr = getattr(pathlib._abc.PathBase, attr_name)
+            self.assertEqual(our_attr.__doc__, path_attr.__doc__)
+
     def test_concrete_class(self):
         if self.cls is pathlib.Path:
             expected = pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath

@@ -703,15 +703,6 @@ class PathBaseTest(PurePathBaseTest):
     def test_as_bytes_common(self):
         self.assertRaises(TypeError, bytes, self.cls())
 
-    def test_matches_path_api(self):
-        our_names = {name for name in dir(self.cls) if name[0] != '_'}
-        path_names = {name for name in dir(pathlib.Path) if name[0] != '_'}
-        self.assertEqual(our_names, path_names)
-        for attr_name in our_names:
-            our_attr = getattr(self.cls, attr_name)
-            path_attr = getattr(pathlib.Path, attr_name)
-            self.assertEqual(our_attr.__doc__, path_attr.__doc__)
-
 
 class DummyPathIO(io.BytesIO):
     """
