@@ -444,6 +444,14 @@
                       Overwrite="true"
                       Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
   </Target>
+  <Target Name="_BuildJIT" BeforeTargets="PrepareForBuild" Condition="'$(UseJIT)' == 'true'" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild">
+    <PropertyGroup>
+      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
+    </PropertyGroup>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)' WorkingDirectory="$(IntDir)"/>
+  </Target>
 
   <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />

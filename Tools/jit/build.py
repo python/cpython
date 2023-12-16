@@ -30,7 +30,6 @@ INCLUDE_INTERNAL = INCLUDE / "internal"
 PC = CPYTHON / "PC"
 PYTHON = CPYTHON / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
-PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 LLVM_VERSION = 16
@@ -103,7 +102,7 @@ def find_llvm_tool(tool: str, *, echo: bool = False) -> str | None:
         return None
     prefix = process.stdout.decode().removesuffix("\n")
     path = f"{prefix}/bin/{tool}"
-    if get_llvm_tool_version(path) == LLVM_VERSION:
+    if get_llvm_tool_version(path, echo=echo) == LLVM_VERSION:
         return path
     return None
 
@@ -687,12 +686,14 @@ CLANG_FLAGS = [
 class Options:
     target: Target
     debug: bool
+    out: pathlib.Path
     verbose: bool
 
     def sha256(self) -> bytes:
         hasher = hashlib.sha256()
         hasher.update(self.target.sha256())
         hasher.update(bytes([self.debug]))
+        hasher.update(bytes(self.out.resolve()))
         return hasher.digest()
 
 
@@ -705,7 +706,7 @@ async def _compile(
         f"--target={options.target.triple}",
         "-D_DEBUG" if options.debug else "-DNDEBUG",  # XXX
         f"-D_JIT_OPCODE={opname}",
-        f"-I{pathlib.Path.cwd()}",
+        f"-I.",
     ]
     clang = require_llvm_tool("clang", echo=options.verbose)
     await run(clang, *flags, "-o", o, c, echo=options.verbose)
@@ -837,22 +838,23 @@ def format_addend(addend: int) -> str:
     return hex(addend)
 
 
-def main(target: Target, *, debug: bool, verbose: bool) -> None:
-    options = Options(target, debug, verbose)
+def main(target: Target, *, debug: bool, out: pathlib.Path, verbose: bool) -> None:
+    jit_stencils = out / "jit_stencils.h"
+    options = Options(target, debug, out, verbose)
     hasher = hashlib.sha256()
     hasher.update(options.sha256())
     hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-    hasher.update(pathlib.Path("pyconfig.h").resolve().read_bytes())
+    hasher.update((out / "pyconfig.h").read_bytes())
     for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
         for filename in filenames:
             hasher.update(pathlib.Path(dirpath, filename).read_bytes())
     digest = hasher.hexdigest()
-    if PYTHON_JIT_STENCILS_H.exists():
-        with PYTHON_JIT_STENCILS_H.open() as file:
+    if jit_stencils.exists():
+        with jit_stencils.open() as file:
             if file.readline().removeprefix("// ").removesuffix("\n") == digest:
                 return
     stencil_groups = asyncio.run(build(options))
-    with PYTHON_JIT_STENCILS_H.open("w") as file:
+    with jit_stencils.open("w") as file:
         file.write(f"// {digest}\n")
         for line in dump(stencil_groups):
             file.write(f"{line}\n")
@@ -868,4 +870,5 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     parsed = parser.parse_args()
-    main(parsed.target, debug=parsed.debug, verbose=parsed.verbose)
+    out = pathlib.Path.cwd()
+    main(parsed.target, debug=parsed.debug, out=out, verbose=parsed.verbose)
