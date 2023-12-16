@@ -120,6 +120,7 @@
         PLATLIBDIR="DLLs";
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -234,9 +234,9 @@ def analyze_stack(op: parser.InstDef) -> StackEffect:
     return StackEffect(inputs, outputs)
 
 
-def analyze_caches(op: parser.InstDef) -> list[CacheEntry]:
+def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     caches: list[parser.CacheEffect] = [
-        i for i in op.inputs if isinstance(i, parser.CacheEffect)
+        i for i in inputs if isinstance(i, parser.CacheEffect)
     ]
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
@@ -314,13 +314,13 @@ def compute_properties(op: parser.InstDef) -> Properties:
     )
 
 
-def make_uop(name: str, op: parser.InstDef) -> Uop:
+def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect]) -> Uop:
     return Uop(
         name=name,
         context=op.context,
         annotations=op.annotations,
         stack=analyze_stack(op),
-        caches=analyze_caches(op),
+        caches=analyze_caches(inputs),
         body=op.block.tokens,
         properties=compute_properties(op),
     )
@@ -333,7 +333,7 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
             raise override_error(
                 op.name, op.context, uops[op.name].context, op.tokens[0]
             )
-    uops[op.name] = make_uop(op.name, op)
+    uops[op.name] = make_uop(op.name, op, op.inputs)
 
 
 def add_instruction(
@@ -347,10 +347,27 @@ def desugar_inst(
 ) -> None:
     assert inst.kind == "inst"
     name = inst.name
-    uop = make_uop("_" + inst.name, inst)
+    op_inputs: list[parser.InputEffect] = []
+    parts: list[Part] = []
+    uop_index = -1
+    # Move unused cache entries to the Instruction, removing them from the Uop.
+    for input in inst.inputs:
+        if isinstance(input, parser.CacheEffect) and input.name == "unused":
+            parts.append(Skip(input.size))
+        else:
+            op_inputs.append(input)
+            if uop_index < 0:
+                uop_index = len(parts)
+                # Place holder for the uop.
+                parts.append(Skip(0))
+    uop = make_uop("_" + inst.name, inst, op_inputs)
     uop.implicitly_created = True
     uops[inst.name] = uop
-    add_instruction(name, [uop], instructions)
+    if uop_index < 0:
+        parts.append(uop)
+    else:
+        parts[uop_index] = uop
+    add_instruction(name, parts, instructions)
 
 
 def add_macro(
@@ -444,7 +461,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 if target.text in instructions:
                     instructions[target.text].is_target = True
     # Hack
-    instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
+    if "BINARY_OP_INPLACE_ADD_UNICODE" in instructions:
+        instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
     return Analysis(instructions, uops, families, pseudos)
 
 
