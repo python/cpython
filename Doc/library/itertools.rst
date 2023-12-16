@@ -1036,10 +1036,15 @@ The following recipes have a more mathematical flavor:
        # sum_of_squares([10, 20, 30]) -> 1400
        return math.sumprod(*tee(it))
 
-   def transpose(it):
-       "Swap the rows and columns of the input."
+   def reshape(matrix, cols):
+       "Reshape a 2-D matrix to have a given number of columns."
+       # reshape([(0, 1), (2, 3), (4, 5)], 3) -->  (0, 1, 2), (3, 4, 5)
+       return batched(chain.from_iterable(matrix), cols)
+
+   def transpose(matrix):
+       "Swap the rows and columns of a 2-D matrix."
        # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
-       return zip(*it, strict=True)
+       return zip(*matrix, strict=True)
 
    def matmul(m1, m2):
        "Multiply two matrices."
@@ -1253,6 +1258,22 @@ The following recipes have a more mathematical flavor:
 
     >>> sum_of_squares([10, 20, 30])
     1400
+
+    >>> list(reshape([(0, 1), (2, 3), (4, 5)], 3))
+    [(0, 1, 2), (3, 4, 5)]
+    >>> M = [(0, 1, 2, 3), (4, 5, 6, 7), (8, 9, 10, 11)]
+    >>> list(reshape(M, 1))
+    [(0,), (1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (10,), (11,)]
+    >>> list(reshape(M, 2))
+    [(0, 1), (2, 3), (4, 5), (6, 7), (8, 9), (10, 11)]
+    >>> list(reshape(M, 3))
+    [(0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)]
+    >>> list(reshape(M, 4))
+    [(0, 1, 2, 3), (4, 5, 6, 7), (8, 9, 10, 11)]
+    >>> list(reshape(M, 6))
+    [(0, 1, 2, 3, 4, 5), (6, 7, 8, 9, 10, 11)]
+    >>> list(reshape(M, 12))
+    [(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)]
 
     >>> list(transpose([(1, 2, 3), (11, 22, 33)]))
     [(1, 11), (2, 22), (3, 33)]
