@@ -164,10 +164,13 @@ loops that truncate the stream.
        Added the optional *initial* parameter.
 
 
-.. function:: batched(iterable, n)
+.. function:: batched(iterable, n, *, strict=False)
 
    Batch data from the *iterable* into tuples of length *n*. The last
    batch may be shorter than *n*.
+
+   If *strict* is true, will raise a :exc:`ValueError` if the final
+   batch is shorter than *n*.
 
    Loops over the input iterable and accumulates data into tuples up to
    size *n*.  The input is consumed lazily, just enough to fill a batch.
@@ -190,15 +193,20 @@ loops that truncate the stream.
 
    Roughly equivalent to::
 
-      def batched(iterable, n):
+      def batched(iterable, n, *, strict=False):
           # batched('ABCDEFG', 3) --> ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
           it = iter(iterable)
           while batch := tuple(islice(it, n)):
+              if strict and len(batch) != n:
+                  raise ValueError('batched(): incomplete batch')
               yield batch
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      Added the *strict* option.
 
 
 .. function:: chain(*iterables)
@@ -1039,7 +1047,7 @@ The following recipes have a more mathematical flavor:
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
        # reshape([(0, 1), (2, 3), (4, 5)], 3) -->  (0, 1, 2), (3, 4, 5)
-       return batched(chain.from_iterable(matrix), cols)
+       return batched(chain.from_iterable(matrix), cols, strict=True)
 
    def transpose(matrix):
        "Swap the rows and columns of a 2-D matrix."
@@ -1270,6 +1278,10 @@ The following recipes have a more mathematical flavor:
     [(0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)]
     >>> list(reshape(M, 4))
     [(0, 1, 2, 3), (4, 5, 6, 7), (8, 9, 10, 11)]
+    >>> list(reshape(M, 5))
+    Traceback (most recent call last):
+    ...
+    ValueError: batched(): incomplete batch
     >>> list(reshape(M, 6))
     [(0, 1, 2, 3, 4, 5), (6, 7, 8, 9, 10, 11)]
     >>> list(reshape(M, 12))
