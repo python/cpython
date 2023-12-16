@@ -10450,7 +10450,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
         return -1;
     }
 
-    assert(_PyFrame_GetCode(cframe)->co_nlocalsplus > 0);
+    assert(co->co_nlocalsplus > 0);
     PyObject *firstarg = _PyFrame_GetLocalsArray(cframe)[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
