@@ -1052,6 +1052,8 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
     return n;
 }
 
+static void free_arenas(PyInterpreterState *interp);
+
 void
 _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 {
@@ -1065,6 +1067,7 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
         assert(has_own_state(interp) || leaked == 0);
         interp->runtime->obmalloc.interpreter_leaks += leaked;
     }
+    free_arenas(interp);
 }
 
 static Py_ssize_t get_num_global_allocated_blocks(_PyRuntimeState *);
@@ -2612,6 +2615,37 @@ _PyObject_DebugDumpAddress(const void *p)
     _PyMem_DumpTraceback(fileno(stderr), p);
 }
 
+static void
+free_arenas(PyInterpreterState *interp)
+{
+    OMState *state = &interp->obmalloc;
+    for (uint i = 0; i < maxarenas; ++i) {
+        // free each obmalloc memory arena
+        struct arena_object *ao = &allarenas[i];
+        _PyObject_Arena.free(_PyObject_Arena.ctx,
+                             (void *)ao->address, ARENA_SIZE);
+    }
+    // free the array containing pointers to all arenas
+    PyMem_RawFree(allarenas);
+#if WITH_PYMALLOC_RADIX_TREE
+    // Free the middle and bottom nodes of the radix tree.  These are allocated
+    // by arena_map_mark_used() but not freed when arenas are freed.
+    for (int i1 = 0; i1 < MAP_TOP_LENGTH; i1++) {
+         arena_map_mid_t *mid = arena_map_root.ptrs[i1];
+         if (mid == NULL) {
+             continue;
+         }
+         for (int i2 = 0; i2 < MAP_MID_LENGTH; i2++) {
+            arena_map_bot_t *bot = arena_map_root.ptrs[i1]->ptrs[i2];
+            if (bot == NULL) {
+                continue;
+            }
+            PyMem_RawFree(bot);
+         }
+         PyMem_RawFree(mid);
+    }
+#endif
+}
 
 static size_t
 printone(FILE *out, const char* msg, size_t value)
