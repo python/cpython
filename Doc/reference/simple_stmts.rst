@@ -214,7 +214,7 @@ Assignment of an object to a single target is recursively defined as follows.
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
-  For user-defined objects, the :meth:`__setitem__` method is called with
+  For user-defined objects, the :meth:`~object.__setitem__` method is called with
   appropriate arguments.
 
   .. index:: pair: slicing; assignment
@@ -351,7 +351,7 @@ If the right hand side is present, an annotated
 assignment performs the actual assignment before evaluating annotations
 (where applicable). If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
-:meth:`__setitem__` or :meth:`__setattr__` call.
+:meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
 .. seealso::
 
@@ -932,7 +932,7 @@ That is not a future statement; it's an ordinary import statement with no
 special semantics or syntax restrictions.
 
 Code compiled by calls to the built-in functions :func:`exec` and :func:`compile`
-that occur in a module :mod:`M` containing a future statement will, by default,
+that occur in a module :mod:`!M` containing a future statement will, by default,
 use the new syntax or semantics associated with the future statement.  This can
 be controlled by optional arguments to :func:`compile` --- see the documentation
 of that function for details.

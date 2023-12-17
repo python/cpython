@@ -209,8 +209,9 @@ class Generator(Analyzer):
                 "",
             ):
                 with self.out.block("switch(opcode)"):
-                    for instr, effect in data:
-                        self.out.emit(f"case {instr.name}:")
+                    effects = [(instr.name, effect) for instr, effect in data]
+                    for name, effect in sorted(effects):
+                        self.out.emit(f"case {name}:")
                         self.out.emit(f"    return {effect};")
                     self.out.emit("default:")
                     self.out.emit("    return -1;")
@@ -433,7 +434,8 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write metadata for each instruction
-                for thing in self.everything:
+                sorted_things = sorted(self.everything, key = lambda t:t.name)
+                for thing in sorted_things:
                     match thing:
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
@@ -456,7 +458,7 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
-                for mac in self.macro_instrs.values():
+                for mac in sorted(self.macro_instrs.values(), key=lambda t: t.name):
                     if is_super_instruction(mac):
                         # Special-case the heck out of super-instructions
                         self.write_super_expansions(mac.name)
@@ -475,7 +477,7 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name in self.opmap:
+                for name in sorted(self.opmap):
                     self.out.emit(f'[{name}] = "{name}",')
 
             with self.metadata_item(
@@ -589,7 +591,7 @@ class Generator(Analyzer):
         add("_EXIT_TRACE")
         add("_SET_IP")
 
-        for instr in self.instrs.values():
+        for instr in sorted(self.instrs.values(), key=lambda t:t.name):
             # Skip ops that are also macros -- those are desugared inst()s
             if instr.name not in self.macros:
                 add(instr.name)
