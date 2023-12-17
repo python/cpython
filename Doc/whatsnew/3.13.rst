@@ -415,9 +415,15 @@ Optimizations
 * :func:`textwrap.indent` is now ~30% faster than before for large input.
   (Contributed by Inada Naoki in :gh:`107369`.)
 
-* The :mod:`subprocess` module can now use the :func:`os.posix_spawn` function
-  with ``close_fds=True`` on platforms where
-  ``posix_spawn_file_actions_addclosefrom_np`` is available.
+* The :mod:`subprocess` module may use the :func:`os.posix_spawn` function
+  in more situations.  Notably in the default of ``close_fds=True``
+  on platforms such as modern Linux and Solaris where the C library provides
+  :c:func:`!posix_spawn_file_actions_addclosefrom_np`.  On Linux this should
+  perform similar to our existing Linux :c:func:``!vfork`` based code.
+  A private control knob :attr:`!subprocess._USE_POSIX_SPAWN` can be set to
+  ``False`` if you need to force :func:`os.posix_spawn` not to be used.
+  Please report your reasons and platform details in the CPython issue tracker
+  if you set this so that we can improve our API selection logic for everyone.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
 
