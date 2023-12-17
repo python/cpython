@@ -160,6 +160,8 @@ class TestFail:
             ('{"spam":42 "ham"', "Expecting ',' delimiter", 11),
             ('[{"spam":42]', "Expecting ',' delimiter", 11),
             ('{"spam":42,}', "Illegal trailing comma before end of object", 10),
+            ('{"spam":42 , }', "Illegal trailing comma before end of object", 11),
+            ('[123  , ]', "Illegal trailing comma before end of array", 6),
         ]
         for data, msg, idx in test_cases:
             with self.assertRaises(self.JSONDecodeError) as cm:

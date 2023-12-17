@@ -748,8 +748,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
             /* skip whitespace after , delimiter */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
-            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == '}')
-            {
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == '}') {
                 raise_errmsg("Illegal trailing comma before end of object", pystr, comma_idx);
                 goto bail;
             }
@@ -837,8 +836,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
             /* skip whitespace after , */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
-            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == ']')
-            {
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == ']') {
                 raise_errmsg("Illegal trailing comma before end of array", pystr, comma_idx);
                 goto bail;
             }
