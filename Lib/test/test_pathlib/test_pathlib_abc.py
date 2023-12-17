@@ -54,7 +54,9 @@ class DummyPurePath(pathlib._abc.PurePathBase):
 
 class DummyPurePathTest(unittest.TestCase):
     cls = DummyPurePath
-    base = f'/BASE/{TESTFN}'
+
+    # Use a base path that's unrelated to any real filesystem path.
+    base = f'/this/path/kills/fascists/{TESTFN}'
 
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
