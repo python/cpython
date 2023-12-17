@@ -98,7 +98,12 @@ class PurePath(_abc.PurePathBase):
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
-        return (self.__class__, tuple(self._raw_paths))
+        args = tuple(self._tail)
+        if self.drive or self.root:
+            args = (self.drive + self.root,) + args
+        if self.has_trailing_sep:
+            args = args + ('.',)
+        return (self.__class__, args)
 
     def __fspath__(self):
         return str(self)
