@@ -272,10 +272,17 @@ class Path(_abc.PathBase, PurePath):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        return (self._make_child_relpath(name) for name in os.listdir(self))
+        with os.scandir(self) as entries:
+            return iter([self._make_child_entry(entry) for entry in entries])
 
     def _scandir(self):
         return os.scandir(self)
+
+    def _make_child_entry(self, entry):
+        # Transform an entry yielded from _scandir() into a path object.
+        path = self.with_segments(entry.path)
+        path._str = entry.name if str(self) == '.' else entry.path
+        return path
 
     def absolute(self):
         """Return an absolute version of this path
