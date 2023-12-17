@@ -40,6 +40,7 @@ Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Tools/c-analyzer/             @ericsnowcurrently
 
 # Exceptions
 Lib/traceback.py              @iritkatriel
@@ -187,6 +188,11 @@ Doc/c-api/stable.rst          @encukou
 /Tools/clinic/**              @erlend-aasland @AlexWaygood
 /Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
 Doc/howto/clinic.rst          @erlend-aasland
+
+# Subinterpreters
+Lib/test/support/interpreters/  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/   @ericsnowcurrently
 
 # WebAssembly
 /Tools/wasm/                  @brettcannon

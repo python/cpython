@@ -129,13 +129,6 @@ arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
 arg_parser.add_argument(
-    "-e",
-    "--executor-cases",
-    type=str,
-    help="Write executor cases to this file",
-    default=DEFAULT_EXECUTOR_OUTPUT,
-)
-arg_parser.add_argument(
     "-a",
     "--abstract-interpreter-cases",
     type=str,
@@ -216,8 +209,9 @@ class Generator(Analyzer):
                 "",
             ):
                 with self.out.block("switch(opcode)"):
-                    for instr, effect in data:
-                        self.out.emit(f"case {instr.name}:")
+                    effects = [(instr.name, effect) for instr, effect in data]
+                    for name, effect in sorted(effects):
+                        self.out.emit(f"case {name}:")
                         self.out.emit(f"    return {effect};")
                     self.out.emit("default:")
                     self.out.emit("    return -1;")
@@ -381,7 +375,7 @@ class Generator(Analyzer):
             self.write_pseudo_instrs()
 
             self.out.emit("")
-            self.write_uop_items(lambda name, counter: f"#define {name} {counter}")
+            self.out.emit('#include "pycore_uop_ids.h"')
 
             self.write_stack_effect_functions()
 
@@ -440,7 +434,8 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write metadata for each instruction
-                for thing in self.everything:
+                sorted_things = sorted(self.everything, key = lambda t:t.name)
+                for thing in sorted_things:
                     match thing:
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
@@ -463,7 +458,7 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
-                for mac in self.macro_instrs.values():
+                for mac in sorted(self.macro_instrs.values(), key=lambda t: t.name):
                     if is_super_instruction(mac):
                         # Special-case the heck out of super-instructions
                         self.write_super_expansions(mac.name)
@@ -482,7 +477,7 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name in self.opmap:
+                for name in sorted(self.opmap):
                     self.out.emit(f'[{name}] = "{name}",')
 
             with self.metadata_item(
@@ -596,7 +591,7 @@ class Generator(Analyzer):
         add("_EXIT_TRACE")
         add("_SET_IP")
 
-        for instr in self.instrs.values():
+        for instr in sorted(self.instrs.values(), key=lambda t:t.name):
             # Skip ops that are also macros -- those are desugared inst()s
             if instr.name not in self.macros:
                 add(instr.name)
@@ -846,7 +841,6 @@ def main() -> None:
     a.assign_opcode_ids()
     a.write_opcode_targets(args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
-    a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
     a.write_abstract_interpreter_instructions(
         args.abstract_interpreter_cases, args.emit_line_directives
     )
