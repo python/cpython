@@ -2,6 +2,7 @@
 
 import contextlib
 import dis
+import functools
 import io
 import re
 import sys
@@ -1209,8 +1210,13 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(loop_test, adaptive=True)
         expected = dis_loop_test_quickened_code
         if _testinternalcapi.get_optimizer():
-            # We *may* see ENTER_EXECUTOR in the disassembly
-            got = got.replace("ENTER_EXECUTOR", "JUMP_BACKWARD ")
+            # We *may* see ENTER_EXECUTOR in the disassembly. This is a
+            # temporary hack to keep the test working until dis is able to
+            # handle the instruction correctly (GH-112383):
+            got = got.replace(
+                "ENTER_EXECUTOR          16",
+                "JUMP_BACKWARD           16 (to L1)",
+            )
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
@@ -1982,19 +1988,27 @@ class InstructionTests(InstructionTestCase):
         self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
         self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
 
+    def get_instructions(self, code):
+        return dis._get_instructions_bytes(code)
+
     def test_start_offset(self):
         # When no extended args are present,
         # start_offset should be equal to offset
+
         instructions = list(dis.Bytecode(_f))
         for instruction in instructions:
             self.assertEqual(instruction.offset, instruction.start_offset)
+
+        def last_item(iterable):
+            return functools.reduce(lambda a, b : b, iterable)
 
         code = bytes([
             opcode.opmap["LOAD_FAST"], 0x00,
             opcode.opmap["EXTENDED_ARG"], 0x01,
             opcode.opmap["POP_JUMP_IF_TRUE"], 0xFF,
         ])
-        jump = list(dis._get_instructions_bytes(code))[-1]
+        labels_map = dis._make_labels_map(code)
+        jump = last_item(self.get_instructions(code))
         self.assertEqual(4, jump.offset)
         self.assertEqual(2, jump.start_offset)
 
@@ -2006,7 +2020,7 @@ class InstructionTests(InstructionTestCase):
             opcode.opmap["POP_JUMP_IF_TRUE"], 0xFF,
             opcode.opmap["CACHE"], 0x00,
         ])
-        jump = list(dis._get_instructions_bytes(code))[-1]
+        jump = last_item(self.get_instructions(code))
         self.assertEqual(8, jump.offset)
         self.assertEqual(2, jump.start_offset)
 
@@ -2021,7 +2035,7 @@ class InstructionTests(InstructionTestCase):
             opcode.opmap["POP_JUMP_IF_TRUE"], 0xFF,
             opcode.opmap["CACHE"], 0x00,
         ])
-        instructions = list(dis._get_instructions_bytes(code))
+        instructions = list(self.get_instructions(code))
         # 1st jump
         self.assertEqual(4, instructions[2].offset)
         self.assertEqual(2, instructions[2].start_offset)
@@ -2042,7 +2056,7 @@ class InstructionTests(InstructionTestCase):
             opcode.opmap["CACHE"], 0x00,
             opcode.opmap["CACHE"], 0x00
         ])
-        instructions = list(dis._get_instructions_bytes(code))
+        instructions = list(self.get_instructions(code))
         self.assertEqual(2, instructions[0].cache_offset)
         self.assertEqual(10, instructions[0].end_offset)
         self.assertEqual(12, instructions[1].cache_offset)
