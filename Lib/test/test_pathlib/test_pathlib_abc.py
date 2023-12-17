@@ -56,9 +56,6 @@ class DummyPurePathTest(unittest.TestCase):
     cls = DummyPurePath
     base = f'/BASE/{TESTFN}'
 
-    # Make sure any symbolic links in the base test path are resolved.
-    base = os.path.realpath(TESTFN)
-
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
     equivalences = {

@@ -40,6 +40,8 @@ if hasattr(os, 'geteuid'):
 
 class PurePathTest(test_pathlib_abc.DummyPurePathTest):
     cls = pathlib.PurePath
+
+    # Make sure any symbolic links in the base test path are resolved.
     base = os.path.realpath(TESTFN)
 
     def test_concrete_class(self):
