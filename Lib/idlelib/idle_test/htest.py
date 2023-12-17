@@ -8,14 +8,15 @@ the master window to end testing.
 
 In a tested module, let X be a global name bound to a callable (class or
 function) whose .__name__ attribute is also X (the usual situation). The
-first parameter of X must be 'parent'.  When called, the parent argument
-will be the root window.  X must create a child Toplevel(parent) window
-(or subclass thereof).  The Toplevel may be a test widget or dialog, in
-which case the callable is the corresponding class.  Or the Toplevel may
-contain the widget to be tested or set up a context in which a test
-widget is invoked.  In this latter case, the callable is a wrapper
-function that sets up the Toplevel and other objects.  Wrapper function
-names, such as _editor_window', should start with '_' and be lowercase.
+first parameter of X must be 'parent' or 'master'.  When called, the
+first argument will be the root window.  X must create a child
+Toplevel(parent/master) (or subclass thereof).  The Toplevel may be a
+test widget or dialog, in which case the callable is the corresponding
+class.  Or the Toplevel may contain the widget to be tested or set up a
+context in which a test widget is invoked.  In this latter case, the
+callable is a wrapper function that sets up the Toplevel and other
+objects.  Wrapper function names, such as _editor_window', should start
+with '_' and be lowercase.
 
 
 End the module with
@@ -117,10 +118,18 @@ CustomRun_spec = {
     'file': 'query',
     'kwds': {'title': 'Customize query.py Run',
              '_htest': True},
-    'msg': "Enter with <Return> or [Run].  Print valid entry to Shell\n"
+    'msg': "Enter with <Return> or [OK].  Print valid entry to Shell\n"
            "Arguments are parsed into a list\n"
            "Mode is currently restart True or False\n"
            "Close dialog with valid entry, <Escape>, [Cancel], [X]"
+    }
+
+_debug_object_browser_spec = {
+    'file': 'debugobj',
+    'kwds': {},
+    'msg': "Double click on items up to the lowest level.\n"
+           "Attributes of the objects and related information "
+           "will be displayed side-by-side at each level."
     }
 
 # TODO Improve message
@@ -161,8 +170,8 @@ _grep_dialog_spec = {
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
            "The results should be displayed in a new '*Output*' window.\n"
-           "'Right-click'->'Go to file/line' anywhere in the search results "
-           "should open that file \nin a new EditorWindow."
+           "'Right-click'->'Go to file/line' in the search results\n "
+           "should open that file in a new EditorWindow."
     }
 
 HelpSource_spec = {
@@ -178,7 +187,14 @@ HelpSource_spec = {
            "Any url ('www...', 'http...') is accepted.\n"
            "Test Browse with and without path, as cannot unittest.\n"
            "[Ok] or <Return> prints valid entry to shell\n"
-           "[Cancel] or <Escape> prints None to shell"
+           "<Escape>, [Cancel], or [X] prints None to shell"
+    }
+
+_helpwindow_spec = {
+    'file': 'help',
+    'kwds': {},
+    'msg': "If the help text displays, this works.\n"
+           "Text is selectable. Window is scrollable."
     }
 
 _io_binding_spec = {
@@ -194,65 +210,36 @@ _io_binding_spec = {
            "Check that changes were saved by opening the file elsewhere."
     }
 
-_linenumbers_drag_scrolling_spec = {
-    'file': 'sidebar',
-    'kwds': {},
-    'msg': textwrap.dedent("""\
-        1. Click on the line numbers and drag down below the edge of the
-        window, moving the mouse a bit and then leaving it there for a while.
-        The text and line numbers should gradually scroll down, with the
-        selection updated continuously.
-
-        2. With the lines still selected, click on a line number above the
-        selected lines. Only the line whose number was clicked should be
-        selected.
-
-        3. Repeat step #1, dragging to above the window. The text and line
-        numbers should gradually scroll up, with the selection updated
-        continuously.
-
-        4. Repeat step #2, clicking a line number below the selection."""),
-    }
-
 _multi_call_spec = {
     'file': 'multicall',
     'kwds': {},
-    'msg': "The following actions should trigger a print to console or IDLE"
-           " Shell.\nEntering and leaving the text area, key entry, "
-           "<Control-Key>,\n<Alt-Key-a>, <Control-Key-a>, "
-           "<Alt-Control-Key-a>, \n<Control-Button-1>, <Alt-Button-1> and "
-           "focusing out of the window\nare sequences to be tested."
+    'msg': "The following should trigger a print to console or IDLE Shell.\n"
+           "Entering and leaving the text area, key entry, <Control-Key>,\n"
+           "<Alt-Key-a>, <Control-Key-a>, <Alt-Control-Key-a>, \n"
+           "<Control-Button-1>, <Alt-Button-1> and focusing elsewhere."
     }
 
 _module_browser_spec = {
     'file': 'browser',
     'kwds': {},
-    'msg': "Inspect names of module, class(with superclass if "
-           "applicable), methods and functions.\nToggle nested items.\n"
-           "Double clicking on items prints a traceback for an exception "
-           "that is ignored."
+    'msg': textwrap.dedent("""
+        "Inspect names of module, class(with superclass if applicable),
+        "methods and functions.  Toggle nested items.  Double clicking
+        "on items prints a traceback for an exception that is ignored.""")
     }
 
 _multistatus_bar_spec = {
     'file': 'statusbar',
     'kwds': {},
     'msg': "Ensure presence of multi-status bar below text area.\n"
-           "Click 'Update Status' to change the multi-status text"
+           "Click 'Update Status' to change the status text"
     }
 
-_object_browser_spec = {
-    'file': 'debugobj',
-    'kwds': {},
-    'msg': "Double click on items up to the lowest level.\n"
-           "Attributes of the objects and related information "
-           "will be displayed side-by-side at each level."
-    }
-
-_path_browser_spec = {
+PathBrowser_spec = {
     'file': 'pathbrowser',
-    'kwds': {},
+    'kwds': {'_htest': True},
     'msg': "Test for correct display of all paths in sys.path.\n"
-           "Toggle nested items up to the lowest level.\n"
+           "Toggle nested items out to the lowest level.\n"
            "Double clicking on an item prints a traceback\n"
            "for an exception that is ignored."
     }
@@ -288,6 +275,15 @@ _replace_dialog_spec = {
            "Click [Close] or [X] to close the 'Replace Dialog'."
     }
 
+_scrolled_list_spec = {
+    'file': 'scrolledlist',
+    'kwds': {},
+    'msg': "You should see a scrollable list of items\n"
+           "Selecting (clicking) or double clicking an item "
+           "prints the name to the console or Idle shell.\n"
+           "Right clicking an item will display a popup."
+    }
+
 _search_dialog_spec = {
     'file': 'search',
     'kwds': {},
@@ -303,28 +299,31 @@ _searchbase_spec = {
            "Its only action is to close."
     }
 
-_scrolled_list_spec = {
-    'file': 'scrolledlist',
+_sidebar_number_scrolling_spec = {
+    'file': 'sidebar',
     'kwds': {},
-    'msg': "You should see a scrollable list of items\n"
-           "Selecting (clicking) or double clicking an item "
-           "prints the name to the console or Idle shell.\n"
-           "Right clicking an item will display a popup."
+    'msg': textwrap.dedent("""\
+        1. Click on the line numbers and drag down below the edge of the
+        window, moving the mouse a bit and then leaving it there for a
+        while. The text and line numbers should gradually scroll down,
+        with the selection updated continuously.
+
+        2. With the lines still selected, click on a line number above
+        or below the selected lines. Only the line whose number was
+        clicked should be selected.
+
+        3. Repeat step #1, dragging to above the window. The text and
+        line numbers should gradually scroll up, with the selection
+        updated continuously.
+
+        4. Repeat step #2, clicking a line number below the selection."""),
     }
 
-show_idlehelp_spec = {
-    'file': 'help',
-    'kwds': {},
-    'msg': "If the help text displays, this works.\n"
-           "Text is selectable. Window is scrollable."
-    }
-
-_stack_viewer_spec = {
+_stackbrowser_spec = {
     'file': 'stackviewer',
     'kwds': {},
     'msg': "A stacktrace for a NameError exception.\n"
-           "Expand 'idlelib ...' and '<locals>'.\n"
-           "Check that exc_value, exc_tb, and exc_type are correct.\n"
+           "Should have NameError and 1 traceback line."
     }
 
 _tooltip_spec = {
@@ -367,11 +366,12 @@ _widget_redirector_spec = {
     }
 
 def run(*tests):
+    "Run callables in tests."
     root = tk.Tk()
     root.title('IDLE htest')
     root.resizable(0, 0)
 
-    # a scrollable Label like constant width text widget.
+    # A scrollable Label-like constant width text widget.
     frameLabel = tk.Frame(root, padx=10)
     frameLabel.pack()
     text = tk.Text(frameLabel, wrap='word')
@@ -381,45 +381,44 @@ def run(*tests):
     scrollbar.pack(side='right', fill='y', expand=False)
     text.pack(side='left', fill='both', expand=True)
 
-    test_list = [] # List of tuples of the form (spec, callable widget)
+    test_list = [] # Make list of (spec, callable) tuples.
     if tests:
         for test in tests:
             test_spec = globals()[test.__name__ + '_spec']
             test_spec['name'] = test.__name__
             test_list.append((test_spec,  test))
     else:
-        for k, d in globals().items():
-            if k.endswith('_spec'):
-                test_name = k[:-5]
-                test_spec = d
+        for key, dic in globals().items():
+            if key.endswith('_spec'):
+                test_name = key[:-5]
+                test_spec = dic
                 test_spec['name'] = test_name
                 mod = import_module('idlelib.' + test_spec['file'])
                 test = getattr(mod, test_name)
                 test_list.append((test_spec, test))
+    test_list.reverse()  # So can pop in proper order in next_test.
 
     test_name = tk.StringVar(root)
     callable_object = None
     test_kwds = None
 
     def next_test():
-
         nonlocal test_name, callable_object, test_kwds
         if len(test_list) == 1:
             next_button.pack_forget()
         test_spec, callable_object = test_list.pop()
         test_kwds = test_spec['kwds']
-        test_kwds['parent'] = root
         test_name.set('Test ' + test_spec['name'])
 
-        text.configure(state='normal') # enable text editing
-        text.delete('1.0','end')
-        text.insert("1.0",test_spec['msg'])
-        text.configure(state='disabled') # preserve read-only property
+        text['state'] = 'normal'  # Enable text replacement.
+        text.delete('1.0', 'end')
+        text.insert("1.0", test_spec['msg'])
+        text['state'] = 'disabled'  # Restore read-only property.
 
     def run_test(_=None):
-        widget = callable_object(**test_kwds)
+        widget = callable_object(root, **test_kwds)
         try:
-            print(widget.result)
+            print(widget.result)  # Only true for query classes(?).
         except AttributeError:
             pass
 
@@ -437,6 +436,7 @@ def run(*tests):
 
     next_test()
     root.mainloop()
+
 
 if __name__ == '__main__':
     run()

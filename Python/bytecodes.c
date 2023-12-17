@@ -506,6 +506,7 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (unused/1, left, right --)) {
+            TIER_ONE_ONLY
             assert(next_instr->op.code == STORE_FAST);
             PyObject **target_local = &GETLOCAL(next_instr->op.arg);
             DEOPT_IF(*target_local != left);
@@ -786,6 +787,7 @@ dummy_func(
         }
 
         inst(INTERPRETER_EXIT, (retval --)) {
+            TIER_ONE_ONLY
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
@@ -800,11 +802,11 @@ dummy_func(
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
         op(_POP_FRAME, (retval --)) {
-            assert(EMPTY());
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
             STORE_SP();
+            assert(EMPTY());
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -1072,6 +1074,7 @@ dummy_func(
         }
 
         inst(YIELD_VALUE, (retval -- unused)) {
+            TIER_ONE_ONLY
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1164,7 +1167,6 @@ dummy_func(
                 ERROR_IF(true, error);
             }
         }
-
 
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -2298,6 +2300,7 @@ dummy_func(
         }
 
         inst(JUMP_FORWARD, (--)) {
+            TIER_ONE_ONLY
             JUMPBY(oparg);
         }
 
@@ -2353,20 +2356,17 @@ dummy_func(
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
-            JUMPBY(1-original_oparg);
-            frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             if (executor->execute == _PyUOpExecute) {
                 current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
-            frame = executor->execute(executor, frame, stack_pointer);
-            if (frame == NULL) {
-                frame = tstate->current_frame;
+            next_instr = executor->execute(executor, frame, stack_pointer);
+            frame = tstate->current_frame;
+            if (next_instr == NULL) {
                 goto resume_with_error;
             }
-            goto enter_tier_one;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
@@ -2406,6 +2406,7 @@ dummy_func(
         macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + _POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
+            TIER_ONE_ONLY
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -3130,7 +3131,7 @@ dummy_func(
         // The 'unused' output effect represents the return value
         // (which will be pushed when the frame returns).
         // It is needed so CALL_PY_EXACT_ARGS matches its family.
-        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
+        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
@@ -3458,6 +3459,7 @@ dummy_func(
 
         // This is secretly a super-instruction
         inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
+            TIER_ONE_ONLY
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
@@ -3796,6 +3798,7 @@ dummy_func(
         }
 
         inst(RETURN_GENERATOR, (--)) {
+            TIER_ONE_ONLY
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -3968,6 +3971,7 @@ dummy_func(
         }
 
         inst(EXTENDED_ARG, ( -- )) {
+            TIER_ONE_ONLY
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -3976,11 +3980,13 @@ dummy_func(
         }
 
         inst(CACHE, (--)) {
+            TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
             Py_UNREACHABLE();
         }
 
         inst(RESERVED, (--)) {
+            TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
         }
@@ -4028,7 +4034,7 @@ dummy_func(
 
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
-            GOTO_TIER_ONE();
+            DEOPT_IF(1);
         }
 
         op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {

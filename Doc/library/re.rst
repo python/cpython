@@ -1093,12 +1093,12 @@ Functions
 Exceptions
 ^^^^^^^^^^
 
-.. exception:: error(msg, pattern=None, pos=None)
+.. exception:: PatternError(msg, pattern=None, pos=None)
 
    Exception raised when a string passed to one of the functions here is not a
    valid regular expression (for example, it might contain unmatched parentheses)
    or when some other error occurs during compilation or matching.  It is never an
-   error if a string contains no match for a pattern.  The error instance has
+   error if a string contains no match for a pattern.  The ``PatternError`` instance has
    the following additional attributes:
 
    .. attribute:: msg
@@ -1123,6 +1123,10 @@ Exceptions
 
    .. versionchanged:: 3.5
       Added additional attributes.
+
+   .. versionchanged:: 3.13
+      ``PatternError`` was originally named ``error``; the latter is kept as an alias for
+      backward compatibility.
 
 .. _re-objects:
 

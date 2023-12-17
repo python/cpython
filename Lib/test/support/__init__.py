@@ -801,7 +801,8 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
-if sysconfig.get_config_var('Py_GIL_DISABLED'):
+Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
+if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
     _header = 'nP'
@@ -1848,7 +1849,7 @@ class SaveSignals:
 
 def with_pymalloc():
     import _testcapi
-    return _testcapi.WITH_PYMALLOC
+    return _testcapi.WITH_PYMALLOC and not Py_GIL_DISABLED
 
 
 def with_mimalloc():

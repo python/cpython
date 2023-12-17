@@ -1475,6 +1475,17 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
+static PyObject *
+get_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(interp->id_refcount);
+}
+
+
 static void
 _xid_capsule_destructor(PyObject *capsule)
 {
@@ -1625,6 +1636,17 @@ get_type_module_name(PyObject *self, PyObject *type)
 }
 
 
+#ifdef Py_GIL_DISABLED
+static PyObject *
+get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    uintptr_t tid = _Py_ThreadId();
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(tid));
+    return PyLong_FromUnsignedLongLong(tid);
+}
+#endif
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1682,12 +1704,16 @@ static PyMethodDef module_functions[] = {
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
+    {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_type_module_name",    get_type_module_name,            METH_O},
+#ifdef Py_GIL_DISABLED
+    {"py_thread_id", get_py_thread_id, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
