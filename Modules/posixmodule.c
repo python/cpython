@@ -17034,10 +17034,6 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR", LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)) return -1;
 #endif
 
-#ifdef NODEV
-    if (PyModule_AddIntConstant(m, "_NODEV", NODEV)) return -1;
-#endif
-
     return 0;
 }
 
