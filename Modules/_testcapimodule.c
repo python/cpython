@@ -13,6 +13,7 @@
 #include "_testcapi/parts.h"
 
 #include "frameobject.h"          // PyFrame_New()
+#include "interpreteridobject.h"  // PyInterpreterID_Type
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
@@ -195,11 +196,11 @@ test_dict_inner(int count)
     for (i = 0; i < count; i++) {
         v = PyLong_FromLong(i);
         if (v == NULL) {
-            return -1;
+            goto error;
         }
         if (PyDict_SetItem(dict, v, v) < 0) {
             Py_DECREF(v);
-            return -1;
+            goto error;
         }
         Py_DECREF(v);
     }
@@ -213,11 +214,12 @@ test_dict_inner(int count)
         assert(v != UNINITIALIZED_PTR);
         i = PyLong_AS_LONG(v) + 1;
         o = PyLong_FromLong(i);
-        if (o == NULL)
-            return -1;
+        if (o == NULL) {
+            goto error;
+        }
         if (PyDict_SetItem(dict, k, o) < 0) {
             Py_DECREF(o);
-            return -1;
+            goto error;
         }
         Py_DECREF(o);
         k = v = UNINITIALIZED_PTR;
@@ -235,6 +237,9 @@ test_dict_inner(int count)
     } else {
         return 0;
     }
+error:
+    Py_DECREF(dict);
+    return -1;
 }
 
 
@@ -1451,6 +1456,36 @@ run_in_subinterp(PyObject *self, PyObject *args)
     return PyLong_FromLong(r);
 }
 
+static PyObject *
+get_interpreterid_type(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_NewRef(&PyInterpreterID_Type);
+}
+
+static PyObject *
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef ml;
 
 static PyObject *
@@ -1525,7 +1560,9 @@ test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
     descr.n_in_sequence = 1;
 
     PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
-    assert(structseq_type != NULL);
+    if (structseq_type == NULL) {
+        return NULL;
+    }
     assert(PyType_Check(structseq_type));
     assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
     Py_DECREF(structseq_type);
@@ -3237,6 +3274,9 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
+    {"get_interpreterid_type",  get_interpreterid_type,          METH_NOARGS},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},

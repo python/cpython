@@ -404,7 +404,7 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.join(_PROJECT_BASE, "PC")
+            inc_dir = os.path.dirname(sys._base_executable)
         else:
             inc_dir = _PROJECT_BASE
     else:

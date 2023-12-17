@@ -576,44 +576,33 @@ init_interp_settings(PyInterpreterState *interp,
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
 
-    /* We check "gil" in init_interp_create_gil(). */
+    switch (config->gil) {
+    case PyInterpreterConfig_DEFAULT_GIL: break;
+    case PyInterpreterConfig_SHARED_GIL: break;
+    case PyInterpreterConfig_OWN_GIL: break;
+    default:
+        return _PyStatus_ERR("invalid interpreter config 'gil' value");
+    }
 
     return _PyStatus_OK();
 }
 
 
-static PyStatus
+static void
 init_interp_create_gil(PyThreadState *tstate, int gil)
 {
-    PyStatus status;
-
     /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
        only called here. */
     // XXX This is broken with a per-interpreter GIL.
     _PyEval_FiniGIL(tstate->interp);
 
     /* Auto-thread-state API */
-    status = _PyGILState_SetTstate(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    _PyGILState_SetTstate(tstate);
 
-    int own_gil;
-    switch (gil) {
-    case PyInterpreterConfig_DEFAULT_GIL: own_gil = 0; break;
-    case PyInterpreterConfig_SHARED_GIL: own_gil = 0; break;
-    case PyInterpreterConfig_OWN_GIL: own_gil = 1; break;
-    default:
-        return _PyStatus_ERR("invalid interpreter config 'gil' value");
-    }
+    int own_gil = (gil == PyInterpreterConfig_OWN_GIL);
 
     /* Create the GIL and take it */
-    status = _PyEval_InitGIL(tstate, own_gil);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    return _PyStatus_OK();
+    _PyEval_InitGIL(tstate, own_gil);
 }
 
 
@@ -657,10 +646,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     _PyThreadState_Bind(tstate);
 
-    status = init_interp_create_gil(tstate, config.gil);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    init_interp_create_gil(tstate, config.gil);
 
     *tstate_p = tstate;
     return _PyStatus_OK();
@@ -730,6 +716,11 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyContext_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyXI_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1742,6 +1733,7 @@ finalize_interp_types(PyInterpreterState *interp)
 {
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
+    _PyXI_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
@@ -2093,28 +2085,21 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp,
-                                               _PyThreadState_WHENCE_INTERP);
-    if (tstate == NULL) {
-        PyInterpreterState_Delete(interp);
-        *tstate_p = NULL;
-        return _PyStatus_OK();
-    }
-    _PyThreadState_Bind(tstate);
-
+    // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
-    int has_gil = 0;
+    PyThreadState *tstate = NULL;
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
        (or otherwise exist).  That applies whether or not the new
        interpreter has its own GIL (e.g. the main interpreter). */
+    if (save_tstate != NULL) {
+        _PyThreadState_Detach(save_tstate);
+    }
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *src_config;
     if (save_tstate != NULL) {
-        // XXX Might new_interpreter() have been called without the GIL held?
-        _PyThreadState_Detach(save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
@@ -2136,11 +2121,14 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         goto error;
     }
 
-    status = init_interp_create_gil(tstate, config->gil);
-    if (_PyStatus_EXCEPTION(status)) {
+    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INTERP);
+    if (tstate == NULL) {
+        status = _PyStatus_NO_MEMORY();
         goto error;
     }
-    has_gil = 1;
+
+    _PyThreadState_Bind(tstate);
+    init_interp_create_gil(tstate, config->gil);
 
     /* No objects have been created yet. */
 
@@ -2159,16 +2147,14 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 
 error:
     *tstate_p = NULL;
-
-    /* Oops, it didn't work.  Undo it all. */
-    if (has_gil) {
+    if (tstate != NULL) {
+        PyThreadState_Clear(tstate);
         _PyThreadState_Detach(tstate);
+        PyThreadState_Delete(tstate);
     }
     if (save_tstate != NULL) {
         _PyThreadState_Attach(save_tstate);
     }
-    PyThreadState_Clear(tstate);
-    PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
 
     return status;

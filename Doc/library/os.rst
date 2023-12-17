@@ -2062,6 +2062,7 @@ features:
       Although Windows supports :func:`chmod`, you can only set the file's
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
+      The default value of *follow_symlinks* is ``False`` on Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
@@ -2074,6 +2075,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support for the *follow_symlinks* argument on Windows.
 
 
 .. function:: chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True)
@@ -2160,12 +2164,18 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
+   ``lchmod()`` is not part of POSIX, but Unix implementations may have it if
+   changing the mode of symbolic links is supported.
+
    .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows, not Linux, FreeBSD >= 1.3, NetBSD >= 1.3, not OpenBSD
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support on Windows.
 
 .. function:: lchown(path, uid, gid)
 
@@ -4170,7 +4180,7 @@ to be ignored.
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
-   individual parameters simply become additional parameters to the :func:`execl\*`
+   individual parameters simply become additional parameters to the :func:`!execl\*`
    functions.  The "v" variants are good when the number of parameters is
    variable, with the arguments being passed in a list or tuple as the *args*
    parameter.  In either case, the arguments to the child process should start with
@@ -4373,6 +4383,11 @@ written in Python, such as a mail server's external command delivery program.
       If you use TLS sockets in an application calling ``fork()``, see
       the warning in the :mod:`ssl` documentation.
 
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
@@ -4411,6 +4426,11 @@ written in Python, such as a mail server's external command delivery program.
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
    .. audit-event:: os.forkpty "" os.forkpty
+
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
 
    .. versionchanged:: 3.12
       If Python is able to detect that your process has multiple
@@ -4708,7 +4728,7 @@ written in Python, such as a mail server's external command delivery program.
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
    individual parameters simply become additional parameters to the
-   :func:`spawnl\*` functions.  The "v" variants are good when the number of
+   :func:`!spawnl\*` functions.  The "v" variants are good when the number of
    parameters is variable, with the arguments being passed in a list or tuple as
    the *args* parameter.  In either case, the arguments to the child process must
    start with the name of the command being run.
@@ -4758,7 +4778,7 @@ written in Python, such as a mail server's external command delivery program.
           P_NOWAITO
 
    Possible values for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
-   functions.  If either of these values is given, the :func:`spawn\*` functions
+   functions.  If either of these values is given, the :func:`spawn\* <spawnl>` functions
    will return as soon as the new process has been created, with the process id as
    the return value.
 
@@ -4768,7 +4788,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: P_WAIT
 
    Possible value for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
-   functions.  If this is given as *mode*, the :func:`spawn\*` functions will not
+   functions.  If this is given as *mode*, the :func:`spawn\* <spawnl>` functions will not
    return until the new process has run to completion and will return the exit code
    of the process the run is successful, or ``-signal`` if a signal kills the
    process.

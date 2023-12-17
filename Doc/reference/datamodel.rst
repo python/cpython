@@ -601,7 +601,7 @@ Most of these attributes check the type of the assigned value:
        or ``None`` if unavailable.
 
    * - .. attribute:: function.__defaults__
-     - A :class:`tuple` containing default parameter values
+     - A :class:`tuple` containing default :term:`parameter` values
        for those parameters that have defaults,
        or ``None`` if no parameters have a default value.
 
@@ -614,18 +614,21 @@ Most of these attributes check the type of the assigned value:
        See also: :attr:`__dict__ attributes <object.__dict__>`.
 
    * - .. attribute:: function.__annotations__
-     - A :class:`dictionary <dict>` containing annotations of parameters.
+     - A :class:`dictionary <dict>` containing annotations of
+       :term:`parameters <parameter>`.
        The keys of the dictionary are the parameter names,
        and ``'return'`` for the return annotation, if provided.
        See also: :ref:`annotations-howto`.
 
    * - .. attribute:: function.__kwdefaults__
      - A :class:`dictionary <dict>` containing defaults for keyword-only
-       parameters.
+       :term:`parameters <parameter>`.
 
    * - .. attribute:: function.__type_params__
      - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
        a :ref:`generic function <generic-functions>`.
+
+       .. versionadded:: 3.12
 
 Function objects also support getting and setting arbitrary attributes, which
 can be used, for example, to attach metadata to functions.  Regular attribute
@@ -1387,7 +1390,8 @@ unwinds the execution stack, at each unwound level a traceback object is
 inserted in front of the current traceback.  When an exception handler is
 entered, the stack trace is made available to the program. (See section
 :ref:`try`.) It is accessible as the third item of the
-tuple returned by :func:`sys.exc_info`, and as the ``__traceback__`` attribute
+tuple returned by :func:`sys.exc_info`, and as the
+:attr:`~BaseException.__traceback__` attribute
 of the caught exception.
 
 When the program contains no suitable
