@@ -289,6 +289,10 @@ os
   ``False`` on Windows.
   (Contributed by Serhiy Storchaka in :gh:`59616`)
 
+* :func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
+  process use the current process environment.
+  (Contributed by Jakub Kulik in :gh:`113119`.)
+
 pathlib
 -------
 
