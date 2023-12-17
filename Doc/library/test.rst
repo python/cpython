@@ -1408,7 +1408,8 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
 .. class:: FakePath(path)
 
-   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   Simple :term:`path-like object`.  It implements the
+   :meth:`~os.PathLike.__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
    it will be raised in :meth:`!__fspath__`.
 
