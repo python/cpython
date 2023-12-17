@@ -346,8 +346,8 @@ the `load_tests protocol`_.
    ``python -m unittest discover -s root/namespace -t root``).
 
 .. versionchanged:: 3.11
-   Python 3.11 dropped the :term:`namespace packages <namespace package>`
-   support. It has been broken since Python 3.7. Start directory and
+   :mod:`unittest` dropped the :term:`namespace packages <namespace package>`
+   support in Python 3.11. It has been broken since Python 3.7. Start directory and
    subdirectories containing tests must be regular package that have
    ``__init__.py`` file.
 
