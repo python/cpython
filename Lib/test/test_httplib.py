@@ -1602,7 +1602,7 @@ class ExtendedReadTest(TestCase):
 
 class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
     _header, _body = ExtendedReadTest.lines.split('\r\n\r\n', 1)
-    lines = _header + f'Content-Length: {len(_body)}\r\n\r\n' + _body
+    lines = _header + f'\r\nContent-Length: {len(_body)}\r\n\r\n' + _body
 
 
 class ExtendedReadTestChunked(ExtendedReadTest):
