@@ -419,7 +419,7 @@ Optimizations
   in more situations.  Notably in the default of ``close_fds=True``
   on platforms such as modern Linux and Solaris where the C library provides
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.  On Linux this should
-  perform similar to our existing Linux :c:func:``!vfork`` based code.
+  perform similar to our existing Linux :c:func:`!vfork` based code.
   A private control knob :attr:`!subprocess._USE_POSIX_SPAWN` can be set to
   ``False`` if you need to force :func:`os.posix_spawn` not to be used.
   Please report your reasons and platform details in the CPython issue tracker
