@@ -282,6 +282,9 @@ class Path(_abc.PathBase, PurePath):
         # Transform an entry yielded from _scandir() into a path object.
         path = self.with_segments(entry.path)
         path._str = entry.name if str(self) == '.' else entry.path
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = self._tail + [entry.name]
         return path
 
     def absolute(self):
