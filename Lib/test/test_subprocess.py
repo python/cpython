@@ -3348,6 +3348,7 @@ class POSIXProcessTestCase(BaseTestCase):
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
                      "vfork() not enabled by configure.")
     @mock.patch("subprocess._fork_exec")
+    @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
     def test__use_vfork(self, mock_fork_exec):
         self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
         mock_fork_exec.side_effect = RuntimeError("just testing args")
@@ -3366,9 +3367,13 @@ class POSIXProcessTestCase(BaseTestCase):
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
                      "vfork() not enabled by configure.")
     @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
+    @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
     def test_vfork_used_when_expected(self):
         # This is a performance regression test to ensure we default to using
         # vfork() when possible.
+        # Technically this test could pass when posix_spawn is used as well
+        # because libc tends to implement that internally using vfork. But
+        # that'd just be testing a libc+kernel implementation detail.
         strace_binary = "/usr/bin/strace"
         # The only system calls we are interested in.
         strace_filter = "--trace=clone,clone2,clone3,fork,vfork,exit,exit_group"

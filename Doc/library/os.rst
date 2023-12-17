@@ -4601,10 +4601,17 @@ written in Python, such as a mail server's external command delivery program.
 
       Performs ``os.dup2(fd, new_fd)``.
 
+   .. data:: POSIX_SPAWN_CLOSEFROM
+
+      (``os.POSIX_SPAWN_CLOSEFROM``, *fd*)
+
+      Performs ``os.closerange(fd, INF)``.
+
    These tuples correspond to the C library
    :c:func:`!posix_spawn_file_actions_addopen`,
-   :c:func:`!posix_spawn_file_actions_addclose`, and
-   :c:func:`!posix_spawn_file_actions_adddup2` API calls used to prepare
+   :c:func:`!posix_spawn_file_actions_addclose`,
+   :c:func:`!posix_spawn_file_actions_adddup2`, and
+   :c:func:`!posix_spawn_file_actions_addclosefrom_np` API calls used to prepare
    for the :c:func:`!posix_spawn` call itself.
 
    The *setpgroup* argument will set the process group of the child to the value
@@ -4648,6 +4655,10 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionchanged:: 3.13
       *env* parameter accepts ``None``.
+
+   .. versionchanged:: 3.13
+      ``os.POSIX_SPAWN_CLOSEFROM`` is available on platforms where
+      :c:func:`!posix_spawn_file_actions_addclosefrom_np` exists.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
