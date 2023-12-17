@@ -25,7 +25,6 @@ except ImportError:
     grp = pwd = None
 
 
-# Make sure any symbolic links in the base test path are resolved.
 only_nt = unittest.skipIf(os.name != 'nt',
                           'test requires a Windows-compatible system')
 only_posix = unittest.skipIf(os.name == 'nt',
@@ -1262,7 +1261,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(target.exists())
         # Linking to a str of a relative path.
         link2 = P / 'dirA' / 'fileAAA'
-        target2 = self.pathmod.join(self.base, 'fileA')
+        target2 = self.pathmod.join(TESTFN, 'fileA')
         link2.hardlink_to(target2)
         self.assertEqual(os.stat(target2).st_size, size)
         self.assertTrue(link2.exists())
@@ -1287,7 +1286,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Renaming to a str of a relative path.
-        r = self.pathmod.join(self.base, 'fileAAA')
+        r = self.pathmod.join(TESTFN, 'fileAAA')
         renamed_q = q.rename(r)
         self.assertEqual(renamed_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
@@ -1304,7 +1303,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Replacing another (existing) path.
-        r = self.pathmod.join(self.base, 'dirB', 'fileB')
+        r = self.pathmod.join(TESTFN, 'dirB', 'fileB')
         replaced_q = q.replace(r)
         self.assertEqual(replaced_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)

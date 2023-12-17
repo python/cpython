@@ -56,6 +56,9 @@ class DummyPurePathTest(unittest.TestCase):
     cls = DummyPurePath
     base = f'/BASE/{TESTFN}'
 
+    # Make sure any symbolic links in the base test path are resolved.
+    base = os.path.realpath(TESTFN)
+
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
     equivalences = {
@@ -813,7 +816,7 @@ class DummyPathTest(DummyPurePathTest):
     cls = DummyPath
     can_symlink = False
 
-    # (BASE)
+    # (self.base)
     #  |
     #  |-- brokenLink -> non-existing
     #  |-- dirA
@@ -1387,10 +1390,9 @@ class DummyPathTest(DummyPurePathTest):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(self.base, 'foo', 'in', 'spam'), False)
         # Now create absolute symlinks.
-        pathmod = self.pathmod
         d = self.tempdir()
         P(self.base, 'dirA', 'linkX').symlink_to(d)
-        P(self.base, str(d), 'linkY').symlink_to(pathmod.join(self.base, 'dirB'))
+        P(self.base, str(d), 'linkY').symlink_to(self.pathmod.join(self.base, 'dirB'))
         p = P(self.base, 'dirA', 'linkX', 'linkY', 'fileB')
         self._check_resolve_absolute(p, P(self.base, 'dirB', 'fileB'))
         # Non-strict
@@ -1445,12 +1447,11 @@ class DummyPathTest(DummyPurePathTest):
         p = self.cls(self.base, 'linkZ', 'foo')
         self.assertEqual(p.resolve(strict=False), p)
         # Loops with absolute symlinks.
-        pathmod = self.pathmod
-        self.cls(self.base, 'linkU').symlink_to(pathmod.join(self.base, 'linkU/inside'))
+        self.cls(self.base, 'linkU').symlink_to(self.pathmod.join(self.base, 'linkU/inside'))
         self._check_symlink_loop(self.base, 'linkU')
-        self.cls(self.base, 'linkV').symlink_to(pathmod.join(self.base, 'linkV'))
+        self.cls(self.base, 'linkV').symlink_to(self.pathmod.join(self.base, 'linkV'))
         self._check_symlink_loop(self.base, 'linkV')
-        self.cls(self.base, 'linkW').symlink_to(pathmod.join(self.base, 'linkW/../linkW'))
+        self.cls(self.base, 'linkW').symlink_to(self.pathmod.join(self.base, 'linkW/../linkW'))
         self._check_symlink_loop(self.base, 'linkW')
         # Non-strict
         q = self.cls(self.base, 'linkW', 'foo')
