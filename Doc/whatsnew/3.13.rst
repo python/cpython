@@ -293,6 +293,11 @@ os
   process use the current process environment.
   (Contributed by Jakub Kulik in :gh:`113119`.)
 
+* :func:`os.posix_spawn` gains an :attr:`os.POSIX_SPAWN_CLOSEFROM` attribute for
+  use in ``file_actions=`` on platforms that support
+  :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
+  (Contributed by Jakub Kulik in :gh:`113117`.)
+
 pathlib
 -------
 
@@ -341,6 +346,21 @@ sqlite3
 * A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
+subprocess
+----------
+
+* The :mod:`subprocess` module now uses the :func:`os.posix_spawn` function in
+  more situations.  Notably in the default case of ``close_fds=True`` on more
+  recent versions of platforms including Linux, FreeBSD, and Solaris where the
+  C library provides :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
+  On Linux this should perform similar to our existing Linux :c:func:`!vfork`
+  based code.  A private control knob :attr:`!subprocess._USE_POSIX_SPAWN` can
+  be set to ``False`` if you need to force :mod:`subprocess` not to ever use
+  :func:`os.posix_spawn`.  Please report your reason and platform details in
+  the CPython issue tracker if you set this so that we can improve our API
+  selection logic for everyone.
+  (Contributed by Jakub Kulik in :gh:`113117`.)
 
 sys
 ---
@@ -414,6 +434,12 @@ Optimizations
 
 * :func:`textwrap.indent` is now ~30% faster than before for large input.
   (Contributed by Inada Naoki in :gh:`107369`.)
+
+* The :mod:`subprocess` module uses :func:`os.posix_spawn` in more situations
+  including the default where ``close_fds=True`` on many modern platforms.  This
+  should provide a noteworthy performance increase launching processes on
+  FreeBSD and Solaris.  See the ``subprocess`` section above for details.
+  (Contributed by Jakub Kulik in :gh:`113117`.)
 
 
 Deprecated
