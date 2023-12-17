@@ -691,6 +691,8 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
         elif self.length is not None:
             self.length -= len(result)
+            if not self.length:
+                self._close_conn()
         return result
 
     def _read1_chunked(self, n):

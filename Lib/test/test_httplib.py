@@ -1546,11 +1546,14 @@ class ExtendedReadTest(TestCase):
         resp = self.resp
         self._verify_readline(self.resp.readline, self.lines_expected)
 
-    def _verify_readline(self, readline, expected):
+    def test_readline_without_limit(self):
+        self._verify_readline(self.resp.readline, self.lines_expected, limit=-1)
+
+    def _verify_readline(self, readline, expected, limit=5):
         all = []
         while True:
             # short readlines
-            line = readline(5)
+            line = readline(limit)
             if line and line != b"foo":
                 if len(line) < 5:
                     self.assertTrue(line.endswith(b"\n"))
@@ -1558,6 +1561,7 @@ class ExtendedReadTest(TestCase):
             if not line:
                 break
         self.assertEqual(b"".join(all), expected)
+        self.assertTrue(self.resp.isclosed())
 
     def test_read1(self):
         resp = self.resp
