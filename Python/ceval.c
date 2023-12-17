@@ -1074,7 +1074,7 @@ deoptimize:
     frame->return_offset = 0;  // Don't leave this random
 
     // Check if there is a side-exit executor here already.
-    int pc = next_uop - 1 - current_executor->trace;
+    int pc = (int)(next_uop - 1 - current_executor->trace);
     _PyExecutorObject **pexecutor = current_executor->executors + pc;
     if (*pexecutor != NULL) {
 #ifdef Py_DEBUG
