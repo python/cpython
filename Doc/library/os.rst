@@ -4570,7 +4570,8 @@ written in Python, such as a mail server's external command delivery program.
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
    The positional-only arguments *path*, *args*, and *env* are similar to
-   :func:`execve`.
+   :func:`execve`. *env* is allowed to be ``None``, in which case current
+   process' environment is used.
 
    The *path* parameter is the path to the executable file.  The *path* should
    contain a directory.  Use :func:`posix_spawnp` to pass an executable file
@@ -4644,6 +4645,9 @@ written in Python, such as a mail server's external command delivery program.
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      *env* parameter accepts ``None``.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
