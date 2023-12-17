@@ -1,0 +1,2 @@
+Fix a bug that :func:`urllib.robotparser` will raise exception when parse
+weird robot.txt.
