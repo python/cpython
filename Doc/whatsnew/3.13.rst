@@ -292,7 +292,7 @@ os
 * :func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
   process use the current process environment.
   (Contributed by Jakub Kulik in :gh:`113119`.)
-  
+
 pathlib
 -------
 
