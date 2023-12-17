@@ -3,8 +3,11 @@ import unittest
 from test import support
 from io import StringIO
 from pstats import SortKey
+from enum import StrEnum, _test_simple_enum
 
+import os
 import pstats
+import tempfile
 import cProfile
 
 class AddCallersTestCase(unittest.TestCase):
@@ -34,6 +37,33 @@ class StatsTestCase(unittest.TestCase):
         stream = StringIO()
         stats = pstats.Stats(stream=stream)
         stats.add(self.stats, self.stats)
+
+    def test_dump_and_load_works_correctly(self):
+        temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            self.stats.dump_stats(filename=temp_storage_new.name)
+            tmp_stats = pstats.Stats(temp_storage_new.name)
+            self.assertEqual(self.stats.stats, tmp_stats.stats)
+        finally:
+            temp_storage_new.close()
+            os.remove(temp_storage_new.name)
+
+    def test_load_equivalent_to_init(self):
+        stats = pstats.Stats()
+        self.temp_storage = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            cProfile.run('import os', filename=self.temp_storage.name)
+            stats.load_stats(self.temp_storage.name)
+            created = pstats.Stats(self.temp_storage.name)
+            self.assertEqual(stats.stats, created.stats)
+        finally:
+            self.temp_storage.close()
+            os.remove(self.temp_storage.name)
+
+    def test_loading_wrong_types(self):
+        stats = pstats.Stats()
+        with self.assertRaises(TypeError):
+            stats.load_stats(42)
 
     def test_sort_stats_int(self):
         valid_args = {-1: 'stdname',
@@ -67,6 +97,25 @@ class StatsTestCase(unittest.TestCase):
             self.assertEqual(
                     self.stats.sort_type,
                     self.stats.sort_arg_dict_default[member.value][-1])
+        class CheckedSortKey(StrEnum):
+            CALLS = 'calls', 'ncalls'
+            CUMULATIVE = 'cumulative', 'cumtime'
+            FILENAME = 'filename', 'module'
+            LINE = 'line'
+            NAME = 'name'
+            NFL = 'nfl'
+            PCALLS = 'pcalls'
+            STDNAME = 'stdname'
+            TIME = 'time', 'tottime'
+            def __new__(cls, *values):
+                value = values[0]
+                obj = str.__new__(cls, value)
+                obj._value_ = value
+                for other_value in values[1:]:
+                    cls._value2member_map_[other_value] = obj
+                obj._all_values = values
+                return obj
+        _test_simple_enum(CheckedSortKey, SortKey)
 
     def test_sort_starts_mix(self):
         self.assertRaises(TypeError, self.stats.sort_stats,
@@ -94,6 +143,10 @@ class StatsTestCase(unittest.TestCase):
         self.assertIn('pass1', funcs_called)
         self.assertIn('pass2', funcs_called)
         self.assertIn('pass3', funcs_called)
+
+    def test_SortKey_enum(self):
+        self.assertEqual(SortKey.FILENAME, 'filename')
+        self.assertNotEqual(SortKey.FILENAME, SortKey.CALLS)
 
 if __name__ == "__main__":
     unittest.main()
