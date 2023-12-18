@@ -1,1 +1,0 @@
-Set exit code when :mod:`tabnanny` CLI exits on error.

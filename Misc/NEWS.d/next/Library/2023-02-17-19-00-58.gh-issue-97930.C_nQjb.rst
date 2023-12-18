@@ -1,4 +1,0 @@
-Apply changes from `importlib_resources 5.12
-<https://importlib-resources.readthedocs.io/en/latest/history.html#v5-12-0>`_,
-including fix for ``MultiplexedPath`` to support directories in multiple
-namespaces (python/importlib_resources#265).

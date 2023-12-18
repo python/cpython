@@ -1,7 +1,9 @@
 import re
 import pickle
 import unittest
+import warnings
 import importlib.metadata
+import contextlib
 
 try:
     import pyfakefs.fake_filesystem_unittest as ffs
@@ -9,6 +11,7 @@ except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
 
 from . import fixtures
+from ._context import suppress
 from importlib.metadata import (
     Distribution,
     EntryPoint,
@@ -20,6 +23,13 @@ from importlib.metadata import (
     packages_distributions,
     version,
 )
+
+
+@contextlib.contextmanager
+def suppress_known_deprecation():
+    with warnings.catch_warnings(record=True) as ctx:
+        warnings.simplefilter('default', category=DeprecationWarning)
+        yield ctx
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -37,7 +47,7 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
     def test_package_not_found_mentions_metadata(self):
         """
         When a package is not found, that could indicate that the
-        packgae is not installed or that it is installed without
+        package is not installed or that it is installed without
         metadata. Ensure the exception mentions metadata to help
         guide users toward the cause. See #124.
         """
@@ -46,15 +56,19 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
 
         assert "metadata" in str(ctx.exception)
 
-    def test_new_style_classes(self):
-        self.assertIsInstance(Distribution, type)
+    # expected to fail until ABC is enforced
+    @suppress(AssertionError)
+    @suppress_known_deprecation()
+    def test_abc_enforced(self):
+        with self.assertRaises(TypeError):
+            type('DistributionSubclass', (Distribution,), {})()
 
     @fixtures.parameterize(
         dict(name=None),
         dict(name=''),
     )
     def test_invalid_inputs_to_from_name(self, name):
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             Distribution.from_name(name)
 
 
@@ -172,11 +186,21 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         assert meta['Description'] == 'pôrˈtend'
 
 
-class DiscoveryTests(fixtures.EggInfoPkg, fixtures.DistInfoPkg, unittest.TestCase):
+class DiscoveryTests(
+    fixtures.EggInfoPkg,
+    fixtures.EggInfoPkgPipInstalledNoToplevel,
+    fixtures.EggInfoPkgPipInstalledNoModules,
+    fixtures.EggInfoPkgSourcesFallback,
+    fixtures.DistInfoPkg,
+    unittest.TestCase,
+):
     def test_package_discovery(self):
         dists = list(distributions())
         assert all(isinstance(dist, Distribution) for dist in dists)
         assert any(dist.metadata['Name'] == 'egginfo-pkg' for dist in dists)
+        assert any(dist.metadata['Name'] == 'egg_with_module-pkg' for dist in dists)
+        assert any(dist.metadata['Name'] == 'egg_with_no_modules-pkg' for dist in dists)
+        assert any(dist.metadata['Name'] == 'sources_fallback-pkg' for dist in dists)
         assert any(dist.metadata['Name'] == 'distinfo-pkg' for dist in dists)
 
     def test_invalid_usage(self):
@@ -324,3 +348,79 @@ class PackagesDistributionsTest(
             prefix=self.site_dir,
         )
         packages_distributions()
+
+    def test_packages_distributions_all_module_types(self):
+        """
+        Test top-level modules detected on a package without 'top-level.txt'.
+        """
+        suffixes = importlib.machinery.all_suffixes()
+        metadata = dict(
+            METADATA="""
+                Name: all_distributions
+                Version: 1.0.0
+                """,
+        )
+        files = {
+            'all_distributions-1.0.0.dist-info': metadata,
+        }
+        for i, suffix in enumerate(suffixes):
+            files.update(
+                {
+                    f'importable-name {i}{suffix}': '',
+                    f'in_namespace_{i}': {
+                        f'mod{suffix}': '',
+                    },
+                    f'in_package_{i}': {
+                        '__init__.py': '',
+                        f'mod{suffix}': '',
+                    },
+                }
+            )
+        metadata.update(RECORD=fixtures.build_record(files))
+        fixtures.build_files(files, prefix=self.site_dir)
+
+        distributions = packages_distributions()
+
+        for i in range(len(suffixes)):
+            assert distributions[f'importable-name {i}'] == ['all_distributions']
+            assert distributions[f'in_namespace_{i}'] == ['all_distributions']
+            assert distributions[f'in_package_{i}'] == ['all_distributions']
+
+        assert not any(name.endswith('.dist-info') for name in distributions)
+
+
+class PackagesDistributionsEggTest(
+    fixtures.EggInfoPkg,
+    fixtures.EggInfoPkgPipInstalledNoToplevel,
+    fixtures.EggInfoPkgPipInstalledNoModules,
+    fixtures.EggInfoPkgSourcesFallback,
+    unittest.TestCase,
+):
+    def test_packages_distributions_on_eggs(self):
+        """
+        Test old-style egg packages with a variation of 'top_level.txt',
+        'SOURCES.txt', and 'installed-files.txt', available.
+        """
+        distributions = packages_distributions()
+
+        def import_names_from_package(package_name):
+            return {
+                import_name
+                for import_name, package_names in distributions.items()
+                if package_name in package_names
+            }
+
+        # egginfo-pkg declares one import ('mod') via top_level.txt
+        assert import_names_from_package('egginfo-pkg') == {'mod'}
+
+        # egg_with_module-pkg has one import ('egg_with_module') inferred from
+        # installed-files.txt (top_level.txt is missing)
+        assert import_names_from_package('egg_with_module-pkg') == {'egg_with_module'}
+
+        # egg_with_no_modules-pkg should not be associated with any import names
+        # (top_level.txt is empty, and installed-files.txt has no .py files)
+        assert import_names_from_package('egg_with_no_modules-pkg') == set()
+
+        # sources_fallback-pkg has one import ('sources_fallback') inferred from
+        # SOURCES.txt (top_level.txt and installed-files.txt is missing)
+        assert import_names_from_package('sources_fallback-pkg') == {'sources_fallback'}

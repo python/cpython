@@ -1,2 +1,0 @@
-Speed up :class:`pathlib.PurePath` construction by calling
-:func:`os.path.join` only when two or more arguments are given.

@@ -1,1 +1,0 @@
-Add a new decorator :func:`typing.override`. See :pep:`698` for details. Patch by Steven Troxler.

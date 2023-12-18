@@ -38,6 +38,17 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
+class SomethingElse(object):
+    def __init__(self):
+        self._instance = None
+
+    @property
+    def instance(self):
+        if not self._instance:
+            self._instance = 'object'
+        return self._instance
+
+
 class Typos():
     autospect = None
     auto_spec = None
@@ -234,6 +245,14 @@ class MockTest(unittest.TestCase):
             with mock.patch('builtins.open', mock.mock_open()):
                 mock.mock_open()  # should still be valid with open() mocked
 
+    def test_explicit_parent(self):
+        parent = Mock()
+        mock1 = Mock(parent=parent, return_value=None)
+        mock1(1, 2, 3)
+        mock2 = Mock(parent=parent, return_value=None)
+        mock2(4, 5, 6)
+
+        self.assertEqual(parent.mock_calls, [call(1, 2, 3), call(4, 5, 6)])
 
     def test_reset_mock(self):
         parent = Mock()
@@ -1039,7 +1058,7 @@ class MockTest(unittest.TestCase):
 
         actual = 'not called.'
         expected = "mock(1, '2', 3, bar='foo')"
-        message = 'expected call not found.\nExpected: %s\nActual: %s'
+        message = 'expected call not found.\nExpected: %s\n  Actual: %s'
         self.assertRaisesWithMsg(
             AssertionError, message % (expected, actual),
             mock.assert_called_with, 1, '2', 3, bar='foo'
@@ -1054,7 +1073,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(1, '2', 3, bar='foo')"
-            message = 'expected call not found.\nExpected: %s\nActual: %s'
+            message = 'expected call not found.\nExpected: %s\n  Actual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, 1, '2', 3, bar='foo'
@@ -1064,7 +1083,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(bar='foo')"
-            message = 'expected call not found.\nExpected: %s\nActual: %s'
+            message = 'expected call not found.\nExpected: %s\n  Actual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, bar='foo'
@@ -1074,7 +1093,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(1, 2, 3)"
-            message = 'expected call not found.\nExpected: %s\nActual: %s'
+            message = 'expected call not found.\nExpected: %s\n  Actual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, 1, 2, 3
@@ -1084,7 +1103,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo()"
-            message = 'expected call not found.\nExpected: %s\nActual: %s'
+            message = 'expected call not found.\nExpected: %s\n  Actual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual), meth
             )
@@ -1533,7 +1552,7 @@ class MockTest(unittest.TestCase):
                 '^{}$'.format(
                     re.escape('Calls not found.\n'
                               'Expected: [call()]\n'
-                              'Actual: [call(1)]'))) as cm:
+                              '  Actual: [call(1)]'))) as cm:
             mock.assert_has_calls([call()])
         self.assertIsNone(cm.exception.__cause__)
 
@@ -1545,7 +1564,7 @@ class MockTest(unittest.TestCase):
                         'Error processing expected calls.\n'
                         "Errors: [None, TypeError('too many positional arguments')]\n"
                         "Expected: [call(), call(1, 2)]\n"
-                        'Actual: [call(1)]'))) as cm:
+                        '  Actual: [call(1)]'))) as cm:
             mock.assert_has_calls([call(), call(1, 2)])
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
@@ -2251,7 +2270,7 @@ class MockTest(unittest.TestCase):
         class Foo():
             one = 'one'
         # patch, patch.object and create_autospec need to check for misspelled
-        # arguments explicitly and throw a RuntimError if found.
+        # arguments explicitly and throw a RuntimeError if found.
         with self.assertRaises(RuntimeError):
             with patch(f'{__name__}.Something.meth', autospect=True): pass
         with self.assertRaises(RuntimeError):
@@ -2293,6 +2312,26 @@ class MockTest(unittest.TestCase):
             f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
             pass
 
+    def test_property_not_called_with_spec_mock(self):
+        obj = SomethingElse()
+        self.assertIsNone(obj._instance, msg='before mock')
+        mock = Mock(spec=obj)
+        self.assertIsNone(obj._instance, msg='after mock')
+        self.assertEqual('object', obj.instance)
+
+    def test_decorated_async_methods_with_spec_mock(self):
+        class Foo():
+            @classmethod
+            async def class_method(cls):
+                pass
+            @staticmethod
+            async def static_method():
+                pass
+            async def method(self):
+                pass
+        mock = Mock(spec=Foo)
+        for m in (mock.method, mock.class_method, mock.static_method):
+            self.assertIsInstance(m, AsyncMock)
 
 if __name__ == '__main__':
     unittest.main()
