@@ -239,6 +239,8 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
+
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -283,8 +285,17 @@ _Py_ThreadId(void)
     // Both GCC and Clang have supported __builtin_thread_pointer
     // for s390 from long time ago.
     tid = (uintptr_t)__builtin_thread_pointer();
+#elif defined(__riscv)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // tp is Thread Pointer provided by the RISC-V ABI.
+    __asm__ ("mv %0, tp" : "=r" (tid));
+    #endif
 #else
-  # error "define _Py_ThreadId for this platform"
+    // Fallback to a portable implementation if we do not have a faster
+    // platform-specific implementation.
+    tid = _Py_GetThreadLocal_Addr();
 #endif
   return tid;
 }
