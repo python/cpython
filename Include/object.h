@@ -292,12 +292,10 @@ _Py_ThreadId(void)
     // tp is Thread Pointer provided by the RISC-V ABI.
     __asm__ ("mv %0, tp" : "=r" (tid));
     #endif
-#elif defined(thread_local) || defined(__GNUC__)
+#else
     // Fallback to a portable implementation if we do not have a faster
     // platform-specific implementation.
     tid = _Py_GetThreadLocal_Addr();
-#else
-  # error "define _Py_ThreadId for this platform"
 #endif
   return tid;
 }
