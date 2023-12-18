@@ -457,6 +457,7 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *left;
             PyObject *arg2;
             PyObject *res;
+            /* Skip 5 cache entries */
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             arg2 = stack_pointer[-3];
@@ -467,6 +468,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
     """
         self.run_cases_test(input, output)
+
     def test_unused_caches(self):
         input = """
         inst(OP, (unused/1, unused/2 --)) {
@@ -478,6 +480,8 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             body();
             DISPATCH();
         }
