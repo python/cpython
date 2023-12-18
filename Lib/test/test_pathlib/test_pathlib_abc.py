@@ -365,6 +365,12 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(p.parent.parent, P('/a'))
         self.assertEqual(p.parent.parent.parent, P('/'))
         self.assertEqual(p.parent.parent.parent.parent, P('/'))
+        # Trailing sep
+        p = P('/a/b/c/')
+        self.assertEqual(p.parent, P('/a/b'))
+        self.assertEqual(p.parent.parent, P('/a'))
+        self.assertEqual(p.parent.parent.parent, P('/'))
+        self.assertEqual(p.parent.parent.parent.parent, P('/'))
 
     def test_parents_common(self):
         # Relative
@@ -393,6 +399,27 @@ class DummyPurePathTest(unittest.TestCase):
             par[0] = p
         # Anchored
         p = P('/a/b/c')
+        par = p.parents
+        self.assertEqual(len(par), 3)
+        self.assertEqual(par[0], P('/a/b'))
+        self.assertEqual(par[1], P('/a'))
+        self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[-1], P('/'))
+        self.assertEqual(par[-2], P('/a'))
+        self.assertEqual(par[-3], P('/a/b'))
+        self.assertEqual(par[0:1], (P('/a/b'),))
+        self.assertEqual(par[:2], (P('/a/b'), P('/a')))
+        self.assertEqual(par[:-1], (P('/a/b'), P('/a')))
+        self.assertEqual(par[1:], (P('/a'), P('/')))
+        self.assertEqual(par[::2], (P('/a/b'), P('/')))
+        self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
+        self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
+        with self.assertRaises(IndexError):
+            par[-4]
+        with self.assertRaises(IndexError):
+            par[3]
+        # Trailing sep
+        p = P('/a/b/c/')
         par = p.parents
         self.assertEqual(len(par), 3)
         self.assertEqual(par[0], P('/a/b'))
@@ -441,10 +468,13 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('.').name, '')
         self.assertEqual(P('/').name, '')
         self.assertEqual(P('a/b').name, 'b')
+        self.assertEqual(P('a/b/').name, 'b')
         self.assertEqual(P('/a/b').name, 'b')
+        self.assertEqual(P('/a/b/').name, 'b')
         self.assertEqual(P('/a/b/.').name, 'b')
         self.assertEqual(P('a/b.py').name, 'b.py')
         self.assertEqual(P('/a/b.py').name, 'b.py')
+        self.assertEqual(P('/etc/cron.d/').name, 'cron.d')
 
     def test_suffix_common(self):
         P = self.cls
@@ -453,7 +483,9 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('..').suffix, '')
         self.assertEqual(P('/').suffix, '')
         self.assertEqual(P('a/b').suffix, '')
+        self.assertEqual(P('a/b/').suffix, '')
         self.assertEqual(P('/a/b').suffix, '')
+        self.assertEqual(P('/a/b/').suffix, '')
         self.assertEqual(P('/a/b/.').suffix, '')
         self.assertEqual(P('a/b.py').suffix, '.py')
         self.assertEqual(P('/a/b.py').suffix, '.py')
@@ -465,6 +497,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.tar.gz').suffix, '.gz')
         self.assertEqual(P('a/Some name. Ending with a dot.').suffix, '')
         self.assertEqual(P('/a/Some name. Ending with a dot.').suffix, '')
+        self.assertEqual(P('/etc/cron.d/').suffix, '.d')
 
     def test_suffixes_common(self):
         P = self.cls
@@ -472,7 +505,9 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('.').suffixes, [])
         self.assertEqual(P('/').suffixes, [])
         self.assertEqual(P('a/b').suffixes, [])
+        self.assertEqual(P('a/b/').suffixes, [])
         self.assertEqual(P('/a/b').suffixes, [])
+        self.assertEqual(P('/a/b/').suffixes, [])
         self.assertEqual(P('/a/b/.').suffixes, [])
         self.assertEqual(P('a/b.py').suffixes, ['.py'])
         self.assertEqual(P('/a/b.py').suffixes, ['.py'])
@@ -484,6 +519,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.tar.gz').suffixes, ['.tar', '.gz'])
         self.assertEqual(P('a/Some name. Ending with a dot.').suffixes, [])
         self.assertEqual(P('/a/Some name. Ending with a dot.').suffixes, [])
+        self.assertEqual(P('/etc/cron.d/').suffixes, ['.d'])
 
     def test_stem_common(self):
         P = self.cls
@@ -492,12 +528,14 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('..').stem, '..')
         self.assertEqual(P('/').stem, '')
         self.assertEqual(P('a/b').stem, 'b')
+        self.assertEqual(P('a/b/').stem, 'b')
         self.assertEqual(P('a/b.py').stem, 'b')
         self.assertEqual(P('a/.hgrc').stem, '.hgrc')
         self.assertEqual(P('a/.hg.rc').stem, '.hg')
         self.assertEqual(P('a/b.tar.gz').stem, 'b.tar')
         self.assertEqual(P('a/Some name. Ending with a dot.').stem,
                          'Some name. Ending with a dot.')
+        self.assertEqual(P('/etc/cron.d/').stem, 'cron')
 
     def test_with_name_common(self):
         P = self.cls
@@ -507,6 +545,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.py').with_name('d.xml'), P('/a/d.xml'))
         self.assertEqual(P('a/Dot ending.').with_name('d.xml'), P('a/d.xml'))
         self.assertEqual(P('/a/Dot ending.').with_name('d.xml'), P('/a/d.xml'))
+        self.assertEqual(P('/etc/cron.d/').with_name('tron.g'), P('/etc/tron.g/'))
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
@@ -525,6 +564,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
         self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d'))
         self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d'))
+        self.assertEqual(P('/etc/cron.d/').with_stem('tron'), P('/etc/tron.d/'))
         self.assertRaises(ValueError, P('').with_stem, 'd')
         self.assertRaises(ValueError, P('.').with_stem, 'd')
         self.assertRaises(ValueError, P('/').with_stem, 'd')
@@ -540,9 +580,11 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b').with_suffix('.gz'), P('/a/b.gz'))
         self.assertEqual(P('a/b.py').with_suffix('.gz'), P('a/b.gz'))
         self.assertEqual(P('/a/b.py').with_suffix('.gz'), P('/a/b.gz'))
+        self.assertEqual(P('/etc/cron.d/').with_suffix('.g'), P('/etc/cron.g/'))
         # Stripping suffix.
         self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
         self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
+        self.assertEqual(P('/etc/cron.d/').with_suffix(''), P('/etc/cron/'))
         # Path doesn't have a "filename" component.
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
@@ -636,6 +678,25 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
 
+    def test_relative_to_trailing_sep(self):
+        P = self.cls
+        self.assertEqual(P('foo').relative_to('foo'), P())
+        self.assertEqual(P('foo').relative_to('foo/'), P())
+        self.assertEqual(P('foo/').relative_to('foo'), P())
+        self.assertEqual(P('foo/').relative_to('foo/'), P())
+        self.assertEqual(P('foo/bar').relative_to('foo'), P('bar'))
+        self.assertEqual(P('foo/bar').relative_to('foo/'), P('bar'))
+        self.assertEqual(P('foo/bar/').relative_to('foo'), P('bar/'))
+        self.assertEqual(P('foo/bar/').relative_to('foo/'), P('bar/'))
+        self.assertEqual(P('foo').relative_to('foo/bar', walk_up=True), P('..'))
+        self.assertEqual(P('foo').relative_to('foo/bar/', walk_up=True), P('..'))
+        self.assertEqual(P('foo/').relative_to('foo/bar', walk_up=True), P('../'))
+        self.assertEqual(P('foo/').relative_to('foo/bar/', walk_up=True), P('../'))
+        self.assertEqual(P('foo/oof').relative_to('foo/bar', walk_up=True), P('../oof'))
+        self.assertEqual(P('foo/oof').relative_to('foo/bar/', walk_up=True), P('../oof'))
+        self.assertEqual(P('foo/oof/').relative_to('foo/bar', walk_up=True), P('../oof/'))
+        self.assertEqual(P('foo/oof/').relative_to('foo/bar/', walk_up=True), P('../oof/'))
+
     def test_is_relative_to_common(self):
         P = self.cls
         p = P('a/b')
@@ -670,6 +731,25 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertFalse(p.is_relative_to(P()))
         self.assertFalse(p.is_relative_to(''))
         self.assertFalse(p.is_relative_to(P('a')))
+
+    def test_is_relative_to_trailing_sep(self):
+        P = self.cls
+        self.assertTrue(P('foo').is_relative_to('foo'))
+        self.assertTrue(P('foo').is_relative_to('foo/'))
+        self.assertTrue(P('foo/').is_relative_to('foo'))
+        self.assertTrue(P('foo/').is_relative_to('foo/'))
+        self.assertTrue(P('foo/bar').is_relative_to('foo'))
+        self.assertTrue(P('foo/bar').is_relative_to('foo/'))
+        self.assertTrue(P('foo/bar/').is_relative_to('foo'))
+        self.assertTrue(P('foo/bar/').is_relative_to('foo/'))
+        self.assertFalse(P('foo').is_relative_to('foo/bar'))
+        self.assertFalse(P('foo').is_relative_to('foo/bar/'))
+        self.assertFalse(P('foo/').is_relative_to('foo/bar'))
+        self.assertFalse(P('foo/').is_relative_to('foo/bar/'))
+        self.assertFalse(P('foo/oof').is_relative_to('foo/bar'))
+        self.assertFalse(P('foo/oof').is_relative_to('foo/bar/'))
+        self.assertFalse(P('foo/oof/').is_relative_to('foo/bar'))
+        self.assertFalse(P('foo/oof/').is_relative_to('foo/bar/'))
 
 
 #
