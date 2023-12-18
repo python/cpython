@@ -148,7 +148,7 @@ class Stack:
                 cast = "(PyObject *)" if var.type else ""
                 if var.name != "unused" and not var.is_array():
                     if var.condition:
-                        out.emit(f" if ({var.condition}) ")
+                        out.emit(f"if ({var.condition}) ")
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
                     )

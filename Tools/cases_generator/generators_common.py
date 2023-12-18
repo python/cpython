@@ -22,8 +22,10 @@ DEFAULT_INPUT = (ROOT / "Python/bytecodes.c").absolute().as_posix()
 
 
 def root_relative_path(filename: str) -> str:
-    return Path(filename).absolute().relative_to(ROOT).as_posix()
-
+    try:
+        return Path(filename).absolute().relative_to(ROOT).as_posix()
+    except ValueError:
+        return filename
 
 def write_header(generator: str, sources: list[str], outfile: TextIO) -> None:
     outfile.write(

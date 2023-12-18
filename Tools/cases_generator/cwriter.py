@@ -38,7 +38,8 @@ class CWriter:
         parens = txt.count("(") - txt.count(")")
         if parens < 0:
             self.indents.pop()
-        elif "}" in txt or is_label(txt):
+        braces = txt.count("{") - txt.count("}")
+        if braces < 0 or is_label(txt):
             self.indents.pop()
 
     def maybe_indent(self, txt: str) -> None:
@@ -50,11 +51,13 @@ class CWriter:
             self.indents.append(offset)
         if is_label(txt):
             self.indents.append(self.indents[-1] + 4)
-        elif "{" in txt:
-            if 'extern "C"' in txt:
-                self.indents.append(self.indents[-1])
-            else:
-                self.indents.append(self.indents[-1] + 4)
+        else:
+            braces = txt.count("{") - txt.count("}")
+            if braces > 0:
+                if 'extern "C"' in txt:
+                    self.indents.append(self.indents[-1])
+                else:
+                    self.indents.append(self.indents[-1] + 4)
 
     def emit_text(self, txt: str) -> None:
         self.out.write(txt)

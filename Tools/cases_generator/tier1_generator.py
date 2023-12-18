@@ -181,6 +181,14 @@ arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
 
+
+def generate_tier1_from_files(
+    filenames: list[str], outfilename: str, lines: bool
+) -> None:
+    data = analyze_files(filenames)
+    with open(outfilename, "w") as outfile:
+        generate_tier1(filenames, data, outfile, lines)
+
 if __name__ == "__main__":
     args = arg_parser.parse_args()
     if len(args.input) == 0:
