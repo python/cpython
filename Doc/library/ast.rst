@@ -2457,6 +2457,13 @@ effects on the compilation of a program:
    Generates and returns an abstract syntax tree instead of returning a
    compiled code object.
 
+.. data:: PyCF_OPTIMIZED_AST
+
+   The returned AST is optimized according to the *optimize* argument
+   in :func:`compile` or :func:`ast.parse`.
+
+   .. versionadded:: 3.13
+
 .. data:: PyCF_TYPE_COMMENTS
 
    Enables support for :pep:`484` and :pep:`526` style type comments
