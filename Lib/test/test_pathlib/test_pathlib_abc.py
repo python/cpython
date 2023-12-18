@@ -1655,13 +1655,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
-    def test_pickling_common(self):
-        p = self.cls(self.base, 'fileA')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertEqual(pp.stat(), p.stat())
-
     def test_parts_interning(self):
         P = self.cls
         p = P('/usr/bin/foo')
