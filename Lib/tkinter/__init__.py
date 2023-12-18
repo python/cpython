@@ -1527,10 +1527,24 @@ class Misc:
         return self._bind(('bind', self._w), sequence, func, add)
 
     def unbind(self, sequence, funcid=None):
-        """Unbind for this widget for event SEQUENCE  the
-        function identified with FUNCID."""
-        self.tk.call('bind', self._w, sequence, '')
-        if funcid:
+        """Unbind for this widget the event SEQUENCE.
+
+        If FUNCID is given, only unbind the function identified with FUNCID
+        and also delete the corresponding Tcl command.
+
+        Otherwise destroy the current binding for SEQUENCE, leaving SEQUENCE
+        unbound.
+        """
+        if funcid is None:
+            self.tk.call('bind', self._w, sequence, '')
+        else:
+            lines = self.tk.call('bind', self._w, sequence).split('\n')
+            prefix = f'if {{"[{funcid} '
+            keep = '\n'.join(line for line in lines
+                             if not line.startswith(prefix))
+            if not keep.strip():
+                keep = ''
+            self.tk.call('bind', self._w, sequence, keep)
             self.deletecommand(funcid)
 
     def bind_all(self, sequence=None, func=None, add=None):
@@ -1538,7 +1552,7 @@ class Misc:
         An additional boolean parameter ADD specifies whether FUNC will
         be called additionally to the other bound function or whether
         it will replace the previous function. See bind for the return value."""
-        return self._bind(('bind', 'all'), sequence, func, add, 0)
+        return self._root()._bind(('bind', 'all'), sequence, func, add, True)
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
@@ -1552,7 +1566,7 @@ class Misc:
         whether it will replace the previous function. See bind for
         the return value."""
 
-        return self._bind(('bind', className), sequence, func, add, 0)
+        return self._root()._bind(('bind', className), sequence, func, add, True)
 
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE

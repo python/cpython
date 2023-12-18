@@ -386,6 +386,7 @@ class Stats:
         trace_too_short = self._data["Optimization trace too short"]
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
+        low_confidence = self._data["Optimization low confidence"]
 
         return {
             "Optimization attempts": (attempts, None),
@@ -396,6 +397,7 @@ class Stats:
             "Trace too short": (trace_too_short, attempts),
             "Inner loop found": (inner_loop, attempts),
             "Recursive call": (recursive_call, attempts),
+            "Low confidence": (low_confidence, attempts),
             "Traces executed": (executed, None),
             "Uops executed": (uops, executed),
         }
@@ -421,8 +423,6 @@ class Ratio:
         self.num = num
         self.den = den
         self.percentage = percentage
-        if den == 0 and num != 0:
-            raise ValueError("Invalid denominator")
 
     def __float__(self):
         if self.den == 0:
@@ -433,7 +433,11 @@ class Ratio:
             return self.num / self.den
 
     def markdown(self) -> str:
-        if self.den == 0 or self.den is None:
+        if self.den is None:
+            return ""
+        elif self.den == 0:
+            if self.num != 0:
+                return f"{self.num:,} / 0 !!"
             return ""
         elif self.percentage:
             return f"{self.num / self.den:,.01%}"
@@ -1028,7 +1032,7 @@ def optimization_section() -> Section:
                 ],
             )
         yield Section(
-            "Uop stats",
+            "Uop execution stats",
             "",
             [
                 Table(

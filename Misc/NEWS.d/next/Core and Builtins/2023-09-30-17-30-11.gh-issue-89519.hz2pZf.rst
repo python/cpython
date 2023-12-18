@@ -1,6 +1,0 @@
-Removed chained :class:`classmethod` descriptors (introduced in
-:issue:`19072`).  This can no longer be used to wrap other descriptors such
-as :class:`property`.  The core design of this feature was flawed and caused
-a number of downstream problems.  To "pass-through" a :class:`classmethod`,
-consider using the :attr:`!__wrapped__` attribute that was added in Python
-3.10.

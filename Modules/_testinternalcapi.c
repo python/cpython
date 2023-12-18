@@ -27,6 +27,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_typeobject.h"    // _PyType_GetModuleName()
 
 #include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
@@ -106,6 +107,14 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
 
     return PyLong_FromLong(tstate->py_recursion_limit - tstate->py_recursion_remaining);
+}
+
+
+static PyObject*
+get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return PyLong_FromLong(tstate->c_recursion_remaining);
 }
 
 
@@ -1466,34 +1475,66 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
-/*[clinic input]
-_testinternalcapi.write_unraisable_exc
-    exception as exc: object
-    err_msg: object
-    obj: object
-    /
-[clinic start generated code]*/
+static PyObject *
+get_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(interp->id_refcount);
+}
+
+
+static void
+_xid_capsule_destructor(PyObject *capsule)
+{
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data != NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        _PyCrossInterpreterData_Free(data);
+    }
+}
 
 static PyObject *
-_testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                            PyObject *err_msg, PyObject *obj)
-/*[clinic end generated code: output=a0f063cdd04aad83 input=274381b1a3fa5cd6]*/
+get_crossinterp_data(PyObject *self, PyObject *args)
 {
-
-    const char *err_msg_utf8;
-    if (err_msg != Py_None) {
-        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
-        if (err_msg_utf8 == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        err_msg_utf8 = NULL;
+    PyObject *obj = NULL;
+    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+        return NULL;
     }
 
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
-    Py_RETURN_NONE;
+    _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+    if (data == NULL) {
+        return NULL;
+    }
+    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+        _PyCrossInterpreterData_Free(data);
+        return NULL;
+    }
+    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    if (capsule == NULL) {
+        assert(_PyCrossInterpreterData_Release(data) == 0);
+        _PyCrossInterpreterData_Free(data);
+    }
+    return capsule;
+}
+
+static PyObject *
+restore_crossinterp_data(PyObject *self, PyObject *args)
+{
+    PyObject *capsule = NULL;
+    if (!PyArg_ParseTuple(args, "O:restore_crossinterp_data", &capsule)) {
+        return NULL;
+    }
+
+    _PyCrossInterpreterData *data = \
+            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
+    if (data == NULL) {
+        return NULL;
+    }
+    return _PyCrossInterpreterData_NewObject(data);
 }
 
 
@@ -1587,9 +1628,29 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+get_type_module_name(PyObject *self, PyObject *type)
+{
+    assert(PyType_Check(type));
+    return _PyType_GetModuleName((PyTypeObject *)type);
+}
+
+
+#ifdef Py_GIL_DISABLED
+static PyObject *
+get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    uintptr_t tid = _Py_ThreadId();
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(tid));
+    return PyLong_FromUnsignedLongLong(tid);
+}
+#endif
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
+    {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
@@ -1643,10 +1704,16 @@ static PyMethodDef module_functions[] = {
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
+    {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
-    _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
+    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
+    {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
+    {"get_type_module_name",    get_type_module_name,            METH_O},
+#ifdef Py_GIL_DISABLED
+    {"py_thread_id", get_py_thread_id, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
@@ -1663,6 +1730,9 @@ module_exec(PyObject *module)
         return 1;
     }
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
         return 1;
     }
 

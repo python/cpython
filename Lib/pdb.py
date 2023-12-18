@@ -142,8 +142,10 @@ class _ScriptTarget(str):
             print('Error:', self.orig, 'is a directory')
             sys.exit(1)
 
-        # Replace pdb's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(self)
+        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # of pdb, and we should replace it with the directory of the script
+        if not sys.flags.safe_path:
+            sys.path[0] = os.path.dirname(self)
 
     @property
     def filename(self):
@@ -205,6 +207,15 @@ class _ModuleTarget(str):
         )
 
 
+class _PdbInteractiveConsole(code.InteractiveConsole):
+    def __init__(self, ns, message):
+        self._message = message
+        super().__init__(locals=ns, local_exit=True)
+
+    def write(self, data):
+        self._message(data, end='')
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -238,7 +249,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             import readline
             # remove some common file name delimiters
-            readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
+            readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
         self.allow_kbdint = False
@@ -597,11 +608,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = line.split()
         while args[0] in self.aliases:
             line = self.aliases[args[0]]
-            ii = 1
-            for tmpArg in args[1:]:
-                line = line.replace("%" + str(ii),
-                                      tmpArg)
-                ii += 1
+            for idx in range(1, 10):
+                if f'%{idx}' in line:
+                    if idx >= len(args):
+                        self.error(f"Not enough arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    line = line.replace(f'%{idx}', args[idx])
+                elif '%*' not in line:
+                    if idx < len(args):
+                        self.error(f"Too many arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    break
+
             line = line.replace("%*", ' '.join(args[1:]))
             args = line.split()
         # split into ';;' separated commands
@@ -616,6 +636,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         # Replace all the convenience variables
         line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
+
         return line
 
     def onecmd(self, line):
@@ -660,8 +681,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # interface abstraction functions
 
-    def message(self, msg):
-        print(msg, file=self.stdout)
+    def message(self, msg, end='\n'):
+        print(msg, end=end, file=self.stdout)
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
@@ -675,6 +696,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
+
+    def completenames(self, text, line, begidx, endidx):
+        # Overwrite completenames() of cmd so for the command completion,
+        # if no current command matches, check for expressions as well
+        commands = super().completenames(text, line, begidx, endidx)
+        for alias in self.aliases:
+            if alias.startswith(text):
+                commands.append(alias)
+        if commands:
+            return commands
+        else:
+            return self._complete_expression(text, line, begidx, endidx)
 
     def _complete_location(self, text, line, begidx, endidx):
         # Complete a file/module/function location for break/tbreak/clear.
@@ -710,6 +743,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
         ns = {**self.curframe.f_globals, **self.curframe_locals}
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
@@ -1758,7 +1795,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns, local_exit=True)
+        console = _PdbInteractiveConsole(ns, message=self.message)
+        console.interact(banner="*pdb interact start*",
+                         exitmsg="*exit from pdb interact command*")
 
     def do_alias(self, arg):
         """alias [name [command]]
@@ -1797,7 +1836,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.error(f"Unknown alias '{args[0]}'")
         else:
-            self.aliases[args[0]] = ' '.join(args[1:])
+            # Do a validation check to make sure no replaceable parameters
+            # are skipped if %* is not used.
+            alias = ' '.join(args[1:])
+            if '%*' not in alias:
+                consecutive = True
+                for idx in range(1, 10):
+                    if f'%{idx}' not in alias:
+                        consecutive = False
+                    if f'%{idx}' in alias and not consecutive:
+                        self.error("Replaceable parameters must be consecutive")
+                        return
+            self.aliases[args[0]] = alias
 
     def do_unalias(self, arg):
         """unalias name

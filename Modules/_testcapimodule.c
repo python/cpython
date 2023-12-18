@@ -13,6 +13,7 @@
 #include "_testcapi/parts.h"
 
 #include "frameobject.h"          // PyFrame_New()
+#include "interpreteridobject.h"  // PyInterpreterID_Type
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
@@ -195,11 +196,11 @@ test_dict_inner(int count)
     for (i = 0; i < count; i++) {
         v = PyLong_FromLong(i);
         if (v == NULL) {
-            return -1;
+            goto error;
         }
         if (PyDict_SetItem(dict, v, v) < 0) {
             Py_DECREF(v);
-            return -1;
+            goto error;
         }
         Py_DECREF(v);
     }
@@ -213,11 +214,12 @@ test_dict_inner(int count)
         assert(v != UNINITIALIZED_PTR);
         i = PyLong_AS_LONG(v) + 1;
         o = PyLong_FromLong(i);
-        if (o == NULL)
-            return -1;
+        if (o == NULL) {
+            goto error;
+        }
         if (PyDict_SetItem(dict, k, o) < 0) {
             Py_DECREF(o);
-            return -1;
+            goto error;
         }
         Py_DECREF(o);
         k = v = UNINITIALIZED_PTR;
@@ -235,6 +237,9 @@ test_dict_inner(int count)
     } else {
         return 0;
     }
+error:
+    Py_DECREF(dict);
+    return -1;
 }
 
 
@@ -568,6 +573,12 @@ static PyType_Spec HeapTypeNameType_Spec = {
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = HeapTypeNameType_slots,
 };
+
+static PyObject *
+get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyType_FromSpec(&HeapTypeNameType_Spec);
+}
 
 static PyObject *
 test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1445,56 +1456,34 @@ run_in_subinterp(PyObject *self, PyObject *args)
     return PyLong_FromLong(r);
 }
 
-static void
-_xid_capsule_destructor(PyObject *capsule)
+static PyObject *
+get_interpreterid_type(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
-    if (data != NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        PyMem_Free(data);
-    }
+    return Py_NewRef(&PyInterpreterID_Type);
 }
 
 static PyObject *
-get_crossinterp_data(PyObject *self, PyObject *args)
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyObject *obj = NULL;
-    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
         return NULL;
     }
-
-    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
-    if (data == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
-        PyMem_Free(data);
-        return NULL;
-    }
-    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
-    if (capsule == NULL) {
-        assert(_PyCrossInterpreterData_Release(data) == 0);
-        PyMem_Free(data);
-    }
-    return capsule;
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
 }
 
 static PyObject *
-restore_crossinterp_data(PyObject *self, PyObject *args)
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyObject *capsule = NULL;
-    if (!PyArg_ParseTuple(args, "O:restore_crossinterp_data", &capsule)) {
+    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
         return NULL;
     }
-
-    _PyCrossInterpreterData *data = \
-            (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
-    if (data == NULL) {
-        return NULL;
-    }
-    return _PyCrossInterpreterData_NewObject(data);
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef ml;
@@ -1571,7 +1560,9 @@ test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
     descr.n_in_sequence = 1;
 
     PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
-    assert(structseq_type != NULL);
+    if (structseq_type == NULL) {
+        return NULL;
+    }
     assert(PyType_Check(structseq_type));
     assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
     Py_DECREF(structseq_type);
@@ -3262,6 +3253,7 @@ static PyMethodDef TestMethods[] = {
     {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
+    {"get_heaptype_for_name",     get_heaptype_for_name,         METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
@@ -3282,8 +3274,9 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
-    {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
+    {"get_interpreterid_type",  get_interpreterid_type,          METH_NOARGS},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
@@ -3962,6 +3955,12 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Abstract(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_ByteArray(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Bytes(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
@@ -3986,10 +3985,22 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Float(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Complex(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Numbers(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Dict(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Set(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_List(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Tuple(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {
@@ -4005,6 +4016,12 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_File(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Codec(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Sys(m) < 0) {
@@ -4023,6 +4040,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Hash(m) < 0) {
         return NULL;
     }
 

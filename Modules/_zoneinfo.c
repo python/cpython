@@ -420,7 +420,7 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
         return NULL;
     }
 
-    file_repr = PyUnicode_FromFormat("%R", file_obj);
+    file_repr = PyObject_Repr(file_obj);
     if (file_repr == NULL) {
         goto error;
     }

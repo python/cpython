@@ -650,7 +650,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
             PyErr_Clear();
             goto done;
         }
-        _PyErr_WriteUnraisableMsg("in audit hook", NULL);
+        PyErr_FormatUnraisable("Exception ignored in audit hook");
     }
     if (hook) {
         PyObject* args[3] = {typ, exc, tb};
@@ -1093,7 +1093,8 @@ fallback:
     _PyRuntime.signals.unhandled_keyboard_interrupt = unhandled_keyboard_interrupt;
 #ifdef Py_DEBUG
      if (PyErr_Occurred()) {
-        _PyErr_WriteUnraisableMsg("in the internal traceback machinery", NULL);
+         PyErr_FormatUnraisable(
+             "Exception ignored in the internal traceback machinery");
      }
 #endif
     PyErr_Clear();

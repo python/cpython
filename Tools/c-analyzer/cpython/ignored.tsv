@@ -165,6 +165,7 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
+Modules/_xxinterpqueuesmodule.c	-	_globals	-
 
 # set once during module init
 Modules/_decimal/_decimal.c	-	minalloc_is_set	-
@@ -374,11 +375,11 @@ Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
-Python/optimizer.c	-	DefaultOptimizer_Type	-
-Python/optimizer.c	-	CounterExecutor_Type	-
-Python/optimizer.c	-	CounterOptimizer_Type	-
-Python/optimizer.c	-	UOpExecutor_Type	-
-Python/optimizer.c	-	UOpOptimizer_Type	-
+Python/optimizer.c	-	_PyDefaultOptimizer_Type	-
+Python/optimizer.c	-	_PyCounterExecutor_Type	-
+Python/optimizer.c	-	_PyCounterOptimizer_Type	-
+Python/optimizer.c	-	_PyUOpExecutor_Type	-
+Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------
@@ -565,7 +566,6 @@ Modules/_testmultiphase.c	-	def_nonascii_latin	-
 Modules/_testmultiphase.c	-	def_nonmodule	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_methods	-
-Modules/_testmultiphase.c	-	imp_dummy_def	-
 Modules/_testmultiphase.c	-	main_def	-
 Modules/_testmultiphase.c	-	main_slots	-
 Modules/_testmultiphase.c	-	meth_state_access_slots	-
@@ -589,6 +589,7 @@ Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
 Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
 Modules/_xxtestfuzz/fuzzer.c	-	ast_literal_eval_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	bytesio_type	-
 Modules/_xxtestfuzz/fuzzer.c	-	compiled_patterns	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_module	-
@@ -598,12 +599,17 @@ Modules/_xxtestfuzz/fuzzer.c	-	re_compile_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	xmlparser_type	-
+Modules/_xxtestfuzz/fuzzer.c	-	pycompile_scratch	-
+Modules/_xxtestfuzz/fuzzer.c	-	start_vals	-
+Modules/_xxtestfuzz/fuzzer.c	-	optimize_vals	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	JSON_LOADS_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_COMPILE_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_MATCH_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	STRUCT_UNPACK_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	ELEMENTTREE_PARSEWHOLE_INITIALIZED	-
 
 ##-----------------------
 ## the analyzer should have ignored these

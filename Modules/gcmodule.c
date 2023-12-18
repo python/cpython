@@ -74,6 +74,20 @@ module gc
 #define AS_GC(op) _Py_AS_GC(op)
 #define FROM_GC(gc) _Py_FROM_GC(gc)
 
+// Automatically choose the generation that needs collecting.
+#define GENERATION_AUTO (-1)
+
+typedef enum {
+    // GC was triggered by heap allocation
+    _Py_GC_REASON_HEAP,
+
+    // GC was called during shutdown
+    _Py_GC_REASON_SHUTDOWN,
+
+    // GC was called by gc.collect() or PyGC_Collect()
+    _Py_GC_REASON_MANUAL
+} _PyGC_Reason;
+
 
 static inline int
 gc_is_collecting(PyGC_Head *g)
@@ -491,15 +505,16 @@ subtract_refs(PyGC_Head *containers)
         PyObject *op = FROM_GC(gc);
         traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(op,
-                        (visitproc)visit_decref,
+                        visit_decref,
                         op);
     }
 }
 
 /* A traversal callback for move_unreachable. */
 static int
-visit_reachable(PyObject *op, PyGC_Head *reachable)
+visit_reachable(PyObject *op, void *arg)
 {
+    PyGC_Head *reachable = arg;
     OBJECT_STAT_INC(object_visits);
     if (!_PyObject_IS_GC(op)) {
         return 0;
@@ -603,7 +618,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             // NOTE: visit_reachable may change gc->_gc_next when
             // young->_gc_prev == gc.  Don't do gc = GC_NEXT(gc) before!
             (void) traverse(op,
-                    (visitproc)visit_reachable,
+                    visit_reachable,
                     (void *)young);
             // relink gc_prev to prev element.
             _PyGCHead_SET_PREV(gc, prev);
@@ -726,8 +741,9 @@ clear_unreachable_mask(PyGC_Head *unreachable)
 
 /* A traversal callback for move_legacy_finalizer_reachable. */
 static int
-visit_move(PyObject *op, PyGC_Head *tolist)
+visit_move(PyObject *op, void *arg)
 {
+    PyGC_Head *tolist = arg;
     OBJECT_STAT_INC(object_visits);
     if (_PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
@@ -751,7 +767,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
         /* Note that the finalizers list may grow during this. */
         traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
         (void) traverse(FROM_GC(gc),
-                        (visitproc)visit_move,
+                        visit_move,
                         (void *)finalizers);
     }
 }
@@ -1032,8 +1048,8 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
                 Py_INCREF(op);
                 (void) clear(op);
                 if (_PyErr_Occurred(tstate)) {
-                    _PyErr_WriteUnraisableMsg("in tp_clear of",
-                                              (PyObject*)Py_TYPE(op));
+                    PyErr_FormatUnraisable("Exception ignored in tp_clear of %s",
+                                           Py_TYPE(op)->tp_name);
                 }
                 Py_DECREF(op);
             }
@@ -1192,19 +1208,122 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     gc_list_merge(resurrected, old_generation);
 }
 
+
+/* Invoke progress callbacks to notify clients that garbage collection
+ * is starting or stopping
+ */
+static void
+invoke_gc_callback(PyThreadState *tstate, const char *phase,
+                   int generation, Py_ssize_t collected,
+                   Py_ssize_t uncollectable)
+{
+    assert(!_PyErr_Occurred(tstate));
+
+    /* we may get called very early */
+    GCState *gcstate = &tstate->interp->gc;
+    if (gcstate->callbacks == NULL) {
+        return;
+    }
+
+    /* The local variable cannot be rebound, check it for sanity */
+    assert(PyList_CheckExact(gcstate->callbacks));
+    PyObject *info = NULL;
+    if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
+        info = Py_BuildValue("{sisnsn}",
+            "generation", generation,
+            "collected", collected,
+            "uncollectable", uncollectable);
+        if (info == NULL) {
+            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+            return;
+        }
+    }
+
+    PyObject *phase_obj = PyUnicode_FromString(phase);
+    if (phase_obj == NULL) {
+        Py_XDECREF(info);
+        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+        return;
+    }
+
+    PyObject *stack[] = {phase_obj, info};
+    for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
+        PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
+        Py_INCREF(cb); /* make sure cb doesn't go away */
+        r = PyObject_Vectorcall(cb, stack, 2, NULL);
+        if (r == NULL) {
+            PyErr_WriteUnraisable(cb);
+        }
+        else {
+            Py_DECREF(r);
+        }
+        Py_DECREF(cb);
+    }
+    Py_DECREF(phase_obj);
+    Py_XDECREF(info);
+    assert(!_PyErr_Occurred(tstate));
+}
+
+
+/* Find the oldest generation (highest numbered) where the count
+ * exceeds the threshold.  Objects in the that generation and
+ * generations younger than it will be collected. */
+static int
+gc_select_generation(GCState *gcstate)
+{
+    for (int i = NUM_GENERATIONS-1; i >= 0; i--) {
+        if (gcstate->generations[i].count > gcstate->generations[i].threshold) {
+            /* Avoid quadratic performance degradation in number
+               of tracked objects (see also issue #4074):
+
+               To limit the cost of garbage collection, there are two strategies;
+                 - make each collection faster, e.g. by scanning fewer objects
+                 - do less collections
+               This heuristic is about the latter strategy.
+
+               In addition to the various configurable thresholds, we only trigger a
+               full collection if the ratio
+
+                long_lived_pending / long_lived_total
+
+               is above a given value (hardwired to 25%).
+
+               The reason is that, while "non-full" collections (i.e., collections of
+               the young and middle generations) will always examine roughly the same
+               number of objects -- determined by the aforementioned thresholds --,
+               the cost of a full collection is proportional to the total number of
+               long-lived objects, which is virtually unbounded.
+
+               Indeed, it has been remarked that doing a full collection every
+               <constant number> of object creations entails a dramatic performance
+               degradation in workloads which consist in creating and storing lots of
+               long-lived objects (e.g. building a large list of GC-tracked objects would
+               show quadratic performance, instead of linear as expected: see issue #4074).
+
+               Using the above ratio, instead, yields amortized linear performance in
+               the total number of objects (the effect of which can be summarized
+               thusly: "each full garbage collection is more and more costly as the
+               number of objects grows, but we do fewer and fewer of them").
+
+               This heuristic was suggested by Martin von Löwis on python-dev in
+               June 2008. His original analysis and proposal can be found at:
+               http://mail.python.org/pipermail/python-dev/2008-June/080579.html
+            */
+            if (i == NUM_GENERATIONS - 1
+                && gcstate->long_lived_pending < gcstate->long_lived_total / 4)
+                continue;
+            return i;
+        }
+    }
+    return -1;
+}
+
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
-gc_collect_main(PyThreadState *tstate, int generation,
-                Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
-                int nofail)
+gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
-    GC_STAT_ADD(generation, collections, 1);
-#ifdef Py_STATS
-    if (_Py_stats) {
-        _Py_stats->object_stats.object_visits = 0;
-    }
-#endif
     int i;
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
@@ -1220,6 +1339,36 @@ gc_collect_main(PyThreadState *tstate, int generation,
     // or after _PyGC_Fini()
     assert(gcstate->garbage != NULL);
     assert(!_PyErr_Occurred(tstate));
+
+    int expected = 0;
+    if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
+        // Don't start a garbage collection if one is already in progress.
+        return 0;
+    }
+
+    if (generation == GENERATION_AUTO) {
+        // Select the oldest generation that needs collecting. We will collect
+        // objects from that generation and all generations younger than it.
+        generation = gc_select_generation(gcstate);
+        if (generation < 0) {
+            // No generation needs to be collected.
+            _Py_atomic_store_int(&gcstate->collecting, 0);
+            return 0;
+        }
+    }
+
+    assert(generation >= 0 && generation < NUM_GENERATIONS);
+
+#ifdef Py_STATS
+    if (_Py_stats) {
+        _Py_stats->object_stats.object_visits = 0;
+    }
+#endif
+    GC_STAT_ADD(generation, collections, 1);
+
+    if (reason != _Py_GC_REASON_SHUTDOWN) {
+        invoke_gc_callback(tstate, "start", generation, 0, 0);
+    }
 
     if (gcstate->debug & DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
@@ -1340,22 +1489,15 @@ gc_collect_main(PyThreadState *tstate, int generation,
     }
 
     if (_PyErr_Occurred(tstate)) {
-        if (nofail) {
+        if (reason == _Py_GC_REASON_SHUTDOWN) {
             _PyErr_Clear(tstate);
         }
         else {
-            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
+            PyErr_FormatUnraisable("Exception ignored in garbage collection");
         }
     }
 
     /* Update stats */
-    if (n_collected) {
-        *n_collected = m;
-    }
-    if (n_uncollectable) {
-        *n_uncollectable = n;
-    }
-
     struct gc_generation_stats *stats = &gcstate->generation_stats[generation];
     stats->collections++;
     stats->collected += m;
@@ -1374,134 +1516,13 @@ gc_collect_main(PyThreadState *tstate, int generation,
         PyDTrace_GC_DONE(n + m);
     }
 
+    if (reason != _Py_GC_REASON_SHUTDOWN) {
+        invoke_gc_callback(tstate, "stop", generation, m, n);
+    }
+
     assert(!_PyErr_Occurred(tstate));
+    _Py_atomic_store_int(&gcstate->collecting, 0);
     return n + m;
-}
-
-/* Invoke progress callbacks to notify clients that garbage collection
- * is starting or stopping
- */
-static void
-invoke_gc_callback(PyThreadState *tstate, const char *phase,
-                   int generation, Py_ssize_t collected,
-                   Py_ssize_t uncollectable)
-{
-    assert(!_PyErr_Occurred(tstate));
-
-    /* we may get called very early */
-    GCState *gcstate = &tstate->interp->gc;
-    if (gcstate->callbacks == NULL) {
-        return;
-    }
-
-    /* The local variable cannot be rebound, check it for sanity */
-    assert(PyList_CheckExact(gcstate->callbacks));
-    PyObject *info = NULL;
-    if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsn}",
-            "generation", generation,
-            "collected", collected,
-            "uncollectable", uncollectable);
-        if (info == NULL) {
-            PyErr_WriteUnraisable(NULL);
-            return;
-        }
-    }
-
-    PyObject *phase_obj = PyUnicode_FromString(phase);
-    if (phase_obj == NULL) {
-        Py_XDECREF(info);
-        PyErr_WriteUnraisable(NULL);
-        return;
-    }
-
-    PyObject *stack[] = {phase_obj, info};
-    for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
-        PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
-        Py_INCREF(cb); /* make sure cb doesn't go away */
-        r = PyObject_Vectorcall(cb, stack, 2, NULL);
-        if (r == NULL) {
-            PyErr_WriteUnraisable(cb);
-        }
-        else {
-            Py_DECREF(r);
-        }
-        Py_DECREF(cb);
-    }
-    Py_DECREF(phase_obj);
-    Py_XDECREF(info);
-    assert(!_PyErr_Occurred(tstate));
-}
-
-/* Perform garbage collection of a generation and invoke
- * progress callbacks.
- */
-static Py_ssize_t
-gc_collect_with_callback(PyThreadState *tstate, int generation)
-{
-    assert(!_PyErr_Occurred(tstate));
-    Py_ssize_t result, collected, uncollectable;
-    invoke_gc_callback(tstate, "start", generation, 0, 0);
-    result = gc_collect_main(tstate, generation, &collected, &uncollectable, 0);
-    invoke_gc_callback(tstate, "stop", generation, collected, uncollectable);
-    assert(!_PyErr_Occurred(tstate));
-    return result;
-}
-
-static Py_ssize_t
-gc_collect_generations(PyThreadState *tstate)
-{
-    GCState *gcstate = &tstate->interp->gc;
-    /* Find the oldest generation (highest numbered) where the count
-     * exceeds the threshold.  Objects in the that generation and
-     * generations younger than it will be collected. */
-    Py_ssize_t n = 0;
-    for (int i = NUM_GENERATIONS-1; i >= 0; i--) {
-        if (gcstate->generations[i].count > gcstate->generations[i].threshold) {
-            /* Avoid quadratic performance degradation in number
-               of tracked objects (see also issue #4074):
-
-               To limit the cost of garbage collection, there are two strategies;
-                 - make each collection faster, e.g. by scanning fewer objects
-                 - do less collections
-               This heuristic is about the latter strategy.
-
-               In addition to the various configurable thresholds, we only trigger a
-               full collection if the ratio
-
-                long_lived_pending / long_lived_total
-
-               is above a given value (hardwired to 25%).
-
-               The reason is that, while "non-full" collections (i.e., collections of
-               the young and middle generations) will always examine roughly the same
-               number of objects -- determined by the aforementioned thresholds --,
-               the cost of a full collection is proportional to the total number of
-               long-lived objects, which is virtually unbounded.
-
-               Indeed, it has been remarked that doing a full collection every
-               <constant number> of object creations entails a dramatic performance
-               degradation in workloads which consist in creating and storing lots of
-               long-lived objects (e.g. building a large list of GC-tracked objects would
-               show quadratic performance, instead of linear as expected: see issue #4074).
-
-               Using the above ratio, instead, yields amortized linear performance in
-               the total number of objects (the effect of which can be summarized
-               thusly: "each full garbage collection is more and more costly as the
-               number of objects grows, but we do fewer and fewer of them").
-
-               This heuristic was suggested by Martin von Löwis on python-dev in
-               June 2008. His original analysis and proposal can be found at:
-               http://mail.python.org/pipermail/python-dev/2008-June/080579.html
-            */
-            if (i == NUM_GENERATIONS - 1
-                && gcstate->long_lived_pending < gcstate->long_lived_total / 4)
-                continue;
-            n = gc_collect_with_callback(tstate, i);
-            break;
-        }
-    }
-    return n;
 }
 
 #include "clinic/gcmodule.c.h"
@@ -1572,18 +1593,7 @@ gc_collect_impl(PyObject *module, int generation)
         return -1;
     }
 
-    GCState *gcstate = &tstate->interp->gc;
-    Py_ssize_t n;
-    if (gcstate->collecting) {
-        /* already collecting, don't do anything */
-        n = 0;
-    }
-    else {
-        gcstate->collecting = 1;
-        n = gc_collect_with_callback(tstate, generation);
-        gcstate->collecting = 0;
-    }
-    return n;
+    return gc_collect_main(tstate, generation, _Py_GC_REASON_MANUAL);
 }
 
 /*[clinic input]
@@ -1684,8 +1694,9 @@ gc_get_count_impl(PyObject *module)
 }
 
 static int
-referrersvisit(PyObject* obj, PyObject *objs)
+referrersvisit(PyObject* obj, void *arg)
 {
+    PyObject *objs = arg;
     Py_ssize_t i;
     for (i = 0; i < PyTuple_GET_SIZE(objs); i++)
         if (PyTuple_GET_ITEM(objs, i) == obj)
@@ -1704,7 +1715,7 @@ gc_referrers_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
         traverse = Py_TYPE(obj)->tp_traverse;
         if (obj == objs || obj == resultlist)
             continue;
-        if (traverse(obj, (visitproc)referrersvisit, objs)) {
+        if (traverse(obj, referrersvisit, objs)) {
             if (PyList_Append(resultlist, obj) < 0)
                 return 0; /* error */
         }
@@ -1740,8 +1751,9 @@ gc_get_referrers(PyObject *self, PyObject *args)
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
 static int
-referentsvisit(PyObject *obj, PyObject *list)
+referentsvisit(PyObject *obj, void *arg)
 {
+    PyObject *list = arg;
     return PyList_Append(list, obj) < 0;
 }
 
@@ -1770,7 +1782,7 @@ gc_get_referents(PyObject *self, PyObject *args)
         traverse = Py_TYPE(obj)->tp_traverse;
         if (! traverse)
             continue;
-        if (traverse(obj, (visitproc)referentsvisit, result)) {
+        if (traverse(obj, referentsvisit, result)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -2120,17 +2132,9 @@ PyGC_Collect(void)
     }
 
     Py_ssize_t n;
-    if (gcstate->collecting) {
-        /* already collecting, don't do anything */
-        n = 0;
-    }
-    else {
-        gcstate->collecting = 1;
-        PyObject *exc = _PyErr_GetRaisedException(tstate);
-        n = gc_collect_with_callback(tstate, NUM_GENERATIONS - 1);
-        _PyErr_SetRaisedException(tstate, exc);
-        gcstate->collecting = 0;
-    }
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    n = gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_MANUAL);
+    _PyErr_SetRaisedException(tstate, exc);
 
     return n;
 }
@@ -2144,16 +2148,7 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
        during interpreter shutdown (and then never finish it).
        See http://bugs.python.org/issue8713#msg195178 for an example.
        */
-    GCState *gcstate = &tstate->interp->gc;
-    if (gcstate->collecting) {
-        return 0;
-    }
-
-    Py_ssize_t n;
-    gcstate->collecting = 1;
-    n = gc_collect_main(tstate, NUM_GENERATIONS - 1, NULL, NULL, 1);
-    gcstate->collecting = 0;
-    return n;
+    return gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_SHUTDOWN);
 }
 
 void
@@ -2271,10 +2266,6 @@ PyObject_IS_GC(PyObject *obj)
 void
 _Py_ScheduleGC(PyInterpreterState *interp)
 {
-    GCState *gcstate = &interp->gc;
-    if (gcstate->collecting == 1) {
-        return;
-    }
     _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 1);
 }
 
@@ -2292,7 +2283,7 @@ _PyObject_GC_Link(PyObject *op)
     if (gcstate->generations[0].count > gcstate->generations[0].threshold &&
         gcstate->enabled &&
         gcstate->generations[0].threshold &&
-        !gcstate->collecting &&
+        !_Py_atomic_load_int_relaxed(&gcstate->collecting) &&
         !_PyErr_Occurred(tstate))
     {
         _Py_ScheduleGC(tstate->interp);
@@ -2302,10 +2293,7 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
-    GCState *gcstate = &tstate->interp->gc;
-    gcstate->collecting = 1;
-    gc_collect_generations(tstate);
-    gcstate->collecting = 0;
+    gc_collect_main(tstate, GENERATION_AUTO, _Py_GC_REASON_HEAP);
 }
 
 static PyObject *
@@ -2396,14 +2384,16 @@ PyObject_GC_Del(void *op)
     size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
+        gc_list_remove(g);
 #ifdef Py_DEBUG
+        PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
                                      "gc", NULL, "Object of type %s is not untracked before destruction",
                                      ((PyObject*)op)->ob_type->tp_name)) {
             PyErr_WriteUnraisable(NULL);
         }
+        PyErr_SetRaisedException(exc);
 #endif
-        gc_list_remove(g);
     }
     GCState *gcstate = get_gc_state();
     if (gcstate->generations[0].count > 0) {

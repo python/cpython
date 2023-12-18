@@ -159,6 +159,9 @@ guidelines to be followed:
 Running tests using the command-line interface
 ----------------------------------------------
 
+.. module:: test.regrtest
+   :synopsis: Drives the regression test suite.
+
 The :mod:`test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
@@ -496,16 +499,6 @@ The :mod:`test.support` module defines the following functions:
 
    Setting *subdir* indicates a relative path to use to find the file
    rather than looking directly in the path directories.
-
-
-.. function:: match_test(test)
-
-   Determine whether *test* matches the patterns set in :func:`set_match_tests`.
-
-
-.. function:: set_match_tests(accept_patterns=None, ignore_patterns=None)
-
-   Define match patterns on test filenames and test method names for filtering tests.
 
 
 .. function:: get_pagesize()
@@ -1415,7 +1408,8 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
 .. class:: FakePath(path)
 
-   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   Simple :term:`path-like object`.  It implements the
+   :meth:`~os.PathLike.__fspath__`
    method which just returns the *path* argument.  If *path* is an exception,
    it will be raised in :meth:`!__fspath__`.
 

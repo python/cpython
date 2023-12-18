@@ -2438,8 +2438,11 @@ class _TestContainers(BaseTestCase):
 #
 #
 
-def sqr(x, wait=0.0):
-    time.sleep(wait)
+def sqr(x, wait=0.0, event=None):
+    if event is None:
+        time.sleep(wait)
+    else:
+        event.wait(wait)
     return x*x
 
 def mul(x, y):
@@ -2578,10 +2581,18 @@ class _TestPool(BaseTestCase):
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT1)
 
     def test_async_timeout(self):
-        res = self.pool.apply_async(sqr, (6, TIMEOUT2 + support.SHORT_TIMEOUT))
-        get = TimingWrapper(res.get)
-        self.assertRaises(multiprocessing.TimeoutError, get, timeout=TIMEOUT2)
-        self.assertTimingAlmostEqual(get.elapsed, TIMEOUT2)
+        p = self.Pool(3)
+        try:
+            event = threading.Event() if self.TYPE == 'threads' else None
+            res = p.apply_async(sqr, (6, TIMEOUT2 + support.SHORT_TIMEOUT, event))
+            get = TimingWrapper(res.get)
+            self.assertRaises(multiprocessing.TimeoutError, get, timeout=TIMEOUT2)
+            self.assertTimingAlmostEqual(get.elapsed, TIMEOUT2)
+        finally:
+            if event is not None:
+                event.set()
+            p.terminate()
+            p.join()
 
     def test_imap(self):
         it = self.pool.imap(sqr, list(range(10)))
@@ -2682,11 +2693,15 @@ class _TestPool(BaseTestCase):
                 p.join()
 
     def test_terminate(self):
+        if self.TYPE == 'threads':
+            self.skipTest("Threads cannot be terminated")
+
         # Simulate slow tasks which take "forever" to complete
+        p = self.Pool(3)
         args = [support.LONG_TIMEOUT for i in range(10_000)]
-        result = self.pool.map_async(time.sleep, args, chunksize=1)
-        self.pool.terminate()
-        self.pool.join()
+        result = p.map_async(time.sleep, args, chunksize=1)
+        p.terminate()
+        p.join()
 
     def test_empty_iterable(self):
         # See Issue 12157
@@ -4439,6 +4454,59 @@ class _TestSharedMemory(BaseTestCase):
                 self.assertIn(
                     "resource_tracker: There appear to be 1 leaked "
                     "shared_memory objects to clean up at shutdown", err)
+
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_untracking(self):
+        # gh-82300: When a separate Python process accesses shared memory
+        # with track=False, it must not cause the memory to be deleted
+        # when terminating.
+        cmd = '''if 1:
+            import sys
+            from multiprocessing.shared_memory import SharedMemory
+            mem = SharedMemory(create=False, name=sys.argv[1], track=False)
+            mem.close()
+        '''
+        mem = shared_memory.SharedMemory(create=True, size=10)
+        # The resource tracker shares pipes with the subprocess, and so
+        # err existing means that the tracker process has terminated now.
+        try:
+            rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
+            self.assertNotIn(b"resource_tracker", err)
+            self.assertEqual(rc, 0)
+            mem2 = shared_memory.SharedMemory(create=False, name=mem.name)
+            mem2.close()
+        finally:
+            try:
+                mem.unlink()
+            except OSError:
+                pass
+            mem.close()
+
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_tracking(self):
+        # gh-82300: When a separate Python process accesses shared memory
+        # with track=True, it must cause the memory to be deleted when
+        # terminating.
+        cmd = '''if 1:
+            import sys
+            from multiprocessing.shared_memory import SharedMemory
+            mem = SharedMemory(create=False, name=sys.argv[1], track=True)
+            mem.close()
+        '''
+        mem = shared_memory.SharedMemory(create=True, size=10)
+        try:
+            rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
+            self.assertEqual(rc, 0)
+            self.assertIn(
+                b"resource_tracker: There appear to be 1 leaked "
+                b"shared_memory objects to clean up at shutdown", err)
+        finally:
+            try:
+                mem.unlink()
+            except OSError:
+                pass
+            resource_tracker.unregister(mem._name, "shared_memory")
+            mem.close()
 
 #
 # Test to verify that `Finalize` works.

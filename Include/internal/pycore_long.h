@@ -47,24 +47,6 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
-extern PyLongObject* _PyLong_New(Py_ssize_t);
-
-// Return a copy of src.
-extern PyObject* _PyLong_Copy(PyLongObject *src);
-
-// Export for '_decimal' shared extension
-PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
-    int negative,
-    Py_ssize_t digit_count,
-    digit *digits);
-
-// _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
-// v must not be NULL, and must be a normalized long.
-// There are no error cases.
-//
-// Export for '_pickle' shared extension.
-PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
-
 // _PyLong_NumBits.  Return the number of bits needed to represent the
 // absolute value of a long.  For example, this returns 1 for 1 and -1, 2
 // for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
@@ -317,7 +299,7 @@ _PyLong_FlipSign(PyLongObject *op) {
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
-        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type) \
+        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type), \
         .long_value  = { \
             .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \

@@ -1150,9 +1150,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_putenv_unsetenv_error(self):
         # Empty variable name is invalid.
         # "=" and null character are not allowed in a variable name.
-        for name in ('', '=name', 'na=me', 'name=', 'name\0', 'na\0me'):
+        for name in ('', '=name', 'na=me', 'name='):
             self.assertRaises((OSError, ValueError), os.putenv, name, "value")
             self.assertRaises((OSError, ValueError), os.unsetenv, name)
+        for name in ('name\0', 'na\0me'):
+            self.assertRaises(ValueError, os.putenv, name, "value")
+            self.assertRaises(ValueError, os.unsetenv, name)
 
         if sys.platform == "win32":
             # On Windows, an environment variable string ("name=value" string)
@@ -1740,7 +1743,7 @@ class MakedirTests(unittest.TestCase):
         os.removedirs(path)
 
 
-@os_helper.skip_unless_working_chmod
+@unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
 class ChownFileTests(unittest.TestCase):
 
     @classmethod
@@ -4029,7 +4032,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter() - t
 
         total_time = initial_expiration + interval * (count - 1)
-        self.assertGreater(t, total_time)
+        self.assertGreater(t, total_time - self.CLOCK_RES)
 
         # wait 3.5 time of interval
         time.sleep( (count+0.5) * interval)
@@ -4083,7 +4086,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter() - t
 
         total_time = initial_expiration + interval * (count - 1)
-        self.assertGreater(t, total_time)
+        self.assertGreater(t, total_time - self.CLOCK_RES)
 
     def check_timerfd_poll(self, nanoseconds):
         fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
@@ -4129,10 +4132,10 @@ class TimerfdTests(unittest.TestCase):
         total_time = initial_expiration_ns + interval_ns * (count - 1)
         if nanoseconds:
             dt = time.perf_counter_ns() - t
-            self.assertGreater(dt, total_time)
+            self.assertGreater(dt, total_time - self.CLOCK_RES_NS)
         else:
             dt = time.perf_counter() - t
-            self.assertGreater(dt, total_time / sec_to_nsec)
+            self.assertGreater(dt, total_time / sec_to_nsec - self.CLOCK_RES)
         selector.unregister(fd)
 
     def test_timerfd_poll(self):
@@ -4189,7 +4192,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter_ns() - t
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
-        self.assertGreater(t, total_time_ns)
+        self.assertGreater(t, total_time_ns - self.CLOCK_RES_NS)
 
         # wait 3.5 time of interval
         time.sleep( (count+0.5) * interval_ns / one_sec_in_nsec)
@@ -4248,7 +4251,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter_ns() - t
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
-        self.assertGreater(t, total_time_ns)
+        self.assertGreater(t, total_time_ns - self.CLOCK_RES_NS)
 
 class OSErrorTests(unittest.TestCase):
     def setUp(self):
@@ -4342,8 +4345,8 @@ class CPUCountTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'sched_setaffinity'),
                          "don't have sched affinity support")
     def test_process_cpu_count_affinity(self):
-        ncpu = os.cpu_count()
-        if ncpu is None:
+        affinity1 = os.process_cpu_count()
+        if affinity1 is None:
             self.skipTest("Could not determine the number of CPUs")
 
         # Disable one CPU
@@ -4356,8 +4359,8 @@ class CPUCountTests(unittest.TestCase):
         os.sched_setaffinity(0, mask)
 
         # test process_cpu_count()
-        affinity = os.process_cpu_count()
-        self.assertEqual(affinity, ncpu - 1)
+        affinity2 = os.process_cpu_count()
+        self.assertEqual(affinity2, affinity1 - 1)
 
 
 # FD inheritance check is only useful for systems with process support.
@@ -5077,7 +5080,10 @@ class ForkTests(unittest.TestCase):
                 support.wait_process(pid, exitcode=0)
         """
         assert_python_ok("-c", code)
-        assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
+        if support.Py_GIL_DISABLED:
+            assert_python_ok("-c", code, PYTHONMALLOC="mimalloc_debug")
+        else:
+            assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
     @unittest.skipUnless(sys.platform in ("linux", "darwin"),
                          "Only Linux and macOS detect this today.")

@@ -691,11 +691,23 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
+        has_is_interned = (test.support.check_impl_detail(cpython=True)
+                           or hasattr(sys, '_is_interned'))
         self.assertRaises(TypeError, sys.intern)
+        self.assertRaises(TypeError, sys.intern, b'abc')
+        if has_is_interned:
+            self.assertRaises(TypeError, sys._is_interned)
+            self.assertRaises(TypeError, sys._is_interned, b'abc')
         s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s), True)
         s2 = s.swapcase().swapcase()
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
         self.assertTrue(sys.intern(s2) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.
@@ -707,6 +719,8 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
+        if has_is_interned:
+            self.assertIs(sys._is_interned(S("abc")), False)
 
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
@@ -715,7 +729,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIs(t, s)
 
         interp = interpreters.create()
-        interp.run(textwrap.dedent(f'''
+        interp.exec_sync(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) != {id(s)}, (id(t), {id(s)})
@@ -730,7 +744,7 @@ class SysModuleTest(unittest.TestCase):
         t = sys.intern(s)
 
         interp = interpreters.create()
-        interp.run(textwrap.dedent(f'''
+        interp.exec_sync(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) == {id(t)}, (id(t), {id(t)})
@@ -1115,8 +1129,10 @@ class SysModuleTest(unittest.TestCase):
             b'Traceback (most recent call last):',
             b'  File "<string>", line 8, in <module>',
             b'    f2()',
+            b'    ~~^^',
             b'  File "<string>", line 6, in f2',
             b'    f1()',
+            b'    ~~^^',
             b'  File "<string>", line 4, in f1',
             b'    1 / 0',
             b'    ~~^~~',
@@ -1124,8 +1140,8 @@ class SysModuleTest(unittest.TestCase):
         ]
         check(10, traceback)
         check(3, traceback)
-        check(2, traceback[:1] + traceback[3:])
-        check(1, traceback[:1] + traceback[5:])
+        check(2, traceback[:1] + traceback[4:])
+        check(1, traceback[:1] + traceback[7:])
         check(0, [traceback[-1]])
         check(-1, [traceback[-1]])
         check(1<<1000, traceback)
@@ -1208,45 +1224,43 @@ class SysModuleTest(unittest.TestCase):
     @test.support.cpython_only
     @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
     def test_disable_gil_abi(self):
-        abi_threaded = 't' in sys.abiflags
-        py_nogil = (sysconfig.get_config_var('Py_NOGIL') == 1)
-        self.assertEqual(py_nogil, abi_threaded)
+        self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
-    def write_unraisable_exc(self, exc, err_msg, obj):
-        import _testinternalcapi
-        import types
-        err_msg2 = f"Exception ignored {err_msg}"
-        try:
-            _testinternalcapi.write_unraisable_exc(exc, err_msg, obj)
-            return types.SimpleNamespace(exc_type=type(exc),
-                                         exc_value=exc,
-                                         exc_traceback=exc.__traceback__,
-                                         err_msg=err_msg2,
-                                         object=obj)
-        finally:
-            # Explicitly break any reference cycle
-            exc = None
-
     def test_original_unraisablehook(self):
-        for err_msg in (None, "original hook"):
-            with self.subTest(err_msg=err_msg):
-                obj = "an object"
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable, err_formatunraisable
+        obj = hex
 
-                with test.support.captured_output("stderr") as stderr:
-                    with test.support.swap_attr(sys, 'unraisablehook',
-                                                sys.__unraisablehook__):
-                        self.write_unraisable_exc(ValueError(42), err_msg, obj)
+        with support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+            with support.captured_stderr() as stderr:
+                err_writeunraisable(ValueError(42), obj)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], f'Exception ignored in: {obj!r}')
+            self.assertEqual(lines[1], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
 
-                err = stderr.getvalue()
-                if err_msg is not None:
-                    self.assertIn(f'Exception ignored {err_msg}: {obj!r}\n', err)
-                else:
-                    self.assertIn(f'Exception ignored in: {obj!r}\n', err)
-                self.assertIn('Traceback (most recent call last):\n', err)
-                self.assertIn('ValueError: 42\n', err)
+            with support.captured_stderr() as stderr:
+                err_writeunraisable(ValueError(42), None)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
+
+            with support.captured_stderr() as stderr:
+                err_formatunraisable(ValueError(42), 'Error in %R', obj)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], f'Error in {obj!r}:')
+            self.assertEqual(lines[1], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
+
+            with support.captured_stderr() as stderr:
+                err_formatunraisable(ValueError(42), None)
+            lines = stderr.getvalue().splitlines()
+            self.assertEqual(lines[0], 'Traceback (most recent call last):')
+            self.assertEqual(lines[-1], 'ValueError: 42')
 
     def test_original_unraisablehook_err(self):
         # bpo-22836: PyErr_WriteUnraisable() should give sensible reports
@@ -1293,6 +1307,8 @@ class UnraisableHookTest(unittest.TestCase):
         # Check that the exception is printed with its qualified name
         # rather than just classname, and the module names appears
         # unless it is one of the hard-coded exclusions.
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable
         class A:
             class B:
                 class X(Exception):
@@ -1304,9 +1320,7 @@ class UnraisableHookTest(unittest.TestCase):
                 with test.support.captured_stderr() as stderr, test.support.swap_attr(
                     sys, 'unraisablehook', sys.__unraisablehook__
                 ):
-                    expected = self.write_unraisable_exc(
-                        A.B.X(), "msg", "obj"
-                    )
+                    err_writeunraisable(A.B.X(), "obj")
                 report = stderr.getvalue()
                 self.assertIn(A.B.X.__qualname__, report)
                 if moduleName in ['builtins', '__main__']:
@@ -1322,34 +1336,45 @@ class UnraisableHookTest(unittest.TestCase):
                 sys.unraisablehook(exc)
 
     def test_custom_unraisablehook(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable, err_formatunraisable
         hook_args = None
 
         def hook_func(args):
             nonlocal hook_args
             hook_args = args
 
-        obj = object()
+        obj = hex
         try:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
-                expected = self.write_unraisable_exc(ValueError(42),
-                                                     "custom hook", obj)
-                for attr in "exc_type exc_value exc_traceback err_msg object".split():
-                    self.assertEqual(getattr(hook_args, attr),
-                                     getattr(expected, attr),
-                                     (hook_args, expected))
+                exc = ValueError(42)
+                err_writeunraisable(exc, obj)
+                self.assertIs(hook_args.exc_type, type(exc))
+                self.assertIs(hook_args.exc_value, exc)
+                self.assertIs(hook_args.exc_traceback, exc.__traceback__)
+                self.assertIsNone(hook_args.err_msg)
+                self.assertEqual(hook_args.object, obj)
+
+                err_formatunraisable(exc, "custom hook %R", obj)
+                self.assertIs(hook_args.exc_type, type(exc))
+                self.assertIs(hook_args.exc_value, exc)
+                self.assertIs(hook_args.exc_traceback, exc.__traceback__)
+                self.assertEqual(hook_args.err_msg, f'custom hook {obj!r}')
+                self.assertIsNone(hook_args.object)
         finally:
             # expected and hook_args contain an exception: break reference cycle
             expected = None
             hook_args = None
 
     def test_custom_unraisablehook_fail(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        from _testcapi import err_writeunraisable
         def hook_func(*args):
             raise Exception("hook_func failed")
 
         with test.support.captured_output("stderr") as stderr:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
-                self.write_unraisable_exc(ValueError(42),
-                                          "custom hook fail", None)
+                err_writeunraisable(ValueError(42), "custom hook fail")
 
         err = stderr.getvalue()
         self.assertIn(f'Exception ignored in sys.unraisablehook: '

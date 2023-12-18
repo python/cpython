@@ -544,7 +544,7 @@ class sf1296433Test(unittest.TestCase):
         parser = expat.ParserCreate()
         parser.CharacterDataHandler = handler
 
-        self.assertRaises(Exception, parser.Parse, xml.encode('iso8859'))
+        self.assertRaises(SpecificException, parser.Parse, xml.encode('iso8859'))
 
 class ChardataBufferTest(unittest.TestCase):
     """

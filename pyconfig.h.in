@@ -157,6 +157,9 @@
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
 
+/* Define to 1 if you have the `closefrom' function. */
+#undef HAVE_CLOSEFROM
+
 /* Define to 1 if you have the `close_range' function. */
 #undef HAVE_CLOSE_RANGE
 
@@ -902,6 +905,10 @@
 /* Define to 1 if you have the `posix_spawnp' function. */
 #undef HAVE_POSIX_SPAWNP
 
+/* Define to 1 if you have the `posix_spawn_file_actions_addclosefrom_np'
+   function. */
+#undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
@@ -1611,12 +1618,12 @@
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
+/* Define if you want to disable the GIL */
+#undef Py_GIL_DISABLED
+
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
-
-/* Define if you want to disable the GIL */
-#undef Py_NOGIL
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
@@ -1800,9 +1807,6 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
-/* Define to build the readline module against Apple BSD editline. */
-#undef WITH_APPLE_EDITLINE
-
 /* Define if you want build the _decimal module using a coroutine-local rather
    than a thread-local context */
 #undef WITH_DECIMAL_CONTEXTVAR
@@ -1826,6 +1830,9 @@
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL
+
+/* Define if you want to compile in mimalloc memory allocator. */
+#undef WITH_MIMALLOC
 
 /* Define if you want to produce an OpenStep/Rhapsody framework (shared
    library plus accessory files). */

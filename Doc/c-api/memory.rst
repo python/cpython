@@ -391,6 +391,8 @@ Legend:
 * ``malloc``: system allocators from the standard C library, C functions:
   :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.  The pymalloc
+  allocator will be used if mimalloc support isn't available.
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
@@ -672,6 +674,16 @@ Customize pymalloc Arena Allocator
 
    Set the arena allocator.
 
+.. _mimalloc:
+
+The mimalloc allocator
+======================
+
+.. versionadded:: 3.13
+
+Python supports the mimalloc allocator when the underlying platform support is available.
+mimalloc "is a general purpose allocator with excellent performance characteristics.
+Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages."
 
 tracemalloc C API
 =================

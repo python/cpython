@@ -535,12 +535,13 @@ Miscellaneous options
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
    * ``-X frozen_modules`` determines whether or not frozen modules are
-     ignored by the import machinery.  A value of "on" means they get
-     imported and "off" means they are ignored.  The default is "on"
+     ignored by the import machinery.  A value of ``on`` means they get
+     imported and ``off`` means they are ignored.  The default is ``on``
      if this is an installed Python (the normal case).  If it's under
-     development (running from the source tree) then the default is "off".
-     Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
-     frozen modules are always used, even if this flag is set to "off".
+     development (running from the source tree) then the default is ``off``.
+     Note that the :mod:`!importlib_bootstrap` and
+     :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+     if this flag is set to ``off``. See also :envvar:`PYTHON_FROZEN_MODULES`.
    * ``-X perf`` enables support for the Linux ``perf`` profiler.
      When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
@@ -589,9 +590,7 @@ Miscellaneous options
 
    .. versionadded:: 3.10
       The ``-X warn_default_encoding`` option.
-
-   .. deprecated-removed:: 3.9 3.10
-      The ``-X oldparser`` option.
+      Removed the ``-X oldparser`` option.
 
    .. versionadded:: 3.11
       The ``-X no_debug_ranges`` option.
@@ -611,6 +610,29 @@ Miscellaneous options
    .. versionadded:: 3.13
       The ``-X presite`` option.
 
+.. _using-on-controlling-color:
+
+Controlling color
+~~~~~~~~~~~~~~~~~
+
+The Python interpreter is configured by default to use colors to highlight
+output in certain situations such as when displaying tracebacks. This
+behavior can be controlled by setting different environment variables.
+
+Setting the environment variable ``TERM`` to ``dumb`` will disable color.
+
+If the environment variable ``FORCE_COLOR`` is set, then color will be
+enabled regardless of the value of TERM. This is useful on CI systems which
+aren’t terminals but can none-the-less display ANSI escape sequences.
+
+If the environment variable ``NO_COLOR`` is set, Python will disable all color
+in the output. This takes precedence over ``FORCE_COLOR``.
+
+All these environment variables are used also by other tools to control color
+output. To control the color output only in the Python interpreter, the
+:envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
+precedence over ``NO_COLOR``, which in turn takes precedence over
+``FORCE_COLOR``.
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -921,6 +943,9 @@ conflict.
    * ``pymalloc``: use the :ref:`pymalloc allocator <pymalloc>` for
      :c:macro:`PYMEM_DOMAIN_MEM` and :c:macro:`PYMEM_DOMAIN_OBJ` domains and use
      the :c:func:`malloc` function for the :c:macro:`PYMEM_DOMAIN_RAW` domain.
+   * ``mimalloc``: use the :ref:`mimalloc allocator <mimalloc>` for
+     :c:macro:`PYMEM_DOMAIN_MEM` and :c:macro:`PYMEM_DOMAIN_OBJ` domains and use
+     the :c:func:`malloc` function for the :c:macro:`PYMEM_DOMAIN_RAW` domain.
 
    Install :ref:`debug hooks <pymem-debug-hooks>`:
 
@@ -928,6 +953,7 @@ conflict.
      allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
+   * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
@@ -1091,6 +1117,27 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_FROZEN_MODULES
+
+   If this variable is set to ``on`` or ``off``, it determines whether or not
+   frozen modules are ignored by the import machinery.  A value of ``on`` means
+   they get imported and ``off`` means they are ignored.  The default is ``on``
+   for non-debug builds (the normal case) and ``off`` for debug builds.
+   Note that the :mod:`!importlib_bootstrap` and
+   :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+   if this flag is set to ``off``.
+
+   See also the :option:`-X frozen_modules <-X>` command-line option.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_COLORS
+
+   If this variable is set to ``1``, the interpreter will colorize various kinds
+   of output. Setting it to ``0`` deactivates this behavior.
+   See also :ref:`using-on-controlling-color`.
+
+   .. versionadded:: 3.13
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

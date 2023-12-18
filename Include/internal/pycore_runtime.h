@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
+#include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -20,13 +21,11 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
-#include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
 struct _getargs_runtime_state {
-    PyThread_type_lock mutex;
     struct _PyArg_Parser *static_parsers;
 };
 
@@ -174,7 +173,7 @@ typedef struct pyruntimestate {
     unsigned long _finalizing_id;
 
     struct pyinterpreters {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The linked list of interpreters, newest first. */
         PyInterpreterState *head;
         /* The runtime's initial interpreter, which has a special role
@@ -199,13 +198,12 @@ typedef struct pyruntimestate {
      possible to facilitate out-of-process observability
      tools. */
 
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry xidregistry;
+    /* cross-interpreter data and utils */
+    struct _xi_runtime_state xi;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
-    struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
@@ -236,7 +234,7 @@ typedef struct pyruntimestate {
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     struct {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         _Py_AuditHookEntry *head;
     } audit_hooks;
 

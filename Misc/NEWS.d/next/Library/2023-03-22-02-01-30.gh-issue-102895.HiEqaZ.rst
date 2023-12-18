@@ -1,1 +1,0 @@
-Added a parameter ``local_exit`` for :func:`code.interact` to prevent ``exit()`` and ``quit`` from closing ``sys.stdin`` and raise ``SystemExit``.

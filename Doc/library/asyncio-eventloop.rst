@@ -509,7 +509,7 @@ Opening network connections
 
    .. versionchanged:: 3.6
 
-      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.7
@@ -581,7 +581,7 @@ Opening network connections
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
-     and some Unixes. If the :py:const:`~socket.SO_REUSEPORT` constant is not
+     and some Unixes. If the :ref:`socket.SO_REUSEPORT <socket-unix-constants>` constant is not
      defined then this capability is unsupported.
 
    * *allow_broadcast* tells the kernel to allow this endpoint to send
@@ -607,7 +607,8 @@ Opening network connections
 
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
-      :py:const:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      :ref:`socket.SO_REUSEADDR <socket-unix-constants>`
+      poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
       When multiple processes with differing UIDs assign sockets to an
@@ -616,7 +617,8 @@ Opening network connections
 
       For supported platforms, *reuse_port* can be used as a replacement for
       similar functionality. With *reuse_port*,
-      :py:const:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      :ref:`socket.SO_REUSEPORT <socket-unix-constants>`
+      is used instead, which specifically
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
@@ -669,6 +671,7 @@ Creating network servers
                         flags=socket.AI_PASSIVE, \
                         sock=None, backlog=100, ssl=None, \
                         reuse_address=None, reuse_port=None, \
+                        keep_alive=None, \
                         ssl_handshake_timeout=None, \
                         ssl_shutdown_timeout=None, \
                         start_serving=True)
@@ -733,6 +736,13 @@ Creating network servers
      set this flag when being created. This option is not supported on
      Windows.
 
+   * *keep_alive* set to ``True`` keeps connections active by enabling the
+     periodic transmission of messages.
+
+   .. versionchanged:: 3.13
+
+      Added the *keep_alive* parameter.
+
    * *ssl_handshake_timeout* is (for a TLS server) the time in seconds to wait
      for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
@@ -758,7 +768,7 @@ Creating network servers
    .. versionchanged:: 3.6
 
       Added *ssl_handshake_timeout* and *start_serving* parameters.
-      The socket option :py:const:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.11
@@ -776,7 +786,7 @@ Creating network servers
                           *, sock=None, backlog=100, ssl=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          start_serving=True)
+                          start_serving=True, cleanup_socket=True)
 
    Similar to :meth:`loop.create_server` but works with the
    :py:const:`~socket.AF_UNIX` socket family.
@@ -785,6 +795,10 @@ Creating network servers
    unless a *sock* argument is provided.  Abstract Unix sockets,
    :class:`str`, :class:`bytes`, and :class:`~pathlib.Path` paths
    are supported.
+
+   If *cleanup_socket* is True then the Unix socket will automatically
+   be removed from the filesystem when the server is closed, unless the
+   socket has been replaced after the server has been created.
 
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
@@ -799,6 +813,10 @@ Creating network servers
    .. versionchanged:: 3.11
 
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.13
+
+      Added the *cleanup_socket* parameter.
 
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \
@@ -1896,7 +1914,7 @@ Set signal handlers for SIGINT and SIGTERM
 
 (This ``signals`` example only works on Unix.)
 
-Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`
+Register handlers for signals :const:`~signal.SIGINT` and :const:`~signal.SIGTERM`
 using the :meth:`loop.add_signal_handler` method::
 
     import asyncio

@@ -94,19 +94,12 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument(
     "-v",
-    "--verbose",
+    "--viable",
     help="Print list of non-viable uops and exit",
     action="store_true",
 )
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
-)
-arg_parser.add_argument(
-    "-n",
-    "--opcode_ids_h",
-    type=str,
-    help="Header file with opcode number definitions",
-    default=DEFAULT_OPCODE_IDS_H_OUTPUT,
 )
 arg_parser.add_argument(
     "-t",
@@ -134,13 +127,6 @@ arg_parser.add_argument(
 )
 arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
-)
-arg_parser.add_argument(
-    "-e",
-    "--executor-cases",
-    type=str,
-    help="Write executor cases to this file",
-    default=DEFAULT_EXECUTOR_OUTPUT,
 )
 arg_parser.add_argument(
     "-a",
@@ -178,17 +164,17 @@ class Generator(Analyzer):
                 # for all targets.
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
-                    # Currently target is always an instr. This could change
-                    # in the future, e.g., if we have a pseudo targetting a
-                    # macro instruction.
-                    assert target_instr
-                    target_popped = effect_str(target_instr.input_effects)
-                    target_pushed = effect_str(target_instr.output_effects)
-                    if popped is None:
-                        popped, pushed = target_popped, target_pushed
+                    if target_instr is None:
+                        macro_instr = self.macro_instrs[target]
+                        popped, pushed = stacking.get_stack_effect_info_for_macro(macro_instr)
                     else:
-                        assert popped == target_popped
-                        assert pushed == target_pushed
+                        target_popped = effect_str(target_instr.input_effects)
+                        target_pushed = effect_str(target_instr.output_effects)
+                        if popped is None:
+                            popped, pushed = target_popped, target_pushed
+                        else:
+                            assert popped == target_popped
+                            assert pushed == target_pushed
             case _:
                 assert_never(thing)
         assert popped is not None and pushed is not None
@@ -223,8 +209,9 @@ class Generator(Analyzer):
                 "",
             ):
                 with self.out.block("switch(opcode)"):
-                    for instr, effect in data:
-                        self.out.emit(f"case {instr.name}:")
+                    effects = [(instr.name, effect) for instr, effect in data]
+                    for name, effect in sorted(effects):
+                        self.out.emit(f"case {name}:")
                         self.out.emit(f"    return {effect};")
                     self.out.emit("default:")
                     self.out.emit("    return -1;")
@@ -334,42 +321,8 @@ class Generator(Analyzer):
         self.opmap = opmap
         self.markers = markers
 
-    def write_opcode_ids(
-        self, opcode_ids_h_filename: str, opcode_targets_filename: str
-    ) -> None:
-        """Write header file that defined the opcode IDs"""
-
-        with open(opcode_ids_h_filename, "w") as f:
-            # Create formatter
-            self.out = Formatter(f, 0)
-
-            self.write_provenance_header()
-
-            self.out.emit("")
-            self.out.emit("#ifndef Py_OPCODE_IDS_H")
-            self.out.emit("#define Py_OPCODE_IDS_H")
-            self.out.emit("#ifdef __cplusplus")
-            self.out.emit('extern "C" {')
-            self.out.emit("#endif")
-            self.out.emit("")
-            self.out.emit("/* Instruction opcodes for compiled code */")
-
-            def define(name: str, opcode: int) -> None:
-                self.out.emit(f"#define {name:<38} {opcode:>3}")
-
-            all_pairs: list[tuple[int, int, str]] = []
-            # the second item in the tuple sorts the markers before the ops
-            all_pairs.extend((i, 1, name) for (name, i) in self.markers.items())
-            all_pairs.extend((i, 2, name) for (name, i) in self.opmap.items())
-            for i, _, name in sorted(all_pairs):
-                assert name is not None
-                define(name, i)
-
-            self.out.emit("")
-            self.out.emit("#ifdef __cplusplus")
-            self.out.emit("}")
-            self.out.emit("#endif")
-            self.out.emit("#endif /* !Py_OPCODE_IDS_H */")
+    def write_opcode_targets(self, opcode_targets_filename: str) -> None:
+        """Write header file that defines the jump target table"""
 
         with open(opcode_targets_filename, "w") as f:
             # Create formatter
@@ -395,13 +348,9 @@ class Generator(Analyzer):
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
-                    for target in self.pseudos[thing.name].targets:
-                        target_instr = self.instrs.get(target)
-                        assert target_instr
-                        if format is None:
-                            format = target_instr.instr_fmt
-                        else:
-                            assert format == target_instr.instr_fmt
+                    # Pseudo instructions exist only in the compiler,
+                    # so do not have a format
+                    continue
                 case _:
                     assert_never(thing)
             assert format is not None
@@ -426,7 +375,7 @@ class Generator(Analyzer):
             self.write_pseudo_instrs()
 
             self.out.emit("")
-            self.write_uop_items(lambda name, counter: f"#define {name} {counter}")
+            self.out.emit('#include "pycore_uop_ids.h"')
 
             self.write_stack_effect_functions()
 
@@ -464,12 +413,12 @@ class Generator(Analyzer):
             self.out.emit("")
 
             self.out.emit(
-                "#define OPCODE_METADATA_FMT(OP) "
-                "(_PyOpcode_opcode_metadata[(OP)].instr_format)"
+                "#define OPCODE_METADATA_FLAGS(OP) "
+                "(_PyOpcode_opcode_metadata[(OP)].flags & (HAS_ARG_FLAG | HAS_JUMP_FLAG))"
             )
             self.out.emit("#define SAME_OPCODE_METADATA(OP1, OP2) \\")
             self.out.emit(
-                "        (OPCODE_METADATA_FMT(OP1) == OPCODE_METADATA_FMT(OP2))"
+                "        (OPCODE_METADATA_FLAGS(OP1) == OPCODE_METADATA_FLAGS(OP2))"
             )
             self.out.emit("")
 
@@ -485,7 +434,8 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write metadata for each instruction
-                for thing in self.everything:
+                sorted_things = sorted(self.everything, key = lambda t:t.name)
+                for thing in sorted_things:
                     match thing:
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
@@ -508,7 +458,7 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
-                for mac in self.macro_instrs.values():
+                for mac in sorted(self.macro_instrs.values(), key=lambda t: t.name):
                     if is_super_instruction(mac):
                         # Special-case the heck out of super-instructions
                         self.write_super_expansions(mac.name)
@@ -527,7 +477,7 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name in self.opmap:
+                for name in sorted(self.opmap):
                     self.out.emit(f'[{name}] = "{name}",')
 
             with self.metadata_item(
@@ -545,8 +495,6 @@ class Generator(Analyzer):
                         and not mac.name.startswith("INSTRUMENTED_")
                     ):
                         self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
-                # Irregular case:
-                self.out.emit("[JUMP_BACKWARD] = 1,")
 
             deoptcodes = {}
             for name, op in self.opmap.items():
@@ -643,7 +591,7 @@ class Generator(Analyzer):
         add("_EXIT_TRACE")
         add("_SET_IP")
 
-        for instr in self.instrs.values():
+        for instr in sorted(self.instrs.values(), key=lambda t:t.name):
             # Skip ops that are also macros -- those are desugared inst()s
             if instr.name not in self.macros:
                 add(instr.name)
@@ -657,11 +605,14 @@ class Generator(Analyzer):
         expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
         for part in parts:
             if isinstance(part, Component):
-                # All component instructions must be viable uops
-                if not part.instr.is_viable_uop():
+                # Skip specializations
+                if "specializing" in part.instr.annotations:
+                    continue
+                # All other component instructions must be viable uops
+                if not part.instr.is_viable_uop() and "replaced" not in part.instr.annotations:
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
-                    # It is sometimes emitted for macros that have a
+                    # Suppress it using 'replaced op(...)' for macros having
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
                     if len(parts) > 1 or part.instr.name != name:
@@ -732,12 +683,13 @@ class Generator(Analyzer):
             f"{{ .nuops = {len(pieces)}, .uops = {{ {', '.join(pieces)} }} }},"
         )
 
-    def emit_metadata_entry(self, name: str, fmt: str, flags: InstructionFlags) -> None:
+    def emit_metadata_entry(self, name: str, fmt: str | None, flags: InstructionFlags) -> None:
         flag_names = flags.names(value=True)
         if not flag_names:
             flag_names.append("0")
+        fmt_macro = "0" if fmt is None else INSTR_FMT_PREFIX + fmt
         self.out.emit(
-            f"[{name}] = {{ true, {INSTR_FMT_PREFIX}{fmt},"
+            f"[{name}] = {{ true, {fmt_macro},"
             f" {' | '.join(flag_names)} }},"
         )
 
@@ -751,7 +703,7 @@ class Generator(Analyzer):
 
     def write_metadata_for_pseudo(self, ps: PseudoInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        self.emit_metadata_entry(ps.name, ps.instr_fmt, ps.instr_flags)
+        self.emit_metadata_entry(ps.name, None, ps.instr_flags)
 
     def write_instructions(
         self, output_filename: str, emit_line_directives: bool
@@ -763,8 +715,15 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_TWO\n")
+            self.out.write_raw("    #error \"This file is for Tier 1 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_ONE 1\n")
+
             # Write and count instructions of all kinds
             n_macros = 0
+            cases = []
             for thing in self.everything:
                 match thing:
                     case parsing.InstDef():
@@ -772,11 +731,17 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(mac, self.out)
+                        cases.append((mac.name, mac))
                     case parsing.Pseudo():
                         pass
                     case _:
                         assert_never(thing)
+            cases.sort()
+            for _, mac in cases:
+                stacking.write_macro_instr(mac, self.out)
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_ONE\n")
 
         print(
             f"Wrote {n_macros} cases to {output_filename}",
@@ -791,15 +756,28 @@ class Generator(Analyzer):
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#ifdef TIER_ONE\n")
+            self.out.write_raw("    #error \"This file is for Tier 2 only\"\n")
+            self.out.write_raw("#endif\n")
+            self.out.write_raw("#define TIER_TWO 2\n")
+
             for instr in self.instrs.values():
                 if instr.is_viable_uop():
                     n_uops += 1
                     self.out.emit("")
                     with self.out.block(f"case {instr.name}:"):
+                        if instr.instr_flags.HAS_ARG_FLAG:
+                            self.out.emit("oparg = CURRENT_OPARG();")
                         stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
                         self.out.emit("break;")
+
+            self.out.write_raw("\n")
+            self.out.write_raw("#undef TIER_TWO\n")
+
         print(
             f"Wrote {n_uops} cases to {executor_filename}",
             file=sys.stderr,
@@ -853,18 +831,16 @@ def main() -> None:
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
-    if args.verbose:
+    if args.viable:
         # Load execution counts from bmraw.json, if it exists
         a.report_non_viable_uops("bmraw.json")
         return
 
     # These raise OSError if output can't be written
-    a.write_instructions(args.output, args.emit_line_directives)
 
     a.assign_opcode_ids()
-    a.write_opcode_ids(args.opcode_ids_h, args.opcode_targets_h)
+    a.write_opcode_targets(args.opcode_targets_h)
     a.write_metadata(args.metadata, args.pymetadata)
-    a.write_executor_instructions(args.executor_cases, args.emit_line_directives)
     a.write_abstract_interpreter_instructions(
         args.abstract_interpreter_cases, args.emit_line_directives
     )

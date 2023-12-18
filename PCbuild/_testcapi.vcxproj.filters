@@ -30,10 +30,25 @@
     <ClCompile Include="..\Modules\_testcapi\abstract.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\bytearray.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\bytes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\unicode.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\dict.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\set.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\list.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\tuple.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\datetime.c">
@@ -54,6 +69,12 @@
     <ClCompile Include="..\Modules\_testcapi\long.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\complex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\numbers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\structmember.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -72,7 +93,16 @@
     <ClCompile Include="..\Modules\_testcapi\pyos.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\codec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\sys.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\hash.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\gc.c">

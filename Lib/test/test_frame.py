@@ -80,9 +80,11 @@ class ClearTest(unittest.TestCase):
         gen = g()
         next(gen)
         self.assertFalse(endly)
-        # Clearing the frame closes the generator
-        gen.gi_frame.clear()
-        self.assertTrue(endly)
+
+        # Cannot clear a suspended frame
+        with self.assertRaisesRegex(RuntimeError, r'suspended frame'):
+            gen.gi_frame.clear()
+        self.assertFalse(endly)
 
     def test_clear_executing(self):
         # Attempting to clear an executing frame is forbidden.
@@ -114,9 +116,10 @@ class ClearTest(unittest.TestCase):
         gen = g()
         f = next(gen)
         self.assertFalse(endly)
-        # Clearing the frame closes the generator
-        f.clear()
-        self.assertTrue(endly)
+        # Cannot clear a suspended frame
+        with self.assertRaisesRegex(RuntimeError, 'suspended frame'):
+            f.clear()
+        self.assertFalse(endly)
 
     def test_lineno_with_tracing(self):
         def record_line():
