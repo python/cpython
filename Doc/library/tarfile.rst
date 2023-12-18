@@ -116,7 +116,7 @@ Some facts and figures:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
    be done on the file. If given, *fileobj* may be any object that has a
-   :meth:`read` or :meth:`write` method (depending on the *mode*). *bufsize*
+   :meth:`~io.TextIOBase.read` or :meth:`~io.TextIOBase.write` method (depending on the *mode*). *bufsize*
    specifies the blocksize and defaults to ``20 * 512`` bytes. Use this variant
    in combination with e.g. ``sys.stdin``, a socket :term:`file object` or a tape
    device. However, such a :class:`TarFile` object is limited in that it does
@@ -255,6 +255,51 @@ The following constants are available at the module level:
    The default character encoding: ``'utf-8'`` on Windows, the value returned by
    :func:`sys.getfilesystemencoding` otherwise.
 
+.. data:: REGTYPE
+          AREGTYPE
+
+   A regular file :attr:`~TarInfo.type`.
+
+.. data:: LNKTYPE
+
+   A link (inside tarfile) :attr:`~TarInfo.type`.
+
+.. data:: SYMTYPE
+
+   A symbolic link :attr:`~TarInfo.type`.
+
+.. data:: CHRTYPE
+
+   A character special device :attr:`~TarInfo.type`.
+
+.. data:: BLKTYPE
+
+   A block special device :attr:`~TarInfo.type`.
+
+.. data:: DIRTYPE
+
+   A directory :attr:`~TarInfo.type`.
+
+.. data:: FIFOTYPE
+
+   A FIFO special device :attr:`~TarInfo.type`.
+
+.. data:: CONTTYPE
+
+   A contiguous file :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_LONGNAME
+
+   A GNU tar longname :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_LONGLINK
+
+   A GNU tar longlink :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_SPARSE
+
+   A GNU tar sparse file :attr:`~TarInfo.type`.
+
 
 Each of the following constants defines a tar archive format that the
 :mod:`tarfile` module is able to create. See section :ref:`tar-formats` for
@@ -325,7 +370,7 @@ be finalized; only the internally used file object will be closed. See the
 
    *name* is the pathname of the archive. *name* may be a :term:`path-like object`.
    It can be omitted if *fileobj* is given.
-   In this case, the file object's :attr:`name` attribute is used if it exists.
+   In this case, the file object's :attr:`!name` attribute is used if it exists.
 
    *mode* is either ``'r'`` to read from an existing archive, ``'a'`` to append
    data to an existing file, ``'w'`` to create a new file overwriting an existing
@@ -359,7 +404,7 @@ be finalized; only the internally used file object will be closed. See the
    messages). The messages are written to ``sys.stderr``.
 
    *errorlevel* controls how extraction errors are handled,
-   see :attr:`the corresponding attribute <~TarFile.errorlevel>`.
+   see :attr:`the corresponding attribute <TarFile.errorlevel>`.
 
    The *encoding* and *errors* arguments define the character encoding to be
    used for reading or writing the archive and how conversion errors are going
@@ -640,8 +685,8 @@ It does *not* contain the file's data itself.
 :meth:`~TarFile.getmember`, :meth:`~TarFile.getmembers` and
 :meth:`~TarFile.gettarinfo`.
 
-Modifying the objects returned by :meth:`~!TarFile.getmember` or
-:meth:`~!TarFile.getmembers` will affect all subsequent
+Modifying the objects returned by :meth:`~TarFile.getmember` or
+:meth:`~TarFile.getmembers` will affect all subsequent
 operations on the archive.
 For cases where this is unwanted, you can use :mod:`copy.copy() <copy>` or
 call the :meth:`~TarInfo.replace` method to create a modified copy in one step.
@@ -790,8 +835,8 @@ A ``TarInfo`` object has the following public data attributes:
 
    A dictionary containing key-value pairs of an associated pax extended header.
 
-.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=...,
-                            uid=..., gid=..., uname=..., gname=...,
+.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=..., \
+                            uid=..., gid=..., uname=..., gname=..., \
                             deep=True)
 
    .. versionadded:: 3.12
@@ -811,7 +856,7 @@ A :class:`TarInfo` object also provides some convenient query methods:
 
 .. method:: TarInfo.isfile()
 
-   Return :const:`True` if the :class:`Tarinfo` object is a regular file.
+   Return :const:`True` if the :class:`TarInfo` object is a regular file.
 
 
 .. method:: TarInfo.isreg()
@@ -947,7 +992,7 @@ reused in custom filters:
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
   - Clear high mode bits (setuid, setgid, sticky) and group/other write bits
-    (:const:`~stat.S_IWGRP`|:const:`~stat.S_IWOTH`).
+    (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
 
@@ -972,9 +1017,9 @@ reused in custom filters:
   - For regular files, including hard links:
 
     - Set the owner read and write permissions
-      (:const:`~stat.S_IRUSR`|:const:`~stat.S_IWUSR`).
+      (:const:`~stat.S_IRUSR` | :const:`~stat.S_IWUSR`).
     - Remove the group & other executable permission
-      (:const:`~stat.S_IXGRP`|:const:`~stat.S_IXOTH`)
+      (:const:`~stat.S_IXGRP` | :const:`~stat.S_IXOTH`)
       if the owner doesn’t have it (:const:`~stat.S_IXUSR`).
 
   - For other files (directories), set ``mode`` to ``None``, so
