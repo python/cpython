@@ -1,0 +1,4 @@
+Set ``CFBundleAllowMixedLocalizations`` to true in the Info.plist for the
+framework, embedded Python.app and IDLE.app with framework installs on
+macOS.  This allows applications to pick up the user's preferred locale when
+that's different from english.
