@@ -86,7 +86,6 @@ Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
 Doc/library/subprocess.rst
-Doc/library/tarfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
 Doc/library/tkinter.rst
