@@ -1953,8 +1953,12 @@ _PyThreadState_Bind(PyThreadState *tstate)
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 uintptr_t
-_Py_GetThreadLocal_Addr(void) {
+_Py_GetThreadLocal_Addr(void)
+{
 #ifdef HAVE_THREAD_LOCAL
+    // gh-112535: Use the address of the thread-local PyThreadState variable as
+    // a unique identifier for the current thread. Each thread has a unique
+    // _Py_tss_tstate variable with a unique address.
     return (uintptr_t)&_Py_tss_tstate;
 #else
 #  error "no supported thread-local variable storage classifier"
