@@ -1489,7 +1489,6 @@ class _DummyThread(Thread):
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"),
                         daemon=_daemon_threads_allowed())
-        self._set_tstate_lock()
         self._started.set()
         self._set_ident()
         if _HAVE_THREAD_NATIVE_ID:
@@ -1698,6 +1697,9 @@ def _after_fork():
         # by threading.Thread. For example, a thread spawned
         # by thread.start_new_thread().
         current = _MainThread()
+    else:
+        if isinstance(current, _DummyThread):
+            current = _MainThread()
 
     _main_thread = current
 
