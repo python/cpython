@@ -44,8 +44,24 @@ hash_getfuncdef(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     return result;
 }
 
+
+static PyObject *
+hash_pointer(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    void *ptr = PyLong_AsVoidPtr(arg);
+    if (ptr == NULL && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    Py_hash_t hash = Py_HashPointer(ptr);
+    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
+    return PyLong_FromLongLong(hash);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"hash_getfuncdef", hash_getfuncdef, METH_NOARGS},
+    {"hash_pointer", hash_pointer, METH_O},
     {NULL},
 };
 

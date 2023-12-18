@@ -293,6 +293,8 @@ static const char usage_envvars[] =
 "PYTHON_FROZEN_MODULES   : if this variable is set, it determines whether or not \n"
 "   frozen modules should be used. The default is \"on\" (or \"off\" if you are \n"
 "   running a local build).\n"
+"PYTHON_COLORS           : If this variable is set to 1, the interpreter will"
+"   colorize various kinds of output. Setting it to 0 deactivates this behavior.\n"
 "These variables have equivalent command-line parameters (see --help for details):\n"
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"

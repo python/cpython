@@ -769,6 +769,8 @@ MODULE__MULTIPROCESSING_FALSE
 MODULE__MULTIPROCESSING_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
+MODULE__XXINTERPQUEUES_FALSE
+MODULE__XXINTERPQUEUES_TRUE
 MODULE__XXINTERPCHANNELS_FALSE
 MODULE__XXINTERPCHANNELS_TRUE
 MODULE__XXSUBINTERPRETERS_FALSE
@@ -16891,6 +16893,8 @@ printf "%s\n" "#define WITH_MIMALLOC 1" >>confdefs.h
 
   MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
+elif test "$disable_gil" = "yes"; then
+  as_fn_error $? "--disable-gil requires mimalloc memory allocator (--with-mimalloc)." "$LINENO" 5
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
@@ -17222,6 +17226,12 @@ ac_fn_c_check_func "$LINENO" "clock" "ac_cv_func_clock"
 if test "x$ac_cv_func_clock" = xyes
 then :
   printf "%s\n" "#define HAVE_CLOCK 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "closefrom" "ac_cv_func_closefrom"
+if test "x$ac_cv_func_closefrom" = xyes
+then :
+  printf "%s\n" "#define HAVE_CLOSEFROM 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "close_range" "ac_cv_func_close_range"
@@ -17768,6 +17778,12 @@ ac_fn_c_check_func "$LINENO" "posix_spawnp" "ac_cv_func_posix_spawnp"
 if test "x$ac_cv_func_posix_spawnp" = xyes
 then :
   printf "%s\n" "#define HAVE_POSIX_SPAWNP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "posix_spawn_file_actions_addclosefrom_np" "ac_cv_func_posix_spawn_file_actions_addclosefrom_np"
+if test "x$ac_cv_func_posix_spawn_file_actions_addclosefrom_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pread" "ac_cv_func_pread"
@@ -23971,7 +23987,6 @@ fi
 
 
 
-
 # Check whether --with-readline was given.
 if test ${with_readline+y}
 then :
@@ -23993,22 +24008,6 @@ else $as_nop
 
 fi
 
-
-# gh-105323: Need to handle the macOS editline as an alias of readline.
-case $ac_sys_system/$ac_sys_release in #(
-  Darwin/*) :
-    ac_fn_c_check_type "$LINENO" "Function" "ac_cv_type_Function" "#include <readline/readline.h>
-"
-if test "x$ac_cv_type_Function" = xyes
-then :
-  printf "%s\n" "#define WITH_APPLE_EDITLINE 1" >>confdefs.h
-
-fi
- ;; #(
-  *) :
-
- ;;
-esac
 
 if test "x$with_readline" = xreadline
 then :
@@ -27902,6 +27901,9 @@ printf "%s\n" "$TEST_MODULES" >&6; }
 # libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
 # compiler flags.
 #
+# gh-112779: On RISC-V, GCC 12 and earlier require libatomic support for 1-byte
+# and 2-byte operations, but not for 8-byte operations.
+#
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
 # If the check is done after AC_OUTPUT, modifying LIBS has no effect
@@ -27941,12 +27943,19 @@ typedef intptr_t Py_ssize_t;
 
 int main()
 {
-    uint64_t byte;
-    _Py_atomic_store_uint64(&byte, 2);
-    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+    uint64_t value;
+    _Py_atomic_store_uint64(&value, 2);
+    if (_Py_atomic_or_uint64(&value, 8) != 2) {
         return 1; // error
     }
-    if (_Py_atomic_load_uint64(&byte) != 10) {
+    if (_Py_atomic_load_uint64(&value) != 10) {
+        return 1; // error
+    }
+    uint8_t byte = 0xb8;
+    if (_Py_atomic_or_uint8(&byte, 0x2d) != 0xb8) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint8(&byte) != 0xbd) {
         return 1; // error
     }
     return 0; // all good
@@ -28024,6 +28033,7 @@ case $ac_sys_system in #(
     py_cv_module__tkinter=n/a
     py_cv_module__xxsubinterpreters=n/a
     py_cv_module__xxinterpchannels=n/a
+    py_cv_module__xxinterpqueues=n/a
     py_cv_module_grp=n/a
     py_cv_module_pwd=n/a
     py_cv_module_resource=n/a
@@ -28518,6 +28528,28 @@ fi
 
   as_fn_append MODULE_BLOCK "MODULE__XXINTERPCHANNELS_STATE=$py_cv_module__xxinterpchannels$as_nl"
   if test "x$py_cv_module__xxinterpchannels" = xyes
+then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__xxinterpqueues" != "n/a"
+then :
+  py_cv_module__xxinterpqueues=yes
+fi
+   if test "$py_cv_module__xxinterpqueues" = yes; then
+  MODULE__XXINTERPQUEUES_TRUE=
+  MODULE__XXINTERPQUEUES_FALSE='#'
+else
+  MODULE__XXINTERPQUEUES_TRUE='#'
+  MODULE__XXINTERPQUEUES_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__XXINTERPQUEUES_STATE=$py_cv_module__xxinterpqueues$as_nl"
+  if test "x$py_cv_module__xxinterpqueues" = xyes
 then :
 
 
@@ -30757,6 +30789,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__XXINTERPCHANNELS_TRUE}" && test -z "${MODULE__XXINTERPCHANNELS_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__XXINTERPCHANNELS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__XXINTERPQUEUES_TRUE}" && test -z "${MODULE__XXINTERPQUEUES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__XXINTERPQUEUES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then

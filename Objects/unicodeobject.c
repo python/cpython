@@ -1904,7 +1904,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
     if (index < 0) {
         struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
-        PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
+        PyMutex_Lock(&rt_ids->mutex);
         // Check again to detect concurrent access. Another thread can have
         // initialized the index while this thread waited for the lock.
         index = _Py_atomic_load_ssize(&id->index);
@@ -1914,7 +1914,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
             rt_ids->next_index++;
             _Py_atomic_store_ssize(&id->index, index);
         }
-        PyThread_release_lock(rt_ids->lock);
+        PyMutex_Unlock(&rt_ids->mutex);
     }
     assert(index >= 0);
 

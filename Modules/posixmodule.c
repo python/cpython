@@ -1030,6 +1030,10 @@ typedef struct {
     PyObject *struct_rusage;
 #endif
     PyObject *st_mode;
+#ifndef MS_WINDOWS
+    // times() clock frequency in hertz; used by os.times()
+    long ticks_per_second;
+#endif
 } _posixstate;
 
 
@@ -3305,6 +3309,29 @@ os_fchdir_impl(PyObject *module, int fd)
 }
 #endif /* HAVE_FCHDIR */
 
+#ifdef MS_WINDOWS
+# define CHMOD_DEFAULT_FOLLOW_SYMLINKS 0
+#else
+# define CHMOD_DEFAULT_FOLLOW_SYMLINKS 1
+#endif
+
+#ifdef MS_WINDOWS
+static int
+win32_lchmod(LPCWSTR path, int mode)
+{
+    DWORD attr = GetFileAttributesW(path);
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        return 0;
+    }
+    if (mode & _S_IWRITE) {
+        attr &= ~FILE_ATTRIBUTE_READONLY;
+    }
+    else {
+        attr |= FILE_ATTRIBUTE_READONLY;
+    }
+    return SetFileAttributesW(path, attr);
+}
+#endif
 
 /*[clinic input]
 os.chmod
@@ -3327,7 +3354,8 @@ os.chmod
         and path should be relative; path will then be relative to that
         directory.
 
-    follow_symlinks: bool = True
+    follow_symlinks: bool(c_default="CHMOD_DEFAULT_FOLLOW_SYMLINKS", \
+                          py_default="(os.name != 'nt')") = CHMOD_DEFAULT_FOLLOW_SYMLINKS
         If False, and the last element of the path is a symbolic link,
         chmod will modify the symbolic link itself instead of the file
         the link points to.
@@ -3344,20 +3372,16 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 static PyObject *
 os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
               int follow_symlinks)
-/*[clinic end generated code: output=5cf6a94915cc7bff input=674a14bc998de09d]*/
+/*[clinic end generated code: output=5cf6a94915cc7bff input=fcf115d174b9f3d8]*/
 {
     int result;
-
-#ifdef MS_WINDOWS
-    DWORD attr;
-#endif
 
 #ifdef HAVE_FCHMODAT
     int fchmodat_nofollow_unsupported = 0;
     int fchmodat_unsupported = 0;
 #endif
 
-#if !(defined(HAVE_FCHMODAT) || defined(HAVE_LCHMOD))
+#if !(defined(HAVE_FCHMODAT) || defined(HAVE_LCHMOD) || defined(MS_WINDOWS))
     if (follow_symlinks_specified("chmod", follow_symlinks))
         return NULL;
 #endif
@@ -3368,19 +3392,36 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     }
 
 #ifdef MS_WINDOWS
+    result = 0;
     Py_BEGIN_ALLOW_THREADS
-    attr = GetFileAttributesW(path->wide);
-    if (attr == INVALID_FILE_ATTRIBUTES)
-        result = 0;
+    if (follow_symlinks) {
+        HANDLE hfile;
+        FILE_BASIC_INFO info;
+
+        hfile = CreateFileW(path->wide,
+                            FILE_READ_ATTRIBUTES|FILE_WRITE_ATTRIBUTES,
+                            0, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            if (GetFileInformationByHandleEx(hfile, FileBasicInfo,
+                                             &info, sizeof(info)))
+            {
+                if (mode & _S_IWRITE) {
+                    info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+                }
+                else {
+                    info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
+                }
+                result = SetFileInformationByHandle(hfile, FileBasicInfo,
+                                                    &info, sizeof(info));
+            }
+            (void)CloseHandle(hfile);
+        }
+    }
     else {
-        if (mode & _S_IWRITE)
-            attr &= ~FILE_ATTRIBUTE_READONLY;
-        else
-            attr |= FILE_ATTRIBUTE_READONLY;
-        result = SetFileAttributesW(path->wide, attr);
+        result = win32_lchmod(path->wide, mode);
     }
     Py_END_ALLOW_THREADS
-
     if (!result) {
         return path_error(path);
     }
@@ -3510,7 +3551,7 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
 #endif /* HAVE_FCHMOD */
 
 
-#ifdef HAVE_LCHMOD
+#if defined(HAVE_LCHMOD) || defined(MS_WINDOWS)
 /*[clinic input]
 os.lchmod
 
@@ -3531,6 +3572,15 @@ os_lchmod_impl(PyObject *module, path_t *path, int mode)
     if (PySys_Audit("os.chmod", "Oii", path->object, mode, -1) < 0) {
         return NULL;
     }
+#ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
+    res = win32_lchmod(path->wide, mode);
+    Py_END_ALLOW_THREADS
+    if (!res) {
+        path_error(path);
+        return NULL;
+    }
+#else /* MS_WINDOWS */
     Py_BEGIN_ALLOW_THREADS
     res = lchmod(path->narrow, mode);
     Py_END_ALLOW_THREADS
@@ -3538,9 +3588,10 @@ os_lchmod_impl(PyObject *module, path_t *path, int mode)
         path_error(path);
         return NULL;
     }
+#endif /* MS_WINDOWS */
     Py_RETURN_NONE;
 }
-#endif /* HAVE_LCHMOD */
+#endif /* HAVE_LCHMOD || MS_WINDOWS */
 
 
 #ifdef HAVE_CHFLAGS
@@ -6783,6 +6834,9 @@ enum posix_spawn_file_actions_identifier {
     POSIX_SPAWN_OPEN,
     POSIX_SPAWN_CLOSE,
     POSIX_SPAWN_DUP2
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+    ,POSIX_SPAWN_CLOSEFROM
+#endif
 };
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -7023,6 +7077,24 @@ parse_file_actions(PyObject *file_actions,
                 }
                 break;
             }
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+            case POSIX_SPAWN_CLOSEFROM: {
+                int fd;
+                if (!PyArg_ParseTuple(file_action, "Oi"
+                        ";A closefrom file_action tuple must have 2 elements",
+                        &tag_obj, &fd))
+                {
+                    goto fail;
+                }
+                errno = posix_spawn_file_actions_addclosefrom_np(file_actionsp,
+                                                                 fd);
+                if (errno) {
+                    posix_error();
+                    goto fail;
+                }
+                break;
+            }
+#endif
             default: {
                 PyErr_SetString(PyExc_TypeError,
                                 "Unknown file_actions identifier");
@@ -7078,9 +7150,9 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         return NULL;
     }
 
-    if (!PyMapping_Check(env)) {
+    if (!PyMapping_Check(env) && env != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                     "%s: environment must be a mapping object", func_name);
+                     "%s: environment must be a mapping object or None", func_name);
         goto exit;
     }
 
@@ -7094,9 +7166,13 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    envlist = parse_envlist(env, &envc);
-    if (envlist == NULL) {
-        goto exit;
+    if (env == Py_None) {
+        envlist = environ;
+    } else {
+        envlist = parse_envlist(env, &envc);
+        if (envlist == NULL) {
+            goto exit;
+        }
     }
 
     if (file_actions != NULL && file_actions != Py_None) {
@@ -7159,7 +7235,7 @@ exit:
     if (attrp) {
         (void)posix_spawnattr_destroy(attrp);
     }
-    if (envlist) {
+    if (envlist && envlist != environ) {
         free_string_array(envlist, envc);
     }
     if (argvlist) {
@@ -9986,8 +10062,6 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 #endif /* HAVE_SYMLINK */
 
 
-
-
 static PyStructSequence_Field times_result_fields[] = {
     {"user",    "user time"},
     {"system",   "system time"},
@@ -10012,12 +10086,6 @@ static PyStructSequence_Desc times_result_desc = {
     times_result_fields,
     5
 };
-
-#ifdef MS_WINDOWS
-#define HAVE_TIMES  /* mandatory, for the method table */
-#endif
-
-#ifdef HAVE_TIMES
 
 static PyObject *
 build_times_result(PyObject *module, double user, double system,
@@ -10064,8 +10132,8 @@ All fields are floating point numbers.
 static PyObject *
 os_times_impl(PyObject *module)
 /*[clinic end generated code: output=35f640503557d32a input=2bf9df3d6ab2e48b]*/
-#ifdef MS_WINDOWS
 {
+#ifdef MS_WINDOWS
     FILETIME create, exit, kernel, user;
     HANDLE hProc;
     hProc = GetCurrentProcess();
@@ -10083,28 +10151,26 @@ os_times_impl(PyObject *module)
         (double)0,
         (double)0,
         (double)0);
-}
 #else /* MS_WINDOWS */
-{
-    struct tms t;
-    clock_t c;
+    _posixstate *state = get_posix_state(module);
+    long ticks_per_second = state->ticks_per_second;
+
+    struct tms process;
+    clock_t elapsed;
     errno = 0;
-    c = times(&t);
-    if (c == (clock_t) -1) {
+    elapsed = times(&process);
+    if (elapsed == (clock_t) -1) {
         return posix_error();
     }
-    assert(_PyRuntime.time.ticks_per_second_initialized);
-#define ticks_per_second _PyRuntime.time.ticks_per_second
+
     return build_times_result(module,
-                         (double)t.tms_utime / ticks_per_second,
-                         (double)t.tms_stime / ticks_per_second,
-                         (double)t.tms_cutime / ticks_per_second,
-                         (double)t.tms_cstime / ticks_per_second,
-                         (double)c / ticks_per_second);
-#undef ticks_per_second
-}
+        (double)process.tms_utime / ticks_per_second,
+        (double)process.tms_stime / ticks_per_second,
+        (double)process.tms_cutime / ticks_per_second,
+        (double)process.tms_cstime / ticks_per_second,
+        (double)elapsed / ticks_per_second);
 #endif /* MS_WINDOWS */
-#endif /* HAVE_TIMES */
+}
 
 
 #if defined(HAVE_TIMERFD_CREATE)
@@ -16079,6 +16145,26 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 }
 #endif
 
+#if defined(MS_WINDOWS)
+/*[clinic input]
+os._supports_virtual_terminal
+
+Checks if virtual terminal is supported in windows
+[clinic start generated code]*/
+
+static PyObject *
+os__supports_virtual_terminal_impl(PyObject *module)
+/*[clinic end generated code: output=bd0556a6d9d99fe6 input=0752c98e5d321542]*/
+{
+    DWORD mode = 0;
+    HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
+    if (!GetConsoleMode(handle, &mode)) {
+        Py_RETURN_FALSE;
+    }
+    return PyBool_FromLong(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+#endif
+
 
 static PyMethodDef posix_methods[] = {
 
@@ -16283,6 +16369,8 @@ static PyMethodDef posix_methods[] = {
     OS__PATH_ISFILE_METHODDEF
     OS__PATH_ISLINK_METHODDEF
     OS__PATH_EXISTS_METHODDEF
+
+    OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -16707,6 +16795,9 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_OPEN", POSIX_SPAWN_OPEN)) return -1;
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_CLOSE", POSIX_SPAWN_CLOSE)) return -1;
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+    if (PyModule_AddIntMacro(m, POSIX_SPAWN_CLOSEFROM)) return -1;
+#endif
 #endif
 
 #if defined(HAVE_SPAWNV) || defined (HAVE_RTPSPAWN)
@@ -17278,6 +17369,15 @@ posixmodule_exec(PyObject *m)
             return -1;
         Py_DECREF(unicode);
     }
+
+#ifndef MS_WINDOWS
+    if (_Py_GetTicksPerSecond(&state->ticks_per_second) < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot read ticks_per_second");
+        return -1;
+    }
+    assert(state->ticks_per_second >= 1);
+#endif
 
     return PyModule_Add(m, "_have_functions", list);
 }

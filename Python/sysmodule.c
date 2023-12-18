@@ -451,15 +451,9 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     e->hookCFunction = (Py_AuditHookFunction)hook;
     e->userData = userData;
 
-    if (runtime->audit_hooks.mutex == NULL) {
-        /* The runtime must not be initialized yet. */
-        add_audit_hook_entry_unlocked(runtime, e);
-    }
-    else {
-        PyThread_acquire_lock(runtime->audit_hooks.mutex, WAIT_LOCK);
-        add_audit_hook_entry_unlocked(runtime, e);
-        PyThread_release_lock(runtime->audit_hooks.mutex);
-    }
+    PyMutex_Lock(&runtime->audit_hooks.mutex);
+    add_audit_hook_entry_unlocked(runtime, e);
+    PyMutex_Unlock(&runtime->audit_hooks.mutex);
 
     return 0;
 }
@@ -986,6 +980,23 @@ sys_intern_impl(PyObject *module, PyObject *s)
                      "can't intern %.400s", Py_TYPE(s)->tp_name);
         return NULL;
     }
+}
+
+
+/*[clinic input]
+sys._is_interned -> bool
+
+  string: unicode
+  /
+
+Return True if the given string is "interned".
+[clinic start generated code]*/
+
+static int
+sys__is_interned_impl(PyObject *module, PyObject *string)
+/*[clinic end generated code: output=c3678267b4e9d7ed input=039843e17883b606]*/
+{
+    return PyUnicode_CHECK_INTERNED(string);
 }
 
 
@@ -2462,6 +2473,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS_INTERN_METHODDEF
+    SYS__IS_INTERNED_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
     SYS_MDEBUG_METHODDEF
     SYS_SETSWITCHINTERVAL_METHODDEF

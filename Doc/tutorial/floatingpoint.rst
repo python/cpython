@@ -150,7 +150,7 @@ section.  See `Examples of Floating Point Problems
 <https://jvns.ca/blog/2023/01/13/examples-of-floating-point-problems/>`_ for
 a pleasant summary of how binary floating-point works and the kinds of
 problems commonly encountered in practice.  Also see
-`The Perils of Floating Point <https://www.lahey.com/float.htm>`_
+`The Perils of Floating Point <http://www.indowsway.com/floatingpoint.htm>`_
 for a more complete account of other common surprises.
 
 As that says near the end, "there are no easy answers."  Still, don't be unduly

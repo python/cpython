@@ -277,7 +277,7 @@ These functions are used to retrieve resource usage information:
 
    This function returns an object that describes the resources consumed by either
    the current process or its children, as specified by the *who* parameter.  The
-   *who* parameter should be specified using one of the :const:`RUSAGE_\*`
+   *who* parameter should be specified using one of the :const:`!RUSAGE_\*`
    constants described below.
 
    A simple example::
@@ -353,7 +353,7 @@ These functions are used to retrieve resource usage information:
    Returns the number of bytes in a system page. (This need not be the same as the
    hardware page size.)
 
-The following :const:`RUSAGE_\*` symbols are passed to the :func:`getrusage`
+The following :const:`!RUSAGE_\*` symbols are passed to the :func:`getrusage`
 function to specify which processes information should be provided for.
 
 

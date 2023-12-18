@@ -4558,6 +4558,8 @@ if test "$with_mimalloc" != no; then
   with_mimalloc=yes
   AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
   AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
+elif test "$disable_gil" = "yes"; then
+  AC_MSG_ERROR([--disable-gil requires mimalloc memory allocator (--with-mimalloc).])
 fi
 
 AC_MSG_RESULT([$with_mimalloc])
@@ -4743,7 +4745,7 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock close_range confstr \
+  accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
   copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
@@ -4755,6 +4757,7 @@ AC_CHECK_FUNCS([ \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
   pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
   pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
@@ -5914,7 +5917,6 @@ dnl library (tinfo ncursesw ncurses termcap). We now assume that libreadline
 dnl or readline.pc provide correct linker information.
 
 AH_TEMPLATE([WITH_EDITLINE], [Define to build the readline module against libedit.])
-AH_TEMPLATE([WITH_APPLE_EDITLINE], [Define to build the readline module against Apple BSD editline.])
 
 AC_ARG_WITH(
   [readline],
@@ -5929,15 +5931,6 @@ AC_ARG_WITH(
     )
   ],
   [with_readline=readline]
-)
-
-# gh-105323: Need to handle the macOS editline as an alias of readline.
-AS_CASE([$ac_sys_system/$ac_sys_release],
-  [Darwin/*], [AC_CHECK_TYPE([Function],
-                             [AC_DEFINE([WITH_APPLE_EDITLINE])],
-                             [],
-                             [@%:@include <readline/readline.h>])],
-  []
 )
 
 AS_VAR_IF([with_readline], [readline], [
@@ -7033,6 +7026,9 @@ AC_SUBST([TEST_MODULES])
 # libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
 # compiler flags.
 #
+# gh-112779: On RISC-V, GCC 12 and earlier require libatomic support for 1-byte
+# and 2-byte operations, but not for 8-byte operations.
+#
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
 # If the check is done after AC_OUTPUT, modifying LIBS has no effect
@@ -7062,12 +7058,19 @@ typedef intptr_t Py_ssize_t;
 
 int main()
 {
-    uint64_t byte;
-    _Py_atomic_store_uint64(&byte, 2);
-    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+    uint64_t value;
+    _Py_atomic_store_uint64(&value, 2);
+    if (_Py_atomic_or_uint64(&value, 8) != 2) {
         return 1; // error
     }
-    if (_Py_atomic_load_uint64(&byte) != 10) {
+    if (_Py_atomic_load_uint64(&value) != 10) {
+        return 1; // error
+    }
+    uint8_t byte = 0xb8;
+    if (_Py_atomic_or_uint8(&byte, 0x2d) != 0xb8) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint8(&byte) != 0xbd) {
         return 1; // error
     }
     return 0; // all good
@@ -7118,6 +7121,7 @@ AS_CASE([$ac_sys_system],
       [_tkinter],
       [_xxsubinterpreters],
       [_xxinterpchannels],
+      [_xxinterpqueues],
       [grp],
       [pwd],
       [resource],
@@ -7234,6 +7238,7 @@ PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_xxinterpchannels])
+PY_STDLIB_MOD_SIMPLE([_xxinterpqueues])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl multiprocessing modules
