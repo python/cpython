@@ -848,7 +848,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                                 "(most likely due to a circular import)",
                                 mod_name, origin, name);
                     Py_DECREF(origin);
-                } else {
+                }
+                else {
                     PyErr_Format(PyExc_AttributeError,
                                 "partially initialized "
                                 "module '%U' has no attribute '%U' "
