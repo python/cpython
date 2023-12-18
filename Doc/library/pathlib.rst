@@ -151,6 +151,8 @@ we also call *flavours*:
 
       >>> PurePath('foo//bar')
       PurePosixPath('foo/bar')
+      >>> PurePath('foo/bar/')
+      PurePosixPath('foo/bar')
       >>> PurePath('//foo/bar')
       PurePosixPath('//foo/bar')
       >>> PurePath('foo/./bar')
