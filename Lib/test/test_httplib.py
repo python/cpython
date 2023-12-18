@@ -1546,11 +1546,14 @@ class ExtendedReadTest(TestCase):
         resp = self.resp
         self._verify_readline(self.resp.readline, self.lines_expected)
 
-    def _verify_readline(self, readline, expected):
+    def test_readline_without_limit(self):
+        self._verify_readline(self.resp.readline, self.lines_expected, limit=-1)
+
+    def _verify_readline(self, readline, expected, limit=5):
         all = []
         while True:
             # short readlines
-            line = readline(5)
+            line = readline(limit)
             if line and line != b"foo":
                 if len(line) < 5:
                     self.assertTrue(line.endswith(b"\n"))
@@ -1558,6 +1561,7 @@ class ExtendedReadTest(TestCase):
             if not line:
                 break
         self.assertEqual(b"".join(all), expected)
+        self.assertTrue(self.resp.isclosed())
 
     def test_read1(self):
         resp = self.resp
@@ -1577,6 +1581,7 @@ class ExtendedReadTest(TestCase):
                 break
             all.append(data)
         self.assertEqual(b"".join(all), self.lines_expected)
+        self.assertTrue(resp.isclosed())
 
     def test_read1_bounded(self):
         resp = self.resp
@@ -1588,13 +1593,20 @@ class ExtendedReadTest(TestCase):
             self.assertLessEqual(len(data), 10)
             all.append(data)
         self.assertEqual(b"".join(all), self.lines_expected)
+        self.assertTrue(resp.isclosed())
 
     def test_read1_0(self):
         self.assertEqual(self.resp.read1(0), b"")
+        self.assertFalse(self.resp.isclosed())
 
     def test_peek_0(self):
         p = self.resp.peek(0)
         self.assertLessEqual(0, len(p))
+
+
+class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
+    _header, _body = ExtendedReadTest.lines.split('\r\n\r\n', 1)
+    lines = _header + f'\r\nContent-Length: {len(_body)}\r\n\r\n' + _body
 
 
 class ExtendedReadTestChunked(ExtendedReadTest):
