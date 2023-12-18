@@ -18,7 +18,7 @@ This module creates temporary files and directories.  It works on all
 supported platforms. :class:`TemporaryFile`, :class:`NamedTemporaryFile`,
 :class:`TemporaryDirectory`, and :class:`SpooledTemporaryFile` are high-level
 interfaces which provide automatic cleanup and can be used as
-context managers. :func:`mkstemp` and
+:term:`context managers <context manager>`. :func:`mkstemp` and
 :func:`mkdtemp` are lower-level functions which require manual cleanup.
 
 All the user-callable functions and constructors take additional arguments which
@@ -41,7 +41,7 @@ The module defines the following user-callable items:
    this; your code should not rely on a temporary file created using this
    function having or not having a visible name in the file system.
 
-   The resulting object can be used as a context manager (see
+   The resulting object can be used as a :term:`context manager` (see
    :ref:`tempfile-examples`).  On completion of the context or
    destruction of the file object the temporary file will be removed
    from the filesystem.
@@ -87,9 +87,9 @@ The module defines the following user-callable items:
      determine whether and how the named file should be automatically deleted.
 
    The returned object is always a :term:`file-like object` whose :attr:`!file`
-   attribute is the underlying true file object. This :term:`file-like object`
+   attribute is the underlying true file object. This file-like object
    can be used in a :keyword:`with` statement, just like a normal file.  The
-   name of the temporary file can be retrieved from the :attr:`name` attribute
+   name of the temporary file can be retrieved from the :attr:`!name` attribute
    of the returned file-like object. On Unix, unlike with the
    :func:`TemporaryFile`, the directory entry does not get unlinked immediately
    after the file creation.
@@ -151,18 +151,20 @@ The module defines the following user-callable items:
    contents are written to disk and operation proceeds as with
    :func:`TemporaryFile`.
 
-   The resulting file has one additional method, :func:`rollover`, which
-   causes the file to roll over to an on-disk file regardless of its size.
+   .. method:: SpooledTemporaryFile.rollover
 
-   The returned object is a file-like object whose :attr:`_file` attribute
+      The resulting file has one additional method, :meth:`!rollover`, which
+      causes the file to roll over to an on-disk file regardless of its size.
+
+   The returned object is a file-like object whose :attr:`!_file` attribute
    is either an :class:`io.BytesIO` or :class:`io.TextIOWrapper` object
    (depending on whether binary or text *mode* was specified) or a true file
-   object, depending on whether :func:`rollover` has been called.  This
+   object, depending on whether :meth:`rollover` has been called.  This
    file-like object can be used in a :keyword:`with` statement, just like
    a normal file.
 
    .. versionchanged:: 3.3
-      the truncate method now accepts a ``size`` argument.
+      the truncate method now accepts a *size* argument.
 
    .. versionchanged:: 3.8
       Added *errors* parameter.
@@ -176,24 +178,28 @@ The module defines the following user-callable items:
 .. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False, *, delete=True)
 
    This class securely creates a temporary directory using the same rules as :func:`mkdtemp`.
-   The resulting object can be used as a context manager (see
+   The resulting object can be used as a :term:`context manager` (see
    :ref:`tempfile-examples`).  On completion of the context or destruction
    of the temporary directory object, the newly created temporary directory
    and all its contents are removed from the filesystem.
 
-   The directory name can be retrieved from the :attr:`name` attribute of the
-   returned object.  When the returned object is used as a context manager, the
-   :attr:`name` will be assigned to the target of the :keyword:`!as` clause in
-   the :keyword:`with` statement, if there is one.
+   .. attribute:: TemporaryDirectory.name
 
-   The directory can be explicitly cleaned up by calling the
-   :func:`cleanup` method. If *ignore_cleanup_errors* is true, any unhandled
-   exceptions during explicit or implicit cleanup (such as a
-   :exc:`PermissionError` removing open files on Windows) will be ignored,
-   and the remaining removable items deleted on a "best-effort" basis.
-   Otherwise, errors will be raised in whatever context cleanup occurs
-   (the :func:`cleanup` call, exiting the context manager, when the object
-   is garbage-collected or during interpreter shutdown).
+      The directory name can be retrieved from the :attr:`!name` attribute of the
+      returned object.  When the returned object is used as a :term:`context manager`, the
+      :attr:`!name` will be assigned to the target of the :keyword:`!as` clause in
+      the :keyword:`with` statement, if there is one.
+
+   .. method:: TemporaryDirectory.cleanup
+
+      The directory can be explicitly cleaned up by calling the
+      :meth:`!cleanup` method. If *ignore_cleanup_errors* is true, any unhandled
+      exceptions during explicit or implicit cleanup (such as a
+      :exc:`PermissionError` removing open files on Windows) will be ignored,
+      and the remaining removable items deleted on a "best-effort" basis.
+      Otherwise, errors will be raised in whatever context cleanup occurs
+      (the :meth:`!cleanup` call, exiting the context manager, when the object
+      is garbage-collected or during interpreter shutdown).
 
    The *delete* parameter can be used to disable cleanup of the directory tree
    upon exiting the context.  While it may seem unusual for a context manager

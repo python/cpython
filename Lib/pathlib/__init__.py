@@ -90,7 +90,9 @@ class PurePath(_abc.PurePathBase):
                         "object where __fspath__ returns a str, "
                         f"not {type(path).__name__!r}")
                 paths.append(path)
-        super().__init__(*paths)
+        # Avoid calling super().__init__, as an optimisation
+        self._raw_paths = paths
+        self._resolving = False
 
     def __reduce__(self):
         return (self.__class__, tuple(self._raw_paths))

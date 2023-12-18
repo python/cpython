@@ -1947,7 +1947,8 @@ traceback
 ---------
 
 New :func:`~traceback.walk_stack` and :func:`~traceback.walk_tb`
-functions to conveniently traverse frame and traceback objects.
+functions to conveniently traverse frame and
+:ref:`traceback objects <traceback-objects>`.
 (Contributed by Robert Collins in :issue:`17911`.)
 
 New lightweight classes: :class:`~traceback.TracebackException`,
