@@ -784,7 +784,7 @@ _channelqueue_clear_interpreter(_channelqueue *queue, int64_t interpid)
     while (next != NULL) {
         _channelitem *item = next;
         next = item->next;
-        if (item->data->interpid == interpid) {
+        if (_PyCrossInterpreterData_INTERPID(item->data) == interpid) {
             if (prev == NULL) {
                 queue->first = item->next;
             }
@@ -2474,7 +2474,8 @@ struct _channelid_xid {
 static PyObject *
 _channelid_from_xid(_PyCrossInterpreterData *data)
 {
-    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    struct _channelid_xid *xid = \
+                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
 
     // It might not be imported yet, so we can't use _get_current_module().
     PyObject *mod = PyImport_ImportModule(MODULE_NAME);
@@ -2530,7 +2531,8 @@ _channelid_shared(PyThreadState *tstate, PyObject *obj,
     {
         return -1;
     }
-    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    struct _channelid_xid *xid = \
+                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
     xid->cid = ((channelid *)obj)->cid;
     xid->end = ((channelid *)obj)->end;
     xid->resolve = ((channelid *)obj)->resolve;
@@ -2680,7 +2682,7 @@ _channelend_shared(PyThreadState *tstate, PyObject *obj,
     if (res < 0) {
         return -1;
     }
-    data->new_object = _channelend_from_xid;
+    _PyCrossInterpreterData_SET_NEW_OBJECT(data, _channelend_from_xid);
     return 0;
 }
 

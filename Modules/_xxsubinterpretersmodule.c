@@ -152,16 +152,16 @@ typedef struct {
 static PyObject *
 xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
 {
-    assert(data->data != NULL);
-    assert(data->obj == NULL);
-    assert(data->interpid >= 0);
+    assert(_PyCrossInterpreterData_DATA(data) != NULL);
+    assert(_PyCrossInterpreterData_OBJ(data) == NULL);
+    assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
         return NULL;
     }
     PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)data->data;
-    self->interpid = data->interpid;
+    self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
+    self->interpid = _PyCrossInterpreterData_INTERPID(data);
     return (PyObject *)self;
 }
 
