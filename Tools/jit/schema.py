@@ -1,6 +1,6 @@
-"""Schema for the JSON produced by llvm-readobj --elf-output-style=JSON."""
-
 # pylint: disable = missing-class-docstring
+
+"""Schema for the JSON produced by llvm-readobj --elf-output-style=JSON."""
 
 import typing
 
@@ -27,7 +27,7 @@ class RelocationType(typing.TypedDict):
     RawValue: int
 
 
-class _Value(typing.TypedDict):
+class WrappedValue(typing.TypedDict):
     Value: str
     RawValue: int
 
@@ -56,7 +56,7 @@ class _Name(typing.TypedDict):
 class ELFRelocation(typing.TypedDict):
     Offset: int
     Type: RelocationType
-    Symbol: _Value
+    Symbol: WrappedValue
     Addend: int
 
 
@@ -72,8 +72,8 @@ class MachORelocation(typing.TypedDict):
     PCRel: int
     Length: int
     Type: RelocationType
-    Symbol: _Value  # XXX
-    Section: _Value  # XXX
+    Symbol: typing.NotRequired[WrappedValue]
+    Section: typing.NotRequired[WrappedValue]
 
 
 class COFFAuxSectionDef(typing.TypedDict):
@@ -88,37 +88,37 @@ class COFFAuxSectionDef(typing.TypedDict):
 class COFFSymbol(typing.TypedDict):
     Name: str
     Value: int
-    Section: _Value
-    BaseType: _Value
-    ComplexType: _Value
+    Section: WrappedValue
+    BaseType: WrappedValue
+    ComplexType: WrappedValue
     StorageClass: int
     AuxSymbolCount: int
     AuxSectionDef: COFFAuxSectionDef
 
 
 class ELFSymbol(typing.TypedDict):
-    Name: _Value
+    Name: WrappedValue
     Value: int
     Size: int
-    Binding: _Value
-    Type: _Value
+    Binding: WrappedValue
+    Type: WrappedValue
     Other: int
-    Section: _Value
+    Section: WrappedValue
 
 
 class MachOSymbol(typing.TypedDict):
-    Name: _Value
-    Type: _Value
-    Section: _Value
-    RefType: _Value
+    Name: WrappedValue
+    Type: WrappedValue
+    Section: WrappedValue
+    RefType: WrappedValue
     Flags: Flags
     Value: int
 
 
 class ELFSection(typing.TypedDict):
     Index: int
-    Name: _Value
-    Type: _Value
+    Name: WrappedValue
+    Type: WrappedValue
     Flags: Flags
     Address: int
     Offset: int
@@ -146,7 +146,7 @@ class COFFSection(typing.TypedDict):
     Characteristics: Flags
     Relocations: list[dict[typing.Literal["Relocation"], COFFRelocation]]
     Symbols: list[dict[typing.Literal["Symbol"], COFFSymbol]]
-    SectionData: SectionData  # XXX
+    SectionData: typing.NotRequired[SectionData]
 
 
 class MachOSection(typing.TypedDict):
@@ -159,11 +159,13 @@ class MachOSection(typing.TypedDict):
     Alignment: int
     RelocationOffset: int
     RelocationCount: int
-    Type: _Value
+    Type: WrappedValue
     Attributes: Flags
     Reserved1: int
     Reserved2: int
     Reserved3: int
-    Relocations: list[dict[typing.Literal["Relocation"], MachORelocation]]  # XXX
-    Symbols: list[dict[typing.Literal["Symbol"], MachOSymbol]]  # XXX
-    SectionData: SectionData  # XXX
+    Relocations: typing.NotRequired[
+        list[dict[typing.Literal["Relocation"], MachORelocation]]
+    ]
+    Symbols: typing.NotRequired[list[dict[typing.Literal["Symbol"], MachOSymbol]]]
+    SectionData: typing.NotRequired[SectionData]

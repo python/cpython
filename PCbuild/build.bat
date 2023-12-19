@@ -36,7 +36,7 @@ echo.                 overrides -c and -d
 echo.  --disable-gil  Enable experimental support for running without the GIL.
 echo.  --test-marker  Enable the test marker within the build.
 echo.  --regen        Regenerate all opcodes, grammar and tokens.
-echo.  --experimental-jit  Build the experimental just-in-time compiler.
+echo.  --experimental-jit  Enable the experimental just-in-time compiler.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
