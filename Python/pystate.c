@@ -2539,8 +2539,8 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     tld->segments.abandoned = &tstate->interp->mimalloc.abandoned_pool;
 
     // Initialize each heap
-    for (Py_ssize_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
-        _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none());
+    for (size_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
+        _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
     }
 
     // By default, object allocations use _Py_MIMALLOC_HEAP_OBJECT.
