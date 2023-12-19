@@ -2265,7 +2265,7 @@ class ClinicParserTest(TestCase):
                 self.expect_failure(block, expected_error, lineno=3)
 
     def test_getset_no_class(self):
-        for annotation in ("@getter", "@setter"):
+        for annotation in "@getter", "@setter":
             with self.subTest(annotation=annotation):
                 block = f"""
                     module m
