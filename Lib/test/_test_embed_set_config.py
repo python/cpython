@@ -1,7 +1,7 @@
 # bpo-42260: Test _PyInterpreterState_GetConfigCopy()
 # and _PyInterpreterState_SetConfig().
 #
-# Test run in a subinterpreter since set_config(get_config())
+# Test run in a subprocess since set_config(get_config())
 # does reset sys attributes to their state of the Python startup
 # (before the site module is run).
 
@@ -9,9 +9,9 @@ import _testinternalcapi
 import os
 import sys
 import unittest
+from test.support import MS_WINDOWS
 
 
-MS_WINDOWS = (os.name == 'nt')
 MAX_HASH_SEED = 4294967295
 
 class SetConfigTests(unittest.TestCase):
@@ -20,6 +20,7 @@ class SetConfigTests(unittest.TestCase):
         self.sys_copy = dict(sys.__dict__)
 
     def tearDown(self):
+        _testinternalcapi.reset_path_config()
         _testinternalcapi.set_config(self.old_config)
         sys.__dict__.clear()
         sys.__dict__.update(self.sys_copy)
@@ -61,6 +62,7 @@ class SetConfigTests(unittest.TestCase):
             'faulthandler',
             'tracemalloc',
             'import_time',
+            'code_debug_ranges',
             'show_ref_count',
             'dump_refs',
             'malloc_stats',
@@ -82,7 +84,6 @@ class SetConfigTests(unittest.TestCase):
             'skip_source_first_line',
             '_install_importlib',
             '_init_main',
-            '_isolated_interpreter',
         ]
         if MS_WINDOWS:
             options.append('legacy_windows_stdio')
@@ -100,19 +101,19 @@ class SetConfigTests(unittest.TestCase):
             'check_hash_pycs_mode',
             'program_name',
             'platlibdir',
-            'executable',
-            'base_executable',
-            'prefix',
-            'base_prefix',
-            'exec_prefix',
-            'base_exec_prefix',
             # optional wstr:
             # 'pythonpath_env'
-            # 'home',
+            # 'home'
             # 'pycache_prefix'
             # 'run_command'
             # 'run_module'
             # 'run_filename'
+            # 'executable'
+            # 'prefix'
+            # 'exec_prefix'
+            # 'base_executable'
+            # 'base_prefix'
+            # 'base_exec_prefix'
         ):
             value_tests.append((key, invalid_wstr))
             type_tests.append((key, b'bytes'))
@@ -217,15 +218,28 @@ class SetConfigTests(unittest.TestCase):
         self.set_config(base_executable="base_executable")
         self.assertEqual(sys._base_executable, "base_executable")
 
+        # When base_xxx is NULL, value is copied from xxxx
+        self.set_config(
+            executable='executable',
+            prefix="prefix",
+            exec_prefix="exec_prefix",
+            base_executable=None,
+            base_prefix=None,
+            base_exec_prefix=None)
+        self.assertEqual(sys._base_executable, "executable")
+        self.assertEqual(sys.base_prefix, "prefix")
+        self.assertEqual(sys.base_exec_prefix, "exec_prefix")
+
     def test_path(self):
         self.set_config(module_search_paths_set=1,
                         module_search_paths=['a', 'b', 'c'])
         self.assertEqual(sys.path, ['a', 'b', 'c'])
 
-        # Leave sys.path unchanged if module_search_paths_set=0
+        # sys.path is reset if module_search_paths_set=0
         self.set_config(module_search_paths_set=0,
                         module_search_paths=['new_path'])
-        self.assertEqual(sys.path, ['a', 'b', 'c'])
+        self.assertNotEqual(sys.path, ['a', 'b', 'c'])
+        self.assertNotEqual(sys.path, ['new_path'])
 
     def test_argv(self):
         self.set_config(parse_argv=0,
