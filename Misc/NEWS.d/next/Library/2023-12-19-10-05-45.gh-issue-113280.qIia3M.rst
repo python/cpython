@@ -1,1 +1,1 @@
-Fix class:`ResourceWarning` in class:`ssl.SSLSocket` connected detection
+Fix :class:`ResourceWarning` in :class:`ssl.SSLSocket` connected detection
