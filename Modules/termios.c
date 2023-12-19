@@ -702,6 +702,9 @@ static struct constant {
 #ifdef IMAXBEL
     {"IMAXBEL", IMAXBEL},
 #endif
+#ifdef IUTF8
+    {"IUTF8", IUTF8},
+#endif
 
     /* struct termios.c_oflag constants */
     {"OPOST", OPOST},
@@ -725,6 +728,12 @@ static struct constant {
 #endif
 #ifdef OFDEL
     {"OFDEL", OFDEL},
+#endif
+#ifdef OXTABS
+    {"OXTABS", OXTABS},
+#endif
+#ifdef ONOEOT
+    {"ONOEOT", ONOEOT},
 #endif
 #ifdef NLDLY
     {"NLDLY", NLDLY},
@@ -751,6 +760,12 @@ static struct constant {
 #endif
 #ifdef NL1
     {"NL1", NL1},
+#endif
+#ifdef NL2
+    {"NL2", NL2},
+#endif
+#ifdef NL3
+    {"NL3", NL3},
 #endif
 #ifdef CR0
     {"CR0", CR0},
@@ -799,6 +814,9 @@ static struct constant {
 #endif
 
     /* struct termios.c_cflag constants */
+#ifdef CIGNORE
+    {"CIGNORE", CIGNORE},
+#endif
     {"CSIZE", CSIZE},
     {"CSTOPB", CSTOPB},
     {"CREAD", CREAD},
@@ -813,6 +831,25 @@ static struct constant {
     {"CRTSCTS", (long)CRTSCTS},
 #endif
 
+#ifdef CRTS_IFLOW
+    {"CRTS_IFLOW", CRTS_IFLOW},
+#endif
+#ifdef CDTR_IFLOW
+    {"CDTR_IFLOW", CDTR_IFLOW},
+#endif
+#ifdef CDSR_OFLOW
+    {"CDSR_OFLOW", CDSR_OFLOW},
+#endif
+#ifdef CCTS_OFLOW
+    {"CCTS_OFLOW", CCTS_OFLOW},
+#endif
+#ifdef CCAR_OFLOW
+    {"CCAR_OFLOW", CCAR_OFLOW},
+#endif
+#ifdef MDMBUF
+    {"MDMBUF", MDMBUF},
+#endif
+
     /* struct termios.c_cflag-related values (character size) */
     {"CS5", CS5},
     {"CS6", CS6},
@@ -820,6 +857,9 @@ static struct constant {
     {"CS8", CS8},
 
     /* struct termios.c_lflag constants */
+#ifdef ALTWERASE
+    {"ALTWERASE", ALTWERASE},
+#endif
     {"ISIG", ISIG},
     {"ICANON", ICANON},
 #ifdef XCASE
@@ -841,12 +881,18 @@ static struct constant {
 #ifdef FLUSHO
     {"FLUSHO", FLUSHO},
 #endif
+#ifdef NOKERNINFO
+    {"NOKERNINFO", NOKERNINFO},
+#endif
     {"NOFLSH", NOFLSH},
     {"TOSTOP", TOSTOP},
 #ifdef PENDIN
     {"PENDIN", PENDIN},
 #endif
     {"IEXTEN", IEXTEN},
+#ifdef EXTPROC
+    {"EXTPROC", EXTPROC},
+#endif
 
     /* indexes into the control chars array returned by tcgetattr() */
     {"VINTR", VINTR},
@@ -855,6 +901,9 @@ static struct constant {
     {"VKILL", VKILL},
     {"VEOF", VEOF},
     {"VTIME", VTIME},
+#ifdef VSTATUS
+    {"VSTATUS", VSTATUS},
+#endif
     {"VMIN", VMIN},
 #ifdef VSWTC
     /* The #defines above ensure that if either is defined, both are,
@@ -865,6 +914,9 @@ static struct constant {
     {"VSTART", VSTART},
     {"VSTOP", VSTOP},
     {"VSUSP", VSUSP},
+#ifdef VDSUSP
+    {"VDSUSP", VDSUSP},
+#endif
     {"VEOL", VEOL},
 #ifdef VREPRINT
     {"VREPRINT", VREPRINT},
@@ -883,6 +935,18 @@ static struct constant {
 #endif
 
 
+#ifdef B7200
+    {"B7200", B7200},
+#endif
+#ifdef B14400
+    {"B14400", B14400},
+#endif
+#ifdef B28800
+    {"B28800", B28800},
+#endif
+#ifdef B76800
+    {"B76800", B76800},
+#endif
 #ifdef B460800
     {"B460800", B460800},
 #endif

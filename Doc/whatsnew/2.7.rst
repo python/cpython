@@ -858,9 +858,11 @@ Some smaller changes made to the core Python language are:
 
   .. XXX bytearray doesn't seem to be documented
 
-* When using ``@classmethod`` and ``@staticmethod`` to wrap
+* When using :class:`@classmethod <classmethod>` and
+  :class:`@staticmethod <staticmethod>` to wrap
   methods as class or static methods, the wrapper object now
-  exposes the wrapped function as their :attr:`__func__` attribute.
+  exposes the wrapped function as their :attr:`~method.__func__`
+  attribute.
   (Contributed by Amaury Forgeot d'Arc, after a suggestion by
   George Sakkis; :issue:`5982`.)
 
@@ -1415,7 +1417,7 @@ changes, or look through the Subversion logs for all the details.
   :func:`~math.lgamma` for the natural log of the Gamma function.
   (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
 
-* The :mod:`multiprocessing` module's :class:`Manager*` classes
+* The :mod:`multiprocessing` module's :class:`!Manager*` classes
   can now be passed a callable that will be called whenever
   a subprocess is started, along with a set of arguments that will be
   passed to the callable.
@@ -2383,8 +2385,8 @@ Port-Specific Changes: Mac OS X
 Port-Specific Changes: FreeBSD
 -----------------------------------
 
-* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with
-  :func:`~socket.getsockopt`/:func:`~socket.setsockopt` to select an
+* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with the :func:`~socket.socket` methods
+  :func:`~socket.socket.getsockopt`/:func:`~socket.socket.setsockopt` to select an
   alternate routing table, is now available in the :mod:`socket`
   module.  (Added by Kyle VanderBeek; :issue:`8235`.)
 
@@ -2404,7 +2406,7 @@ Other Changes and Fixes
   :issue:`5464`.)
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
-  with an existing :file:`.py` counterpart, the :attr:`co_filename`
+  with an existing :file:`.py` counterpart, the :attr:`~codeobject.co_filename`
   attributes of the resulting code objects are overwritten when the
   original filename is obsolete.  This can happen if the file has been
   renamed, moved, or is accessed through different paths.  (Patch by

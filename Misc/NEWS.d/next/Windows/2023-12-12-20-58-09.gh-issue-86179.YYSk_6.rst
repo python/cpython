@@ -1,0 +1,1 @@
+Fixes path calculations when launching Python on Windows through a symlink.

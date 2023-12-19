@@ -638,7 +638,7 @@ class ClinicWholeFileTest(TestCase):
             C.__init__ = C.meth
             [clinic start generated code]*/
         """
-        err = "'__init__' must be a normal method, not a class or static method"
+        err = "'__init__' must be a normal method; got 'FunctionKind.CLASS_METHOD'!"
         self.expect_failure(block, err, lineno=8)
 
     def test_validate_cloned_new(self):
@@ -2180,14 +2180,85 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
-        err = "'__init__' must be a normal method, not a class or static method!"
-        block = """
-            module foo
-            class Foo "" ""
-            @classmethod
-            Foo.__init__
-        """
-        self.expect_failure(block, err, lineno=3)
+        err_template = "'__init__' must be a normal method; got 'FunctionKind.{}'!"
+        annotations = {
+            "@classmethod": "CLASS_METHOD",
+            "@staticmethod": "STATIC_METHOD",
+            "@getter": "GETTER",
+        }
+        for annotation, invalid_kind in annotations.items():
+            with self.subTest(annotation=annotation, invalid_kind=invalid_kind):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.__init__
+                """
+                expected_error = err_template.format(invalid_kind)
+                self.expect_failure(block, expected_error, lineno=3)
+
+    def test_invalid_getset(self):
+        annotations = ["@getter", "@setter"]
+        for annotation in annotations:
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.property -> int
+                """
+                expected_error = f"{annotation} method cannot define a return type"
+                self.expect_failure(block, expected_error, lineno=3)
+
+                block = f"""
+                   module foo
+                   class Foo "" ""
+                   {annotation}
+                   Foo.property
+                       obj: int
+                       /
+                """
+                expected_error = f"{annotation} method cannot define parameters"
+                self.expect_failure(block, expected_error)
+
+    def test_duplicate_getset(self):
+        annotations = ["@getter", "@setter"]
+        for annotation in annotations:
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    {annotation}
+                    Foo.property -> int
+                """
+                expected_error = f"Cannot apply {annotation} twice to the same function!"
+                self.expect_failure(block, expected_error, lineno=3)
+
+    def test_getter_and_setter_disallowed_on_same_function(self):
+        dup_annotations = [("@getter", "@setter"), ("@setter", "@getter")]
+        for dup in dup_annotations:
+            with self.subTest(dup=dup):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {dup[0]}
+                    {dup[1]}
+                    Foo.property -> int
+                """
+                expected_error = "Cannot apply both @getter and @setter to the same function!"
+                self.expect_failure(block, expected_error, lineno=3)
+
+    def test_getset_no_class(self):
+        for annotation in "@getter", "@setter":
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module m
+                    {annotation}
+                    m.func
+                """
+                expected_error = "@getter and @setter must be methods"
+                self.expect_failure(block, expected_error, lineno=2)
 
     def test_duplicate_coexist(self):
         err = "Called @coexist twice"

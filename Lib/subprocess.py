@@ -74,8 +74,8 @@ except ModuleNotFoundError:
 else:
     _mswindows = True
 
-# wasm32-emscripten and wasm32-wasi do not support processes
-_can_fork_exec = sys.platform not in {"emscripten", "wasi"}
+# some platforms do not support subprocesses
+_can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watchos"}
 
 if _mswindows:
     import _winapi
@@ -103,18 +103,22 @@ else:
     if _can_fork_exec:
         from _posixsubprocess import fork_exec as _fork_exec
         # used in methods that are called by __del__
-        _waitpid = os.waitpid
-        _waitstatus_to_exitcode = os.waitstatus_to_exitcode
-        _WIFSTOPPED = os.WIFSTOPPED
-        _WSTOPSIG = os.WSTOPSIG
-        _WNOHANG = os.WNOHANG
+        class _del_safe:
+            waitpid = os.waitpid
+            waitstatus_to_exitcode = os.waitstatus_to_exitcode
+            WIFSTOPPED = os.WIFSTOPPED
+            WSTOPSIG = os.WSTOPSIG
+            WNOHANG = os.WNOHANG
+            ECHILD = errno.ECHILD
     else:
-        _fork_exec = None
-        _waitpid = None
-        _waitstatus_to_exitcode = None
-        _WIFSTOPPED = None
-        _WSTOPSIG = None
-        _WNOHANG = None
+        class _del_safe:
+            waitpid = None
+            waitstatus_to_exitcode = None
+            WIFSTOPPED = None
+            WSTOPSIG = None
+            WNOHANG = None
+            ECHILD = errno.ECHILD
+
     import select
     import selectors
 
@@ -744,6 +748,7 @@ def _use_posix_spawn():
 # guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
 _USE_VFORK = True
+_HAVE_POSIX_SPAWN_CLOSEFROM = hasattr(os, 'POSIX_SPAWN_CLOSEFROM')
 
 
 class Popen:
@@ -1747,14 +1752,11 @@ class Popen:
                     errread, errwrite)
 
 
-        def _posix_spawn(self, args, executable, env, restore_signals,
+        def _posix_spawn(self, args, executable, env, restore_signals, close_fds,
                          p2cread, p2cwrite,
                          c2pread, c2pwrite,
                          errread, errwrite):
             """Execute program using os.posix_spawn()."""
-            if env is None:
-                env = os.environ
-
             kwargs = {}
             if restore_signals:
                 # See _Py_RestoreSignals() in Python/pylifecycle.c
@@ -1776,6 +1778,10 @@ class Popen:
             ):
                 if fd != -1:
                     file_actions.append((os.POSIX_SPAWN_DUP2, fd, fd2))
+
+            if close_fds:
+                file_actions.append((os.POSIX_SPAWN_CLOSEFROM, 3))
+
             if file_actions:
                 kwargs['file_actions'] = file_actions
 
@@ -1823,7 +1829,7 @@ class Popen:
             if (_USE_POSIX_SPAWN
                     and os.path.dirname(executable)
                     and preexec_fn is None
-                    and not close_fds
+                    and (not close_fds or _HAVE_POSIX_SPAWN_CLOSEFROM)
                     and not pass_fds
                     and cwd is None
                     and (p2cread == -1 or p2cread > 2)
@@ -1835,7 +1841,7 @@ class Popen:
                     and gids is None
                     and uid is None
                     and umask < 0):
-                self._posix_spawn(args, executable, env, restore_signals,
+                self._posix_spawn(args, executable, env, restore_signals, close_fds,
                                   p2cread, p2cwrite,
                                   c2pread, c2pwrite,
                                   errread, errwrite)
@@ -1951,20 +1957,16 @@ class Popen:
                 raise child_exception_type(err_msg)
 
 
-        def _handle_exitstatus(self, sts,
-                               _waitstatus_to_exitcode=_waitstatus_to_exitcode,
-                               _WIFSTOPPED=_WIFSTOPPED,
-                               _WSTOPSIG=_WSTOPSIG):
+        def _handle_exitstatus(self, sts, _del_safe=_del_safe):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
-            if _WIFSTOPPED(sts):
-                self.returncode = -_WSTOPSIG(sts)
+            if _del_safe.WIFSTOPPED(sts):
+                self.returncode = -_del_safe.WSTOPSIG(sts)
             else:
-                self.returncode = _waitstatus_to_exitcode(sts)
+                self.returncode = _del_safe.waitstatus_to_exitcode(sts)
 
-        def _internal_poll(self, _deadstate=None, _waitpid=_waitpid,
-                _WNOHANG=_WNOHANG, _ECHILD=errno.ECHILD):
+        def _internal_poll(self, _deadstate=None, _del_safe=_del_safe):
             """Check if child process has terminated.  Returns returncode
             attribute.
 
@@ -1980,13 +1982,13 @@ class Popen:
                 try:
                     if self.returncode is not None:
                         return self.returncode  # Another thread waited.
-                    pid, sts = _waitpid(self.pid, _WNOHANG)
+                    pid, sts = _del_safe.waitpid(self.pid, _del_safe.WNOHANG)
                     if pid == self.pid:
                         self._handle_exitstatus(sts)
                 except OSError as e:
                     if _deadstate is not None:
                         self.returncode = _deadstate
-                    elif e.errno == _ECHILD:
+                    elif e.errno == _del_safe.ECHILD:
                         # This happens if SIGCLD is set to be ignored or
                         # waiting for child processes has otherwise been
                         # disabled for our process.  This child is dead, we
