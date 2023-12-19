@@ -1212,7 +1212,7 @@ class CLanguage(Language):
                 docstring_prototype = docstring_definition = ''
         elif f.kind is SETTER:
             if f.docstring:
-                fail("@setter can not set docstring")
+                fail("docstrings are only supported for @getter, not @setter")
             return_value_declaration = "int {return_value};"
             methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
