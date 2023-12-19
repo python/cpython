@@ -61,7 +61,7 @@ def _compile_pattern(pat, sep, case_sensitive):
     if re is None:
         import re, glob
 
-    flags = re.NOFLAG if case_sensitive else re.IGNORECASE
+    flags = 0 if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
     return re.compile(regex, flags=flags).match
 
