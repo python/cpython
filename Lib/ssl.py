@@ -1017,6 +1017,7 @@ class SSLSocket(socket):
             self.getpeername()
         except OSError as e:
             if e.errno != errno.ENOTCONN:
+                self.close()
                 raise
             connected = False
             blocking = self.getblocking()
@@ -1030,6 +1031,7 @@ class SSLSocket(socket):
             except OSError as e:
                 # EINVAL occurs for recv(1) on non-connected on unix sockets.
                 if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    self.close()
                     raise
                 notconn_pre_handshake_data = b''
             self.setblocking(blocking)
