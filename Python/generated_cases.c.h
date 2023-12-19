@@ -238,6 +238,7 @@
             }
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
+                TIER_ONE_ONLY
                 assert(next_instr->op.code == STORE_FAST);
                 PyObject **target_local = &GETLOCAL(next_instr->op.arg);
                 DEOPT_IF(*target_local != left, BINARY_OP);
@@ -451,6 +452,7 @@
             PyObject *sub;
             PyObject *dict;
             PyObject *res;
+            /* Skip 1 cache entry */
             sub = stack_pointer[-1];
             dict = stack_pointer[-2];
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
@@ -475,6 +477,7 @@
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             PyObject *sub;
             PyObject *container;
+            /* Skip 1 cache entry */
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
             DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
@@ -508,6 +511,7 @@
             PyObject *sub;
             PyObject *list;
             PyObject *res;
+            /* Skip 1 cache entry */
             sub = stack_pointer[-1];
             list = stack_pointer[-2];
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -535,6 +539,7 @@
             PyObject *sub;
             PyObject *str;
             PyObject *res;
+            /* Skip 1 cache entry */
             sub = stack_pointer[-1];
             str = stack_pointer[-2];
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -562,6 +567,7 @@
             PyObject *sub;
             PyObject *tuple;
             PyObject *res;
+            /* Skip 1 cache entry */
             sub = stack_pointer[-1];
             tuple = stack_pointer[-2];
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -677,7 +683,7 @@
             PyObject *stop;
             PyObject *start;
             PyObject *slice;
-        if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
+            if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
             stop = stack_pointer[-1 - (((oparg == 3) ? 1 : 0))];
             start = stack_pointer[-2 - (((oparg == 3) ? 1 : 0))];
             slice = PySlice_New(start, stop, step);
@@ -839,6 +845,8 @@
             PyObject **args;
             PyObject *null;
             PyObject *callable;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1000,6 +1008,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1034,6 +1044,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1079,6 +1091,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1118,6 +1132,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1160,7 +1176,7 @@
             PyObject *callargs;
             PyObject *func;
             PyObject *result;
-        if (oparg & 1) { kwargs = stack_pointer[-((oparg & 1))]; }
+            if (oparg & 1) { kwargs = stack_pointer[-((oparg & 1))]; }
             callargs = stack_pointer[-1 - ((oparg & 1))];
             func = stack_pointer[-3 - ((oparg & 1))];
             // DICT_MERGE is called before this opcode if there are kwargs.
@@ -1278,6 +1294,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1407,6 +1425,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1443,9 +1463,12 @@
             PyObject **args;
             PyObject *self;
             PyObject *callable;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
+            TIER_ONE_ONLY
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
@@ -1473,6 +1496,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1515,6 +1540,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1557,6 +1584,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1601,6 +1630,8 @@
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1726,6 +1757,7 @@
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
+            /* Skip 1 cache entry */
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1772,6 +1804,8 @@
             PyObject *null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1799,6 +1833,8 @@
             PyObject *null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1826,6 +1862,8 @@
             PyObject *null;
             PyObject *callable;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -1980,6 +2018,7 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
+            /* Skip 1 cache entry */
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
@@ -2006,6 +2045,7 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
+            /* Skip 1 cache entry */
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
@@ -2036,6 +2076,7 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
+            /* Skip 1 cache entry */
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
@@ -2467,6 +2508,7 @@
             INSTRUCTION_STATS(FOR_ITER_GEN);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             PyObject *iter;
+            /* Skip 1 cache entry */
             iter = stack_pointer[-1];
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
             PyGenObject *gen = (PyGenObject *)iter;
@@ -2841,6 +2883,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL);
+            /* Skip 3 cache entries */
             int is_meth = PEEK(oparg + 1) != NULL;
             int total_args = oparg + is_meth;
             PyObject *function = PEEK(oparg + 2);
@@ -2927,6 +2970,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_FOR_ITER);
+            /* Skip 1 cache entry */
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
@@ -2974,6 +3018,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_BACKWARD);
+            /* Skip 1 cache entry */
             CHECK_EVAL_BREAKER();
             INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
@@ -2991,6 +3036,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_LOAD_SUPER_ATTR);
+            /* Skip 1 cache entry */
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
             INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
@@ -3001,6 +3047,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_FALSE);
+            /* Skip 1 cache entry */
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
@@ -3016,6 +3063,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NONE);
+            /* Skip 1 cache entry */
             PyObject *value = POP();
             int flag = Py_IsNone(value);
             int offset;
@@ -3037,6 +3085,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NOT_NONE);
+            /* Skip 1 cache entry */
             PyObject *value = POP();
             int offset;
             int nflag = Py_IsNone(value);
@@ -3058,6 +3107,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_TRUE);
+            /* Skip 1 cache entry */
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
@@ -3182,6 +3232,7 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             PyObject *retval;
             retval = stack_pointer[-1];
+            TIER_ONE_ONLY
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
@@ -3213,6 +3264,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
+            /* Skip 1 cache entry */
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -3253,6 +3305,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
+            TIER_ONE_ONLY
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -3266,6 +3319,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_FORWARD);
+            TIER_ONE_ONLY
             JUMPBY(oparg);
             DISPATCH();
         }
@@ -3380,7 +3434,7 @@
                 }
             }
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = self_or_null;
+            if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3413,7 +3467,7 @@
                 Py_DECREF(owner);
             }
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3424,6 +3478,7 @@
             INSTRUCTION_STATS(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
+            /* Skip 1 cache entry */
             owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&this_instr[2].cache);
             uint32_t func_version = read_u32(&this_instr[4].cache);
@@ -3489,7 +3544,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3531,7 +3586,7 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
+            if (1) stack_pointer[0] = self;
             stack_pointer += (((1) ? 1 : 0));
             DISPATCH();
         }
@@ -3566,7 +3621,7 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
+            if (1) stack_pointer[0] = self;
             stack_pointer += (((1) ? 1 : 0));
             DISPATCH();
         }
@@ -3613,7 +3668,7 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
+            if (1) stack_pointer[0] = self;
             stack_pointer += (((1) ? 1 : 0));
             DISPATCH();
         }
@@ -3652,7 +3707,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3738,6 +3793,7 @@
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             PyObject *owner;
+            /* Skip 1 cache entry */
             owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&this_instr[2].cache);
             uint32_t func_version = read_u32(&this_instr[4].cache);
@@ -3794,7 +3850,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -3850,7 +3906,7 @@
             }
             /* Skip 5 cache entries */
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += ((oparg & 1));
             DISPATCH();
         }
@@ -4078,7 +4134,7 @@
                 null = NULL;
             }
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
+            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + ((oparg & 1));
             DISPATCH();
         }
@@ -4119,7 +4175,7 @@
                 null = NULL;
             }
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
+            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + ((oparg & 1));
             DISPATCH();
         }
@@ -4153,7 +4209,7 @@
                 null = NULL;
             }
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
+            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + ((oparg & 1));
             DISPATCH();
         }
@@ -4281,7 +4337,7 @@
                 null = NULL;
             }
             stack_pointer[-3] = attr;
-             if (oparg & 1) stack_pointer[-2] = null;
+            if (oparg & 1) stack_pointer[-2] = null;
             stack_pointer += -2 + ((oparg & 1));
             DISPATCH();
         }
@@ -4295,6 +4351,7 @@
             PyObject *class;
             PyObject *global_super;
             PyObject *attr;
+            /* Skip 1 cache entry */
             self = stack_pointer[-1];
             class = stack_pointer[-2];
             global_super = stack_pointer[-3];
@@ -4323,6 +4380,7 @@
             PyObject *global_super;
             PyObject *attr;
             PyObject *self_or_null;
+            /* Skip 1 cache entry */
             self = stack_pointer[-1];
             class = stack_pointer[-2];
             global_super = stack_pointer[-3];
@@ -4793,6 +4851,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
+            TIER_ONE_ONLY
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -4921,6 +4980,7 @@
             static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
             PyObject *v;
             PyObject *receiver;
+            /* Skip 1 cache entry */
             v = stack_pointer[-1];
             receiver = stack_pointer[-2];
             DEOPT_IF(tstate->interp->eval_frame, SEND);
@@ -5151,6 +5211,7 @@
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             PyObject *owner;
             PyObject *value;
+            /* Skip 1 cache entry */
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint32_t type_version = read_u32(&this_instr[2].cache);
@@ -5368,6 +5429,7 @@
             PyObject *sub;
             PyObject *dict;
             PyObject *value;
+            /* Skip 1 cache entry */
             sub = stack_pointer[-1];
             dict = stack_pointer[-2];
             value = stack_pointer[-3];
@@ -5388,6 +5450,7 @@
             PyObject *sub;
             PyObject *list;
             PyObject *value;
+            /* Skip 1 cache entry */
             sub = stack_pointer[-1];
             list = stack_pointer[-2];
             value = stack_pointer[-3];
@@ -5464,6 +5527,7 @@
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
+            /* Skip 1 cache entry */
             value = stack_pointer[-1];
             uint32_t version = read_u32(&this_instr[2].cache);
             // This one is a bit weird, because we expect *some* failures:
@@ -5482,6 +5546,8 @@
             INSTRUCTION_STATS(TO_BOOL_BOOL);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             value = stack_pointer[-1];
             DEOPT_IF(!PyBool_Check(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
@@ -5495,6 +5561,8 @@
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             value = stack_pointer[-1];
             DEOPT_IF(!PyLong_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
@@ -5517,6 +5585,8 @@
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             value = stack_pointer[-1];
             DEOPT_IF(!PyList_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
@@ -5533,6 +5603,8 @@
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
             DEOPT_IF(!Py_IsNone(value), TO_BOOL);
@@ -5549,6 +5621,8 @@
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             PyObject *value;
             PyObject *res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
             value = stack_pointer[-1];
             DEOPT_IF(!PyUnicode_CheckExact(value), TO_BOOL);
             STAT_INC(TO_BOOL, hit);
@@ -5663,6 +5737,7 @@
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             PyObject **values;
+            /* Skip 1 cache entry */
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
@@ -5684,6 +5759,7 @@
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             PyObject **values;
+            /* Skip 1 cache entry */
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -5705,6 +5781,7 @@
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
             PyObject **values;
+            /* Skip 1 cache entry */
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -5764,6 +5841,7 @@
             INSTRUCTION_STATS(YIELD_VALUE);
             PyObject *retval;
             retval = stack_pointer[-1];
+            TIER_ONE_ONLY
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
