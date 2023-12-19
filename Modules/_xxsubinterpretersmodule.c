@@ -372,9 +372,7 @@ check_code_object(PyCodeObject *code)
     }
     // We trust that no code objects under co_consts have unbound cell vars.
 
-    if (code->co_executors != NULL
-        || code->_co_instrumentation_version > 0)
-    {
+    if (_PyCode_HAS_EXECUTORS(code) || _PyCode_HAS_INSTRUMENTATION(code)) {
         return "only basic functions are supported";
     }
     if (code->_co_monitoring != NULL) {
