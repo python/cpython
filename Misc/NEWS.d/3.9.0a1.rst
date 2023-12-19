@@ -2069,7 +2069,7 @@ Restores instantiation of Windows IOCP event loops from the non-main thread.
 .. section: Library
 
 Add default implementation of the :meth:`ast.NodeVisitor.visit_Constant`
-method which emits a deprecation warning and calls corresponding methody
+method which emits a deprecation warning and calls corresponding methods
 ``visit_Num()``, ``visit_Str()``, etc.
 
 ..
