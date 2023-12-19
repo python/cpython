@@ -1935,7 +1935,7 @@ Function and class definitions
 .. class:: arg(arg, annotation, type_comment)
 
    A single argument in a list. ``arg`` is a raw string of the argument
-   name, ``annotation`` is its annotation, such as a :class:`Name` node.
+   name; ``annotation`` is its annotation, such as a :class:`Name` node.
 
    .. attribute:: type_comment
 
