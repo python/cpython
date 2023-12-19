@@ -5616,7 +5616,7 @@ class DSLParser:
 
         if self.kind in {GETTER, SETTER}:
             if not cls:
-                fail("@getter and @setter must be class level functions")
+                fail("@getter and @setter must be class methods")
 
         self.update_function_kind(full_name)
         if self.kind is METHOD_INIT and not return_converter:
