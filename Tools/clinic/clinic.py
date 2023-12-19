@@ -6453,7 +6453,7 @@ class DSLParser:
         f = self.function
         k = f.kind
         if (k.new_or_init or k in {GETTER, SETTER}) and not f.docstring:
-            # If the following methods have a empty docstring,
+            # If following cases have a empty docstring,
             # Do not render a docstring at all, no signature, nothing.
             # 1. __init__ / __new__
             # 2. @getter / @setter properties
