@@ -2631,12 +2631,13 @@ Functions and decorators
       x = reveal_type(1)  # prints "Runtime type is int"
       print(x)  # prints "1"
 
-   Note that the runtime type inferred by ``reveal_type()`` can be different
-   from other static type checkers. Static type checkers in some cases will
-   know more (e.g. generic types, like the element types of a list) and in some
-   cases will know less (e.g. a runtime value will never be a union, it will
-   always be one concrete type or the other, but static type systems use union
-   types to represent that at runtime the value may be any of several types.)
+   Note that ``reveal_type()`` at runtime doesn't infer a type in the same way
+   that static type checkers do; it returns the actual type at runtime. Static
+   type checkers in some cases will know more (e.g. generic types, like the
+   element types of a list) and in some cases will know less (e.g. a runtime
+   value will never be a union, it will always be one concrete type or the
+   other, but static type systems use union types to represent that at runtime
+   the value may be any of several types.)
 
    .. versionadded:: 3.11
 
