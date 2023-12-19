@@ -63,9 +63,6 @@ def _compile_pattern(pat, sep, case_sensitive):
 
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
-    # The string representation of an empty path is a single dot ('.'). Empty
-    # paths shouldn't match wildcards, so we consume it with an atomic group.
-    regex = r'(\.\Z)?+' + regex
     return re.compile(regex, flags=flags).match
 
 
@@ -276,6 +273,14 @@ class PurePathBase:
             self._str = self._format_parsed_parts(self.drive, self.root,
                                                   self._tail) or '.'
             return self._str
+
+    @property
+    def _pattern_str(self):
+        """A string representation of the path, suitable for pattern matching.
+        This differs from __str__() by representing empty paths as the empty
+        string '', rather than a dot '.' character."""
+        path_str = str(self)
+        return '' if path_str == '.' else path_str
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -528,7 +533,7 @@ class PurePathBase:
         else:
             raise ValueError("empty pattern")
         match = _compile_pattern(pattern_str, sep, case_sensitive)
-        return match(str(self)) is not None
+        return match(self._pattern_str) is not None
 
 
 
@@ -882,9 +887,9 @@ class PathBase(PurePathBase):
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
 
                     # Filter out paths that don't match pattern.
-                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
+                    prefix_len = len(self._make_child_relpath('_')._pattern_str) - 1
                     match = _compile_pattern(str(path_pattern), sep, case_sensitive)
-                    paths = (path for path in paths if match(str(path), prefix_len))
+                    paths = (path for path in paths if match(path._pattern_str, prefix_len))
                     return paths
 
                 dir_only = part_idx < len(pattern_parts)
