@@ -865,9 +865,6 @@ class CLanguage(Language):
         PyDoc_STRVAR({c_basename}__doc__,
         {docstring});
     """)
-    GETSET_DOCSTRING_PROTOTYPE_VAR: Final[str] = normalize_snippet("""
-        PyDoc_VAR({getset_basename}__doc__);
-    """)
     GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
         PyDoc_STRVAR({getset_basename}__doc__,
         {docstring});
@@ -1206,7 +1203,7 @@ class CLanguage(Language):
         elif f.kind is GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
             if f.docstring:
-                docstring_prototype = self.GETSET_DOCSTRING_PROTOTYPE_VAR
+                docstring_prototype = ''
                 docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
             else:
                 docstring_prototype = docstring_definition = ''
