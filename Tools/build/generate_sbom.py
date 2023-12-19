@@ -50,7 +50,7 @@ PACKAGE_TO_FILES = {
         include=["Modules/expat/**"]
     ),
     "pip": PackageFiles(
-        include=["Lib/ensurepip/_bundled/pip-*-py3-none-any.whl"]
+        include=["Lib/ensurepip/_bundled/pip-23.3.2-py3-none-any.whl"]
     ),
     "macholib": PackageFiles(
         include=["Lib/ctypes/macholib/**"],
