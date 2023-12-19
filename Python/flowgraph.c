@@ -1110,7 +1110,10 @@ remove_redundant_jumps(cfg_builder *g) {
      * of that jump. If it is, then the jump instruction is redundant and
      * can be deleted.
      */
+
     assert(no_empty_basic_blocks(g));
+
+    bool remove_empty_blocks = false;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
         assert(last != NULL);
@@ -1122,10 +1125,22 @@ remove_redundant_jumps(cfg_builder *g) {
             }
             if (last->i_target == b->b_next) {
                 assert(b->b_next->b_iused);
-                INSTR_SET_OP0(last, NOP);
+                if (last->i_loc.lineno == NO_LOCATION.lineno) {
+                    b->b_iused--;
+                    if (b->b_iused == 0) {
+                        remove_empty_blocks = true;
+                    }
+                }
+                else {
+                    INSTR_SET_OP0(last, NOP);
+                }
             }
         }
     }
+    if (remove_empty_blocks) {
+        eliminate_empty_basic_blocks(g);
+    }
+    assert(no_empty_basic_blocks(g));
     return SUCCESS;
 }
 
