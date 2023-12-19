@@ -2106,6 +2106,10 @@ class TarFile(object):
            output is produced. `members' is optional and must be a subset of the
            list returned by getmembers().
         """
+        # Convert tarinfo type to stat type.
+        type2mode = {REGTYPE: stat.S_IFREG, SYMTYPE: stat.S_IFLNK,
+                     FIFOTYPE: stat.S_IFIFO, CHRTYPE: stat.S_IFCHR,
+                     DIRTYPE: stat.S_IFDIR, BLKTYPE: stat.S_IFBLK}
         self._check()
 
         if members is None:
@@ -2115,7 +2119,8 @@ class TarFile(object):
                 if tarinfo.mode is None:
                     _safe_print("??????????")
                 else:
-                    _safe_print(stat.filemode(tarinfo.mode))
+                    modetype = type2mode.get(tarinfo.type, 0)
+                    _safe_print(stat.filemode(modetype | tarinfo.mode))
                 _safe_print("%s/%s" % (tarinfo.uname or tarinfo.uid,
                                        tarinfo.gname or tarinfo.gid))
                 if tarinfo.ischr() or tarinfo.isblk():
