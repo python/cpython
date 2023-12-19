@@ -846,7 +846,7 @@ class ProgramsTestCase(BaseTestCase):
         if not support.Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
         if sysconfig.get_config_var("Py_GIL_DISABLED"):
-            rt_args.append('--disable-gil')
+            test_args.append('--disable-gil')
         self.run_batch(script, *test_args, *self.tests)
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')

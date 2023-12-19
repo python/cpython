@@ -232,7 +232,7 @@ class RunPyMixin:
             p.stdin.close()
             p.wait(10)
             out = p.stdout.read().decode("utf-8", "replace")
-            err = p.stderr.read().decode("ascii", "replace")
+            err = p.stderr.read().decode("ascii", "replace").replace("\uFFFD", "?")
         if p.returncode != expect_returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
             print([self.py_exe, *args])
