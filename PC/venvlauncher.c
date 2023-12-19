@@ -1,4 +1,4 @@
-/* 
+/*
  * venv redirector for Windows
  *
  * This launcher looks for a nearby pyvenv.cfg to find the correct home
