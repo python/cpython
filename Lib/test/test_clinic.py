@@ -2233,7 +2233,7 @@ class ClinicParserTest(TestCase):
             bar
             [clinic start generated code]*/
         """
-        expected_error = "@setter can not set docstring"
+        expected_error = "docstrings are only supported for @getter, not @setter"
         self.expect_failure(block, expected_error)
 
     def test_duplicate_getset(self):

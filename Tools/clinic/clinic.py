@@ -6280,6 +6280,7 @@ class DSLParser:
         if self.forced_text_signature:
             add(self.forced_text_signature)
         elif f.kind in {GETTER, SETTER}:
+            # @getter and @setter do not need signatures like a method or a function.
             return ''
         else:
             add('(')
@@ -6453,11 +6454,12 @@ class DSLParser:
     def format_docstring(self) -> str:
         assert self.function is not None
         f = self.function
-        if f.kind.new_or_init and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
-            return f.docstring
-        if f.kind in {GETTER, SETTER} and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
+        k = f.kind
+        if (k.new_or_init or k in {GETTER, SETTER}) and not f.docstring:
+            # If the following methods have a empty docstring,
+            # Do not render a docstring at all, no signature, nothing.
+            # 1. __init__ / __new__
+            # 2. @getter / @setter properties
             return f.docstring
 
         # Enforce the summary line!
