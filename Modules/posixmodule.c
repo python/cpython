@@ -1557,6 +1557,7 @@ error:
 ** man environ(7).
 */
 #include <crt_externs.h>
+#define USE_DARWIN_NS_GET_ENVIRON 1
 #elif !defined(_MSC_VER) && (!defined(__WATCOMC__) || defined(__QNX__) || defined(__VXWORKS__))
 extern char **environ;
 #endif /* !_MSC_VER */
@@ -1579,7 +1580,7 @@ convertenviron(void)
        through main() instead of wmain(). */
     (void)_wgetenv(L"");
     e = _wenviron;
-#elif defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
+#elif defined(USE_DARWIN_NS_GET_ENVIRON)
     /* environ is not accessible as an extern in a shared object on OSX; use
        _NSGetEnviron to resolve it. The value changes if you add environment
        variables between calls to Py_Initialize, so don't cache the value. */
@@ -7166,7 +7167,15 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
+#ifdef USE_DARWIN_NS_GET_ENVIRON
+    // There is no environ global in this situation.
+    char **environ = NULL;
+#endif
+
     if (env == Py_None) {
+#ifdef USE_DARWIN_NS_GET_ENVIRON
+        environ = *_NSGetEnviron();
+#endif
         envlist = environ;
     } else {
         envlist = parse_envlist(env, &envc);
