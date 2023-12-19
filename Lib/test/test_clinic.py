@@ -268,8 +268,8 @@ class ClinicWholeFileTest(TestCase):
     @contextlib.contextmanager
     def _clinic_version(new_version):
         """Helper for test_version_*() tests"""
-        _saved = clinic.version
-        clinic.version = new_version
+        _saved = clinic.parser.version
+        clinic.parser.version = new_version
         try:
             yield
         finally:
