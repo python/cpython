@@ -4,6 +4,8 @@ Released after 2023-10-02
 =========================
 
 
+gh-113269: Fix test_editor hang on macOS Catalina.
+
 gh-112939: Fix processing unsaved files when quitting IDLE on macOS.
 Patch by Ronald Oussoren and Christopher Chavez.
 
