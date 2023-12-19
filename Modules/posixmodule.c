@@ -7167,12 +7167,16 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    if (env == Py_None) {
-#if defined(USE_DARWIN_NS_GET_ENVIRON)
-        envlist = *_NSGetEnviron();
-#else
-        envlist = environ;
+#ifdef USE_DARWIN_NS_GET_ENVIRON
+    // There is no environ global in this situation.
+    char **environ = NULL;
 #endif
+
+    if (env == Py_None) {
+#ifdef USE_DARWIN_NS_GET_ENVIRON
+        environ = *_NSGetEnviron();
+#endif
+        envlist = environ;
     } else {
         envlist = parse_envlist(env, &envc);
         if (envlist == NULL) {
