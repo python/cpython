@@ -86,6 +86,12 @@ def main():
     cp932decmap = loadmap(cp932file)
     jis3decmap, jis4decmap, jis3_2_decmap, jis4_2_decmap, jis3_pairdecmap = loadmap_jisx0213(jisx0213file)
 
+    # In JIS0212.TXT provided by Unicode, JIS X 0212 entry 0x2237 is mapped to
+    # ~ (TILDE). However, EUC-JP already includes US-ASCII, so it is often
+    # mapped to ～ (FULLWIDTH TILDE). See
+    # https://encoding.spec.whatwg.org/index-jis0212.txt
+    jisx0212decmap[34][55] = ord('～')
+
     if jis3decmap[0x21][0x24] != 0xff0c:
         raise SystemExit('Please adjust your JIS X 0213 map using jisx0213-2000-std.txt.diff')
 
