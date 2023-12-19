@@ -275,7 +275,7 @@ class Server(object):
                 try:
                     res = function(*args, **kwds)
                 except Exception as e:
-                    msg = ('#ERROR', e)
+                    msg = ('#ERROR', pool.ExceptionWithTraceback(e, e.__traceback__))
                 else:
                     typeid = gettypeid and gettypeid.get(methodname, None)
                     if typeid:
