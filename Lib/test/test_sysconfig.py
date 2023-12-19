@@ -405,7 +405,6 @@ class TestSysConfig(unittest.TestCase):
     def test_library(self):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
-        config_args = sysconfig.get_config_var('CONFIG_ARGS')
         major, minor = sys.version_info[:2]
         if sys.platform == 'win32':
             self.assertTrue(library.startswith(f'python{major}{minor}'))
@@ -414,10 +413,10 @@ class TestSysConfig(unittest.TestCase):
         else:
             self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
             self.assertTrue(library.endswith('.a'))
-            if "--enable-framework" not in config_args:
-                self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
-            else:
+            if sys.platform == 'darwin' and sys._framework:
                 self.assertTrue(ldlibrary.endswith(f'{major}.{minor}/Python'))
+            else:
+                self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
