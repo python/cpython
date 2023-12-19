@@ -600,7 +600,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Destroy the interpreter.
     PyThreadState *tstate = PyThreadState_New(interp);
-    tstate->_whence = _PyThreadState_WHENCE_INTERP;
+    _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_INTERP);
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
