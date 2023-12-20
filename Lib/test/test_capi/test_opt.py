@@ -176,6 +176,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         with temporary_optimizer(opt):
             f()
         exe = get_first_executor(f)
+        self.assertIsNotNone(exe)
         self.assertTrue(exe.is_valid())
         _testinternalcapi.invalidate_executors(f.__code__)
         self.assertFalse(exe.is_valid())
@@ -196,7 +197,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_SET_IP", uops)
-        self.assertIn("LOAD_FAST", uops)
+        self.assertIn("_LOAD_FAST", uops)
 
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
@@ -243,7 +244,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertIn(("LOAD_FAST", 259, 0), list(ex))
+        self.assertIn(("_LOAD_FAST", 259, 0), list(ex))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode

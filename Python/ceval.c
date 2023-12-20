@@ -24,6 +24,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_uop_ids.h"       // Uops
 #include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_pyerrors.h"
 

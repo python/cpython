@@ -840,7 +840,6 @@ def main() -> None:
 
     a.assign_opcode_ids()
     a.write_opcode_targets(args.opcode_targets_h)
-    a.write_metadata(args.metadata, args.pymetadata)
     a.write_abstract_interpreter_instructions(
         args.abstract_interpreter_cases, args.emit_line_directives
     )

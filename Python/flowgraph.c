@@ -2258,11 +2258,11 @@ convert_pseudo_ops(basicblock *entryblock)
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
-                assert(SAME_OPCODE_METADATA(LOAD_CLOSURE, LOAD_FAST));
+                assert(is_pseudo_target(LOAD_CLOSURE, LOAD_FAST));
                 instr->i_opcode = LOAD_FAST;
             }
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
-                assert(SAME_OPCODE_METADATA(STORE_FAST_MAYBE_NULL, STORE_FAST));
+                assert(is_pseudo_target(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
             }
         }
