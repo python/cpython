@@ -661,7 +661,7 @@ check-clean-src:
 	\); then \
 		echo "Error: The source directory ($(srcdir)) is not clean" ; \
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
-		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
+		echo "Try to run: make -C \"$(srcdir)\" distclean" ; \
 		exit 1; \
 	fi
 
