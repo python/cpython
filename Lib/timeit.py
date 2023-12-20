@@ -50,9 +50,9 @@ Functions:
 """
 
 import gc
+import itertools
 import sys
 import time
-import itertools
 
 __all__ = ["Timer", "timeit", "repeat", "default_timer"]
 
@@ -77,9 +77,11 @@ def inner(_it, _timer{init}):
     return _t1 - _t0
 """
 
+
 def reindent(src, indent):
     """Helper to reindent a multi-line statement."""
-    return src.replace("\n", "\n" + " "*indent)
+    return src.replace("\n", "\n" + " " * indent)
+
 
 class Timer:
     """Class for timing execution speed of small code snippets.
@@ -166,7 +168,7 @@ class Timer:
 
         To be precise, this executes the setup statement once, and
         then returns the time it takes to execute the main statement
-        a number of times, as a float measured in seconds.  The
+        a number of times, as float seconds if using the default timer.   The
         argument is the number of times through the loop, defaulting
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
@@ -228,15 +230,18 @@ class Timer:
                     return (number, time_taken)
             i *= 10
 
+
 def timeit(stmt="pass", setup="pass", timer=default_timer,
            number=default_number, globals=None):
     """Convenience function to create Timer object and call timeit method."""
     return Timer(stmt, setup, timer, globals).timeit(number)
 
+
 def repeat(stmt="pass", setup="pass", timer=default_timer,
            repeat=default_repeat, number=default_number, globals=None):
     """Convenience function to create Timer object and call repeat method."""
     return Timer(stmt, setup, timer, globals).repeat(repeat, number)
+
 
 def main(args=None, *, _wrap_timer=None):
     """Main program, used when run as a script.
@@ -259,10 +264,9 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "process",
-                                    "verbose", "unit=", "help"])
+                                    "process", "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
         print("use -h/--help for command line help")
@@ -270,7 +274,7 @@ def main(args=None, *, _wrap_timer=None):
 
     timer = default_timer
     stmt = "\n".join(args) or "pass"
-    number = 0 # auto-determine
+    number = 0  # auto-determine
     setup = []
     repeat = default_repeat
     verbose = 0
@@ -287,7 +291,7 @@ def main(args=None, *, _wrap_timer=None):
                 time_unit = a
             else:
                 print("Unrecognized unit. Please select nsec, usec, msec, or sec.",
-                    file=sys.stderr)
+                      file=sys.stderr)
                 return 2
         if o in ("-r", "--repeat"):
             repeat = int(a)
@@ -321,7 +325,7 @@ def main(args=None, *, _wrap_timer=None):
                 msg = "{num} loop{s} -> {secs:.{prec}g} secs"
                 plural = (number != 1)
                 print(msg.format(num=number, s='s' if plural else '',
-                                  secs=time_taken, prec=precision))
+                                 secs=time_taken, prec=precision))
         try:
             number, _ = t.autorange(callback)
         except:
@@ -371,6 +375,7 @@ def main(args=None, *, _wrap_timer=None):
                                % (format_time(worst), format_time(best)),
                                UserWarning, '', 0)
     return None
+
 
 if __name__ == "__main__":
     sys.exit(main())

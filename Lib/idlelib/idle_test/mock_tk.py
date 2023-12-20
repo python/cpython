@@ -79,7 +79,7 @@ class Test(unittest.TestCase):
     ---
     For 'ask' functions, set func.result return value before calling the method
     that uses the message function. When messagebox functions are the
-    only gui alls in a method, this replacement makes the method gui-free,
+    only GUI calls in a method, this replacement makes the method GUI-free,
     """
     askokcancel = Mbox_func()     # True or False
     askquestion = Mbox_func()     # 'yes' or 'no'
