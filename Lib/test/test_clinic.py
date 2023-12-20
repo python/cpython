@@ -2221,6 +2221,21 @@ class ClinicParserTest(TestCase):
                 expected_error = f"{annotation} method cannot define parameters"
                 self.expect_failure(block, expected_error)
 
+    def test_setter_docstring(self):
+        block = """
+            module foo
+            class Foo "" ""
+            @setter
+            Foo.property
+
+            foo
+
+            bar
+            [clinic start generated code]*/
+        """
+        expected_error = "docstrings are only supported for @getter, not @setter"
+        self.expect_failure(block, expected_error)
+
     def test_duplicate_getset(self):
         annotations = ["@getter", "@setter"]
         for annotation in annotations:
