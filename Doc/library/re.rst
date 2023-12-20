@@ -1141,7 +1141,7 @@ Regular Expression Objects
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
       See :ref:`types-genericalias`.
 
-.. method:: Pattern.search(string[, pos[, endpos]])
+.. method:: Pattern.search(string, pos=0, endpos=sys.maxsize)
 
    Scan through *string* looking for the first location where this regular
    expression produces a match, and return a corresponding :class:`~re.Match`.
@@ -1167,7 +1167,7 @@ Regular Expression Objects
       >>> pattern.search("dog", 1)  # No match; search doesn't include the "d"
 
 
-.. method:: Pattern.match(string[, pos[, endpos]])
+.. method:: Pattern.match(string, pos=0, endpos=sys.maxsize)
 
    If zero or more characters at the *beginning* of *string* match this regular
    expression, return a corresponding :class:`~re.Match`. Return ``None`` if the
@@ -1186,7 +1186,7 @@ Regular Expression Objects
    :meth:`~Pattern.search` instead (see also :ref:`search-vs-match`).
 
 
-.. method:: Pattern.fullmatch(string[, pos[, endpos]])
+.. method:: Pattern.fullmatch(string, pos=0, endpos=sys.maxsize)
 
    If the whole *string* matches this regular expression, return a corresponding
    :class:`~re.Match`.  Return ``None`` if the string does not match the pattern;
@@ -1209,14 +1209,14 @@ Regular Expression Objects
    Identical to the :func:`split` function, using the compiled pattern.
 
 
-.. method:: Pattern.findall(string[, pos[, endpos]])
+.. method:: Pattern.findall(string, pos=0, endpos=sys.maxsize)
 
    Similar to the :func:`findall` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
    region like for :meth:`search`.
 
 
-.. method:: Pattern.finditer(string[, pos[, endpos]])
+.. method:: Pattern.finditer(string, pos=0, endpos=sys.maxsize)
 
    Similar to the :func:`finditer` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
