@@ -6451,11 +6451,8 @@ class DSLParser:
     def format_docstring(self) -> str:
         assert self.function is not None
         f = self.function
+        # For the following special cases, it does not make sense to render a docstring.
         if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
-            # If following cases have a empty docstring,
-            # Do not render a docstring at all, no signature, nothing.
-            # 1. __init__ / __new__
-            # 2. @getter / @setter properties
             return f.docstring
 
         # Enforce the summary line!
