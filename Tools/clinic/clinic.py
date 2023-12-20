@@ -6451,8 +6451,7 @@ class DSLParser:
     def format_docstring(self) -> str:
         assert self.function is not None
         f = self.function
-        k = f.kind
-        if (k.new_or_init or k in {GETTER, SETTER}) and not f.docstring:
+        if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
             # If following cases have a empty docstring,
             # Do not render a docstring at all, no signature, nothing.
             # 1. __init__ / __new__
