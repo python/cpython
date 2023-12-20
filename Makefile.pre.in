@@ -1797,7 +1797,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/warnings.h \
 		$(srcdir)/Include/cpython/weakrefobject.h \
 		\
-		@MIMALLOC_HEADERS@ \
+		$(MIMALLOC_HEADERS) \
 		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_asdl.h \
