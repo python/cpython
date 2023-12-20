@@ -865,6 +865,11 @@ class CLanguage(Language):
         PyDoc_STRVAR({c_basename}__doc__,
         {docstring});
     """)
+    GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
+        PyDoc_STRVAR({getset_basename}__doc__,
+        {docstring});
+        #define {getset_basename}_HAS_DOCSTR
+    """)
     IMPL_DEFINITION_PROTOTYPE: Final[str] = normalize_snippet("""
         static {impl_return_type}
         {c_basename}_impl({impl_parameters})
@@ -874,17 +879,27 @@ class CLanguage(Language):
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_basename}_HAS_DOCSTR)
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        #  define {getset_basename}_DOCSTR NULL
+        #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
         #else
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
         #endif
     """)
     SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_name}_HAS_DOCSTR)
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        #  define {getset_basename}_DOCSTR NULL
+        #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
         #else
         #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
         #endif
@@ -1187,11 +1202,17 @@ class CLanguage(Language):
             docstring_prototype = docstring_definition = ''
         elif f.kind is GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
-            docstring_prototype = docstring_definition = ''
+            if f.docstring:
+                docstring_prototype = ''
+                docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
+            else:
+                docstring_prototype = docstring_definition = ''
         elif f.kind is SETTER:
+            if f.docstring:
+                fail("docstrings are only supported for @getter, not @setter")
             return_value_declaration = "int {return_value};"
             methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
-            docstring_prototype = docstring_prototype = docstring_definition = ''
+            docstring_prototype = docstring_definition = ''
         else:
             docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
             docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
@@ -6255,6 +6276,9 @@ class DSLParser:
         add(f.displayname)
         if self.forced_text_signature:
             add(self.forced_text_signature)
+        elif f.kind in {GETTER, SETTER}:
+            # @getter and @setter do not need signatures like a method or a function.
+            return ''
         else:
             add('(')
 
@@ -6427,8 +6451,8 @@ class DSLParser:
     def format_docstring(self) -> str:
         assert self.function is not None
         f = self.function
-        if f.kind.new_or_init and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
+        # For the following special cases, it does not make sense to render a docstring.
+        if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
             return f.docstring
 
         # Enforce the summary line!

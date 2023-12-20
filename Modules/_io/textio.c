@@ -131,40 +131,52 @@ _io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls,
     return _unsupported(state, "write");
 }
 
-PyDoc_STRVAR(textiobase_encoding_doc,
-    "Encoding of the text stream.\n"
-    "\n"
-    "Subclasses should override.\n"
-    );
+/*[clinic input]
+@getter
+_io._TextIOBase.encoding
+
+Encoding of the text stream.
+
+Subclasses should override.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_encoding_get(PyObject *self, void *context)
+_io__TextIOBase_encoding_get_impl(PyObject *self)
+/*[clinic end generated code: output=e0f5d8f548b92432 input=4736d7621dd38f43]*/
 {
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(textiobase_newlines_doc,
-    "Line endings translated so far.\n"
-    "\n"
-    "Only line endings translated during reading are considered.\n"
-    "\n"
-    "Subclasses should override.\n"
-    );
+/*[clinic input]
+@getter
+_io._TextIOBase.newlines
+
+Line endings translated so far.
+
+Only line endings translated during reading are considered.
+
+Subclasses should override.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_newlines_get(PyObject *self, void *context)
+_io__TextIOBase_newlines_get_impl(PyObject *self)
+/*[clinic end generated code: output=46ec147fb9f00c2a input=a5b196d076af1164]*/
 {
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(textiobase_errors_doc,
-    "The error setting of the decoder or encoder.\n"
-    "\n"
-    "Subclasses should override.\n"
-    );
+/*[clinic input]
+@getter
+_io._TextIOBase.errors
+
+The error setting of the decoder or encoder.
+
+Subclasses should override.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_errors_get(PyObject *self, void *context)
+_io__TextIOBase_errors_get_impl(PyObject *self)
+/*[clinic end generated code: output=c6623d6addcd087d input=974aa52d1db93a82]*/
 {
     Py_RETURN_NONE;
 }
@@ -179,9 +191,9 @@ static PyMethodDef textiobase_methods[] = {
 };
 
 static PyGetSetDef textiobase_getset[] = {
-    {"encoding", (getter)textiobase_encoding_get, NULL, textiobase_encoding_doc},
-    {"newlines", (getter)textiobase_newlines_get, NULL, textiobase_newlines_doc},
-    {"errors", (getter)textiobase_errors_get, NULL, textiobase_errors_doc},
+    _IO__TEXTIOBASE_ENCODING_GETSETDEF
+    _IO__TEXTIOBASE_NEWLINES_GETSETDEF
+    _IO__TEXTIOBASE_ERRORS_GETSETDEF
     {NULL}
 };
 
