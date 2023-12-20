@@ -62,15 +62,13 @@ R = typing.TypeVar(
 
 
 @dataclasses.dataclass
-class Stencil(typing.Generic[R]):
+class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray)
     holes: list[Hole] = dataclasses.field(default_factory=list)
     disassembly: list[str] = dataclasses.field(default_factory=list)
     symbols: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
     offsets: dict[int, int] = dataclasses.field(default_factory=dict, init=False)
-    relocations: list[tuple[int, R]] = dataclasses.field(
-        default_factory=list, init=False
-    )
+    relocations: list[Hole] = dataclasses.field(default_factory=list, init=False)
 
     def pad(self, alignment: int) -> None:
         offset = len(self.body)
@@ -108,9 +106,9 @@ class Stencil(typing.Generic[R]):
 
 
 @dataclasses.dataclass
-class StencilGroup(typing.Generic[R]):
-    code: Stencil[R] = dataclasses.field(default_factory=Stencil)
-    data: Stencil[R] = dataclasses.field(default_factory=Stencil)
+class StencilGroup:
+    code: Stencil = dataclasses.field(default_factory=Stencil)
+    data: Stencil = dataclasses.field(default_factory=Stencil)
     global_offset_table: dict[str, int] = dataclasses.field(
         default_factory=dict, init=False
     )
@@ -196,8 +194,8 @@ class Target(typing.Generic[S, R]):
         hasher.update(self.prefix.encode())
         return hasher.digest()
 
-    async def parse(self, path: pathlib.Path) -> StencilGroup[R]:
-        group: StencilGroup[R] = StencilGroup()
+    async def parse(self, path: pathlib.Path) -> StencilGroup:
+        group = StencilGroup()
         objdump = llvm.find_tool("llvm-objdump", echo=self.verbose)
         if objdump is not None:
             flags = ["--disassemble", "--reloc"]
@@ -224,15 +222,15 @@ class Target(typing.Generic[S, R]):
         output = output.replace(b"PrivateExtern\n", b"\n")
         output = output.replace(b"Extern\n", b"\n")
         # ...and also COFF:
-        output = output[output.index(b"[", 1, None):]
-        output = output[:output.rindex(b"]", None, -1) + 1]
+        output = output[output.index(b"[", 1, None) :]
+        output = output[: output.rindex(b"]", None, -1) + 1]
         sections: list[dict[typing.Literal["Section"], S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
         assert group.code.symbols["_JIT_ENTRY"] == 0
         if group.data.body:
-            bytes_without_b = str(bytes(group.data.body)).removeprefix("b")
-            group.data.disassembly.append(f"0: {bytes_without_b}")
+            line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
+            group.data.disassembly.append(line)
         group.data.pad(8)
         self._process_relocations(group.code, group)
         remaining: list[Hole] = []
@@ -252,9 +250,8 @@ class Target(typing.Generic[S, R]):
         group.data.holes.sort(key=lambda hole: hole.offset)
         return group
 
-    def _process_relocations(self, stencil: Stencil[R], group: StencilGroup[R]) -> None:
-        for base, relocation in stencil.relocations:
-            hole = self._handle_relocation(base, relocation, group, stencil.body)
+    def _process_relocations(self, stencil: Stencil, group: StencilGroup) -> None:
+        for hole in stencil.relocations:
             if hole.symbol in group.data.symbols:
                 value, symbol = HoleValue.DATA, None
                 addend = hole.addend + group.data.symbols[hole.symbol]
@@ -265,17 +262,17 @@ class Target(typing.Generic[S, R]):
                 hole = hole.replace(value=value, symbol=symbol, addend=addend)
             stencil.holes.append(hole)
 
-    def _handle_section(self, section: S, group: StencilGroup[R]) -> None:
+    def _handle_section(self, section: S, group: StencilGroup) -> None:
         raise NotImplementedError()
 
     def _handle_relocation(
-        self, base: int, relocation: R, group: StencilGroup[R], raw: bytes
+        self, base: int, relocation: R, group: StencilGroup, raw: bytes
     ) -> Hole:
         raise NotImplementedError()
 
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
-    ) -> StencilGroup[R]:
+    ) -> StencilGroup:
         o = tempdir / f"{opname}.o"
         flags = [
             f"--target={self.triple}",
@@ -309,7 +306,7 @@ class Target(typing.Generic[S, R]):
         await run(clang, *flags, "-o", o, c, echo=self.verbose)
         return await self.parse(o)
 
-    async def build_stencils(self) -> dict[str, StencilGroup[R]]:
+    async def build_stencils(self) -> dict[str, StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
@@ -342,9 +339,7 @@ class Target(typing.Generic[S, R]):
 
 
 class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
-    def _handle_section(
-        self, section: schema.ELFSection, group: StencilGroup[schema.ELFRelocation]
-    ) -> None:
+    def _handle_section(self, section: schema.ELFSection, group: StencilGroup) -> None:
         section_type = section["Type"]["Value"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
@@ -357,7 +352,8 @@ class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
             base = stencil.offsets[section["Info"]]
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
-                stencil.relocations.append((base, relocation))
+                hole = self._handle_relocation(base, relocation, group, stencil.body)
+                stencil.relocations.append(hole)
         elif section_type == "SHT_PROGBITS":
             if "SHF_ALLOC" not in flags:
                 return
@@ -389,7 +385,7 @@ class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
         self,
         base: int,
         relocation: schema.ELFRelocation,
-        group: StencilGroup[schema.ELFRelocation],
+        group: StencilGroup,
         raw: bytes,
     ) -> Hole:
         match relocation:
@@ -408,9 +404,7 @@ class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
 
 
 class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
-    def _handle_section(
-        self, section: schema.COFFSection, group: StencilGroup[schema.COFFRelocation]
-    ) -> None:
+    def _handle_section(self, section: schema.COFFSection, group: StencilGroup) -> None:
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
@@ -433,13 +427,14 @@ class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
             stencil.symbols[name] = offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
-            stencil.relocations.append((base, relocation))
+            hole = self._handle_relocation(base, relocation, group, stencil.body)
+            stencil.relocations.append(hole)
 
     def _handle_relocation(
         self,
         base: int,
         relocation: schema.COFFRelocation,
-        group: StencilGroup[schema.COFFRelocation],
+        group: StencilGroup,
         raw: bytes,
     ) -> Hole:
         match relocation:
@@ -468,7 +463,7 @@ class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
 
 class MachO(Target[schema.MachOSection, schema.MachORelocation]):
     def _handle_section(
-        self, section: schema.MachOSection, group: StencilGroup[schema.MachORelocation]
+        self, section: schema.MachOSection, group: StencilGroup
     ) -> None:
         assert section["Address"] >= len(group.code.body)
         assert "SectionData" in section
@@ -477,48 +472,36 @@ class MachO(Target[schema.MachOSection, schema.MachORelocation]):
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
         if "SomeInstructions" in flags:
-            assert not group.data.body, group.data.body
-            group.code.body.extend([0] * (section["Address"] - len(group.code.body)))
-            before = group.code.offsets[section["Index"]] = section["Address"]
-            group.code.body.extend(section_data["Bytes"])
-            group.code.symbols[name] = before
-            assert "Symbols" in section
-            for wrapped_symbol in section["Symbols"]:
-                symbol = wrapped_symbol["Symbol"]
-                offset = symbol["Value"]
-                name = symbol["Name"]["Value"]
-                name = name.removeprefix(self.prefix)
-                group.code.symbols[name] = offset
-            assert "Relocations" in section
-            for wrapped_relocation in section["Relocations"]:
-                relocation = wrapped_relocation["Relocation"]
-                group.code.relocations.append((before, relocation))
+            stencil = group.code
+            bias = 0
+            stencil.symbols[name] = section["Address"] - bias
         else:
-            group.data.body.extend(
-                [0] * (section["Address"] - len(group.data.body) - len(group.code.body))
-            )
-            before = group.data.offsets[section["Index"]] = section["Address"] - len(
-                group.code.body
-            )
-            group.data.body.extend(section_data["Bytes"])
-            group.data.symbols[name] = len(group.code.body)
-            assert "Symbols" in section
-            for wrapped_symbol in section["Symbols"]:
-                symbol = wrapped_symbol["Symbol"]
-                offset = symbol["Value"] - len(group.code.body)
-                name = symbol["Name"]["Value"]
-                name = name.removeprefix(self.prefix)
-                group.data.symbols[name] = offset
-            assert "Relocations" in section
-            for wrapped_relocation in section["Relocations"]:
-                relocation = wrapped_relocation["Relocation"]
-                group.data.relocations.append((before, relocation))
+            stencil = group.data
+            bias = len(group.code.body)
+            stencil.symbols[name] = len(group.code.body)
+        base = stencil.offsets[section["Index"]] = section["Address"] - bias
+        stencil.body.extend(
+            [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
+        )
+        stencil.body.extend(section_data["Bytes"])
+        assert "Symbols" in section
+        for wrapped_symbol in section["Symbols"]:
+            symbol = wrapped_symbol["Symbol"]
+            offset = symbol["Value"] - bias
+            name = symbol["Name"]["Value"]
+            name = name.removeprefix(self.prefix)
+            stencil.symbols[name] = offset
+        assert "Relocations" in section
+        for wrapped_relocation in section["Relocations"]:
+            relocation = wrapped_relocation["Relocation"]
+            hole = self._handle_relocation(base, relocation, group, stencil.body)
+            stencil.relocations.append(hole)
 
     def _handle_relocation(
         self,
         base: int,
         relocation: schema.MachORelocation,
-        group: StencilGroup[schema.MachORelocation],
+        group: StencilGroup,
         raw: bytes,
     ) -> Hole:
         match relocation:
@@ -635,9 +618,7 @@ def dump_footer(opnames: list[str]) -> typing.Generator[str, None, None]:
     yield "}"
 
 
-def dump(
-    stencil_groups: dict[str, StencilGroup[R]]
-) -> typing.Generator[str, None, None]:
+def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Generator[str, None, None]:
     yield from dump_header()
     opnames = []
     for opname, stencil in sorted(stencil_groups.items()):
