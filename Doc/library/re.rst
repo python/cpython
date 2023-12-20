@@ -94,6 +94,9 @@ repetition to an inner repetition, parentheses may be used. For example,
 the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
 
 
+Special Characters
+^^^^^^^^^^^^^^^^^^
+
 The special characters are:
 
 .. index:: single: . (dot); in regular expressions
