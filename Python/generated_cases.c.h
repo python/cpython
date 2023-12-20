@@ -153,6 +153,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_ADD_FLOAT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -181,6 +182,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_ADD_INT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -209,6 +211,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_ADD_UNICODE
             {
                 STAT_INC(BINARY_OP, hit);
@@ -236,6 +239,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
                 TIER_ONE_ONLY
@@ -282,6 +286,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_MULTIPLY_FLOAT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -310,6 +315,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_MULTIPLY_INT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -338,6 +344,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_SUBTRACT_FLOAT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -366,6 +373,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             }
+            /* Skip 1 cache entry */
             // _BINARY_OP_SUBTRACT_INT
             {
                 STAT_INC(BINARY_OP, hit);
@@ -763,6 +771,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
+            /* Skip 2 cache entries */
             // _CALL
             {
                 // oparg counts all of the args, but *not* self:
@@ -3400,6 +3409,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
+            /* Skip 8 cache entries */
             // _LOAD_ATTR
             {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
@@ -4096,6 +4106,9 @@
                 DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
+            /* Skip 1 cache entry */
+            /* Skip 1 cache entry */
+            /* Skip 1 cache entry */
             // _LOAD_GLOBAL
             {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -4564,6 +4577,7 @@
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
             PyObject *cond;
+            /* Skip 1 cache entry */
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
@@ -4582,6 +4596,7 @@
             PyObject *value;
             PyObject *b;
             PyObject *cond;
+            /* Skip 1 cache entry */
             // _IS_NONE
             value = stack_pointer[-1];
             {
@@ -4614,6 +4629,7 @@
             PyObject *value;
             PyObject *b;
             PyObject *cond;
+            /* Skip 1 cache entry */
             // _IS_NONE
             value = stack_pointer[-1];
             {
@@ -4644,6 +4660,7 @@
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
             PyObject *cond;
+            /* Skip 1 cache entry */
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
@@ -5117,6 +5134,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
+            /* Skip 3 cache entries */
             // _STORE_ATTR
             v = stack_pointer[-2];
             {
@@ -5509,6 +5527,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
+            /* Skip 2 cache entries */
             // _TO_BOOL
             {
                 int err = PyObject_IsTrue(value);
