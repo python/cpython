@@ -123,6 +123,7 @@ backward compatibility.
 """
 
 import enum
+import sys
 from . import _compiler, _parser
 import functools
 import _sre
@@ -161,20 +162,20 @@ PatternError = error = _compiler.PatternError
 # --------------------------------------------------------------------
 # public interface
 
-def match(pattern, string, flags=0):
+def match(pattern, string, flags=0, pos=0, endpos=sys.maxsize):
     """Try to apply the pattern at the start of the string, returning
     a Match object, or None if no match was found."""
-    return _compile(pattern, flags).match(string)
+    return _compile(pattern, flags).match(string, pos=pos, endpos=endpos)
 
-def fullmatch(pattern, string, flags=0):
+def fullmatch(pattern, string, flags=0, pos=0, endpos=sys.maxsize):
     """Try to apply the pattern to all of the string, returning
     a Match object, or None if no match was found."""
-    return _compile(pattern, flags).fullmatch(string)
+    return _compile(pattern, flags).fullmatch(string, pos=pos, endpos=endpos)
 
-def search(pattern, string, flags=0):
+def search(pattern, string, flags=0, pos=0, endpos=sys.maxsize):
     """Scan through string looking for a match to the pattern, returning
     a Match object, or None if no match was found."""
-    return _compile(pattern, flags).search(string)
+    return _compile(pattern, flags).search(string, pos=pos, endpos=endpos)
 
 class _ZeroSentinel(int):
     pass
@@ -267,7 +268,7 @@ def split(pattern, string, *args, maxsplit=_zero_sentinel, flags=_zero_sentinel)
     return _compile(pattern, flags).split(string, maxsplit)
 split.__text_signature__ = '(pattern, string, maxsplit=0, flags=0)'
 
-def findall(pattern, string, flags=0):
+def findall(pattern, string, flags=0, pos=0, endpos=sys.maxsize):
     """Return a list of all non-overlapping matches in the string.
 
     If one or more capturing groups are present in the pattern, return
@@ -275,14 +276,14 @@ def findall(pattern, string, flags=0):
     has more than one group.
 
     Empty matches are included in the result."""
-    return _compile(pattern, flags).findall(string)
+    return _compile(pattern, flags).findall(string, pos=pos, endpos=endpos)
 
-def finditer(pattern, string, flags=0):
+def finditer(pattern, string, flags=0, pos=0, endpos=sys.maxsize):
     """Return an iterator over all non-overlapping matches in the
     string.  For each match, the iterator returns a Match object.
 
     Empty matches are included in the result."""
-    return _compile(pattern, flags).finditer(string)
+    return _compile(pattern, flags).finditer(string, pos=pos, endpos=endpos)
 
 def compile(pattern, flags=0):
     "Compile a regular expression pattern, returning a Pattern object."
