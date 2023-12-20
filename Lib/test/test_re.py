@@ -1981,6 +1981,61 @@ class ReTests(unittest.TestCase):
             pat.scanner(string='abracadabra', pos=3, endpos=10).search().span(),
             (7, 9))
 
+    def test_module_function_pos_endpos(self):
+        # pos/endpos - positional arguments
+        self.assertEqual(
+            re.match(r'(ab)', 'abracadabra', 0, 7).span(), (7, 9))
+        self.assertEqual(
+            re.match(r'(ab)', 'abracadabra', 0, 7, 10).span(), (7, 9))
+        self.assertEqual(
+            re.fullmatch(r'(abra)', 'abracadabra', 1, 7).span(), (7, 11))
+        self.assertEqual(
+            re.fullmatch(r'(ab)', 'abracadabra', 0, 7, 9).span(), (7, 9))
+        self.assertEqual(
+            re.search(r'(ab)', 'abracadabra', 0, 3).span(), (7, 9))
+        self.assertEqual(
+            re.search(r'(ab)', 'abracadabra', 0, 3, 10).span(), (7, 9))
+        self.assertEqual(
+            re.findall(r'(ab)', 'abracadabracadabra', 0, 3), ['ab', 'ab'])
+        self.assertEqual(
+            re.findall(r'(ab)', 'abracadabracadabra', 0, 3, 16), ['ab', 'ab'])
+        iter = re.finditer(r":+", "a:b::c:::d", 0, 3)
+        self.assertEqual([item.group(0) for item in iter], ["::", ":::"])
+        iter = re.finditer(r":+", "a:b::c:::d", 0, 3, 10)
+        self.assertEqual([item.group(0) for item in iter], ["::", ":::"])
+
+        # pos/endpos - keyword arguments
+        self.assertEqual(
+            re.match(r'(ab)', 'abracadabra', pos=7).span(), (7, 9))
+        self.assertEqual(
+            re.match(r'(ab)', 'abracadabra', endpos=9).span(), (0, 2))
+        self.assertEqual(
+            re.match(r'(ab)', 'abracadabra', pos=7, endpos=9).span(), (7, 9))
+        self.assertEqual(
+            re.fullmatch(r'(abra)', 'abracadabra', pos=7).span(), (7, 11))
+        self.assertEqual(
+            re.fullmatch(r'(ab)', 'abracadabra', endpos=2).span(), (0, 2))
+        self.assertEqual(
+            re.fullmatch(r'(ab)', 'abracadabra', pos=7, endpos=9).span(), (7, 9))
+        self.assertEqual(
+            re.search(r'(ab)', 'abracadabra', pos=3).span(), (7, 9))
+        self.assertEqual(
+            re.search(r'(ab)', 'abracadabra', endpos=9).span(), (0, 2))
+        self.assertEqual(
+            re.search(r'(ab)', 'abracadabra', pos=3, endpos=9).span(), (7, 9))
+        self.assertEqual(
+            re.findall(r':+', 'a:b::c:::d', pos=3), ['::', ':::'])
+        self.assertEqual(
+            re.findall(r':+', 'a:b::c:::d', endpos=6), [':', '::'])
+        self.assertEqual(
+            re.findall(r':+', 'a:b::c:::d', pos=3, endpos=10), ['::', ':::'])
+        iter = re.finditer(r':+', 'a:b::c:::d', pos=3)
+        self.assertEqual([item.group(0) for item in iter], ['::', ':::'])
+        iter = re.finditer(r':+', 'a:b::c:::d', endpos=6)
+        self.assertEqual([item.group(0) for item in iter], [':', '::'])
+        iter = re.finditer(r':+', 'a:b::c:::d', pos=3, endpos=10)
+        self.assertEqual([item.group(0) for item in iter], ['::', ':::'])
+
     def test_bug_20998(self):
         # Issue #20998: Fullmatch of repeated single character pattern
         # with ignore case.
