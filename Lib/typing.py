@@ -3280,7 +3280,7 @@ sys.modules[re.__name__] = re
 
 
 def reveal_type[T](obj: T, /) -> T:
-    """Reveal the inferred type of a variable.
+    """Ask a static type checker to reveal the inferred type of an expression.
 
     When a static type checker encounters a call to ``reveal_type()``,
     it will emit the inferred type of the argument::
@@ -3292,7 +3292,7 @@ def reveal_type[T](obj: T, /) -> T:
     will produce output similar to 'Revealed type is "builtins.int"'.
 
     At runtime, the function prints the runtime type of the
-    argument and returns it unchanged.
+    argument and returns the argument unchanged.
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
