@@ -1,0 +1,2 @@
+Fix a memory leak in :class:`asyncio.sslproto.SSLProtocol` when the SSL
+handshake fails. Contributed by Jamie Phan.
