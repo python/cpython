@@ -3303,8 +3303,8 @@ class TextIO(IO[str]):
 def reveal_type[T](obj: T, /) -> T:
     """Ask a static type checker to reveal the inferred type of an expression.
 
-    When a static type checker encounters a call to this function,
-    it emits a diagnostic with the inferred type of the argument.
+    When a static type checker encounters a call to ``reveal_type()``,
+    it will emit the inferred type of the argument::
 
         x: int = 1
         reveal_type(x)
@@ -3313,7 +3313,7 @@ def reveal_type[T](obj: T, /) -> T:
     will produce output similar to 'Revealed type is "builtins.int"'.
 
     At runtime, the function prints the runtime type of the
-    argument and returns it unchanged.
+    argument and returns the argument unchanged.
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
