@@ -50,6 +50,11 @@ from typing import (
     overload,
 )
 
+
+# Local imports.
+import libclinic
+
+
 # TODO:
 #
 # soon:
@@ -61,23 +66,6 @@ from typing import (
 #         and keyword-only
 #
 
-NO_VARARG = "PY_SSIZE_T_MAX"
-CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {
-    "_keywords",
-    "_parser",
-    "args",
-    "argsbuf",
-    "fastargs",
-    "kwargs",
-    "kwnames",
-    "nargs",
-    "noptargs",
-    "return_value",
-}
-
-# '#include "header.h"   // reason': column of '//' comment
-INCLUDE_COMMENT_COLUMN = 35
 
 # match '#define Py_LIMITED_API'
 LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
@@ -102,8 +90,6 @@ class Null:
 
 
 NULL = Null()
-
-sig_end_marker = '--'
 
 TemplateDict = dict[str, str]
 
@@ -179,33 +165,6 @@ def fail(
     warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
-def quoted_for_c_string(s: str) -> str:
-    for old, new in (
-        ('\\', '\\\\'), # must be first!
-        ('"', '\\"'),
-        ("'", "\\'"),
-        ):
-        s = s.replace(old, new)
-    return s
-
-def c_repr(s: str) -> str:
-    return '"' + s + '"'
-
-
-def wrapped_c_string_literal(
-        text: str,
-        *,
-        width: int = 72,
-        suffix: str = '',
-        initial_indent: int = 0,
-        subsequent_indent: int = 4
-) -> str:
-    wrapped = textwrap.wrap(text, width=width, replace_whitespace=False,
-                            drop_whitespace=False, break_on_hyphens=False)
-    separator = '"' + suffix + '\n' + subsequent_indent * ' ' + '"'
-    return initial_indent * ' ' + '"' + separator.join(wrapped) + '"'
-
-
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
 def is_legal_py_identifier(s: str) -> bool:
@@ -251,7 +210,6 @@ def linear_format(s: str, **kwargs: str) -> str:
             by the indent of the source line.
           * A newline will be added to the end.
     """
-
     lines = []
     for line in s.split('\n'):
         indent, curly, trailing = line.partition('{')
@@ -280,34 +238,6 @@ def linear_format(s: str, **kwargs: str) -> str:
         lines.extend([value, "\n"])
 
     return "".join(lines[:-1])
-
-def _add_prefix_and_suffix(s: str, prefix: str = "", suffix: str = "") -> str:
-    """
-    Return 's', with 'prefix' prepended and 'suffix' appended to all lines.
-
-    If the last line is empty, it remains unchanged.
-    If s is blank, returns s unchanged.
-
-    (textwrap.indent only adds to non-blank lines.)
-    """
-    *split, last = s.split("\n")
-    lines = [prefix + line + suffix + "\n" for line in split]
-    if last:
-        lines.append(prefix + last + suffix)
-    return "".join(lines)
-
-def indent_all_lines(s: str, prefix: str) -> str:
-    return _add_prefix_and_suffix(s, prefix=prefix)
-
-def suffix_all_lines(s: str, suffix: str) -> str:
-    return _add_prefix_and_suffix(s, suffix=suffix)
-
-
-def pprint_words(items: list[str]) -> str:
-    if len(items) <= 2:
-        return " and ".join(items)
-    else:
-        return ", ".join(items[:-1]) + " and " + items[-1]
 
 
 class CRenderData:
@@ -710,6 +640,8 @@ class CLanguage(Language):
     stop_line     = "[{dsl_name} start generated code]*/"
     checksum_line = "/*[{dsl_name} end generated code: {arguments}]*/"
 
+    NO_VARARG: Final[str] = "PY_SSIZE_T_MAX"
+
     PARSER_PROTOTYPE_KEYWORD: Final[str] = normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
@@ -863,7 +795,7 @@ class CLanguage(Language):
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
             minor=minversion[1],
-            message=c_repr(message),
+            message=libclinic.c_repr(message),
         )
         return normalize_snippet(code)
 
@@ -894,7 +826,7 @@ class CLanguage(Language):
             params.values(), key=attrgetter("deprecated_positional")
         ):
             names = [repr(p.name) for p in group]
-            pstr = pprint_words(names)
+            pstr = libclinic.pprint_words(names)
             if len(names) == 1:
                 message += (
                     f" Parameter {pstr} will become a keyword-only parameter "
@@ -913,8 +845,8 @@ class CLanguage(Language):
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
             errcheck="",
-            message=wrapped_c_string_literal(message, width=64,
-                                             subsequent_indent=20),
+            message=libclinic.wrapped_c_string_literal(message, width=64,
+                                                       subsequent_indent=20),
         )
         return normalize_snippet(code, indent=4)
 
@@ -963,7 +895,7 @@ class CLanguage(Language):
                 else:
                     condition = f"kwargs && PyDict_GET_SIZE(kwargs) && {condition}"
         names = [repr(p.name) for p in params.values()]
-        pstr = pprint_words(names)
+        pstr = libclinic.pprint_words(names)
         pl = 's' if len(params) != 1 else ''
         message = (
             f"Passing keyword argument{pl} {pstr} to "
@@ -974,7 +906,7 @@ class CLanguage(Language):
             params.values(), key=attrgetter("deprecated_keyword")
         ):
             names = [repr(p.name) for p in group]
-            pstr = pprint_words(names)
+            pstr = libclinic.pprint_words(names)
             pl = 's' if len(names) != 1 else ''
             message += (
                 f" Parameter{pl} {pstr} will become positional-only "
@@ -996,30 +928,10 @@ class CLanguage(Language):
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
             errcheck=errcheck,
-            message=wrapped_c_string_literal(message, width=64,
-                                             subsequent_indent=20),
+            message=libclinic.wrapped_c_string_literal(message, width=64,
+                                                       subsequent_indent=20),
         )
         return normalize_snippet(code, indent=4)
-
-    def docstring_for_c_string(
-            self,
-            f: Function
-    ) -> str:
-        lines = []
-        # turn docstring into a properly quoted C string
-        for line in f.docstring.split('\n'):
-            lines.append('"')
-            lines.append(quoted_for_c_string(line))
-            lines.append('\\n"\n')
-
-        if lines[-2] == sig_end_marker:
-            # If we only have a signature, add the blank line that the
-            # __text_signature__ getter expects to be there.
-            lines.append('"\\n"')
-        else:
-            lines.pop()
-            lines.append('"')
-        return ''.join(lines)
 
     def output_templates(
             self,
@@ -1049,7 +961,7 @@ class CLanguage(Language):
                          and not f.critical_section)
         new_or_init = f.kind.new_or_init
 
-        vararg: int | str = NO_VARARG
+        vararg: int | str = self.NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
             if p.is_keyword_only():
@@ -1057,12 +969,12 @@ class CLanguage(Language):
                 if not p.is_optional():
                     min_kw_only = i - max_pos
             elif p.is_vararg():
-                if vararg != NO_VARARG:
+                if vararg != self.NO_VARARG:
                     fail("Too many var args")
                 pseudo_args += 1
                 vararg = i - 1
             else:
-                if vararg == NO_VARARG:
+                if vararg == self.NO_VARARG:
                     max_pos = i
                 if p.is_positional_only():
                     pos_only = i
@@ -1271,7 +1183,7 @@ class CLanguage(Language):
                     argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
             left_args = f"{nargs} - {max_pos}"
-            max_args = NO_VARARG if (vararg != NO_VARARG) else max_pos
+            max_args = self.NO_VARARG if (vararg != self.NO_VARARG) else max_pos
             if limited_capi:
                 parser_code = []
                 if nargs != 'nargs':
@@ -1296,7 +1208,7 @@ class CLanguage(Language):
                             }}}}
                             """,
                             indent=4))
-                    if max_args != NO_VARARG:
+                    if max_args != self.NO_VARARG:
                         pl = '' if max_args == 1 else 's'
                         parser_code.append(normalize_snippet(f"""
                             if ({nargs} > {max_args}) {{{{
@@ -1393,13 +1305,17 @@ class CLanguage(Language):
                 if p.deprecated_keyword:
                     deprecated_keywords[i] = p
 
-            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
+            has_optional_kw = (
+                max(pos_only, min_pos) + min_kw_only
+                <
+                len(converters) - int(vararg != self.NO_VARARG)
+            )
 
             if limited_capi:
                 parser_code = None
                 fastcall = False
             else:
-                if vararg == NO_VARARG:
+                if vararg == self.NO_VARARG:
                     clinic.add_include('pycore_modsupport.h',
                                        '_PyArg_UnpackKeywords()')
                     args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
@@ -1499,7 +1415,7 @@ class CLanguage(Language):
                         else:
                             label = 'skip_optional_kwonly'
                             first_opt = max_pos + min_kw_only
-                            if vararg != NO_VARARG:
+                            if vararg != self.NO_VARARG:
                                 first_opt += 1
                         if i == first_opt:
                             add_label = label
@@ -1897,8 +1813,7 @@ class CLanguage(Language):
             template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
             template_dict['c_basename'] = f.c_basename
 
-        template_dict['docstring'] = self.docstring_for_c_string(f)
-
+        template_dict['docstring'] = libclinic.docstring_for_c_string(f.docstring)
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
         template_dict['target_critical_section'] = ', '.join(f.target_critical_section)
         for converter in converters:
@@ -1976,9 +1891,9 @@ class CLanguage(Language):
                 s = wrap_declarations(s)
 
             if clinic.line_prefix:
-                s = indent_all_lines(s, clinic.line_prefix)
+                s = libclinic.indent_all_lines(s, clinic.line_prefix)
             if clinic.line_suffix:
-                s = suffix_all_lines(s, clinic.line_suffix)
+                s = libclinic.suffix_all_lines(s, clinic.line_suffix)
 
             destination.append(s)
 
@@ -2263,6 +2178,9 @@ class BlockPrinter:
     language: Language
     f: io.StringIO = dc.field(default_factory=io.StringIO)
 
+    # '#include "header.h"   // reason': column of '//' comment
+    INCLUDE_COMMENT_COLUMN: Final[int] = 35
+
     def print_block(
             self,
             block: Block,
@@ -2318,7 +2236,7 @@ class BlockPrinter:
                     line = f'#include "{include.filename}"'
                 if include.reason:
                     comment = f'// {include.reason}\n'
-                    line = line.ljust(INCLUDE_COMMENT_COLUMN - 1) + comment
+                    line = line.ljust(self.INCLUDE_COMMENT_COLUMN - 1) + comment
                 output += line
 
             if current_condition:
@@ -3406,7 +3324,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             args.append(self.converter)
 
         if self.encoding:
-            args.append(c_repr(self.encoding))
+            args.append(libclinic.c_repr(self.encoding))
         elif self.subclass_of:
             args.append(self.subclass_of)
 
@@ -3584,8 +3502,8 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     @property
     def parser_name(self) -> str:
-        if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
-            return CLINIC_PREFIX + self.name
+        if self.name in libclinic.CLINIC_PREFIXED_ARGS: # bpo-39741
+            return libclinic.CLINIC_PREFIX + self.name
         else:
             return self.name
 
@@ -5867,7 +5785,7 @@ class DSLParser:
                     if isinstance(value, (bool, NoneType)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
-                        c_default = c_repr(value)
+                        c_default = libclinic.c_repr(value)
                     else:
                         c_default = py_default
 
@@ -6312,7 +6230,7 @@ class DSLParser:
         #     lines.append(f.return_converter.py_default)
 
         if not f.docstring_only:
-            lines.append("\n" + sig_end_marker + "\n")
+            lines.append("\n" + libclinic.SIG_END_MARKER + "\n")
 
         signature_line = "".join(lines)
 
