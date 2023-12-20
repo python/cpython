@@ -1,0 +1,1 @@
+Add ``pos``/``endpos`` parameters to top-level re module functions.

@@ -1,7 +1,0 @@
-Add `pos`/`endpos` parameters to top-level re module functions:
-
-- `re.search()`
-- `re.match()`
-- `re.fullmatch()`
-- `re.findall()`
-- `re.finditer()`
