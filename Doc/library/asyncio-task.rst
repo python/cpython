@@ -895,6 +895,10 @@ Waiting Primitives
    .. versionchanged:: 3.12
       Added support for generators yielding tasks.
 
+   .. versionchanged:: 3.13
+      The result is now an :term:`asynchronous iterator` as well as
+      an :term:`iterator`.
+
 
 Running in Threads
 ==================

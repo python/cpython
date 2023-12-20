@@ -163,6 +163,15 @@ asyncio
   the Unix socket when the server is closed.
   (Contributed by Pierre Ossman in :gh:`111246`.)
 
+* :func:`asyncio.as_completed` now returns an :term:`asynchronous iterator` of
+  awaitables.
+  The yielded awaitables include Task or Future objects that were passed in,
+  making it easier to associate results with the tasks being completed.
+  For backwards compatibility, the object returned by
+  :func:`asyncio.as_completed` can still be iterated as a regular
+  :term:`iterator` yielding new coroutines.
+  (Contributed by Justin Arthur in :issue:`77714`.)
+
 copy
 ----
 
