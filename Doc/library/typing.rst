@@ -2604,12 +2604,10 @@ Functions and decorators
 
 .. function:: reveal_type(obj, /)
 
-   Ask a static type checker to reveal the statically inferred type of an
-   expression.
+   Ask a static type checker to reveal the inferred type of an expression.
 
    When a static type checker encounters a call to this function,
-   it emits a diagnostic with the inferred static type of the argument.
-   For example::
+   it emits a diagnostic with the inferred type of the argument. For example::
 
       x: int = 1
       reveal_type(x)  # Revealed type is "builtins.int"

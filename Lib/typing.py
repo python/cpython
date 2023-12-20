@@ -3301,11 +3301,10 @@ class TextIO(IO[str]):
 
 
 def reveal_type[T](obj: T, /) -> T:
-    """Ask a static type checker to reveal the statically inferred type of an
-    expression.
+    """Ask a static type checker to reveal the inferred type of an expression.
 
     When a static type checker encounters a call to this function,
-    it emits a diagnostic with the inferred static type of the argument.
+    it emits a diagnostic with the inferred type of the argument.
 
         x: int = 1
         reveal_type(x)
