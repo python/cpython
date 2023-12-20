@@ -47,6 +47,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sslobj = mock.Mock()
         # emulate reading decompressed data
         sslobj.read.side_effect = ssl.SSLWantReadError
+        sslobj.write.side_effect = ssl.SSLWantReadError
         if do_handshake is not None:
             sslobj.do_handshake = do_handshake
         ssl_proto._sslobj = sslobj
@@ -120,7 +121,19 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
 
         ssl_proto._app_transport.close()
-        self.assertTrue(transport.abort.called)
+        self.assertTrue(transport._force_close.called)
+
+    def test_close_during_ssl_over_ssl(self):
+        # gh-113214: passing exceptions from the inner wrapped SSL protocol to the
+        # shim transport provided by the outer SSL protocol should not raise
+        # attribute errors
+        outer = self.ssl_protocol(proto=self.ssl_protocol())
+        self.connection_made(outer)
+        # Closing the outer app transport should not raise an exception
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        outer._app_transport.close()
+        self.assertEqual(messages, [])
 
     def test_get_extra_info_on_closed_connection(self):
         waiter = self.loop.create_future()
