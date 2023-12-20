@@ -6,6 +6,7 @@ import json
 import glob
 import pathlib
 import subprocess
+import sys
 import typing
 from urllib.request import urlopen
 
@@ -113,7 +114,7 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
     automatable to discover the metadata we need like the version and checksums
     so let's do that on behalf of our friends at the PyPA.
     """
-    global PACKAGE_TO_FILES, CPYTHON_ROOT_DIR
+    global PACKAGE_TO_FILES
 
     ensurepip_bundled_dir = CPYTHON_ROOT_DIR / "Lib/ensurepip/_bundled"
     pip_wheels = []
@@ -124,7 +125,7 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
             pip_wheels.append(wheel_filename)
     if len(pip_wheels) != 1:
         print("Zero or multiple pip wheels detected in 'Lib/ensurepip/_bundled'")
-        exit(1)
+        sys.exit(1)
     pip_wheel_filename = pip_wheels[0]
 
     # Add the wheel filename to the list of files so the SBOM file
@@ -160,7 +161,7 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
 
     except (OSError, ValueError) as e:
         print(f"Couldn't fetch pip's metadata from PyPI: {e}")
-        exit(1)
+        sys.exit(1)
 
     # Remove pip from the existing SBOM packages if it's there
     # and then overwrite its entry with our own generated one.
