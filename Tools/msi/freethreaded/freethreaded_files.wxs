@@ -105,10 +105,10 @@
             <?endforeach ?>
             
             <Component Id="venvlaunchert.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Id="venvlaunchert.exe" Name="python$(var.ShortVersion)t.exe" Source="venvlaunchert.exe" KeyPath="yes" />
+                <File Name="venvlaunchert.exe" KeyPath="yes" />
             </Component>
             <Component Id="venvwlaunchert.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
-                <File Id="venvwlaunchert.exe" Name="pythonw$(var.ShortVersion)t.exe" Source="venvwlaunchert.exe" KeyPath="yes" />
+                <File Name="venvwlaunchert.exe" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

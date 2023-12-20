@@ -223,8 +223,14 @@ class BasicTest(BaseTest):
 
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
-        bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
+        bin_path = 'bin'
         python_exe = os.path.split(sys.executable)[1]
+        if sys.platform == 'win32':
+            bin_path = 'Scripts'
+            if os.path.normcase(os.path.splitext(python_exe)[0]).endswith('_d'):
+                python_exe = 'python_d.exe'
+            else:
+                python_exe = 'python.exe'
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
                 os.path.join(fake_env_dir, bin_path, python_exe)

@@ -321,6 +321,30 @@ locate_python(wchar_t *path, size_t maxlen)
 }
 
 
+int
+smuggle_path()
+{
+    wchar_t buffer[MAXLEN];
+    // We could use argv[0], but that may be wrong in certain rare cases (if the
+    // user is doing something weird like symlinks to venv redirectors), and
+    // what we _really_ want is the directory of the venv. We always copy the
+    // redirectors, so if we've made the venv, this will be correct.
+    DWORD len = GetModuleFileNameW(NULL, buffer, MAXLEN);
+    if (!len) {
+        winerror(GetLastError(), L"Failed to get own executable path");
+        return RC_INTERNAL_ERROR;
+    }
+    buffer[len] = L'\0';
+    debug(L"Setting __PYVENV_LAUNCHER__ = '%s'", buffer);
+
+    if (!SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", buffer)) {
+        winerror(GetLastError(), L"Failed to set launcher environment");
+        return RC_INTERNAL_ERROR;
+    }
+
+    return 0;
+}
+
 /*
  * Process creation
  */
@@ -457,6 +481,11 @@ process(int argc, wchar_t ** argv)
 
     exitCode = locate_python(home_path, MAXLEN);
     if (exitCode) return exitCode;
+
+    // We do not update argv[0] to point at the target runtime, and so we do not
+    // pass through our original argv[0] in an environment variable.
+    //exitCode = smuggle_path();
+    //if (exitCode) return exitCode;
 
     exitCode = launch(home_path, GetCommandLineW());
     return exitCode;
