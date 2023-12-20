@@ -839,7 +839,6 @@ def main() -> None:
     # These raise OSError if output can't be written
 
     a.assign_opcode_ids()
-    a.write_opcode_targets(args.opcode_targets_h)
     a.write_abstract_interpreter_instructions(
         args.abstract_interpreter_cases, args.emit_line_directives
     )
