@@ -796,35 +796,12 @@ stack_effect(int opcode, int oparg, int jump)
             // Specialized instructions are not supported.
             return PY_INVALID_STACK_EFFECT;
         }
-        int popped, pushed;
-        if (jump > 0) {
-            popped = _PyOpcode_num_popped(opcode, oparg, true);
-            pushed = _PyOpcode_num_pushed(opcode, oparg, true);
-        }
-        else {
-            popped = _PyOpcode_num_popped(opcode, oparg, false);
-            pushed = _PyOpcode_num_pushed(opcode, oparg, false);
-        }
+        int popped = _PyOpcode_num_popped(opcode, oparg);
+        int pushed = _PyOpcode_num_pushed(opcode, oparg);
         if (popped < 0 || pushed < 0) {
             return PY_INVALID_STACK_EFFECT;
         }
-        if (jump >= 0) {
-            return pushed - popped;
-        }
-        if (jump < 0) {
-            // Compute max(pushed - popped, alt_pushed - alt_popped)
-            int alt_popped = _PyOpcode_num_popped(opcode, oparg, true);
-            int alt_pushed = _PyOpcode_num_pushed(opcode, oparg, true);
-            if (alt_popped < 0 || alt_pushed < 0) {
-                return PY_INVALID_STACK_EFFECT;
-            }
-            int diff = pushed - popped;
-            int alt_diff = alt_pushed - alt_popped;
-            if (alt_diff > diff) {
-                return alt_diff;
-            }
-            return diff;
-        }
+        return pushed - popped;
     }
 
     // Pseudo ops
@@ -1125,7 +1102,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
-        assert(SAME_OPCODE_METADATA(LOAD_METHOD, LOAD_ATTR));
+        assert(is_pseudo_target(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1135,18 +1112,18 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        assert(SAME_OPCODE_METADATA(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
+        assert(is_pseudo_target(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
-        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
+        assert(is_pseudo_target(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
+        assert(is_pseudo_target(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
