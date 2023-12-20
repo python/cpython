@@ -1419,7 +1419,7 @@ class BaseTaskTests:
                 loop.advance_time(0.14)
             return x
 
-        async def try_iterator():
+        async def try_iterator(awaitables):
             values = []
             for f in asyncio.as_completed(awaitables):
                 values.append(await f)
@@ -1547,8 +1547,6 @@ class BaseTaskTests:
             yield 0
             yield 0.01
 
-        a = asyncio.sleep(0.01, 'a')
-
         async def try_iterator():
             for f in asyncio.as_completed([a], timeout=1):
                 v = await f
@@ -1561,6 +1559,7 @@ class BaseTaskTests:
 
         for foo in try_iterator, try_async_iterator:
             with self.subTest(method=foo.__name__):
+                a = asyncio.sleep(0.01, 'a')
                 loop = self.new_test_loop(gen)
                 loop.run_until_complete(self.new_task(loop, foo()))
                 loop.close()
@@ -1709,8 +1708,8 @@ class BaseTaskTests:
         a = coro()
         self.addCleanup(a.close)
 
-        futs = asyncio.as_completed([a])
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            futs = asyncio.as_completed([a])
             list(futs)
 
     def test_as_completed_coroutine_use_running_loop(self):

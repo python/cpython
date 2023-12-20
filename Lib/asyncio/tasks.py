@@ -574,6 +574,7 @@ class _AsCompletedIterator:
     def __init__(self, aws, timeout):
         self._done = asyncio.Queue()
         self._timeout_handle = None
+        self._todo = set()
 
         loop = events.get_event_loop()
         todo = {ensure_future(aw, loop=loop) for aw in frozenset(aws)}
