@@ -117,6 +117,25 @@ A, L, and U are mutually exclusive.
     U  UNICODE     For compatibility only. Ignored for string patterns (it
                    is the default), and forbidden for bytes patterns.
 
+The following functions support optional pos/endpos arguments:
+    match
+    fullmatch
+    search
+    findall
+    finditer
+
+The optional parameter pos gives an index in the string where the search is
+to start; it defaults to 0. This is not completely equivalent to slicing the
+string; the '^' pattern character matches at the real beginning of the string
+and at positions just after a newline, but not necessarily at the index where
+the search is to start.
+
+The optional parameter endpos limits how far the string will be searched;
+it will be as if the string is endpos characters long, so only the characters
+from pos to endpos - 1 will be searched for a match.  If endpos is less than
+pos, no match will be found. Otherwise, if rx is a compiled regular expression
+object, rx.search(string, 0, 50) is equivalent to rx.search(string[:50], 0).
+
 This module also defines exception 'PatternError', aliased to 'error' for
 backward compatibility.
 
