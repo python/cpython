@@ -910,6 +910,9 @@ class SSLProtocol(protocols.BufferedProtocol):
         if self._transport:
             self._transport._force_close(exc)
 
+        self._ssl_buffer_view.release()
+        self._ssl_buffer = None
+
         if isinstance(exc, OSError):
             if self._loop.get_debug():
                 logger.debug("%r: %s", self, message, exc_info=True)
