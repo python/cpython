@@ -2604,10 +2604,11 @@ Functions and decorators
 
 .. function:: reveal_type(obj, /)
 
-   Reveal the inferred static type of an expression.
+   Ask a static type checker to reveal the statically inferred type of an
+   expression.
 
-   When a static type checker encounters a call to this function,
-   it emits a diagnostic with the type of the argument. For example::
+   When a static type checker encounters a call to this function, it emits a
+   diagnostic with the inferred static type of the argument. For example::
 
       x: int = 1
       reveal_type(x)  # Revealed type is "builtins.int"
@@ -2631,13 +2632,8 @@ Functions and decorators
       x = reveal_type(1)  # prints "Runtime type is int"
       print(x)  # prints "1"
 
-   Note that ``reveal_type()`` at runtime doesn't infer a type in the same way
-   that static type checkers do; it returns the actual type at runtime. Static
-   type checkers in some cases will know more (e.g. generic types, like the
-   element types of a list) and in some cases will know less (e.g. a runtime
-   value will never be a union, it will always be one concrete type or the
-   other, but static type systems use union types to represent that at runtime
-   the value may be any of several types.)
+   Note that the runtime type may be different from (more or less specific
+   than) the type statically inferred by a type checker.
 
    .. versionadded:: 3.11
 
