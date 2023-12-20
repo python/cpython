@@ -825,7 +825,7 @@ String Indexing Arguments
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following functions and related ``Pattern`` methods support optional string
-index ``pos`` & ``endpos`` arguments:
+index ``pos`` & ``endpos`` parameters:
 
     * ``re.match()`` & ``Pattern.match()``
     * ``re.fullmatch()`` & ``Pattern.fullmatch()``
