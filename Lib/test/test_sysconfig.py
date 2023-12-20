@@ -414,7 +414,7 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
             self.assertTrue(library.endswith('.a'))
             if sys.platform == 'darwin' and sys._framework:
-                self.assertTrue(ldlibrary.endswith(f'{major}.{minor}/Python'))
+                self.assertTrue(ldlibrary.endswith(f'{major}.{minor}/{sys._framework}'))
             else:
                 self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
 
