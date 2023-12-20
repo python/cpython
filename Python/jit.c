@@ -286,12 +286,12 @@ copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
 }
 
 static void
-emit(const StencilGroup *stencil_group, uint64_t patches[])
+emit(const StencilGroup *group, uint64_t patches[])
 {
     char *data = (char *)patches[HoleValue_DATA];
-    copy_and_patch(data, &stencil_group->data, patches);
+    copy_and_patch(data, &group->data, patches);
     char *text = (char *)patches[HoleValue_TEXT];
-    copy_and_patch(text, &stencil_group->text, patches);
+    copy_and_patch(text, &group->text, patches);
 }
 
 // This becomes the executor's execute member, and handles some setup/teardown:
@@ -316,9 +316,9 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
     size_t data_size = 0;
     for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
-        const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
-        text_size += stencil_group->text.body_size;
-        data_size += stencil_group->data.body_size;
+        const StencilGroup *group = &stencil_groups[instruction->opcode];
+        text_size += group->text.body_size;
+        data_size += group->data.body_size;
     }
     // Round up to the nearest page (text and data need separate pages):
     size_t page_size = get_page_size();
@@ -334,10 +334,10 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
     char *data = memory + text_size;
     for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
-        const StencilGroup *stencil_group = &stencil_groups[instruction->opcode];
+        const StencilGroup *group = &stencil_groups[instruction->opcode];
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();
-        patches[HoleValue_CONTINUE] = (uint64_t)text + stencil_group->text.body_size;
+        patches[HoleValue_CONTINUE] = (uint64_t)text + group->text.body_size;
         patches[HoleValue_CURRENT_EXECUTOR] = (uint64_t)executor;
         patches[HoleValue_OPARG] = instruction->oparg;
         patches[HoleValue_OPERAND] = instruction->operand;
@@ -346,9 +346,9 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
         patches[HoleValue_TEXT] = (uint64_t)text;
         patches[HoleValue_TOP] = (uint64_t)memory;
         patches[HoleValue_ZERO] = 0;
-        emit(stencil_group, patches);
-        text += stencil_group->text.body_size;
-        data += stencil_group->data.body_size;
+        emit(group, patches);
+        text += group->text.body_size;
+        data += group->data.body_size;
     }
     if (mark_executable(memory, text_size) ||
         mark_readable(memory + text_size, data_size))

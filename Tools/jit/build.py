@@ -4,7 +4,6 @@ import argparse
 import asyncio
 import dataclasses
 import enum
-import functools
 import hashlib
 import json
 import os
@@ -16,6 +15,7 @@ import sys
 import tempfile
 import typing
 
+import llvm
 import schema
 
 if sys.version_info < (3, 11):
@@ -27,12 +27,9 @@ TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
 INCLUDE = CPYTHON / "Include"
 INCLUDE_INTERNAL = INCLUDE / "internal"
-PC = CPYTHON / "PC"
 PYTHON = CPYTHON / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
-
-LLVM_VERSION = 16
 
 
 @enum.unique
@@ -63,56 +60,14 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray)
     holes: list[Hole] = dataclasses.field(default_factory=list)
     disassembly: list[str] = dataclasses.field(default_factory=list)
+    symbols: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
+    offsets: dict[int, int] = dataclasses.field(default_factory=dict, init=False)
 
 
 @dataclasses.dataclass
 class StencilGroup:
     text: Stencil = dataclasses.field(default_factory=Stencil)
     data: Stencil = dataclasses.field(default_factory=Stencil)
-
-
-def get_llvm_tool_version(name: str, *, echo: bool = False) -> int | None:
-    try:
-        args = [name, "--version"]
-        if echo:
-            print(shlex.join(args))
-        process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
-    except FileNotFoundError:
-        return None
-    match = re.search(rb"version\s+(\d+)\.\d+\.\d+\s+", process.stdout)
-    return int(match.group(1)) if match else None
-
-
-@functools.cache
-def find_llvm_tool(tool: str, *, echo: bool = False) -> str | None:
-    # Unversioned executables:
-    path = tool
-    if get_llvm_tool_version(path, echo=echo) == LLVM_VERSION:
-        return path
-    # Versioned executables:
-    path = f"{tool}-{LLVM_VERSION}"
-    if get_llvm_tool_version(path, echo=echo) == LLVM_VERSION:
-        return path
-    # My homebrew homies:
-    try:
-        args = ["brew", "--prefix", f"llvm@{LLVM_VERSION}"]
-        if echo:
-            print(shlex.join(args))
-        process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        return None
-    prefix = process.stdout.decode().removesuffix("\n")
-    path = f"{prefix}/bin/{tool}"
-    if get_llvm_tool_version(path, echo=echo) == LLVM_VERSION:
-        return path
-    return None
-
-
-def require_llvm_tool(tool: str, *, echo: bool = False) -> str:
-    path = find_llvm_tool(tool, echo=echo)
-    if path is not None:
-        return path
-    raise RuntimeError(f"Can't find {tool}-{LLVM_VERSION}!")
 
 
 _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
@@ -139,53 +94,40 @@ R = typing.TypeVar(
 )
 
 
-@dataclasses.dataclass
-class MetaData(typing.Generic[R]):
-    symbols: dict[str, int] = dataclasses.field(default_factory=dict)
-    offsets: dict[int, int] = dataclasses.field(default_factory=dict)
-    relocations: list[tuple[int, R]] = dataclasses.field(default_factory=list)
-
-
 class Parser(typing.Generic[S, R]):
-    _ARGS = [
-        "--elf-output-style=JSON",
-        "--expand-relocs",
-        # "--pretty-print",
-        "--section-data",
-        "--section-relocations",
-        "--section-symbols",
-        "--sections",
-    ]
-
     def __init__(self, options: "Options") -> None:
-        self.stencil_group = StencilGroup()
-        self.metadata_text: MetaData[R] = MetaData()
-        self.metadata_data: MetaData[R] = MetaData()
+        self.group = StencilGroup()
+        self.relocations_text: list[tuple[int, R]] = []
+        self.relocations_data: list[tuple[int, R]] = []
         self.global_offset_table: dict[str, int] = {}
         assert options.target.parser is type(self)
         self.options = options
 
     async def parse(self, path: pathlib.Path) -> StencilGroup:
-        objdump = find_llvm_tool("llvm-objdump", echo=self.options.verbose)
+        objdump = llvm.find_tool("llvm-objdump", echo=self.options.verbose)
         if objdump is not None:
+            flags = ["--disassemble", "--reloc"]
             output = await run(
-                objdump,
-                path,
-                "--disassemble",
-                "--reloc",
-                capture=True,
-                echo=self.options.verbose,
+                objdump, *flags, path, capture=True, echo=self.options.verbose
             )
             assert output is not None
-            self.stencil_group.text.disassembly = [
-                line.expandtabs().strip() for line in output.decode().splitlines()
-            ]
-            self.stencil_group.text.disassembly = [
-                line for line in self.stencil_group.text.disassembly if line
-            ]
-        readobj = require_llvm_tool("llvm-readobj", echo=self.options.verbose)
+            self.group.text.disassembly.extend(
+                line.expandtabs().strip()
+                for line in output.decode().splitlines()
+                if not line.isspace()
+            )
+        readobj = llvm.require_tool("llvm-readobj", echo=self.options.verbose)
+        flags = [
+            "--elf-output-style=JSON",
+            "--expand-relocs",
+            # "--pretty-print",
+            "--section-data",
+            "--section-relocations",
+            "--section-symbols",
+            "--sections",
+        ]
         output = await run(
-            readobj, *self._ARGS, path, capture=True, echo=self.options.verbose
+            readobj, *flags, path, capture=True, echo=self.options.verbose
         )
         assert output is not None
         # --elf-output-style=JSON is only *slightly* broken on Mach-O...
@@ -199,62 +141,43 @@ class Parser(typing.Generic[S, R]):
         )
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"])
-        assert self.metadata_text.symbols["_JIT_ENTRY"] == 0
-        padding = 0
-        offset_data = 0
-        self.stencil_group.data.disassembly = []
-        padding_data = 0
-        if self.stencil_group.data.body:
-            self.stencil_group.data.disassembly.append(
-                f"{offset_data:x}: {str(bytes(self.stencil_group.data.body)).removeprefix('b')}"
+        assert self.group.text.symbols["_JIT_ENTRY"] == 0
+        if self.group.data.body:
+            self.group.data.disassembly.append(
+                f"0: {str(bytes(self.group.data.body)).removeprefix('b')}"
             )
-            offset_data += len(self.stencil_group.data.body)
-        while len(self.stencil_group.data.body) % 8:
-            self.stencil_group.data.body.append(0)
-            padding_data += 1
-        if padding_data:
-            self.stencil_group.data.disassembly.append(
-                f"{offset_data:x}: {' '.join(padding_data * ['00'])}"
-            )
-            offset_data += padding_data
-        self._process_relocations(self.metadata_text, self.stencil_group.text)
-        remaining = []
-        for hole in self.stencil_group.text.holes:
+        self._pad(self.group.data, 8)
+        self._process_relocations(self.relocations_text, self.group.text)
+        remaining: list[Hole] = []
+        for hole in self.group.text.holes:
             if (
                 hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
                 and hole.value is HoleValue.ZERO
             ):
-                remaining.extend(self._emit_aarch64_trampoline(hole))
+                remaining.extend(self._emit_aarch64_trampoline(self.group.text, hole))
             else:
                 remaining.append(hole)
-        self.stencil_group.text.holes = remaining
-        while len(self.stencil_group.text.body) % self.options.target.alignment:
-            self.stencil_group.text.body.append(0)
-        self._process_relocations(self.metadata_data, self.stencil_group.data)
-        offset = len(self.stencil_group.text.body) - padding
-        if padding:
-            self.stencil_group.text.disassembly.append(
-                f"{offset:x}: {' '.join(padding * ['00'])}"
-            )
-            offset += padding
+        self.group.text.holes[:] = remaining
+        self._pad(self.group.text, self.options.target.alignment)
+        self._process_relocations(self.relocations_data, self.group.data)
         self._emit_global_offset_table()
-        self.stencil_group.text.holes.sort(key=lambda hole: hole.offset)
-        self.stencil_group.data.holes.sort(key=lambda hole: hole.offset)
-        return self.stencil_group
+        self.group.text.holes.sort(key=lambda hole: hole.offset)
+        self.group.data.holes.sort(key=lambda hole: hole.offset)
+        return self.group
 
     def _emit_global_offset_table(self) -> None:
-        global_offset_table = len(self.stencil_group.data.body)
+        global_offset_table = len(self.group.data.body)
         for s, offset in self.global_offset_table.items():
-            if s in self.metadata_text.symbols:
-                addend = self.metadata_text.symbols[s]
+            if s in self.group.text.symbols:
                 value, symbol = HoleValue.TEXT, None
-            elif s in self.metadata_data.symbols:
-                addend = self.metadata_data.symbols[s]
+                addend = self.group.text.symbols[s]
+            elif s in self.group.data.symbols:
                 value, symbol = HoleValue.DATA, None
+                addend = self.group.data.symbols[s]
             else:
                 value, symbol = self._symbol_to_value(s)
                 addend = 0
-            self.stencil_group.data.holes.append(
+            self.group.data.holes.append(
                 Hole(global_offset_table + offset, "R_X86_64_64", value, symbol, addend)
             )
             value_part = value.name if value is not HoleValue.ZERO else ""
@@ -265,19 +188,26 @@ class Parser(typing.Generic[S, R]):
                 addend_part += format_addend(addend)
                 if value_part:
                     value_part += " + "
-            self.stencil_group.data.disassembly.append(
-                f"{len(self.stencil_group.data.body):x}: {value_part}{addend_part}"
+            self.group.data.disassembly.append(
+                f"{len(self.group.data.body):x}: {value_part}{addend_part}"
             )
-            self.stencil_group.data.body.extend([0] * 8)
+            self.group.data.body.extend([0] * 8)
 
-    def _emit_aarch64_trampoline(self, hole: Hole) -> typing.Generator[Hole, None, None]:
-        base = len(self.stencil_group.text.body)
-        self.stencil_group.text.body.extend(0xD2800008.to_bytes(4, sys.byteorder))
-        self.stencil_group.text.body.extend(0xF2A00008.to_bytes(4, sys.byteorder))
-        self.stencil_group.text.body.extend(0xF2C00008.to_bytes(4, sys.byteorder))
-        self.stencil_group.text.body.extend(0xF2E00008.to_bytes(4, sys.byteorder))
-        self.stencil_group.text.body.extend(0xD61F0100.to_bytes(4, sys.byteorder))
-        self.stencil_group.text.disassembly += [
+    @staticmethod
+    def _emit_aarch64_trampoline(
+        stencil: Stencil, hole: Hole
+    ) -> typing.Generator[Hole, None, None]:
+        base = len(stencil.body)
+        instruction = int.from_bytes(
+            stencil.body[hole.offset : hole.offset + 4], sys.byteorder
+        )
+        instruction = (instruction & 0xFC000000) | (
+            ((base - hole.offset) >> 2) & 0x03FFFFFF
+        )
+        stencil.body[hole.offset : hole.offset + 4] = instruction.to_bytes(
+            4, sys.byteorder
+        )
+        stencil.disassembly += [
             f"{base + 4 * 0: x}: d2800008      mov     x8, #0x0",
             f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
             f"{base + 4 * 1:x}: f2a00008      movk    x8, #0x0, lsl #16",
@@ -288,39 +218,44 @@ class Parser(typing.Generic[S, R]):
             f"{base + 4 * 3:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
             f"{base + 4 * 4:x}: d61f0100      br      x8",
         ]
-        instruction = int.from_bytes(
-            self.stencil_group.text.body[hole.offset : hole.offset + 4],
-            sys.byteorder,
-        )
-        instruction = (instruction & 0xFC000000) | (
-            ((base - hole.offset) >> 2) & 0x03FFFFFF
-        )
-        self.stencil_group.text.body[
-            hole.offset : hole.offset + 4
-        ] = instruction.to_bytes(4, sys.byteorder)
+        stencil.body.extend(0xD2800008.to_bytes(4, sys.byteorder))
+        stencil.body.extend(0xF2A00008.to_bytes(4, sys.byteorder))
+        stencil.body.extend(0xF2C00008.to_bytes(4, sys.byteorder))
+        stencil.body.extend(0xF2E00008.to_bytes(4, sys.byteorder))
+        stencil.body.extend(0xD61F0100.to_bytes(4, sys.byteorder))
         yield hole.replace(offset=base + 4 * 0, kind="R_AARCH64_MOVW_UABS_G0_NC")
         yield hole.replace(offset=base + 4 * 1, kind="R_AARCH64_MOVW_UABS_G1_NC")
         yield hole.replace(offset=base + 4 * 2, kind="R_AARCH64_MOVW_UABS_G2_NC")
         yield hole.replace(offset=base + 4 * 3, kind="R_AARCH64_MOVW_UABS_G3")
 
-    def _process_relocations(self, metadata: MetaData[R], stencil: Stencil) -> None:
-        for base, relocation in metadata.relocations:
+    def _process_relocations(
+        self, relocations: list[tuple[int, R]], stencil: Stencil
+    ) -> None:
+        for base, relocation in relocations:
             hole = self._handle_relocation(base, relocation, stencil.body)
-            if hole.symbol in self.metadata_data.symbols:
-                addend = hole.addend + self.metadata_data.symbols[hole.symbol]
-                hole = hole.replace(value=HoleValue.DATA, symbol=None, addend=addend)
-            elif hole.symbol in self.metadata_text.symbols:
-                addend = hole.addend + self.metadata_text.symbols[hole.symbol]
-                hole = hole.replace(value=HoleValue.TEXT, symbol=None, addend=addend)
+            if hole.symbol in self.group.data.symbols:
+                value, symbol = HoleValue.DATA, None
+                addend = hole.addend + self.group.data.symbols[hole.symbol]
+                hole = hole.replace(value=value, symbol=symbol, addend=addend)
+            elif hole.symbol in self.group.text.symbols:
+                value, symbol = HoleValue.TEXT, None
+                addend = hole.addend + self.group.text.symbols[hole.symbol]
+                hole = hole.replace(value=value, symbol=symbol, addend=addend)
             stencil.holes.append(hole)
 
+    @staticmethod
+    def _pad(stencil: Stencil, alignment: int) -> None:
+        offset = len(stencil.body)
+        padding = -offset % alignment
+        stencil.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
+        stencil.body.extend([0] * padding)
+
     def _global_offset_table_lookup(self, symbol: str | None) -> int:
-        while len(self.stencil_group.data.body) % 8:
-            self.stencil_group.data.body.append(0)
+        self._pad(self.group.data, 8)
         if symbol is None:
-            return len(self.stencil_group.data.body)
+            return len(self.group.data.body)
         default = 8 * len(self.global_offset_table)
-        return len(self.stencil_group.data.body) + self.global_offset_table.setdefault(
+        return len(self.group.data.body) + self.global_offset_table.setdefault(
             symbol, default
         )
 
@@ -346,45 +281,23 @@ class ELF(Parser[schema.ELFSection, schema.ELFRelocation]):
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
             assert not section["Symbols"]
-            if section["Info"] in self.metadata_text.offsets:
-                base = self.metadata_text.offsets[section["Info"]]
+            if section["Info"] in self.group.text.offsets:
+                base = self.group.text.offsets[section["Info"]]
                 for wrapped_relocation in section["Relocations"]:
                     relocation = wrapped_relocation["Relocation"]
-                    self.metadata_text.relocations.append((base, relocation))
+                    self.relocations_text.append((base, relocation))
             else:
-                base = self.metadata_data.offsets[section["Info"]]
+                base = self.group.data.offsets[section["Info"]]
                 for wrapped_relocation in section["Relocations"]:
                     relocation = wrapped_relocation["Relocation"]
-                    self.metadata_data.relocations.append((base, relocation))
+                    self.relocations_data.append((base, relocation))
         elif section_type == "SHT_PROGBITS":
             if "SHF_ALLOC" not in flags:
                 return
             if "SHF_EXECINSTR" in flags:
-                self.metadata_text.offsets[section["Index"]] = len(
-                    self.stencil_group.text.body
-                )
-                for wrapped_symbol in section["Symbols"]:
-                    symbol = wrapped_symbol["Symbol"]
-                    offset = len(self.stencil_group.text.body) + symbol["Value"]
-                    name = symbol["Name"]["Value"]
-                    name = name.removeprefix(self.options.target.prefix)
-                    assert name not in self.metadata_text.symbols
-                    self.metadata_text.symbols[name] = offset
-                section_data = section["SectionData"]
-                self.stencil_group.text.body.extend(section_data["Bytes"])
+                self._handle_section_data(section, self.group.text)
             else:
-                self.metadata_data.offsets[section["Index"]] = len(
-                    self.stencil_group.data.body
-                )
-                for wrapped_symbol in section["Symbols"]:
-                    symbol = wrapped_symbol["Symbol"]
-                    offset = len(self.stencil_group.data.body) + symbol["Value"]
-                    name = symbol["Name"]["Value"]
-                    name = name.removeprefix(self.options.target.prefix)
-                    assert name not in self.metadata_data.symbols
-                    self.metadata_data.symbols[name] = offset
-                section_data = section["SectionData"]
-                self.stencil_group.data.body.extend(section_data["Bytes"])
+                self._handle_section_data(section, self.group.data)
             assert not section["Relocations"]
         else:
             assert section_type in {
@@ -394,6 +307,20 @@ class ELF(Parser[schema.ELFSection, schema.ELFRelocation]):
                 "SHT_STRTAB",
                 "SHT_SYMTAB",
             }, section_type
+
+    def _handle_section_data(
+        self, section: schema.ELFSection, stencil: Stencil
+    ) -> None:
+        stencil.offsets[section["Index"]] = len(stencil.body)
+        for wrapped_symbol in section["Symbols"]:
+            symbol = wrapped_symbol["Symbol"]
+            offset = len(stencil.body) + symbol["Value"]
+            name = symbol["Name"]["Value"]
+            name = name.removeprefix(self.options.target.prefix)
+            assert name not in stencil.symbols
+            stencil.symbols[name] = offset
+        section_data = section["SectionData"]
+        stencil.body.extend(section_data["Bytes"])
 
     def _handle_relocation(
         self, base: int, relocation: schema.ELFRelocation, raw: bytes
@@ -420,34 +347,34 @@ class COFF(Parser[schema.COFFSection, schema.COFFRelocation]):
             return
         section_data = section["SectionData"]
         if "IMAGE_SCN_MEM_EXECUTE" in flags:
-            assert not self.stencil_group.data.body, self.stencil_group.data.body
-            base = self.metadata_text.offsets[section["Number"]] = len(
-                self.stencil_group.text.body
+            assert not self.group.data.body, self.group.data.body
+            base = self.group.text.offsets[section["Number"]] = len(
+                self.group.text.body
             )
-            self.stencil_group.text.body.extend(section_data["Bytes"])
+            self.group.text.body.extend(section_data["Bytes"])
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = base + symbol["Value"]
                 name = symbol["Name"]
                 name = name.removeprefix(self.options.target.prefix)
-                self.metadata_text.symbols[name] = offset
+                self.group.text.symbols[name] = offset
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
-                self.metadata_text.relocations.append((base, relocation))
+                self.relocations_text.append((base, relocation))
         elif "IMAGE_SCN_MEM_READ" in flags:
-            base = self.metadata_data.offsets[section["Number"]] = len(
-                self.stencil_group.data.body
+            base = self.group.data.offsets[section["Number"]] = len(
+                self.group.data.body
             )
-            self.stencil_group.data.body.extend(section_data["Bytes"])
+            self.group.data.body.extend(section_data["Bytes"])
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = base + symbol["Value"]
                 name = symbol["Name"]
                 name = name.removeprefix(self.options.target.prefix)
-                self.metadata_data.symbols[name] = offset
+                self.group.data.symbols[name] = offset
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
-                self.metadata_data.relocations.append((base, relocation))
+                self.relocations_data.append((base, relocation))
         else:
             return
 
@@ -480,51 +407,56 @@ class COFF(Parser[schema.COFFSection, schema.COFFRelocation]):
 
 class MachO(Parser[schema.MachOSection, schema.MachORelocation]):
     def _handle_section(self, section: schema.MachOSection) -> None:
-        assert section["Address"] >= len(self.stencil_group.text.body)
+        assert section["Address"] >= len(self.group.text.body)
+        assert "SectionData" in section
         section_data = section["SectionData"]
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.options.target.prefix)
         if "SomeInstructions" in flags:
-            assert not self.stencil_group.data.body, self.stencil_group.data.body
-            self.stencil_group.text.body.extend(
-                [0] * (section["Address"] - len(self.stencil_group.text.body))
+            assert not self.group.data.body, self.group.data.body
+            self.group.text.body.extend(
+                [0] * (section["Address"] - len(self.group.text.body))
             )
-            before = self.metadata_text.offsets[section["Index"]] = section["Address"]
-            self.stencil_group.text.body.extend(section_data["Bytes"])
-            self.metadata_text.symbols[name] = before
+            before = self.group.text.offsets[section["Index"]] = section["Address"]
+            self.group.text.body.extend(section_data["Bytes"])
+            self.group.text.symbols[name] = before
+            assert "Symbols" in section
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = symbol["Value"]
                 name = symbol["Name"]["Value"]
                 name = name.removeprefix(self.options.target.prefix)
-                self.metadata_text.symbols[name] = offset
+                self.group.text.symbols[name] = offset
+            assert "Relocations" in section
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
-                self.metadata_text.relocations.append((before, relocation))
+                self.relocations_text.append((before, relocation))
         else:
-            self.stencil_group.data.body.extend(
+            self.group.data.body.extend(
                 [0]
                 * (
                     section["Address"]
-                    - len(self.stencil_group.data.body)
-                    - len(self.stencil_group.text.body)
+                    - len(self.group.data.body)
+                    - len(self.group.text.body)
                 )
             )
-            before = self.metadata_data.offsets[section["Index"]] = section[
+            before = self.group.data.offsets[section["Index"]] = section[
                 "Address"
-            ] - len(self.stencil_group.text.body)
-            self.stencil_group.data.body.extend(section_data["Bytes"])
-            self.metadata_data.symbols[name] = len(self.stencil_group.text.body)
+            ] - len(self.group.text.body)
+            self.group.data.body.extend(section_data["Bytes"])
+            self.group.data.symbols[name] = len(self.group.text.body)
+            assert "Symbols" in section
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
-                offset = symbol["Value"] - len(self.stencil_group.text.body)
+                offset = symbol["Value"] - len(self.group.text.body)
                 name = symbol["Name"]["Value"]
                 name = name.removeprefix(self.options.target.prefix)
-                self.metadata_data.symbols[name] = offset
+                self.group.data.symbols[name] = offset
+            assert "Relocations" in section
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
-                self.metadata_data.relocations.append((before, relocation))
+                self.relocations_data.append((before, relocation))
 
     def _handle_relocation(
         self, base: int, relocation: schema.MachORelocation, raw: bytes
@@ -679,7 +611,7 @@ async def _compile(
         # - "large": makes no assumptions about either code or data
         "-mcmodel=large",
     ]
-    clang = require_llvm_tool("clang", echo=options.verbose)
+    clang = llvm.require_tool("clang", echo=options.verbose)
     await run(clang, *flags, "-o", o, c, echo=options.verbose)
     return await options.target.parser(options).parse(o)
 
@@ -841,16 +773,16 @@ def build(target: Target, *, debug: bool, out: pathlib.Path, verbose: bool) -> N
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("target", type=get_target)
+    parser.add_argument(
+        "target", type=get_target, help="a PEP 11 target triple to compile for"
+    )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
-    parsed = parser.parse_args()
-    out = pathlib.Path.cwd()
-    build(parsed.target, debug=parsed.debug, out=out, verbose=parsed.verbose)
+    build(out=pathlib.Path.cwd(), **vars(parser.parse_args()))
 
 
 if __name__ == "__main__":
