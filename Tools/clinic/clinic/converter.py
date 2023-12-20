@@ -15,9 +15,9 @@ from . import utils
 from .utils import (
     fail, TemplateDict, ensure_legal_c_identifier, c_repr,
     Sentinels, unknown, unspecified)
-from .crender_data import CRenderData
 from .block_printer import Include
 if TYPE_CHECKING:
+    from .crender_data import CRenderData
     from .function import Function
     from .parameter import Parameter
 

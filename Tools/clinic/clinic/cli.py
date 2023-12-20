@@ -3,13 +3,10 @@ import os
 import inspect
 import sys
 
-from . import clinic
 from .utils import ClinicError
 from .converter import legacy_converters
 from .clinic import parse_file
-from typing import (
-    NoReturn,
-)
+from typing import NoReturn
 
 
 def create_cli() -> argparse.ArgumentParser:

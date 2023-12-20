@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 from .utils import (
     fail, compute_checksum,
     _TextAccumulator, _text_accumulator)
-from .language import Language
-from .block_parser import Block
 if TYPE_CHECKING:
+    from .block_parser import Block
+    from .language import Language
     from .clinic import Clinic
 
 

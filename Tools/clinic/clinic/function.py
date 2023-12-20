@@ -4,11 +4,7 @@ import dataclasses as dc
 import enum
 import functools
 import inspect
-from typing import (
-    Any,
-    Final,
-    TYPE_CHECKING,
-)
+from typing import Any, Final, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .parameter import Parameter, ParamDict

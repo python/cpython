@@ -4,10 +4,7 @@ import abc
 import collections
 import string
 from collections.abc import Iterable
-from typing import (
-    Literal,
-    TYPE_CHECKING,
-)
+from typing import Literal, TYPE_CHECKING
 
 from .utils import fail
 if TYPE_CHECKING:

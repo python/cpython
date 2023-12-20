@@ -4,18 +4,17 @@ import builtins as bltns
 import sys
 import functools
 from types import NoneType
+from typing import TYPE_CHECKING
 
-from .utils import (
-    fail, unknown, unspecified,
-    TemplateDict,
-)
+from .utils import fail, unknown, unspecified, TemplateDict
 from .converter import CConverter, legacy_converters, add_legacy_c_converter
 from .function import (
-    Function,
     CALLABLE, METHOD_INIT, GETTER, SETTER,
     STATIC_METHOD, CLASS_METHOD, METHOD_NEW)
-from .parameter import Parameter
-from .crender_data import CRenderData
+if TYPE_CHECKING:
+    from .crender_data import CRenderData
+    from .parameter import Parameter
+    from .function import Function
 
 
 TypeSet = set[bltns.type[object]]

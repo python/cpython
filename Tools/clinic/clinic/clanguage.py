@@ -21,12 +21,8 @@ from .utils import (
     fail, warn, c_repr,
     Sentinels, TemplateDict, VersionTuple, unspecified,
     _text_accumulator, text_accumulator)
-from .function import (
-    Function, Class, Module,
-    GETTER, SETTER, METHOD_NEW,
-)
+from .function import Function, GETTER, SETTER, METHOD_NEW
 from .crender_data import CRenderData
-from .parameter import Parameter, ParamTuple
 from .converters import (
     defining_class_converter,
     self_converter,
@@ -34,6 +30,8 @@ from .converters import (
 )
 from .language import Language
 if TYPE_CHECKING:
+    from .function import Class, Module
+    from .parameter import Parameter, ParamTuple
     from .clinic import Clinic
 
 

@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import sys
-from typing import (
-    Any,
-    Callable,
-)
+from typing import Any, Callable, TYPE_CHECKING
 
-from .crender_data import CRenderData
-from .function import Function
+if TYPE_CHECKING:
+    from .crender_data import CRenderData
+    from .function import Function
 
 
 ReturnConverterType = Callable[..., "CReturnConverter"]

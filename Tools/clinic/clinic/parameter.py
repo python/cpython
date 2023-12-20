@@ -3,14 +3,11 @@ from __future__ import annotations
 import copy
 import dataclasses as dc
 import inspect
-from typing import (
-    Any,
-    TYPE_CHECKING,
-)
+from typing import Any, TYPE_CHECKING
 
 from .utils import text_accumulator, unspecified, VersionTuple
-from .function import Function
 if TYPE_CHECKING:
+    from .function import Function
     from .converter import CConverter
 
 

@@ -11,18 +11,17 @@ from typing import (
 )
 
 from . import utils
-from .utils import (
-    fail, warn,
-    _TextAccumulator)
-from .function import (
-    Function, Module, Class, ModuleDict, ClassDict)
-from .language import Language, PythonLanguage
+from .utils import fail, warn, _TextAccumulator
+from .function import Class
+from .language import PythonLanguage, Language
 from .clanguage import CLanguage
 from .block_parser import Block, BlockParser
-from .block_printer import BlockPrinter, Include, Destination, DestinationDict
+from .block_printer import BlockPrinter, Include, Destination
 from .parser import parsers
 if TYPE_CHECKING:
+    from .function import Function, Module, ModuleDict, ClassDict
     from .parser import Parser
+    from .block_printer import DestinationDict
 
 
 # TODO:

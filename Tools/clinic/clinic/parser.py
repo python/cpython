@@ -38,7 +38,6 @@ from .return_converter import (
     return_converters,
     init_return_converter, CReturnConverter,
 )
-from .block_parser import Block
 from .clanguage import (
     linear_format, text_accumulator,
     sig_end_marker,
@@ -46,6 +45,7 @@ from .clanguage import (
     defining_class_converter,
 )
 if TYPE_CHECKING:
+    from .block_parser import Block
     from .clinic import Clinic
 
 

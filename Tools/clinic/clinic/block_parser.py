@@ -7,9 +7,9 @@ import shlex
 from typing import Any, TYPE_CHECKING
 
 from .utils import fail, compute_checksum, text_accumulator, create_regex
-from .language import Language
 if TYPE_CHECKING:
     from .function import Function, Module, Class
+    from .language import Language
 
 
 @dc.dataclass(slots=True, repr=False)
