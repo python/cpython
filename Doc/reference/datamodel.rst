@@ -2811,7 +2811,7 @@ through the object's keys; for sequences, it should iterate through the values.
    the accepted keys should be integers and slice objects.  Note that the
    special interpretation of negative indexes (if the class wishes to emulate a
    :term:`sequence` type) is up to the :meth:`__getitem__` method. If *key* is
-   of an inappropriate type, :exc:`TypeError` may be raised; if of a value
+   of an inappropriate type, :exc:`TypeError` may be raised; if *key* is a value
    outside the set of indexes for the sequence (after any special
    interpretation of negative values), :exc:`IndexError` should be raised. For
    :term:`mapping` types, if *key* is missing (not in the container),
