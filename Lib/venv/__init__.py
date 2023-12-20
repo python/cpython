@@ -509,9 +509,10 @@ class EnvBuilder:
                 with open(srcfile, 'rb') as f:
                     data = f.read()
                 try:
-                    data = data.decode('utf-8')
-                    new_data = (self.replace_variables(data, context)
-                                .encode('utf-8'))
+                    new_data = (
+                        self.replace_variables(data.decode('utf-8'), context)
+                            .encode('utf-8')
+                    )
                 except UnicodeError as e:
                     logger.warning('unable to copy script %r, '
                                    'may be binary: %s', srcfile, e)
