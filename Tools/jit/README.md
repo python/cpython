@@ -1,15 +1,11 @@
-<div align=center>
-
 The JIT Compiler
 ================
-
-</div>
 
 This version of CPython can be built with an experimental just-in-time compiler. While most everything you already know about building and using CPython is unchanged, you will probably need to install a compatible version of LLVM first.
 
 ### Installing LLVM
 
-While the JIT compiler does not require end users to install any third-party dependencies, part of it must be *built* using LLVM. It is *not* required for you to build the rest of CPython using LLVM, or the even the same version of LLVM (in fact, this is uncommon).
+The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM. You are *not* required to build the rest of CPython using LLVM, or the even the same version of LLVM (in fact, this is uncommon).
 
 LLVM version 16 is required. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-16`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
 
@@ -47,4 +43,4 @@ For `PCbuild`-based builds, pass the new `--experimental-jit` option to `build.b
 
 For all other builds, pass the new `--enable-experimental-jit` option to `configure`.
 
-Otherwise, just configure and build as you normally would. Even cross-compiling "just works", since the JIT is built for the host platform.
+Otherwise, just configure and build as you normally would. Cross-compiling "just works", since the JIT is built for the host platform.

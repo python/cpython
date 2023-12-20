@@ -56,7 +56,7 @@ _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
-    PATCH_VALUE(_PyUOpExecutorObject *, current_executor, _JIT_CURRENT_EXECUTOR)
+    PATCH_VALUE(_PyUOpExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int opcode = _JIT_OPCODE;
     _PyUOpInstruction *next_uop;

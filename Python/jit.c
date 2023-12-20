@@ -288,10 +288,8 @@ copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
 static void
 emit(const StencilGroup *group, uint64_t patches[])
 {
-    char *data = (char *)patches[HoleValue_DATA];
-    copy_and_patch(data, &group->data, patches);
-    char *text = (char *)patches[HoleValue_TEXT];
-    copy_and_patch(text, &group->text, patches);
+    copy_and_patch((char *)patches[HoleValue_CODE], &group->code, patches);
+    copy_and_patch((char *)patches[HoleValue_DATA], &group->data, patches);
 }
 
 // This becomes the executor's execute member, and handles some setup/teardown:
@@ -312,53 +310,53 @@ int
 _PyJIT_Compile(_PyUOpExecutorObject *executor)
 {
     // Loop once to find the total compiled size:
-    size_t text_size = 0;
+    size_t code_size = 0;
     size_t data_size = 0;
     for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
-        text_size += group->text.body_size;
+        code_size += group->code.body_size;
         data_size += group->data.body_size;
     }
-    // Round up to the nearest page (text and data need separate pages):
+    // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    text_size += page_size - (text_size & (page_size - 1));
+    code_size += page_size - (code_size & (page_size - 1));
     data_size += page_size - (data_size & (page_size - 1));
-    char *memory = jit_alloc(text_size + data_size);
+    char *memory = jit_alloc(code_size + data_size);
     if (memory == NULL) {
         goto fail;
     }
     // Loop again to emit the code:
-    char *text = memory;
-    char *data = memory + text_size;
+    char *code = memory;
+    char *data = memory + code_size;
     for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();
-        patches[HoleValue_CONTINUE] = (uint64_t)text + group->text.body_size;
-        patches[HoleValue_CURRENT_EXECUTOR] = (uint64_t)executor;
+        patches[HoleValue_CODE] = (uint64_t)code;
+        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
+        patches[HoleValue_DATA] = (uint64_t)data;
+        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
         patches[HoleValue_OPARG] = instruction->oparg;
         patches[HoleValue_OPERAND] = instruction->operand;
         patches[HoleValue_TARGET] = instruction->target;
-        patches[HoleValue_DATA] = (uint64_t)data;
-        patches[HoleValue_TEXT] = (uint64_t)text;
         patches[HoleValue_TOP] = (uint64_t)memory;
         patches[HoleValue_ZERO] = 0;
         emit(group, patches);
-        text += group->text.body_size;
+        code += group->code.body_size;
         data += group->data.body_size;
     }
-    if (mark_executable(memory, text_size) ||
-        mark_readable(memory + text_size, data_size))
+    if (mark_executable(memory, code_size) ||
+        mark_readable(memory + code_size, data_size))
     {
-        jit_free(memory, text_size + data_size);
+        jit_free(memory, code_size + data_size);
         goto fail;
     }
     executor->base.execute = execute;
     executor->jit_code = memory;
-    executor->jit_size = text_size + data_size;
+    executor->jit_size = code_size + data_size;
     return 1;
 fail:
     return PyErr_Occurred() ? -1 : 0;
