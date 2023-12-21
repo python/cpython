@@ -10,7 +10,6 @@ __all__ = (
     '_register_task', '_unregister_task', '_enter_task', '_leave_task',
 )
 
-import asyncio
 import concurrent.futures
 import contextvars
 import functools
@@ -572,7 +571,8 @@ class _AsCompletedIterator:
     their underlying tasks or futures complete.
     """
     def __init__(self, aws, timeout):
-        self._done = asyncio.Queue()
+        from .queues import Queue  # Import here to avoid circular import problem.
+        self._done = Queue()
         self._timeout_handle = None
         self._todo = set()
 
