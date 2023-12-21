@@ -112,15 +112,15 @@ class EncodingDetails(_EncodingDetails):
     ])
 
     @classmethod
-    def get_expected_details(cls, coercion_expected, fs_encoding, stream_encoding, env_vars):
+    def get_expected_details(cls, coercion_expected, fs_encoding, stream_encoding, stream_errors, env_vars):
         """Returns expected child process details for a given encoding"""
-        _stream = stream_encoding.split(":")[0] + ":{}"
-        if ":" in stream_encoding:
-            stream_info = 2*[stream_encoding]
-        else:
+        _stream = stream_encoding + ":{}"
+        if stream_errors is None:
             # stdin and stdout should use surrogateescape either because the
             # coercion triggered, or because the C locale was detected
-            stream_info = 2*[_stream.format("surrogateescape")]
+            stream_errors = "surrogateescape"
+
+        stream_info = 2*[_stream.format(stream_errors)]
 
         # stderr should always use backslashreplace
         stream_info.append(_stream.format("backslashreplace"))
@@ -214,6 +214,7 @@ class _LocaleHandlingTestCase(unittest.TestCase):
                                       env_vars,
                                       expected_fs_encoding,
                                       expected_stream_encoding,
+                                      expected_stream_errors,
                                       expected_warnings,
                                       coercion_expected):
         """Check the C locale handling for the given process environment
@@ -229,6 +230,7 @@ class _LocaleHandlingTestCase(unittest.TestCase):
             coercion_expected,
             expected_fs_encoding,
             expected_stream_encoding,
+            expected_stream_errors,
             env_vars
         )
         self.assertEqual(encoding_details, expected_details)
@@ -278,6 +280,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
                     self._check_child_encoding_details(var_dict,
                                                        expected_fs_encoding,
                                                        expected_stream_encoding,
+                                                       expected_stream_errors=None,
                                                        expected_warnings=None,
                                                        coercion_expected=False)
 
@@ -287,7 +290,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
         self.maxDiff = None
 
         expected_fs_encoding = "utf-8"
-        expected_stream_encoding = "utf-8:strict"
+        expected_stream_encoding = "utf-8"
 
         base_var_dict = {
             "LANG": "",
@@ -311,6 +314,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
                     self._check_child_encoding_details(var_dict,
                                                        expected_fs_encoding,
                                                        expected_stream_encoding,
+                                                       expected_stream_errors="strict",
                                                        expected_warnings=None,
                                                        coercion_expected=False)
 
@@ -377,6 +381,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             self._check_child_encoding_details(base_var_dict,
                                                fs_encoding,
                                                stream_encoding,
+                                               None,
                                                _expected_warnings,
                                                _coercion_expected)
 
@@ -393,6 +398,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                     self._check_child_encoding_details(var_dict,
                                                        fs_encoding,
                                                        stream_encoding,
+                                                       None,
                                                        expected_warnings,
                                                        coercion_expected)
 
