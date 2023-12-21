@@ -176,7 +176,7 @@ def addpackage(sitedir, name, known_paths):
     except OSError:
         return
     with f:
-        if name.startswith*("._"):
+        if name.startswith("._"):
             try:
                 f.readline()
                 f.seek(0)
