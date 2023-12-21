@@ -79,6 +79,9 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
+   .. versionchanged:: 3.13
+      *filename* also accepts :class:`os.PathLike` objects.
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -320,6 +323,8 @@ ZipFile Objects
       Calling :meth:`.open` on a closed ZipFile will raise a :exc:`ValueError`.
       Previously, a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.13
+      *name* also accepts :class:`os.PathLike` objects.
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 
@@ -397,6 +402,9 @@ ZipFile Objects
       Calling :meth:`read` on a closed ZipFile will raise a :exc:`ValueError`.
       Previously, a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.13
+      *name* also accepts :class:`os.PathLike` objects.
+
 
 .. method:: ZipFile.testzip()
 
@@ -412,8 +420,10 @@ ZipFile Objects
                           compresslevel=None)
 
    Write the file named *filename* to the archive, giving it the archive name
-   *arcname* (by default, this will be the same as *filename*, but without a drive
-   letter and with leading path separators removed).  If given, *compress_type*
+   *arcname* without a drive letter and with leading path separators removed
+   (by default, this will be derived from *filename*).
+
+   If given, *compress_type*
    overrides the value given for the *compression* parameter to the constructor for
    the new entry. Similarly, *compresslevel* will override the constructor if
    given.
@@ -448,6 +458,9 @@ ZipFile Objects
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.13
+      *filename* and *arcname* also accept :class:`os.PathLike` objects.
+
 
 .. method:: ZipFile.writestr(zinfo_or_arcname, data, compress_type=None, \
                              compresslevel=None)
@@ -479,6 +492,10 @@ ZipFile Objects
       Calling :meth:`writestr` on a ZipFile created with mode ``'r'`` or
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
+
+   .. versionchanged:: 3.13
+      *zinfo_or_arcname* also accepts :class:`os.PathLike` objects.
+
 
 .. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
 

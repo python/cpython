@@ -429,6 +429,16 @@ warnings
   warning may also be emitted when a decorated function or class is used at runtime.
   See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
 
+zipfile
+-------
+
+* The :meth:`zipfile.ZipFile.open`, :meth:`zipfile.ZipFile.read`,
+  :meth:`zipfile.ZipFile.write`, :meth:`zipfile.ZipFile.writestr`, and
+  :class:`zipfile.ZipInfo` now accept :class:`os.PathLike` values such as
+  :mod:`pathlib` provides as ``filename``, ``name``, or ``arcname``,
+  parameters.
+
+
 Optimizations
 =============
 
