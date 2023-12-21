@@ -1715,6 +1715,12 @@ class OtherTests(unittest.TestCase):
                 zinfo.flag_bits |= zipfile._MASK_USE_DATA_DESCRIPTOR  # Include an extended local header.
                 orig_zip.writestr(zinfo, data)
 
+    def test_writestr_pathlib_pathlike(self):
+        with zipfile.ZipFile(TESTFN2, 'w') as orig_zip:
+            path = 'foo/bar.txt'
+            orig_zip.writestr(pathlib.PurePath(path), '1234')
+            self.assertEqual(orig_zip.open(path).read(4), b'1234')
+
     def test_close(self):
         """Check that the zipfile is closed after the 'with' block."""
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:

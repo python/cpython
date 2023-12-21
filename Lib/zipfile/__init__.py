@@ -371,7 +371,7 @@ def _sanitize_filename(filename):
     return filename
 
 
-class ZipInfo (object):
+class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
 
     __slots__ = (
@@ -398,6 +398,8 @@ class ZipInfo (object):
     )
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
+        if isinstance(filename, os.PathLike):
+            filename = os.fspath(filename)
         self.orig_filename = filename   # Original file name in archive
 
         # Terminate the file name at the first null byte and
