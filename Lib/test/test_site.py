@@ -181,6 +181,20 @@ class HelperFunctionsTests(unittest.TestCase):
             if isinstance(path, str):
                 self.assertNotIn("abc\x00def", path)
 
+    def test_addpackage_macOS_resources(self):
+        # GH-113356
+        pth_dir, pth_fn = self.make_pth("dummy\n")
+        resource_fork = os.path.join(pth_dir, "._" + pth_fn)
+        with open(resource_fork, "wb") as fp:
+            self.addCleanup(lambda: os.remove(resource_fork))
+            # Some random that that isn't valid UTF-8
+            fp.write(b"\xff\xff\xff")
+
+        with captured_stderr() as err_out:
+            self.assertFalse(site.addpackage(pth_dir, "._" + pth_fn, set()))
+        self.assertEqual(err_out.getvalue(), "")
+
+
     def test_addsitedir(self):
         # Same tests for test_addpackage since addsitedir() essentially just
         # calls addpackage() for every .pth file in the directory

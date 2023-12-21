@@ -176,29 +176,40 @@ def addpackage(sitedir, name, known_paths):
     except OSError:
         return
     with f:
-        for n, line in enumerate(f):
-            if line.startswith("#"):
-                continue
-            if line.strip() == "":
-                continue
-            try:
-                if line.startswith(("import ", "import\t")):
-                    exec(line)
+        try:
+            for n, line in enumerate(f):
+                if line.startswith("#"):
                     continue
-                line = line.rstrip()
-                dir, dircase = makepath(sitedir, line)
-                if not dircase in known_paths and os.path.exists(dir):
-                    sys.path.append(dir)
-                    known_paths.add(dircase)
-            except Exception as exc:
-                print("Error processing line {:d} of {}:\n".format(n+1, fullname),
-                      file=sys.stderr)
-                import traceback
-                for record in traceback.format_exception(exc):
-                    for line in record.splitlines():
-                        print('  '+line, file=sys.stderr)
-                print("\nRemainder of file ignored", file=sys.stderr)
-                break
+                if line.strip() == "":
+                    continue
+                try:
+                    if line.startswith(("import ", "import\t")):
+                        exec(line)
+                        continue
+                    line = line.rstrip()
+                    dir, dircase = makepath(sitedir, line)
+                    if not dircase in known_paths and os.path.exists(dir):
+                        sys.path.append(dir)
+                        known_paths.add(dircase)
+                except Exception as exc:
+                    print("Error processing line {:d} of {}:\n".format(n+1, fullname),
+                          file=sys.stderr)
+                    import traceback
+                    for record in traceback.format_exception(exc):
+                        for line in record.splitlines():
+                            print('  '+line, file=sys.stderr)
+                    print("\nRemainder of file ignored", file=sys.stderr)
+                    break
+        except UnicodeDecodeError:
+            # MacOS can create files with a "._" prefix in the name
+            # next to the regular file when the system needs to store
+            # metadata (such as extended attributes) that the filesystem
+            # cannot store natively.
+            #
+            # Ignore errors when trying to parse these files.
+            if name.startswith("._") and os.path.exists(os.path.join(sitedir, name[2:])):
+                return
+            raise
     if reset:
         known_paths = None
     return known_paths

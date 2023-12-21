@@ -1,0 +1,3 @@
+Ignore "._" prefixed pth files when those cannot be parsed. These files are
+created on macOS when the system tries store metadata that is not supported
+by the filesystem (such as extended attributes on exFAT)
