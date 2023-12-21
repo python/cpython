@@ -2803,9 +2803,9 @@ through the object's keys; for sequences, it should iterate through the values.
 .. method:: object.__getitem__(self, key)
 
    Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
-   the accepted keys should be integers and slice objects.  Note that the
-   special interpretation of negative indexes (if the class wishes to emulate a
-   :term:`sequence` type) is up to the :meth:`__getitem__` method. If *key* is
+   the accepted keys should be integers. Optionally, they may support
+   :class:`slice` objects as well.  Negative index support is also optional.
+   If *key* is
    of an inappropriate type, :exc:`TypeError` may be raised; if *key* is a value
    outside the set of indexes for the sequence (after any special
    interpretation of negative values), :exc:`IndexError` should be raised. For
