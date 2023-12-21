@@ -6564,7 +6564,7 @@ The purpose of the Argument Clinic is automating all the boilerplate involved
 with writing argument parsing code for builtins and providing introspection
 signatures ("docstrings") for CPython builtins.
 
-For more information see https://docs.python.org/3/howto/clinic.html""")
+For more information see https://devguide.python.org/development-tools/clinic/""")
     cmdline.add_argument("-f", "--force", action='store_true',
                          help="force output regeneration")
     cmdline.add_argument("-o", "--output", type=str,
