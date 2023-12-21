@@ -272,9 +272,9 @@ This module can be used with the "classic" ndbm interface or the GNU GDBM
 compatibility interface. On Unix, the :program:`configure` script will attempt
 to locate the appropriate header file to simplify building this module.
 
-.. warning:: 
+.. warning::
 
-   The ndbm library shipped as part of macOS has an undocumented limitation on the 
+   The ndbm library shipped as part of macOS has an undocumented limitation on the
    size of values, which can result in corrupted database files
    when storing values larger than this limit. Reading such corrupted files can
    result in a hard crash (segmentation fault).
