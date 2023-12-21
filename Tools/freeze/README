@@ -221,7 +221,7 @@ window, by specifying the option '-s windows'. See the Usage below.
 Usage under macOS
 -----------------
 
-On macOS the freeze tool is not supported for framework builds.
+On macOS the :program:`freeze` tool is not supported for framework builds.
 
 Usage
 -----
