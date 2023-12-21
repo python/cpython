@@ -574,7 +574,6 @@ class _AsCompletedIterator:
         from .queues import Queue  # Import here to avoid circular import problem.
         self._done = Queue()
         self._timeout_handle = None
-        self._todo = set()
 
         loop = events.get_event_loop()
         todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
@@ -606,10 +605,6 @@ class _AsCompletedIterator:
         assert self._todo_left > 0
         self._todo_left -= 1
         return self._wait_for_one(resolve=True)
-
-    def __del__(self):
-        for f in self._todo:
-            f.remove_done_callback(self._handle_completion)
 
     def _handle_timeout(self):
         for f in self._todo:
