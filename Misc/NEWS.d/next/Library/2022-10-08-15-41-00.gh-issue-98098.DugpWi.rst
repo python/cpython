@@ -1,2 +1,0 @@
-Created packages from zipfile and test_zipfile modules, separating
-``zipfile.Path`` functionality.

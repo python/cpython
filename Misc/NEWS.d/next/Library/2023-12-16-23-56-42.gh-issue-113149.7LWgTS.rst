@@ -1,0 +1,2 @@
+Improve error message when a JSON array or object contains a trailing comma.
+Patch by Carson Radtke.

@@ -1,1 +1,0 @@
-Fix a compilation issue with GCC 12 on macOS.

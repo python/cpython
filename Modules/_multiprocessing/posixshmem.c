@@ -2,14 +2,20 @@
 posixshmem - A Python extension that provides shm_open() and shm_unlink()
 */
 
-#define PY_SSIZE_T_CLEAN
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifndef Py_GIL_DISABLED
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
+#endif
 
 #include <Python.h>
 
-// for shm_open() and shm_unlink()
+#include <errno.h>                // EINTR
 #ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
+#  include <sys/mman.h>           // shm_open(), shm_unlink()
 #endif
+
 
 /*[clinic input]
 module _posixshmem
@@ -42,7 +48,7 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 {
     int fd;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
     if (name == NULL) {
         return -1;
     }
@@ -81,7 +87,7 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 {
     int rv;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
     if (name == NULL) {
         return NULL;
     }
@@ -110,12 +116,19 @@ static PyMethodDef module_methods[ ] = {
 };
 
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
+
 static struct PyModuleDef _posixshmemmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_posixshmem",
     .m_doc = "POSIX shared memory module",
     .m_size = 0,
     .m_methods = module_methods,
+    .m_slots = module_slots,
 };
 
 /* Module init function */

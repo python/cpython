@@ -1,2 +1,0 @@
-Rename the *fmt* parameter of the pure Python implementation of
-:meth:`datetime.date.strftime` to *format*.

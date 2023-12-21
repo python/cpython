@@ -183,27 +183,6 @@ class PropertyTests(unittest.TestCase):
             fake_prop.__init__('fget', 'fset', 'fdel', 'doc')
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def test_class_property(self):
-        class A:
-            @classmethod
-            @property
-            def __doc__(cls):
-                return 'A doc for %r' % cls.__name__
-        self.assertEqual(A.__doc__, "A doc for 'A'")
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def test_class_property_override(self):
-        class A:
-            """First"""
-            @classmethod
-            @property
-            def __doc__(cls):
-                return 'Second'
-        self.assertEqual(A.__doc__, 'Second')
-
     def test_property_set_name_incorrect_args(self):
         p = property()
 
@@ -214,6 +193,23 @@ class PropertyTests(unittest.TestCase):
             ):
                 p.__set_name__(*([0] * i))
 
+    def test_property_setname_on_property_subclass(self):
+        # https://github.com/python/cpython/issues/100942
+        # Copy was setting the name field without first
+        # verifying that the copy was an actual property
+        # instance.  As a result, the code below was
+        # causing a segfault.
+
+        class pro(property):
+            def __new__(typ, *args, **kwargs):
+                return "abcdef"
+
+        class A:
+            pass
+
+        p = property.__new__(pro)
+        p.__set_name__(A, 1)
+        np = p.getter(lambda self: 1)
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
 class PropertySub(property):
@@ -229,16 +225,67 @@ class PropertySubSlots(property):
 class PropertySubclassTests(unittest.TestCase):
 
     def test_slots_docstring_copy_exception(self):
-        try:
+        # A special case error that we preserve despite the GH-98963 behavior
+        # that would otherwise silently ignore this error.
+        # This came from commit b18500d39d791c879e9904ebac293402b4a7cd34
+        # as part of https://bugs.python.org/issue5890 which allowed docs to
+        # be set via property subclasses in the first place.
+        with self.assertRaises(AttributeError):
             class Foo(object):
                 @PropertySubSlots
                 def spam(self):
                     """Trying to copy this docstring will raise an exception"""
                     return 1
-        except AttributeError:
-            pass
-        else:
-            raise Exception("AttributeError not raised")
+
+    def test_property_with_slots_no_docstring(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo",)
+
+        p = slotted_prop()  # no AttributeError
+        self.assertIsNone(getattr(p, "__doc__", None))
+
+        def undocumented_getter():
+            return 4
+
+        p = slotted_prop(undocumented_getter)  # New in 3.12: no AttributeError
+        self.assertIsNone(getattr(p, "__doc__", None))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_with_slots_docstring_silently_dropped(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo",)
+
+        p = slotted_prop(doc="what's up")  # no AttributeError
+        self.assertIsNone(p.__doc__)
+
+        def documented_getter():
+            """getter doc."""
+            return 4
+
+        # Historical behavior: A docstring from a getter always raises.
+        # (matches test_slots_docstring_copy_exception above).
+        with self.assertRaises(AttributeError):
+            p = slotted_prop(documented_getter)
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_with_slots_and_doc_slot_docstring_present(self):
+        # https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+        class slotted_prop(property):
+            __slots__ = ("foo", "__doc__")
+
+        p = slotted_prop(doc="what's up")
+        self.assertEqual("what's up", p.__doc__)  # new in 3.12: This gets set.
+
+        def documented_getter():
+            """what's up getter doc?"""
+            return 4
+
+        p = slotted_prop(documented_getter)
+        self.assertEqual("what's up getter doc?", p.__doc__)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")

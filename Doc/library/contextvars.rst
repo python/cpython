@@ -144,6 +144,11 @@ Manual Context Management
    To get a copy of the current context use the
    :func:`~contextvars.copy_context` function.
 
+   Every thread will have a different top-level :class:`~contextvars.Context`
+   object. This means that a :class:`ContextVar` object behaves in a similar
+   fashion to :func:`threading.local()` when values are assigned in different
+   threads.
+
    Context implements the :class:`collections.abc.Mapping` interface.
 
    .. method:: run(callable, *args, **kwargs)

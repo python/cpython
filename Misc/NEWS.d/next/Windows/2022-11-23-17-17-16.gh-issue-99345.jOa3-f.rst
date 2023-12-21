@@ -1,2 +1,0 @@
-Use faster initialization functions to detect install location for Windows
-Store package

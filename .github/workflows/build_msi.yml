@@ -8,12 +8,14 @@ on:
     - '3.*'
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
   pull_request:
     branches:
     - 'main'
     - '3.*'
     paths:
     - 'Tools/msi/**'
+    - '.github/workflows/build_msi.yml'
 
 permissions:
   contents: read
@@ -26,10 +28,11 @@ jobs:
   build:
     name: Windows Installer
     runs-on: windows-latest
+    timeout-minutes: 60
     strategy:
       matrix:
         type: [x86, x64, arm64]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build CPython installer
-      run: .\Tools\msi\build.bat -${{ matrix.type }}
+      run: .\Tools\msi\build.bat --doc -${{ matrix.type }}
