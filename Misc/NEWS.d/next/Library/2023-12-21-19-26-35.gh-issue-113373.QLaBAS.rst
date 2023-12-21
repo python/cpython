@@ -1,0 +1,1 @@
+Slightly speed up path parsing in :mod:`pathlib`. Patch by Barney Gale.

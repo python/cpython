@@ -206,7 +206,11 @@ class PurePathBase:
     )
     pathmod = os.path
 
-    def __init__(self, *paths):
+    def __init__(self, *args):
+        paths = []
+        for arg in args:
+            if arg:
+                paths.append(arg)
         self._raw_paths = paths
         self._resolving = False
 
@@ -219,8 +223,6 @@ class PurePathBase:
 
     @classmethod
     def _parse_path(cls, path):
-        if not path:
-            return '', '', []
         sep = cls.pathmod.sep
         altsep = cls.pathmod.altsep
         if altsep:
@@ -239,16 +241,19 @@ class PurePathBase:
 
     def _load_parts(self):
         paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
+        if len(paths) == 1:
             path = paths[0]
-        else:
+        elif paths:
             path = self.pathmod.join(*paths)
-        drv, root, tail = self._parse_path(path)
-        self._drv = drv
-        self._root = root
-        self._tail_cached = tail
+            # Store the joined path. This makes subsequent joins onto this
+            # path slightly faster.
+            paths.clear()
+            paths.append(path)
+        else:
+            self._drv = self._root = ''
+            self._tail_cached = []
+            return
+        self._drv, self._root, self._tail_cached = self._parse_path(path)
 
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
