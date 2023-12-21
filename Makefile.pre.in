@@ -1564,7 +1564,7 @@ Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
 Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
-	$(srcdir)/Objects/mimalloc/alloc-aligned.c \
+		$(srcdir)/Objects/mimalloc/alloc-aligned.c \
 		$(srcdir)/Objects/mimalloc/alloc-posix.c \
 		$(srcdir)/Objects/mimalloc/arena.c \
 		$(srcdir)/Objects/mimalloc/bitmap.c \
@@ -1577,7 +1577,10 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 		$(srcdir)/Objects/mimalloc/segment.c \
 		$(srcdir)/Objects/mimalloc/segment-map.c \
 		$(srcdir)/Objects/mimalloc/stats.c \
-		$(srcdir)/Objects/mimalloc/prim/prim.c
+		$(srcdir)/Objects/mimalloc/prim/prim.c \
+		$(srcdir)/Objects/mimalloc/prim/osx/prim.c \
+		$(srcdir)/Objects/mimalloc/prim/unix/prim.c \
+		$(srcdir)/Objects/mimalloc/prim/wasi/prim.c
 
 Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
