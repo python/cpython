@@ -25,7 +25,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    Some behavior may be platform dependent, since calls are made to the
    operating system socket APIs.  The installed version of OpenSSL may also
-   cause variations in behavior. For example, TLSv1.3 with OpenSSL version
+   cause variations in behavior. For example, TLSv1.3 comes with OpenSSL version
    1.1.1.
 
 .. warning::
