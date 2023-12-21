@@ -274,7 +274,7 @@ class BrowserRegistrationTest(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
     def test_no_xdg_settings_on_macOS(self):
-        # On macOS webbrowser should not use xdg-settings to 
+        # On macOS webbrowser should not use xdg-settings to
         # look for X11 based browsers (for those users with
         # XQuartz installed)
         with mock.patch("subprocess.check_output") as ck_o:
