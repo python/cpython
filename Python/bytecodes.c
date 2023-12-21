@@ -1100,7 +1100,7 @@ dummy_func(
 
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            Py_XSETREF(exc_info->exc_value, exc_value);
+            Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
         }
 
         inst(RERAISE, (values[oparg], exc -- values[oparg])) {
