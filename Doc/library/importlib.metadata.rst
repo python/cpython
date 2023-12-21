@@ -182,7 +182,7 @@ for more information on entry points, their definition, and usage.
 
 .. versionchanged:: 3.13
    ``EntryPoint`` objects no longer present a tuple-like interface
-   (``__getitem__``).
+   (:meth:`~object.__getitem__`).
 
 .. _metadata:
 
