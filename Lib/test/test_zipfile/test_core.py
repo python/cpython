@@ -1723,7 +1723,7 @@ class OtherTests(unittest.TestCase):
                 t.write(b'1234')
                 t.close()
                 try:
-                    orig_zip.write(path)
+                    orig_zip.write(path, arcname=path)
                 finally:
                     os.unlink(path)
             # We need to look up a relative path within a zipfile.
