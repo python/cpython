@@ -1,5 +1,6 @@
 """ Tests for the internal type cache in CPython. """
 import unittest
+import dis
 from test import support
 from test.support import import_helper
 try:
@@ -8,8 +9,11 @@ except ImportError:
     _clear_type_cache = None
 
 # Skip this test if the _testcapi module isn't available.
-type_get_version = import_helper.import_module('_testcapi').type_get_version
-type_assign_version = import_helper.import_module('_testcapi').type_assign_version
+_testcapi = import_helper.import_module("_testcapi")
+type_get_version = _testcapi.type_get_version
+type_assign_specific_version_unsafe = _testcapi.type_assign_specific_version_unsafe
+type_assign_version = _testcapi.type_assign_version
+type_modified = _testcapi.type_modified
 
 
 @support.cpython_only
@@ -55,6 +59,89 @@ class TypeCacheTests(unittest.TestCase):
         self.assertEqual(type_assign_version(C), 1)
         self.assertNotEqual(type_get_version(C), 0)
         self.assertNotEqual(type_get_version(C), c_ver)
+
+    def test_type_assign_specific_version(self):
+        """meta-test for type_assign_specific_version_unsafe"""
+        class C:
+            pass
+
+        type_assign_version(C)
+        orig_version = type_get_version(C)
+        self.assertNotEqual(orig_version, 0)
+
+        type_modified(C)
+        type_assign_specific_version_unsafe(C, orig_version + 5)
+        type_assign_version(C)  # this should do nothing
+
+        new_version = type_get_version(C)
+        self.assertEqual(new_version, orig_version + 5)
+
+    def test_specialization_user_type_no_tag_overflow(self):
+        class A:
+            def foo(self):
+                pass
+
+        class B:
+            def foo(self):
+                pass
+
+        type_modified(A)
+        type_assign_version(A)
+        type_modified(B)
+        type_assign_version(B)
+        self.assertNotEqual(type_get_version(A), 0)
+        self.assertNotEqual(type_get_version(B), 0)
+        self.assertNotEqual(type_get_version(A), type_get_version(B))
+
+        def get_foo(type_):
+            return type_.foo
+
+        self.assertIn(
+            "LOAD_ATTR",
+            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
+        )
+
+        get_foo(A)
+        get_foo(A)
+
+        # check that specialization has occurred
+        self.assertNotIn(
+            "LOAD_ATTR",
+            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
+        )
+
+    def test_specialization_user_type_tag_overflow(self):
+        class A:
+            def foo(self):
+                pass
+
+        class B:
+            def foo(self):
+                pass
+
+        type_modified(A)
+        type_assign_specific_version_unsafe(A, 0)
+        type_modified(B)
+        type_assign_specific_version_unsafe(B, 0)
+        self.assertEqual(type_get_version(A), 0)
+        self.assertEqual(type_get_version(B), 0)
+
+        def get_foo(type_):
+            return type_.foo
+
+        self.assertIn(
+            "LOAD_ATTR",
+            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
+        )
+
+        get_foo(A)
+        get_foo(A)
+
+        # check that specialization has not occurred due to version tag == 0
+        self.assertIn(
+            "LOAD_ATTR",
+            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
+        )
 
 
 if __name__ == "__main__":
