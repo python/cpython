@@ -31,6 +31,7 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertFalse(hasattr(P, '__fspath__'))
         self.assertFalse(hasattr(P, '__bytes__'))
         self.assertIs(P.__reduce__, object.__reduce__)
+        self.assertIs(P.__repr__, object.__repr__)
         self.assertIs(P.__hash__, object.__hash__)
         self.assertIs(P.__eq__, object.__eq__)
         self.assertIs(P.__lt__, object.__lt__)
@@ -226,18 +227,6 @@ class DummyPurePathTest(unittest.TestCase):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
-
-    def test_repr_common(self):
-        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            with self.subTest(pathstr=pathstr):
-                p = self.cls(pathstr)
-                clsname = p.__class__.__name__
-                r = repr(p)
-                # The repr() is in the form ClassName("forward-slashes path").
-                self.assertTrue(r.startswith(clsname + '('), r)
-                self.assertTrue(r.endswith(')'), r)
-                inner = r[len(clsname) + 1 : -1]
-                self.assertEqual(eval(inner), p.as_posix())
 
     def test_eq_common(self):
         P = self.cls
