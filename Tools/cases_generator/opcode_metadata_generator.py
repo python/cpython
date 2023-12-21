@@ -366,7 +366,7 @@ arg_parser = argparse.ArgumentParser(
 )
 
 
-DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
+DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_opcode_metadata.h"
 
 
 arg_parser.add_argument(

@@ -61,8 +61,6 @@ from typing import (
 #         and keyword-only
 #
 
-version = '1'
-
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -373,49 +371,6 @@ def pprint_words(items: list[str]) -> str:
         return " and ".join(items)
     else:
         return ", ".join(items[:-1]) + " and " + items[-1]
-
-
-def version_splitter(s: str) -> tuple[int, ...]:
-    """Splits a version string into a tuple of integers.
-
-    The following ASCII characters are allowed, and employ
-    the following conversions:
-        a -> -3
-        b -> -2
-        c -> -1
-    (This permits Python-style version strings such as "1.4b3".)
-    """
-    version: list[int] = []
-    accumulator: list[str] = []
-    def flush() -> None:
-        if not accumulator:
-            fail(f'Unsupported version string: {s!r}')
-        version.append(int(''.join(accumulator)))
-        accumulator.clear()
-
-    for c in s:
-        if c.isdigit():
-            accumulator.append(c)
-        elif c == '.':
-            flush()
-        elif c in 'abc':
-            flush()
-            version.append('abc'.index(c) - 3)
-        else:
-            fail(f'Illegal character {c!r} in version string {s!r}')
-    flush()
-    return tuple(version)
-
-def version_comparator(version1: str, version2: str) -> Literal[-1, 0, 1]:
-    iterator = itertools.zip_longest(
-        version_splitter(version1), version_splitter(version2), fillvalue=0
-    )
-    for a, b in iterator:
-        if a < b:
-            return -1
-        if a > b:
-            return 1
-    return 0
 
 
 class CRenderData:
@@ -5262,13 +5217,6 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
 
-    def directive_version(self, required: str) -> None:
-        global version
-        if version_comparator(version, required) < 0:
-            fail("Insufficient Clinic version!\n"
-                 f"  Version: {version}\n"
-                 f"  Required: {required}")
-
     def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
@@ -6564,7 +6512,7 @@ The purpose of the Argument Clinic is automating all the boilerplate involved
 with writing argument parsing code for builtins and providing introspection
 signatures ("docstrings") for CPython builtins.
 
-For more information see https://docs.python.org/3/howto/clinic.html""")
+For more information see https://devguide.python.org/development-tools/clinic/""")
     cmdline.add_argument("-f", "--force", action='store_true',
                          help="force output regeneration")
     cmdline.add_argument("-o", "--output", type=str,
