@@ -1,8 +1,22 @@
-import sys
+import re
 from analyzer import StackItem, Instruction, Uop
 from dataclasses import dataclass
-from formatting import maybe_parenthesize
 from cwriter import CWriter
+
+
+def maybe_parenthesize(sym: str) -> str:
+    """Add parentheses around a string if it contains an operator
+       and is not already parenthesized.
+
+    An exception is made for '*' which is common and harmless
+    in the context where the symbolic size is used.
+    """
+    if sym.startswith("(") and sym.endswith(")"):
+        return sym
+    if re.match(r"^[\s\w*]+$", sym):
+        return sym
+    else:
+        return f"({sym})"
 
 
 def var_size(var: StackItem) -> str:
