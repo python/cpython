@@ -34,14 +34,12 @@ typedef enum {
 #include "mimalloc/internal.h"
 #endif
 
-struct _mimalloc_thread_state {
 #ifdef Py_GIL_DISABLED
+struct _mimalloc_thread_state {
     mi_heap_t *current_object_heap;
     mi_heap_t heaps[_Py_MIMALLOC_HEAP_COUNT];
     mi_tld_t tld;
-#else
-    char _unused;  // empty structs are not allowed
-#endif
 };
+#endif
 
 #endif // Py_INTERNAL_MIMALLOC_H
