@@ -207,10 +207,7 @@ class PurePathBase:
     pathmod = os.path
 
     def __init__(self, *args):
-        paths = []
-        for arg in args:
-            if arg:
-                paths.append(arg)
+        paths = [arg for arg in args if arg]
         self._raw_paths = paths
         self._resolving = False
 
