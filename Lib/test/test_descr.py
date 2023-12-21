@@ -5004,6 +5004,21 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         gc.collect()
         self.assertEqual(Parent.__subclasses__(), [])
 
+    def test_instance_method_get_behavior(self):
+        # test case for gh-113157
+
+        class A:
+            def meth(self):
+                return self
+
+        class B:
+            pass
+
+        a = A()
+        b = B()
+        b.meth = a.meth.__get__(b, B)
+        self.assertEqual(b.meth(), a)
+
     def test_attr_raise_through_property(self):
         # test case for gh-103272
         class A:
