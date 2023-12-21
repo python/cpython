@@ -1002,7 +1002,7 @@ importlib
   (Contributed by Jason R. Coombs in :gh:`106532`.)
 
 * Remove deprecated :meth:`~object.__getitem__` access for
-  :class:`importlib.metadata.EntryPoint` objects.
+  :class:`!importlib.metadata.EntryPoint` objects.
   (Contributed by Jason R. Coombs in :gh:`113175`.)
 
 locale
