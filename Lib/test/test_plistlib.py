@@ -13,6 +13,7 @@ import codecs
 import subprocess
 import binascii
 import collections
+import zoneinfo
 from test import support
 from test.support import os_helper
 from io import BytesIO
@@ -838,6 +839,17 @@ class TestPlistlib(unittest.TestCase):
                                     "XML entity declarations are not supported"):
             plistlib.loads(XML_PLIST_WITH_ENTITY, fmt=plistlib.FMT_XML)
 
+    def test_load_aware_datetime(self):
+        dt = plistlib.loads(b"<plist><date>2023-12-10T08:03:30Z</date></plist>",
+                            aware_datetime=True)
+        self.assertEqual(dt.tzinfo, datetime.UTC)
+
+    def test_dump_aware_datetime(self):
+        dt = datetime.datetime(1234, 5, 6, 7, 8, 9,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        s = plistlib.dumps(dt, aware_datetime=True)
+        self.assertIn(b"1234-05-06T15:01:07Z", s)
+
 
 class TestBinaryPlistlib(unittest.TestCase):
 
@@ -962,6 +974,22 @@ class TestBinaryPlistlib(unittest.TestCase):
                 with self.assertRaises(plistlib.InvalidFileException):
                     plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
 
+    def test_load_aware_datetime(self):
+        data = (b'bplist003B\x04>\xd0d\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00'
+                b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11')
+        self.assertEqual(plistlib.loads(data, aware_datetime=True),
+                         datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC))
+
+    def test_dump_aware_datetime(self):
+        dt = datetime.datetime(2345, 6, 7, 8,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        b = plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=True)
+
+        # loads it with naive datetime will have time difference.
+        self.assertEqual(plistlib.loads(b, aware_datetime=False),
+                         datetime.datetime(2345, 6, 7, 15))
+
 
 class TestKeyedArchive(unittest.TestCase):
     def test_keyed_archive_data(self):
@@ -1071,6 +1099,7 @@ class TestPlutil(unittest.TestCase):
             p = json.loads(f.read())
             self.assertEqual(p.get("HexType"), 16777228)
             self.assertEqual(p.get("IntType"), 83)
+
 
 if __name__ == '__main__':
     unittest.main()
