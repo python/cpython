@@ -61,8 +61,6 @@ from typing import (
 #         and keyword-only
 #
 
-version = '1'
-
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -373,49 +371,6 @@ def pprint_words(items: list[str]) -> str:
         return " and ".join(items)
     else:
         return ", ".join(items[:-1]) + " and " + items[-1]
-
-
-def version_splitter(s: str) -> tuple[int, ...]:
-    """Splits a version string into a tuple of integers.
-
-    The following ASCII characters are allowed, and employ
-    the following conversions:
-        a -> -3
-        b -> -2
-        c -> -1
-    (This permits Python-style version strings such as "1.4b3".)
-    """
-    version: list[int] = []
-    accumulator: list[str] = []
-    def flush() -> None:
-        if not accumulator:
-            fail(f'Unsupported version string: {s!r}')
-        version.append(int(''.join(accumulator)))
-        accumulator.clear()
-
-    for c in s:
-        if c.isdigit():
-            accumulator.append(c)
-        elif c == '.':
-            flush()
-        elif c in 'abc':
-            flush()
-            version.append('abc'.index(c) - 3)
-        else:
-            fail(f'Illegal character {c!r} in version string {s!r}')
-    flush()
-    return tuple(version)
-
-def version_comparator(version1: str, version2: str) -> Literal[-1, 0, 1]:
-    iterator = itertools.zip_longest(
-        version_splitter(version1), version_splitter(version2), fillvalue=0
-    )
-    for a, b in iterator:
-        if a < b:
-            return -1
-        if a > b:
-            return 1
-    return 0
 
 
 class CRenderData:
@@ -865,6 +820,11 @@ class CLanguage(Language):
         PyDoc_STRVAR({c_basename}__doc__,
         {docstring});
     """)
+    GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
+        PyDoc_STRVAR({getset_basename}__doc__,
+        {docstring});
+        #define {getset_basename}_HAS_DOCSTR
+    """)
     IMPL_DEFINITION_PROTOTYPE: Final[str] = normalize_snippet("""
         static {impl_return_type}
         {c_basename}_impl({impl_parameters})
@@ -874,17 +834,27 @@ class CLanguage(Language):
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_basename}_HAS_DOCSTR)
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        #  define {getset_basename}_DOCSTR NULL
+        #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
         #else
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
         #endif
     """)
     SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_name}_HAS_DOCSTR)
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        #  define {getset_basename}_DOCSTR NULL
+        #endif
         #if defined({getset_name}_GETSETDEF)
         #  undef {getset_name}_GETSETDEF
-        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, NULL}},
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
         #else
         #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
         #endif
@@ -1187,11 +1157,17 @@ class CLanguage(Language):
             docstring_prototype = docstring_definition = ''
         elif f.kind is GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
-            docstring_prototype = docstring_definition = ''
+            if f.docstring:
+                docstring_prototype = ''
+                docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
+            else:
+                docstring_prototype = docstring_definition = ''
         elif f.kind is SETTER:
+            if f.docstring:
+                fail("docstrings are only supported for @getter, not @setter")
             return_value_declaration = "int {return_value};"
             methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
-            docstring_prototype = docstring_prototype = docstring_definition = ''
+            docstring_prototype = docstring_definition = ''
         else:
             docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
             docstring_definition = self.DOCSTRING_PROTOTYPE_STRVAR
@@ -5241,13 +5217,6 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
 
-    def directive_version(self, required: str) -> None:
-        global version
-        if version_comparator(version, required) < 0:
-            fail("Insufficient Clinic version!\n"
-                 f"  Version: {version}\n"
-                 f"  Required: {required}")
-
     def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
@@ -5613,6 +5582,10 @@ class DSLParser:
         fields = [x.strip() for x in full_name.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
+
+        if self.kind in {GETTER, SETTER}:
+            if not cls:
+                fail("@getter and @setter must be methods")
 
         self.update_function_kind(full_name)
         if self.kind is METHOD_INIT and not return_converter:
@@ -6251,6 +6224,9 @@ class DSLParser:
         add(f.displayname)
         if self.forced_text_signature:
             add(self.forced_text_signature)
+        elif f.kind in {GETTER, SETTER}:
+            # @getter and @setter do not need signatures like a method or a function.
+            return ''
         else:
             add('(')
 
@@ -6423,8 +6399,8 @@ class DSLParser:
     def format_docstring(self) -> str:
         assert self.function is not None
         f = self.function
-        if f.kind.new_or_init and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
+        # For the following special cases, it does not make sense to render a docstring.
+        if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
             return f.docstring
 
         # Enforce the summary line!
@@ -6536,7 +6512,7 @@ The purpose of the Argument Clinic is automating all the boilerplate involved
 with writing argument parsing code for builtins and providing introspection
 signatures ("docstrings") for CPython builtins.
 
-For more information see https://docs.python.org/3/howto/clinic.html""")
+For more information see https://devguide.python.org/development-tools/clinic/""")
     cmdline.add_argument("-f", "--force", action='store_true',
                          help="force output regeneration")
     cmdline.add_argument("-o", "--output", type=str,
