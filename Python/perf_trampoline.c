@@ -247,7 +247,7 @@ new_code_arena(void)
              mem_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
              -1,  // fd (not used here)
              0);  // offset (not used here)
-    if (!memory) {
+    if (memory == MAP_FAILED) {
         PyErr_SetFromErrno(PyExc_OSError);
         _PyErr_WriteUnraisableMsg(
             "Failed to create new mmap for perf trampoline", NULL);
