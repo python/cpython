@@ -5815,11 +5815,11 @@ class DSLParser:
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
 
+        value: object
         if not default:
             if self.parameter_state is ParamState.OPTIONAL:
                 fail(f"Can't have a parameter without a default ({parameter_name!r}) "
                       "after a parameter with a default!")
-            value: Sentinels | Null
             if is_vararg:
                 value = NULL
                 kwargs.setdefault('c_default', "NULL")
