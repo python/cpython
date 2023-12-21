@@ -43,6 +43,7 @@ class TestSysConfig(unittest.TestCase):
         self.name = os.name
         self.platform = sys.platform
         self.version = sys.version
+        self._framework = sys._framework
         self.sep = os.sep
         self.join = os.path.join
         self.isabs = os.path.isabs
@@ -66,6 +67,7 @@ class TestSysConfig(unittest.TestCase):
         os.name = self.name
         sys.platform = self.platform
         sys.version = self.version
+        sys._framework = self._framework
         os.sep = self.sep
         os.path.join = self.join
         os.path.isabs = self.isabs
@@ -139,7 +141,7 @@ class TestSysConfig(unittest.TestCase):
         # Mac, framework build.
         os.name = 'posix'
         sys.platform = 'darwin'
-        sys._framework = True
+        sys._framework = "MyPython"
         self.assertIsInstance(schemes, dict)
         self.assertEqual(set(schemes), expected_schemes)
 
