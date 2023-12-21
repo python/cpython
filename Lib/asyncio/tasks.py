@@ -577,7 +577,7 @@ class _AsCompletedIterator:
         self._todo = set()
 
         loop = events.get_event_loop()
-        todo = {ensure_future(aw, loop=loop) for aw in frozenset(aws)}
+        todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
         for f in todo:
             f.add_done_callback(self._handle_completion)
         if todo and timeout is not None:
@@ -594,15 +594,17 @@ class _AsCompletedIterator:
         return self
 
     async def __anext__(self):
-        self._todo_left -= 1
-        if self._todo_left < 0:
+        if not self._todo_left:
             raise StopAsyncIteration
+        assert self._todo_left > 0
+        self._todo_left -= 1
         return await self._wait_for_one()
 
     def __next__(self):
-        self._todo_left -= 1
-        if self._todo_left < 0:
+        if not self._todo_left:
             raise StopIteration
+        assert self._todo_left > 0
+        self._todo_left -= 1
         return self._wait_for_one(resolve=True)
 
     def __del__(self):
