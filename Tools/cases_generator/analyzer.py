@@ -302,7 +302,81 @@ def is_infallible(op: parser.InstDef) -> bool:
     )
 
 
-from flags import makes_escaping_api_call
+NON_ESCAPING_FUNCTIONS = (
+    "Py_INCREF",
+    "_PyDictOrValues_IsValues",
+    "_PyObject_DictOrValuesPointer",
+    "_PyDictOrValues_GetValues",
+    "_PyObject_MakeInstanceAttributesFromDict",
+    "Py_DECREF",
+    "_Py_DECREF_SPECIALIZED",
+    "DECREF_INPUTS_AND_REUSE_FLOAT",
+    "PyUnicode_Append",
+    "_PyLong_IsZero",
+    "Py_SIZE",
+    "Py_TYPE",
+    "PyList_GET_ITEM",
+    "PyTuple_GET_ITEM",
+    "PyList_GET_SIZE",
+    "PyTuple_GET_SIZE",
+    "Py_ARRAY_LENGTH",
+    "Py_Unicode_GET_LENGTH",
+    "PyUnicode_READ_CHAR",
+    "_Py_SINGLETON",
+    "PyUnicode_GET_LENGTH",
+    "_PyLong_IsCompact",
+    "_PyLong_IsNonNegativeCompact",
+    "_PyLong_CompactValue",
+    "_Py_NewRef",
+    "_Py_IsImmortal",
+    "_Py_STR",
+    "_PyLong_Add",
+    "_PyLong_Multiply",
+    "_PyLong_Subtract",
+    "Py_NewRef",
+    "_PyList_ITEMS",
+    "_PyTuple_ITEMS",
+    "_PyList_AppendTakeRef",
+    "_Py_atomic_load_uintptr_relaxed",
+    "_PyFrame_GetCode",
+    "_PyThreadState_HasStackSpace",
+)
+
+ESCAPING_FUNCTIONS = (
+    "import_name",
+    "import_from",
+)
+
+
+def makes_escaping_api_call(instr: parser.InstDef) -> bool:
+    if "CALL_INTRINSIC" in instr.name:
+        return True
+    tkns = iter(instr.tokens)
+    for tkn in tkns:
+        if tkn.kind != lexer.IDENTIFIER:
+            continue
+        try:
+            next_tkn = next(tkns)
+        except StopIteration:
+            return False
+        if next_tkn.kind != lexer.LPAREN:
+            continue
+        if tkn.text in ESCAPING_FUNCTIONS:
+            return True
+        if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
+            continue
+        if tkn.text.endswith("Check"):
+            continue
+        if tkn.text.startswith("Py_Is"):
+            continue
+        if tkn.text.endswith("CheckExact"):
+            continue
+        if tkn.text in NON_ESCAPING_FUNCTIONS:
+            continue
+        return True
+    return False
+
+
 
 EXITS = {
     "DISPATCH",
