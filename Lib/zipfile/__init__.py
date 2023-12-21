@@ -1569,8 +1569,8 @@ class ZipFile:
     def open(self, name, mode="r", pwd=None, *, force_zip64=False):
         """Return file-like object for 'name'.
 
-        name is a string for the file name within the ZIP file, or a ZipInfo
-        object.
+        name is a string or os.PathLike for the file name within the ZIP file,
+        or a ZipInfo instance.
 
         mode should be 'r' to read a file already in the ZIP file, or 'w' to
         write to a file newly added to the archive.
@@ -1590,6 +1590,8 @@ class ZipFile:
             raise ValueError(
                 "Attempt to use ZIP archive that was already closed")
 
+        if isinstance(name, os.PathLike):
+            name = os.fspath(name)
         # Make sure we have an info object
         if isinstance(name, ZipInfo):
             # 'name' is already an info object

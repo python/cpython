@@ -9,6 +9,7 @@ import posixpath
 import struct
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
 import unittest.mock as mock
@@ -1714,6 +1715,22 @@ class OtherTests(unittest.TestCase):
                 zinfo = zipfile.ZipInfo(data)
                 zinfo.flag_bits |= zipfile._MASK_USE_DATA_DESCRIPTOR  # Include an extended local header.
                 orig_zip.writestr(zinfo, data)
+
+    def test_write_read_open_pathlib_pathlike(self):
+        with zipfile.ZipFile(TESTFN2, 'w') as orig_zip:
+            with tempfile.NamedTemporaryFile(delete=False) as t:
+                path = pathlib.PurePath(t.name)
+                t.write(b'1234')
+                t.close()
+                try:
+                    orig_zip.write(path)
+                finally:
+                    os.unlink(path)
+            # We need to look up a relative path within a zipfile.
+            if path.is_absolute():
+                path = path.relative_to(path.parts[0])
+            # ZipFile.read calls ZipFile.open
+            self.assertEqual(orig_zip.read(path), b'1234')
 
     def test_writestr_pathlib_pathlike(self):
         with zipfile.ZipFile(TESTFN2, 'w') as orig_zip:

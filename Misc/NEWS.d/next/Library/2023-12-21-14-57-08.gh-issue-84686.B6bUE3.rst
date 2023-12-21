@@ -1,4 +1,4 @@
-The :mod:`zipfile` module's :meth:`~zipfile.ZipFile.writestr`,
-:meth:`!write`, and :class:`~zipfile.ZipInfo` APIs now accept
-:class:`os.PathLike` objects as a filename.  Patch contributed by
-@domragusa.
+The :class:`zipfile.ZipFile` instance APIs :meth:`!open`, :meth:`!read`,
+:meth:`!write`, :meth:`!writestr`, as well as :class:`~zipfile.ZipInfo` now
+accept :class:`os.PathLike` objects as a filename.
+Original patch contributed by @domragusa.
