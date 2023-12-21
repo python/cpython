@@ -12686,7 +12686,17 @@ PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
 }
 
 /*[clinic input]
-str.rsplit as unicode_rsplit = str.split
+str.rsplit as unicode_rsplit
+
+    sep: object = None
+        The separator used to split the string.
+
+        When set to None (the default value), will split on any whitespace
+        character (including \n \r \t \f and spaces) and will discard
+        empty strings from the result.
+    maxsplit: Py_ssize_t = -1
+        Maximum number of splits (starting from the right).
+        -1 (the default value) means no limit.
 
 Return a list of the substrings in the string, using sep as the separator string.
 
