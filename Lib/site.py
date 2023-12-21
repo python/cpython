@@ -176,19 +176,20 @@ def addpackage(sitedir, name, known_paths):
     except OSError:
         return
     with f:
-        try:
-            f.readline()
-            f.seek(0)
-        except UnicodeDecodeError:
-            # MacOS can create files with a "._" prefix in the name
-            # next to the regular file when the system needs to store
-            # metadata (such as extended attributes) that the filesystem
-            # cannot store natively.
-            #
-            # Ignore errors when trying to parse these files.
-            if name.startswith("._") and os.path.exists(os.path.join(sitedir, name[2:])):
-                return
-            raise
+        if name.startswith*("._"):
+            try:
+                f.readline()
+                f.seek(0)
+            except UnicodeDecodeError:
+                # MacOS can create files with a "._" prefix in the name
+                # next to the regular file when the system needs to store
+                # metadata (such as extended attributes) that the filesystem
+                # cannot store natively.
+                #
+                # Ignore errors when trying to parse these files.
+                if os.path.exists(os.path.join(sitedir, name[2:])):
+                    return
+                raise
 
         for n, line in enumerate(f):
             if line.startswith("#"):
