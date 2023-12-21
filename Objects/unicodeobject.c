@@ -12705,7 +12705,7 @@ Splitting starts at the end of the string and works to the front.
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=c2b815c63bcabffc input=ea78406060fce33c]*/
+/*[clinic end generated code: output=c2b815c63bcabffc input=e58ee898aeab2b5e]*/
 {
     if (sep == Py_None)
         return rsplit(self, NULL, maxsplit);
