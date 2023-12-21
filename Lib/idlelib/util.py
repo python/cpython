@@ -13,9 +13,9 @@ TODO:
     * warning stuff (pyshell, run).
 """
 
-# .pyw is for Windows; .pyi is for stub files.
-py_extensions = ('.py', '.pyw', '.pyi')  # Order needed for open/save dialogs.
-
+# .pyw is for Windows; .pyi is for typing stub files.
+# The extension order is needed for iomenu open/save dialogs.
+py_extensions = ('.py', '.pyw', '.pyi')
 
 if __name__ == '__main__':
     from unittest import main

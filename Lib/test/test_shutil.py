@@ -1132,10 +1132,11 @@ class TestCopy(BaseTest, unittest.TestCase):
         os.lchmod(src_link, stat.S_IRWXO|stat.S_IRWXG)
         # link to link
         os.lchmod(dst_link, stat.S_IRWXO)
+        old_mode = os.stat(dst).st_mode
         shutil.copymode(src_link, dst_link, follow_symlinks=False)
         self.assertEqual(os.lstat(src_link).st_mode,
                          os.lstat(dst_link).st_mode)
-        self.assertNotEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        self.assertEqual(os.stat(dst).st_mode, old_mode)
         # src link - use chmod
         os.lchmod(dst_link, stat.S_IRWXO)
         shutil.copymode(src_link, dst, follow_symlinks=False)
@@ -1670,6 +1671,17 @@ class TestArchives(BaseTest, unittest.TestCase):
         # now create another tarball using `tar`
         tarball2 = os.path.join(root_dir, 'archive2.tar')
         tar_cmd = ['tar', '-cf', 'archive2.tar', base_dir]
+        if sys.platform == 'darwin':
+            # macOS tar can include extended attributes,
+            # ACLs and other mac specific metadata into the
+            # archive (an recentish version of the OS).
+            #
+            # This feature can be disabled with the
+            # '--no-mac-metadata' option on macOS 11 or
+            # later.
+            import platform
+            if int(platform.mac_ver()[0].split('.')[0]) >= 11:
+                tar_cmd.insert(1, '--no-mac-metadata')
         subprocess.check_call(tar_cmd, cwd=root_dir,
                               stdout=subprocess.DEVNULL)
 

@@ -61,8 +61,6 @@ from typing import (
 #         and keyword-only
 #
 
-version = '1'
-
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {
@@ -373,49 +371,6 @@ def pprint_words(items: list[str]) -> str:
         return " and ".join(items)
     else:
         return ", ".join(items[:-1]) + " and " + items[-1]
-
-
-def version_splitter(s: str) -> tuple[int, ...]:
-    """Splits a version string into a tuple of integers.
-
-    The following ASCII characters are allowed, and employ
-    the following conversions:
-        a -> -3
-        b -> -2
-        c -> -1
-    (This permits Python-style version strings such as "1.4b3".)
-    """
-    version: list[int] = []
-    accumulator: list[str] = []
-    def flush() -> None:
-        if not accumulator:
-            fail(f'Unsupported version string: {s!r}')
-        version.append(int(''.join(accumulator)))
-        accumulator.clear()
-
-    for c in s:
-        if c.isdigit():
-            accumulator.append(c)
-        elif c == '.':
-            flush()
-        elif c in 'abc':
-            flush()
-            version.append('abc'.index(c) - 3)
-        else:
-            fail(f'Illegal character {c!r} in version string {s!r}')
-    flush()
-    return tuple(version)
-
-def version_comparator(version1: str, version2: str) -> Literal[-1, 0, 1]:
-    iterator = itertools.zip_longest(
-        version_splitter(version1), version_splitter(version2), fillvalue=0
-    )
-    for a, b in iterator:
-        if a < b:
-            return -1
-        if a > b:
-            return 1
-    return 0
 
 
 class CRenderData:
@@ -850,6 +805,10 @@ class CLanguage(Language):
         static PyObject *
         {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
     """)
+    PARSER_PROTOTYPE_SETTER: Final[str] = normalize_snippet("""
+        static int
+        {c_basename}({self_type}{self_name}, PyObject *value, void *Py_UNUSED(context))
+    """)
     METH_O_PROTOTYPE: Final[str] = normalize_snippet("""
         static PyObject *
         {c_basename}({impl_parameters})
@@ -861,6 +820,11 @@ class CLanguage(Language):
         PyDoc_STRVAR({c_basename}__doc__,
         {docstring});
     """)
+    GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
+        PyDoc_STRVAR({getset_basename}__doc__,
+        {docstring});
+        #define {getset_basename}_HAS_DOCSTR
+    """)
     IMPL_DEFINITION_PROTOTYPE: Final[str] = normalize_snippet("""
         static {impl_return_type}
         {c_basename}_impl({impl_parameters})
@@ -870,8 +834,30 @@ class CLanguage(Language):
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
     """)
     GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
-        #define {getter_name}    \
-            {{"{name}", (getter){c_basename}, NULL, NULL}},
+        #if defined({getset_basename}_HAS_DOCSTR)
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        #  define {getset_basename}_DOCSTR NULL
+        #endif
+        #if defined({getset_name}_GETSETDEF)
+        #  undef {getset_name}_GETSETDEF
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+        #else
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
+        #endif
+    """)
+    SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+        #if defined({getset_name}_HAS_DOCSTR)
+        #  define {getset_basename}_DOCSTR {getset_basename}__doc__
+        #else
+        #  define {getset_basename}_DOCSTR NULL
+        #endif
+        #if defined({getset_name}_GETSETDEF)
+        #  undef {getset_name}_GETSETDEF
+        #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+        #else
+        #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
+        #endif
     """)
     METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
         #ifndef {methoddef_name}
@@ -1171,6 +1157,16 @@ class CLanguage(Language):
             docstring_prototype = docstring_definition = ''
         elif f.kind is GETTER:
             methoddef_define = self.GETTERDEF_PROTOTYPE_DEFINE
+            if f.docstring:
+                docstring_prototype = ''
+                docstring_definition = self.GETSET_DOCSTRING_PROTOTYPE_STRVAR
+            else:
+                docstring_prototype = docstring_definition = ''
+        elif f.kind is SETTER:
+            if f.docstring:
+                fail("docstrings are only supported for @getter, not @setter")
+            return_value_declaration = "int {return_value};"
+            methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
         else:
             docstring_prototype = self.DOCSTRING_PROTOTYPE_VAR
@@ -1226,11 +1222,18 @@ class CLanguage(Language):
             limited_capi = False
 
         parsearg: str | None
+        if f.kind in {GETTER, SETTER} and parameters:
+            fail(f"@{f.kind.name.lower()} method cannot define parameters")
+
         if not parameters:
             parser_code: list[str] | None
             if f.kind is GETTER:
                 flags = "" # This should end up unused
                 parser_prototype = self.PARSER_PROTOTYPE_GETTER
+                parser_code = []
+            elif f.kind is SETTER:
+                flags = ""
+                parser_prototype = self.PARSER_PROTOTYPE_SETTER
                 parser_code = []
             elif not requires_defining_class:
                 # no parameters, METH_NOARGS
@@ -1944,9 +1947,16 @@ class CLanguage(Language):
         full_name = f.full_name
         template_dict = {'full_name': full_name}
         template_dict['name'] = f.displayname
-        if f.kind is GETTER:
-            template_dict['getter_name'] = f.c_basename.upper() + "_GETTERDEF"
-            template_dict['c_basename'] = f.c_basename + "_get"
+        if f.kind in {GETTER, SETTER}:
+            template_dict['getset_name'] = f.c_basename.upper()
+            template_dict['getset_basename'] = f.c_basename
+            if f.kind is GETTER:
+                template_dict['c_basename'] = f.c_basename + "_get"
+            elif f.kind is SETTER:
+                template_dict['c_basename'] = f.c_basename + "_set"
+                # Implicitly add the setter value parameter.
+                data.impl_parameters.append("PyObject *value")
+                data.impl_arguments.append("value")
         else:
             template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
             template_dict['c_basename'] = f.c_basename
@@ -1959,7 +1969,11 @@ class CLanguage(Language):
             converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
-        template_dict['impl_return_type'] = f.return_converter.type
+        if f.kind is SETTER:
+            # All setters return an int.
+            template_dict['impl_return_type'] = 'int'
+        else:
+            template_dict['impl_return_type'] = f.return_converter.type
 
         template_dict['declarations'] = format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
@@ -2954,6 +2968,7 @@ class FunctionKind(enum.Enum):
     METHOD_INIT     = enum.auto()
     METHOD_NEW      = enum.auto()
     GETTER          = enum.auto()
+    SETTER          = enum.auto()
 
     @functools.cached_property
     def new_or_init(self) -> bool:
@@ -2970,6 +2985,7 @@ CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
 METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
 GETTER: Final = FunctionKind.GETTER
+SETTER: Final = FunctionKind.SETTER
 
 ParamDict = dict[str, "Parameter"]
 ReturnConverterType = Callable[..., "CReturnConverter"]
@@ -3056,7 +3072,7 @@ class Function:
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
             case _ as kind:
-                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER}
+                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER, FunctionKind.SETTER}
                 assert kind in acceptable_kinds, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
@@ -3184,7 +3200,7 @@ def add_legacy_c_converter(
 
 class CConverterAutoRegister(type):
     def __init__(
-        cls, name: str, bases: tuple[type, ...], classdict: dict[str, Any]
+        cls, name: str, bases: tuple[type[object], ...], classdict: dict[str, Any]
     ) -> None:
         converter_cls = cast(type["CConverter"], cls)
         add_c_converter(converter_cls)
@@ -3217,7 +3233,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type: bltns.type[Any] | tuple[bltns.type[Any], ...] | None = None
+    default_type: bltns.type[object] | tuple[bltns.type[object], ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
@@ -3683,7 +3699,7 @@ legacy_converters: ConverterDict = {}
 ReturnConverterDict = dict[str, ReturnConverterType]
 return_converters: ReturnConverterDict = {}
 
-TypeSet = set[bltns.type[Any]]
+TypeSet = set[bltns.type[object]]
 
 
 class bool_converter(CConverter):
@@ -3697,7 +3713,7 @@ class bool_converter(CConverter):
             self.format_unit = 'i'
         elif accept != {object}:
             fail(f"bool_converter: illegal 'accept' argument {accept!r}")
-        if self.default is not unspecified:
+        if self.default is not unspecified and self.default is not unknown:
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
 
@@ -4347,7 +4363,7 @@ class buffer: pass
 class rwbuffer: pass
 class robuffer: pass
 
-StrConverterKeyType = tuple[frozenset[type], bool, bool]
+StrConverterKeyType = tuple[frozenset[type[object]], bool, bool]
 
 def str_converter_key(
     types: TypeSet, encoding: bool | str | None, zeroes: bool
@@ -4702,7 +4718,7 @@ class Py_buffer_converter(CConverter):
 def correct_name_for_self(
         f: Function
 ) -> tuple[str, str]:
-    if f.kind in {CALLABLE, METHOD_INIT, GETTER}:
+    if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
@@ -4846,7 +4862,7 @@ class CReturnConverterAutoRegister(type):
     def __init__(
             cls: ReturnConverterType,
             name: str,
-            bases: tuple[type, ...],
+            bases: tuple[type[object], ...],
             classdict: dict[str, Any]
     ) -> None:
         add_c_return_converter(cls)
@@ -5201,13 +5217,6 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
 
-    def directive_version(self, required: str) -> None:
-        global version
-        if version_comparator(version, required) < 0:
-            fail("Insufficient Clinic version!\n"
-                 f"  Version: {version}\n"
-                 f"  Required: {required}")
-
     def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
         module, cls = self.clinic._module_and_class(fields)
@@ -5335,7 +5344,22 @@ class DSLParser:
         self.critical_section = True
 
     def at_getter(self) -> None:
-        self.kind = GETTER
+        match self.kind:
+            case FunctionKind.GETTER:
+                fail("Cannot apply @getter twice to the same function!")
+            case FunctionKind.SETTER:
+                fail("Cannot apply both @getter and @setter to the same function!")
+            case _:
+                self.kind = FunctionKind.GETTER
+
+    def at_setter(self) -> None:
+        match self.kind:
+            case FunctionKind.SETTER:
+                fail("Cannot apply @setter twice to the same function!")
+            case FunctionKind.GETTER:
+                fail("Cannot apply both @getter and @setter to the same function!")
+            case _:
+                self.kind = FunctionKind.SETTER
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
@@ -5536,6 +5560,8 @@ class DSLParser:
 
         return_converter = None
         if returns:
+            if self.kind in {GETTER, SETTER}:
+                fail(f"@{self.kind.name.lower()} method cannot define a return type")
             ast_input = f"def x() -> {returns}: pass"
             try:
                 module_node = ast.parse(ast_input)
@@ -5556,6 +5582,10 @@ class DSLParser:
         fields = [x.strip() for x in full_name.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
+
+        if self.kind in {GETTER, SETTER}:
+            if not cls:
+                fail("@getter and @setter must be methods")
 
         self.update_function_kind(full_name)
         if self.kind is METHOD_INIT and not return_converter:
@@ -6194,6 +6224,9 @@ class DSLParser:
         add(f.displayname)
         if self.forced_text_signature:
             add(self.forced_text_signature)
+        elif f.kind in {GETTER, SETTER}:
+            # @getter and @setter do not need signatures like a method or a function.
+            return ''
         else:
             add('(')
 
@@ -6366,8 +6399,8 @@ class DSLParser:
     def format_docstring(self) -> str:
         assert self.function is not None
         f = self.function
-        if f.kind.new_or_init and not f.docstring:
-            # don't render a docstring at all, no signature, nothing.
+        # For the following special cases, it does not make sense to render a docstring.
+        if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
             return f.docstring
 
         # Enforce the summary line!
@@ -6479,7 +6512,7 @@ The purpose of the Argument Clinic is automating all the boilerplate involved
 with writing argument parsing code for builtins and providing introspection
 signatures ("docstrings") for CPython builtins.
 
-For more information see https://docs.python.org/3/howto/clinic.html""")
+For more information see https://devguide.python.org/development-tools/clinic/""")
     cmdline.add_argument("-f", "--force", action='store_true',
                          help="force output regeneration")
     cmdline.add_argument("-o", "--output", type=str,

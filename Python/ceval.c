@@ -24,6 +24,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_uop_ids.h"       // Uops
 #include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_pyerrors.h"
 
@@ -135,14 +136,14 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
-                    _Py_CODEUNIT *next_instr)
+                    _Py_CODEUNIT *next_instr,
+                    int opcode,
+                    int oparg)
 {
     if (frame->owner == FRAME_OWNED_BY_CSTACK) {
         return;
     }
     dump_stack(frame, stack_pointer);
-    int oparg = next_instr->op.arg;
-    int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
@@ -1051,9 +1052,10 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1));
+            (int)(next_uop - current_executor->trace - 1),
+            _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1062,30 +1064,16 @@ error_tier_two:
 
 // Jump here from DEOPT_IF()
 deoptimize:
-    // On DEOPT_IF we just repeat the last instruction.
-    // This presumes nothing was popped from the stack (nor pushed).
-    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d]\n",
+    next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1));
+            (int)(next_uop - current_executor->trace - 1),
+            _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    frame->return_offset = 0;  // Dispatch to frame->instr_ptr
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     Py_DECREF(current_executor);
-    // Fall through
-// Jump here from ENTER_EXECUTOR
-enter_tier_one:
-    next_instr = frame->instr_ptr;
-    goto resume_frame;
+    DISPATCH();
 
-// Jump here from _EXIT_TRACE
-exit_trace:
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
-    Py_DECREF(current_executor);
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    goto enter_tier_one;
 }
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
@@ -2415,7 +2403,7 @@ PyObject *
 _PyEval_GetBuiltin(PyObject *name)
 {
     PyObject *attr;
-    if (PyDict_GetItemRef(PyEval_GetBuiltins(), name, &attr) == 0) {
+    if (PyMapping_GetOptionalItem(PyEval_GetBuiltins(), name, &attr) == 0) {
         PyErr_SetObject(PyExc_AttributeError, name);
     }
     return attr;
@@ -2568,7 +2556,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyDict_GetItemRef(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {
@@ -2614,11 +2602,10 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     /* Issue #17636: in case this failed because of a circular relative
        import, try to fallback on reading the module directly from
        sys.modules. */
-    pkgname = PyObject_GetAttr(v, &_Py_ID(__name__));
-    if (pkgname == NULL) {
-        goto error;
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__name__), &pkgname) < 0) {
+        return NULL;
     }
-    if (!PyUnicode_Check(pkgname)) {
+    if (pkgname == NULL || !PyUnicode_Check(pkgname)) {
         Py_CLEAR(pkgname);
         goto error;
     }
@@ -2635,42 +2622,59 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     Py_DECREF(pkgname);
     return x;
  error:
-    pkgpath = PyModule_GetFilenameObject(v);
     if (pkgname == NULL) {
         pkgname_or_unknown = PyUnicode_FromString("<unknown module name>");
         if (pkgname_or_unknown == NULL) {
-            Py_XDECREF(pkgpath);
             return NULL;
         }
     } else {
         pkgname_or_unknown = pkgname;
     }
 
+    pkgpath = NULL;
+    if (PyModule_Check(v)) {
+        pkgpath = PyModule_GetFilenameObject(v);
+        if (pkgpath == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(pkgname_or_unknown);
+                return NULL;
+            }
+            // module filename missing
+            _PyErr_Clear(tstate);
+        }
+    }
     if (pkgpath == NULL || !PyUnicode_Check(pkgpath)) {
-        _PyErr_Clear(tstate);
+        Py_CLEAR(pkgpath);
         errmsg = PyUnicode_FromFormat(
             "cannot import name %R from %R (unknown location)",
             name, pkgname_or_unknown
         );
-        /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, NULL, name);
     }
     else {
-        PyObject *spec = PyObject_GetAttr(v, &_Py_ID(__spec__));
+        PyObject *spec;
+        int rc = PyObject_GetOptionalAttr(v, &_Py_ID(__spec__), &spec);
+        if (rc > 0) {
+            rc = _PyModuleSpec_IsInitializing(spec);
+            Py_DECREF(spec);
+        }
+        if (rc < 0) {
+            Py_DECREF(pkgname_or_unknown);
+            Py_DECREF(pkgpath);
+            return NULL;
+        }
         const char *fmt =
-            _PyModuleSpec_IsInitializing(spec) ?
+            rc ?
             "cannot import name %R from partially initialized module %R "
             "(most likely due to a circular import) (%S)" :
             "cannot import name %R from %R (%S)";
-        Py_XDECREF(spec);
 
         errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
-        /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
     }
+    /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
+    _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
 
     Py_XDECREF(errmsg);
-    Py_XDECREF(pkgname_or_unknown);
+    Py_DECREF(pkgname_or_unknown);
     Py_XDECREF(pkgpath);
     return NULL;
 }

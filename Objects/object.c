@@ -1196,7 +1196,7 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         }
         return 0;
     }
-    if (tp->tp_getattro == (getattrofunc)_Py_type_getattro) {
+    if (tp->tp_getattro == _Py_type_getattro) {
         int supress_missing_attribute_exception = 0;
         *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
         if (supress_missing_attribute_exception) {
@@ -2026,7 +2026,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
-    0,                  /*tp_richcompare */
+    _Py_BaseObject_RichCompare, /*tp_richcompare */
     0,                  /*tp_weaklistoffset */
     0,                  /*tp_iter */
     0,                  /*tp_iternext */
