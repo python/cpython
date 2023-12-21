@@ -563,11 +563,13 @@ class ZipInfo:
         filename should be the path to a file or directory on the filesystem.
 
         arcname is the name which it will have within the archive (by default,
-        this will be the same as filename, but without a drive letter and with
-        leading path separators removed).
+        this will be the same as filename).  The drive letter and leading path
+        separators are always removed.
         """
         if isinstance(filename, os.PathLike):
             filename = os.fspath(filename)
+        if isinstance(arcname, os.PathLike):
+            arcname = os.fspath(arcname)
         st = os.stat(filename)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
