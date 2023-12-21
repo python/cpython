@@ -1051,7 +1051,12 @@ class TracebackException:
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _safe_string(exc_value, 'exception')
-        self.__notes__ = getattr(exc_value, '__notes__', None)
+        notes = None
+        try:
+            notes = getattr(exc_value, '__notes__', None)
+        except Exception:
+            pass
+        self.__notes__ = notes
 
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
