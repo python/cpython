@@ -633,7 +633,7 @@ class TestSupport(unittest.TestCase):
             if depth:
                 recursive_function(depth - 1)
 
-        for max_depth in (5, 25, 250):
+        for max_depth in (5, 25, 250, 2500):
             with support.infinite_recursion(max_depth):
                 available = support.get_recursion_available()
 
