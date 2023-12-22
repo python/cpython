@@ -597,6 +597,24 @@ functions, classes, and the `__test__` dictionary, if it exists:
      2  some_module.__test__.d
      1  some_module.sample_func
 
+When ``__test__`` is falsy, this value should be ignored:
+
+    >>> import types
+    >>> m = types.ModuleType('falsy_magic_test')
+    >>> m.__dict__.update({'__test__': None})
+
+    >>> finder = doctest.DocTestFinder()
+    >>> # Use module=test.test_doctest, to prevent doctest from
+    >>> # ignoring the objects since they weren't defined in m.
+    >>> import test.test_doctest
+    >>> finder.find(m, module=test.test_doctest)
+    []
+
+    >>> m.__dict__.update({'__test__': False})
+    >>> finder.find(m, module=test.test_doctest)
+    []
+
+
 Duplicate Removal
 ~~~~~~~~~~~~~~~~~
 If a single object is listed twice (under different names), then tests

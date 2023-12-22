@@ -1040,7 +1040,7 @@ class DocTestFinder:
 
         # Look for tests in a module's __test__ dictionary.
         if inspect.ismodule(obj) and self._recurse:
-            for valname, val in getattr(obj, '__test__', {}).items():
+            for valname, val in (getattr(obj, '__test__', None) or {}).items():
                 if not isinstance(valname, str):
                     raise ValueError("DocTestFinder.find: __test__ keys "
                                      "must be strings: %r" %
