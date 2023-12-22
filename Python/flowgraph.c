@@ -648,7 +648,7 @@ mark_except_handlers(basicblock *entryblock) {
 
 
 struct _PyCfgExceptStack {
-    basicblock *handlers[CO_MAXBLOCKS+1];
+    basicblock *handlers[CO_MAXBLOCKS+2];
     int depth;
 };
 
@@ -661,6 +661,7 @@ push_except_block(struct _PyCfgExceptStack *stack, cfg_instr *setup) {
     if (opcode == SETUP_WITH || opcode == SETUP_CLEANUP) {
         target->b_preserve_lasti = 1;
     }
+    assert(stack->depth <= CO_MAXBLOCKS);
     stack->handlers[++stack->depth] = target;
     return target;
 }
