@@ -399,7 +399,7 @@ class ZipInfo:
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
         if isinstance(filename, os.PathLike):
-            filename = os.fspath(filename)
+            filename = _sanitize_filename(os.fspath(filename))
         self.orig_filename = filename   # Original file name in archive
 
         # Terminate the file name at the first null byte and
