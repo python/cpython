@@ -4,13 +4,13 @@ import textwrap
 from typing import Final
 
 
-SIG_END_MARKER: Final = '--'
+SIG_END_MARKER: Final = "--"
 
 
 def docstring_for_c_string(docstring: str) -> str:
     lines = []
     # turn docstring into a properly quoted C string
-    for line in docstring.split('\n'):
+    for line in docstring.split("\n"):
         lines.append('"')
         lines.append(_quoted_for_c_string(line))
         lines.append('\\n"\n')
@@ -22,13 +22,13 @@ def docstring_for_c_string(docstring: str) -> str:
     else:
         lines.pop()
         lines.append('"')
-    return ''.join(lines)
+    return "".join(lines)
 
 
 def _quoted_for_c_string(s: str) -> str:
     """Helper for docstring_for_c_string()."""
     for old, new in (
-        ('\\', '\\\\'), # must be first!
+        ("\\", "\\\\"),  # must be first!
         ('"', '\\"'),
         ("'", "\\'"),
     ):
@@ -44,14 +44,19 @@ def wrapped_c_string_literal(
     text: str,
     *,
     width: int = 72,
-    suffix: str = '',
+    suffix: str = "",
     initial_indent: int = 0,
     subsequent_indent: int = 4
 ) -> str:
-    wrapped = textwrap.wrap(text, width=width, replace_whitespace=False,
-                            drop_whitespace=False, break_on_hyphens=False)
-    separator = c_repr(suffix + '\n' + subsequent_indent * ' ')
-    return initial_indent * ' ' + c_repr(separator.join(wrapped))
+    wrapped = textwrap.wrap(
+        text,
+        width=width,
+        replace_whitespace=False,
+        drop_whitespace=False,
+        break_on_hyphens=False,
+    )
+    separator = c_repr(suffix + "\n" + subsequent_indent * " ")
+    return initial_indent * " " + c_repr(separator.join(wrapped))
 
 
 def _add_prefix_and_suffix(s: str, prefix: str = "", suffix: str = "") -> str:
