@@ -2175,7 +2175,8 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    if (type == &PyCSimpleType_Type && fmt->setfunc_swapped && fmt->getfunc_swapped) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (type == st->PyCSimpleType_Type && fmt->setfunc_swapped && fmt->getfunc_swapped) {
         PyObject *swapped = CreateSwappedType(type, args, kwds,
                                               proto, fmt);
         StgDictObject *sw_dict;
@@ -2283,6 +2284,13 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     return NULL;
 }
 
+static int
+PyCSimpleType_traverse(PyTypeObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static PyMethodDef PyCSimpleType_methods[] = {
     { "from_param", PyCSimpleType_from_param, METH_O, from_param_doc },
     { "from_address", CDataType_from_address, METH_O, from_address_doc },
@@ -2292,46 +2300,20 @@ static PyMethodDef PyCSimpleType_methods[] = {
     { NULL, NULL },
 };
 
-PyTypeObject PyCSimpleType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCSimpleType",                                    /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,             /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("metatype for the PyCSimpleType Objects"), /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    PyCSimpleType_methods,                      /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    PyCSimpleType_new,                                  /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot pycsimple_type_type_slots[] = {
+    {Py_sq_repeat, CDataType_repeat},
+    {Py_tp_doc, PyDoc_STR("metatype for the PyCSimpleType Objects")},
+    {Py_tp_methods, PyCSimpleType_methods},
+    {Py_tp_new, PyCSimpleType_new},
+    {Py_tp_traverse, PyCSimpleType_traverse},
+    {0, NULL},
+};
+
+PyType_Spec pycsimple_type_type_spec = {
+    .name = "_ctypes.PyCSimpleType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycsimple_type_type_slots,
 };
 
 /******************************************************************/
@@ -5694,7 +5676,9 @@ _ctypes_add_types(PyObject *mod)
     TYPE_READY_BASE(&UnionType_Type, &PyType_Type);
     TYPE_READY_BASE(&PyCPointerType_Type, &PyType_Type);
     TYPE_READY_BASE(&PyCArrayType_Type, &PyType_Type);
-    TYPE_READY_BASE(&PyCSimpleType_Type, &PyType_Type);
+    // TYPE_READY_BASE(&PyCSimpleType_Type, &PyType_Type);
+    CREATE_TYPE(mod, st->PyCSimpleType_Type, &pycsimple_type_type_spec,
+                &PyType_Type);
     TYPE_READY_BASE(&PyCFuncPtrType_Type, &PyType_Type);
 
     /*************************************************
@@ -5706,7 +5690,7 @@ _ctypes_add_types(PyObject *mod)
     MOD_ADD_TYPE(&Union_Type, &UnionType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCPointer_Type, &PyCPointerType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCArray_Type, &PyCArrayType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&Simple_Type, &PyCSimpleType_Type, &PyCData_Type);
+    MOD_ADD_TYPE(&Simple_Type, st->PyCSimpleType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type, &PyCData_Type);
 
     /*************************************************

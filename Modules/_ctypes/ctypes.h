@@ -33,7 +33,7 @@
 #endif
 
 typedef struct {
-    PyTypeObject *DictRemover_Type;
+PyTypeObject *DictRemover_Type;
     PyTypeObject *PyCArg_Type;
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
@@ -41,6 +41,7 @@ typedef struct {
     PyTypeObject *PyComError_Type;
 #endif
     PyTypeObject *StructParam_Type;
+    PyTypeObject *PyCSimpleType_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;
@@ -155,9 +156,8 @@ extern PyTypeObject PyCData_Type;
 #define CDataObject_Check(v)            PyObject_TypeCheck(v, &PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
 
-extern PyTypeObject PyCSimpleType_Type;
-#define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, &PyCSimpleType_Type)
-#define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCSimpleType_Type)
+#define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, GLOBAL_STATE()->PyCSimpleType_Type)
+#define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, GLOBAL_STATE()->PyCSimpleType_Type)
 
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
