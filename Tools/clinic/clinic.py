@@ -257,14 +257,12 @@ def linear_format(s: str, **kwargs: str) -> str:
     for line in s.split('\n'):
         indent, curly, trailing = line.partition('{')
         if not curly:
-            lines.append(line)
-            lines.append('\n')
+            lines.extend([line, "\n"])
             continue
 
         name, curly, trailing = trailing.partition('}')
         if not curly or name not in kwargs:
-            lines.append(line)
-            lines.append('\n')
+            lines.extend([line, "\n"])
             continue
 
         if trailing:
@@ -280,8 +278,7 @@ def linear_format(s: str, **kwargs: str) -> str:
 
         stripped = [line.rstrip() for line in value.split("\n")]
         value = textwrap.indent("\n".join(stripped), indent)
-        lines.append(value)
-        lines.append('\n')
+        lines.extend([value, "\n"])
 
     return "".join(lines[:-1])
 
@@ -6232,8 +6229,7 @@ class DSLParser:
                 else:
                     s = ' ' + text
                     if line_length + len(s) >= 72:
-                        lines.append('\n')
-                        lines.append(indent)
+                        lines.extend(["\n", indent])
                         line_length = len(indent)
                         s = text
                 line_length += len(s)
@@ -6260,8 +6256,7 @@ class DSLParser:
                     added_star = True
                     add_parameter('*,')
 
-                p_lines = []
-                p_lines.append(fix_right_bracket_count(p.right_bracket_count))
+                p_lines = [fix_right_bracket_count(p.right_bracket_count)]
 
                 if isinstance(p.converter, self_converter):
                     # annotate first parameter as being a "self".
