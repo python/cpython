@@ -35,7 +35,6 @@ Doc/library/bdb.rst
 Doc/library/bisect.rst
 Doc/library/calendar.rst
 Doc/library/cmd.rst
-Doc/library/collections.abc.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
@@ -63,11 +62,9 @@ Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
 Doc/library/lzma.rst
-Doc/library/mailbox.rst
 Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/multiprocessing.shared_memory.rst
-Doc/library/numbers.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/pickle.rst
@@ -81,7 +78,6 @@ Doc/library/pyexpat.rst
 Doc/library/random.rst
 Doc/library/readline.rst
 Doc/library/resource.rst
-Doc/library/rlcompleter.rst
 Doc/library/select.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
@@ -90,7 +86,6 @@ Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
 Doc/library/subprocess.rst
-Doc/library/tarfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
 Doc/library/tkinter.rst
@@ -119,7 +114,6 @@ Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst
 Doc/whatsnew/2.2.rst
-Doc/whatsnew/2.3.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst

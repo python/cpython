@@ -6,13 +6,19 @@
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_uop_ids.h"
 #include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
+#define NEED_OPCODE_METADATA
+#include "pycore_uop_metadata.h" // Uop tables
+#undef NEED_OPCODE_METADATA
+
 #define MAX_EXECUTORS_SIZE 256
+
 
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
@@ -327,9 +333,6 @@ uop_dealloc(_PyUOpExecutorObject *self) {
 const char *
 _PyUOpName(int index)
 {
-    if (index <= MAX_REAL_OPCODE) {
-        return _PyOpcode_OpName[index];
-    }
     return _PyOpcode_uop_name[index];
 }
 
@@ -388,7 +391,7 @@ PyTypeObject _PyUOpExecutor_Type = {
 
 /* TO DO -- Generate these tables */
 static const uint16_t
-_PyUOp_Replacements[OPCODE_METADATA_SIZE] = {
+_PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
@@ -629,14 +632,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                         oparg += extras;
                                     }
                                 }
-                                if (_PyUOp_Replacements[uop]) {
-                                    uop = _PyUOp_Replacements[uop];
-                                    if (uop == _FOR_ITER_TIER_TWO) {
-                                        target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
-                                        assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
-                                               _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
-                                    }
-                                }
                                 break;
                             case OPARG_CACHE_1:
                                 operand = read_u16(&instr[offset].cache);
@@ -657,7 +652,15 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 oparg = offset;
                                 assert(uop == _SAVE_RETURN_OFFSET);
                                 break;
-
+                            case OPARG_REPLACED:
+                                uop = _PyUOp_Replacements[uop];
+                                assert(uop != 0);
+                                if (uop == _FOR_ITER_TIER_TWO) {
+                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
+                                    assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
+                                            _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
+                                }
+                                break;
                             default:
                                 fprintf(stderr,
                                         "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
@@ -799,7 +802,8 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
         }
         /* All other micro-ops fall through, so i+1 is reachable */
         SET_BIT(used, i+1);
-        if (OPCODE_HAS_JUMP(opcode)) {
+        assert(opcode <= MAX_UOP_ID);
+        if (_PyUop_Flags[opcode] & HAS_JUMP_FLAG) {
             /* Mark target as reachable */
             SET_BIT(used, buffer[i].oparg);
         }
