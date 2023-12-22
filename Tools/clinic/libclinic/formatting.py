@@ -1,4 +1,4 @@
-"""A collection of various string formatting helpers."""
+"""A collection of string formatting helpers."""
 import textwrap
 
 from typing import Final
@@ -9,7 +9,7 @@ SIG_END_MARKER: Final = "--"
 
 def docstring_for_c_string(docstring: str) -> str:
     lines = []
-    # turn docstring into a properly quoted C string
+    # Turn docstring into a properly quoted C string.
     for line in docstring.split("\n"):
         lines.append('"')
         lines.append(_quoted_for_c_string(line))
