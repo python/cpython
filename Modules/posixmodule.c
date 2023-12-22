@@ -12826,7 +12826,7 @@ os_fstatvfs_impl(PyObject *module, int fd)
     int async_err = 0;
 #ifdef __APPLE__
     struct statfs st;
-    /* On macOS os.fstatvfs is implemented using fstatfs(2) because 
+    /* On macOS os.fstatvfs is implemented using fstatfs(2) because
      * the former uses 32-bit values for block counts.
      */
     do {
