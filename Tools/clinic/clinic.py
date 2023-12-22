@@ -1800,8 +1800,7 @@ class CLanguage(Language):
         out.append('        goto exit;\n')
         out.append("}")
 
-        output = "".join(out)
-        template_dict['option_group_parsing'] = format_escape(output)
+        template_dict['option_group_parsing'] = format_escape("".join(out))
 
     def render_function(
             self,
