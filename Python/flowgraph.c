@@ -634,6 +634,7 @@ mark_except_handlers(basicblock *entryblock) {
     return SUCCESS;
 }
 
+
 typedef _PyCfgExceptStack ExceptStack;
 
 static basicblock *
