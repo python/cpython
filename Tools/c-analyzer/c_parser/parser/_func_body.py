@@ -65,11 +65,11 @@ def parse_function_body(name, text, resolve, source, anon_name, parent):
          ) = m.groups()
 
         if empty:
-            log_match('', m)
+            log_match('', m, depth)
             resolve(None, None, None, text)
             yield None, text
         elif inline_kind:
-            log_match('', m)
+            log_match('', m, depth)
             kind = inline_kind
             name = inline_name or anon_name('inline-')
             data = []  # members
@@ -92,7 +92,7 @@ def parse_function_body(name, text, resolve, source, anon_name, parent):
             # XXX Should "parent" really be None for inline type decls?
             yield resolve(kind, data, name, text, None), text
         elif block_close:
-            log_match('', m)
+            log_match('', m, depth)
             depth -= 1
             resolve(None, None, None, text)
             # XXX This isn't great.  Calling resolve() should have
@@ -101,13 +101,13 @@ def parse_function_body(name, text, resolve, source, anon_name, parent):
             # needs to be fixed.
             yield None, text
         elif compound_bare:
-            log_match('', m)
+            log_match('', m, depth)
             yield resolve('statement', compound_bare, None, text, parent), text
         elif compound_labeled:
-            log_match('', m)
+            log_match('', m, depth)
             yield resolve('statement', compound_labeled, None, text, parent), text
         elif compound_paren:
-            log_match('', m)
+            log_match('', m, depth)
             try:
                 pos = match_paren(text)
             except ValueError:
@@ -132,7 +132,7 @@ def parse_function_body(name, text, resolve, source, anon_name, parent):
                     }
                 yield resolve('statement', data, None, text, parent), text
         elif block_open:
-            log_match('', m)
+            log_match('', m, depth)
             depth += 1
             if block_leading:
                 # An inline block: the last evaluated expression is used
@@ -144,10 +144,10 @@ def parse_function_body(name, text, resolve, source, anon_name, parent):
                 resolve(None, None, None, text)
                 yield None, text
         elif simple_ending:
-            log_match('', m)
+            log_match('', m, depth)
             yield resolve('statement', simple_stmt, None, text, parent), text
         elif var_ending:
-            log_match('', m)
+            log_match('', m, depth)
             kind = 'variable'
             _, name, vartype = parse_var_decl(decl)
             data = {
@@ -220,7 +220,7 @@ def _parse_next_local_static(m, srcinfo, anon_name, func, depth):
     remainder = srcinfo.text[m.end():]
 
     if inline_kind:
-        log_match('func inline', m)
+        log_match('func inline', m, depth, depth)
         kind = inline_kind
         name = inline_name or anon_name('inline-')
         # Immediately emit a forward declaration.
@@ -249,7 +249,7 @@ def _parse_next_local_static(m, srcinfo, anon_name, func, depth):
         yield parse_body, depth
 
     elif static_decl:
-        log_match('local variable', m)
+        log_match('local variable', m, depth, depth)
         _, name, data = parse_var_decl(static_decl)
 
         yield srcinfo.resolve('variable', data, name, parent=func), depth
@@ -266,10 +266,13 @@ def _parse_next_local_static(m, srcinfo, anon_name, func, depth):
     else:
         log_match('func other', m)
         if block_open:
+            log_match('func other', None, depth, depth + 1)
             depth += 1
         elif block_close:
+            log_match('func other', None, depth, depth - 1)
             depth -= 1
         elif stmt_end:
+            log_match('func other', None, depth, depth)
             pass
         else:
             # This should be unreachable.

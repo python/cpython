@@ -3,20 +3,23 @@
 
 // gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
-// the static_assert() macro. Define the static_assert() macro in Python until
-// <sys/cdefs.h> suports C11:
+// the static_assert() macro.
 // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
-#if defined(__FreeBSD__) && !defined(static_assert)
-#  define static_assert _Static_assert
-#endif
-
-// static_assert is defined in glibc from version 2.16. Before it requires
-// compiler support (gcc >= 4.6) and is called _Static_assert.
-// In C++ 11 static_assert is a keyword, redefining is undefined behaviour.
-#if (defined(__GLIBC__) \
-     && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 16)) \
-     && !(defined(__cplusplus) && __cplusplus >= 201103L) \
-     && !defined(static_assert))
+//
+// macOS <= 10.10 doesn't define static_assert in assert.h at all despite
+// having C11 compiler support.
+//
+// static_assert is defined in glibc from version 2.16. Compiler support for
+// the C11 _Static_assert keyword is in gcc >= 4.6.
+//
+// MSVC makes static_assert a keyword in C11-17, contrary to the standards.
+//
+// In C++11 and C2x, static_assert is a keyword, redefining is undefined
+// behaviour. So only define if building as C (if __STDC_VERSION__ is defined),
+// not C++, and only for C11-17.
+#if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
+     && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+     && __STDC_VERSION__ <= 201710L
 #  define static_assert _Static_assert
 #endif
 
@@ -115,6 +118,15 @@
  */
 #if defined(__GNUC__) || defined(__clang__)
 #  define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
+#elif defined(_MSC_VER)
+   // Disable warning C4100: unreferenced formal parameter,
+   // declare the parameter,
+   // restore old compiler warnings.
+#  define Py_UNUSED(name) \
+        __pragma(warning(push)) \
+        __pragma(warning(suppress: 4100)) \
+        _unused_ ## name \
+        __pragma(warning(pop))
 #else
 #  define Py_UNUSED(name) _unused_ ## name
 #endif
