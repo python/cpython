@@ -3761,20 +3761,6 @@ class FormatHelperTests(unittest.TestCase):
                 actual = clinic.normalize_snippet(snippet, indent=indent)
                 self.assertEqual(actual, expected)
 
-    def test_accumulator(self):
-        acc = clinic.text_accumulator()
-        self.assertEqual(acc.output(), "")
-        acc.append("a")
-        self.assertEqual(acc.output(), "a")
-        self.assertEqual(acc.output(), "")
-        acc.append("b")
-        self.assertEqual(acc.output(), "b")
-        self.assertEqual(acc.output(), "")
-        acc.append("c")
-        acc.append("d")
-        self.assertEqual(acc.output(), "cd")
-        self.assertEqual(acc.output(), "")
-
     def test_quoted_for_c_string(self):
         dataset = (
             # input,    expected
@@ -3789,22 +3775,6 @@ class FormatHelperTests(unittest.TestCase):
             with self.subTest(line=line, expected=expected):
                 out = clinic.quoted_for_c_string(line)
                 self.assertEqual(out, expected)
-
-    def test_rstrip_lines(self):
-        lines = (
-            "a \n"
-            "b\n"
-            " c\n"
-            " d \n"
-        )
-        expected = (
-            "a\n"
-            "b\n"
-            " c\n"
-            " d\n"
-        )
-        out = clinic.rstrip_lines(lines)
-        self.assertEqual(out, expected)
 
     def test_format_escape(self):
         line = "{}, {a}"
