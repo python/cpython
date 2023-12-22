@@ -1800,6 +1800,13 @@ are always available.  They are listed here in alphabetical order.
    the second argument is a type, ``issubclass(type2, type)`` must be true (this
    is useful for classmethods).
 
+   When called directly within an ordinary method of a class, both arguments may
+   be omitted ("zero-argument :func:`!super`"). In this case, *type* will be the
+   enclosing class, and *obj* will be the first argument of the immediately
+   enclosing function (typically ``self``). (This means that zero-argument
+   :func:`!super` will not work as expected within nested functions, including
+   generator expressions, which implicitly create nested functions.)
+
    There are two typical use cases for *super*.  In a class hierarchy with
    single inheritance, *super* can be used to refer to parent classes without
    naming them explicitly, thus making the code more maintainable.  This use
