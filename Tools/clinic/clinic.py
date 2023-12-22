@@ -1307,8 +1307,7 @@ class CLanguage(Language):
 
             has_optional_kw = (
                 max(pos_only, min_pos) + min_kw_only
-                <
-                len(converters) - int(vararg != self.NO_VARARG)
+                < len(converters) - int(vararg != self.NO_VARARG)
             )
 
             if limited_capi:

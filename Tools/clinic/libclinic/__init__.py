@@ -11,8 +11,8 @@ from .formatting import (
 )
 
 
-CLINIC_PREFIX: Final[str] = "__clinic_"
-CLINIC_PREFIXED_ARGS: Final[frozenset[str]] = frozenset({
+CLINIC_PREFIX: Final = "__clinic_"
+CLINIC_PREFIXED_ARGS: Final = frozenset({
     "_keywords",
     "_parser",
     "args",

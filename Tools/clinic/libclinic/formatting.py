@@ -4,7 +4,7 @@ import textwrap
 from typing import Final
 
 
-SIG_END_MARKER: Final[str] = '--'
+SIG_END_MARKER: Final = '--'
 
 
 def docstring_for_c_string(docstring: str) -> str:
