@@ -223,9 +223,11 @@ struct _ts {
    // layout, optimization, and WASI runtime. Wasmtime can handle about 700
    // recursions, sometimes less. 500 is a more conservative limit.
 #  define Py_C_RECURSION_LIMIT 500
+#elif defined(__s390x__)
+#  define Py_C_RECURSION_LIMIT 1200
 #else
    // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 1500
+#  define Py_C_RECURSION_LIMIT 8000
 #endif
 
 
