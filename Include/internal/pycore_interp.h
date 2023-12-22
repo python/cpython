@@ -29,6 +29,7 @@ extern "C" {
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -210,8 +211,8 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-   /* the initial PyInterpreterState.threads.head */
-    PyThreadState _initial_thread;
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
     Py_ssize_t _interactive_src_count;
 };
 
@@ -249,9 +250,9 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 // Export for the _xxinterpchannels module.
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 
-extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
-extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
-extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 

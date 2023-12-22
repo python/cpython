@@ -141,10 +141,11 @@ class Pseudo(Node):
     flags: list[str]   # instr flags to set on the pseudo instruction
     targets: list[str] # opcodes this can be replaced by
 
+AstNode = InstDef | Macro | Pseudo | Family
 
 class Parser(PLexer):
     @contextual
-    def definition(self) -> InstDef | Macro | Pseudo | Family | None:
+    def definition(self) -> AstNode | None:
         if macro := self.macro_def():
             return macro
         if family := self.family_def():

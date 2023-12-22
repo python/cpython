@@ -78,6 +78,15 @@ class SampleClass:
         """
         return self.val
 
+    def setter(self, val):
+        """
+        >>> s = SampleClass(-5)
+        >>> s.setter(1)
+        >>> print(s.val)
+        1
+        """
+        self.val = val
+
     def a_staticmethod(v):
         """
         >>> print(SampleClass.a_staticmethod(10))
@@ -96,7 +105,7 @@ class SampleClass:
         return v+2
     a_classmethod = classmethod(a_classmethod)
 
-    a_property = property(get, doc="""
+    a_property = property(get, setter, doc="""
         >>> print(SampleClass(22).a_property)
         22
         """)
@@ -519,6 +528,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+     3  SampleClass.setter
 
 New-style classes are also supported:
 
@@ -575,9 +585,24 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
      1  some_module.SampleClass.get
+     3  some_module.SampleClass.setter
      1  some_module.__test__.c
      2  some_module.__test__.d
      1  some_module.sample_func
+
+However, doctest will ignore imported objects from other modules
+(without proper `module=`):
+
+    >>> import types
+    >>> m = types.ModuleType('poluted_namespace')
+    >>> m.__dict__.update({
+    ...     'sample_func': sample_func,
+    ...     'SampleClass': SampleClass,
+    ... })
+
+    >>> finder = doctest.DocTestFinder()
+    >>> finder.find(m)
+    []
 
 Duplicate Removal
 ~~~~~~~~~~~~~~~~~
@@ -617,6 +642,7 @@ By default, an object with no doctests doesn't create any tests:
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+     3  SampleClass.setter
 
 By default, that excluded objects with no doctests.  exclude_empty=False
 tells it to include (empty) tests for objects with no doctests.  This feature
@@ -638,6 +664,7 @@ displays.
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+     3  SampleClass.setter
 
 When used with `exclude_empty=False` we are also interested in line numbers
 of doctests that are empty.
@@ -652,9 +679,11 @@ It used to be broken for quite some time until `bpo-28249`.
        30  test.test_doctest.doctest_lineno.ClassWithDoctest
      None  test.test_doctest.doctest_lineno.ClassWithoutDocstring
      None  test.test_doctest.doctest_lineno.MethodWrapper
+       53  test.test_doctest.doctest_lineno.MethodWrapper.classmethod_with_doctest
        39  test.test_doctest.doctest_lineno.MethodWrapper.method_with_docstring
        45  test.test_doctest.doctest_lineno.MethodWrapper.method_with_doctest
      None  test.test_doctest.doctest_lineno.MethodWrapper.method_without_docstring
+       61  test.test_doctest.doctest_lineno.MethodWrapper.property_with_doctest
         4  test.test_doctest.doctest_lineno.func_with_docstring
        12  test.test_doctest.doctest_lineno.func_with_doctest
      None  test.test_doctest.doctest_lineno.func_without_docstring
