@@ -12,18 +12,20 @@ from .formatting import (
 
 
 CLINIC_PREFIX: Final = "__clinic_"
-CLINIC_PREFIXED_ARGS: Final = frozenset({
-    "_keywords",
-    "_parser",
-    "args",
-    "argsbuf",
-    "fastargs",
-    "kwargs",
-    "kwnames",
-    "nargs",
-    "noptargs",
-    "return_value",
-})
+CLINIC_PREFIXED_ARGS: Final = frozenset(
+    {
+        "_keywords",
+        "_parser",
+        "args",
+        "argsbuf",
+        "fastargs",
+        "kwargs",
+        "kwnames",
+        "nargs",
+        "noptargs",
+        "return_value",
+    }
+)
 
 
 __all__ = [
