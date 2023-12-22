@@ -406,13 +406,14 @@ _collections_deque_append_impl(dequeobject *deque, PyObject *item)
     Py_RETURN_NONE;
 }
 
-static inline int
-deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
+static inline AppendResult
+deque_appendleft_locked(dequeobject *deque, PyObject *item)
 {
     if (deque->leftindex == 0) {
         block *b = newblock(deque);
-        if (b == NULL)
-            return -1;
+        if (b == NULL) {
+            return (AppendResult){1, NULL};
+        }
         b->rightlink = deque->leftblock;
         CHECK_END(deque->leftblock->leftlink);
         deque->leftblock->leftlink = b;
@@ -422,17 +423,19 @@ deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
     }
     Py_SET_SIZE(deque, Py_SIZE(deque) + 1);
     deque->leftindex--;
+    Py_INCREF(item);
     deque->leftblock->data[deque->leftindex] = item;
     if (NEEDS_TRIM(deque)) {
-        PyObject *olditem = deque_pop_locked(deque);
-        Py_DECREF(olditem);
+        PyObject *trimmed = deque_pop_locked(deque);
+        return (AppendResult){0, trimmed};
     } else {
         deque->state++;
+        return (AppendResult){0, NULL};
     }
-    return 0;
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.appendleft
 
     deque: dequeobject
@@ -443,11 +446,14 @@ Add an element to the left side of the deque.
 [clinic start generated code]*/
 
 static PyObject *
-_collections_deque_appendleft(dequeobject *deque, PyObject *item)
-/*[clinic end generated code: output=f1b75022fbccf8bb input=481442915f0f6465]*/
+_collections_deque_appendleft_impl(dequeobject *deque, PyObject *item)
+/*[clinic end generated code: output=5d64c3723b5f0b02 input=78335f6b0654b2fd]*/
 {
-    if (deque_appendleft_internal(deque, Py_NewRef(item), deque->maxlen) < 0)
+    AppendResult res = deque_appendleft_locked(deque, item);
+    Py_XDECREF(res.trimmed);
+    if (res.err) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -584,8 +590,10 @@ _collections_deque_extendleft(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        if (deque_appendleft_internal(deque, item, maxlen) == -1) {
-            Py_DECREF(item);
+        AppendResult res = deque_appendleft_locked(deque, item);
+        Py_DECREF(item);
+        Py_XDECREF(res.trimmed);
+        if (res.err) {
             Py_DECREF(it);
             return NULL;
         }
