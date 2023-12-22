@@ -59,27 +59,31 @@ def wrapped_c_string_literal(
     return initial_indent * " " + c_repr(separator.join(wrapped))
 
 
-def _add_prefix_and_suffix(s: str, prefix: str = "", suffix: str = "") -> str:
-    """Return 's', with 'prefix' prepended and 'suffix' appended to all lines.
+def _add_prefix_and_suffix(
+    text: str,
+    prefix: str = "",
+    suffix: str = ""
+) -> str:
+    """Return 'text' with 'prefix' prepended and 'suffix' appended to all lines.
 
     If the last line is empty, it remains unchanged.
-    If s is blank, returns s unchanged.
+    If text is blank, return text unchanged.
 
     (textwrap.indent only adds to non-blank lines.)
     """
-    *split, last = s.split("\n")
+    *split, last = text.split("\n")
     lines = [prefix + line + suffix + "\n" for line in split]
     if last:
         lines.append(prefix + last + suffix)
     return "".join(lines)
 
 
-def indent_all_lines(s: str, prefix: str) -> str:
-    return _add_prefix_and_suffix(s, prefix=prefix)
+def indent_all_lines(text: str, prefix: str) -> str:
+    return _add_prefix_and_suffix(text, prefix=prefix)
 
 
-def suffix_all_lines(s: str, suffix: str) -> str:
-    return _add_prefix_and_suffix(s, suffix=suffix)
+def suffix_all_lines(text: str, suffix: str) -> str:
+    return _add_prefix_and_suffix(text, suffix=suffix)
 
 
 def pprint_words(items: list[str]) -> str:
