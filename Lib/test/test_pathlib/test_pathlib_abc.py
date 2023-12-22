@@ -3,7 +3,6 @@ import io
 import os
 import errno
 import pathlib
-import pickle
 import posixpath
 import stat
 import unittest
