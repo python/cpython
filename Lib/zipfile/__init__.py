@@ -400,11 +400,10 @@ class ZipInfo:
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
         if isinstance(filename, os.PathLike):
             filename = _sanitize_filename(os.fspath(filename))
-        self.orig_filename = filename   # Original file name in archive
-
-        # Terminate the file name at the first null byte and
-        # ensure paths always use forward slashes as the directory separator.
-        filename = _sanitize_filename(filename)
+            self.orig_filename = filename
+        else:
+            self.orig_filename = filename   # Original file name in archive
+            filename = _sanitize_filename(filename)
 
         self.filename = filename        # Normalized file name
         self.date_time = date_time      # year, month, day, hour, min, sec
@@ -570,8 +569,10 @@ class ZipInfo:
             filename = os.fspath(filename)
             if arcname is None:
                 arcname = _sanitize_filename(filename)
-        elif isinstance(arcname, os.PathLike):
+        if isinstance(arcname, os.PathLike):
             arcname = _sanitize_filename(os.fspath(arcname))
+        elif arcname is None:
+            arcname = filename
         st = os.stat(filename)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
@@ -581,8 +582,6 @@ class ZipInfo:
         elif not strict_timestamps and date_time[0] > 2107:
             date_time = (2107, 12, 31, 23, 59, 59)
         # Create ZipInfo instance to store file information
-        if arcname is None:
-            arcname = filename
         arcname = os.path.normpath(os.path.splitdrive(arcname)[1])
         while arcname[0] in (os.sep, os.altsep):
             arcname = arcname[1:]
