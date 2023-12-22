@@ -8,21 +8,21 @@ SIG_END_MARKER: Final = '--'
 
 
 def docstring_for_c_string(docstring: str) -> str:
-        lines = []
-        # turn docstring into a properly quoted C string
-        for line in docstring.split('\n'):
-            lines.append('"')
-            lines.append(_quoted_for_c_string(line))
-            lines.append('\\n"\n')
+    lines = []
+    # turn docstring into a properly quoted C string
+    for line in docstring.split('\n'):
+        lines.append('"')
+        lines.append(_quoted_for_c_string(line))
+        lines.append('\\n"\n')
 
-        if lines[-2] == SIG_END_MARKER:
-            # If we only have a signature, add the blank line that the
-            # __text_signature__ getter expects to be there.
-            lines.append('"\\n"')
-        else:
-            lines.pop()
-            lines.append('"')
-        return ''.join(lines)
+    if lines[-2] == SIG_END_MARKER:
+        # If we only have a signature, add the blank line that the
+        # __text_signature__ getter expects to be there.
+        lines.append('"\\n"')
+    else:
+        lines.pop()
+        lines.append('"')
+    return ''.join(lines)
 
 
 def _quoted_for_c_string(s: str) -> str:
