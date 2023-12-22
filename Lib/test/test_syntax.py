@@ -2283,6 +2283,7 @@ if x:
     @support.cpython_only
     def test_with_statement_many_context_managers(self):
         # See gh-113297
+
         def get_code(n):
             code = textwrap.dedent("""
                 def bug():
@@ -2294,11 +2295,13 @@ if x:
             code += "): yield a"
             return code
 
-        for n in range(19):
+        CO_MAXBLOCKS = 20  # static nesting limit of the compiler
+
+        for n in range(CO_MAXBLOCKS):
             with self.subTest(f"within range: {n=}"):
                 compile(get_code(n), "<string>", "exec")
 
-        for n in range(20, 25):
+        for n in range(CO_MAXBLOCKS, CO_MAXBLOCKS + 5):
             with self.subTest(f"out of range: {n=}"):
                 self._check_error(get_code(n), "too many statically nested blocks")
 
