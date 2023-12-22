@@ -2342,9 +2342,6 @@ class BlockPrinter:
         self.f.write(text)
 
 
-TextAccumulator = list[str]
-
-
 class BufferSeries:
     """
     Behaves like a "defaultlist".
@@ -2358,13 +2355,13 @@ class BufferSeries:
 
     def __init__(self) -> None:
         self._start = 0
-        self._array: list[TextAccumulator] = []
+        self._array: list[list[str]] = []
 
-    def __getitem__(self, i: int) -> TextAccumulator:
+    def __getitem__(self, i: int) -> list[str]:
         i -= self._start
         if i < 0:
             self._start += i
-            prefix: list[TextAccumulator] = [[] for x in range(-i)]
+            prefix: list[list[str]] = [[] for x in range(-i)]
             self._array = prefix + self._array
             i = 0
         while i >= len(self._array):
@@ -2563,7 +2560,7 @@ impl_definition block
             'impl_definition': d('block'),
         }
 
-        DestBufferType = dict[str, TextAccumulator]
+        DestBufferType = dict[str, list[str]]
         DestBufferList = list[DestBufferType]
 
         self.destination_buffers_stack: DestBufferList = []
@@ -2635,7 +2632,7 @@ impl_definition block
             self,
             name: str,
             item: int = 0
-    ) -> TextAccumulator:
+    ) -> list[str]:
         d = self.get_destination(name)
         return d.buffers[item]
 
