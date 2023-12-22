@@ -2,10 +2,11 @@ import collections.abc
 import io
 import os
 import errno
-import pathlib
-import posixpath
 import stat
 import unittest
+
+from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+import posixpath
 
 from test.support import set_recursion_limit
 from test.support.os_helper import TESTFN
@@ -13,8 +14,8 @@ from test.support.os_helper import TESTFN
 
 class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
-        self.assertTrue(issubclass(pathlib.UnsupportedOperation, NotImplementedError))
-        self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
+        self.assertTrue(issubclass(UnsupportedOperation, NotImplementedError))
+        self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
 
 
 #
@@ -23,7 +24,7 @@ class UnsupportedOperationTest(unittest.TestCase):
 
 
 class PurePathBaseTest(unittest.TestCase):
-    cls = pathlib._abc.PurePathBase
+    cls = PurePathBase
 
     def test_magic_methods(self):
         P = self.cls
@@ -42,7 +43,7 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(self.cls.pathmod, posixpath)
 
 
-class DummyPurePath(pathlib._abc.PurePathBase):
+class DummyPurePath(PurePathBase):
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
             return NotImplemented
@@ -637,12 +638,12 @@ class DummyPurePathTest(unittest.TestCase):
 #
 
 class PathBaseTest(PurePathBaseTest):
-    cls = pathlib._abc.PathBase
+    cls = PathBase
 
     def test_unsupported_operation(self):
         P = self.cls
         p = self.cls()
-        e = pathlib.UnsupportedOperation
+        e = UnsupportedOperation
         self.assertRaises(e, p.stat)
         self.assertRaises(e, p.lstat)
         self.assertRaises(e, p.exists)
@@ -684,7 +685,7 @@ class PathBaseTest(PurePathBaseTest):
         self.assertRaises(e, p.as_uri)
 
     def test_as_uri_common(self):
-        e = pathlib.UnsupportedOperation
+        e = UnsupportedOperation
         self.assertRaises(e, self.cls().as_uri)
 
     def test_fspath_common(self):
@@ -709,7 +710,7 @@ class DummyPathIO(io.BytesIO):
         super().close()
 
 
-class DummyPath(pathlib._abc.PathBase):
+class DummyPath(PathBase):
     """
     Simple implementation of PathBase that keeps files and directories in
     memory.
@@ -1325,7 +1326,7 @@ class DummyPathTest(DummyPurePathTest):
     def test_readlink_unsupported(self):
         P = self.cls(self.base)
         p = P / 'fileA'
-        with self.assertRaises(pathlib.UnsupportedOperation):
+        with self.assertRaises(UnsupportedOperation):
             q.readlink(p)
 
     def _check_resolve(self, p, expected, strict=True):
@@ -1648,7 +1649,7 @@ class DummyPathTest(DummyPurePathTest):
         # Resolve relative paths.
         try:
             self.cls().absolute()
-        except pathlib.UnsupportedOperation:
+        except UnsupportedOperation:
             return
         old_path = os.getcwd()
         os.chdir(self.base)
