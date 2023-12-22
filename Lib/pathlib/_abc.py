@@ -207,7 +207,7 @@ class PurePathBase:
     pathmod = os.path
 
     def __init__(self, *args):
-        self._raw_paths = [arg for arg in args if arg]
+        self._raw_paths = list(args)
         self._resolving = False
 
     def with_segments(self, *pathsegments):
