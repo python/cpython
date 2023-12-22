@@ -917,7 +917,13 @@ def collect_windows(info_add):
         proc = subprocess.Popen(["ver"], shell=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
-                                text=True)
+                                text=True,
+                                env={
+                                    "SystemDrive": os.environ["SystemDrive"],
+                                    "SystemRoot": os.environ["SystemRoot"],
+                                    "Path": r"{0}\system32;{0}".format(os.environ["SystemRoot"]),
+                                    "PATHEXT": os.environ["PATHEXT"],
+                                })
         output, stderr = proc.communicate()
         if proc.returncode:
             raise ValueError(
