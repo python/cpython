@@ -99,6 +99,9 @@ class PurePath(_abc.PurePathBase):
         # when pickling related paths.
         return (self.__class__, self.parts)
 
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
+
     def __fspath__(self):
         return str(self)
 
