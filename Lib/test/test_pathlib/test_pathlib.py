@@ -60,14 +60,16 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
 
     def test_pickling_common(self):
         P = self.cls
-        p = P('/a/b')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertIs(pp.__class__, p.__class__)
-            self.assertEqual(pp, p)
-            self.assertEqual(hash(pp), hash(p))
-            self.assertEqual(str(pp), str(p))
+        for pathstr in ('a', 'a/', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c', 'a/b/c/'):
+            with self.subTest(pathstr=pathstr):
+                p = P(pathstr)
+                for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+                    dumped = pickle.dumps(p, proto)
+                    pp = pickle.loads(dumped)
+                    self.assertIs(pp.__class__, p.__class__)
+                    self.assertEqual(pp, p)
+                    self.assertEqual(hash(pp), hash(p))
+                    self.assertEqual(str(pp), str(p))
 
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
