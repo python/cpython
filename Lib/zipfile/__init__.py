@@ -568,8 +568,10 @@ class ZipInfo:
         """
         if isinstance(filename, os.PathLike):
             filename = os.fspath(filename)
-        if isinstance(arcname, os.PathLike):
-            arcname = os.fspath(arcname)
+            if arcname is None:
+                arcname = _sanitize_filename(filename)
+        elif isinstance(arcname, os.PathLike):
+            arcname = _sanitize_filename(os.fspath(arcname))
         st = os.stat(filename)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
