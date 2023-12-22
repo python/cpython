@@ -563,6 +563,59 @@ class ProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read(), b"orange")
 
+    def test_stdout_pipe_readline_select(self):
+        import select
+        expected = ["oranges\n", "apples\n", "pears\n"]
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys;'
+                              'sys.stdout.write("oranges\\napples\\n");'
+                              'input();'
+                              'sys.stdout.write("pears\\n")'],
+                             bufsize=0,
+                             universal_newlines=True,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        p.stdin.write('go\n')
+        started_receive = False
+        while expected:
+            r, w, x = select.select([p.stdout], [], [p.stdout], 1.0)
+            self.assertEqual(x, [])
+            if not started_receive and r == []: continue
+            self.assertNotEqual(r, [], "no data waiting for %r" % expected[0])
+            data = p.stdout.readline()
+            self.assertEqual(data, expected.pop(0))
+            started_receive = True
+
+    def test_stdout_pipe_readline_poll(self):
+        expected = [c for c in "oranges"]
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys;'
+                              'sys.stdout.write("oranges");'
+                              'input();'],
+                             bufsize=0,
+                             universal_newlines=True,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        p.stdin.write('go\n')
+
+        poll = select.poll()
+        poll.register(p.stdout, select.POLLIN|select.POLLHUP|select.POLLERR)
+
+        started_receive = False
+        while expected:
+            matches = poll.poll(1.0)
+            if matches == []:
+                if not started_receive: continue
+                self.assertEqual(True, False, "no data waiting for %r" % expected[0])
+            for fd, event in matches: # only one match accepted
+                self.assertEqual(event & select.POLLERR, 0)
+                self.assertNotEqual(event & select.POLLIN, 0,
+                                    "event with no data waiting for %r" % expected[0])
+
+                data = p.stdout.read(1)
+                self.assertEqual(data, expected.pop(0))
+                started_receive = True
+
     def test_stdout_filedes(self):
         # stdout is set to open file descriptor
         tf = tempfile.TemporaryFile()
