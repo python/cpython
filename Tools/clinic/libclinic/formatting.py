@@ -25,19 +25,19 @@ def docstring_for_c_string(docstring: str) -> str:
     return "".join(lines)
 
 
-def _quoted_for_c_string(s: str) -> str:
+def _quoted_for_c_string(text: str) -> str:
     """Helper for docstring_for_c_string()."""
     for old, new in (
         ("\\", "\\\\"),  # must be first!
         ('"', '\\"'),
         ("'", "\\'"),
     ):
-        s = s.replace(old, new)
-    return s
+        text = text.replace(old, new)
+    return text
 
 
-def c_repr(s: str) -> str:
-    return '"' + s + '"'
+def c_repr(text: str) -> str:
+    return '"' + text + '"'
 
 
 def wrapped_c_string_literal(
