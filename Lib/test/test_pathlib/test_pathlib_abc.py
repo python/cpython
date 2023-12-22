@@ -3,7 +3,6 @@ import io
 import os
 import errno
 import pathlib
-import pickle
 import posixpath
 import stat
 import unittest
@@ -31,6 +30,7 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertFalse(hasattr(P, '__fspath__'))
         self.assertFalse(hasattr(P, '__bytes__'))
         self.assertIs(P.__reduce__, object.__reduce__)
+        self.assertIs(P.__repr__, object.__repr__)
         self.assertIs(P.__hash__, object.__hash__)
         self.assertIs(P.__eq__, object.__eq__)
         self.assertIs(P.__lt__, object.__lt__)
@@ -198,18 +198,6 @@ class DummyPurePathTest(unittest.TestCase):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
-
-    def test_repr_common(self):
-        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            with self.subTest(pathstr=pathstr):
-                p = self.cls(pathstr)
-                clsname = p.__class__.__name__
-                r = repr(p)
-                # The repr() is in the form ClassName("forward-slashes path").
-                self.assertTrue(r.startswith(clsname + '('), r)
-                self.assertTrue(r.endswith(')'), r)
-                inner = r[len(clsname) + 1 : -1]
-                self.assertEqual(eval(inner), p.as_posix())
 
     def test_eq_common(self):
         P = self.cls
@@ -1621,13 +1609,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse((P / 'fileA' / 'bah').is_char_device())
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
-
-    def test_pickling_common(self):
-        p = self.cls(self.base, 'fileA')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertEqual(pp.stat(), p.stat())
 
     def test_parts_interning(self):
         P = self.cls

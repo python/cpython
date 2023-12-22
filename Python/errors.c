@@ -121,11 +121,11 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     _PyErr_StackItem *exc_info = tstate->exc_info;
     assert(exc_info);
 
-    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
-           exc_info->previous_item != NULL)
+    while (exc_info->exc_value == NULL && exc_info->previous_item != NULL)
     {
         exc_info = exc_info->previous_item;
     }
+    assert(!Py_IsNone(exc_info->exc_value));
     return exc_info;
 }
 
@@ -592,7 +592,7 @@ PyErr_GetHandledException(void)
 void
 _PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
 {
-    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc));
+    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc == Py_None ? NULL : exc));
 }
 
 void
