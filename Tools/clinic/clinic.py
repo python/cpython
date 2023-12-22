@@ -106,7 +106,6 @@ NULL = Null()
 sig_end_marker = '--'
 
 TemplateDict = dict[str, str]
-TextAccumulator = list[str]
 
 
 @dc.dataclass
@@ -2342,6 +2341,9 @@ class BlockPrinter:
 
     def write(self, text: str) -> None:
         self.f.write(text)
+
+
+TextAccumulator = list[str]
 
 
 class BufferSeries:
