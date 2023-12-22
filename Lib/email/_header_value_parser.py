@@ -1601,6 +1601,9 @@ def get_domain(value):
     """
     domain = Domain()
     leader = None
+    if not value:
+        raise errors.HeaderParseError(
+            "expected domain but found '{}'".format(value))
     if value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
     if not value:
@@ -1695,6 +1698,9 @@ def get_angle_addr(value):
 
     """
     angle_addr = AngleAddr()
+    if not value:
+        raise errors.HeaderParseError(
+            "expected angle-addr but found '{}'".format(value))
     if value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         angle_addr.append(token)
@@ -1757,6 +1763,9 @@ def get_name_addr(value):
     name_addr = NameAddr()
     # Both the optional display name and the angle-addr can start with cfws.
     leader = None
+    if not value:
+        raise errors.HeaderParseError(
+            "expected name-addr but but found '{}'".format(value))
     if value[0] in CFWS_LEADER:
         leader, value = get_cfws(value)
         if not value:
