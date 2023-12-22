@@ -6310,8 +6310,8 @@ class DSLParser:
         # therefore this is commented out:
         #
         # if f.return_converter.py_default:
-        #     acc.add(' -> ')
-        #     acc.add(f.return_converter.py_default)
+        #     lines.append(' -> ')
+        #     lines.append(f.return_converter.py_default)
 
         if not f.docstring_only:
             lines.append("\n" + sig_end_marker + "\n")
