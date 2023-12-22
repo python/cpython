@@ -280,18 +280,8 @@ _collections_deque_pop_impl(dequeobject *deque)
     return deque_pop_locked(deque);
 }
 
-/*[clinic input]
-@critical_section
-_collections.deque.popleft
-
-     deque: dequeobject
-
-Remove and return the rightmost element.
-[clinic start generated code]*/
-
 static PyObject *
-_collections_deque_popleft_impl(dequeobject *deque)
-/*[clinic end generated code: output=8cd77178b5116aba input=39d64df4664392d3]*/
+deque_popleft_locked(dequeobject *deque)
 {
     PyObject *item;
     block *prevblock;
@@ -326,6 +316,22 @@ _collections_deque_popleft_impl(dequeobject *deque)
     return item;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.popleft
+
+     deque: dequeobject
+
+Remove and return the rightmost element.
+[clinic start generated code]*/
+
+static PyObject *
+_collections_deque_popleft_impl(dequeobject *deque)
+/*[clinic end generated code: output=8cd77178b5116aba input=a59eae3f0b0b9796]*/
+{
+    return deque_popleft_locked(deque);
+}
+
 /* The deque's size limit is d.maxlen.  The limit can be zero or positive.
  * If there is no limit, then d.maxlen == -1.
  *
@@ -358,7 +364,7 @@ deque_append_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
     deque->rightindex++;
     deque->rightblock->data[deque->rightindex] = item;
     if (NEEDS_TRIM(deque, maxlen)) {
-        PyObject *olditem = _collections_deque_popleft_impl(deque);
+        PyObject *olditem = deque_popleft_locked(deque);
         Py_DECREF(olditem);
     } else {
         deque->state++;
@@ -1353,7 +1359,7 @@ deque_del_item(dequeobject *deque, Py_ssize_t i)
     assert (i >= 0 && i < Py_SIZE(deque));
     if (_deque_rotate(deque, -i))
         return -1;
-    item = _collections_deque_popleft_impl(deque);
+    item = deque_popleft_locked(deque);
     rv = _deque_rotate(deque, i);
     assert (item != NULL);
     Py_DECREF(item);

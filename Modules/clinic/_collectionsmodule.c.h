@@ -49,7 +49,13 @@ _collections_deque_popleft_impl(dequeobject *deque);
 static PyObject *
 _collections_deque_popleft(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    return _collections_deque_popleft_impl(deque);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque_popleft_impl(deque);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_collections_deque_append__doc__,
@@ -497,4 +503,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1c8f5848173225af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff9bb5a7aabafb91 input=a9049054013a1b77]*/
