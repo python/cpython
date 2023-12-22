@@ -69,6 +69,18 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
             self.assertEqual(hash(pp), hash(p))
             self.assertEqual(str(pp), str(p))
 
+    def test_repr_common(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                clsname = p.__class__.__name__
+                r = repr(p)
+                # The repr() is in the form ClassName("forward-slashes path").
+                self.assertTrue(r.startswith(clsname + '('), r)
+                self.assertTrue(r.endswith(')'), r)
+                inner = r[len(clsname) + 1 : -1]
+                self.assertEqual(eval(inner), p.as_posix())
+
     def test_fspath_common(self):
         P = self.cls
         p = P('a/b')

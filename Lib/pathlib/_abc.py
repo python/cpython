@@ -282,9 +282,6 @@ class PurePathBase:
         slashes."""
         return str(self).replace(self.pathmod.sep, '/')
 
-    def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
-
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
