@@ -409,8 +409,10 @@ class TestSuper(unittest.TestCase):
 
         cases = (
             (int, c, int.__name__, C.__name__, "instance of"),
-            (C, list(), C.__name__, list.__name__, "instance of"),  # obj is instance of type
-            (C, list, C.__name__, list.__name__, "type"),           # obj is type itself
+            # obj is instance of type
+            (C, list(), C.__name__, list.__name__, "instance of"),
+            # obj is type itself
+            (C, list, C.__name__, list.__name__, "type"),
         )
 
         for case in cases:
