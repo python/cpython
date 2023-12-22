@@ -2,6 +2,7 @@
 Collect various information about Python to help debugging test failures.
 """
 import errno
+import os
 import re
 import sys
 import traceback
@@ -192,8 +193,6 @@ def collect_builtins(info_add):
 
 
 def collect_urandom(info_add):
-    import os
-
     if hasattr(os, 'getrandom'):
         # PEP 524: Check if system urandom is initialized
         try:
@@ -211,8 +210,6 @@ def collect_urandom(info_add):
 
 
 def collect_os(info_add):
-    import os
-
     def format_attr(attr, value):
         if attr in ('supports_follow_symlinks', 'supports_fd',
                     'supports_effective_ids'):
@@ -356,8 +353,6 @@ def collect_pwd(info_add):
         import pwd
     except ImportError:
         return
-    import os
-
     uid = os.getuid()
     try:
         entry = pwd.getpwuid(uid)
@@ -557,7 +552,6 @@ def collect_sysconfig(info_add):
 
 
 def collect_ssl(info_add):
-    import os
     try:
         import ssl
     except ImportError:
