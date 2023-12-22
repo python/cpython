@@ -117,7 +117,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._str_normcase_cached
         except AttributeError:
-            if _abc._is_case_sensitive(self.pathmod):
+            if self._case_sensitive:
                 self._str_normcase_cached = str(self)
             else:
                 self._str_normcase_cached = str(self).lower()
@@ -141,7 +141,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._parts_normcase_cached
         except AttributeError:
-            self._parts_normcase_cached = self._str_normcase.split(self.pathmod.sep)
+            self._parts_normcase_cached = self._str_normcase.split(self._sep)
             return self._parts_normcase_cached
 
     def __lt__(self, other):
@@ -309,7 +309,7 @@ class Path(_abc.PathBase, PurePath):
         drive, root, rel = os.path.splitroot(cwd)
         if not rel:
             return self._from_parsed_parts(drive, root, self._tail)
-        tail = rel.split(self.pathmod.sep)
+        tail = rel.split(self._sep)
         tail.extend(self._tail)
         return self._from_parsed_parts(drive, root, tail)
 

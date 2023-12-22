@@ -1,0 +1,2 @@
+Speed up path parsing in :mod:`pathlib` by storing path separators and case
+sensitivity as private class attributes. Patch by Barney Gale.

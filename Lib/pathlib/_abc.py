@@ -41,10 +41,6 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
-@functools.cache
-def _is_case_sensitive(pathmod):
-    return pathmod.normcase('Aa') == 'Aa'
-
 #
 # Globbing helpers
 #
@@ -205,6 +201,12 @@ class PurePathBase:
     )
     pathmod = posixpath
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._sep = cls.pathmod.sep
+        cls._altsep = cls.pathmod.altsep
+        cls._case_sensitive = cls.pathmod.normcase('Aa') == 'Aa'
+
     def __init__(self, *paths):
         self._raw_paths = paths
         self._resolving = False
@@ -220,8 +222,8 @@ class PurePathBase:
     def _parse_path(cls, path):
         if not path:
             return '', '', []
-        sep = cls.pathmod.sep
-        altsep = cls.pathmod.altsep
+        sep = cls._sep
+        altsep = cls._altsep
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = cls.pathmod.splitroot(path)
@@ -261,10 +263,10 @@ class PurePathBase:
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
         if drv or root:
-            return drv + root + cls.pathmod.sep.join(tail)
+            return drv + root + cls._sep.join(tail)
         elif tail and cls.pathmod.splitdrive(tail[0])[0]:
             tail = ['.'] + tail
-        return cls.pathmod.sep.join(tail)
+        return cls._sep.join(tail)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -279,7 +281,7 @@ class PurePathBase:
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
-        return str(self).replace(self.pathmod.sep, '/')
+        return str(self).replace(self._sep, '/')
 
     @property
     def drive(self):
@@ -360,8 +362,7 @@ class PurePathBase:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        m = self.pathmod
-        if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
+        if not name or self._sep in name or (self._altsep and self._altsep in name) or name == '.':
             raise ValueError(f"Invalid name {name!r}")
         tail = self._tail.copy()
         if not tail:
@@ -514,8 +515,8 @@ class PurePathBase:
         if not isinstance(path_pattern, PurePathBase):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.pathmod)
-        sep = path_pattern.pathmod.sep
+            case_sensitive = self._case_sensitive
+        sep = path_pattern._sep
         pattern_str = str(path_pattern)
         if path_pattern.drive or path_pattern.root:
             pass
@@ -797,7 +798,7 @@ class PathBase(PurePathBase):
         path_str = str(self)
         tail = self._tail
         if tail:
-            path_str = f'{path_str}{self.pathmod.sep}{name}'
+            path_str = f'{path_str}{self._sep}{name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
         else:
@@ -832,7 +833,7 @@ class PathBase(PurePathBase):
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
         pattern_parts = path_pattern._tail.copy()
-        if pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
+        if pattern[-1] in (self._sep, self._altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
         if pattern_parts[-1] == '**':
@@ -846,7 +847,7 @@ class PathBase(PurePathBase):
 
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
-            case_sensitive = _is_case_sensitive(self.pathmod)
+            case_sensitive = self._case_sensitive
 
         # If symlinks are handled consistently, and the pattern does not
         # contain '..' components, then we can use a 'walk-and-match' strategy
@@ -857,7 +858,7 @@ class PathBase(PurePathBase):
         # do not perform any filesystem access, which can be much faster!
         filter_paths = follow_symlinks is not None and '..' not in pattern_parts
         deduplicate_paths = False
-        sep = self.pathmod.sep
+        sep = self._sep
         paths = iter([self] if self.is_dir() else [])
         part_idx = 0
         while part_idx < len(pattern_parts):
