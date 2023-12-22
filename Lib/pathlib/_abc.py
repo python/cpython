@@ -1,5 +1,4 @@
 import functools
-import io
 import ntpath
 import posixpath
 import sys
@@ -755,7 +754,6 @@ class PathBase(PurePathBase):
         """
         Open the file in text mode, read it, and close the file.
         """
-        encoding = io.text_encoding(encoding)
         with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
 
@@ -775,7 +773,6 @@ class PathBase(PurePathBase):
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        encoding = io.text_encoding(encoding)
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
