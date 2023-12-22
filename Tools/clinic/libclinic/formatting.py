@@ -41,12 +41,12 @@ def c_repr(s: str) -> str:
 
 
 def wrapped_c_string_literal(
-        text: str,
-        *,
-        width: int = 72,
-        suffix: str = '',
-        initial_indent: int = 0,
-        subsequent_indent: int = 4
+    text: str,
+    *,
+    width: int = 72,
+    suffix: str = '',
+    initial_indent: int = 0,
+    subsequent_indent: int = 4
 ) -> str:
     wrapped = textwrap.wrap(text, width=width, replace_whitespace=False,
                             drop_whitespace=False, break_on_hyphens=False)
