@@ -2,8 +2,6 @@ Fix a bug on :class:`asyncio.Queue` to preserve the FIFO order when putting and 
 Currently, it is possible to put a new item when queue is not full and there are already waiters.
 This fix will propose to check the dedicated *waiters* deques before input/output on queue.
 When putting, if the queue is not full or if the *waiters* deque is not empty, we will have to:
-
-+ in the :meth:`put`, append the task to the *waiters*,
-+ in the :meth:`put_nowait`, raise a new exception.
-
+   + in the :meth:`put`, append the task to the *waiters*,
+   + in the :meth:`put_nowait`, raise a new exception.
 The behavior of the get part should be identical.
