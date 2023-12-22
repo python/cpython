@@ -918,8 +918,6 @@ def collect_windows(info_add):
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 text=True,
-                                # Avoid interference from CI systems with
-                                # messy environments (gh-113392):
                                 env={
                                     "SystemDrive": os.environ["SystemDrive"],
                                     "SystemRoot": os.environ["SystemRoot"],
