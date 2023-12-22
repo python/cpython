@@ -59,6 +59,7 @@ class PurePath(_abc.PurePathBase):
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
     )
+    pathmod = os.path
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing

@@ -1,7 +1,6 @@
 import functools
 import io
 import ntpath
-import os
 import posixpath
 import sys
 import warnings
@@ -204,7 +203,7 @@ class PurePathBase:
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    pathmod = os.path
+    pathmod = posixpath
 
     def __init__(self, *paths):
         self._raw_paths = paths
