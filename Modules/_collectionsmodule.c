@@ -344,15 +344,25 @@ _collections_deque_popleft_impl(dequeobject *deque)
  * unsigned test that returns true whenever 0 <= maxlen < Py_SIZE(deque).
  */
 
-#define NEEDS_TRIM(deque, maxlen) ((size_t)(maxlen) < (size_t)(Py_SIZE(deque)))
+#define NEEDS_TRIM(deque) ((size_t)((deque)->maxlen) < (size_t)(Py_SIZE(deque)))
 
-static inline int
-deque_append_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
+typedef struct {
+    // 1 if an error occurred, 0 otherwise
+    int err;
+
+    // A value that was trimmed if the operation would exceed maxlen, NULL
+    // otherwise
+    PyObject *trimmed;
+} AppendResult;
+
+static inline AppendResult
+deque_append_locked(dequeobject *deque, PyObject *item)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(deque);
-        if (b == NULL)
-            return -1;
+        if (b == NULL) {
+            return (AppendResult){1, NULL};
+        }
         b->leftlink = deque->rightblock;
         CHECK_END(deque->rightblock->rightlink);
         deque->rightblock->rightlink = b;
@@ -362,17 +372,19 @@ deque_append_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
     }
     Py_SET_SIZE(deque, Py_SIZE(deque) + 1);
     deque->rightindex++;
+    Py_INCREF(item);
     deque->rightblock->data[deque->rightindex] = item;
-    if (NEEDS_TRIM(deque, maxlen)) {
-        PyObject *olditem = deque_popleft_locked(deque);
-        Py_DECREF(olditem);
+    if (NEEDS_TRIM(deque)) {
+        PyObject *trimmed = deque_popleft_locked(deque);
+        return (AppendResult){0, trimmed};
     } else {
         deque->state++;
+        return (AppendResult){0, NULL};
     }
-    return 0;
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.append
 
     deque: dequeobject
@@ -383,11 +395,14 @@ Add an element to the right side of the deque.
 [clinic start generated code]*/
 
 static PyObject *
-_collections_deque_append(dequeobject *deque, PyObject *item)
-/*[clinic end generated code: output=fc44cc7b9dcb0180 input=803e0d976a2e2620]*/
+_collections_deque_append_impl(dequeobject *deque, PyObject *item)
+/*[clinic end generated code: output=f8339396b82cbb97 input=29d2c1ea535d8fa6]*/
 {
-    if (deque_append_internal(deque, Py_NewRef(item), deque->maxlen) < 0)
+    AppendResult res = deque_append_locked(deque, item);
+    Py_XDECREF(res.trimmed);
+    if (res.err) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -408,7 +423,7 @@ deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
     Py_SET_SIZE(deque, Py_SIZE(deque) + 1);
     deque->leftindex--;
     deque->leftblock->data[deque->leftindex] = item;
-    if (NEEDS_TRIM(deque, deque->maxlen)) {
+    if (NEEDS_TRIM(deque)) {
         PyObject *olditem = deque_pop_locked(deque);
         Py_DECREF(olditem);
     } else {
@@ -512,8 +527,10 @@ _collections_deque_extend(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        if (deque_append_internal(deque, item, maxlen) == -1) {
-            Py_DECREF(item);
+        AppendResult res = deque_append_locked(deque, item);
+        Py_DECREF(item);
+        Py_XDECREF(res.trimmed);
+        if (res.err) {
             Py_DECREF(it);
             return NULL;
         }

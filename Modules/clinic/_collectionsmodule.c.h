@@ -67,6 +67,21 @@ PyDoc_STRVAR(_collections_deque_append__doc__,
 #define _COLLECTIONS_DEQUE_APPEND_METHODDEF    \
     {"append", (PyCFunction)_collections_deque_append, METH_O, _collections_deque_append__doc__},
 
+static PyObject *
+_collections_deque_append_impl(dequeobject *deque, PyObject *item);
+
+static PyObject *
+_collections_deque_append(dequeobject *deque, PyObject *item)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque_append_impl(deque, item);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_collections_deque_appendleft__doc__,
 "appendleft($self, item, /)\n"
 "--\n"
@@ -503,4 +518,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ff9bb5a7aabafb91 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=579df8454c63c2e4 input=a9049054013a1b77]*/
