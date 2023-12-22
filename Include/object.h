@@ -239,6 +239,8 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
+
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -291,7 +293,9 @@ _Py_ThreadId(void)
     __asm__ ("mv %0, tp" : "=r" (tid));
     #endif
 #else
-  # error "define _Py_ThreadId for this platform"
+    // Fallback to a portable implementation if we do not have a faster
+    // platform-specific implementation.
+    tid = _Py_GetThreadLocal_Addr();
 #endif
   return tid;
 }

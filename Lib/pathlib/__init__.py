@@ -59,6 +59,7 @@ class PurePath(_abc.PurePathBase):
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
     )
+    pathmod = os.path
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -98,6 +99,9 @@ class PurePath(_abc.PurePathBase):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
         return (self.__class__, self.parts)
+
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def __fspath__(self):
         return str(self)
