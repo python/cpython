@@ -248,8 +248,10 @@ class PurePathBase:
         else:
             self._drv = self._root = ''
             self._tail_cached = []
+            self._str = '.'
             return
         self._drv, self._root, self._tail_cached = self._parse_path(path)
+        self._str = self._format_parsed_parts(self.drive, self.root, self._tail) or '.'
 
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
@@ -274,8 +276,7 @@ class PurePathBase:
         try:
             return self._str
         except AttributeError:
-            self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._tail) or '.'
+            self._load_parts()
             return self._str
 
     def as_posix(self):

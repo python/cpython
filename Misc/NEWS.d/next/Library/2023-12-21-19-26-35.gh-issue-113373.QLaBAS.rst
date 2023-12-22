@@ -1,1 +1,1 @@
-Slightly speed up path parsing in :mod:`pathlib`. Patch by Barney Gale.
+Speed up path parsing in :mod:`pathlib`. Patch by Barney Gale.
