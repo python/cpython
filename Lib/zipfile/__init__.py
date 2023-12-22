@@ -1592,8 +1592,6 @@ class ZipFile:
             raise ValueError(
                 "Attempt to use ZIP archive that was already closed")
 
-        if isinstance(name, os.PathLike):
-            name = os.fspath(name)
         # Make sure we have an info object
         if isinstance(name, ZipInfo):
             # 'name' is already an info object
@@ -1603,6 +1601,8 @@ class ZipFile:
             zinfo.compress_type = self.compression
             zinfo._compresslevel = self.compresslevel
         else:
+            if isinstance(name, os.PathLike):
+                name = _sanitize_filename(os.fspath(name))
             # Get info object for name
             zinfo = self.getinfo(name)
 
