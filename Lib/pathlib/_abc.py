@@ -250,8 +250,11 @@ class PurePathBase:
             self._tail_cached = []
             self._str = '.'
             return
-        self._drv, self._root, self._tail_cached = self._parse_path(path)
-        self._str = self._format_parsed_parts(self.drive, self.root, self._tail) or '.'
+        drv, root, tail = self._parse_path(path)
+        self._drv = drv
+        self._root = root
+        self._tail_cached = tail
+        self._str = self._format_parsed_parts(drv, root, tail) or '.'
 
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
