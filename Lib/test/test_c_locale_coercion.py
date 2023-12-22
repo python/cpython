@@ -120,7 +120,7 @@ class EncodingDetails(_EncodingDetails):
             # coercion triggered, or because the C locale was detected
             stream_errors = "surrogateescape"
 
-        stream_info = 2*[_stream.format(stream_errors)]
+        stream_info = [_stream.format(stream_errors)] * 2
 
         # stderr should always use backslashreplace
         stream_info.append(_stream.format("backslashreplace"))
