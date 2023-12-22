@@ -228,18 +228,10 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)deque;
 }
 
-/*[clinic input]
-_collections.deque.pop
-
-    deque: dequeobject
-
-Remove and return the rightmost element.
-[clinic start generated code]*/
-
 static PyObject *
-_collections_deque_pop_impl(dequeobject *deque)
-/*[clinic end generated code: output=2d4ef1dcd5113ae6 input=b4873fc20283d8d6]*/
+deque_pop_locked(dequeobject *deque)
 {
+
     PyObject *item;
     block *prevblock;
 
@@ -273,6 +265,23 @@ _collections_deque_pop_impl(dequeobject *deque)
 }
 
 /*[clinic input]
+@critical_section
+_collections.deque.pop
+
+    deque: dequeobject
+
+Remove and return the rightmost element.
+[clinic start generated code]*/
+
+static PyObject *
+_collections_deque_pop_impl(dequeobject *deque)
+/*[clinic end generated code: output=2d4ef1dcd5113ae6 input=95605871b5f856d5]*/
+{
+    return deque_pop_locked(deque);
+}
+
+/*[clinic input]
+@critical_section
 _collections.deque.popleft
 
      deque: dequeobject
@@ -394,7 +403,7 @@ deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
     deque->leftindex--;
     deque->leftblock->data[deque->leftindex] = item;
     if (NEEDS_TRIM(deque, deque->maxlen)) {
-        PyObject *olditem = _collections_deque_pop_impl(deque);
+        PyObject *olditem = deque_pop_locked(deque);
         Py_DECREF(olditem);
     } else {
         deque->state++;
@@ -747,7 +756,7 @@ deque_clear(dequeobject *deque)
 
   alternate_method:
     while (Py_SIZE(deque)) {
-        item = _collections_deque_pop_impl(deque);
+        item = deque_pop_locked(deque);
         assert (item != NULL);
         Py_DECREF(item);
     }
