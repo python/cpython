@@ -396,9 +396,8 @@ class PurePathBase:
         if _deprecated:
             msg = ("support for supplying more than one positional argument "
                    "to pathlib.PurePath.relative_to() is deprecated and "
-                   "scheduled for removal in Python {remove}")
-            warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
-                                 remove=(3, 14))
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePathBase):
             other = self.with_segments(other)
@@ -420,9 +419,8 @@ class PurePathBase:
         if _deprecated:
             msg = ("support for supplying more than one argument to "
                    "pathlib.PurePath.is_relative_to() is deprecated and "
-                   "scheduled for removal in Python {remove}")
-            warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
-                                 msg, remove=(3, 14))
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
         elif not isinstance(other, PurePathBase):
             other = self.with_segments(other)
