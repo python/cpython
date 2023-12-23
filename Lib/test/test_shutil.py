@@ -1109,7 +1109,6 @@ class TestCopy(BaseTest, unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     def test_copystat_symlinks(self):
-        _lchmod = os.chmod if os.name == 'nt' else getattr(os, 'lchmod', None)
         tmp_dir = self.mkdtemp()
         src = os.path.join(tmp_dir, 'foo')
         dst = os.path.join(tmp_dir, 'bar')
