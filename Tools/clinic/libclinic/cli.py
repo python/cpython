@@ -13,7 +13,6 @@ __all__ = ["main"]
 
 def create_cli() -> argparse.ArgumentParser:
     cmdline = argparse.ArgumentParser(
-        prog="Argument Clinic",
         description="""Preprocessor for CPython C files.
 
 The purpose of the Argument Clinic is automating all the boilerplate involved

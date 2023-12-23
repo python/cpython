@@ -2603,7 +2603,7 @@ class ClinicExternalTest(TestCase):
 
     def test_cli_help(self):
         out = self.expect_success("-h")
-        self.assertIn("usage: clinic.py", out)
+        self.assertIn("Preprocessor for CPython C files.", out)
 
     def test_cli_converters(self):
         prelude = dedent("""
