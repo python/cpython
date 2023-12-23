@@ -3730,7 +3730,7 @@ class FormatHelperTests(unittest.TestCase):
         )
         for lines, expected in dataset:
             with self.subTest(lines=lines, expected=expected):
-                out = clinic.strip_leading_and_trailing_blank_lines(lines)
+                out = libclinic.normalize_snippet(lines)
                 self.assertEqual(out, expected)
 
     def test_normalize_snippet(self):
@@ -3759,7 +3759,7 @@ class FormatHelperTests(unittest.TestCase):
         expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
         for indent, expected in expected_outputs.items():
             with self.subTest(indent=indent):
-                actual = clinic.normalize_snippet(snippet, indent=indent)
+                actual = libclinic.normalize_snippet(snippet, indent=indent)
                 self.assertEqual(actual, expected)
 
     def test_escaped_docstring(self):
@@ -3780,7 +3780,7 @@ class FormatHelperTests(unittest.TestCase):
     def test_format_escape(self):
         line = "{}, {a}"
         expected = "{{}}, {{a}}"
-        out = clinic.format_escape(line)
+        out = libclinic.format_escape(line)
         self.assertEqual(out, expected)
 
     def test_indent_all_lines(self):
