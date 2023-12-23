@@ -1785,6 +1785,8 @@ Other constructor:
 
    Examples::
 
+   .. doctest::
+
        >>> from datetime import time
        >>> time.fromisoformat('04:23:01')
        datetime.time(4, 23, 1)
@@ -1794,7 +1796,7 @@ Other constructor:
        datetime.time(4, 23, 1)
        >>> time.fromisoformat('04:23:01.000384')
        datetime.time(4, 23, 1, 384)
-       >>> time.fromisoformat('04:23:01,000')
+       >>> time.fromisoformat('04:23:01,000384')
        datetime.time(4, 23, 1, 384)
        >>> time.fromisoformat('04:23:01+04:00')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
