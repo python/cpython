@@ -310,7 +310,7 @@ def copymode(src, dst, *, follow_symlinks=True):
             return
     else:
         if os.name == 'nt' and os.path.islink(dst):
-            dst = os.realpath(dst, strict=True)
+            dst = os.path.realpath(dst, strict=True)
         stat_func, chmod_func = _stat, os.chmod
 
     st = stat_func(src)
