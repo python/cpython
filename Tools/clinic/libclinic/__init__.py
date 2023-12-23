@@ -1,25 +1,31 @@
 from typing import Final
 
 from .formatting import (
+    SIG_END_MARKER,
     c_repr,
     docstring_for_c_string,
+    format_escape,
     indent_all_lines,
+    normalize_snippet,
     pprint_words,
     suffix_all_lines,
+    wrap_declarations,
     wrapped_c_string_literal,
-    SIG_END_MARKER,
 )
 
 
 __all__ = [
     # Formatting helpers
+    "SIG_END_MARKER",
     "c_repr",
     "docstring_for_c_string",
+    "format_escape",
     "indent_all_lines",
+    "normalize_snippet",
     "pprint_words",
     "suffix_all_lines",
+    "wrap_declarations",
     "wrapped_c_string_literal",
-    "SIG_END_MARKER",
 ]
 
 
