@@ -306,7 +306,12 @@ def copymode(src, dst, *, follow_symlinks=True):
         else:
             return
     else:
-        stat_func, chmod_func = _stat, os.chmod
+        stat_func = _stat
+        if os.name == 'nt' and os.path.islink(dst):
+            def chmod_func(*args):
+                os.chmod(*args, follow_symlinks=True)
+        else:
+            chmod_func = os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
