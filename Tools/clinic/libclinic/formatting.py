@@ -60,7 +60,7 @@ def wrapped_c_string_literal(
     return initial_indent * " " + c_repr(separator.join(wrapped))
 
 
-def _add_prefix_and_suffix(text: str, prefix: str = "", suffix: str = "") -> str:
+def _add_prefix_and_suffix(text: str, *, prefix: str = "", suffix: str = "") -> str:
     """Return 'text' with 'prefix' prepended and 'suffix' appended to all lines.
 
     If the last line is empty, it remains unchanged.
