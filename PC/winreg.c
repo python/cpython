@@ -242,7 +242,7 @@ class HKEY_return_converter(CReturnConverter):
             'return_value = PyHKEY_FromHKEY(_PyModule_GetState(module), _return_value);\n')
 
 # HACK: this only works for PyHKEYObjects, nothing else.
-#       Should this be generalized and enshrined in clinic.py,
+#       Should this be generalized and enshrined in Argument Clinic,
 #       destroy this converter with prejudice.
 class self_return_converter(CReturnConverter):
     type = 'PyHKEYObject *'

@@ -17,8 +17,9 @@ import unittest
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
-    import clinic
-    from clinic import DSLParser
+    import libclinic.cli
+    from libclinic import clinic
+    from libclinic.clinic import DSLParser
 
 
 def _make_clinic(*, filename='clinic_tests'):
@@ -2429,7 +2430,7 @@ class ClinicExternalTest(TestCase):
             support.captured_stderr() as err,
             self.assertRaises(SystemExit) as cm
         ):
-            clinic.main(args)
+            libclinic.cli.main(args)
         return out.getvalue(), err.getvalue(), cm.exception.code
 
     def expect_success(self, *args):
