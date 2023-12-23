@@ -462,6 +462,8 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_heap_ctype_doc_and_text_signature(self):
         self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
         self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
