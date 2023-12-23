@@ -3722,6 +3722,8 @@ class TestSignatureObject(unittest.TestCase):
         foo_sig = MySignature.from_callable(foo)
         self.assertIsInstance(foo_sig, MySignature)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_signature_from_callable_class(self):
         # A regression test for a class inheriting its signature from `object`.
         class MySignature(inspect.Signature): pass
@@ -3812,7 +3814,8 @@ class TestSignatureObject(unittest.TestCase):
                             par('c', PORK, annotation="'MyClass'"),
                         )))
 
-                self.assertEqual(signature_func(isa.UnannotatedClass), sig())
+                if not MISSING_C_DOCSTRINGS:
+                    self.assertEqual(signature_func(isa.UnannotatedClass), sig())
                 self.assertEqual(signature_func(isa.unannotated_function),
                     sig(
                         parameters=(
