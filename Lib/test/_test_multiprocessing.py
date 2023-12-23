@@ -4724,6 +4724,18 @@ class _TestLogging(BaseTestCase):
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
 
+    def test_format(self):
+        logger = multiprocessing.get_logger()
+        logger.setLevel(util.DEBUG)
+        handler = logging.StreamHandler()
+        logging_format = '[%(levelname)s] [%(processName)s] [%(filename)s:%(lineno)d:%(funcName)s] %(message)s'
+        handler.setFormatter(logging.Formatter(logging_format))
+        logger.addHandler(handler)
+        logger.info('print info')
+        logger.debug('print debug')
+        pool_in_process()
+        logger.setLevel(LOG_LEVEL)
+
 
 # class _TestLoggingProcessName(BaseTestCase):
 #
