@@ -1,6 +1,6 @@
 """A collection of string formatting helpers."""
-import textwrap
 
+import textwrap
 from typing import Final
 
 
