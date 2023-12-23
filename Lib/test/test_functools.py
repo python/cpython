@@ -939,6 +939,8 @@ class TestCmpToKey:
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
 
+    @unittest.skipIf(support.MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_cmp_to_signature(self):
         self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
                          '(mycmp)')

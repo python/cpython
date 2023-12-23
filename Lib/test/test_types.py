@@ -1,6 +1,6 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only
+from test.support import run_with_locale, cpython_only, MISSING_C_DOCSTRINGS
 import collections.abc
 from collections import namedtuple
 import copy
@@ -598,6 +598,8 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
         self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_dunder_get_signature(self):
         sig = inspect.signature(object.__init__.__get__)
         self.assertEqual(list(sig.parameters), ["instance", "owner"])
