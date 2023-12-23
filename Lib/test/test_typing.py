@@ -4136,7 +4136,9 @@ class ProtocolTests(BaseTestCase):
             evil = classproperty()
 
         # recognised as a protocol attr,
-        # but not actually accessed for non-runtime protocols
+        # but not actually accessed by the protocol metaclass
+        # (which would raise RuntimeError) for non-runtime protocols.
+        # See gh-113320
         self.assertEqual(get_protocol_members(Commentable), {"evil"})
 
     def test_runtime_protocol_interaction_with_evil_classproperty(self):
