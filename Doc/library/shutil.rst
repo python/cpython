@@ -108,13 +108,6 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
 
-   .. versionchanged:: 3.13
-      In older Python versions :func:`!copymode` worked differenly on Windows
-      if *dst* is a symbolic link: it modified the permission bits of *dst*
-      itself rather than the file it points to if *follow_symlinks* is true
-      or *src* is not a symbolic link, and did not modify the permission bits
-      if *follow_symlinks* is false and *src* is a symbolic link.
-
 .. function:: copystat(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits, last access time, last modification time, and
@@ -161,13 +154,6 @@ Directory and files operations
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
-
-   .. versionchanged:: 3.13
-      In older Python versions :func:`!copymode` worked differenly on Windows
-      if *dst* is a symbolic link: it modified the permission bits of *dst*
-      itself rather than the file it points to if *follow_symlinks* is true
-      or *src* is not a symbolic link, and did not modify the permission bits
-      if *follow_symlinks* is false and *src* is a symbolic link.
 
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
