@@ -4727,7 +4727,7 @@ class _TestLogging(BaseTestCase):
     def test_format(self):
         logger = multiprocessing.get_logger()
         logger.setLevel(util.DEBUG)
-        handler = logging.StreamHandler()
+        handler = logging.StreamHandler(io.StringIO())
         logging_format = '[%(levelname)s] [%(processName)s] [%(filename)s:%(lineno)d:%(funcName)s] %(message)s'
         handler.setFormatter(logging.Formatter(logging_format))
         logger.addHandler(handler)
