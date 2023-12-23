@@ -1,3 +1,0 @@
-Refine the custom syntax error that suggests that a comma may be missing to
-trigger only when the expressions are detected between parentheses or
-brackets. Patch by Pablo Galindo

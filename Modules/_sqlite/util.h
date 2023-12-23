@@ -23,13 +23,10 @@
 
 #ifndef PYSQLITE_UTIL_H
 #define PYSQLITE_UTIL_H
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 #include "sqlite3.h"
 #include "connection.h"
-
-int pysqlite_step(sqlite3_stmt *statement);
 
 /**
  * Checks the SQLite error code and sets the appropriate DB-API exception.

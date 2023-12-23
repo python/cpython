@@ -1,1 +1,0 @@
-Get rid of the ``_bootstrap_python`` build step. The deepfreeze.py script is now run using ``$(PYTHON_FOR_REGEN)`` which can be Python 3.7 or newer (on Windows, 3.8 or newer).

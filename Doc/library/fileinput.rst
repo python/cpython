@@ -177,7 +177,7 @@ available for subclassing as well:
       The keyword-only parameter *encoding* and *errors* are added.
 
    .. versionchanged:: 3.11
-      The ``'rU'`` and ``'U'`` modes and the :meth:`__getitem__` method have
+      The ``'rU'`` and ``'U'`` modes and the :meth:`!__getitem__` method have
       been removed.
 
 
@@ -224,5 +224,5 @@ The two following opening hooks are provided by this module:
       Added the optional *errors* parameter.
 
    .. deprecated:: 3.10
-      This function is deprecated since :func:`input` and :class:`FileInput`
+      This function is deprecated since :func:`fileinput.input` and :class:`FileInput`
       now have *encoding* and *errors* parameters.

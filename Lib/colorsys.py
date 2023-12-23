@@ -83,7 +83,7 @@ def rgb_to_hls(r, g, b):
     if l <= 0.5:
         s = rangec / sumc
     else:
-        s = rangec / (2.0-sumc)
+        s = rangec / (2.0-maxc-minc)  # Not always 2.0-sumc: gh-106498.
     rc = (maxc-r) / rangec
     gc = (maxc-g) / rangec
     bc = (maxc-b) / rangec

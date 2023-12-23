@@ -1,4 +1,4 @@
-"""Test suite for statistics module, including helper NumericTestCase and
+x = """Test suite for statistics module, including helper NumericTestCase and
 approx_equal function.
 
 """
@@ -27,6 +27,12 @@ import statistics
 
 
 # === Helper functions and class ===
+
+# Test copied from Lib/test/test_math.py
+# detect evidence of double-rounding: fsum is not always correctly
+# rounded on machines that suffer from double rounding.
+x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
+HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 def sign(x):
     """Return -1.0 for negatives, including -0.0, otherwise +1.0."""
@@ -692,14 +698,6 @@ class GlobalsTest(unittest.TestCase):
                             'missing name "%s" in __all__' % name)
 
 
-class DocTests(unittest.TestCase):
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -OO and above")
-    def test_doc_tests(self):
-        failed, tried = doctest.testmod(statistics, optionflags=doctest.ELLIPSIS)
-        self.assertGreater(tried, 0)
-        self.assertEqual(failed, 0)
-
 class StatisticsErrorTest(unittest.TestCase):
     def test_has_exception(self):
         errmsg = (
@@ -1038,50 +1036,6 @@ class FailNegTest(unittest.TestCase):
         else:
             self.fail("expected exception, but it didn't happen")
         self.assertEqual(errmsg, msg)
-
-
-class FindLteqTest(unittest.TestCase):
-    # Test _find_lteq private function.
-
-    def test_invalid_input_values(self):
-        for a, x in [
-            ([], 1),
-            ([1, 2], 3),
-            ([1, 3], 2)
-        ]:
-            with self.subTest(a=a, x=x):
-                with self.assertRaises(ValueError):
-                    statistics._find_lteq(a, x)
-
-    def test_locate_successfully(self):
-        for a, x, expected_i in [
-            ([1, 1, 1, 2, 3], 1, 0),
-            ([0, 1, 1, 1, 2, 3], 1, 1),
-            ([1, 2, 3, 3, 3], 3, 2)
-        ]:
-            with self.subTest(a=a, x=x):
-                self.assertEqual(expected_i, statistics._find_lteq(a, x))
-
-
-class FindRteqTest(unittest.TestCase):
-    # Test _find_rteq private function.
-
-    def test_invalid_input_values(self):
-        for a, l, x in [
-            ([1], 2, 1),
-            ([1, 3], 0, 2)
-        ]:
-            with self.assertRaises(ValueError):
-                statistics._find_rteq(a, l, x)
-
-    def test_locate_successfully(self):
-        for a, l, x, expected_i in [
-            ([1, 1, 1, 2, 3], 0, 1, 2),
-            ([0, 1, 1, 1, 2, 3], 0, 1, 3),
-            ([1, 2, 3, 3, 3], 0, 3, 4)
-        ]:
-            with self.subTest(a=a, l=l, x=x):
-                self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
 
 
 # === Tests for public functions ===
@@ -1786,6 +1740,12 @@ class TestMedianGrouped(TestMedian):
                 data = [x]*count
                 self.assertEqual(self.func(data), float(x))
 
+    def test_single_value(self):
+        # Override method from AverageMixin.
+        # Average of a single value is the value as a float.
+        for x in (23, 42.5, 1.3e15, Fraction(15, 19), Decimal('0.28')):
+            self.assertEqual(self.func([x]), float(x))
+
     def test_odd_fractions(self):
         # Test median_grouped works with an odd number of Fractions.
         F = Fraction
@@ -2164,9 +2124,9 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
 
 class TestSqrtHelpers(unittest.TestCase):
 
-    def test_isqrt_frac_rto(self):
+    def test_integer_sqrt_of_frac_rto(self):
         for n, m in itertools.product(range(100), range(1, 1000)):
-            r = statistics._isqrt_frac_rto(n, m)
+            r = statistics._integer_sqrt_of_frac_rto(n, m)
             self.assertIsInstance(r, int)
             if r*r*m == n:
                 # Root is exact
@@ -2177,7 +2137,8 @@ class TestSqrtHelpers(unittest.TestCase):
             self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
 
     @requires_IEEE_754
-    def test_sqrt_frac(self):
+    @support.requires_resource('cpu')
+    def test_float_sqrt_of_frac(self):
 
         def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
             if not x:
@@ -2204,22 +2165,59 @@ class TestSqrtHelpers(unittest.TestCase):
             denonimator: int = randrange(10 ** randrange(50)) + 1
             with self.subTest(numerator=numerator, denonimator=denonimator):
                 x: Fraction = Fraction(numerator, denonimator)
-                root: float = statistics._sqrt_frac(numerator, denonimator)
+                root: float = statistics._float_sqrt_of_frac(numerator, denonimator)
                 self.assertTrue(is_root_correctly_rounded(x, root))
 
         # Verify that corner cases and error handling match math.sqrt()
-        self.assertEqual(statistics._sqrt_frac(0, 1), 0.0)
+        self.assertEqual(statistics._float_sqrt_of_frac(0, 1), 0.0)
         with self.assertRaises(ValueError):
-            statistics._sqrt_frac(-1, 1)
+            statistics._float_sqrt_of_frac(-1, 1)
         with self.assertRaises(ValueError):
-            statistics._sqrt_frac(1, -1)
+            statistics._float_sqrt_of_frac(1, -1)
 
         # Error handling for zero denominator matches that for Fraction(1, 0)
         with self.assertRaises(ZeroDivisionError):
-            statistics._sqrt_frac(1, 0)
+            statistics._float_sqrt_of_frac(1, 0)
 
         # The result is well defined if both inputs are negative
-        self.assertAlmostEqual(statistics._sqrt_frac(-2, -1), math.sqrt(2.0))
+        self.assertEqual(statistics._float_sqrt_of_frac(-2, -1), statistics._float_sqrt_of_frac(2, 1))
+
+    def test_decimal_sqrt_of_frac(self):
+        root: Decimal
+        numerator: int
+        denominator: int
+
+        for root, numerator, denominator in [
+            (Decimal('0.4481904599041192673635338663'), 200874688349065940678243576378, 1000000000000000000000000000000),  # No adj
+            (Decimal('0.7924949131383786609961759598'), 628048187350206338833590574929, 1000000000000000000000000000000),  # Adj up
+            (Decimal('0.8500554152289934068192208727'), 722594208960136395984391238251, 1000000000000000000000000000000),  # Adj down
+        ]:
+            with decimal.localcontext(decimal.DefaultContext):
+                self.assertEqual(statistics._decimal_sqrt_of_frac(numerator, denominator), root)
+
+            # Confirm expected root with a quad precision decimal computation
+            with decimal.localcontext(decimal.DefaultContext) as ctx:
+                ctx.prec *= 4
+                high_prec_ratio = Decimal(numerator) / Decimal(denominator)
+                ctx.rounding = decimal.ROUND_05UP
+                high_prec_root = high_prec_ratio.sqrt()
+            with decimal.localcontext(decimal.DefaultContext):
+                target_root = +high_prec_root
+            self.assertEqual(root, target_root)
+
+        # Verify that corner cases and error handling match Decimal.sqrt()
+        self.assertEqual(statistics._decimal_sqrt_of_frac(0, 1), 0.0)
+        with self.assertRaises(decimal.InvalidOperation):
+            statistics._decimal_sqrt_of_frac(-1, 1)
+        with self.assertRaises(decimal.InvalidOperation):
+            statistics._decimal_sqrt_of_frac(1, -1)
+
+        # Error handling for zero denominator matches that for Fraction(1, 0)
+        with self.assertRaises(ZeroDivisionError):
+            statistics._decimal_sqrt_of_frac(1, 0)
+
+        # The result is well defined if both inputs are negative
+        self.assertEqual(statistics._decimal_sqrt_of_frac(-2, -1), statistics._decimal_sqrt_of_frac(2, 1))
 
 
 class TestStdev(VarianceStdevMixin, NumericTestCase):
@@ -2305,9 +2303,11 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(StatisticsError):
             geometric_mean([])                      # empty input
         with self.assertRaises(StatisticsError):
-            geometric_mean([3.5, 0.0, 5.25])        # zero input
-        with self.assertRaises(StatisticsError):
             geometric_mean([3.5, -4.0, 5.25])       # negative input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([0.0, -4.0, 5.25])       # negative input with zero
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, -math.inf, 5.25])  # negative infinity
         with self.assertRaises(StatisticsError):
             geometric_mean(iter([]))                # empty iterator
         with self.assertRaises(TypeError):
@@ -2329,6 +2329,12 @@ class TestGeometricMean(unittest.TestCase):
         self.assertTrue(math.isinf(geometric_mean([10, Inf])), 'infinity')
         with self.assertRaises(ValueError):
             geometric_mean([Inf, -Inf])
+
+        # Cases with zero
+        self.assertEqual(geometric_mean([3, 0.0, 5]), 0.0)         # Any zero gives a zero
+        self.assertEqual(geometric_mean([3, -0.0, 5]), 0.0)        # Negative zero allowed
+        self.assertTrue(math.isnan(geometric_mean([0, NaN])))      # NaN beats zero
+        self.assertTrue(math.isnan(geometric_mean([0, Inf])))      # Because 0.0 * Inf -> NaN
 
     def test_mixed_int_and_float(self):
         # Regression test for b.p.o. issue #28327
@@ -2456,6 +2462,11 @@ class TestQuantiles(unittest.TestCase):
             data = random.choices(range(100), k=k)
             q1, q2, q3 = quantiles(data, method='inclusive')
             self.assertEqual(q2, statistics.median(data))
+        # Base case with a single data point:  When estimating quantiles from
+        # a sample, we want to be able to add one sample point at a time,
+        # getting increasingly better estimates.
+        self.assertEqual(quantiles([10], n=4), [10.0, 10.0, 10.0])
+        self.assertEqual(quantiles([10], n=4, method='exclusive'), [10.0, 10.0, 10.0])
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles
@@ -2506,7 +2517,7 @@ class TestQuantiles(unittest.TestCase):
         with self.assertRaises(ValueError):
             quantiles([10, 20, 30], method='X') # method is unknown
         with self.assertRaises(StatisticsError):
-            quantiles([10], n=4)                # not enough data points
+            quantiles([], n=4)                  # not enough data points
         with self.assertRaises(TypeError):
             quantiles([10, None, 30], n=4)      # data is non-numeric
 
@@ -2565,6 +2576,95 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         self.assertAlmostEqual(statistics.correlation(x, y), 1)
         self.assertAlmostEqual(statistics.covariance(x, y), 0.1)
 
+    def test_sqrtprod_helper_function_fundamentals(self):
+        # Verify that results are close to sqrt(x * y)
+        for i in range(100):
+            x = random.expovariate()
+            y = random.expovariate()
+            expected = math.sqrt(x * y)
+            actual = statistics._sqrtprod(x, y)
+            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+                self.assertAlmostEqual(expected, actual)
+
+        x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661
+        self.assertEqual(statistics._sqrtprod(x, y), target)
+        self.assertNotEqual(math.sqrt(x * y), target)
+
+        # Test that range extremes avoid underflow and overflow
+        smallest = sys.float_info.min * sys.float_info.epsilon
+        self.assertEqual(statistics._sqrtprod(smallest, smallest), smallest)
+        biggest = sys.float_info.max
+        self.assertEqual(statistics._sqrtprod(biggest, biggest), biggest)
+
+        # Check special values and the sign of the result
+        special_values = [0.0, -0.0, 1.0, -1.0, 4.0, -4.0,
+                          math.nan, -math.nan, math.inf, -math.inf]
+        for x, y in itertools.product(special_values, repeat=2):
+            try:
+                expected = math.sqrt(x * y)
+            except ValueError:
+                expected = 'ValueError'
+            try:
+                actual = statistics._sqrtprod(x, y)
+            except ValueError:
+                actual = 'ValueError'
+            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+                if isinstance(expected, str) and expected == 'ValueError':
+                    self.assertEqual(actual, 'ValueError')
+                    continue
+                self.assertIsInstance(actual, float)
+                if math.isnan(expected):
+                    self.assertTrue(math.isnan(actual))
+                    continue
+                self.assertEqual(actual, expected)
+                self.assertEqual(sign(actual), sign(expected))
+
+    @requires_IEEE_754
+    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                     "accuracy not guaranteed on machines with double rounding")
+    @support.cpython_only    # Allow for a weaker sumprod() implmentation
+    def test_sqrtprod_helper_function_improved_accuracy(self):
+        # Test a known example where accuracy is improved
+        x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661
+        self.assertEqual(statistics._sqrtprod(x, y), target)
+        self.assertNotEqual(math.sqrt(x * y), target)
+
+        def reference_value(x: float, y: float) -> float:
+            x = decimal.Decimal(x)
+            y = decimal.Decimal(y)
+            with decimal.localcontext() as ctx:
+                ctx.prec = 200
+                return float((x * y).sqrt())
+
+        # Verify that the new function with improved accuracy
+        # agrees with a reference value more often than old version.
+        new_agreements = 0
+        old_agreements = 0
+        for i in range(10_000):
+            x = random.expovariate()
+            y = random.expovariate()
+            new = statistics._sqrtprod(x, y)
+            old = math.sqrt(x * y)
+            ref = reference_value(x, y)
+            new_agreements += (new == ref)
+            old_agreements += (old == ref)
+        self.assertGreater(new_agreements, old_agreements)
+
+    def test_correlation_spearman(self):
+        # https://statistics.laerd.com/statistical-guides/spearmans-rank-order-correlation-statistical-guide-2.php
+        # Compare with:
+        #     >>> import scipy.stats.mstats
+        #     >>> scipy.stats.mstats.spearmanr(reading, mathematics)
+        #     SpearmanrResult(correlation=0.6686960980480712, pvalue=0.03450954165178532)
+        # And Wolfram Alpha gives: 0.668696
+        #     https://www.wolframalpha.com/input?i=SpearmanRho%5B%7B56%2C+75%2C+45%2C+71%2C+61%2C+64%2C+58%2C+80%2C+76%2C+61%7D%2C+%7B66%2C+70%2C+40%2C+60%2C+65%2C+56%2C+59%2C+77%2C+67%2C+63%7D%5D
+        reading = [56, 75, 45, 71, 61, 64, 58, 80, 76, 61]
+        mathematics = [66, 70, 40, 60, 65, 56, 59, 77, 67, 63]
+        self.assertAlmostEqual(statistics.correlation(reading, mathematics, method='ranked'),
+                               0.6686960980480712)
+
+        with self.assertRaises(ValueError):
+            statistics.correlation(reading, mathematics, method='bad_method')
 
 class TestLinearRegression(unittest.TestCase):
 
@@ -2594,6 +2694,16 @@ class TestLinearRegression(unittest.TestCase):
         slope, intercept = statistics.linear_regression(x, y, proportional=True)
         self.assertAlmostEqual(slope, 20 + 1/150)
         self.assertEqual(intercept, 0.0)
+
+    def test_float_output(self):
+        x = [Fraction(2, 3), Fraction(3, 4)]
+        y = [Fraction(4, 5), Fraction(5, 6)]
+        slope, intercept = statistics.linear_regression(x, y)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
+        slope, intercept = statistics.linear_regression(x, y, proportional=True)
+        self.assertTrue(isinstance(slope, float))
+        self.assertTrue(isinstance(intercept, float))
 
 class TestNormalDist:
 
@@ -2745,6 +2855,7 @@ class TestNormalDist:
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_inv_cdf(self):
         NormalDist = self.module.NormalDist
 
@@ -2802,9 +2913,10 @@ class TestNormalDist:
             iq.inv_cdf(1.0)                         # p is one
         with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(1.1)                         # p over one
-        with self.assertRaises(self.module.StatisticsError):
-            iq = NormalDist(100, 0)                 # sigma is zero
-            iq.inv_cdf(0.5)
+
+        # Supported case:
+        iq = NormalDist(100, 0)                     # sigma is zero
+        self.assertEqual(iq.inv_cdf(0.5), 100)
 
         # Special values
         self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
@@ -2987,14 +3099,19 @@ class TestNormalDist:
         nd = NormalDist(100, 15)
         self.assertNotEqual(nd, lnd)
 
-    def test_pickle_and_copy(self):
+    def test_copy(self):
         nd = self.module.NormalDist(37.5, 5.625)
         nd1 = copy.copy(nd)
         self.assertEqual(nd, nd1)
         nd2 = copy.deepcopy(nd)
         self.assertEqual(nd, nd2)
-        nd3 = pickle.loads(pickle.dumps(nd))
-        self.assertEqual(nd, nd3)
+
+    def test_pickle(self):
+        nd = self.module.NormalDist(37.5, 5.625)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                pickled = pickle.loads(pickle.dumps(nd, protocol=proto))
+                self.assertEqual(nd, pickled)
 
     def test_hashability(self):
         ND = self.module.NormalDist
@@ -3033,6 +3150,7 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
+    tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

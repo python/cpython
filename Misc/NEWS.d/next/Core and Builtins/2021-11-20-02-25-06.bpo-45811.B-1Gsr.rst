@@ -1,2 +1,0 @@
-Improve the tokenizer errors when encountering invisible control characters
-in the parser. Patch by Pablo Galindo

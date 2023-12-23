@@ -120,7 +120,7 @@ class ReplaceDialog(SearchDialogBase):
         if self.engine.isre():
             try:
                 new = m.expand(repl)
-            except re.error:
+            except re.PatternError:
                 self.engine.report_error(repl, 'Invalid Replace Expression')
                 new = None
         else:
@@ -158,11 +158,8 @@ class ReplaceDialog(SearchDialogBase):
         first = last = None
         # XXX ought to replace circular instead of top-to-bottom when wrapping
         text.undo_block_start()
-        while True:
-            res = self.engine.search_forward(text, prog, line, col,
-                                             wrap=False, ok=ok)
-            if not res:
-                break
+        while res := self.engine.search_forward(
+                text, prog, line, col, wrap=False, ok=ok):
             line, m = res
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()
@@ -301,6 +298,7 @@ def _replace_dialog(parent):  # htest #
 
     button = Button(frame, text="Replace", command=show_replace)
     button.pack()
+
 
 if __name__ == '__main__':
     from unittest import main
