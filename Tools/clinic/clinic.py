@@ -50,6 +50,11 @@ from typing import (
     overload,
 )
 
+
+# Local imports.
+import libclinic
+
+
 # TODO:
 #
 # soon:
@@ -61,23 +66,6 @@ from typing import (
 #         and keyword-only
 #
 
-NO_VARARG = "PY_SSIZE_T_MAX"
-CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {
-    "_keywords",
-    "_parser",
-    "args",
-    "argsbuf",
-    "fastargs",
-    "kwargs",
-    "kwnames",
-    "nargs",
-    "noptargs",
-    "return_value",
-}
-
-# '#include "header.h"   // reason': column of '//' comment
-INCLUDE_COMMENT_COLUMN = 35
 
 # match '#define Py_LIMITED_API'
 LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
@@ -103,43 +91,7 @@ class Null:
 
 NULL = Null()
 
-sig_end_marker = '--'
-
-Appender = Callable[[str], None]
-Outputter = Callable[[], str]
 TemplateDict = dict[str, str]
-
-class _TextAccumulator(NamedTuple):
-    text: list[str]
-    append: Appender
-    output: Outputter
-
-def _text_accumulator() -> _TextAccumulator:
-    text: list[str] = []
-    def output() -> str:
-        s = ''.join(text)
-        text.clear()
-        return s
-    return _TextAccumulator(text, text.append, output)
-
-
-class TextAccumulator(NamedTuple):
-    append: Appender
-    output: Outputter
-
-def text_accumulator() -> TextAccumulator:
-    """
-    Creates a simple text accumulator / joiner.
-
-    Returns a pair of callables:
-        append, output
-    "append" appends a string to the accumulator.
-    "output" returns the contents of the accumulator
-       joined together (''.join(accumulator)) and
-       empties the accumulator.
-    """
-    text, append, output = _text_accumulator()
-    return TextAccumulator(append, output)
 
 
 @dc.dataclass
@@ -213,33 +165,6 @@ def fail(
     warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
-def quoted_for_c_string(s: str) -> str:
-    for old, new in (
-        ('\\', '\\\\'), # must be first!
-        ('"', '\\"'),
-        ("'", "\\'"),
-        ):
-        s = s.replace(old, new)
-    return s
-
-def c_repr(s: str) -> str:
-    return '"' + s + '"'
-
-
-def wrapped_c_string_literal(
-        text: str,
-        *,
-        width: int = 72,
-        suffix: str = '',
-        initial_indent: int = 0,
-        subsequent_indent: int = 4
-) -> str:
-    wrapped = textwrap.wrap(text, width=width, replace_whitespace=False,
-                            drop_whitespace=False, break_on_hyphens=False)
-    separator = '"' + suffix + '\n' + subsequent_indent * ' ' + '"'
-    return initial_indent * ' ' + '"' + separator.join(wrapped) + '"'
-
-
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
 def is_legal_py_identifier(s: str) -> bool:
@@ -264,14 +189,6 @@ def ensure_legal_c_identifier(s: str) -> str:
         return s + "_value"
     return s
 
-def rstrip_lines(s: str) -> str:
-    text, add, output = _text_accumulator()
-    for line in s.split('\n'):
-        add(line.rstrip())
-        add('\n')
-    text.pop()
-    return output()
-
 def format_escape(s: str) -> str:
     # double up curly-braces, this string will be used
     # as part of a format_map() template later
@@ -293,19 +210,16 @@ def linear_format(s: str, **kwargs: str) -> str:
             by the indent of the source line.
           * A newline will be added to the end.
     """
-
-    add, output = text_accumulator()
+    lines = []
     for line in s.split('\n'):
         indent, curly, trailing = line.partition('{')
         if not curly:
-            add(line)
-            add('\n')
+            lines.extend([line, "\n"])
             continue
 
         name, curly, trailing = trailing.partition('}')
         if not curly or name not in kwargs:
-            add(line)
-            add('\n')
+            lines.extend([line, "\n"])
             continue
 
         if trailing:
@@ -319,58 +233,11 @@ def linear_format(s: str, **kwargs: str) -> str:
         if not value:
             continue
 
-        value = textwrap.indent(rstrip_lines(value), indent)
-        add(value)
-        add('\n')
+        stripped = [line.rstrip() for line in value.split("\n")]
+        value = textwrap.indent("\n".join(stripped), indent)
+        lines.extend([value, "\n"])
 
-    return output()[:-1]
-
-def indent_all_lines(s: str, prefix: str) -> str:
-    """
-    Returns 's', with 'prefix' prepended to all lines.
-
-    If the last line is empty, prefix is not prepended
-    to it.  (If s is blank, returns s unchanged.)
-
-    (textwrap.indent only adds to non-blank lines.)
-    """
-    split = s.split('\n')
-    last = split.pop()
-    final = []
-    for line in split:
-        final.append(prefix)
-        final.append(line)
-        final.append('\n')
-    if last:
-        final.append(prefix)
-        final.append(last)
-    return ''.join(final)
-
-def suffix_all_lines(s: str, suffix: str) -> str:
-    """
-    Returns 's', with 'suffix' appended to all lines.
-
-    If the last line is empty, suffix is not appended
-    to it.  (If s is blank, returns s unchanged.)
-    """
-    split = s.split('\n')
-    last = split.pop()
-    final = []
-    for line in split:
-        final.append(line)
-        final.append(suffix)
-        final.append('\n')
-    if last:
-        final.append(last)
-        final.append(suffix)
-    return ''.join(final)
-
-
-def pprint_words(items: list[str]) -> str:
-    if len(items) <= 2:
-        return " and ".join(items)
-    else:
-        return ", ".join(items[:-1]) + " and " + items[-1]
+    return "".join(lines[:-1])
 
 
 class CRenderData:
@@ -773,6 +640,8 @@ class CLanguage(Language):
     stop_line     = "[{dsl_name} start generated code]*/"
     checksum_line = "/*[{dsl_name} end generated code: {arguments}]*/"
 
+    NO_VARARG: Final[str] = "PY_SSIZE_T_MAX"
+
     PARSER_PROTOTYPE_KEYWORD: Final[str] = normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
@@ -926,7 +795,7 @@ class CLanguage(Language):
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
             minor=minversion[1],
-            message=c_repr(message),
+            message=libclinic.c_repr(message),
         )
         return normalize_snippet(code)
 
@@ -957,7 +826,7 @@ class CLanguage(Language):
             params.values(), key=attrgetter("deprecated_positional")
         ):
             names = [repr(p.name) for p in group]
-            pstr = pprint_words(names)
+            pstr = libclinic.pprint_words(names)
             if len(names) == 1:
                 message += (
                     f" Parameter {pstr} will become a keyword-only parameter "
@@ -976,8 +845,8 @@ class CLanguage(Language):
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
             errcheck="",
-            message=wrapped_c_string_literal(message, width=64,
-                                             subsequent_indent=20),
+            message=libclinic.wrapped_c_string_literal(message, width=64,
+                                                       subsequent_indent=20),
         )
         return normalize_snippet(code, indent=4)
 
@@ -1026,7 +895,7 @@ class CLanguage(Language):
                 else:
                     condition = f"kwargs && PyDict_GET_SIZE(kwargs) && {condition}"
         names = [repr(p.name) for p in params.values()]
-        pstr = pprint_words(names)
+        pstr = libclinic.pprint_words(names)
         pl = 's' if len(params) != 1 else ''
         message = (
             f"Passing keyword argument{pl} {pstr} to "
@@ -1037,7 +906,7 @@ class CLanguage(Language):
             params.values(), key=attrgetter("deprecated_keyword")
         ):
             names = [repr(p.name) for p in group]
-            pstr = pprint_words(names)
+            pstr = libclinic.pprint_words(names)
             pl = 's' if len(names) != 1 else ''
             message += (
                 f" Parameter{pl} {pstr} will become positional-only "
@@ -1059,30 +928,10 @@ class CLanguage(Language):
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
             errcheck=errcheck,
-            message=wrapped_c_string_literal(message, width=64,
-                                             subsequent_indent=20),
+            message=libclinic.wrapped_c_string_literal(message, width=64,
+                                                       subsequent_indent=20),
         )
         return normalize_snippet(code, indent=4)
-
-    def docstring_for_c_string(
-            self,
-            f: Function
-    ) -> str:
-        text, add, output = _text_accumulator()
-        # turn docstring into a properly quoted C string
-        for line in f.docstring.split('\n'):
-            add('"')
-            add(quoted_for_c_string(line))
-            add('\\n"\n')
-
-        if text[-2] == sig_end_marker:
-            # If we only have a signature, add the blank line that the
-            # __text_signature__ getter expects to be there.
-            add('"\\n"')
-        else:
-            text.pop()
-            add('"')
-        return ''.join(text)
 
     def output_templates(
             self,
@@ -1112,7 +961,7 @@ class CLanguage(Language):
                          and not f.critical_section)
         new_or_init = f.kind.new_or_init
 
-        vararg: int | str = NO_VARARG
+        vararg: int | str = self.NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
             if p.is_keyword_only():
@@ -1120,12 +969,12 @@ class CLanguage(Language):
                 if not p.is_optional():
                     min_kw_only = i - max_pos
             elif p.is_vararg():
-                if vararg != NO_VARARG:
+                if vararg != self.NO_VARARG:
                     fail("Too many var args")
                 pseudo_args += 1
                 vararg = i - 1
             else:
-                if vararg == NO_VARARG:
+                if vararg == self.NO_VARARG:
                     max_pos = i
                 if p.is_positional_only():
                     pos_only = i
@@ -1183,8 +1032,8 @@ class CLanguage(Language):
                 declarations: str = ''
         ) -> str:
             nonlocal parser_body_fields
-            add, output = text_accumulator()
-            add(prototype)
+            lines = []
+            lines.append(prototype)
             parser_body_fields = fields
 
             preamble = normalize_snippet("""
@@ -1208,9 +1057,8 @@ class CLanguage(Language):
                 }}
             """)
             for field in preamble, *fields, finale:
-                add('\n')
-                add(field)
-            return linear_format(output(), parser_declarations=declarations)
+                lines.append(field)
+            return linear_format("\n".join(lines), parser_declarations=declarations)
 
         fastcall = not new_or_init
         limited_capi = clinic.limited_capi
@@ -1335,7 +1183,7 @@ class CLanguage(Language):
                     argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
             left_args = f"{nargs} - {max_pos}"
-            max_args = NO_VARARG if (vararg != NO_VARARG) else max_pos
+            max_args = self.NO_VARARG if (vararg != self.NO_VARARG) else max_pos
             if limited_capi:
                 parser_code = []
                 if nargs != 'nargs':
@@ -1360,7 +1208,7 @@ class CLanguage(Language):
                             }}}}
                             """,
                             indent=4))
-                    if max_args != NO_VARARG:
+                    if max_args != self.NO_VARARG:
                         pl = '' if max_args == 1 else 's'
                         parser_code.append(normalize_snippet(f"""
                             if ({nargs} > {max_args}) {{{{
@@ -1457,13 +1305,16 @@ class CLanguage(Language):
                 if p.deprecated_keyword:
                     deprecated_keywords[i] = p
 
-            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
+            has_optional_kw = (
+                max(pos_only, min_pos) + min_kw_only
+                < len(converters) - int(vararg != self.NO_VARARG)
+            )
 
             if limited_capi:
                 parser_code = None
                 fastcall = False
             else:
-                if vararg == NO_VARARG:
+                if vararg == self.NO_VARARG:
                     clinic.add_include('pycore_modsupport.h',
                                        '_PyArg_UnpackKeywords()')
                     args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
@@ -1563,7 +1414,7 @@ class CLanguage(Language):
                         else:
                             label = 'skip_optional_kwonly'
                             first_opt = max_pos + min_kw_only
-                            if vararg != NO_VARARG:
+                            if vararg != self.NO_VARARG:
                                 first_opt += 1
                         if i == first_opt:
                             add_label = label
@@ -1785,7 +1636,7 @@ class CLanguage(Language):
         # Clinic prefers groups on the left.  So in the above example,
         # five arguments would map to B+C, not C+D.
 
-        add, output = text_accumulator()
+        out = []
         parameters = list(f.parameters.values())
         if isinstance(parameters[0].converter, self_converter):
             del parameters[0]
@@ -1817,14 +1668,14 @@ class CLanguage(Language):
             nargs = 'PyTuple_Size(args)'
         else:
             nargs = 'PyTuple_GET_SIZE(args)'
-        add(f"switch ({nargs}) {{\n")
+        out.append(f"switch ({nargs}) {{\n")
         for subset in permute_optional_groups(left, required, right):
             count = len(subset)
             count_min = min(count_min, count)
             count_max = max(count_max, count)
 
             if count == 0:
-                add("""    case 0:
+                out.append("""    case 0:
         break;
 """)
                 continue
@@ -1856,14 +1707,15 @@ class CLanguage(Language):
 """
             s = linear_format(s, group_booleans=lines)
             s = s.format_map(d)
-            add(s)
+            out.append(s)
 
-        add("    default:\n")
+        out.append("    default:\n")
         s = '        PyErr_SetString(PyExc_TypeError, "{} requires {} to {} arguments");\n'
-        add(s.format(f.full_name, count_min, count_max))
-        add('        goto exit;\n')
-        add("}")
-        template_dict['option_group_parsing'] = format_escape(output())
+        out.append(s.format(f.full_name, count_min, count_max))
+        out.append('        goto exit;\n')
+        out.append("}")
+
+        template_dict['option_group_parsing'] = format_escape("".join(out))
 
     def render_function(
             self,
@@ -1873,7 +1725,6 @@ class CLanguage(Language):
         if f is None or clinic is None:
             return ""
 
-        add, output = text_accumulator()
         data = CRenderData()
 
         assert f.parameters, "We should always have a 'self' at this point!"
@@ -1961,8 +1812,7 @@ class CLanguage(Language):
             template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
             template_dict['c_basename'] = f.c_basename
 
-        template_dict['docstring'] = self.docstring_for_c_string(f)
-
+        template_dict['docstring'] = libclinic.docstring_for_c_string(f.docstring)
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
         template_dict['target_critical_section'] = ', '.join(f.target_critical_section)
         for converter in converters:
@@ -2040,9 +1890,9 @@ class CLanguage(Language):
                 s = wrap_declarations(s)
 
             if clinic.line_prefix:
-                s = indent_all_lines(s, clinic.line_prefix)
+                s = libclinic.indent_all_lines(s, clinic.line_prefix)
             if clinic.line_suffix:
-                s = suffix_all_lines(s, clinic.line_suffix)
+                s = libclinic.suffix_all_lines(s, clinic.line_suffix)
 
             destination.append(s)
 
@@ -2202,7 +2052,7 @@ class BlockParser:
         return line
 
     def parse_verbatim_block(self) -> Block:
-        add, output = text_accumulator()
+        lines = []
         self.block_start_line_number = self.line_number
 
         while self.input:
@@ -2211,12 +2061,12 @@ class BlockParser:
             if dsl_name:
                 self.dsl_name = dsl_name
                 break
-            add(line)
+            lines.append(line)
 
-        return Block(output())
+        return Block("".join(lines))
 
     def parse_clinic_block(self, dsl_name: str) -> Block:
-        input_add, input_output = text_accumulator()
+        in_lines = []
         self.block_start_line_number = self.line_number + 1
         stop_line = self.language.stop_line.format(dsl_name=dsl_name)
         body_prefix = self.language.body_prefix.format(dsl_name=dsl_name)
@@ -2244,7 +2094,7 @@ class BlockParser:
                 line = line.lstrip()
                 assert line.startswith(body_prefix)
                 line = line.removeprefix(body_prefix)
-            input_add(line)
+            in_lines.append(line)
 
         # consume output and checksum line, if present.
         if self.last_dsl_name == dsl_name:
@@ -2258,7 +2108,7 @@ class BlockParser:
         assert checksum_re is not None
 
         # scan forward for checksum line
-        output_add, output_output = text_accumulator()
+        out_lines = []
         arguments = None
         while self.input:
             line = self._line(lookahead=True)
@@ -2266,12 +2116,12 @@ class BlockParser:
             arguments = match.group(1) if match else None
             if arguments:
                 break
-            output_add(line)
+            out_lines.append(line)
             if self.is_start_line(line):
                 break
 
         output: str | None
-        output = output_output()
+        output = "".join(out_lines)
         if arguments:
             d = {}
             for field in shlex.split(arguments):
@@ -2299,7 +2149,7 @@ class BlockParser:
             self.input.extend(reversed(output_lines))
             output = None
 
-        return Block(input_output(), dsl_name, output=output)
+        return Block("".join(in_lines), dsl_name, output=output)
 
 
 @dc.dataclass(slots=True, frozen=True)
@@ -2326,6 +2176,9 @@ class Include:
 class BlockPrinter:
     language: Language
     f: io.StringIO = dc.field(default_factory=io.StringIO)
+
+    # '#include "header.h"   // reason': column of '//' comment
+    INCLUDE_COMMENT_COLUMN: Final[int] = 35
 
     def print_block(
             self,
@@ -2382,7 +2235,7 @@ class BlockPrinter:
                     line = f'#include "{include.filename}"'
                 if include.reason:
                     comment = f'// {include.reason}\n'
-                    line = line.ljust(INCLUDE_COMMENT_COLUMN - 1) + comment
+                    line = line.ljust(self.INCLUDE_COMMENT_COLUMN - 1) + comment
                 output += line
 
             if current_condition:
@@ -2419,26 +2272,26 @@ class BufferSeries:
 
     def __init__(self) -> None:
         self._start = 0
-        self._array: list[_TextAccumulator] = []
-        self._constructor = _text_accumulator
+        self._array: list[list[str]] = []
 
-    def __getitem__(self, i: int) -> _TextAccumulator:
+    def __getitem__(self, i: int) -> list[str]:
         i -= self._start
         if i < 0:
             self._start += i
-            prefix = [self._constructor() for x in range(-i)]
+            prefix: list[list[str]] = [[] for x in range(-i)]
             self._array = prefix + self._array
             i = 0
         while i >= len(self._array):
-            self._array.append(self._constructor())
+            self._array.append([])
         return self._array[i]
 
     def clear(self) -> None:
         for ta in self._array:
-            ta.text.clear()
+            ta.clear()
 
     def dump(self) -> str:
-        texts = [ta.output() for ta in self._array]
+        texts = ["".join(ta) for ta in self._array]
+        self.clear()
         return "".join(texts)
 
 
@@ -2624,7 +2477,7 @@ impl_definition block
             'impl_definition': d('block'),
         }
 
-        DestBufferType = dict[str, _TextAccumulator]
+        DestBufferType = dict[str, list[str]]
         DestBufferList = list[DestBufferType]
 
         self.destination_buffers_stack: DestBufferList = []
@@ -2696,7 +2549,7 @@ impl_definition block
             self,
             name: str,
             item: int = 0
-    ) -> _TextAccumulator:
+    ) -> list[str]:
         d = self.get_destination(name)
         return d.buffers[item]
 
@@ -3150,11 +3003,9 @@ class Parameter:
             return f'argument {i}'
 
     def render_docstring(self) -> str:
-        add, out = text_accumulator()
-        add(f"  {self.name}\n")
-        for line in self.docstring.split("\n"):
-            add(f"    {line}\n")
-        return out().rstrip()
+        lines = [f"  {self.name}"]
+        lines.extend(f"    {line}" for line in self.docstring.split("\n"))
+        return "\n".join(lines).rstrip()
 
 
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
@@ -3472,7 +3323,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             args.append(self.converter)
 
         if self.encoding:
-            args.append(c_repr(self.encoding))
+            args.append(libclinic.c_repr(self.encoding))
         elif self.subclass_of:
             args.append(self.subclass_of)
 
@@ -3650,8 +3501,8 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     @property
     def parser_name(self) -> str:
-        if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
-            return CLINIC_PREFIX + self.name
+        if self.name in libclinic.CLINIC_PREFIXED_ARGS: # bpo-39741
+            return libclinic.CLINIC_PREFIX + self.name
         else:
             return self.name
 
@@ -5815,11 +5666,11 @@ class DSLParser:
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
 
+        value: object
         if not default:
             if self.parameter_state is ParamState.OPTIONAL:
                 fail(f"Can't have a parameter without a default ({parameter_name!r}) "
                       "after a parameter with a default!")
-            value: Sentinels | Null
             if is_vararg:
                 value = NULL
                 kwargs.setdefault('c_default', "NULL")
@@ -5933,7 +5784,7 @@ class DSLParser:
                     if isinstance(value, (bool, NoneType)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
-                        c_default = c_repr(value)
+                        c_default = libclinic.c_repr(value)
                     else:
                         c_default = py_default
 
@@ -6220,15 +6071,15 @@ class DSLParser:
     def format_docstring_signature(
         self, f: Function, parameters: list[Parameter]
     ) -> str:
-        text, add, output = _text_accumulator()
-        add(f.displayname)
+        lines = []
+        lines.append(f.displayname)
         if self.forced_text_signature:
-            add(self.forced_text_signature)
+            lines.append(self.forced_text_signature)
         elif f.kind in {GETTER, SETTER}:
             # @getter and @setter do not need signatures like a method or a function.
             return ''
         else:
-            add('(')
+            lines.append('(')
 
             # populate "right_bracket_count" field for every parameter
             assert parameters, "We should always have a self parameter. " + repr(f)
@@ -6282,7 +6133,7 @@ class DSLParser:
 
             first_parameter = True
             last_p = parameters[-1]
-            line_length = len(''.join(text))
+            line_length = len(''.join(lines))
             indent = " " * line_length
             def add_parameter(text: str) -> None:
                 nonlocal line_length
@@ -6293,12 +6144,11 @@ class DSLParser:
                 else:
                     s = ' ' + text
                     if line_length + len(s) >= 72:
-                        add('\n')
-                        add(indent)
+                        lines.extend(["\n", indent])
                         line_length = len(indent)
                         s = text
                 line_length += len(s)
-                add(s)
+                lines.append(s)
 
             for p in parameters:
                 if not p.converter.show_in_signature:
@@ -6321,8 +6171,7 @@ class DSLParser:
                     added_star = True
                     add_parameter('*,')
 
-                p_add, p_output = text_accumulator()
-                p_add(fix_right_bracket_count(p.right_bracket_count))
+                p_lines = [fix_right_bracket_count(p.right_bracket_count)]
 
                 if isinstance(p.converter, self_converter):
                     # annotate first parameter as being a "self".
@@ -6340,30 +6189,31 @@ class DSLParser:
                     # have a docstring.)  if this is an __init__
                     # (or __new__), then this signature is for
                     # calling the class to construct a new instance.
-                    p_add('$')
+                    p_lines.append('$')
 
                 if p.is_vararg():
-                    p_add("*")
+                    p_lines.append("*")
 
                 name = p.converter.signature_name or p.name
-                p_add(name)
+                p_lines.append(name)
 
                 if not p.is_vararg() and p.converter.is_optional():
-                    p_add('=')
+                    p_lines.append('=')
                     value = p.converter.py_default
                     if not value:
                         value = repr(p.converter.default)
-                    p_add(value)
+                    p_lines.append(value)
 
                 if (p != last_p) or need_a_trailing_slash:
-                    p_add(',')
+                    p_lines.append(',')
 
-                add_parameter(p_output())
+                p_output = "".join(p_lines)
+                add_parameter(p_output)
 
-            add(fix_right_bracket_count(0))
+            lines.append(fix_right_bracket_count(0))
             if need_a_trailing_slash:
                 add_parameter('/')
-            add(')')
+            lines.append(')')
 
         # PEP 8 says:
         #
@@ -6375,13 +6225,13 @@ class DSLParser:
         # therefore this is commented out:
         #
         # if f.return_converter.py_default:
-        #     add(' -> ')
-        #     add(f.return_converter.py_default)
+        #     lines.append(' -> ')
+        #     lines.append(f.return_converter.py_default)
 
         if not f.docstring_only:
-            add("\n" + sig_end_marker + "\n")
+            lines.append("\n" + libclinic.SIG_END_MARKER + "\n")
 
-        signature_line = output()
+        signature_line = "".join(lines)
 
         # now fix up the places where the brackets look wrong
         return signature_line.replace(', ]', ',] ')
@@ -6389,12 +6239,7 @@ class DSLParser:
     @staticmethod
     def format_docstring_parameters(params: list[Parameter]) -> str:
         """Create substitution text for {parameters}"""
-        add, output = text_accumulator()
-        for p in params:
-            if p.docstring:
-                add(p.render_docstring())
-                add('\n')
-        return output()
+        return "".join(p.render_docstring() + "\n" for p in params if p.docstring)
 
     def format_docstring(self) -> str:
         assert self.function is not None

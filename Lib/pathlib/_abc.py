@@ -1,7 +1,6 @@
 import functools
 import io
 import ntpath
-import os
 import posixpath
 import sys
 import warnings
@@ -204,7 +203,7 @@ class PurePathBase:
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    pathmod = os.path
+    pathmod = posixpath
 
     def __init__(self, *paths):
         self._raw_paths = paths
@@ -281,9 +280,6 @@ class PurePathBase:
         """Return the string representation of the path with forward (/)
         slashes."""
         return str(self).replace(self.pathmod.sep, '/')
-
-    def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     @property
     def drive(self):

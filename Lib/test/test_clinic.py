@@ -16,6 +16,7 @@ import unittest
 
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
+    import libclinic
     import clinic
     from clinic import DSLParser
 
@@ -3761,50 +3762,20 @@ class FormatHelperTests(unittest.TestCase):
                 actual = clinic.normalize_snippet(snippet, indent=indent)
                 self.assertEqual(actual, expected)
 
-    def test_accumulator(self):
-        acc = clinic.text_accumulator()
-        self.assertEqual(acc.output(), "")
-        acc.append("a")
-        self.assertEqual(acc.output(), "a")
-        self.assertEqual(acc.output(), "")
-        acc.append("b")
-        self.assertEqual(acc.output(), "b")
-        self.assertEqual(acc.output(), "")
-        acc.append("c")
-        acc.append("d")
-        self.assertEqual(acc.output(), "cd")
-        self.assertEqual(acc.output(), "")
-
-    def test_quoted_for_c_string(self):
+    def test_escaped_docstring(self):
         dataset = (
             # input,    expected
-            (r"abc",    r"abc"),
-            (r"\abc",   r"\\abc"),
-            (r"\a\bc",  r"\\a\\bc"),
-            (r"\a\\bc", r"\\a\\\\bc"),
-            (r'"abc"',  r'\"abc\"'),
-            (r"'a'",    r"\'a\'"),
+            (r"abc",    r'"abc"'),
+            (r"\abc",   r'"\\abc"'),
+            (r"\a\bc",  r'"\\a\\bc"'),
+            (r"\a\\bc", r'"\\a\\\\bc"'),
+            (r'"abc"',  r'"\"abc\""'),
+            (r"'a'",    r'"\'a\'"'),
         )
         for line, expected in dataset:
             with self.subTest(line=line, expected=expected):
-                out = clinic.quoted_for_c_string(line)
+                out = libclinic.docstring_for_c_string(line)
                 self.assertEqual(out, expected)
-
-    def test_rstrip_lines(self):
-        lines = (
-            "a \n"
-            "b\n"
-            " c\n"
-            " d \n"
-        )
-        expected = (
-            "a\n"
-            "b\n"
-            " c\n"
-            " d\n"
-        )
-        out = clinic.rstrip_lines(lines)
-        self.assertEqual(out, expected)
 
     def test_format_escape(self):
         line = "{}, {a}"
@@ -3814,7 +3785,7 @@ class FormatHelperTests(unittest.TestCase):
 
     def test_indent_all_lines(self):
         # Blank lines are expected to be unchanged.
-        self.assertEqual(clinic.indent_all_lines("", prefix="bar"), "")
+        self.assertEqual(libclinic.indent_all_lines("", prefix="bar"), "")
 
         lines = (
             "one\n"
@@ -3824,7 +3795,7 @@ class FormatHelperTests(unittest.TestCase):
             "barone\n"
             "bartwo"
         )
-        out = clinic.indent_all_lines(lines, prefix="bar")
+        out = libclinic.indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -3840,12 +3811,12 @@ class FormatHelperTests(unittest.TestCase):
             "bartwo\n"
             ""
         )
-        out = clinic.indent_all_lines(lines, prefix="bar")
+        out = libclinic.indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
     def test_suffix_all_lines(self):
         # Blank lines are expected to be unchanged.
-        self.assertEqual(clinic.suffix_all_lines("", suffix="foo"), "")
+        self.assertEqual(libclinic.suffix_all_lines("", suffix="foo"), "")
 
         lines = (
             "one\n"
@@ -3855,7 +3826,7 @@ class FormatHelperTests(unittest.TestCase):
             "onefoo\n"
             "twofoo"
         )
-        out = clinic.suffix_all_lines(lines, suffix="foo")
+        out = libclinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -3871,7 +3842,7 @@ class FormatHelperTests(unittest.TestCase):
             "twofoo\n"
             ""
         )
-        out = clinic.suffix_all_lines(lines, suffix="foo")
+        out = libclinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
 
