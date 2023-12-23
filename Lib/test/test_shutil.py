@@ -1046,23 +1046,23 @@ class TestCopy(BaseTest, unittest.TestCase):
         shutil.copymode(src, dst)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
         # On Windows, os.chmod does not follow symlinks (issue #15411)
-        if os.name != 'nt':
-            # follow src link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow dst link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow both links
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow src link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow dst link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow both links
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
-    @unittest.skipUnless(hasattr(os, 'lchmod'), 'requires os.lchmod')
+    @unittest.skipUnless(hasattr(os, 'lchmod') or os.name == 'nt', 'requires os.lchmod')
     @os_helper.skip_unless_symlink
     def test_copymode_symlink_to_symlink(self):
+        _lchmod = os.chmod if os.name == 'nt' else os.lchmod
         tmp_dir = self.mkdtemp()
         src = os.path.join(tmp_dir, 'foo')
         dst = os.path.join(tmp_dir, 'bar')
@@ -1074,20 +1074,20 @@ class TestCopy(BaseTest, unittest.TestCase):
         os.symlink(dst, dst_link)
         os.chmod(src, stat.S_IRWXU|stat.S_IRWXG)
         os.chmod(dst, stat.S_IRWXU)
-        os.lchmod(src_link, stat.S_IRWXO|stat.S_IRWXG)
+        _lchmod(src_link, stat.S_IRWXO|stat.S_IRWXG)
         # link to link
-        os.lchmod(dst_link, stat.S_IRWXO)
+        _lchmod(dst_link, stat.S_IRWXO)
         old_mode = os.stat(dst).st_mode
         shutil.copymode(src_link, dst_link, follow_symlinks=False)
         self.assertEqual(os.lstat(src_link).st_mode,
                          os.lstat(dst_link).st_mode)
         self.assertEqual(os.stat(dst).st_mode, old_mode)
         # src link - use chmod
-        os.lchmod(dst_link, stat.S_IRWXO)
+        _lchmod(dst_link, stat.S_IRWXO)
         shutil.copymode(src_link, dst, follow_symlinks=False)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
         # dst link - use chmod
-        os.lchmod(dst_link, stat.S_IRWXO)
+        _lchmod(dst_link, stat.S_IRWXO)
         shutil.copymode(src, dst_link, follow_symlinks=False)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
@@ -1124,11 +1124,13 @@ class TestCopy(BaseTest, unittest.TestCase):
         os.symlink(dst, dst_link)
         if hasattr(os, 'lchmod'):
             os.lchmod(src_link, stat.S_IRWXO)
+        elif os.name == 'nt':
+            os.chmod(src_link, stat.S_IRWXO)
         if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
             os.lchflags(src_link, stat.UF_NODUMP)
         src_link_stat = os.lstat(src_link)
         # follow
-        if hasattr(os, 'lchmod'):
+        if hasattr(os, 'lchmod') or os.name == 'nt':
             shutil.copystat(src_link, dst_link, follow_symlinks=True)
             self.assertNotEqual(src_link_stat.st_mode, os.stat(dst).st_mode)
         # don't follow
@@ -1139,7 +1141,7 @@ class TestCopy(BaseTest, unittest.TestCase):
                 # The modification times may be truncated in the new file.
                 self.assertLessEqual(getattr(src_link_stat, attr),
                                      getattr(dst_link_stat, attr) + 1)
-        if hasattr(os, 'lchmod'):
+        if hasattr(os, 'lchmod') or os.name == 'nt':
             self.assertEqual(src_link_stat.st_mode, dst_link_stat.st_mode)
         if hasattr(os, 'lchflags') and hasattr(src_link_stat, 'st_flags'):
             self.assertEqual(src_link_stat.st_flags, dst_link_stat.st_flags)
