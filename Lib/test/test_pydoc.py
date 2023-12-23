@@ -910,10 +910,8 @@ class A(builtins.object)
  |
  |  __weakref__%s
 ''' % (__name__,
-       '' if MISSING_C_DOCSTRINGS else
-       '\n |      dictionary for instance variables',
-       '' if MISSING_C_DOCSTRINGS else
-       '\n |      list of weak references to the object',
+       '' if MISSING_C_DOCSTRINGS else '\n |      dictionary for instance variables',
+       '' if MISSING_C_DOCSTRINGS else '\n |      list of weak references to the object',
       ))
 
         def func(
