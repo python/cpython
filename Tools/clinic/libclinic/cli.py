@@ -8,6 +8,8 @@ from typing import NoReturn
 
 from libclinic import clinic
 
+__all__ = ["main"]
+
 
 def create_cli() -> argparse.ArgumentParser:
     cmdline = argparse.ArgumentParser(
