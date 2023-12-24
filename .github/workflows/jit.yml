@@ -1,7 +1,5 @@
 name: JIT
-on:
-  - pull_request
-  - push
+on: push
 jobs:
   jit:
     # Comment this line to run JIT CI:
