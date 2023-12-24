@@ -187,13 +187,20 @@ class HelperFunctionsTests(unittest.TestCase):
         resource_fork = os.path.join(pth_dir, "._" + pth_fn)
         with open(resource_fork, "wb") as fp:
             self.addCleanup(lambda: os.remove(resource_fork))
-            # Some random that that isn't valid UTF-8
-            fp.write(b"\xff\xff\xff")
+
+            # The bytes below were generated on macOS 14 using an
+            # exFAT filesystem. Command to write an xattr:
+            # `xattr -w key value test.txt`. These bytes are not
+            # the complete AppleDouble file, but just a significant
+            # prefix.
+            fp.write(b'\x00\x05\x16\x07\x00\x02\x00\x00Mac OS X        ')
+            fp.write(b'\x00\x02\x00\x00\x00\t\x00\x00\x002\x00\x00\x0e')
+            fp.write(b'\xb0\x00\x00\x00\x02\x00\x00\x0e\xe2\x00\x00')
+            fp.write(b'\x01\x1e')
 
         with captured_stderr() as err_out:
             self.assertFalse(site.addpackage(pth_dir, "._" + pth_fn, set()))
         self.assertEqual(err_out.getvalue(), "")
-
 
     def test_addsitedir(self):
         # Same tests for test_addpackage since addsitedir() essentially just

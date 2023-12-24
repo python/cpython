@@ -177,19 +177,16 @@ def addpackage(sitedir, name, known_paths):
         return
     with f:
         if name.startswith("._"):
-            try:
-                f.readline()
-                f.seek(0)
-            except UnicodeDecodeError:
-                # MacOS can create files with a "._" prefix in the name
-                # next to the regular file when the system needs to store
-                # metadata (such as extended attributes) that the filesystem
-                # cannot store natively.
-                #
-                # Ignore errors when trying to parse these files.
-                if os.path.exists(os.path.join(sitedir, name[2:])):
+            # MacOS will create "._" files next to a regular file
+            # when a filesystem driver needs to store metadata that
+            # cannot be stored natively. Such files are encoded
+            # in AppleDouble format.
+            # The test looks for the magic marker at the start of such
+            # files.
+            if f.buffer.read(4) == b"\x00\x05\x16\x07" \
+               and os.path.exists(os.path.join(sitedir, name[2:])):
                     return
-                raise
+            f.seek(0)
 
         for n, line in enumerate(f):
             if line.startswith("#"):
