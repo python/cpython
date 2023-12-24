@@ -263,8 +263,16 @@ class SetExceptionTests(unittest.TestCase):
                 self.assertIsInstance(sys.exception(), ValueError)
                 self.assertIsInstance(sys.exception().__context__, TypeError)
                 yield next(g)
+                # at this point the TypeError from the caller has been handled
+                # by the caller's except block. Even still, it should still be
+                # referenced as the __context__ of the current exception.
                 self.assertIsInstance(sys.exception(), ValueError)
-            self.assertIsInstance(sys.exception(), TypeError)
+                self.assertIsInstance(sys.exception().__context__, TypeError)
+            # not handling an exception, caller isn't handling one either
+            self.assertIsNone(sys.exception())
+            with self.assertRaises(StopIteration):
+                next(g)
+            self.assertIsNone(sys.exception())
 
         g = outer()
         next(g)
