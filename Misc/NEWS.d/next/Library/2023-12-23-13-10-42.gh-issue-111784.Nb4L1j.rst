@@ -1,0 +1,5 @@
+Fix segfaults in the ``_elementtree`` module.
+Fix first segfault during deallocation of ``_elementtree.XMLParser`` instances by keeping strong reference
+to ``pyexpat`` module in module state for capsule lifetime.
+Fix second segfault which happens in the same deallocation process  by keeping strong reference
+to ``_elementtree`` module in ``XMLParser`` structure for ``_elementtree`` module lifetime.
