@@ -6,10 +6,19 @@ BytesIO -- for bytes
 import unittest
 from test import support
 
+import gc
 import io
 import _pyio as pyio
 import pickle
 import sys
+import weakref
+
+class IntLike:
+    def __init__(self, num):
+        self._num = num
+    def __index__(self):
+        return self._num
+    __int__ = __index__
 
 class MemorySeekTestMixin:
 
@@ -116,7 +125,10 @@ class MemoryTestMixin:
         memio = self.ioclass(buf)
 
         self.assertRaises(ValueError, memio.truncate, -1)
+        self.assertRaises(ValueError, memio.truncate, IntLike(-1))
         memio.seek(6)
+        self.assertEqual(memio.truncate(IntLike(8)), 8)
+        self.assertEqual(memio.getvalue(), buf[:8])
         self.assertEqual(memio.truncate(), 6)
         self.assertEqual(memio.getvalue(), buf[:6])
         self.assertEqual(memio.truncate(4), 4)
@@ -131,6 +143,7 @@ class MemoryTestMixin:
         self.assertRaises(TypeError, memio.truncate, '0')
         memio.close()
         self.assertRaises(ValueError, memio.truncate, 0)
+        self.assertRaises(ValueError, memio.truncate, IntLike(0))
 
     def test_init(self):
         buf = self.buftype("1234567890")
@@ -154,11 +167,18 @@ class MemoryTestMixin:
         self.assertEqual(memio.read(900), buf[5:])
         self.assertEqual(memio.read(), self.EOF)
         memio.seek(0)
+        self.assertEqual(memio.read(IntLike(0)), self.EOF)
+        self.assertEqual(memio.read(IntLike(1)), buf[:1])
+        self.assertEqual(memio.read(IntLike(4)), buf[1:5])
+        self.assertEqual(memio.read(IntLike(900)), buf[5:])
+        memio.seek(0)
         self.assertEqual(memio.read(), buf)
         self.assertEqual(memio.read(), self.EOF)
         self.assertEqual(memio.tell(), 10)
         memio.seek(0)
         self.assertEqual(memio.read(-1), buf)
+        memio.seek(0)
+        self.assertEqual(memio.read(IntLike(-1)), buf)
         memio.seek(0)
         self.assertEqual(type(memio.read()), type(buf))
         memio.seek(100)
@@ -169,6 +189,8 @@ class MemoryTestMixin:
         memio.seek(len(buf) + 1)
         self.assertEqual(memio.read(1), self.EOF)
         memio.seek(len(buf) + 1)
+        self.assertEqual(memio.read(IntLike(1)), self.EOF)
+        memio.seek(len(buf) + 1)
         self.assertEqual(memio.read(), self.EOF)
         memio.close()
         self.assertRaises(ValueError, memio.read)
@@ -178,6 +200,7 @@ class MemoryTestMixin:
         memio = self.ioclass(buf * 2)
 
         self.assertEqual(memio.readline(0), self.EOF)
+        self.assertEqual(memio.readline(IntLike(0)), self.EOF)
         self.assertEqual(memio.readline(), buf)
         self.assertEqual(memio.readline(), buf)
         self.assertEqual(memio.readline(), self.EOF)
@@ -186,9 +209,16 @@ class MemoryTestMixin:
         self.assertEqual(memio.readline(5), buf[5:10])
         self.assertEqual(memio.readline(5), buf[10:15])
         memio.seek(0)
+        self.assertEqual(memio.readline(IntLike(5)), buf[:5])
+        self.assertEqual(memio.readline(IntLike(5)), buf[5:10])
+        self.assertEqual(memio.readline(IntLike(5)), buf[10:15])
+        memio.seek(0)
         self.assertEqual(memio.readline(-1), buf)
         memio.seek(0)
+        self.assertEqual(memio.readline(IntLike(-1)), buf)
+        memio.seek(0)
         self.assertEqual(memio.readline(0), self.EOF)
+        self.assertEqual(memio.readline(IntLike(0)), self.EOF)
         # Issue #24989: Buffer overread
         memio.seek(len(buf) * 2 + 1)
         self.assertEqual(memio.readline(), self.EOF)
@@ -434,6 +464,39 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         memio.truncate()
         memio.close()
         self.assertRaises(ValueError, memio.getbuffer)
+
+    def test_getbuffer_empty(self):
+        memio = self.ioclass()
+        buf = memio.getbuffer()
+        self.assertEqual(bytes(buf), b"")
+        # Trying to change the size of the BytesIO while a buffer is exported
+        # raises a BufferError.
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf2 = memio.getbuffer()
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf.release()
+        self.assertRaises(BufferError, memio.write, b'x')
+        buf2.release()
+        memio.write(b'x')
+
+    def test_getbuffer_gc_collect(self):
+        memio = self.ioclass(b"1234567890")
+        buf = memio.getbuffer()
+        memiowr = weakref.ref(memio)
+        bufwr = weakref.ref(buf)
+        # Create a reference loop.
+        a = [buf]
+        a.append(a)
+        # The Python implementation emits an unraisable exception.
+        with support.catch_unraisable_exception():
+            del memio
+        del buf
+        del a
+        # The C implementation emits an unraisable exception.
+        with support.catch_unraisable_exception():
+            gc.collect()
+        self.assertIsNone(memiowr())
+        self.assertIsNone(bufwr())
 
     def test_read1(self):
         buf = self.buftype("1234567890")
@@ -731,7 +794,8 @@ class CBytesIOTest(PyBytesIOTest):
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
         check(io.BytesIO(), basesize )
-        check(io.BytesIO(b'a' * 1000), basesize + sys.getsizeof(b'a' * 1000))
+        n = 1000  # use a variable to prevent constant folding
+        check(io.BytesIO(b'a' * n), basesize + sys.getsizeof(b'a' * n))
 
     # Various tests of copy-on-write behaviour for BytesIO.
 

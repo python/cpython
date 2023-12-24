@@ -55,10 +55,11 @@ The :mod:`csv` module defines the following functions:
 
 .. function:: reader(csvfile, dialect='excel', **fmtparams)
 
-   Return a reader object which will iterate over lines in the given *csvfile*.
-   *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
-   string each time its :meth:`!__next__` method is called --- :term:`file objects
-   <file object>` and list objects are both suitable.   If *csvfile* is a file object,
+   Return a :ref:`reader object <reader-objects>` that will process
+   lines from the given *csvfile*.  A csvfile must be an iterable of
+   strings, each in the reader's defined csv format.
+   A csvfile is most commonly a file-like object or list.
+   If *csvfile* is a file object,
    it should be opened with ``newline=''``. [1]_  An optional
    *dialect* parameter can be given which is used to define a set of parameters
    specific to a particular CSV dialect.  It may be an instance of a subclass of
@@ -94,8 +95,8 @@ The :mod:`csv` module defines the following functions:
    :class:`Dialect` class or one of the strings returned by the
    :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
    can be given to override individual formatting parameters in the current
-   dialect.  For full details about the dialect and formatting parameters, see
-   section :ref:`csv-fmt-params`. To make it
+   dialect.  For full details about dialects and formatting parameters, see
+   the :ref:`csv-fmt-params` section. To make it
    as easy as possible to interface with modules which implement the DB API, the
    value :const:`None` is written as the empty string.  While this isn't a
    reversible transformation, it makes it easier to dump SQL NULL data values to
@@ -117,7 +118,7 @@ The :mod:`csv` module defines the following functions:
    Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
    by *fmtparams* keyword arguments, or both, with keyword arguments overriding
-   parameters of the dialect. For full details about the dialect and formatting
+   parameters of the dialect. For full details about dialects and formatting
    parameters, see section :ref:`csv-fmt-params`.
 
 
@@ -150,29 +151,35 @@ The :mod:`csv` module defines the following classes:
                       dialect='excel', *args, **kwds)
 
    Create an object that operates like a regular reader but maps the
-   information in each row to an :mod:`OrderedDict <collections.OrderedDict>`
-   whose keys are given by the optional *fieldnames* parameter.
+   information in each row to a :class:`dict` whose keys are given by the
+   optional *fieldnames* parameter.
 
    The *fieldnames* parameter is a :term:`sequence`.  If *fieldnames* is
    omitted, the values in the first row of file *f* will be used as the
-   fieldnames.  Regardless of how the fieldnames are determined, the ordered
+   fieldnames.  Regardless of how the fieldnames are determined, the
    dictionary preserves their original ordering.
 
    If a row has more fields than fieldnames, the remaining data is put in a
    list and stored with the fieldname specified by *restkey* (which defaults
    to ``None``).  If a non-blank row has fewer fields than fieldnames, the
-   missing values are filled-in with ``None``.
+   missing values are filled-in with the value of *restval* (which defaults
+   to ``None``).
 
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
 
+   If the argument passed to *fieldnames* is an iterator, it will be coerced to a :class:`list`.
+
    .. versionchanged:: 3.6
       Returned rows are now of type :class:`OrderedDict`.
+
+   .. versionchanged:: 3.8
+      Returned rows are now of type :class:`dict`.
 
    A short usage example::
 
        >>> import csv
-       >>> with open('names.csv') as csvfile:
+       >>> with open('names.csv', newline='') as csvfile:
        ...     reader = csv.DictReader(csvfile)
        ...     for row in reader:
        ...         print(row['first_name'], row['last_name'])
@@ -181,7 +188,7 @@ The :mod:`csv` module defines the following classes:
        John Cleese
 
        >>> print(row)
-       OrderedDict([('first_name', 'John'), ('last_name', 'Cleese')])
+       {'first_name': 'John', 'last_name': 'Cleese'}
 
 
 .. class:: DictWriter(f, fieldnames, restval='', extrasaction='raise', \
@@ -203,15 +210,15 @@ The :mod:`csv` module defines the following classes:
    :class:`writer` instance.
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
-   of the :class:`DictWriter` is not optional.  Since Python's :class:`dict`
-   objects are not ordered, there is not enough information available to deduce
-   the order in which the row should be written to file *f*.
+   of the :class:`DictWriter` class is not optional.
+
+   If the argument passed to *fieldnames* is an iterator, it will be coerced to a :class:`list`.
 
    A short usage example::
 
        import csv
 
-       with open('names.csv', 'w') as csvfile:
+       with open('names.csv', 'w', newline='') as csvfile:
            fieldnames = ['first_name', 'last_name']
            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -223,9 +230,21 @@ The :mod:`csv` module defines the following classes:
 
 .. class:: Dialect
 
-   The :class:`Dialect` class is a container class relied on primarily for its
-   attributes, which are used to define the parameters for a specific
-   :class:`reader` or :class:`writer` instance.
+   The :class:`Dialect` class is a container class whose attributes contain
+   information for how to handle doublequotes, whitespace, delimiters, etc.
+   Due to the lack of a strict CSV specification, different applications
+   produce subtly different CSV data.  :class:`Dialect` instances define how
+   :class:`reader` and :class:`writer` instances behave.
+
+   All available :class:`Dialect` names are returned by :func:`list_dialects`,
+   and they can be registered with specific :class:`reader` and :class:`writer`
+   classes through their initializer (``__init__``) functions like this::
+
+       import csv
+
+       with open('students.csv', 'w', newline='') as csvfile:
+           writer = csv.writer(csvfile, dialect='unix')
+                                        ^^^^^^^^^^^^^^
 
 
 .. class:: excel()
@@ -267,15 +286,31 @@ The :mod:`csv` module defines the following classes:
 
       Analyze the sample text (presumed to be in CSV format) and return
       :const:`True` if the first row appears to be a series of column headers.
+      Inspecting each column, one of two key criteria will be considered to
+      estimate if the sample contains a header:
+
+      - the second through n-th rows contain numeric values
+      - the second through n-th rows contain strings where at least one value's
+        length differs from that of the putative header of that column.
+
+      Twenty rows after the first row are sampled; if more than half of columns +
+      rows meet the criteria, :const:`True` is returned.
+
+   .. note::
+
+      This method is a rough heuristic and may produce both false positives and
+      negatives.
 
 An example for :class:`Sniffer` use::
 
-   with open('example.csv') as csvfile:
+   with open('example.csv', newline='') as csvfile:
        dialect = csv.Sniffer().sniff(csvfile.read(1024))
        csvfile.seek(0)
        reader = csv.reader(csvfile, dialect)
        # ... process CSV file contents here ...
 
+
+.. _csv-constants:
 
 The :mod:`csv` module defines the following constants:
 
@@ -295,7 +330,7 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`writer` objects to quote all non-numeric fields.
 
-   Instructs the reader to convert all non-quoted fields to type *float*.
+   Instructs :class:`reader` objects to convert all non-quoted fields to type *float*.
 
 
 .. data:: QUOTE_NONE
@@ -305,7 +340,25 @@ The :mod:`csv` module defines the following constants:
    character.  If *escapechar* is not set, the writer will raise :exc:`Error` if
    any characters that require escaping are encountered.
 
-   Instructs :class:`reader` to perform no special processing of quote characters.
+   Instructs :class:`reader` objects to perform no special processing of quote characters.
+
+.. data:: QUOTE_NOTNULL
+
+   Instructs :class:`writer` objects to quote all fields which are not
+   ``None``.  This is similar to :data:`QUOTE_ALL`, except that if a
+   field value is ``None`` an empty (unquoted) string is written.
+
+   Instructs :class:`reader` objects to interpret an empty (unquoted) field as None and
+   to otherwise behave as :data:`QUOTE_ALL`.
+
+.. data:: QUOTE_STRINGS
+
+   Instructs :class:`writer` objects to always place quotes around fields
+   which are strings.  This is similar to :data:`QUOTE_NONNUMERIC`, except that if a
+   field value is ``None`` an empty (unquoted) string is written.
+
+   Instructs :class:`reader` objects to interpret an empty (unquoted) string as ``None`` and
+   to otherwise behave as :data:`QUOTE_NONNUMERIC`.
 
 The :mod:`csv` module defines the following exception:
 
@@ -355,6 +408,8 @@ Dialects support the following attributes:
    :const:`False`. On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
 
+   .. versionchanged:: 3.11
+      An empty *escapechar* is not allowed.
 
 .. attribute:: Dialect.lineterminator
 
@@ -374,17 +429,19 @@ Dialects support the following attributes:
    as the *delimiter* or *quotechar*, or which contain new-line characters.  It
    defaults to ``'"'``.
 
+   .. versionchanged:: 3.11
+      An empty *quotechar* is not allowed.
 
 .. attribute:: Dialect.quoting
 
    Controls when quotes should be generated by the writer and recognised by the
-   reader.  It can take on any of the :const:`QUOTE_\*` constants (see section
-   :ref:`csv-contents`) and defaults to :const:`QUOTE_MINIMAL`.
+   reader.  It can take on any of the :ref:`QUOTE_\* constants <csv-constants>`
+   and defaults to :const:`QUOTE_MINIMAL`.
 
 
 .. attribute:: Dialect.skipinitialspace
 
-   When :const:`True`, whitespace immediately following the *delimiter* is ignored.
+   When :const:`True`, spaces immediately following the *delimiter* are ignored.
    The default is :const:`False`.
 
 
@@ -392,6 +449,8 @@ Dialects support the following attributes:
 
    When ``True``, raise exception :exc:`Error` on bad CSV input.
    The default is ``False``.
+
+.. _reader-objects:
 
 Reader Objects
 --------------
@@ -403,8 +462,8 @@ Reader objects (:class:`DictReader` instances and objects returned by the
 
    Return the next row of the reader's iterable object as a list (if the object
    was returned from :func:`reader`) or a dict (if it is a :class:`DictReader`
-   instance), parsed according to the current dialect.  Usually you should call
-   this as ``next(reader)``.
+   instance), parsed according to the current :class:`Dialect`.  Usually you
+   should call this as ``next(reader)``.
 
 
 Reader objects have the following public attributes:
@@ -422,7 +481,7 @@ Reader objects have the following public attributes:
 
 DictReader objects have the following public attribute:
 
-.. attribute:: csvreader.fieldnames
+.. attribute:: DictReader.fieldnames
 
    If not passed as a parameter when creating the object, this attribute is
    initialized upon first access or when the first record is read from the
@@ -444,16 +503,18 @@ read CSV files (assuming they support complex numbers at all).
 
 .. method:: csvwriter.writerow(row)
 
-   Write the *row* parameter to the writer's file object, formatted according to
-   the current dialect.
+   Write the *row* parameter to the writer's file object, formatted according
+   to the current :class:`Dialect`. Return the return value of the call to the
+   *write* method of the underlying file object.
 
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
 
 .. method:: csvwriter.writerows(rows)
 
-   Write all the *rows* parameters (a list of *row* objects as described above) to
-   the writer's file object, formatted according to the current dialect.
+   Write all elements in *rows* (an iterable of *row* objects as described
+   above) to the writer's file object, formatted according to the current
+   dialect.
 
 Writer objects have the following public attribute:
 
@@ -468,9 +529,14 @@ DictWriter objects have the following public method:
 
 .. method:: DictWriter.writeheader()
 
-   Write a row with the field names (as specified in the constructor).
+   Write a row with the field names (as specified in the constructor) to
+   the writer's file object, formatted according to the current dialect. Return
+   the return value of the :meth:`csvwriter.writerow` call used internally.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.8
+      :meth:`writeheader` now also returns the value returned by
+      the :meth:`csvwriter.writerow` method it uses internally.
 
 
 .. _csv-examples:
@@ -503,7 +569,7 @@ The corresponding simplest possible writing example is::
 
 Since :func:`open` is used to open a CSV file for reading, the file
 will by default be decoded into unicode using the system default
-encoding (see :func:`locale.getpreferredencoding`).  To decode a file
+encoding (see :func:`locale.getencoding`).  To decode a file
 using a different encoding, use the ``encoding`` argument of open::
 
    import csv

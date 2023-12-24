@@ -19,10 +19,7 @@ from re import escape as re_escape
 from datetime import (date as datetime_date,
                       timedelta as datetime_timedelta,
                       timezone as datetime_timezone)
-try:
-    from _thread import allocate_lock as _thread_allocate_lock
-except ImportError:
-    from _dummy_thread import allocate_lock as _thread_allocate_lock
+from _thread import allocate_lock as _thread_allocate_lock
 
 __all__ = []
 
@@ -79,15 +76,6 @@ class LocaleTime(object):
             raise ValueError("locale changed during initialization")
         if time.tzname != self.tzname or time.daylight != self.daylight:
             raise ValueError("timezone changed during initialization")
-
-    def __pad(self, seq, front):
-        # Add '' to seq to either the front (is True), else the back.
-        seq = list(seq)
-        if front:
-            seq.insert(0, '')
-        else:
-            seq.append('')
-        return seq
 
     def __calc_weekday(self):
         # Set self.a_weekday and self.f_weekday using the calendar
@@ -194,7 +182,7 @@ class TimeRE(dict):
             self.locale_time = LocaleTime()
         base = super()
         base.__init__({
-            # The " \d" part of the regex is to make %c from ANSI C work
+            # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
@@ -213,7 +201,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d[0-5]\d)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -302,22 +290,6 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
         return 1 + days_to_week + day_of_week
 
 
-def _calc_julian_from_V(iso_year, iso_week, iso_weekday):
-    """Calculate the Julian day based on the ISO 8601 year, week, and weekday.
-    ISO weeks start on Mondays, with week 01 being the week containing 4 Jan.
-    ISO week days range from 1 (Monday) to 7 (Sunday).
-    """
-    correction = datetime_date(iso_year, 1, 4).isoweekday() + 3
-    ordinal = (iso_week * 7) + iso_weekday - correction
-    # ordinal may be negative or 0 now, which means the date is in the previous
-    # calendar year
-    if ordinal < 1:
-        ordinal += datetime_date(iso_year, 1, 1).toordinal()
-        iso_year -= 1
-        ordinal -= datetime_date(iso_year, 1, 1).toordinal()
-    return iso_year, ordinal
-
-
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a 2-tuple consisting of a time struct and an int containing
     the number of microseconds based on the input string and the
@@ -368,7 +340,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     month = day = 1
     hour = minute = second = fraction = 0
     tz = -1
-    tzoffset = None
+    gmtoff = None
+    gmtoff_fraction = 0
     # Default to -1 to signify that values not known; not critical to have,
     # though
     iso_week = week_of_year = None
@@ -458,9 +431,27 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             iso_week = int(found_dict['V'])
         elif group_key == 'z':
             z = found_dict['z']
-            tzoffset = int(z[1:3]) * 60 + int(z[3:5])
-            if z.startswith("-"):
-                tzoffset = -tzoffset
+            if z == 'Z':
+                gmtoff = 0
+            else:
+                if z[3] == ':':
+                    z = z[:3] + z[4:]
+                    if len(z) > 5:
+                        if z[5] != ':':
+                            msg = f"Inconsistent use of : in {found_dict['z']}"
+                            raise ValueError(msg)
+                        z = z[:5] + z[6:]
+                hours = int(z[1:3])
+                minutes = int(z[3:5])
+                seconds = int(z[5:7] or 0)
+                gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
+                gmtoff_remainder = z[8:]
+                # Pad to always return microseconds.
+                gmtoff_remainder_padding = "0" * (6 - len(gmtoff_remainder))
+                gmtoff_fraction = int(gmtoff_remainder + gmtoff_remainder_padding)
+                if z.startswith("-"):
+                    gmtoff = -gmtoff
+                    gmtoff_fraction = -gmtoff_fraction
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.
@@ -476,7 +467,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
-    # Deal with the cases where ambiguities arize
+
+    # Deal with the cases where ambiguities arise
     # don't assume default values for ISO week/year
     if year is None and iso_year is not None:
         if iso_week is None or weekday is None:
@@ -504,7 +496,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     elif year is None:
         year = 1900
 
-
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.
     if julian is None and weekday is not None:
@@ -513,7 +504,10 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
                                                 week_starts_Mon)
         elif iso_year is not None and iso_week is not None:
-            year, julian = _calc_julian_from_V(iso_year, iso_week, weekday + 1)
+            datetime_result = datetime_date.fromisocalendar(iso_year, iso_week, weekday + 1)
+            year = datetime_result.year
+            month = datetime_result.month
+            day = datetime_result.day
         if julian is not None and julian <= 0:
             year -= 1
             yday = 366 if calendar.isleap(year) else 365
@@ -538,10 +532,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         weekday = datetime_date(year, month, day).weekday()
     # Add timezone info
     tzname = found_dict.get("Z")
-    if tzoffset is not None:
-        gmtoff = tzoffset * 60
-    else:
-        gmtoff = None
 
     if leap_year_fix:
         # the caller didn't supply a year but asked for Feb 29th. We couldn't
@@ -551,7 +541,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
 
     return (year, month, day,
             hour, minute, second,
-            weekday, julian, tz, tzname, gmtoff), fraction
+            weekday, julian, tz, tzname, gmtoff), fraction, gmtoff_fraction
 
 def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the
@@ -562,11 +552,11 @@ def _strptime_time(data_string, format="%a %b %d %H:%M:%S %Y"):
 def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a class cls instance based on the input string and the
     format string."""
-    tt, fraction = _strptime(data_string, format)
+    tt, fraction, gmtoff_fraction = _strptime(data_string, format)
     tzname, gmtoff = tt[-2:]
     args = tt[:6] + (fraction,)
     if gmtoff is not None:
-        tzdelta = datetime_timedelta(seconds=gmtoff)
+        tzdelta = datetime_timedelta(seconds=gmtoff, microseconds=gmtoff_fraction)
         if tzname:
             tz = datetime_timezone(tzdelta, tzname)
         else:

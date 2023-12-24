@@ -24,18 +24,18 @@
 
 @interface FileSettings : NSObject <FileSettingsSource>
 {
-    NSString *interpreter;	// The pathname of the interpreter to use
-    NSArray *interpreters;	// List of known interpreters
-    BOOL honourhashbang;	// #! line overrides interpreter
-    BOOL debug;			// -d option: debug parser
-    BOOL verbose;		// -v option: verbose import
-    BOOL inspect;		// -i option: interactive mode after script
-    BOOL optimize;		// -O option: optimize bytecode
-    BOOL nosite;		// -S option: don't import site.py
-    BOOL tabs;			// -t option: warn about inconsistent tabs
-    NSString *others;		// other options
-    NSString *scriptargs;	// script arguments (not for preferences)
-    BOOL with_terminal;		// Run in terminal window
+    NSString *interpreter;      // The pathname of the interpreter to use
+    NSArray *interpreters;      // List of known interpreters
+    BOOL honourhashbang;        // #! line overrides interpreter
+    BOOL debug;                 // -d option: debug parser
+    BOOL verbose;               // -v option: verbose import
+    BOOL inspect;               // -i option: interactive mode after script
+    BOOL optimize;              // -O option: optimize bytecode
+    BOOL nosite;                // -S option: don't import site.py
+    BOOL tabs;                  // -t option: warn about inconsistent tabs
+    NSString *others;           // other options
+    NSString *scriptargs;       // script arguments (not for preferences)
+    BOOL with_terminal;         // Run in terminal window
 
     FileSettings *origsource;
     NSString *prefskey;

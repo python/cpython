@@ -39,9 +39,9 @@ returns the root object when you close the parser.
 Note that the parser can be extended in limited ways, and of course you can
 implement your own parser completely from scratch.  All of the logic that
 connects the :mod:`email` package's bundled parser and the
-:class:`~email.message.EmailMessage` class is embodied in the :mod:`policy`
+:class:`~email.message.EmailMessage` class is embodied in the :class:`~email.policy.Policy`
 class, so a custom parser can create message object trees any way it finds
-necessary by implementing custom versions of the appropriate :mod:`policy`
+necessary by implementing custom versions of the appropriate :class:`!Policy`
 methods.
 
 
@@ -164,7 +164,7 @@ message body, instead setting the payload to the raw body.
       envelope header.  The header block is terminated either by the end of the
       data or by a blank line.  Following the header block is the body of the
       message (which may contain MIME-encoded subparts, including subparts
-      with a :mailheader:`Content-Transfer-Encoding` of ``8bit``.
+      with a :mailheader:`Content-Transfer-Encoding` of ``8bit``).
 
       Optional *headersonly* is a flag specifying whether to stop parsing after
       reading the headers or not.  The default is ``False``, meaning it parses
@@ -238,7 +238,7 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure from a :term:`bytes-like object`.  This is
    equivalent to ``BytesParser().parsebytes(s)``.  Optional *_class* and
-   *strict* are interpreted as with the :class:`~email.parser.BytesParser` class
+   *policy* are interpreted as with the :class:`~email.parser.BytesParser` class
    constructor.
 
    .. versionadded:: 3.2
@@ -246,7 +246,7 @@ in the top-level :mod:`email` package namespace.
       Removed the *strict* argument.  Added the *policy* keyword.
 
 
-.. function:: message_from_binary_file(fp, _class=None, *,
+.. function:: message_from_binary_file(fp, _class=None, *, \
                                        policy=policy.compat32)
 
    Return a message object structure tree from an open binary :term:`file

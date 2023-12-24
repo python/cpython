@@ -1,1 +1,0 @@
-IDLE: Add docstrings to browser.py. Patch by Cheryl Sabella.

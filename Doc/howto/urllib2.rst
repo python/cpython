@@ -4,14 +4,7 @@
   HOWTO Fetch Internet Resources Using The urllib Package
 ***********************************************************
 
-:Author: `Michael Foord <http://www.voidspace.org.uk/python/index.shtml>`_
-
-.. note::
-
-    There is a French translation of an earlier revision of this
-    HOWTO, available at `urllib2 - Le Manuel manquant
-    <http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
-
+:Author: `Michael Foord <https://agileabstractions.com/>`_
 
 
 Introduction
@@ -22,7 +15,7 @@ Introduction
     You may also find useful the following article on fetching web resources
     with Python:
 
-    * `Basic Authentication <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
+    * `Basic Authentication <https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`_
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
@@ -56,12 +49,20 @@ The simplest way to use urllib.request is as follows::
     with urllib.request.urlopen('http://python.org/') as response:
        html = response.read()
 
-If you wish to retrieve a resource via URL and store it in a temporary location,
-you can do so via the :func:`~urllib.request.urlretrieve` function::
+If you wish to retrieve a resource via URL and store it in a temporary
+location, you can do so via the :func:`shutil.copyfileobj` and
+:func:`tempfile.NamedTemporaryFile` functions::
 
+    import shutil
+    import tempfile
     import urllib.request
-    local_filename, headers = urllib.request.urlretrieve('http://python.org/')
-    html = open(local_filename)
+
+    with urllib.request.urlopen('http://python.org/') as response:
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            shutil.copyfileobj(response, tmp_file)
+
+    with open(tmp_file.name) as html:
+        pass
 
 Many uses of urllib will be that simple (note that instead of an 'http:' URL we
 could have used a URL starting with 'ftp:', 'file:', etc.).  However, it's the
@@ -78,7 +79,7 @@ response::
 
     import urllib.request
 
-    req = urllib.request.Request('http://www.voidspace.org.uk')
+    req = urllib.request.Request('http://python.org/')
     with urllib.request.urlopen(req) as response:
        the_page = response.read()
 
@@ -89,7 +90,7 @@ schemes.  For example, you can make an FTP request like so::
 
 In the case of HTTP, there are two extra things that Request objects allow you
 to do: First, you can pass data to be sent to the server.  Second, you can pass
-extra information ("metadata") *about* the data or the about request itself, to
+extra information ("metadata") *about* the data or about the request itself, to
 the server - this information is sent as HTTP "headers".  Let's look at each of
 these in turn.
 
@@ -193,11 +194,11 @@ which comes after we have a look at what happens when things go wrong.
 Handling Exceptions
 ===================
 
-*urlopen* raises :exc:`URLError` when it cannot handle a response (though as
+*urlopen* raises :exc:`~urllib.error.URLError` when it cannot handle a response (though as
 usual with Python APIs, built-in exceptions such as :exc:`ValueError`,
 :exc:`TypeError` etc. may also be raised).
 
-:exc:`HTTPError` is the subclass of :exc:`URLError` raised in the specific case of
+:exc:`~urllib.error.HTTPError` is the subclass of :exc:`~urllib.error.URLError` raised in the specific case of
 HTTP URLs.
 
 The exception classes are exported from the :mod:`urllib.error` module.
@@ -228,12 +229,12 @@ the status code indicates that the server is unable to fulfil the request. The
 default handlers will handle some of these responses for you (for example, if
 the response is a "redirection" that requests the client fetch the document from
 a different URL, urllib will handle that for you). For those it can't handle,
-urlopen will raise an :exc:`HTTPError`. Typical errors include '404' (page not
+urlopen will raise an :exc:`~urllib.error.HTTPError`. Typical errors include '404' (page not
 found), '403' (request forbidden), and '401' (authentication required).
 
-See section 10 of RFC 2616 for a reference on all the HTTP error codes.
+See section 10 of :rfc:`2616` for a reference on all the HTTP error codes.
 
-The :exc:`HTTPError` instance raised will have an integer 'code' attribute, which
+The :exc:`~urllib.error.HTTPError` instance raised will have an integer 'code' attribute, which
 corresponds to the error sent by the server.
 
 Error Codes
@@ -244,7 +245,7 @@ codes in the 100--299 range indicate success, you will usually only see error
 codes in the 400--599 range.
 
 :attr:`http.server.BaseHTTPRequestHandler.responses` is a useful dictionary of
-response codes in that shows all the response codes used by RFC 2616. The
+response codes in that shows all the response codes used by :rfc:`2616`. The
 dictionary is reproduced here for convenience ::
 
     # Table mapping response codes to messages; entries have the
@@ -316,7 +317,7 @@ dictionary is reproduced here for convenience ::
         }
 
 When an error is raised the server responds by returning an HTTP error code
-*and* an error page. You can use the :exc:`HTTPError` instance as a response on the
+*and* an error page. You can use the :exc:`~urllib.error.HTTPError` instance as a response on the
 page returned. This means that as well as the code attribute, it also has read,
 geturl, and info, methods as returned by the ``urllib.response`` module::
 
@@ -337,7 +338,7 @@ geturl, and info, methods as returned by the ``urllib.response`` module::
 Wrapping it Up
 --------------
 
-So if you want to be prepared for :exc:`HTTPError` *or* :exc:`URLError` there are two
+So if you want to be prepared for :exc:`~urllib.error.HTTPError` *or* :exc:`~urllib.error.URLError` there are two
 basic approaches. I prefer the second approach.
 
 Number 1
@@ -364,7 +365,7 @@ Number 1
 .. note::
 
     The ``except HTTPError`` *must* come first, otherwise ``except URLError``
-    will *also* catch an :exc:`HTTPError`.
+    will *also* catch an :exc:`~urllib.error.HTTPError`.
 
 Number 2
 ~~~~~~~~
@@ -390,7 +391,7 @@ Number 2
 info and geturl
 ===============
 
-The response returned by urlopen (or the :exc:`HTTPError` instance) has two
+The response returned by urlopen (or the :exc:`~urllib.error.HTTPError` instance) has two
 useful methods :meth:`info` and :meth:`geturl` and is defined in the module
 :mod:`urllib.response`..
 
@@ -403,7 +404,7 @@ fetched, particularly the headers sent by the server. It is currently an
 :class:`http.client.HTTPMessage` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
-`Quick Reference to HTTP Headers <https://www.cs.tut.fi/~jkorpela/http.html>`_
+`Quick Reference to HTTP Headers <https://jkorpela.fi/http.html>`_
 for a useful listing of HTTP headers with brief explanations of their meaning
 and use.
 
@@ -412,7 +413,7 @@ Openers and Handlers
 ====================
 
 When you fetch a URL you use an opener (an instance of the perhaps
-confusingly-named :class:`urllib.request.OpenerDirector`). Normally we have been using
+confusingly named :class:`urllib.request.OpenerDirector`). Normally we have been using
 the default opener - via ``urlopen`` - but you can create custom
 openers. Openers use handlers. All the "heavy lifting" is done by the
 handlers. Each handler knows how to open URLs for a particular URL scheme (http,
@@ -450,14 +451,16 @@ To illustrate creating and installing a handler we will use the
 ``HTTPBasicAuthHandler``. For a more detailed discussion of this subject --
 including an explanation of how Basic Authentication works - see the `Basic
 Authentication Tutorial
-<http://www.voidspace.org.uk/python/articles/authentication.shtml>`_.
+<https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml>`__.
 
 When authentication is required, the server sends a header (as well as the 401
 error code) requesting authentication.  This specifies the authentication scheme
 and a 'realm'. The header looks like: ``WWW-Authenticate: SCHEME
 realm="REALM"``.
 
-e.g. ::
+e.g.
+
+.. code-block:: none
 
     WWW-Authenticate: Basic realm="cPanel Users"
 

@@ -148,6 +148,7 @@ def header_encode(header_bytes, charset='iso-8859-1'):
 _QUOPRI_BODY_ENCODE_MAP = _QUOPRI_BODY_MAP[:]
 for c in b'\r\n':
     _QUOPRI_BODY_ENCODE_MAP[c] = chr(c)
+del c
 
 def body_encode(body, maxlinelen=76, eol=NL):
     """Encode with quoted-printable, wrapping at maxlinelen characters.
@@ -173,7 +174,7 @@ def body_encode(body, maxlinelen=76, eol=NL):
     if not body:
         return body
 
-    # quote speacial characters
+    # quote special characters
     body = body.translate(_QUOPRI_BODY_ENCODE_MAP)
 
     soft_break = '=' + eol

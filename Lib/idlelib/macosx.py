@@ -1,6 +1,8 @@
 """
-A number of functions that enhance IDLE on Mac OSX.
+A number of functions that enhance IDLE on macOS.
 """
+from os.path import expanduser
+import plistlib
 from sys import platform  # Used in _init_tk_type, changed by test.
 
 import tkinter
@@ -12,12 +14,25 @@ import tkinter
 _tk_type = None
 
 def _init_tk_type():
-    """
-    Initializes OS X Tk variant values for
-    isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
+    """ Initialize _tk_type for isXyzTk functions.
+
+    This function is only called once, when _tk_type is still None.
     """
     global _tk_type
     if platform == 'darwin':
+
+        # When running IDLE, GUI is present, test/* may not be.
+        # When running tests, test/* is present, GUI may not be.
+        # If not, guess most common.  Does not matter for testing.
+        from idlelib.__init__ import testing
+        if testing:
+            from test.support import requires, ResourceDenied
+            try:
+                requires('gui')
+            except ResourceDenied:
+                _tk_type = "cocoa"
+                return
+
         root = tkinter.Tk()
         ws = root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
@@ -31,6 +46,7 @@ def _init_tk_type():
         root.destroy()
     else:
         _tk_type = "other"
+    return
 
 def isAquaTk():
     """
@@ -66,25 +82,37 @@ def isXQuartz():
     return _tk_type == "xquartz"
 
 
-def tkVersionWarning(root):
+def readSystemPreferences():
     """
-    Returns a string warning message if the Tk version in use appears to
-    be one known to cause problems with IDLE.
-    1. Apple Cocoa-based Tk 8.5.7 shipped with Mac OS X 10.6 is unusable.
-    2. Apple Cocoa-based Tk 8.5.9 in OS X 10.7 and 10.8 is better but
-        can still crash unexpectedly.
+    Fetch the macOS system preferences.
     """
+    if platform != 'darwin':
+        return None
 
-    if isCocoaTk():
-        patchlevel = root.tk.call('info', 'patchlevel')
-        if patchlevel not in ('8.5.7', '8.5.9'):
-            return False
-        return (r"WARNING: The version of Tcl/Tk ({0}) in use may"
-                r" be unstable.\n"
-                r"Visit http://www.python.org/download/mac/tcltk/"
-                r" for current information.".format(patchlevel))
-    else:
-        return False
+    plist_path = expanduser('~/Library/Preferences/.GlobalPreferences.plist')
+    try:
+        with open(plist_path, 'rb') as plist_file:
+            return plistlib.load(plist_file)
+    except OSError:
+        return None
+
+
+def preferTabsPreferenceWarning():
+    """
+    Warn if "Prefer tabs when opening documents" is set to "Always".
+    """
+    if platform != 'darwin':
+        return None
+
+    prefs = readSystemPreferences()
+    if prefs and prefs.get('AppleWindowTabbingMode') == 'always':
+        return (
+            'WARNING: The system preference "Prefer tabs when opening'
+            ' documents" is set to "Always". This will cause various problems'
+            ' with IDLE. For the best experience, change this setting when'
+            ' running IDLE (via System Preferences -> Dock).'
+        )
+    return None
 
 
 ## Fix the menu and related functions.
@@ -128,7 +156,7 @@ def overrideRootMenu(root, flist):
     # menu.
     from tkinter import Menu
     from idlelib import mainmenu
-    from idlelib import windows
+    from idlelib import window
 
     closeItem = mainmenu.menudefs[0][1][-2]
 
@@ -143,12 +171,11 @@ def overrideRootMenu(root, flist):
     del mainmenu.menudefs[-1][1][0:2]
     # Remove the 'Configure Idle' entry from the options menu, it is in the
     # application menu as 'Preferences'
-    del mainmenu.menudefs[-2][1][0]
+    del mainmenu.menudefs[-3][1][0:2]
     menubar = Menu(root)
     root.configure(menu=menubar)
-    menudict = {}
 
-    menudict['windows'] = menu = Menu(menubar, name='windows', tearoff=0)
+    menu = Menu(menubar, name='window', tearoff=0)
     menubar.add_cascade(label='Window', menu=menu, underline=0)
 
     def postwindowsmenu(menu=menu):
@@ -158,8 +185,8 @@ def overrideRootMenu(root, flist):
 
         if end > 0:
             menu.delete(0, end)
-        windows.add_windows_to_menu(menu)
-    windows.register_callback(postwindowsmenu)
+        window.add_windows_to_menu(menu)
+    window.register_callback(postwindowsmenu)
 
     def about_dialog(event=None):
         "Handle Help 'About IDLE' event."
@@ -192,14 +219,13 @@ def overrideRootMenu(root, flist):
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
         # The binding above doesn't reliably work on all versions of Tk
-        # on MacOSX. Adding command definition below does seem to do the
+        # on macOS. Adding command definition below does seem to do the
         # right thing for now.
-        root.createcommand('exit', flist.close_all_callback)
+        root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
-        menudict['application'] = menu = Menu(menubar, name='apple',
-                                              tearoff=0)
+        menu = Menu(menubar, name='apple', tearoff=0)
         menubar.add_cascade(label='IDLE', menu=menu)
         mainmenu.menudefs.insert(0,
             ('application', [

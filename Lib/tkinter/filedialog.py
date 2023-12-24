@@ -11,13 +11,20 @@ to the native file dialogues available in Tk 4.2 and newer, and the
 directory dialogue available in Tk 8.3 and newer.
 These interfaces were written by Fredrik Lundh, May 1997.
 """
+__all__ = ["FileDialog", "LoadFileDialog", "SaveFileDialog",
+           "Open", "SaveAs", "Directory",
+           "askopenfilename", "asksaveasfilename", "askopenfilenames",
+           "askopenfile", "askopenfiles", "asksaveasfile", "askdirectory"]
 
-from tkinter import *
+import fnmatch
+import os
+from tkinter import (
+    Frame, LEFT, YES, BOTTOM, Entry, TOP, Button, Tk, X,
+    Toplevel, RIGHT, Y, END, Listbox, BOTH, Scrollbar,
+)
 from tkinter.dialog import Dialog
 from tkinter import commondialog
-
-import os
-import fnmatch
+from tkinter.simpledialog import _setup_dialog
 
 
 dialogstates = {}
@@ -56,6 +63,7 @@ class FileDialog:
         self.top = Toplevel(master)
         self.top.title(title)
         self.top.iconname(title)
+        _setup_dialog(self.top)
 
         self.botframe = Frame(self.top)
         self.botframe.pack(side=BOTTOM, fill=X)
@@ -264,7 +272,6 @@ class SaveFileDialog(FileDialog):
         self.quit(file)
 
 
-
 # For the following classes and modules:
 #
 # options (all have default values):
@@ -341,6 +348,7 @@ class Open(_Dialog):
             return self._fixresult(widget, widget.tk.splitlist(result))
         return _Dialog._fixresult(self, widget, result)
 
+
 class SaveAs(_Dialog):
     "Ask for a filename to save as"
 
@@ -369,15 +377,18 @@ class Directory(commondialog.Dialog):
 #
 # convenience stuff
 
+
 def askopenfilename(**options):
     "Ask for a filename to open"
 
     return Open(**options).show()
 
+
 def asksaveasfilename(**options):
     "Ask for a filename to save as"
 
     return SaveAs(**options).show()
+
 
 def askopenfilenames(**options):
     """Ask for multiple filenames to open
@@ -390,6 +401,7 @@ def askopenfilenames(**options):
 
 # FIXME: are the following  perhaps a bit too convenient?
 
+
 def askopenfile(mode = "r", **options):
     "Ask for a filename to open, and returned the opened file"
 
@@ -397,6 +409,7 @@ def askopenfile(mode = "r", **options):
     if filename:
         return open(filename, mode)
     return None
+
 
 def askopenfiles(mode = "r", **options):
     """Ask for multiple filenames and return the open file
@@ -423,10 +436,10 @@ def asksaveasfile(mode = "w", **options):
         return open(filename, mode)
     return None
 
+
 def askdirectory (**options):
     "Ask for a directory, and return the file name"
     return Directory(**options).show()
-
 
 
 # --------------------------------------------------------------------
@@ -448,7 +461,6 @@ def test():
 
     # Start off with UTF-8
     enc = "utf-8"
-    import sys
 
     # See whether CODESET is defined
     try:
@@ -458,15 +470,15 @@ def test():
     except (ImportError, AttributeError):
         pass
 
-    # dialog for openening files
+    # dialog for opening files
 
     openfilename=askopenfilename(filetypes=[("all files", "*")])
     try:
         fp=open(openfilename,"r")
         fp.close()
-    except:
+    except BaseException as exc:
         print("Could not open File: ")
-        print(sys.exc_info()[1])
+        print(exc)
 
     print("open", openfilename.encode(enc))
 
@@ -474,6 +486,7 @@ def test():
 
     saveasfilename=asksaveasfilename()
     print("saveas", saveasfilename.encode(enc))
+
 
 if __name__ == '__main__':
     test()

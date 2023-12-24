@@ -1,16 +1,22 @@
+// strtol() and strtoul(), renamed to avoid conflicts.
+//
+// API:
+//
+// - PyOS_strtol(): convert string to C long integer.
+// - PyOS_strtoul(): convert string to C unsigned long integer.
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_DigitValue
 
-#if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
-#define _SGI_MP_SOURCE
+#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
+#  define _SGI_MP_SOURCE
 #endif
 
 /* strtol and strtoul, renamed to avoid conflicts */
 
 
-#include <ctype.h>
 #ifdef HAVE_ERRNO_H
-#include <errno.h>
+#  include <errno.h>              // errno
 #endif
 
 /* Static overflow check values for bases 2 through 36.
@@ -75,7 +81,7 @@ static const int digitlimit[] = {
     14,  14, 14, 14, 13, 13, 13, 13, 13, 13,  /* 20 - 29 */
     13,  12, 12, 12, 12, 12, 12};             /* 30 - 36 */
 #else
-#error "Need table for SIZEOF_LONG"
+#  error "Need table for SIZEOF_LONG"
 #endif
 
 /*
@@ -99,7 +105,7 @@ PyOS_strtoul(const char *str, char **ptr, int base)
     int ovlimit;       /* required digits to overflow */
 
     /* skip leading white space */
-    while (*str && Py_ISSPACE(Py_CHARMASK(*str)))
+    while (*str && Py_ISSPACE(*str))
         ++str;
 
     /* check for leading 0b, 0o or 0x for auto-base or base 16 */
@@ -138,7 +144,7 @@ PyOS_strtoul(const char *str, char **ptr, int base)
                 /* skip all zeroes... */
                 while (*str == '0')
                     ++str;
-                while (Py_ISSPACE(Py_CHARMASK(*str)))
+                while (Py_ISSPACE(*str))
                     ++str;
                 if (ptr)
                     *ptr = (char *)str;
@@ -266,7 +272,7 @@ PyOS_strtol(const char *str, char **ptr, int base)
     unsigned long uresult;
     char sign;
 
-    while (*str && Py_ISSPACE(Py_CHARMASK(*str)))
+    while (*str && Py_ISSPACE(*str))
         str++;
 
     sign = *str;

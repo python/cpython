@@ -1,7 +1,6 @@
 """Implementation of the DOM Level 3 'LS-Load' feature."""
 
 import copy
-import warnings
 import xml.dom
 
 from xml.dom.NodeFilter import NodeFilter
@@ -332,29 +331,10 @@ class DOMBuilderFilter:
 del NodeFilter
 
 
-class _AsyncDeprecatedProperty:
-    def warn(self, cls):
-        clsname = cls.__name__
-        warnings.warn(
-            "{cls}.async is deprecated; use {cls}.async_".format(cls=clsname),
-            DeprecationWarning)
-
-    def __get__(self, instance, cls):
-        self.warn(cls)
-        if instance is not None:
-            return instance.async_
-        return False
-
-    def __set__(self, instance, value):
-        self.warn(type(instance))
-        setattr(instance, 'async_', value)
-
-
 class DocumentLS:
     """Mixin to create documents that conform to the load/save spec."""
 
     async_ = False
-    locals()['async'] = _AsyncDeprecatedProperty()  # Avoid DeprecationWarning
 
     def _get_async(self):
         return False
@@ -382,9 +362,6 @@ class DocumentLS:
         elif snode.ownerDocument is not self:
             raise xml.dom.WrongDocumentErr()
         return snode.toxml()
-
-
-del _AsyncDeprecatedProperty
 
 
 class DOMImplementationLS:

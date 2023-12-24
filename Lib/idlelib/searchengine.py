@@ -2,7 +2,7 @@
 import re
 
 from tkinter import StringVar, BooleanVar, TclError
-import tkinter.messagebox as tkMessageBox
+from tkinter import messagebox
 
 def get(root):
     '''Return the singleton SearchEngine instance for the process.
@@ -84,22 +84,19 @@ class SearchEngine:
             flags = flags | re.IGNORECASE
         try:
             prog = re.compile(pat, flags)
-        except re.error as what:
-            args = what.args
-            msg = args[0]
-            col = args[1] if len(args) >= 2 else -1
-            self.report_error(pat, msg, col)
+        except re.PatternError as e:
+            self.report_error(pat, e.msg, e.pos)
             return None
         return prog
 
-    def report_error(self, pat, msg, col=-1):
+    def report_error(self, pat, msg, col=None):
         # Derived class could override this with something fancier
         msg = "Error: " + str(msg)
         if pat:
             msg = msg + "\nPattern: " + str(pat)
-        if col >= 0:
+        if col is not None:
             msg = msg + "\nOffset: " + str(col)
-        tkMessageBox.showerror("Regular expression error",
+        messagebox.showerror("Regular expression error",
                                msg, master=self.root)
 
     def search_text(self, text, prog=None, ok=0):
@@ -168,7 +165,7 @@ class SearchEngine:
         wrapped = 0
         startline = line
         chars = text.get("%d.0" % line, "%d.0" % (line+1))
-        while 1:
+        while True:
             m = search_reverse(prog, chars[:-1], col)
             if m:
                 if ok or m.start() < col:
@@ -231,6 +228,7 @@ def get_line_col(index):
     line, col = map(int, index.split(".")) # Fails on invalid index
     return line, col
 
+
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_searchengine', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_searchengine', verbosity=2)

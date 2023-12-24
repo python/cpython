@@ -1,14 +1,27 @@
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifndef Py_GIL_DISABLED
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030c0000
+#endif
+
+// gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
+// linking the extension to python3.lib (which fails). Py_BUILD_CORE_MODULE is
+// needed to import Python symbols. Then Python.h undefines Py_BUILD_CORE and
+// Py_BUILD_CORE_MODULE if Py_LIMITED_API is defined.
+#define Py_BUILD_CORE
+#define Py_BUILD_CORE_MODULE
+
 #include <Python.h>
 
+#include <stdio.h>                // printf()
+#include <stdlib.h>               // qsort()
+#include <string.h>               // memset()
 #ifdef MS_WIN32
-#include <windows.h>
+#  include <windows.h>
 #endif
 
-#if defined(MS_WIN32) || defined(__CYGWIN__)
-#define EXPORT(x) __declspec(dllexport) x
-#else
-#define EXPORT(x) x
-#endif
+#define EXPORT(x) Py_EXPORTED_SYMBOL x
 
 /* some functions handy for testing */
 
@@ -63,7 +76,7 @@ typedef struct {
 } TestReg;
 
 
-EXPORT(TestReg) last_tfrsuv_arg;
+EXPORT(TestReg) last_tfrsuv_arg = {0};
 
 
 EXPORT(void)
@@ -74,6 +87,277 @@ _testfunc_reg_struct_update_value(TestReg in)
     ((volatile TestReg *)&in)->second = 0x0badf00d;
 }
 
+/*
+ * See bpo-22273. Structs containing arrays should work on Linux 64-bit.
+ */
+
+typedef struct {
+    unsigned char data[16];
+} Test2;
+
+EXPORT(int)
+_testfunc_array_in_struct2(Test2 in)
+{
+    int result = 0;
+    for (unsigned i = 0; i < sizeof(in.data)/sizeof(in.data[0]); i++)
+        result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+/*
+ * Test3A struct test the MAX_STRUCT_SIZE 16 with single precision floats.
+ * These structs should be passed via registers on all platforms and they are
+ * used for within bounds tests.
+ */
+typedef struct {
+    float data[2];
+    float more_data[2];
+} Test3A;
+
+EXPORT(double)
+_testfunc_array_in_struct3A(Test3A in)
+{
+    double result = 0;
+
+    for (unsigned i = 0; i < sizeof(in.data)/sizeof(in.data[0]); i++)
+        result += in.data[i];
+    for (unsigned i = 0; i < sizeof(in.more_data)/sizeof(in.more_data[0]); i++)
+        result += in.more_data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+/* The structs Test3B..Test3E use the same functions hence using the MACRO
+ * to define their implementation.
+ */
+
+#define _TESTFUNC_ARRAY_IN_STRUCT_IMPL                                  \
+    double result = 0;                                                  \
+                                                                        \
+    for (unsigned i = 0; i < sizeof(in.data)/sizeof(in.data[0]); i++)   \
+        result += in.data[i];                                           \
+    /* As the structure is passed by value, changes to it shouldn't be  \
+     * reflected in the caller.                                         \
+     */                                                                 \
+    memset(in.data, 0, sizeof(in.data));                                \
+    return result;                                                      \
+
+#define _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL                     \
+    for (unsigned i = 0; i < sizeof(s.data)/sizeof(s.data[0]); i++)     \
+        s.data[i] = (double)i+1;                                        \
+    return s;                                                           \
+
+
+/*
+ * Test3B struct test the MAX_STRUCT_SIZE 16 with double precision floats.
+ * These structs should be passed via registers on all platforms and they are
+ * used for within bounds tests.
+ */
+typedef struct {
+    double data[2];
+} Test3B;
+
+EXPORT(double)
+_testfunc_array_in_struct3B(Test3B in)
+{
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
+}
+
+EXPORT(Test3B)
+_testfunc_array_in_struct3B_set_defaults(void)
+{
+    Test3B s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
+}
+
+/*
+ * Test3C struct tests the MAX_STRUCT_SIZE 32. Structs containing arrays of up
+ * to four floating point types are passed in registers on Arm platforms.
+ * This struct is used for within bounds test on Arm platfroms and for an
+ * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 32.
+ * See gh-110190.
+ */
+typedef struct {
+    double data[4];
+} Test3C;
+
+EXPORT(double)
+_testfunc_array_in_struct3C(Test3C in)
+{
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
+}
+
+EXPORT(Test3C)
+_testfunc_array_in_struct3C_set_defaults(void)
+{
+    Test3C s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
+}
+
+/*
+ * Test3D struct tests the MAX_STRUCT_SIZE 64. Structs containing arrays of up
+ * to eight floating point types are passed in registers on PPC64LE platforms.
+ * This struct is used for within bounds test on PPC64LE platfroms and for an
+ * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 64.
+ * See gh-110190.
+ */
+typedef struct {
+    double data[8];
+} Test3D;
+
+EXPORT(double)
+_testfunc_array_in_struct3D(Test3D in)
+{
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
+}
+
+EXPORT(Test3D)
+_testfunc_array_in_struct3D_set_defaults(void)
+{
+    Test3D s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
+}
+
+/*
+ * Test3E struct tests the out-of-bounds for all architectures.
+ * See gh-110190.
+ */
+typedef struct {
+    double data[9];
+} Test3E;
+
+EXPORT(double)
+_testfunc_array_in_struct3E(Test3E in)
+{
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
+}
+
+EXPORT(Test3E)
+_testfunc_array_in_struct3E_set_defaults(void)
+{
+    Test3E s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
+}
+
+typedef union {
+    long a_long;
+    struct {
+        int an_int;
+        int another_int;
+    } a_struct;
+} Test4;
+
+typedef struct {
+    int an_int;
+    struct {
+        int an_int;
+        Test4 a_union;
+    } nested;
+    int another_int;
+} Test5;
+
+EXPORT(long)
+_testfunc_union_by_value1(Test4 in) {
+    long result = in.a_long + in.a_struct.an_int + in.a_struct.another_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_value2(Test5 in) {
+    long result = in.an_int + in.nested.an_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference1(Test4 *in) {
+    long result = in->a_long;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference2(Test4 *in) {
+    long result = in->a_struct.an_int + in->a_struct.another_int;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference3(Test5 *in) {
+    long result = in->an_int + in->nested.an_int + in->another_int;
+
+    memset(in, 0, sizeof(Test5));
+    return result;
+}
+
+typedef struct {
+    signed int A: 1, B:2, C:3, D:2;
+} Test6;
+
+EXPORT(long)
+_testfunc_bitfield_by_value1(Test6 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_bitfield_by_reference1(Test6 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test6));
+    return result;
+}
+
+typedef struct {
+    unsigned int A: 1, B:2, C:3, D:2;
+} Test7;
+
+EXPORT(long)
+_testfunc_bitfield_by_reference2(Test7 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test7));
+    return result;
+}
+
+typedef union {
+    signed int A: 1, B:2, C:3, D:2;
+} Test8;
+
+EXPORT(long)
+_testfunc_bitfield_by_value2(Test8 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
 
 EXPORT(void)testfunc_array(int values[4])
 {
@@ -87,7 +371,7 @@ EXPORT(void)testfunc_array(int values[4])
 EXPORT(long double)testfunc_Ddd(double a, double b)
 {
     long double result = (long double)(a * b);
-    printf("testfunc_Ddd(%p, %p)\n", &a, &b);
+    printf("testfunc_Ddd(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_Ddd(%g, %g)\n", a, b);
     return result;
 }
@@ -95,7 +379,7 @@ EXPORT(long double)testfunc_Ddd(double a, double b)
 EXPORT(long double)testfunc_DDD(long double a, long double b)
 {
     long double result = a * b;
-    printf("testfunc_DDD(%p, %p)\n", &a, &b);
+    printf("testfunc_DDD(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_DDD(%Lg, %Lg)\n", a, b);
     return result;
 }
@@ -103,7 +387,7 @@ EXPORT(long double)testfunc_DDD(long double a, long double b)
 EXPORT(int)testfunc_iii(int a, int b)
 {
     int result = a * b;
-    printf("testfunc_iii(%p, %p)\n", &a, &b);
+    printf("testfunc_iii(%p, %p)\n", (void *)&a, (void *)&b);
     return result;
 }
 
@@ -361,7 +645,7 @@ static void _xxx_init(void *(*Xalloc)(int), void (*Xfree)(void *))
 {
     void *ptr;
 
-    printf("_xxx_init got %p %p\n", Xalloc, Xfree);
+    printf("_xxx_init got %p %p\n", (void *)Xalloc, (void *)Xfree);
     printf("calling\n");
     ptr = Xalloc(32);
     Xfree(ptr);
@@ -410,36 +694,20 @@ EXPORT(void) _py_func(void)
 {
 }
 
-EXPORT(long long) last_tf_arg_s;
-EXPORT(unsigned long long) last_tf_arg_u;
+EXPORT(long long) last_tf_arg_s = 0;
+EXPORT(unsigned long long) last_tf_arg_u = 0;
 
 struct BITS {
-    int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
-    short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+    signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
+/*
+ * The test case needs/uses "signed short" bitfields, but the
+ * IBM XLC compiler does not support this
+ */
+#ifndef __xlc__
+#define SIGNED_SHORT_BITFIELDS
+     short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+#endif
 };
-
-EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
-{
-    switch (name) {
-    case 'A': bits->A = value; break;
-    case 'B': bits->B = value; break;
-    case 'C': bits->C = value; break;
-    case 'D': bits->D = value; break;
-    case 'E': bits->E = value; break;
-    case 'F': bits->F = value; break;
-    case 'G': bits->G = value; break;
-    case 'H': bits->H = value; break;
-    case 'I': bits->I = value; break;
-
-    case 'M': bits->M = value; break;
-    case 'N': bits->N = value; break;
-    case 'O': bits->O = value; break;
-    case 'P': bits->P = value; break;
-    case 'Q': bits->Q = value; break;
-    case 'R': bits->R = value; break;
-    case 'S': bits->S = value; break;
-    }
-}
 
 EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 {
@@ -454,6 +722,7 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     case 'H': return bits->H;
     case 'I': return bits->I;
 
+#ifdef SIGNED_SHORT_BITFIELDS
     case 'M': return bits->M;
     case 'N': return bits->N;
     case 'O': return bits->O;
@@ -461,8 +730,9 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     case 'Q': return bits->Q;
     case 'R': return bits->R;
     case 'S': return bits->S;
+#endif
     }
-    return 0;
+    return 999;
 }
 
 static PyMethodDef module_methods[] = {
@@ -661,6 +931,200 @@ EXPORT(void) TwoOutArgs(int a, int *pi, int b, int *pj)
 }
 
 #ifdef MS_WIN32
+
+typedef struct {
+    char f1;
+} Size1;
+
+typedef struct {
+    char f1;
+    char f2;
+} Size2;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+} Size3;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+} Size4;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+} Size5;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+} Size6;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+} Size7;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+} Size8;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+} Size9;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+} Size10;
+
+EXPORT(Size1) TestSize1() {
+    Size1 f;
+    f.f1 = 'a';
+    return f;
+}
+
+EXPORT(Size2) TestSize2() {
+    Size2 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    return f;
+}
+
+EXPORT(Size3) TestSize3() {
+    Size3 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    return f;
+}
+
+EXPORT(Size4) TestSize4() {
+    Size4 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    return f;
+}
+
+EXPORT(Size5) TestSize5() {
+    Size5 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    return f;
+}
+
+EXPORT(Size6) TestSize6() {
+    Size6 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    return f;
+}
+
+EXPORT(Size7) TestSize7() {
+    Size7 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    return f;
+}
+
+EXPORT(Size8) TestSize8() {
+    Size8 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    return f;
+}
+
+EXPORT(Size9) TestSize9() {
+    Size9 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    return f;
+}
+
+EXPORT(Size10) TestSize10() {
+    Size10 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    return f;
+}
+
+#endif
+
+#ifdef MS_WIN32
 EXPORT(S2H) __stdcall s_ret_2h_func(S2H inp) { return ret_2h_func(inp); }
 EXPORT(S8I) __stdcall s_ret_8i_func(S8I inp) { return ret_8i_func(inp); }
 #endif
@@ -683,14 +1147,37 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
+#ifdef MS_WIN32
+
+// i38748: c stub for testing stack corruption
+// When executing a Python callback with a long and a long long
+
+typedef long(__stdcall *_test_i38748_funcType)(long, long long);
+
+EXPORT(long) _test_i38748_runCallback(_test_i38748_funcType callback, int a, int b) {
+    return callback(a, b);
+}
+
+#endif
+
+EXPORT(int)
+_testfunc_pylist_append(PyObject *list, PyObject *item)
+{
+    return PyList_Append(list, item);
+}
+
+static struct PyModuleDef_Slot _ctypes_test_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
 
 static struct PyModuleDef _ctypes_testmodule = {
     PyModuleDef_HEAD_INIT,
     "_ctypes_test",
     NULL,
-    -1,
+    0,
     module_methods,
-    NULL,
+    _ctypes_test_slots,
     NULL,
     NULL,
     NULL
@@ -699,5 +1186,5 @@ static struct PyModuleDef _ctypes_testmodule = {
 PyMODINIT_FUNC
 PyInit__ctypes_test(void)
 {
-    return PyModule_Create(&_ctypes_testmodule);
+    return PyModuleDef_Init(&_ctypes_testmodule);
 }

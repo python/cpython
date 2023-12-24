@@ -579,7 +579,7 @@ dddiv1056 divide  1e-277 -1e+311 -> -0E-398 Underflow Subnormal Inexact Rounded 
 dddiv1057 divide -1e-277  1e+311 -> -0E-398 Underflow Subnormal Inexact Rounded Clamped
 dddiv1058 divide -1e-277 -1e+311 ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
 
--- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+-- 'subnormal' boundary (all hard underflow or overflow in base arithmetic)
 dddiv1060 divide 1e-291 1e+101 -> 1E-392 Subnormal
 dddiv1061 divide 1e-291 1e+102 -> 1E-393 Subnormal
 dddiv1062 divide 1e-291 1e+103 -> 1E-394 Subnormal

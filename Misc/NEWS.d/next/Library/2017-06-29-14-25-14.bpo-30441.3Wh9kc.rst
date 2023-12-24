@@ -1,1 +1,0 @@
-Fix bug when modifying os.environ while iterating over it

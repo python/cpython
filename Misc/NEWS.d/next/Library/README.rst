@@ -1,1 +1,3 @@
-Put news entry ``blurb`` files for the *Library* section in this directory.
+Put news entry `blurb`_ files for the *Library* section in this directory.
+
+.. _blurb: https://pypi.org/project/blurb/
