@@ -486,6 +486,10 @@ Encoders and Decoders
    .. versionchanged:: 3.6
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. versionchanged:: 3.13
+      :exc:`TypeError` is raised if the default serialization function
+      returns a result of the same type as the input.
+
 
    .. method:: default(o)
 

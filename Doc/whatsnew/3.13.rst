@@ -1163,6 +1163,10 @@ Changes in the Python API
   other "private" attributes.
   (See :gh:`112826`.)
 
+* :exc:`TypeError` is now raised in the :mod:`json` encoder if the default
+  serialization function returns a result of the same type as the input.
+  (Contributed by Siddharth Velankar and Serhiy Storchaka in :gh:`74917`.)
+
 
 Build Changes
 =============

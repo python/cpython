@@ -1,0 +1,2 @@
+:exc:`TypeError` is now raised in the :mod:`json` encoder if the default
+serialization function returns a result of the same type as the input.
