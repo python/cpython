@@ -12,6 +12,7 @@ import itertools
 import sys
 import os
 import gc
+import re
 import errno
 import functools
 import signal
@@ -4724,17 +4725,35 @@ class _TestLogging(BaseTestCase):
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
 
-    def test_format(self):
+    def assert_log_lines(self, expected_values, stream=None):
+        stream = stream or self.stream
+        actual_lines = stream.getvalue().splitlines()
+        self.assertEqual(len(actual_lines), len(expected_values))
+        for actual, expected in zip(actual_lines, expected_values):
+            self.assertEqual(actual, expected)
+        s = stream.read()
+        if s:
+            self.fail("Remaining output at end of log stream:\n" + s)
+
+    def test_filename(self):
         logger = multiprocessing.get_logger()
         logger.setLevel(util.DEBUG)
-        handler = logging.StreamHandler(io.StringIO())
-        logging_format = '[%(levelname)s] [%(processName)s] [%(filename)s:%(lineno)d:%(funcName)s] %(message)s'
+        stream = io.StringIO()
+        handler = logging.StreamHandler(stream)
+        logging_format = '[%(levelname)s] [%(filename)s] %(message)s'
         handler.setFormatter(logging.Formatter(logging_format))
         logger.addHandler(handler)
         logger.info('print info')
+        util.info('print info again')
         logger.debug('print debug')
-        pool_in_process()
+        self.assert_log_lines([
+            '[INFO] [_test_multiprocessing.py] print info',
+            '[INFO] [_test_multiprocessing.py] print info again',
+            '[DEBUG] [_test_multiprocessing.py] print debug',
+        ], stream)
         logger.setLevel(LOG_LEVEL)
+        logger.removeHandler(handler)
+        handler.close()
 
 
 # class _TestLoggingProcessName(BaseTestCase):
