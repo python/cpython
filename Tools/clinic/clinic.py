@@ -5614,6 +5614,10 @@ class DSLParser:
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
+        if self.kind in {GETTER, SETTER}:
+            if not cls:
+                fail("@getter and @setter must be methods")
+
         self.update_function_kind(full_name)
         if self.kind is METHOD_INIT and not return_converter:
             return_converter = init_return_converter()
