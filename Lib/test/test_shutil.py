@@ -1101,19 +1101,18 @@ class TestCopy(BaseTest, unittest.TestCase):
         shutil.copymode(src, dst)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
         # On Windows, os.chmod does not follow symlinks (issue #15411)
-        if os.name != 'nt':
-            # follow src link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow dst link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow both links
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow src link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow dst link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow both links
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
     @unittest.skipUnless(hasattr(os, 'lchmod'), 'requires os.lchmod')
     @os_helper.skip_unless_symlink
