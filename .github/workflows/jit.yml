@@ -2,7 +2,8 @@ name: JIT
 on: push
 jobs:
   jit:
-    # if: false  # XXX
+    # Comment this line to run JIT CI:
+    # if: false  # XXX: Uncomment before merging.
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     runs-on: ${{ matrix.runner }}
     strategy:

@@ -13,7 +13,6 @@ on:
     - '3.10'
     - '3.9'
     - '3.8'
-    - 'justin'  # XXX
   pull_request:
     branches:
     - 'main'

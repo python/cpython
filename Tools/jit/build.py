@@ -121,7 +121,7 @@ class StencilGroup:
     )
 
     def global_offset_table_lookup(self, symbol: str | None) -> int:
-        """when disabling position-independent-code, macOS insists on using the GOT."""
+        """Even when disabling PIC, macOS insists on using the global offset table."""
         if symbol is None:
             return len(self.data.body)
         default = 8 * len(self.global_offset_table)
