@@ -1,0 +1,6 @@
+When a second reference to a string appears in the input to :mod:`pickle`,
+and the Python implementation is in use,
+we are guaranteed that a single copy gets pickled
+and a single object is shared when reloaded.
+Previously, in protocol 0, when a string contained certain characters
+(e.g. newline) it resulted in duplicate objects.
