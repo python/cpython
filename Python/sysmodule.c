@@ -860,14 +860,14 @@ sys._set_exception
 Set the current exception.
 
 Subsequent calls to sys.exception()/sys.exc_info() will return
-the provided exception until another exception is raised in the
+the provided exception until another exception is caught in the
 current thread or the execution stack returns to a frame where
 another exception is being handled.
 [clinic start generated code]*/
 
 static PyObject *
 sys__set_exception_impl(PyObject *module, PyObject *exception)
-/*[clinic end generated code: output=39e119ee6b747085 input=46da3b45313a1cfa]*/
+/*[clinic end generated code: output=39e119ee6b747085 input=9c0495269be0821d]*/
 {
     if (!Py_IsNone(exception) && !PyExceptionInstance_Check(exception)){
         PyErr_SetString(
