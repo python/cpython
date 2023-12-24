@@ -1593,12 +1593,7 @@ class FileFinder:
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
-
-        # Cache in NFKC normalization for imports of non-ASCII
-        # names. The regular cache is not kept in NFKC format
-        # to avoid circular dependencies during startup.
-        self._norm_path_cache = None
-        self._norm_relaxed_path_cache = None
+        self._cache_is_normalized = False
 
     def invalidate_caches(self):
         """Invalidate the directory mtime."""
@@ -1626,22 +1621,17 @@ class FileFinder:
         # tail_module keeps the original casing, for __file__ and friends
         if _relax_case():
             cache_module = tail_module.lower()
+            cache = self._relaxed_path_cache
 
-            if cache_module.isascii():
-                cache = self._relaxed_path_cache
-            else:
-                if self._norm_relaxed_path_cache is None:
-                    self._fill_norm_cache()
-                cache = self._norm_relaxed_path_cache
+            if not cache_module.isascii() and not self._cache_is_normalized:
+                    self._normalize_cache()
         else:
             cache_module = tail_module
+            cache = self._path_cache
 
-            if cache_module.isascii():
-                cache = self._path_cache
-            else:
-                if self._norm_path_cache is None:
-                    self._fill_norm_cache()
-                cache = self._norm_path_cache
+            if cache_module.isascii() and not self._cache_is_normalized:
+                self._normalize_cache()
+
         # Check if the module is the name of a directory (and thus a package).
         if cache_module in cache:
             base_path = _path_join(self.path, tail_module)
@@ -1703,14 +1693,14 @@ class FileFinder:
         if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS):
             self._relaxed_path_cache = {fn.lower() for fn in contents}
 
-        self._norm_path_cache = None
-        self._norm_relaxed_path_cache = None
+        self._cache_is_normalized = False
 
-    def _fill_norm_cache(self):
+    def _normalize_cache(self):
         from unicodedata import normalize
 
-        self._norm_path_cache = { normalize('NFKC', p) for p in self._path_cache }
-        self._norm_relaxed_path_cache = { normalize('NFKC', p) for p in self._relaxed_path_cache }
+        self._path_cache = { normalize('NFKC', p) for p in self._path_cache }
+        self._relaxed_path_cache = { normalize('NFKC', p) for p in self._relaxed_path_cache }
+        self._cache_is_normalized = True
 
 
     @classmethod
