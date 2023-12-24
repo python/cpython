@@ -185,7 +185,7 @@ PyDoc_STRVAR(sys__set_exception__doc__,
 "Set the current exception.\n"
 "\n"
 "Subsequent calls to sys.exception()/sys.exc_info() will return\n"
-"the provided exception until another exception is raised in the\n"
+"the provided exception until another exception is caught in the\n"
 "current thread or the execution stack returns to a frame where\n"
 "another exception is being handled.");
 
@@ -2152,4 +2152,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=1aa1a448b567907b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=756f746124b20c54 input=a9049054013a1b77]*/
