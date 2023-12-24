@@ -855,13 +855,13 @@ class _Pickler:
             else:
                 self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
-            obj = obj.replace("\\", "\\u005c")
-            obj = obj.replace("\0", "\\u0000")
-            obj = obj.replace("\n", "\\u000a")
-            obj = obj.replace("\r", "\\u000d")
-            obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
-            self.write(UNICODE + obj.encode('raw-unicode-escape') +
-                       b'\n')
+            # Escape what raw-unicode-escape doesn't, but memoize the original.
+            tmp = obj.replace("\\", "\\u005c")
+            tmp = tmp.replace("\0", "\\u0000")
+            tmp = tmp.replace("\n", "\\u000a")
+            tmp = tmp.replace("\r", "\\u000d")
+            tmp = tmp.replace("\x1a", "\\u001a")  # EOF on DOS
+            self.write(UNICODE + tmp.encode('raw-unicode-escape') + b'\n')
         self.memoize(obj)
     dispatch[str] = save_str
 
