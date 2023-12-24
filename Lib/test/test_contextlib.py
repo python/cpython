@@ -364,12 +364,17 @@ def woohoo():
                 raise TypeError()
             except:
                 with ctx():
+                    self.assertIsInstance(sys.exception(), TypeError)
+                    self.assertIsInstance(sys.exception().__context__, IndexError)
                     try:
                         raise ValueError()
                     except:
                         self.assertIsInstance(sys.exception(), ValueError)
+                        self.assertIsInstance(sys.exception().__context__, TypeError)
+                        self.assertIsInstance(sys.exception().__context__.__context__, IndexError)
                         1/0
                 self.assertIsInstance(sys.exception(), TypeError)
+                self.assertIsInstance(sys.exception().__context__, IndexError)
             self.assertIsInstance(sys.exception(), IndexError)
 
         try:
@@ -380,12 +385,17 @@ def woohoo():
             except:
                 with self.assertRaises(ZeroDivisionError):
                     with ctx(reraise=True):
+                        self.assertIsInstance(sys.exception(), TypeError)
+                        self.assertIsInstance(sys.exception().__context__, IndexError)
                         try:
                             raise ValueError()
                         except:
                             self.assertIsInstance(sys.exception(), ValueError)
+                            self.assertIsInstance(sys.exception().__context__, TypeError)
+                            self.assertIsInstance(sys.exception().__context__.__context__, IndexError)
                             1/0
                     self.assertIsInstance(sys.exception(), TypeError)
+                    self.assertIsInstance(sys.exception().__context__, IndexError)
             self.assertIsInstance(sys.exception(), IndexError)
 
     def _create_contextmanager_attribs(self):
