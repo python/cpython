@@ -157,6 +157,8 @@ Doc/c-api/stable.rst          @encukou
 
 **/*dataclasses*              @ericvsmith
 
+**/*ensurepip*                @pfmoore @pradyunsg
+
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @JelleZijlstra @AlexWaygood
