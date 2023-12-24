@@ -436,8 +436,11 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 if markerid in markers:
                     raise ValueError("Circular reference detected")
                 markers[markerid] = o
-            o = _default(o)
-            yield from _iterencode(o, _current_indent_level)
+            new = _default(o)
+            if type(new) is type(o):
+                raise TypeError("Default serialization function "
+                                "returning same type")
+            yield from _iterencode(new, _current_indent_level)
             if markers is not None:
                 del markers[markerid]
     return _iterencode

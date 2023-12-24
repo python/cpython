@@ -65,6 +65,9 @@ class TestRecursion:
         else:
             self.fail("didn't raise ValueError on default recursion")
 
+    def test_default_returns_same_type(self):
+        with self.assertRaisesRegex(TypeError, ".*same type"):
+            self.dumps(JSONTestObject(), default=lambda o: JSONTestObject())
 
     def test_highly_nested_objects_decoding(self):
         # test that loading highly-nested objects doesn't segfault when C
