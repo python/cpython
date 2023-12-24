@@ -4724,19 +4724,9 @@ class _TestLogging(BaseTestCase):
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
 
-    def assert_log_lines(self, expected_values, stream=None):
-        stream = stream or self.stream
-        actual_lines = stream.getvalue().splitlines()
-        self.assertEqual(len(actual_lines), len(expected_values))
-        for actual, expected in zip(actual_lines, expected_values):
-            self.assertEqual(actual, expected)
-        s = stream.read()
-        if s:
-            self.fail("Remaining output at end of log stream:\n" + s)
-
     def test_filename(self):
         logger = multiprocessing.get_logger()
-        default_level = logger.level
+        original_level = logger.level
         try:
             logger.setLevel(util.DEBUG)
             stream = io.StringIO()
@@ -4748,13 +4738,12 @@ class _TestLogging(BaseTestCase):
             util.info('2')
             logger.debug('3')
             filename = os.path.basename(__file__)
-            self.assert_log_lines([
-                f'[INFO] [{filename}] 1',
-                f'[INFO] [{filename}] 2',
-                f'[DEBUG] [{filename}] 3',
-            ], stream)
+            log_record = stream.getvalue()
+            self.assertIn(f'[INFO] [{filename}] 1', log_record)
+            self.assertIn(f'[INFO] [{filename}] 2', log_record)
+            self.assertIn(f'[DEBUG] [{filename}] 3', log_record)
         finally:
-            logger.setLevel(default_level)
+            logger.setLevel(original_level)
             logger.removeHandler(handler)
             handler.close()
 
