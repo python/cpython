@@ -166,10 +166,11 @@ class _GeneratorContextManager(
                 value = typ()
             try:
                 # If the generator handles the exception thrown into it, the
-                # exception context will revert to the actual current exception
+                # exception context reverts to the actual current exception
                 # context here. In order to make the context manager behave
                 # like a normal function we set the current exception context
                 # to what it was during the context manager's __enter__
+                # (see gh-111676).
                 sys._set_exception(exc_context)
                 self.gen.throw(value)
             except StopIteration as exc:
