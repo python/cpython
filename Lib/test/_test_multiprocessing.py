@@ -12,7 +12,6 @@ import itertools
 import sys
 import os
 import gc
-import re
 import errno
 import functools
 import signal
