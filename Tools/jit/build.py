@@ -1,5 +1,10 @@
 """A template JIT for CPython 3.13, based on copy-and-patch."""
 
+# XXX: I'll probably refactor this file a bit before merging to make it easier
+# to understand... it's changed a lot over the last few months, and the way
+# things are done here definitely has some historical cruft. The high-level
+# architecture and the actual generated code probably won't change, though.
+
 import argparse
 import asyncio
 import dataclasses
@@ -38,6 +43,7 @@ class HoleValue(enum.Enum):
     CONTINUE = enum.auto()
     DATA = enum.auto()
     EXECUTOR = enum.auto()
+    GOT = enum.auto()
     OPARG = enum.auto()
     OPERAND = enum.auto()
     TARGET = enum.auto()
@@ -77,6 +83,7 @@ class Stencil:
         self.body.extend([0] * padding)
 
     def emit_aarch64_trampoline(self, hole: Hole) -> typing.Generator[Hole, None, None]:
+        """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
         base = len(self.body)
         where = slice(hole.offset, hole.offset + 4)
         instruction = int.from_bytes(self.body[where], sys.byteorder)
@@ -114,7 +121,7 @@ class StencilGroup:
     )
 
     def global_offset_table_lookup(self, symbol: str | None) -> int:
-        self.data.pad(8)
+        """when disabling position-independent-code, macOS insists on using the GOT."""
         if symbol is None:
             return len(self.data.body)
         default = 8 * len(self.global_offset_table)
@@ -252,7 +259,11 @@ class Target(typing.Generic[S, R]):
 
     def _process_relocations(self, stencil: Stencil, group: StencilGroup) -> None:
         for hole in stencil.relocations:
-            if hole.symbol in group.data.symbols:
+            if hole.value is HoleValue.GOT:
+                value, symbol = HoleValue.DATA, None
+                addend = hole.addend + group.global_offset_table_lookup(hole.symbol)
+                hole = hole.replace(value=value, symbol=symbol, addend=addend)
+            elif hole.symbol in group.data.symbols:
                 value, symbol = HoleValue.DATA, None
                 addend = hole.addend + group.data.symbols[hole.symbol]
                 hole = hole.replace(value=value, symbol=symbol, addend=addend)
@@ -265,9 +276,7 @@ class Target(typing.Generic[S, R]):
     def _handle_section(self, section: S, group: StencilGroup) -> None:
         raise NotImplementedError()
 
-    def _handle_relocation(
-        self, base: int, relocation: R, group: StencilGroup, raw: bytes
-    ) -> Hole:
+    def _handle_relocation(self, base: int, relocation: R, raw: bytes) -> Hole:
         raise NotImplementedError()
 
     async def _compile(
@@ -352,7 +361,7 @@ class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
             base = stencil.offsets[section["Info"]]
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
-                hole = self._handle_relocation(base, relocation, group, stencil.body)
+                hole = self._handle_relocation(base, relocation, stencil.body)
                 stencil.relocations.append(hole)
         elif section_type == "SHT_PROGBITS":
             if "SHF_ALLOC" not in flags:
@@ -382,11 +391,7 @@ class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
             }, section_type
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: schema.ELFRelocation,
-        group: StencilGroup,
-        raw: bytes,
+        self, base: int, relocation: schema.ELFRelocation, raw: bytes
     ) -> Hole:
         match relocation:
             case {
@@ -427,15 +432,11 @@ class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
             stencil.symbols[name] = offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
-            hole = self._handle_relocation(base, relocation, group, stencil.body)
+            hole = self._handle_relocation(base, relocation, stencil.body)
             stencil.relocations.append(hole)
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: schema.COFFRelocation,
-        group: StencilGroup,
-        raw: bytes,
+        self, base: int, relocation: schema.COFFRelocation, raw: bytes
     ) -> Hole:
         match relocation:
             case {
@@ -494,16 +495,13 @@ class MachO(Target[schema.MachOSection, schema.MachORelocation]):
         assert "Relocations" in section
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
-            hole = self._handle_relocation(base, relocation, group, stencil.body)
+            hole = self._handle_relocation(base, relocation, stencil.body)
             stencil.relocations.append(hole)
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: schema.MachORelocation,
-        group: StencilGroup,
-        raw: bytes,
+        self, base: int, relocation: schema.MachORelocation, raw: bytes
     ) -> Hole:
+        symbol: str | None
         match relocation:
             case {
                 "Type": {
@@ -515,8 +513,8 @@ class MachO(Target[schema.MachOSection, schema.MachORelocation]):
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
-                value, symbol = HoleValue.DATA, None
-                addend = group.global_offset_table_lookup(s)
+                value, symbol = HoleValue.GOT, s
+                addend = 0
             case {
                 "Type": {"Value": kind},
                 "Section": {"Value": s},
