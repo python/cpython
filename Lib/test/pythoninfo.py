@@ -924,6 +924,8 @@ def collect_windows(info_add):
                                 stderr=subprocess.PIPE,
                                 text=True)
         output = proc.communicate()[0]
+        if proc.returncode == 0xc0000142:
+            return
         if proc.returncode:
             output = ""
     except OSError:
