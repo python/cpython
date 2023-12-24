@@ -4737,23 +4737,27 @@ class _TestLogging(BaseTestCase):
 
     def test_filename(self):
         logger = multiprocessing.get_logger()
-        logger.setLevel(util.DEBUG)
-        stream = io.StringIO()
-        handler = logging.StreamHandler(stream)
-        logging_format = '[%(levelname)s] [%(filename)s] %(message)s'
-        handler.setFormatter(logging.Formatter(logging_format))
-        logger.addHandler(handler)
-        logger.info('print info')
-        util.info('print info again')
-        logger.debug('print debug')
-        self.assert_log_lines([
-            '[INFO] [_test_multiprocessing.py] print info',
-            '[INFO] [_test_multiprocessing.py] print info again',
-            '[DEBUG] [_test_multiprocessing.py] print debug',
-        ], stream)
-        logger.setLevel(LOG_LEVEL)
-        logger.removeHandler(handler)
-        handler.close()
+        default_level = logger.level
+        try:
+            logger.setLevel(util.DEBUG)
+            stream = io.StringIO()
+            handler = logging.StreamHandler(stream)
+            logging_format = '[%(levelname)s] [%(filename)s] %(message)s'
+            handler.setFormatter(logging.Formatter(logging_format))
+            logger.addHandler(handler)
+            logger.info('1')
+            util.info('2')
+            logger.debug('3')
+            filename = os.path.basename(__file__)
+            self.assert_log_lines([
+                f'[INFO] [{filename}] 1',
+                f'[INFO] [{filename}] 2',
+                f'[DEBUG] [{filename}] 3',
+            ], stream)
+        finally:
+            logger.setLevel(default_level)
+            logger.removeHandler(handler)
+            handler.close()
 
 
 # class _TestLoggingProcessName(BaseTestCase):
