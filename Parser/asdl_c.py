@@ -1479,6 +1479,8 @@ class ChainOfVisitors:
 def generate_ast_state(module_state, f):
     f.write('struct ast_state {\n')
     f.write('    int initialized;\n')
+    f.write('    int unused_recursion_depth;\n')
+    f.write('    int unused_recursion_limit;\n')
     for s in module_state:
         f.write('    PyObject *' + s + ';\n')
     f.write('};')
