@@ -681,6 +681,20 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self._box = mailbox.Maildir(self._path)
         self._check_basics()
 
+    def test_filename_leading_dot(self):
+        self.tearDown()
+        for subdir in '', 'tmp', 'new', 'cur':
+            os.mkdir(os.path.normpath(os.path.join(self._path, subdir)))
+        for subdir in 'tmp', 'new', 'cur':
+            fname = os.path.join(self._path, subdir, '.foo' + subdir)
+            with open(fname, 'wb') as f:
+                f.write(b"@")
+        self._box = mailbox.Maildir(self._path)
+        self.assertNotIn('.footmp', self._box)
+        self.assertNotIn('.foonew', self._box)
+        self.assertNotIn('.foocur', self._box)
+        self.assertEqual(list(self._box.iterkeys()), [])
+
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
         self.assertEqual(self._box._path, os.path.abspath(self._path))

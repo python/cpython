@@ -1163,6 +1163,9 @@ Changes in the Python API
   other "private" attributes.
   (See :gh:`112826`.)
 
+* :class:`mailbox.Maildir` now ignores files with a leading dot.
+  (Contributed by Zackery Spytz in :gh:`65559`.)
+
 
 Build Changes
 =============
