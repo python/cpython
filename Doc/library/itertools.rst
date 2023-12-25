@@ -900,12 +900,20 @@ which incur interpreter overhead.
        Like builtins.iter(func, sentinel) but uses an exception instead
        of a sentinel to end the loop.
 
-       Examples:
-           iter_except(functools.partial(heappop, h), IndexError)   # priority queue iterator
-           iter_except(d.popitem, KeyError)                         # non-blocking dict iterator
-           iter_except(d.popleft, IndexError)                       # non-blocking deque iterator
-           iter_except(q.get_nowait, Queue.Empty)                   # loop over a producer Queue
-           iter_except(s.pop, KeyError)                             # non-blocking set iterator
+       Priority queue iterator:
+           iter_except(functools.partial(heappop, h), IndexError)
+
+       Non-blocking dictionary iterator:
+           iter_except(d.popitem, KeyError)
+
+       Non-blocking deque iterator:
+           iter_except(d.popleft, IndexError)
+
+       Non-blocking iterator over a producer Queue:
+           iter_except(q.get_nowait, Queue.Empty)
+
+       Non-blocking set iterator:
+           iter_except(s.pop, KeyError)
 
        """
        try:
