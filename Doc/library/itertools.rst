@@ -996,7 +996,8 @@ which incur interpreter overhead.
        """
        try:
            if first is not None:
-               yield first()            # For database APIs needing an initial cast to db.first()
+               # For database APIs needing an initial call to db.first()
+               yield first()
            while True:
                yield func()
        except exception:
