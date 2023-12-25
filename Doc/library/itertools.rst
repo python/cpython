@@ -893,37 +893,6 @@ which incur interpreter overhead.
            except ValueError:
                pass
 
-   def iter_except(func, exception, first=None):
-       """ Call a function repeatedly until an exception is raised.
-
-       Converts a call-until-exception interface to an iterator interface.
-       Like builtins.iter(func, sentinel) but uses an exception instead
-       of a sentinel to end the loop.
-
-       Priority queue iterator:
-           iter_except(functools.partial(heappop, h), IndexError)
-
-       Non-blocking dictionary iterator:
-           iter_except(d.popitem, KeyError)
-
-       Non-blocking deque iterator:
-           iter_except(d.popleft, IndexError)
-
-       Non-blocking iterator over a producer Queue:
-           iter_except(q.get_nowait, Queue.Empty)
-
-       Non-blocking set iterator:
-           iter_except(s.pop, KeyError)
-
-       """
-       try:
-           if first is not None:
-               yield first()            # For database APIs needing an initial cast to db.first()
-           while True:
-               yield func()
-       except exception:
-           pass
-
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks"
        # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
@@ -1001,6 +970,37 @@ which incur interpreter overhead.
        if key is None:
            return map(operator.itemgetter(0), groupby(iterable))
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+
+   def iter_except(func, exception, first=None):
+       """ Call a function repeatedly until an exception is raised.
+
+       Converts a call-until-exception interface to an iterator interface.
+       Like builtins.iter(func, sentinel) but uses an exception instead
+       of a sentinel to end the loop.
+
+       Priority queue iterator:
+           iter_except(functools.partial(heappop, h), IndexError)
+
+       Non-blocking dictionary iterator:
+           iter_except(d.popitem, KeyError)
+
+       Non-blocking deque iterator:
+           iter_except(d.popleft, IndexError)
+
+       Non-blocking iterator over a producer Queue:
+           iter_except(q.get_nowait, Queue.Empty)
+
+       Non-blocking set iterator:
+           iter_except(s.pop, KeyError)
+
+       """
+       try:
+           if first is not None:
+               yield first()            # For database APIs needing an initial cast to db.first()
+           while True:
+               yield func()
+       except exception:
+           pass
 
    def before_and_after(predicate, it):
        """ Variant of takewhile() that allows complete
