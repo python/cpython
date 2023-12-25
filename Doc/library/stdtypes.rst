@@ -5492,6 +5492,17 @@ types, where they are relevant.  Some of these are not reported by the
    The tuple of base classes of a class object.
 
 
+.. attribute:: definition.__module__
+
+   The name of the module in which the class or function was defined.
+
+
+.. attribute:: definition.__doc__
+
+   The documentation string of the class, function, method, descriptor,
+   generator instance, or ``None`` if undefined.
+
+
 .. attribute:: definition.__name__
 
    The name of the class, function, method, descriptor, or

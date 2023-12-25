@@ -441,7 +441,7 @@ Sets
 
    These represent a mutable set. They are created by the built-in :func:`set`
    constructor and can be modified afterwards by several methods, such as
-   :meth:`~set.add`.
+   :meth:`~frozenset.add`.
 
 
 Frozen sets
@@ -885,7 +885,7 @@ Predefined (writable) attributes:
    :attr:`__name__`
       The module's name.
 
-   :attr:`__doc__`
+   :attr:`~definition.__doc__`
       The module's documentation string, or ``None`` if
       unavailable.
 
@@ -976,7 +976,7 @@ Special attributes:
    :attr:`~definition.__name__`
       The class name.
 
-   :attr:`__module__`
+   :attr:`~definition.__module__`
       The name of the module in which the class was defined.
 
    :attr:`~object.__dict__`
@@ -986,7 +986,7 @@ Special attributes:
       A tuple containing the base classes, in the order of
       their occurrence in the base class list.
 
-   :attr:`__doc__`
+   :attr:`~definition.__doc__`
       The class's documentation string, or ``None`` if undefined.
 
    :attr:`__annotations__`
@@ -996,7 +996,7 @@ Special attributes:
       working with :attr:`__annotations__`, please see
       :ref:`annotations-howto`.
 
-   :attr:`__type_params__`
+   :attr:`~definition.__type_params__`
       A tuple containing the :ref:`type parameters <type-params>` of
       a :ref:`generic class <generic-classes>`.
 
@@ -1563,8 +1563,8 @@ When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
 of individual elements, but extracting a slice may not make sense.  (One example
-of this is the :class:`~xml.dom.NodeList` interface in the W3C's Document
-Object Model.)
+of this is the class ``NodeList`` interface in the W3C's Document
+Object Model, see :ref:`dom-nodelist-objects`.)
 
 
 .. _customization:
@@ -2334,7 +2334,7 @@ class defining the method.
    .. versionadded:: 3.6
 
 
-When a class is created, :meth:`type.__new__` scans the class variables
+When a class is created, ``type.__new__`` scans the class variables
 and makes callbacks to those with a :meth:`~object.__set_name__` hook.
 
 .. method:: object.__set_name__(self, owner, name)
