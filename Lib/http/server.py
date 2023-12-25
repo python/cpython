@@ -895,7 +895,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         base, ext = posixpath.splitext(path)
         guess = self.extensions_map.get(ext,
                 self.extensions_map.get(ext.lower(),
-                mimetypes.guess_type(path)))
+                mimetypes.guess_type(path)[0]))
         return guess or self.default_content_type
 
 
