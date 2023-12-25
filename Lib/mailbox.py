@@ -590,6 +590,8 @@ class Maildir(Mailbox):
         for subdir in self._toc_mtimes:
             path = self._paths[subdir]
             for entry in os.listdir(path):
+                if entry.startswith('.'):
+                    continue
                 p = os.path.join(path, entry)
                 if os.path.isdir(p):
                     continue
