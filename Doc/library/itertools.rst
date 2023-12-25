@@ -924,6 +924,15 @@ which incur interpreter overhead.
        except exception:
            pass
 
+   def sliding_window(iterable, n):
+       "Collect data into overlapping fixed-length chunks or blocks"
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+       it = iter(iterable)
+       window = collections.deque(islice(it, n-1), maxlen=n)
+       for x in it:
+           window.append(x)
+           yield tuple(window)
+
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks"
        # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
@@ -939,14 +948,6 @@ which incur interpreter overhead.
                return zip(*args)
            case _:
                raise ValueError('Expected fill, strict, or ignore')
-
-   def sliding_window(iterable, n):
-       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
-       it = iter(iterable)
-       window = collections.deque(islice(it, n-1), maxlen=n)
-       for x in it:
-           window.append(x)
-           yield tuple(window)
 
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
@@ -977,6 +978,30 @@ which incur interpreter overhead.
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(operator.getitem, repeat(seq), slices)
 
+   def unique_everseen(iterable, key=None):
+       "List unique elements, preserving order. Remember all elements ever seen."
+       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+       # unique_everseen('ABBcCAD', str.casefold) --> A B c D
+       seen = set()
+       if key is None:
+           for element in filterfalse(seen.__contains__, iterable):
+               seen.add(element)
+               yield element
+       else:
+           for element in iterable:
+               k = key(element)
+               if k not in seen:
+                   seen.add(k)
+                   yield element
+
+   def unique_justseen(iterable, key=None):
+       "List unique elements, preserving order. Remember only the element just seen."
+       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
+       if key is None:
+           return map(operator.itemgetter(0), groupby(iterable))
+       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+
    def before_and_after(predicate, it):
        """ Variant of takewhile() that allows complete
            access to the remainder of the iterator.
@@ -1001,30 +1026,6 @@ which incur interpreter overhead.
                    transition.append(elem)
                    return
        return true_iterator(), chain(transition, it)
-
-   def unique_everseen(iterable, key=None):
-       "List unique elements, preserving order. Remember all elements ever seen."
-       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBcCAD', str.casefold) --> A B c D
-       seen = set()
-       if key is None:
-           for element in filterfalse(seen.__contains__, iterable):
-               seen.add(element)
-               yield element
-       else:
-           for element in iterable:
-               k = key(element)
-               if k not in seen:
-                   seen.add(k)
-                   yield element
-
-   def unique_justseen(iterable, key=None):
-       "List unique elements, preserving order. Remember only the element just seen."
-       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
-       if key is None:
-           return map(operator.itemgetter(0), groupby(iterable))
-       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
 
 The following recipes have a more mathematical flavor:
