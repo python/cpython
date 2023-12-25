@@ -120,6 +120,7 @@
         PLATLIBDIR="DLLs";
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -378,7 +379,7 @@
     <ClInclude Include="..\Parser\string_parser.h" />
     <ClInclude Include="..\Parser\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
-    <ClInclude Include="..\PC\pyconfig.h" />
+    <ClInclude Include="..\PC\pyconfig.h.in" />
     <ClInclude Include="..\Python\condvar.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
@@ -458,6 +459,7 @@
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
     <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c" />
+    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
     <ClCompile Include="..\Modules\_io\stringio.c" />
@@ -645,6 +647,35 @@
     <Import Project="regen.targets" />
   </ImportGroup>
   <Target Name="_TriggerRegen" BeforeTargets="PrepareForBuild" DependsOnTargets="Regen" />
+
+  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
+    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
+    <ItemGroup>
+      <PyConfigH Remove="@(PyConfigH)" />
+      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
+    </ItemGroup>
+    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
+    <PropertyGroup>
+      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
+      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
+      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(DisableGil) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
+    </PropertyGroup>
+    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+    <WriteLinesToFile File="$(IntDir)pyconfig.h"
+                      Lines="$(PyConfigHText)"
+                      Overwrite="true"
+                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+  </Target>
+  <Target Name="_CopyPyconfig" Inputs="$(IntDir)pyconfig.h" Outputs="$(OutDir)pyconfig.h" AfterTargets="Build" DependsOnTargets="_UpdatePyconfig">
+    <Copy SourceFiles="$(IntDir)pyconfig.h" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanPyconfig" AfterTargets="Clean">
+    <Delete Files="$(IntDir)pyconfig.h;$(OutDir)pyconfig.h" />
+  </Target>
+
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <GIT Condition="$(GIT) == ''">git</GIT>
