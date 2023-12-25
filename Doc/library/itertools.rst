@@ -873,6 +873,30 @@ which incur interpreter overhead.
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
 
+   def unique_everseen(iterable, key=None):
+       "List unique elements, preserving order. Remember all elements ever seen."
+       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+       # unique_everseen('ABBcCAD', str.casefold) --> A B c D
+       seen = set()
+       if key is None:
+           for element in filterfalse(seen.__contains__, iterable):
+               seen.add(element)
+               yield element
+       else:
+           for element in iterable:
+               k = key(element)
+               if k not in seen:
+                   seen.add(k)
+                   yield element
+
+   def unique_justseen(iterable, key=None):
+       "List unique elements, preserving order. Remember only the element just seen."
+       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
+       if key is None:
+           return map(operator.itemgetter(0), groupby(iterable))
+       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+
    def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
@@ -946,30 +970,6 @@ which incur interpreter overhead.
        # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(operator.getitem, repeat(seq), slices)
-
-   def unique_everseen(iterable, key=None):
-       "List unique elements, preserving order. Remember all elements ever seen."
-       # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBcCAD', str.casefold) --> A B c D
-       seen = set()
-       if key is None:
-           for element in filterfalse(seen.__contains__, iterable):
-               seen.add(element)
-               yield element
-       else:
-           for element in iterable:
-               k = key(element)
-               if k not in seen:
-                   seen.add(k)
-                   yield element
-
-   def unique_justseen(iterable, key=None):
-       "List unique elements, preserving order. Remember only the element just seen."
-       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
-       if key is None:
-           return map(operator.itemgetter(0), groupby(iterable))
-       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
    def iter_except(func, exception, first=None):
        """ Call a function repeatedly until an exception is raised.
