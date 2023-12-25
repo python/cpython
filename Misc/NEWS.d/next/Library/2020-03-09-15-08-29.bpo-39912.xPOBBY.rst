@@ -1,0 +1,3 @@
+:func:`warnings.filterwarnings()` and :func:`warnings.simplefilter()` now raise
+appropriate exceptions instead of ``AssertionError``. Patch contributed by
+Rémi Lapeyre.

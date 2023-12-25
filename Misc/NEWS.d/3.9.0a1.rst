@@ -33,7 +33,7 @@ Fixes audit event for :func:`os.system` to be named ``os.system``.
 .. section: Security
 
 Escape the server title of :class:`xmlrpc.server.DocXMLRPCServer` when
-rendering the document page as HTML. (Contributed by Dong-hee Na in
+rendering the document page as HTML. (Contributed by Donghee Na in
 :issue:`38243`.)
 
 ..
@@ -98,8 +98,8 @@ after whitespace, e.g. '127.0.0.1 whatever'.
 .. section: Security
 
 Adds audit events for :mod:`ensurepip`, :mod:`ftplib`, :mod:`glob`,
-:mod:`imaplib`, :mod:`nntplib`, :mod:`pdb`, :mod:`poplib`, :mod:`shutil`,
-:mod:`smtplib`, :mod:`sqlite3`, :mod:`subprocess`, :mod:`telnetlib`,
+:mod:`imaplib`, :mod:`!nntplib`, :mod:`pdb`, :mod:`poplib`, :mod:`shutil`,
+:mod:`smtplib`, :mod:`sqlite3`, :mod:`subprocess`, :mod:`!telnetlib`,
 :mod:`tempfile` and :mod:`webbrowser`, as well as :func:`os.listdir`,
 :func:`os.scandir` and :func:`breakpoint`.
 
@@ -203,7 +203,7 @@ arguments in decorators.
 .. section: Core and Builtins
 
 Fix a segmentation fault when using reverse iterators of empty ``dict``
-objects. Patch by Dong-hee Na and Inada Naoki.
+objects. Patch by Donghee Na and Inada Naoki.
 
 ..
 
@@ -280,7 +280,7 @@ visited by ``tp_traverse()`` are valid.
 .. section: Core and Builtins
 
 Remove unnecessary intersection and update set operation in dictview with
-empty set. (Contributed by Dong-hee Na in :issue:`38210`.)
+empty set. (Contributed by Donghee Na in :issue:`38210`.)
 
 ..
 
@@ -1164,7 +1164,7 @@ defines them with eponymous methods.
 .. nonce: bmhquU
 .. section: Library
 
-Add :data:`os.P_PIDFD` constant, which may be passed to :func:`os.waitid` to
+Add :const:`os.P_PIDFD` constant, which may be passed to :func:`os.waitid` to
 wait on a Linux process file descriptor.
 
 ..
@@ -1193,8 +1193,8 @@ Expose the Linux ``pidfd_open`` syscall as :func:`os.pidfd_open`.
 .. nonce: 7jvYFA
 .. section: Library
 
-Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK` and
-:data:`~fcntl.F_OFD_SETLKW` to the :mod:`fcntl` module. Patch by Dong-hee
+Added constants :const:`~fcntl.F_OFD_GETLK`, :const:`~fcntl.F_OFD_SETLK` and
+:const:`~fcntl.F_OFD_SETLKW` to the :mod:`fcntl` module. Patch by Donghee
 Na.
 
 ..
@@ -1283,8 +1283,8 @@ Fixed erroneous equality comparison in statistics.NormalDist().
 .. nonce: 86ExWB
 .. section: Library
 
-Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for
-:attr:`si_code`. Patch by Dong-hee Na.
+Added :const:`~os.CLD_KILLED` and :const:`~os.CLD_STOPPED` for
+:attr:`si_code`. Patch by Donghee Na.
 
 ..
 
@@ -1355,8 +1355,8 @@ objects, patch by Samuel Colvin.
 .. nonce: 9w-IGF
 .. section: Library
 
-Add missing :data:`stat.S_IFDOOR`, :data:`stat.S_IFPORT`,
-:data:`stat.S_IFWHT`, :func:`stat.S_ISDOOR`, :func:`stat.S_ISPORT`, and
+Add missing :const:`stat.S_IFDOOR`, :const:`stat.S_IFPORT`,
+:const:`stat.S_IFWHT`, :func:`stat.S_ISDOOR`, :func:`stat.S_ISPORT`, and
 :func:`stat.S_ISWHT` values to the Python implementation of :mod:`stat`.
 
 ..
@@ -1882,7 +1882,7 @@ avoid dynamic lookup.
 .. section: Library
 
 Update :class:`importlib.machinery.BuiltinImporter` to use
-``loader._ORIGIN`` instead of a hardcoded value. Patch by Dong-hee Na.
+``loader._ORIGIN`` instead of a hardcoded value. Patch by Donghee Na.
 
 ..
 
@@ -2069,7 +2069,7 @@ Restores instantiation of Windows IOCP event loops from the non-main thread.
 .. section: Library
 
 Add default implementation of the :meth:`ast.NodeVisitor.visit_Constant`
-method which emits a deprecation warning and calls corresponding methody
+method which emits a deprecation warning and calls corresponding methods
 ``visit_Num()``, ``visit_Str()``, etc.
 
 ..
@@ -2080,7 +2080,7 @@ method which emits a deprecation warning and calls corresponding methody
 .. section: Library
 
 Update test_statistics.py to verify that the statistics module works well
-for both C and Python implementations. Patch by Dong-hee Na
+for both C and Python implementations. Patch by Donghee Na
 
 ..
 
@@ -2201,7 +2201,7 @@ uses more than ``SIGSTKSZ`` bytes of stack memory on some platforms.
 .. nonce: AmXrik
 .. section: Library
 
-Add C fastpath for statistics.NormalDist.inv_cdf() Patch by Dong-hee Na
+Add C fastpath for statistics.NormalDist.inv_cdf() Patch by Donghee Na
 
 ..
 
@@ -2210,7 +2210,7 @@ Add C fastpath for statistics.NormalDist.inv_cdf() Patch by Dong-hee Na
 .. nonce: Ene6L-
 .. section: Library
 
-Remove the deprecated method `threading.Thread.isAlive()`. Patch by Dong-hee
+Remove the deprecated method `threading.Thread.isAlive()`. Patch by Donghee
 Na.
 
 ..
@@ -2534,7 +2534,7 @@ object when `self._spec_signature` exists. Patch by Elizabeth Uselton
 .. nonce: iXGuoi
 .. section: Library
 
-Make `from tkinter import *` import only the expected objects.
+Make ``from tkinter import *`` import only the expected objects.
 
 ..
 
@@ -3117,9 +3117,9 @@ Ensure cookies with ``expires`` attribute are handled in
 .. section: Library
 
 Fix an unintended ValueError from :func:`subprocess.run` when checking for
-conflicting `input` and `stdin` or `capture_output` and `stdout` or `stderr`
-args when they were explicitly provided but with `None` values within a
-passed in `**kwargs` dict rather than as passed directly by name. Patch
+conflicting *input* and *stdin* or *capture_output* and *stdout* or *stderr*
+args when they were explicitly provided but with ``None`` values within a
+passed in ``**kwargs`` dict rather than as passed directly by name. Patch
 contributed by Rémi Lapeyre.
 
 ..
@@ -3457,7 +3457,7 @@ Patch contributed by Rémi Lapeyre.
 .. nonce: kG0ub5
 .. section: Library
 
-Fixes a bug in :mod:`cgi` module when a multipart/form-data request has no
+Fixes a bug in :mod:`!cgi` module when a multipart/form-data request has no
 `Content-Length` header.
 
 ..
@@ -3546,7 +3546,7 @@ Patch by Stein Karlsen.
 .. nonce: XaJDei
 .. section: Library
 
-lib2to3 now recognizes expressions after ``*`` and `**` like in ``f(*[] or
+lib2to3 now recognizes expressions after ``*`` and ``**`` like in ``f(*[] or
 [])``.
 
 ..
@@ -4089,7 +4089,7 @@ Increase code coverage for multiprocessing.shared_memory.
 .. nonce: Kl1sti
 .. section: Tests
 
-Add tests for json.dump(..., skipkeys=True). Patch by Dong-hee Na.
+Add tests for json.dump(..., skipkeys=True). Patch by Donghee Na.
 
 ..
 
@@ -4118,7 +4118,7 @@ Add tests for ROT-13 codec.
 .. nonce: Zoe9ek
 .. section: Tests
 
-Added tests for PyDateTime_xxx_GET_xxx() macros of the C API of the
+Added tests for :samp:`PyDateTime_{xxx}_GET_{xxx}()` macros of the C API of the
 :mod:`datetime` module. Patch by Joannah Nanjekye.
 
 ..
@@ -4576,7 +4576,7 @@ distutils bdist_wininst: bdist_wininst only works on Windows.
 .. nonce: j5ebdT
 .. section: Build
 
-Many ``PyRun_XXX()`` functions like :c:func:`PyRun_String` were no longer
+Many :samp:`PyRun_{XXX}()` functions like :c:func:`PyRun_String` were no longer
 exported in ``libpython38.dll`` by mistake. Export them again to fix the ABI
 compatibility.
 
@@ -4856,7 +4856,7 @@ Patch by Srinivas Nyayapati.
 .. nonce: Akreij
 .. section: Windows
 
-Trying to import the :mod:`crypt` module on Windows will result in an
+Trying to import the :mod:`!crypt` module on Windows will result in an
 :exc:`ImportError` with a message explaining that the module isn't supported
 on Windows. On other platforms, if the underlying ``_crypt`` module is not
 available, the ImportError will include a message explaining the problem.
@@ -4887,7 +4887,7 @@ Fix use of registry values to launch Python from Microsoft Store app.
 .. section: Windows
 
 Fix memory leak on Windows in creating an SSLContext object or running
-urllib.request.urlopen('https://...').
+``urllib.request.urlopen('https://...')``.
 
 ..
 
@@ -4983,7 +4983,7 @@ set to CP_UTF7 or CP_UTF8.
 .. nonce: -0g2O3
 .. section: Windows
 
-Make :data:`winreg.REG_MULTI_SZ` support zero-length strings.
+Make :const:`winreg.REG_MULTI_SZ` support zero-length strings.
 
 ..
 
@@ -5535,7 +5535,7 @@ Tyler Kieft.
 .. nonce: d0bhEA
 .. section: C API
 
-:c:func:`Py_SetPath` now sets :data:`sys.executable` to the program full
+:c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
 path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
 (:c:func:`Py_GetProgramName`).
 
@@ -5546,8 +5546,8 @@ path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
 .. nonce: ZbquVK
 .. section: C API
 
-Python ignored arguments passed to :c:func:`Py_SetPath`,
-:c:func:`Py_SetPythonHome` and :c:func:`Py_SetProgramName`: fix Python
+Python ignored arguments passed to :c:func:`!Py_SetPath`,
+:c:func:`!Py_SetPythonHome` and :c:func:`!Py_SetProgramName`: fix Python
 initialization to use specified arguments.
 
 ..
@@ -5686,7 +5686,7 @@ positional argument.
 .. nonce: zrmgki
 .. section: C API
 
-Add :func:`PyConfig_SetWideStringList` function.
+Add :c:func:`PyConfig_SetWideStringList` function.
 
 ..
 
@@ -5706,7 +5706,7 @@ and :c:func:`_PyObject_CallMethodOneArg`.
 .. nonce: qZC0N_
 .. section: C API
 
-The :const:`METH_FASTCALL` calling convention has been documented.
+The :c:macro:`METH_FASTCALL` calling convention has been documented.
 
 ..
 

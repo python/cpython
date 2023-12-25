@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(tuple_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
@@ -118,4 +114,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=48a9e0834b300ac3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6a9abba5d121f4c input=a9049054013a1b77]*/

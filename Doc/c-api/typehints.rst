@@ -35,7 +35,7 @@ two types exist -- :ref:`GenericAlias <types-genericalias>` and
           ...
       }
 
-   .. seealso:: The data model method :meth:`__class_getitem__`.
+   .. seealso:: The data model method :meth:`~object.__class_getitem__`.
 
    .. versionadded:: 3.9
 

@@ -4,6 +4,7 @@ import sys
 import textwrap
 import unittest
 
+from test import support
 from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
 
 
@@ -522,6 +523,7 @@ class TestTranforms(BytecodeTestCase):
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
+    @support.requires_resource('cpu')
     def test_format_combinations(self):
         flags = '-+ #0'
         testcases = [
@@ -686,7 +688,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f():
             x = 1
             y = x + x
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST')
 
     def test_load_fast_unknown_simple(self):
         def f():
@@ -790,7 +792,10 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
 
-        for i in 0, 1, 62, 63:
+        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST', ("a00", "a01"))
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a00")
+        self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a01")
+        for i in 62, 63:
             # First 64 locals: analyze completely
             self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
@@ -810,7 +815,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST', "a73")
 
     def test_setting_lineno_no_undefined(self):
-        code = textwrap.dedent(f"""\
+        code = textwrap.dedent("""\
             def f():
                 x = y = 2
                 if not x:
@@ -842,7 +847,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertEqual(f.__code__.co_code, co_code)
 
     def test_setting_lineno_one_undefined(self):
-        code = textwrap.dedent(f"""\
+        code = textwrap.dedent("""\
             def f():
                 x = y = 2
                 if not x:
@@ -876,7 +881,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertEqual(f.__code__.co_code, co_code)
 
     def test_setting_lineno_two_undefined(self):
-        code = textwrap.dedent(f"""\
+        code = textwrap.dedent("""\
             def f():
                 x = y = 2
                 if not x:
@@ -971,13 +976,14 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
 
-class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
+class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 
     def cfg_optimization_test(self, insts, expected_insts,
-                              consts=None, expected_consts=None):
+                              consts=None, expected_consts=None,
+                              nlocals=0):
         if expected_consts is None:
             expected_consts = consts
-        opt_insts, opt_consts = self.get_optimized(insts, consts)
+        opt_insts, opt_consts = self.get_optimized(insts, consts, nlocals)
         expected_insts = self.normalize_insts(expected_insts)
         self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
@@ -987,6 +993,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', 13),
             lbl,
             ('LOAD_CONST', 3, 14),
             ('RETURN_VALUE', 14),
@@ -994,7 +1001,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 1, 13),
+            ('RETURN_CONST', 1, 13),
             lbl,
             ('RETURN_CONST', 2, 14),
         ]
@@ -1057,6 +1064,72 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('JUMP', lbl, 12),
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
+
+    def test_no_unsafe_static_swap(self):
+        # We can't change order of two stores to the same location
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('SWAP', 3, 4),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('POP_TOP', 0, 4),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', 0, 3),
+            ('STORE_FAST', 1, 4),
+            ('POP_TOP', 0, 4),
+            ('RETURN_CONST', 0)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_dead_store_elimination_in_same_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 4),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('NOP', 0, 3),
+            ('POP_TOP', 0, 4),
+            ('STORE_FAST', 1, 4),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
+
+    def test_no_dead_store_elimination_in_different_lineno(self):
+        insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', 5)
+        ]
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
 
 if __name__ == "__main__":

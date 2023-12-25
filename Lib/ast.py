@@ -25,19 +25,22 @@
     :license: Python License.
 """
 import sys
+import re
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
-          type_comments=False, feature_version=None):
+          type_comments=False, feature_version=None, optimize=-1):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
     Pass type_comments=True to get back type comments where the syntax allows.
     """
     flags = PyCF_ONLY_AST
+    if optimize > 0:
+        flags |= PyCF_OPTIMIZED_AST
     if type_comments:
         flags |= PyCF_TYPE_COMMENTS
     if feature_version is None:
@@ -49,7 +52,7 @@ def parse(source, filename='<unknown>', mode='exec', *,
         feature_version = minor
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   _feature_version=feature_version)
+                   _feature_version=feature_version, optimize=optimize)
 
 
 def literal_eval(node_or_string):
@@ -293,9 +296,7 @@ def get_docstring(node, clean=True):
     if not(node.body and isinstance(node.body[0], Expr)):
         return None
     node = node.body[0].value
-    if isinstance(node, Str):
-        text = node.s
-    elif isinstance(node, Constant) and isinstance(node.value, str):
+    if isinstance(node, Constant) and isinstance(node.value, str):
         text = node.value
     else:
         return None
@@ -305,28 +306,17 @@ def get_docstring(node, clean=True):
     return text
 
 
-def _splitlines_no_ff(source):
+_line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+def _splitlines_no_ff(source, maxlines=None):
     """Split a string into lines ignoring form feed and other chars.
 
     This mimics how the Python parser splits source code.
     """
-    idx = 0
     lines = []
-    next_line = ''
-    while idx < len(source):
-        c = source[idx]
-        next_line += c
-        idx += 1
-        # Keep \r\n together
-        if c == '\r' and idx < len(source) and source[idx] == '\n':
-            next_line += '\n'
-            idx += 1
-        if c in '\r\n':
-            lines.append(next_line)
-            next_line = ''
-
-    if next_line:
-        lines.append(next_line)
+    for lineno, match in enumerate(_line_pattern.finditer(source), 1):
+        if maxlines is not None and lineno > maxlines:
+            break
+        lines.append(match[0])
     return lines
 
 
@@ -360,7 +350,7 @@ def get_source_segment(source, node, *, padded=False):
     except AttributeError:
         return None
 
-    lines = _splitlines_no_ff(source)
+    lines = _splitlines_no_ff(source, maxlines=end_lineno+1)
     if end_lineno == lineno:
         return lines[lineno].encode()[col_offset:end_col_offset].decode()
 
@@ -509,20 +499,52 @@ class NodeTransformer(NodeVisitor):
         return node
 
 
+_DEPRECATED_VALUE_ALIAS_MESSAGE = (
+    "{name} is deprecated and will be removed in Python {remove}; use value instead"
+)
+_DEPRECATED_CLASS_MESSAGE = (
+    "{name} is deprecated and will be removed in Python {remove}; "
+    "use ast.Constant instead"
+)
+
+
 # If the ast module is loaded more than once, only add deprecated methods once
 if not hasattr(Constant, 'n'):
     # The following code is for backward compatibility.
     # It will be removed in future.
 
-    def _getter(self):
+    def _n_getter(self):
         """Deprecated. Use value instead."""
+        import warnings
+        warnings._deprecated(
+            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         return self.value
 
-    def _setter(self, value):
+    def _n_setter(self, value):
+        import warnings
+        warnings._deprecated(
+            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         self.value = value
 
-    Constant.n = property(_getter, _setter)
-    Constant.s = property(_getter, _setter)
+    def _s_getter(self):
+        """Deprecated. Use value instead."""
+        import warnings
+        warnings._deprecated(
+            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
+        return self.value
+
+    def _s_setter(self, value):
+        import warnings
+        warnings._deprecated(
+            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
+        self.value = value
+
+    Constant.n = property(_n_getter, _n_setter)
+    Constant.s = property(_s_getter, _s_setter)
 
 class _ABC(type):
 
@@ -530,6 +552,13 @@ class _ABC(type):
         cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
 
     def __instancecheck__(cls, inst):
+        if cls in _const_types:
+            import warnings
+            warnings._deprecated(
+                f"ast.{cls.__qualname__}",
+                message=_DEPRECATED_CLASS_MESSAGE,
+                remove=(3, 14)
+            )
         if not isinstance(inst, Constant):
             return False
         if cls in _const_types:
@@ -553,6 +582,10 @@ def _new(cls, *args, **kwargs):
         if pos < len(args):
             raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
     if cls in _const_types:
+        import warnings
+        warnings._deprecated(
+            f"ast.{cls.__qualname__}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+        )
         return Constant(*args, **kwargs)
     return Constant.__new__(cls, *args, **kwargs)
 
@@ -575,9 +608,18 @@ class Ellipsis(Constant, metaclass=_ABC):
     _fields = ()
 
     def __new__(cls, *args, **kwargs):
-        if cls is Ellipsis:
+        if cls is _ast_Ellipsis:
+            import warnings
+            warnings._deprecated(
+                "ast.Ellipsis", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+            )
             return Constant(..., *args, **kwargs)
         return Constant.__new__(cls, *args, **kwargs)
+
+# Keep another reference to Ellipsis in the global namespace
+# so it can be referenced in Ellipsis.__new__
+# (The original "Ellipsis" name is removed from the global namespace later on)
+_ast_Ellipsis = Ellipsis
 
 _const_types = {
     Num: (int, float, complex),
@@ -1011,6 +1053,8 @@ class _Unparser(NodeVisitor):
             self.fill("@")
             self.traverse(deco)
         self.fill("class " + node.name)
+        if hasattr(node, "type_params"):
+            self._type_params_helper(node.type_params)
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
@@ -1042,6 +1086,8 @@ class _Unparser(NodeVisitor):
             self.traverse(deco)
         def_str = fill_suffix + " " + node.name
         self.fill(def_str)
+        if hasattr(node, "type_params"):
+            self._type_params_helper(node.type_params)
         with self.delimit("(", ")"):
             self.traverse(node.args)
         if node.returns:
@@ -1049,6 +1095,30 @@ class _Unparser(NodeVisitor):
             self.traverse(node.returns)
         with self.block(extra=self.get_type_comment(node)):
             self._write_docstring_and_traverse_body(node)
+
+    def _type_params_helper(self, type_params):
+        if type_params is not None and len(type_params) > 0:
+            with self.delimit("[", "]"):
+                self.interleave(lambda: self.write(", "), self.traverse, type_params)
+
+    def visit_TypeVar(self, node):
+        self.write(node.name)
+        if node.bound:
+            self.write(": ")
+            self.traverse(node.bound)
+
+    def visit_TypeVarTuple(self, node):
+        self.write("*" + node.name)
+
+    def visit_ParamSpec(self, node):
+        self.write("**" + node.name)
+
+    def visit_TypeAlias(self, node):
+        self.fill("type ")
+        self.traverse(node.name)
+        self._type_params_helper(node.type_params)
+        self.write(" = ")
+        self.traverse(node.value)
 
     def visit_For(self, node):
         self._for_helper("for ", node)
@@ -1155,17 +1225,7 @@ class _Unparser(NodeVisitor):
 
     def visit_JoinedStr(self, node):
         self.write("f")
-        if self._avoid_backslashes:
-            with self.buffered() as buffer:
-                self._write_fstring_inner(node)
-            return self._write_str_avoiding_backslashes("".join(buffer))
 
-        # If we don't need to avoid backslashes globally (i.e., we only need
-        # to avoid them inside FormattedValues), it's cosmetically preferred
-        # to use escaped whitespace. That is, it's preferred to use backslashes
-        # for cases like: f"{x}\n". To accomplish this, we keep track of what
-        # in our buffer corresponds to FormattedValues and what corresponds to
-        # Constant parts of the f-string, and allow escapes accordingly.
         fstring_parts = []
         for value in node.values:
             with self.buffered() as buffer:
@@ -1176,25 +1236,49 @@ class _Unparser(NodeVisitor):
 
         new_fstring_parts = []
         quote_types = list(_ALL_QUOTES)
+        fallback_to_repr = False
         for value, is_constant in fstring_parts:
-            value, quote_types = self._str_literal_helper(
-                value,
-                quote_types=quote_types,
-                escape_special_whitespace=is_constant,
-            )
+            if is_constant:
+                value, new_quote_types = self._str_literal_helper(
+                    value,
+                    quote_types=quote_types,
+                    escape_special_whitespace=True,
+                )
+                if set(new_quote_types).isdisjoint(quote_types):
+                    fallback_to_repr = True
+                    break
+                quote_types = new_quote_types
+            elif "\n" in value:
+                quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
+                assert quote_types
             new_fstring_parts.append(value)
+
+        if fallback_to_repr:
+            # If we weren't able to find a quote type that works for all parts
+            # of the JoinedStr, fallback to using repr and triple single quotes.
+            quote_types = ["'''"]
+            new_fstring_parts.clear()
+            for value, is_constant in fstring_parts:
+                if is_constant:
+                    value = repr('"' + value)  # force repr to use single quotes
+                    expected_prefix = "'\""
+                    assert value.startswith(expected_prefix), repr(value)
+                    value = value[len(expected_prefix):-1]
+                new_fstring_parts.append(value)
 
         value = "".join(new_fstring_parts)
         quote_type = quote_types[0]
         self.write(f"{quote_type}{value}{quote_type}")
 
-    def _write_fstring_inner(self, node):
+    def _write_fstring_inner(self, node, scape_newlines=False):
         if isinstance(node, JoinedStr):
             # for both the f-string itself, and format_spec
             for value in node.values:
-                self._write_fstring_inner(value)
+                self._write_fstring_inner(value, scape_newlines=scape_newlines)
         elif isinstance(node, Constant) and isinstance(node.value, str):
             value = node.value.replace("{", "{{").replace("}", "}}")
+            if scape_newlines:
+                value = value.replace("\n", "\\n")
             self.write(value)
         elif isinstance(node, FormattedValue):
             self.visit_FormattedValue(node)
@@ -1203,16 +1287,12 @@ class _Unparser(NodeVisitor):
 
     def visit_FormattedValue(self, node):
         def unparse_inner(inner):
-            unparser = type(self)(_avoid_backslashes=True)
+            unparser = type(self)()
             unparser.set_precedence(_Precedence.TEST.next(), inner)
             return unparser.visit(inner)
 
         with self.delimit("{", "}"):
             expr = unparse_inner(node.value)
-            if "\\" in expr:
-                raise ValueError(
-                    "Unable to avoid backslash in f-string expression part"
-                )
             if expr.startswith("{"):
                 # Separate pair of opening brackets as "{ {"
                 self.write(" ")
@@ -1221,7 +1301,10 @@ class _Unparser(NodeVisitor):
                 self.write(f"!{chr(node.conversion)}")
             if node.format_spec:
                 self.write(":")
-                self._write_fstring_inner(node.format_spec)
+                self._write_fstring_inner(
+                    node.format_spec,
+                    scape_newlines=True
+                )
 
     def visit_Name(self, node):
         self.write(node.id)
@@ -1707,6 +1790,22 @@ class _Unparser(NodeVisitor):
 def unparse(ast_obj):
     unparser = _Unparser()
     return unparser.visit(ast_obj)
+
+
+_deprecated_globals = {
+    name: globals().pop(name)
+    for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
+}
+
+def __getattr__(name):
+    if name in _deprecated_globals:
+        globals()[name] = value = _deprecated_globals[name]
+        import warnings
+        warnings._deprecated(
+            f"ast.{name}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+        )
+        return value
+    raise AttributeError(f"module 'ast' has no attribute '{name}'")
 
 
 def main():

@@ -49,6 +49,7 @@ Sample use, programmatically
 """
 __all__ = ['Trace', 'CoverageResults']
 
+import io
 import linecache
 import os
 import sys
@@ -201,7 +202,8 @@ class CoverageResults:
         for key in other_callers:
             callers[key] = 1
 
-    def write_results(self, show_missing=True, summary=False, coverdir=None):
+    def write_results(self, show_missing=True, summary=False, coverdir=None, *,
+                      ignore_missing_files=False):
         """
         Write the coverage results.
 
@@ -210,6 +212,9 @@ class CoverageResults:
         :param coverdir: If None, the results of each module are placed in its
                          directory, otherwise it is included in the directory
                          specified.
+        :param ignore_missing_files: If True, counts for files that no longer
+                         exist are silently ignored. Otherwise, a missing file
+                         will raise a FileNotFoundError.
         """
         if self.calledfuncs:
             print()
@@ -252,6 +257,9 @@ class CoverageResults:
             if filename.endswith(".pyc"):
                 filename = filename[:-1]
 
+            if ignore_missing_files and not os.path.isfile(filename):
+                continue
+
             if coverdir is None:
                 dir = os.path.dirname(os.path.abspath(filename))
                 modulename = _modname(filename)
@@ -276,7 +284,6 @@ class CoverageResults:
             if summary and n_lines:
                 percent = int(100 * n_hits / n_lines)
                 sums[modulename] = n_lines, percent, modulename, filename
-
 
         if summary and sums:
             print("lines   cov%   module   (path)")
@@ -716,7 +723,7 @@ def main():
             sys.argv = [opts.progname, *opts.arguments]
             sys.path[0] = os.path.dirname(opts.progname)
 
-            with open(opts.progname, 'rb') as fp:
+            with io.open_code(opts.progname) as fp:
                 code = compile(fp.read(), opts.progname, 'exec')
             # try to emulate __main__ namespace as much as possible
             globs = {

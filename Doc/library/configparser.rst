@@ -935,8 +935,10 @@ ConfigParser Objects
 
    When *default_section* is given, it specifies the name for the special
    section holding default values for other sections and interpolation purposes
-   (normally named ``"DEFAULT"``).  This value can be retrieved and changed on
-   runtime using the ``default_section`` instance attribute.
+   (normally named ``"DEFAULT"``).  This value can be retrieved and changed at
+   runtime using the ``default_section`` instance attribute. This won't
+   re-evaluate an already parsed config file, but will be used when writing
+   parsed settings to a new config file.
 
    Interpolation behaviour may be customized by providing a custom handler
    through the *interpolation* argument. ``None`` can be used to turn off
@@ -953,7 +955,7 @@ ConfigParser Objects
    When *converters* is given, it should be a dictionary where each key
    represents the name of a type converter and each value is a callable
    implementing the conversion from string to the desired datatype.  Every
-   converter gets its own corresponding :meth:`get*()` method on the parser
+   converter gets its own corresponding :meth:`!get*()` method on the parser
    object and section proxies.
 
    .. versionchanged:: 3.1
