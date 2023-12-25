@@ -34,9 +34,9 @@ instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`!random`,
-:meth:`!seed`, :meth:`!getstate`, and :meth:`!setstate` methods.
-Optionally, a new generator can supply a :meth:`!getrandbits` method --- this
+basic generator of your own devising: in that case, override the :meth:`~Random.random`,
+:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
+Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
@@ -412,6 +412,31 @@ Alternative Generator
       ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
+   .. method:: Random.seed()
+
+      Override this method in subclasses to customise the :meth:`random.seed`
+      behaviour of :class:`Random` instances.
+
+   .. method:: Random.getstate()
+
+      Override this method in subclasses to customise the :meth:`random.getstate`
+      behaviour of :class:`Random` instances.
+
+   .. method:: Random.setstate()
+
+      Override this method in subclasses to customise the :meth:`random.setstate`
+      behaviour of :class:`Random` instances.
+
+   .. method:: Random.getrandbits()
+
+      Override this method in subclasses to customise the :meth:`random.getrandbits`
+      behaviour of :class:`Random` instances.
+
+   .. method:: Random.random()
+
+      Override this method in subclasses to customise the :meth:`random.random`
+      behaviour of :class:`Random` instances.
+
 .. class:: SystemRandom([seed])
 
    Class that uses the :func:`os.urandom` function for generating random numbers
@@ -435,7 +460,7 @@ change across Python versions, but two aspects are guaranteed not to change:
 * If a new seeding method is added, then a backward compatible seeder will be
   offered.
 
-* The generator's :meth:`!random` method will continue to produce the same
+* The generator's :meth:`~Random.random` method will continue to produce the same
   sequence when the compatible seeder is given the same seed.
 
 .. _random-examples:
