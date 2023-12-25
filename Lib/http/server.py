@@ -263,6 +263,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # the client gets back when sending a malformed request line.
     # Most web servers default to HTTP 0.9, i.e. don't send a status line.
     default_request_version = "HTTP/0.9"
+    default_content_type = "application/octet-stream"
 
     def parse_request(self):
         """Parse a request (internal).
@@ -718,7 +719,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     break
             else:
                 return self.list_directory(path)
-        ctype = self.guess_type(path)
+        ctype = self.guess_type(path, default_type)
         # check for trailing "/" which should return 404. See Issue17324
         # The test for this was added in test_httpserver.py
         # However, some OS platforms accept a trailingSlash as a filename
@@ -877,7 +878,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """
         shutil.copyfileobj(source, outputfile)
 
-    def guess_type(self, path):
+    def guess_type(self, path, default=self.default_content_type):
         """Guess the type of a file.
 
         Argument is a PATH (a filename).
@@ -892,15 +893,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         """
         base, ext = posixpath.splitext(path)
-        if ext in self.extensions_map:
-            return self.extensions_map[ext]
-        ext = ext.lower()
-        if ext in self.extensions_map:
-            return self.extensions_map[ext]
-        guess, _ = mimetypes.guess_type(path)
-        if guess:
-            return guess
-        return 'application/octet-stream'
+        guess = self.extensions_map.get(ext,
+                self.extensions_map.get(ext.lower(),
+                mimetypes.guess_type(path)))
+        return guess or default
 
 
 # Utilities for CGIHTTPRequestHandler
