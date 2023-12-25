@@ -803,11 +803,11 @@ which incur interpreter overhead.
    import random
 
    def take(n, iterable):
-       "Return first n items of the iterable as a list"
+       "Return first n items of the iterable as a list."
        return list(islice(iterable, n))
 
    def prepend(value, iterable):
-       "Prepend a single value in front of an iterable"
+       "Prepend a single value in front of an iterable."
        # prepend(1, [2, 3, 4]) --> 1 2 3 4
        return chain([value], iterable)
 
@@ -825,15 +825,15 @@ which incur interpreter overhead.
        return starmap(func, repeat(args, times))
 
    def flatten(list_of_lists):
-       "Flatten one level of nesting"
+       "Flatten one level of nesting."
        return chain.from_iterable(list_of_lists)
 
    def ncycles(iterable, n):
-       "Returns the sequence elements n times"
+       "Returns the sequence elements n times."
        return chain.from_iterable(repeat(tuple(iterable), n))
 
    def tail(n, iterable):
-       "Return an iterator over the last n items"
+       "Return an iterator over the last n items."
        # tail(3, 'ABCDEFG') --> E F G
        return iter(collections.deque(iterable, maxlen=n))
 
@@ -848,7 +848,7 @@ which incur interpreter overhead.
            next(islice(iterator, n, n), None)
 
    def nth(iterable, n, default=None):
-       "Returns the nth item or a default value"
+       "Returns the nth item or a default value."
        return next(islice(iterable, n, None), default)
 
    def quantify(iterable, pred=bool):
@@ -856,7 +856,7 @@ which incur interpreter overhead.
        return sum(map(pred, iterable))
 
    def all_equal(iterable):
-       "Returns True if all the elements are equal to each other"
+       "Returns True if all the elements are equal to each other."
        g = groupby(iterable)
        return next(g, True) and not next(g, False)
 
@@ -918,7 +918,7 @@ which incur interpreter overhead.
                pass
 
    def sliding_window(iterable, n):
-       "Collect data into overlapping fixed-length chunks or blocks"
+       "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
        window = collections.deque(islice(it, n-1), maxlen=n)
@@ -927,7 +927,7 @@ which incur interpreter overhead.
            yield tuple(window)
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
-       "Collect data into non-overlapping fixed-length chunks or blocks"
+       "Collect data into non-overlapping fixed-length chunks or blocks."
        # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
        # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
@@ -943,7 +943,8 @@ which incur interpreter overhead.
                raise ValueError('Expected fill, strict, or ignore')
 
    def roundrobin(*iterables):
-       "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+       "Visit input iterables in a cycle until each is exhausted."
+       # roundrobin('ABC', 'D', 'EF') --> A D E B F C
        # Recipe credited to George Sakkis
        num_active = len(iterables)
        nexts = cycle(iter(it).__next__ for it in iterables)
@@ -966,7 +967,7 @@ which incur interpreter overhead.
        return filterfalse(pred, t1), filter(pred, t2)
 
    def subslices(seq):
-       "Return all contiguous non-empty subslices of a sequence"
+       "Return all contiguous non-empty subslices of a sequence."
        # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(operator.getitem, repeat(seq), slices)
@@ -1019,6 +1020,7 @@ which incur interpreter overhead.
        """
        it = iter(it)
        transition = []
+
        def true_iterator():
            for elem in it:
                if predicate(elem):
@@ -1026,6 +1028,7 @@ which incur interpreter overhead.
                else:
                    transition.append(elem)
                    return
+
        return true_iterator(), chain(transition, it)
 
 
