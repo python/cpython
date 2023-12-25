@@ -1214,9 +1214,10 @@ iterations of the loop.
    ``super(cls, self).method()``, ``super(cls, self).attr``).
 
    It pops three values from the stack (from top of stack down):
-   - ``self``: the first argument to the current method
-   -  ``cls``: the class within which the current method was defined
-   -  the global ``super``
+
+   * ``self``: the first argument to the current method
+   * ``cls``: the class within which the current method was defined
+   * the global ``super``
 
    With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
    except that ``namei`` is shifted left by 2 bits instead of 1.

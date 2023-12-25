@@ -601,7 +601,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_FCHMOD)
+#if (defined(HAVE_FCHMOD) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_fchmod__doc__,
 "fchmod($module, /, fd, mode)\n"
@@ -676,7 +676,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_FCHMOD) */
+#endif /* (defined(HAVE_FCHMOD) || defined(MS_WINDOWS)) */
 
 #if (defined(HAVE_LCHMOD) || defined(MS_WINDOWS))
 
@@ -12422,4 +12422,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=1be15e60a553b40d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b82391c4f58231b6 input=a9049054013a1b77]*/

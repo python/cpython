@@ -289,6 +289,10 @@ os
   ``False`` on Windows.
   (Contributed by Serhiy Storchaka in :gh:`59616`)
 
+* Add support of :func:`os.fchmod` and a file descriptor
+  in :func:`os.chmod` on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`113191`)
+
 * :func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
   process use the current process environment.
   (Contributed by Jakub Kulik in :gh:`113119`.)
@@ -1158,6 +1162,9 @@ Changes in the Python API
   must provide ``_is_main_interpreter()``, just like the module's
   other "private" attributes.
   (See :gh:`112826`.)
+
+* :class:`mailbox.Maildir` now ignores files with a leading dot.
+  (Contributed by Zackery Spytz in :gh:`65559`.)
 
 
 Build Changes
