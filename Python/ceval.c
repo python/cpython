@@ -24,6 +24,7 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_uop_ids.h"       // Uops
 #include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_pyerrors.h"
 
@@ -1063,31 +1064,16 @@ error_tier_two:
 
 // Jump here from DEOPT_IF()
 deoptimize:
-    // On DEOPT_IF we just repeat the last instruction.
-    // This presumes nothing was popped from the stack (nor pushed).
-    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
+    next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
     DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
             (int)(next_uop - current_executor->trace - 1),
             _PyOpcode_OpName[frame->instr_ptr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    frame->return_offset = 0;  // Dispatch to frame->instr_ptr
-    _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
-    // Fall through
-// Jump here from ENTER_EXECUTOR
-enter_tier_one:
-    next_instr = frame->instr_ptr;
-    goto resume_frame;
+    DISPATCH();
 
-// Jump here from _EXIT_TRACE
-exit_trace:
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
-    Py_DECREF(current_executor);
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    goto enter_tier_one;
 }
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
@@ -2417,7 +2403,7 @@ PyObject *
 _PyEval_GetBuiltin(PyObject *name)
 {
     PyObject *attr;
-    if (PyDict_GetItemRef(PyEval_GetBuiltins(), name, &attr) == 0) {
+    if (PyMapping_GetOptionalItem(PyEval_GetBuiltins(), name, &attr) == 0) {
         PyErr_SetObject(PyExc_AttributeError, name);
     }
     return attr;
@@ -2570,7 +2556,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyDict_GetItemRef(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {

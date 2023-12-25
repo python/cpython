@@ -4757,6 +4757,7 @@ AC_CHECK_FUNCS([ \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
   pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
   pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \

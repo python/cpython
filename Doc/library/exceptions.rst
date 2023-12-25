@@ -44,7 +44,7 @@ Exception context
            __suppress_context__ (exception attribute)
 
 Three attributes on exception objects provide information about the context in
-which an the exception was raised:
+which the exception was raised:
 
 .. attribute:: BaseException.__context__
                BaseException.__cause__
@@ -1009,9 +1009,9 @@ their subgroups based on the types of the contained exceptions.
          True
 
 
-   Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
+   Note that :exc:`BaseExceptionGroup` defines :meth:`~object.__new__`, so
    subclasses that need a different constructor signature need to
-   override that rather than :meth:`__init__`. For example, the following
+   override that rather than :meth:`~object.__init__`. For example, the following
    defines an exception group subclass which accepts an exit_code and
    and constructs the group's message from it. ::
 
