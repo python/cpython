@@ -1619,19 +1619,14 @@ class FileFinder:
             self._fill_cache()
             self._path_mtime = mtime
         # tail_module keeps the original casing, for __file__ and friends
+        if not tail_module.isascii() and not self._cache_is_normalized:
+            self._normalize_cache()
         if _relax_case():
             cache_module = tail_module.lower()
             cache = self._relaxed_path_cache
-
-            if not cache_module.isascii() and not self._cache_is_normalized:
-                    self._normalize_cache()
         else:
             cache_module = tail_module
             cache = self._path_cache
-
-            if not cache_module.isascii() and not self._cache_is_normalized:
-                self._normalize_cache()
-
         # Check if the module is the name of a directory (and thus a package).
         if cache_module in cache:
             base_path = _path_join(self.path, tail_module)
@@ -1696,6 +1691,9 @@ class FileFinder:
         self._cache_is_normalized = False
 
     def _normalize_cache(self):
+        """
+        Normalize all entries in the caches to NFKC.
+        """
         from unicodedata import normalize
 
         self._path_cache = { normalize('NFKC', p) for p in self._path_cache }
