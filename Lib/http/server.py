@@ -1293,7 +1293,7 @@ if __name__ == '__main__':
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
     parser.add_argument('-c', '--content-type',  # parsed into content_type
-                        default='application/octet-stream',
+                        default=BaseHTTPRequestHandler.default_content_type,
                         help='sets default content type for unknown extensions')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
