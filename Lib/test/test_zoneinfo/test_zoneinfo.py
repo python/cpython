@@ -17,6 +17,7 @@ import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
+from test.support import MISSING_C_DOCSTRINGS
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module
@@ -404,6 +405,8 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
 class CZoneInfoTest(ZoneInfoTest):
     module = c_zoneinfo
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_signatures(self):
         """Ensure that C module has valid method signatures."""
         import inspect

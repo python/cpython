@@ -289,6 +289,10 @@ os
   ``False`` on Windows.
   (Contributed by Serhiy Storchaka in :gh:`59616`)
 
+* Add support of :func:`os.fchmod` and a file descriptor
+  in :func:`os.chmod` on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`113191`)
+
 * :func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
   process use the current process environment.
   (Contributed by Jakub Kulik in :gh:`113119`.)
@@ -1000,6 +1004,10 @@ importlib
   <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
   for migration advice.
   (Contributed by Jason R. Coombs in :gh:`106532`.)
+
+* Remove deprecated :meth:`~object.__getitem__` access for
+  :class:`!importlib.metadata.EntryPoint` objects.
+  (Contributed by Jason R. Coombs in :gh:`113175`.)
 
 locale
 ------
