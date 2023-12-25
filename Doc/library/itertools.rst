@@ -1007,19 +1007,12 @@ which incur interpreter overhead.
            for element in filterfalse(seen.__contains__, iterable):
                seen.add(element)
                yield element
-           # For order preserving deduplication,
-           # a faster but non-lazy solution is:
-           #     yield from dict.fromkeys(iterable)
        else:
            for element in iterable:
                k = key(element)
                if k not in seen:
                    seen.add(k)
                    yield element
-           # For use cases that allow the last matching element to be returned,
-           # a faster but non-lazy solution is:
-           #      t1, t2 = tee(iterable)
-           #      yield from dict(zip(map(key, t1), t2)).values()
 
    def unique_justseen(iterable, key=None):
        "List unique elements, preserving order. Remember only the element just seen."
