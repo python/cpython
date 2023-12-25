@@ -719,7 +719,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     break
             else:
                 return self.list_directory(path)
-        ctype = self.guess_type(path, default_type)
+        ctype = self.guess_type(path)
         # check for trailing "/" which should return 404. See Issue17324
         # The test for this was added in test_httpserver.py
         # However, some OS platforms accept a trailingSlash as a filename
@@ -878,7 +878,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """
         shutil.copyfileobj(source, outputfile)
 
-    def guess_type(self, path, default=self.default_content_type):
+    def guess_type(self, path):
         """Guess the type of a file.
 
         Argument is a PATH (a filename).
@@ -896,7 +896,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         guess = self.extensions_map.get(ext,
                 self.extensions_map.get(ext.lower(),
                 mimetypes.guess_type(path)))
-        return guess or default
+        return guess or self.default_content_type
 
 
 # Utilities for CGIHTTPRequestHandler
@@ -1252,7 +1252,8 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None):
+         protocol="HTTP/1.0", port=8000, bind=None,
+         content_type=BaseHTTPRequestHandler.default_content_type):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1260,6 +1261,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
+    HandlerClass.default_content_type = content_type
     with ServerClass(addr, HandlerClass) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
@@ -1290,6 +1292,9 @@ if __name__ == '__main__':
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
+    parser.add_argument('-c', '--content-type',  # parsed into content_type
+                        default='application/octet-stream',
+                        help='sets default content type for unknown extensions')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
@@ -1319,4 +1324,5 @@ if __name__ == '__main__':
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        content_type=args.content_type
     )
