@@ -980,9 +980,8 @@ which incur interpreter overhead.
            >>> ''.join(remainder)     # takewhile() would lose the 'd'
            'dEfGhI'
 
-           Note that the first iterator must be fully
-           consumed before the second iterator can
-           generate valid results.
+           Note that the true iterator must be fully consumed
+           before the remainder iterator can generate valid results.
        """
        it = iter(it)
        transition = []
@@ -993,10 +992,7 @@ which incur interpreter overhead.
                else:
                    transition.append(elem)
                    return
-       def remainder_iterator():
-           yield from transition
-           yield from it
-       return true_iterator(), remainder_iterator()
+       return true_iterator(), chain(transition, it)
 
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
