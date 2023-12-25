@@ -1001,7 +1001,7 @@ which incur interpreter overhead.
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-       # unique_everseen('ABBcCAD', str.lower) --> A B c D
+       # unique_everseen('ABBcCAD', str.casefold) --> A B c D
        seen = set()
        if key is None:
            for element in filterfalse(seen.__contains__, iterable):
@@ -1017,7 +1017,7 @@ which incur interpreter overhead.
    def unique_justseen(iterable, key=None):
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBcCAD', str.lower) --> A B c A D
+       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
        if key is None:
            return map(operator.itemgetter(0), groupby(iterable))
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
@@ -1555,16 +1555,16 @@ The following recipes have a more mathematical flavor:
 
     >>> list(unique_everseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D']
-    >>> list(unique_everseen('ABBCcAD', str.lower))
+    >>> list(unique_everseen('ABBCcAD', str.casefold))
     ['A', 'B', 'C', 'D']
-    >>> list(unique_everseen('ABBcCAD', str.lower))
+    >>> list(unique_everseen('ABBcCAD', str.casefold))
     ['A', 'B', 'c', 'D']
 
     >>> list(unique_justseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D', 'A', 'B']
-    >>> list(unique_justseen('ABBCcAD', str.lower))
+    >>> list(unique_justseen('ABBCcAD', str.casefold))
     ['A', 'B', 'C', 'A', 'D']
-    >>> list(unique_justseen('ABBcCAD', str.lower))
+    >>> list(unique_justseen('ABBcCAD', str.casefold))
     ['A', 'B', 'c', 'A', 'D']
 
     >>> d = dict(a=1, b=2, c=3)
