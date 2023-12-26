@@ -1,0 +1,1 @@
+Check if the type attribute is really modified before label it modified
