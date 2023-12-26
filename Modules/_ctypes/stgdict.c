@@ -119,14 +119,7 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
 
     if (src->ffi_type_pointer.elements == NULL)
         return 0;
-    /* src->ffi_type_pointer.elements is an */
-    /* array of pointers to ffi_type that   */
-    /* contains a trailing NULL pointer.    */
-    /* src->size is the size of the array   */
-    /* in bytes excluding the trailing NULL */
-    /* pointer, so we have to add it in to  */
-    /* to compute how many bytes to copy.   */
-    size = src->size + max(sizeof(ffi_type *), src->align);
+    size = sizeof(ffi_type *) * (src->length + 1);
     dst->ffi_type_pointer.elements = PyMem_Malloc(size);
     if (dst->ffi_type_pointer.elements == NULL) {
         PyErr_NoMemory();
@@ -380,7 +373,7 @@ int
 PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 {
     StgDictObject *stgdict, *basedict;
-    Py_ssize_t len, offset, size, align, i, base_len;
+    Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align, aligned_size;
     Py_ssize_t field_size = 0;
     int bitofs;
@@ -472,22 +465,19 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         union_size = 0;
         total_align = align ? align : 1;
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
-        /* calculate the cumulative number of elements in the base class */
-        /* so that all elements get copied to the child class            */
-        base_len = size / max(sizeof(ffi_type *), align);
-        stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, base_len + len + 1);
+        stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, basedict->length + len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         memset(stgdict->ffi_type_pointer.elements, 0,
-               sizeof(ffi_type *) * (base_len + len + 1));
-        if (size > 0) {
+               sizeof(ffi_type *) * (basedict->length + len + 1));
+        if (basedict->length > 0) {
             memcpy(stgdict->ffi_type_pointer.elements,
                    basedict->ffi_type_pointer.elements,
-                   size);
+                   sizeof(ffi_type *) * (basedict->length));
         }
-        ffi_ofs = base_len;  /* index of the child class's first element */
+        ffi_ofs = basedict->length;
     } else {
         offset = 0;
         size = 0;
@@ -705,7 +695,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stgdict->size = aligned_size;
     stgdict->align = total_align;
-    stgdict->length = len;  /* the number of elements in the child class */
+    stgdict->length = ffi_ofs + len;
 
 /*
  * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
