@@ -4960,8 +4960,16 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         /* Will fail in _PyObject_GenericSetAttrWithDict. */
         Py_INCREF(name);
     }
+
+    // Get the global dict version of interpreter
+    // If the version does not change, that means we assigned the same value
+    // to the attribute, so the type is not modified
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    uint64_t prev_version = interp->dict_state.global_version;
+
     res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
-    if (res == 0) {
+    if (res == 0 && prev_version != interp->dict_state.global_version) {
         /* Clear the VALID_VERSION flag of 'type' and all its
            subclasses.  This could possibly be unified with the
            update_subclasses() recursion in update_slot(), but carefully:
