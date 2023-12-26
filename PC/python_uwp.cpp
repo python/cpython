@@ -10,6 +10,7 @@
 
 #include <string>
 
+#include <appmodel.h>
 #include <winrt\Windows.ApplicationModel.h>
 #include <winrt\Windows.Storage.h>
 
@@ -28,6 +29,35 @@ const wchar_t *PROGNAME = L"python.exe";
 #endif
 
 static std::wstring
+get_package_family()
+{
+    try {
+        UINT32 nameLength = MAX_PATH;
+        std::wstring name;
+        name.resize(nameLength);
+        DWORD rc = GetCurrentPackageFamilyName(&nameLength, name.data());
+        if (rc == ERROR_SUCCESS) {
+            name.resize(nameLength - 1);
+            return name;
+        }
+        else if (rc != ERROR_INSUFFICIENT_BUFFER) {
+            throw rc;
+        }
+        name.resize(nameLength);
+        rc = GetCurrentPackageFamilyName(&nameLength, name.data());
+        if (rc != ERROR_SUCCESS) {
+            throw rc;
+        }
+        name.resize(nameLength - 1);
+        return name;
+    }
+    catch (...) {
+    }
+
+    return std::wstring();
+}
+
+static std::wstring
 get_user_base()
 {
     try {
@@ -35,30 +65,13 @@ get_user_base()
         if (appData) {
             const auto localCache = appData.LocalCacheFolder();
             if (localCache) {
-                auto path = localCache.Path();
+                std::wstring path { localCache.Path().c_str() };
                 if (!path.empty()) {
-                    return std::wstring(path) + L"\\local-packages";
+                    return path + L"\\local-packages";
                 }
             }
         }
     } catch (...) {
-    }
-    return std::wstring();
-}
-
-static std::wstring
-get_package_family()
-{
-    try {
-        const auto package = winrt::Windows::ApplicationModel::Package::Current();
-        if (package) {
-            const auto id = package.Id();
-            if (id) {
-                return std::wstring(id.FamilyName());
-            }
-        }
-    }
-    catch (...) {
     }
 
     return std::wstring();
@@ -68,13 +81,24 @@ static std::wstring
 get_package_home()
 {
     try {
-        const auto package = winrt::Windows::ApplicationModel::Package::Current();
-        if (package) {
-            const auto path = package.InstalledLocation();
-            if (path) {
-                return std::wstring(path.Path());
-            }
+        UINT32 pathLength = MAX_PATH;
+        std::wstring path;
+        path.resize(pathLength);
+        DWORD rc = GetCurrentPackagePath(&pathLength, path.data());
+        if (rc == ERROR_SUCCESS) {
+            path.resize(pathLength - 1);
+            return path;
         }
+        else if (rc != ERROR_INSUFFICIENT_BUFFER) {
+            throw rc;
+        }
+        path.resize(pathLength);
+        rc = GetCurrentPackagePath(&pathLength, path.data());
+        if (rc != ERROR_SUCCESS) {
+            throw rc;
+        }
+        path.resize(pathLength - 1);
+        return path;
     }
     catch (...) {
     }
@@ -122,6 +146,12 @@ set_process_name(PyConfig *config)
                 break;
             }
         }
+        size_t i = executable.find_last_of(L"/\\");
+        if (i == std::wstring::npos) {
+            executable = PROGNAME;
+        } else {
+            executable.replace(i + 1, std::wstring::npos, PROGNAME);
+        }
     }
 
     if (!home.empty()) {
@@ -159,37 +189,11 @@ int
 wmain(int argc, wchar_t **argv)
 {
     PyStatus status;
-
     PyPreConfig preconfig;
     PyConfig config;
 
-    PyPreConfig_InitPythonConfig(&preconfig);
-    status = Py_PreInitializeFromArgs(&preconfig, argc, argv);
-    if (PyStatus_Exception(status)) {
-        goto fail_without_config;
-    }
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        goto fail_without_config;
-    }
-
-    status = PyConfig_SetArgv(&config, argc, argv);
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    status = set_process_name(&config);
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    const wchar_t *p = _wgetenv(L"PYTHONUSERBASE");
-    if (!p || !*p) {
-        _wputenv_s(L"PYTHONUSERBASE", get_user_base().c_str());
-    }
-
-    p = wcsrchr(argv[0], L'\\');
+    const wchar_t *moduleName = NULL;
+    const wchar_t *p = wcsrchr(argv[0], L'\\');
     if (!p) {
         p = argv[0];
     }
@@ -198,28 +202,53 @@ wmain(int argc, wchar_t **argv)
             p++;
         }
 
-        const wchar_t *moduleName = NULL;
         if (wcsnicmp(p, L"pip", 3) == 0) {
             moduleName = L"pip";
-            /* No longer required when pip 19.1 is added */
-            _wputenv_s(L"PIP_USER", L"true");
         } else if (wcsnicmp(p, L"idle", 4) == 0) {
             moduleName = L"idlelib";
         }
+    }
 
-        if (moduleName) {
-            status = PyConfig_SetString(&config, &config.run_module, moduleName);
-            if (PyStatus_Exception(status)) {
-                goto fail;
-            }
-            status = PyConfig_SetString(&config, &config.run_filename, NULL);
-            if (PyStatus_Exception(status)) {
-                goto fail;
-            }
-            status = PyConfig_SetString(&config, &config.run_command, NULL);
-            if (PyStatus_Exception(status)) {
-                goto fail;
-            }
+    PyPreConfig_InitPythonConfig(&preconfig);
+    if (!moduleName) {
+        status = Py_PreInitializeFromArgs(&preconfig, argc, argv);
+        if (PyStatus_Exception(status)) {
+            goto fail_without_config;
+        }
+    }
+
+    PyConfig_InitPythonConfig(&config);
+
+    status = PyConfig_SetArgv(&config, argc, argv);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+    if (moduleName) {
+        config.parse_argv = 0;
+    }
+
+    status = set_process_name(&config);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    p = _wgetenv(L"PYTHONUSERBASE");
+    if (!p || !*p) {
+        _wputenv_s(L"PYTHONUSERBASE", get_user_base().c_str());
+    }
+
+    if (moduleName) {
+        status = PyConfig_SetString(&config, &config.run_module, moduleName);
+        if (PyStatus_Exception(status)) {
+            goto fail;
+        }
+        status = PyConfig_SetString(&config, &config.run_filename, NULL);
+        if (PyStatus_Exception(status)) {
+            goto fail;
+        }
+        status = PyConfig_SetString(&config, &config.run_command, NULL);
+        if (PyStatus_Exception(status)) {
+            goto fail;
         }
     }
 

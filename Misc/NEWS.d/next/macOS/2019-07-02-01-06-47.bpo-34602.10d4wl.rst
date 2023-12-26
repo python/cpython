@@ -1,4 +1,0 @@
-Avoid test suite failures on macOS by no longer calling resource.setrlimit
-to increase the process stack size limit at runtime.  The runtime change is
-no longer needed since the interpreter is being built with a larger default
-stack size.

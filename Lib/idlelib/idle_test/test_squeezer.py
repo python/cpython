@@ -1,6 +1,5 @@
 "Test squeezer, coverage 95%"
 
-from collections import namedtuple
 from textwrap import dedent
 from tkinter import Text, Tk
 import unittest
@@ -8,13 +7,12 @@ from unittest.mock import Mock, NonCallableMagicMock, patch, sentinel, ANY
 from test.support import requires
 
 from idlelib.config import idleConf
+from idlelib.percolator import Percolator
 from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
     Squeezer
 from idlelib import macosx
 from idlelib.textview import view_text
 from idlelib.tooltip import Hovertip
-from idlelib.pyshell import PyShell
-
 
 SENTINEL_VALUE = sentinel.SENTINEL_VALUE
 
@@ -82,18 +80,10 @@ class CountLinesTest(unittest.TestCase):
 
 class SqueezerTest(unittest.TestCase):
     """Tests for the Squeezer class."""
-    def tearDown(self):
-        # Clean up the Squeezer class's reference to its instance,
-        # to avoid side-effects from one test case upon another.
-        if Squeezer._instance_weakref is not None:
-            Squeezer._instance_weakref = None
-
     def make_mock_editor_window(self, with_text_widget=False):
         """Create a mock EditorWindow instance."""
         editwin = NonCallableMagicMock()
-        # isinstance(editwin, PyShell) must be true for Squeezer to enable
-        # auto-squeezing; in practice this will always be true.
-        editwin.__class__ = PyShell
+        editwin.width = 80
 
         if with_text_widget:
             editwin.root = get_test_tk_root(self)
@@ -107,7 +97,6 @@ class SqueezerTest(unittest.TestCase):
         if editor_window is None:
             editor_window = self.make_mock_editor_window()
         squeezer = Squeezer(editor_window)
-        squeezer.get_line_width = Mock(return_value=80)
         return squeezer
 
     def make_text_widget(self, root=None):
@@ -143,8 +132,8 @@ class SqueezerTest(unittest.TestCase):
                               line_width=line_width,
                               expected=expected):
                 text = eval(text_code)
-                squeezer.get_line_width.return_value = line_width
-                self.assertEqual(squeezer.count_lines(text), expected)
+                with patch.object(editwin, 'width', line_width):
+                    self.assertEqual(squeezer.count_lines(text), expected)
 
     def test_init(self):
         """Test the creation of Squeezer instances."""
@@ -215,8 +204,8 @@ class SqueezerTest(unittest.TestCase):
         self.assertEqual(text_widget.get('1.0', 'end'), '\n')
         self.assertEqual(len(squeezer.expandingbuttons), 1)
 
-    def test_squeeze_current_text_event(self):
-        """Test the squeeze_current_text event."""
+    def test_squeeze_current_text(self):
+        """Test the squeeze_current_text method."""
         # Squeezing text should work for both stdout and stderr.
         for tag_name in ["stdout", "stderr"]:
             editwin = self.make_mock_editor_window(with_text_widget=True)
@@ -232,7 +221,7 @@ class SqueezerTest(unittest.TestCase):
             self.assertEqual(len(squeezer.expandingbuttons), 0)
 
             # Test squeezing the current text.
-            retval = squeezer.squeeze_current_text_event(event=Mock())
+            retval = squeezer.squeeze_current_text()
             self.assertEqual(retval, "break")
             self.assertEqual(text_widget.get('1.0', 'end'), '\n\n')
             self.assertEqual(len(squeezer.expandingbuttons), 1)
@@ -240,11 +229,11 @@ class SqueezerTest(unittest.TestCase):
 
             # Test that expanding the squeezed text works and afterwards
             # the Text widget contains the original text.
-            squeezer.expandingbuttons[0].expand(event=Mock())
+            squeezer.expandingbuttons[0].expand()
             self.assertEqual(text_widget.get('1.0', 'end'), 'SOME\nTEXT\n\n')
             self.assertEqual(len(squeezer.expandingbuttons), 0)
 
-    def test_squeeze_current_text_event_no_allowed_tags(self):
+    def test_squeeze_current_text_no_allowed_tags(self):
         """Test that the event doesn't squeeze text without a relevant tag."""
         editwin = self.make_mock_editor_window(with_text_widget=True)
         text_widget = editwin.text
@@ -259,7 +248,7 @@ class SqueezerTest(unittest.TestCase):
         self.assertEqual(len(squeezer.expandingbuttons), 0)
 
         # Test squeezing the current text.
-        retval = squeezer.squeeze_current_text_event(event=Mock())
+        retval = squeezer.squeeze_current_text()
         self.assertEqual(retval, "break")
         self.assertEqual(text_widget.get('1.0', 'end'), 'SOME\nTEXT\n\n')
         self.assertEqual(len(squeezer.expandingbuttons), 0)
@@ -274,13 +263,13 @@ class SqueezerTest(unittest.TestCase):
         # Prepare some text in the Text widget and squeeze it.
         text_widget.insert("1.0", "SOME\nTEXT\n", "stdout")
         text_widget.mark_set("insert", "1.0")
-        squeezer.squeeze_current_text_event(event=Mock())
+        squeezer.squeeze_current_text()
         self.assertEqual(len(squeezer.expandingbuttons), 1)
 
         # Test squeezing the current text.
         text_widget.insert("1.0", "MORE\nSTUFF\n", "stdout")
         text_widget.mark_set("insert", "1.0")
-        retval = squeezer.squeeze_current_text_event(event=Mock())
+        retval = squeezer.squeeze_current_text()
         self.assertEqual(retval, "break")
         self.assertEqual(text_widget.get('1.0', 'end'), '\n\n\n')
         self.assertEqual(len(squeezer.expandingbuttons), 2)
@@ -294,7 +283,6 @@ class SqueezerTest(unittest.TestCase):
         """Test the reload() class-method."""
         editwin = self.make_mock_editor_window(with_text_widget=True)
         squeezer = self.make_squeezer_instance(editwin)
-        squeezer.load_font = Mock()
 
         orig_auto_squeeze_min_lines = squeezer.auto_squeeze_min_lines
 
@@ -307,7 +295,6 @@ class SqueezerTest(unittest.TestCase):
         Squeezer.reload()
         self.assertEqual(squeezer.auto_squeeze_min_lines,
                          new_auto_squeeze_min_lines)
-        squeezer.load_font.assert_called()
 
     def test_reload_no_squeezer_instances(self):
         """Test that Squeezer.reload() runs without any instances existing."""
@@ -323,6 +310,8 @@ class ExpandingButtonTest(unittest.TestCase):
         root = get_test_tk_root(self)
         squeezer = Mock()
         squeezer.editwin.text = Text(root)
+        squeezer.editwin.per = Percolator(squeezer.editwin.text)
+        self.addCleanup(squeezer.editwin.per.close)
 
         # Set default values for the configuration settings.
         squeezer.auto_squeeze_min_lines = 50
@@ -364,13 +353,8 @@ class ExpandingButtonTest(unittest.TestCase):
 
         # Insert the button into the text widget
         # (this is normally done by the Squeezer class).
-        text_widget = expandingbutton.text
+        text_widget = squeezer.editwin.text
         text_widget.window_create("1.0", window=expandingbutton)
-
-        # Set base_text to the text widget, so that changes are actually
-        # made to it (by ExpandingButton) and we can inspect these
-        # changes afterwards.
-        expandingbutton.base_text = expandingbutton.text
 
         # trigger the expand event
         retval = expandingbutton.expand(event=Mock())
@@ -402,13 +386,8 @@ class ExpandingButtonTest(unittest.TestCase):
         text_widget = expandingbutton.text
         text_widget.window_create("1.0", window=expandingbutton)
 
-        # Set base_text to the text widget, so that changes are actually
-        # made to it (by ExpandingButton) and we can inspect these
-        # changes afterwards.
-        expandingbutton.base_text = expandingbutton.text
-
         # Patch the message box module to always return False.
-        with patch('idlelib.squeezer.tkMessageBox') as mock_msgbox:
+        with patch('idlelib.squeezer.messagebox') as mock_msgbox:
             mock_msgbox.askokcancel.return_value = False
             mock_msgbox.askyesno.return_value = False
             # Trigger the expand event.
@@ -419,7 +398,7 @@ class ExpandingButtonTest(unittest.TestCase):
         self.assertEqual(expandingbutton.text.get('1.0', 'end-1c'), '')
 
         # Patch the message box module to always return True.
-        with patch('idlelib.squeezer.tkMessageBox') as mock_msgbox:
+        with patch('idlelib.squeezer.messagebox') as mock_msgbox:
             mock_msgbox.askokcancel.return_value = True
             mock_msgbox.askyesno.return_value = True
             # Trigger the expand event.
