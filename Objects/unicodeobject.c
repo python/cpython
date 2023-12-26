@@ -1959,6 +1959,7 @@ end:
     return obj;
 }
 
+
 static void
 unicode_clear_identifiers(struct _Py_unicode_state *state)
 {
