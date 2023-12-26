@@ -848,15 +848,19 @@ class TestPlistlib(unittest.TestCase):
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
                          "Can't find timezone datebase")
     def test_dump_aware_datetime(self):
-        dt = datetime.datetime(1234, 5, 6, 7, 8, 9,
+        dt = datetime.datetime(2345, 6, 7, 8, 9, 10,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
-        s = plistlib.dumps(dt, aware_datetime=True)
-        self.assertIn(b"1234-05-06T15:01:07Z", s)
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            self.assertEqual(plistlib.loads(s, fmt=fmt),
+                             datetime.datetime(2345, 6, 7, 15, 9, 10))
 
     def test_dump_utc_aware_datetime(self):
-        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC)
-        s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=True)
-        self.assertIn(b"2345-06-07T08:00:00Z", s)
+        dt = datetime.datetime(2345, 6, 7, 8, 9, 10, tzinfo=datetime.UTC)
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            self.assertEqual(plistlib.loads(s, fmt=fmt),
+                             datetime.datetime(2345, 6, 7, 8, 9, 10))
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
                          "Can't find timezone datebase")
@@ -866,15 +870,21 @@ class TestPlistlib(unittest.TestCase):
         s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=False)
         self.assertIn(b"2345-06-07T08:00:00Z", s)
 
+    def test_dump_utc_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC)
+        s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=False)
+        self.assertIn(b"2345-06-07T08:00:00Z", s)
+
     def test_dump_native_datetime_with_aware_datetime_option(self):
         # Save a naive datetime with aware_datetime set to true.  This will lead
         # to having different time as compared to the current machine's
         # timezone, which is UTC.
         dt = datetime.datetime(2345, 6, 7, 8, tzinfo=None)
-        b = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=True)
-        parsed = plistlib.loads(b, aware_datetime=False)
-        expected = dt + datetime.timedelta(seconds=time.timezone)
-        self.assertEqual(parsed, expected)
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            parsed = plistlib.loads(s, aware_datetime=False)
+            expected = dt + datetime.timedelta(seconds=time.timezone)
+            self.assertEqual(parsed, expected)
 
 
 class TestBinaryPlistlib(unittest.TestCase):
@@ -1009,30 +1019,18 @@ class TestBinaryPlistlib(unittest.TestCase):
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
                          "Can't find timezone datebase")
-    def test_dump_aware_datetime(self):
+    def test_dump_aware_datetime_without_aware_datetime_option(self):
         dt = datetime.datetime(2345, 6, 7, 8,
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
-        b = plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=True)
+        msg = "can't subtract offset-naive and offset-aware datetimes"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=False)
 
-        # loads it with naive datetime will have time difference.
-        self.assertEqual(plistlib.loads(b, aware_datetime=False),
-                         datetime.datetime(2345, 6, 7, 15))
-
-    def test_dump_utc_aware_datetime(self):
+    def test_dump_utc_aware_datetime_without_aware_datetime_option(self):
         dt = datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC)
-        b = plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=True)
-        self.assertEqual(plistlib.loads(b, aware_datetime=False),
-                         datetime.datetime(2345, 6, 7, 8))
-
-    def test_dump_native_datetime_with_aware_datetime_option(self):
-        # Save a naive datetime with aware_datetime set to true.  This will lead
-        # to having different time as compared to the current machine's
-        # timezone, which is UTC.
-        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=None)
-        b = plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=True)
-        parsed = plistlib.loads(b, aware_datetime=False)
-        expected = dt + datetime.timedelta(seconds=time.timezone)
-        self.assertEqual(parsed, expected)
+        msg = "can't subtract offset-naive and offset-aware datetimes"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=False)
 
 
 class TestKeyedArchive(unittest.TestCase):
