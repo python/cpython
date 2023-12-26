@@ -1975,7 +1975,7 @@ static int test_unicode_id_init(void)
     static _Py_Identifier PyId_test_unicode_id_init = {
         .string = "test_unicode_id_init",
         .index = -1,
-        .mutex = 0,
+        .mutex = {0},
     };
 
     // Initialize Python once without using the identifier

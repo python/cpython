@@ -49,7 +49,7 @@ typedef struct _Py_Identifier {
 // For now we are keeping _Py_IDENTIFIER for continued use
 // in non-builtin extensions (and naughty PyPI modules).
 
-#define _Py_static_string_init(value) { .string = (value), .index = -1, mutex = 0 }
+#define _Py_static_string_init(value) { .string = (value), .index = -1, mutex = {0} }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
