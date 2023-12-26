@@ -187,6 +187,7 @@ extern PyThreadState * _PyThreadState_New(
     int whence);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
+extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);

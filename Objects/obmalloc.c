@@ -88,19 +88,37 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 void *
 _PyMem_MiMalloc(void *ctx, size_t size)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = &tstate->mimalloc.heaps[_Py_MIMALLOC_HEAP_MEM];
+    return mi_heap_malloc(heap, size);
+#else
     return mi_malloc(size);
+#endif
 }
 
 void *
 _PyMem_MiCalloc(void *ctx, size_t nelem, size_t elsize)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = &tstate->mimalloc.heaps[_Py_MIMALLOC_HEAP_MEM];
+    return mi_heap_calloc(heap, nelem, elsize);
+#else
     return mi_calloc(nelem, elsize);
+#endif
 }
 
 void *
 _PyMem_MiRealloc(void *ctx, void *ptr, size_t size)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = &tstate->mimalloc.heaps[_Py_MIMALLOC_HEAP_MEM];
+    return mi_heap_realloc(heap, ptr, size);
+#else
     return mi_realloc(ptr, size);
+#endif
 }
 
 void
@@ -112,20 +130,38 @@ _PyMem_MiFree(void *ctx, void *ptr)
 void *
 _PyObject_MiMalloc(void *ctx, size_t nbytes)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = tstate->mimalloc.current_object_heap;
+    return mi_heap_malloc(heap, nbytes);
+#else
     return mi_malloc(nbytes);
+#endif
 }
 
 void *
 _PyObject_MiCalloc(void *ctx, size_t nelem, size_t elsize)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = tstate->mimalloc.current_object_heap;
+    return mi_heap_calloc(heap, nelem, elsize);
+#else
     return mi_calloc(nelem, elsize);
+#endif
 }
 
 
 void *
 _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = tstate->mimalloc.current_object_heap;
+    return mi_heap_realloc(heap, ptr, nbytes);
+#else
     return mi_realloc(ptr, nbytes);
+#endif
 }
 
 void
