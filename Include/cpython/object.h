@@ -39,13 +39,17 @@ typedef struct _Py_Identifier {
     // Index in PyInterpreterState.unicode.ids.array. It is process-wide
     // unique and must be initialized to -1.
     Py_ssize_t index;
+    // Hidden PyMutex struct for non free-threaded build.
+    struct {
+        uint8_t v;
+    } mutex;
 } _Py_Identifier;
 
 #ifndef Py_BUILD_CORE
 // For now we are keeping _Py_IDENTIFIER for continued use
 // in non-builtin extensions (and naughty PyPI modules).
 
-#define _Py_static_string_init(value) { .string = (value), .index = -1 }
+#define _Py_static_string_init(value) { .string = (value), .index = -1, mutex = 0 }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
