@@ -162,3 +162,12 @@ represents a NaN or infinity.
 .. c:function:: double PyFloat_Unpack8(const unsigned char *p, int le)
 
    Unpack the IEEE 754 binary64 double precision format as a C double.
+
+Constants
+^^^^^^^^^
+
+.. c:macro:: PY_BIG_ENDIAN
+
+   A constant which can be used by pack and unpack functions to use the native
+   endian: it is equal to ``1`` on big endian processor, or ``0`` on little
+   endian processor.
