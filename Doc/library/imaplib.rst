@@ -204,15 +204,7 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.append(mailbox, flags, date_time, message)
 
-   Append *message* to a specified mailbox.
-   
-   *mailbox* ( ``string``): name of the mailbox where the message should be appended
-   
-   *flags* (list of ``string`` ): The flags parameter is a sequence of flags associated with the message. Flags are used to mark messages with certain attributes or states. Common flags include ``\\Seen`` (marks the message as read), ``\\FlagName`` (custom flags),  as (``flags = ["\\Seen", "\\FlagName]``) etc.
-
-   *date_time* (``string``): date and time associated with the message. Often of the format *"DD-Mon-YYYY HH:MM:SS" (e.g., "01-Jan-2023 12:00:00")*
-   
-   *message* (``string``): This parameter is the actual message that you want to append to the specified mailbox. This should be a string representing the entire email message, including headers and body.
+   Append *message* to named mailbox.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
