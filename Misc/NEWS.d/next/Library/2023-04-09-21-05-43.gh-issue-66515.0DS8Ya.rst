@@ -1,0 +1,3 @@
+:class:`mailbox.MH` now supports folders that do not contain a
+``.mh_sequences`` file (e.g. Claws Mail IMAP-cache folders). Patch by Serhiy
+Storchaka.
