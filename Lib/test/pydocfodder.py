@@ -2,8 +2,8 @@
 
 import types
 
-class A_new:
-    "A new-style class."
+class A:
+    "A class."
 
     def A_method(self):
         "Method defined in A."
@@ -41,8 +41,8 @@ class A_new:
 
     A_int_alias = int
 
-class B_new(A_new):
-    "A new-style class, derived from A_new."
+class B(A):
+    "A class, derived from A."
 
     def AB_method(self):
         "Method defined in A and B."
@@ -61,8 +61,8 @@ class B_new(A_new):
     def BCD_method(self):
         "Method defined in B, C and D."
 
-class C_new(A_new):
-    "A new-style class, derived from A_new."
+class C(A):
+    "A class, derived from A."
 
     def AC_method(self):
         "Method defined in A and C."
@@ -81,8 +81,8 @@ class C_new(A_new):
     def CD_method(self):
         "Method defined in C and D."
 
-class D_new(B_new, C_new):
-    """A new-style class, derived from B_new and C_new.
+class D(B, C):
+    """A class, derived from B and C.
     """
 
     def AD_method(self):
