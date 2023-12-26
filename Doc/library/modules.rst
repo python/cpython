@@ -17,3 +17,7 @@ The full list of modules described in this chapter is:
    modulefinder.rst
    runpy.rst
    importlib.rst
+   importlib.resources.rst
+   importlib.resources.abc.rst
+   importlib.metadata.rst
+   sys_path_init.rst

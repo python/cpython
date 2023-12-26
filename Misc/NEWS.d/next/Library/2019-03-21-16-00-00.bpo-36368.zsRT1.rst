@@ -1,2 +1,0 @@
-Fix a bug crashing SharedMemoryManager instances in interactive sessions after
-a ctrl-c (KeyboardInterrupt) was sent

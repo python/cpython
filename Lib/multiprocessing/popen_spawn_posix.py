@@ -61,8 +61,12 @@ class Popen(popen_fork.Popen):
             with open(parent_w, 'wb', closefd=False) as f:
                 f.write(fp.getbuffer())
         finally:
-            if parent_r is not None:
-                self.finalizer = util.Finalize(self, os.close, (parent_r,))
-            for fd in (child_r, child_w, parent_w):
+            fds_to_close = []
+            for fd in (parent_r, parent_w):
+                if fd is not None:
+                    fds_to_close.append(fd)
+            self.finalizer = util.Finalize(self, util.close_fds, fds_to_close)
+
+            for fd in (child_r, child_w):
                 if fd is not None:
                     os.close(fd)
