@@ -84,7 +84,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.13
-      The keyword parameter *aware_datetime* has been added.
+      The keyword-only parameter *aware_datetime* has been added.
 
 
 .. function:: loads(data, *, fmt=None, dict_type=dict, aware_datetime=False)
@@ -127,7 +127,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.13
-      The keyword parameter *aware_datetime* has been added.
+      The keyword-only parameter *aware_datetime* has been added.
 
 
 .. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
