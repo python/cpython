@@ -1,4 +1,4 @@
-# Copyright 2001-2022 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2023 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -740,7 +740,7 @@ class DictConfigurator(BaseConfigurator):
             lklass = kwargs['listener']
         else:
             lklass = logging.handlers.QueueListener
-        listener = lklass(q, *kwargs['handlers'], respect_handler_level=rhl)
+        listener = lklass(q, *kwargs.get('handlers', []), respect_handler_level=rhl)
         handler = klass(q)
         handler.listener = listener
         return handler
@@ -782,11 +782,12 @@ class DictConfigurator(BaseConfigurator):
                     raise ValueError('Unable to set target handler %r' % tn) from e
             elif issubclass(klass, logging.handlers.QueueHandler):
                 # Another special case for handler which refers to other handlers
-                if 'handlers' not in config:
-                    raise ValueError('No handlers specified for a QueueHandler')
+                # if 'handlers' not in config:
+                    # raise ValueError('No handlers specified for a QueueHandler')
                 if 'queue' in config:
+                    from multiprocessing.queues import Queue as MPQueue
                     qspec = config['queue']
-                    if not isinstance(qspec, queue.Queue):
+                    if not isinstance(qspec, (queue.Queue, MPQueue)):
                         if isinstance(qspec, str):
                             q = self.resolve(qspec)
                             if not callable(q):
@@ -819,18 +820,19 @@ class DictConfigurator(BaseConfigurator):
                         if not callable(listener):
                             raise TypeError('Invalid listener specifier %r' % lspec)
                         config['listener'] = listener
-                hlist = []
-                try:
-                    for hn in config['handlers']:
-                        h = self.config['handlers'][hn]
-                        if not isinstance(h, logging.Handler):
-                            config.update(config_copy)  # restore for deferred cfg
-                            raise TypeError('Required handler %r '
-                                            'is not configured yet' % hn)
-                        hlist.append(h)
-                except Exception as e:
-                    raise ValueError('Unable to set required handler %r' % hn) from e
-                config['handlers'] = hlist
+                if 'handlers' in config:
+                    hlist = []
+                    try:
+                        for hn in config['handlers']:
+                            h = self.config['handlers'][hn]
+                            if not isinstance(h, logging.Handler):
+                                config.update(config_copy)  # restore for deferred cfg
+                                raise TypeError('Required handler %r '
+                                                'is not configured yet' % hn)
+                            hlist.append(h)
+                    except Exception as e:
+                        raise ValueError('Unable to set required handler %r' % hn) from e
+                    config['handlers'] = hlist
             elif issubclass(klass, logging.handlers.SMTPHandler) and\
                 'mailhost' in config:
                 config['mailhost'] = self.as_tuple(config['mailhost'])
