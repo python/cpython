@@ -852,15 +852,15 @@ class TestPlistlib(unittest.TestCase):
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
         for fmt in ALL_FORMATS:
             s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
-            self.assertEqual(plistlib.loads(s, fmt=fmt),
-                             datetime.datetime(2345, 6, 7, 15, 9, 10))
+            self.assertEqual(plistlib.loads(s, fmt=fmt, aware_datetime=True),
+                             dt)
 
     def test_dump_utc_aware_datetime(self):
         dt = datetime.datetime(2345, 6, 7, 8, 9, 10, tzinfo=datetime.UTC)
         for fmt in ALL_FORMATS:
             s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
-            self.assertEqual(plistlib.loads(s, fmt=fmt),
-                             datetime.datetime(2345, 6, 7, 8, 9, 10))
+            self.assertEqual(plistlib.loads(s, fmt=fmt, aware_datetime=True),
+                             dt)
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
                          "Can't find timezone datebase")
@@ -875,7 +875,7 @@ class TestPlistlib(unittest.TestCase):
         s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=False)
         self.assertIn(b"2345-06-07T08:00:00Z", s)
 
-    def test_dump_native_datetime_with_aware_datetime_option(self):
+    def test_dump_naive_datetime_with_aware_datetime_option(self):
         # Save a naive datetime with aware_datetime set to true.  This will lead
         # to having different time as compared to the current machine's
         # timezone, which is UTC.
