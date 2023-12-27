@@ -8,11 +8,8 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import argparse
-import functools
 import os
-import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import zipfile
@@ -33,15 +30,12 @@ from .support.pip import *
 from .support.props import *
 from .support.nuspec import *
 
-BDIST_WININST_FILES_ONLY = FileNameSet("wininst-*", "bdist_wininst.py")
-BDIST_WININST_STUB = "PC/layout/support/distutils.command.bdist_wininst.py"
-
-TEST_PYDS_ONLY = FileStemSet("xxlimited", "_ctypes_test", "_test*")
+TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
 
-TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter")
+TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter", "zlib1")
 TCLTK_DIRS_ONLY = FileNameSet("tkinter", "turtledemo")
 TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
@@ -55,8 +49,6 @@ EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
 REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "libffi*")
 
-LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
-
 PY_FILES = FileSuffixSet(".py")
 PYC_FILES = FileSuffixSet(".pyc")
 CAT_FILES = FileSuffixSet(".cat")
@@ -64,7 +56,7 @@ CDF_FILES = FileSuffixSet(".cdf")
 
 DATA_DIRS = FileNameSet("data")
 
-TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
+TOOLS_DIRS = FileNameSet("scripts", "i18n", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
 
@@ -81,7 +73,10 @@ def copy_if_modified(src, dest):
         )
 
     if do_copy:
-        shutil.copy2(src, dest)
+        try:
+            shutil.copy2(src, dest)
+        except FileNotFoundError:
+            raise FileNotFoundError(src) from None
 
 
 def get_lib_layout(ns):
@@ -100,16 +95,10 @@ def get_lib_layout(ns):
         else:
             if f in TCLTK_FILES_ONLY:
                 return ns.include_tcltk
-            if f in BDIST_WININST_FILES_ONLY:
-                return ns.include_bdist_wininst
         return True
 
     for dest, src in rglob(ns.source / "Lib", "**/*", _c):
         yield dest, src
-
-    if not ns.include_bdist_wininst:
-        src = ns.source / BDIST_WININST_STUB
-        yield Path("distutils/command/bdist_wininst.py"), src
 
 
 def get_tcltk_lib(ns):
@@ -173,8 +162,12 @@ def get_layout(ns):
     if ns.include_stable:
         yield from in_build(PYTHON_STABLE_DLL_NAME)
 
+    found_any = False
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
+        found_any = True
         yield dest, src
+    if not found_any:
+        log_error("Failed to locate vcruntime DLL in the build.")
 
     yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
@@ -218,8 +211,7 @@ def get_layout(ns):
 
         for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
-        src = ns.source / "PC" / "pyconfig.h"
-        yield "include/pyconfig.h", src
+        yield "include/pyconfig.h", ns.build / "pyconfig.h"
 
     for dest, src in get_tcltk_lib(ns):
         yield dest, src
@@ -305,27 +297,6 @@ def _write_to_zip(zf, dest, src, ns, checked=True):
             except:
                 log_exception("Failed to delete {}", pyc)
         return
-
-    if src in LIB2TO3_GRAMMAR_FILES:
-        from lib2to3.pgen2.driver import load_grammar
-
-        tmp = ns.temp / src.name
-        try:
-            shutil.copy(src, tmp)
-            load_grammar(str(tmp))
-            for f in ns.temp.glob(src.stem + "*.pickle"):
-                zf.write(str(f), str(dest.parent / f.name))
-                try:
-                    f.unlink()
-                except:
-                    log_exception("Failed to delete {}", f)
-        except:
-            log_exception("Failed to compile {}", src)
-        finally:
-            try:
-                tmp.unlink()
-            except:
-                log_exception("Failed to delete {}", tmp)
 
     zf.write(str(src), str(dest))
 
