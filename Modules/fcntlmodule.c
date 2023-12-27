@@ -19,6 +19,10 @@
 #include <stropts.h>
 #endif
 
+#ifdef __FreeBSD__
+#include <sys/user.h>
+#endif
+
 /*[clinic input]
 module fcntl
 [clinic start generated code]*/
@@ -64,6 +68,13 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 
     if (arg != NULL) {
         int parse_result;
+#ifdef F_KINFO
+	if (code == F_KINFO) {
+            PyErr_SetString(PyExc_ValueError,
+                            "fnctl arg not permitted with F_KINFO");
+	    return NULL;
+	}
+#endif
 
         if (PyArg_Parse(arg, "s#", &str, &len)) {
             if ((size_t)len > sizeof buf) {
@@ -92,6 +103,33 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
           return NULL;
         }
     }
+
+#ifdef F_KINFO
+    if (code == F_KINFO) {
+        struct kinfo_file f = {.kf_structsize = KINFO_FILE_SIZE};
+        do {
+            Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, &f);
+            Py_END_ALLOW_THREADS
+        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        if (ret < 0) {
+            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+        }
+
+        PyObject *ret = PyDict_New();
+        if (ret) {
+            PyDict_SetItemString(ret, "status", PyLong_FromLong(f.kf_status));
+            PyDict_SetItemString(ret, "type", PyLong_FromLong(f.kf_type));
+            PyDict_SetItemString(ret, "offset", PyLong_FromLongLong(f.kf_offset));
+            PyDict_SetItemString(ret, "path", PyBytes_FromString(f.kf_path));
+            return ret;
+        } else {
+            PyErr_SetString(PyExc_ValueError,
+                    "fcntl could not create F_KINFO data");
+            return NULL;
+        }
+    }
+#endif
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -598,6 +636,9 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_DUP2FD_CLOEXEC
     if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
+#endif
+#ifdef F_KINFO
+    if (PyModule_AddIntMacro(m, F_KINFO)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */
