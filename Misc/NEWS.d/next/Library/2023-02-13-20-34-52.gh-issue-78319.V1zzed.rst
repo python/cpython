@@ -1,0 +1,1 @@
+UTF8 support for the IMAP APPEND command has been made RFC compliant.
