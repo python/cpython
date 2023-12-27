@@ -135,6 +135,15 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         check('a/./.',    '', '', ['a'])
         check('/a/b',     '', sep, ['a', 'b'])
 
+    def test_parts_interning(self):
+        P = self.cls
+        p = P('/usr/bin/foo')
+        q = P('/usr/local/bin')
+        # 'usr'
+        self.assertIs(p.parts[1], q.parts[1])
+        # 'bin'
+        self.assertIs(p.parts[2], q.parts[3])
+
     def test_join_nested(self):
         P = self.cls
         p = P('a/b').joinpath(P('c'))

@@ -1552,15 +1552,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
-    def test_parts_interning(self):
-        P = self.cls
-        p = P('/usr/bin/foo')
-        q = P('/usr/local/bin')
-        # 'usr'
-        self.assertIs(p.parts[1], q.parts[1])
-        # 'bin'
-        self.assertIs(p.parts[2], q.parts[3])
-
     def _check_complex_symlinks(self, link0_target):
         if not self.can_symlink:
             self.skipTest("symlinks required")
