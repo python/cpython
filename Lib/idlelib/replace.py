@@ -25,9 +25,8 @@ def replace(text, insert_tags=None):
     if not hasattr(engine, "_replacedialog"):
         engine._replacedialog = ReplaceDialog(root, engine)
     dialog = engine._replacedialog
-    dialog.open(text,
-                selected=text.get("sel.first", "sel.last"),
-                insert_tags=insert_tags)
+    searchphrase = text.get("sel.first", "sel.last")
+    dialog.open(text, searchphrase, insert_tags=insert_tags)
 
 
 class ReplaceDialog(SearchDialogBase):
@@ -53,7 +52,7 @@ class ReplaceDialog(SearchDialogBase):
         self.replvar = StringVar(root)
         self.insert_tags = None
 
-    def open(self, text, *, insert_tags=None, selected=None):
+    def open(self, text, searchphrase=None, *, insert_tags=None):
         """Make dialog visible on top of others and ready to use.
 
         Also, set the search to include the current selection
@@ -61,12 +60,9 @@ class ReplaceDialog(SearchDialogBase):
 
         Args:
             text: Text widget being searched.
-            selected: The selected text.
+            searchphrase: String phrase to search.
         """
-        SearchDialogBase.open(self, text)
-        if selected:
-            self.ent.delete(0, "end")
-            self.ent.insert("end", selected)
+        SearchDialogBase.open(self, text, searchphrase)
         self.ok = True
         self.insert_tags = insert_tags
 
