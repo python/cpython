@@ -10755,6 +10755,12 @@ then :
   printf "%s\n" "#define HAVE_SYS_UN_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "sys/user.h" "ac_cv_header_sys_user_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_user_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_USER_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "sys/utsname.h" "ac_cv_header_sys_utsname_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_utsname_h" = xyes
 then :

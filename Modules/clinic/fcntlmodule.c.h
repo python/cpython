@@ -246,4 +246,70 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=732e33ba92042031 input=a9049054013a1b77]*/
+
+#if defined(F_KINFO)
+
+PyDoc_STRVAR(fcntl_kinfoalloc__doc__,
+"kinfoalloc($module, /)\n"
+"--\n"
+"\n"
+"Return a FreeBSD\'s kinfo_file buffer with the `kf_structsize` field pre-initialised.");
+
+#define FCNTL_KINFOALLOC_METHODDEF    \
+    {"kinfoalloc", (PyCFunction)fcntl_kinfoalloc, METH_NOARGS, fcntl_kinfoalloc__doc__},
+
+static PyObject *
+fcntl_kinfoalloc_impl(PyObject *module);
+
+static PyObject *
+fcntl_kinfoalloc(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return fcntl_kinfoalloc_impl(module);
+}
+
+#endif /* defined(F_KINFO) */
+
+#if defined(F_KINFO)
+
+PyDoc_STRVAR(fcntl_kinfodict__doc__,
+"kinfodict($module, arg=0, /)\n"
+"--\n"
+"\n"
+"Return a FreeBSD\'s kinfo_file as dictionary.");
+
+#define FCNTL_KINFODICT_METHODDEF    \
+    {"kinfodict", _PyCFunction_CAST(fcntl_kinfodict), METH_FASTCALL, fcntl_kinfodict__doc__},
+
+static PyObject *
+fcntl_kinfodict_impl(PyObject *module, PyObject *arg);
+
+static PyObject *
+fcntl_kinfodict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *arg = NULL;
+
+    if (!_PyArg_CheckPositional("kinfodict", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    arg = args[0];
+skip_optional:
+    return_value = fcntl_kinfodict_impl(module, arg);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(F_KINFO) */
+
+#ifndef FCNTL_KINFOALLOC_METHODDEF
+    #define FCNTL_KINFOALLOC_METHODDEF
+#endif /* !defined(FCNTL_KINFOALLOC_METHODDEF) */
+
+#ifndef FCNTL_KINFODICT_METHODDEF
+    #define FCNTL_KINFODICT_METHODDEF
+#endif /* !defined(FCNTL_KINFODICT_METHODDEF) */
+/*[clinic end generated code: output=e449fd5d17f369d3 input=a9049054013a1b77]*/
