@@ -1,1 +1,0 @@
-Fix a NULL pointer dereference within the ssl module during a MemoryError in the keylog callback. (discovered by Coverity)

@@ -1,1 +1,0 @@
-Make test_gdb properly run on HP-UX. Patch by Michael Osipov.
