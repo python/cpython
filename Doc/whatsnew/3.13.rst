@@ -556,6 +556,9 @@ Deprecated
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
 
+* Deprecate undocumented :func:`!pydoc.ispackage` function.
+  (Contributed by Zackery Spytz in :gh:`64020`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
