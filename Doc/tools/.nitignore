@@ -31,7 +31,6 @@ Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/asyncio-task.rst
 Doc/library/bdb.rst
-Doc/library/bisect.rst
 Doc/library/cmd.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
