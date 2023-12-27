@@ -229,7 +229,7 @@ def overrideRootMenu(root, flist):
     if flist:
         root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
-        # Override the _on_quit helder, see comment in
+        # Override the _on_quit helper, see comment in
         # _init_tk_type for the background on this
         global _on_quit
         _on_quit = flist.close_all_callback
