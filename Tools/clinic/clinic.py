@@ -13,7 +13,6 @@ import builtins as bltns
 import collections
 import contextlib
 import copy
-import cpp
 import dataclasses as dc
 import enum
 import functools
@@ -53,6 +52,7 @@ from typing import (
 
 # Local imports.
 import libclinic
+import libclinic.cpp
 from libclinic import ClinicError
 
 
@@ -648,7 +648,7 @@ class CLanguage(Language):
 
     def __init__(self, filename: str) -> None:
         super().__init__(filename)
-        self.cpp = cpp.Monitor(filename)
+        self.cpp = libclinic.cpp.Monitor(filename)
 
     def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)

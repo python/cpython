@@ -3920,7 +3920,7 @@ class ClinicReprTests(unittest.TestCase):
         self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
 
     def test_Monitor_repr(self):
-        monitor = clinic.cpp.Monitor("test.c")
+        monitor = libclinic.cpp.Monitor("test.c")
         self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
 
         monitor.line_number = 42
