@@ -270,6 +270,24 @@ class Path(_abc.PathBase, PurePath):
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
 
+    def read_text(self, encoding=None, errors=None, newline=None):
+        """
+        Open the file in text mode, read it, and close the file.
+        """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = io.text_encoding(encoding)
+        return _abc.PathBase.read_text(self, encoding, errors, newline)
+
+    def write_text(self, data, encoding=None, errors=None, newline=None):
+        """
+        Open the file in text mode, write to it, and close the file.
+        """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = io.text_encoding(encoding)
+        return _abc.PathBase.write_text(self, data, encoding, errors, newline)
+
     def iterdir(self):
         """Yield path objects of the directory contents.
 
