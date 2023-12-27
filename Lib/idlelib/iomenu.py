@@ -67,14 +67,9 @@ class IOBinding:
     def set_filename(self, filename):
         if filename and os.path.isdir(filename):
             self.filename = None
-            self.file_timestamp = None
             self.dirname = filename
         else:
             self.filename = filename
-            if filename is not None:
-                self.file_timestamp = os.stat(filename).st_mtime
-            else:
-                self.file_timestamp = None
             self.dirname = None
             self.set_saved(1)
             if self.filename_change_hook:
@@ -133,6 +128,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
+                    file_timestamp = os.stat(filename).st_mtime
                     converted = False
             except (UnicodeDecodeError, SyntaxError):
                 # Wait for the editor window to appear
@@ -148,6 +144,7 @@ class IOBinding:
                     chars = f.read()
                     fileencoding = f.encoding
                     eol_convention = f.newlines
+                    file_timestamp = os.stat(filename).st_mtime
                     converted = True
         except OSError as err:
             messagebox.showerror("I/O Error", str(err), parent=self.text)
@@ -176,6 +173,7 @@ class IOBinding:
         self.text.insert("1.0", chars)
         self.reset_undo()
         self.set_filename(filename)
+        self.file_timestamp = file_timestamp
         if converted:
             # We need to save the conversion results first
             # before being able to execute the code
@@ -214,16 +212,21 @@ class IOBinding:
         else:
             # Check the time of most recent content modification so the
             # user doesn't accidentally overwrite a newer version of the file.
-            if self.file_timestamp != os.stat(self.filename).st_mtime:
-                confirm = tkMessageBox.askokcancel(
-                    title="File has changed",
-                    message=(
-                        "The file has changed on disk since reading it!\n\n"
-                        "Do you really want to overwrite it?"),
-                    default=tkMessageBox.CANCEL,
-                    parent=self.text)
-                if not confirm:
-                    return
+            try:
+                file_timestamp = os.stat(self.filename).st_mtime
+            except OSError:
+                pass
+            else:
+                if self.file_timestamp != file_timestamp:
+                    confirm = messagebox.askokcancel(
+                        title="File has changed",
+                        message=(
+                            "The file has changed on disk since reading it!\n\n"
+                            "Do you really want to overwrite it?"),
+                        default=messagebox.CANCEL,
+                        parent=self.text)
+                    if not confirm:
+                        return
 
             if self.writefile(self.filename):
                 self.file_timestamp = os.stat(self.filename).st_mtime
@@ -239,6 +242,7 @@ class IOBinding:
         filename = self.asksavefile()
         if filename:
             if self.writefile(filename):
+                self.file_timestamp = os.stat(filename).st_mtime
                 self.set_filename(filename)
                 self.set_saved(1)
                 try:
