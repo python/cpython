@@ -53,6 +53,7 @@ from typing import (
 
 # Local imports.
 import libclinic
+from libclinic import ClinicError
 
 
 # TODO:
@@ -92,27 +93,6 @@ class Null:
 NULL = Null()
 
 TemplateDict = dict[str, str]
-
-
-@dc.dataclass
-class ClinicError(Exception):
-    message: str
-    _: dc.KW_ONLY
-    lineno: int | None = None
-    filename: str | None = None
-
-    def __post_init__(self) -> None:
-        super().__init__(self.message)
-
-    def report(self, *, warn_only: bool = False) -> str:
-        msg = "Warning" if warn_only else "Error"
-        if self.filename is not None:
-            msg += f" in file {self.filename!r}"
-        if self.lineno is not None:
-            msg += f" on line {self.lineno}"
-        msg += ":\n"
-        msg += f"{self.message}\n"
-        return msg
 
 
 @overload
@@ -669,7 +649,6 @@ class CLanguage(Language):
     def __init__(self, filename: str) -> None:
         super().__init__(filename)
         self.cpp = cpp.Monitor(filename)
-        self.cpp.fail = fail  # type: ignore[method-assign]
 
     def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
