@@ -31,6 +31,7 @@ import sys
 
 from tkinter.font import Font
 import idlelib
+from idlelib import macosx
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
@@ -659,6 +660,9 @@ class IdleConf:
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
+
+        if macosx.isAquaTk():
+            del keyBindings['<<close-all-windows>>']
 
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
