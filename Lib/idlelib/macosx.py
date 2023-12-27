@@ -13,6 +13,10 @@ import tkinter
 
 _tk_type = None
 
+def _on_quit():
+    # on quit callback, overridden in setupApp
+    pass
+
 def _init_tk_type():
     """ Initialize _tk_type for isXyzTk functions.
 
@@ -34,6 +38,12 @@ def _init_tk_type():
                 return
 
         root = tkinter.Tk()
+
+        # Add an ::tk::mac::Quit command to the root because Tk
+        # seem to only call the quit command created in the 
+        # first `tkinter.Tk` instance.
+        root.createcommand('::tk::mac::Quit', lambda: _on_quit())
+
         ws = root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
             _tk_type = "xquartz"
@@ -158,6 +168,7 @@ def overrideRootMenu(root, flist):
     from idlelib import mainmenu
     from idlelib import window
 
+
     closeItem = mainmenu.menudefs[0][1][-2]
 
     # Remove the last 3 items of the file menu: a separator, close window and
@@ -217,6 +228,11 @@ def overrideRootMenu(root, flist):
     root.createcommand('::tk::mac::ShowPreferences', config_dialog)
     if flist:
         root.createcommand('::tk::mac::Quit', flist.close_all_callback)
+
+        # Override the _on_quit helder, see comment in
+        # _init_tk_type for the background on this
+        global _on_quit
+        _on_quit = flist.close_all_callback
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
