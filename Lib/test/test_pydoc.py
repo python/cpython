@@ -745,14 +745,18 @@ class PydocDocTest(unittest.TestCase):
 
     def test_is_package_when_not_package(self):
         with os_helper.temp_cwd() as test_dir:
-            self.assertFalse(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertFalse(pydoc.ispackage(test_dir))
+            self.assertEqual(cm.filename, __file__)
 
     def test_is_package_when_is_package(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
             open(init_path, 'w').close()
-            self.assertTrue(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertTrue(pydoc.ispackage(test_dir))
             os.remove(init_path)
+            self.assertEqual(cm.filename, __file__)
 
     def test_allmethods(self):
         # issue 17476: allmethods was no longer returning unbound methods.
