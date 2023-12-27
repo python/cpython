@@ -196,6 +196,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       output (defaulting to the system default encoding).
 
 
+   .. method:: formatmonthname(theyear, themonth, withyear=True)
+
+      Return a month name as an HTML table row. If *withyear* is true the year
+      will be included in the row, otherwise just the month name will be
+      used.
+
+
    :class:`!HTMLCalendar` has the following attributes you can override to
    customize the CSS classes used by the calendar:
 
@@ -289,7 +296,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. note::
 
-   The constructor, :meth:`formatweekday` and :meth:`formatmonthname` methods
+   The constructor, :meth:`!formatweekday` and :meth:`!formatmonthname` methods
    of these two classes temporarily change the ``LC_TIME`` locale to the given
    *locale*. Because the current locale is a process-wide setting, they are
    not thread-safe.
@@ -358,7 +365,7 @@ For simple text calendars this module provides the following functions.
 
 .. function:: month(theyear, themonth, w=0, l=0)
 
-   Returns a month's calendar in a multi-line string using the :meth:`formatmonth`
+   Returns a month's calendar in a multi-line string using the :meth:`~TextCalendar.formatmonth`
    of the :class:`TextCalendar` class.
 
 
@@ -370,7 +377,7 @@ For simple text calendars this module provides the following functions.
 .. function:: calendar(year, w=2, l=1, c=6, m=3)
 
    Returns a 3-column calendar for an entire year as a multi-line string using
-   the :meth:`formatyear` of the :class:`TextCalendar` class.
+   the :meth:`~TextCalendar.formatyear` of the :class:`TextCalendar` class.
 
 
 .. function:: timegm(tuple)
