@@ -216,9 +216,6 @@ def overrideRootMenu(root, flist):
     root.bind('<<open-config-dialog>>', config_dialog)
     root.createcommand('::tk::mac::ShowPreferences', config_dialog)
     if flist:
-        # The binding above doesn't reliably work on all versions of Tk
-        # on macOS. Adding command definition below does seem to do the
-        # right thing for now.
         root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
