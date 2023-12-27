@@ -32,7 +32,7 @@ __all__ = [
 UnsupportedOperation = _abc.UnsupportedOperation
 
 
-class PurePath(_abc.PurePathBase):
+class PurePath(_abc.PurePathBase, pathmod=os.path):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -59,7 +59,6 @@ class PurePath(_abc.PurePathBase):
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
     )
-    pathmod = os.path
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -191,23 +190,21 @@ class PurePath(_abc.PurePathBase):
 os.PathLike.register(PurePath)
 
 
-class PurePosixPath(PurePath):
+class PurePosixPath(PurePath, pathmod=posixpath):
     """PurePath subclass for non-Windows systems.
 
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    pathmod = posixpath
     __slots__ = ()
 
 
-class PureWindowsPath(PurePath):
+class PureWindowsPath(PurePath, pathmod=ntpath):
     """PurePath subclass for Windows systems.
 
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    pathmod = ntpath
     __slots__ = ()
 
 

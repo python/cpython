@@ -200,12 +200,17 @@ class PurePathBase:
         '_resolving',
     )
     pathmod = posixpath
+    _sep = '/'
+    _altsep = None
+    _case_sensitive = True
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, pathmod=None, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._sep = cls.pathmod.sep
-        cls._altsep = cls.pathmod.altsep
-        cls._case_sensitive = cls.pathmod.normcase('Aa') == 'Aa'
+        if pathmod is not None:
+            cls.pathmod = pathmod
+            cls._sep = pathmod.sep
+            cls._altsep = pathmod.altsep
+            cls._case_sensitive = pathmod.normcase('Aa') == 'Aa'
 
     def __init__(self, *paths):
         self._raw_paths = paths
