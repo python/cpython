@@ -207,8 +207,6 @@ An :class:`IMAP4` instance has the following methods:
    Append *message* to a named *mailbox*.
    
    *flags* is a space-separated string containing IMAP flags tokens.
-   Must start with ``\``.
-
    System flags defined in :rfc:`3501` are:
 
    * ``\Seen`` - Message has been read.
@@ -220,8 +218,7 @@ An :class:`IMAP4` instance has the following methods:
 
 
    *date_time* is the date and time associated with the message.
-   Often of the format *"DD-Mon-YYYY HH:MM:SS" (e.g., "01-Jan-2023 12:00:00")*.
-
+   
    *message* is a string representing the entire email message, including
    headers and body.
 
