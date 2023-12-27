@@ -662,6 +662,7 @@ class IdleConf:
             }
 
         if sys.platform == "darwin":
+        #if macosx.isAquaTk():
             # XXX: ^^^ This test should be macosx.isAquaTk(),
             # but that has some side effect that results in not
             # calling the quit event handler.
