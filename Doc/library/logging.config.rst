@@ -87,6 +87,10 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    provides a mechanism to present the choices and load the chosen
    configuration).
 
+   It will raise :exc:`FileNotFoundError` if the file
+   doesn't exist and :exc:`RuntimeError` if the file is invalid or
+   empty.
+
    :param fname: A filename, or a file-like object, or an instance derived
                  from :class:`~configparser.RawConfigParser`. If a
                  ``RawConfigParser``-derived instance is passed, it is used as
@@ -111,7 +115,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     they or their ancestors are explicitly named
                                     in the logging configuration.
 
-    :param encoding: The encoding used to open file when *fname* is filename.
+   :param encoding: The encoding used to open file when *fname* is filename.
 
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
@@ -125,6 +129,10 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
     .. versionadded:: 3.10
        The *encoding* parameter is added.
+
+    .. versionchanged:: 3.12
+       An exception will be thrown if the provided file
+       doesn't exist or is invalid or empty.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
@@ -249,11 +257,11 @@ otherwise, the context is used to determine what to instantiate.
   which correspond to the arguments passed to create a
   :class:`~logging.Formatter` object:
 
-   * ``format``
-   * ``datefmt``
-   * ``style``
-   * ``validate`` (since version >=3.8)
-   * ``defaults`` (since version >=3.12)
+  * ``format``
+  * ``datefmt``
+  * ``style``
+  * ``validate`` (since version >=3.8)
+  * ``defaults`` (since version >=3.12)
 
   An optional ``class`` key indicates the name of the formatter's
   class (as a dotted module and class name).  The instantiation
@@ -536,9 +544,9 @@ valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
 mnemonic that the corresponding value is a callable.
 
-    .. versionchanged:: 3.11
-       The ``filters`` member of ``handlers`` and ``loggers`` can take
-       filter instances in addition to ids.
+.. versionchanged:: 3.11
+   The ``filters`` member of ``handlers`` and ``loggers`` can take
+   filter instances in addition to ids.
 
 You can also specify a special key ``'.'`` whose value is a dictionary is a
 mapping of attribute names to values. If found, the specified attributes will
@@ -677,7 +685,8 @@ resolve to ``'dev_team@domain.tld'`` and the string
 ``'support_team@domain.tld'``. The ``subject`` value could be accessed
 using either ``'cfg://handlers.email.subject'`` or, equivalently,
 ``'cfg://handlers.email[subject]'``.  The latter form only needs to be
-used if the key contains spaces or non-alphanumeric characters.  If an
+used if the key contains spaces or non-alphanumeric characters. Please note
+that the characters ``[`` and ``]`` are not allowed in the keys. If an
 index value consists only of decimal digits, access will be attempted
 using the corresponding integer value, falling back to the string
 value if needed.

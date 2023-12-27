@@ -38,7 +38,13 @@ Examining Symbol Tables
    .. method:: get_type()
 
       Return the type of the symbol table.  Possible values are ``'class'``,
-      ``'module'``, and ``'function'``.
+      ``'module'``, ``'function'``, ``'annotation'``, ``'TypeVar bound'``,
+      ``'type alias'``, and ``'type parameter'``. The latter four refer to
+      different flavors of :ref:`annotation scopes <annotation-scopes>`.
+
+      .. versionchanged:: 3.12
+         Added ``'annotation'``,  ``'TypeVar bound'``, ``'type alias'``,
+         and ``'type parameter'`` as possible return values.
 
    .. method:: get_id()
 
@@ -49,6 +55,10 @@ Examining Symbol Tables
       Return the table's name.  This is the name of the class if the table is
       for a class, the name of the function if the table is for a function, or
       ``'top'`` if the table is global (:meth:`get_type` returns ``'module'``).
+      For type parameter scopes (which are used for generic classes, functions,
+      and type aliases), it is the name of the underlying class, function, or
+      type alias. For type alias scopes, it is the name of the type alias.
+      For :class:`~typing.TypeVar` bound scopes, it is the name of the ``TypeVar``.
 
    .. method:: get_lineno()
 
@@ -197,3 +207,21 @@ Examining Symbol Tables
 
       Return the namespace bound to this name. If more than one or no namespace
       is bound to this name, a :exc:`ValueError` is raised.
+
+
+.. _symtable-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.13
+
+The :mod:`symtable` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m symtable [infile...]
+
+Symbol tables are generated for the specified Python source files and
+dumped to stdout.
+If no input file is specified, the content is read from stdin.

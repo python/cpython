@@ -220,8 +220,8 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
-   .. deprecated-removed:: 3.9 3.11
-      The optional parameter *random*.
+   .. versionchanged:: 3.11
+      Removed the optional parameter *random*.
 
 
 .. function:: sample(population, k, *, counts=None)
@@ -334,8 +334,10 @@ be found in any statistics text.
 
 .. function:: gammavariate(alpha, beta)
 
-   Gamma distribution.  (*Not* the gamma function!)  Conditions on the
-   parameters are ``alpha > 0`` and ``beta > 0``.
+   Gamma distribution.  (*Not* the gamma function!)  The shape and
+   scale parameters, *alpha* and *beta*, must have positive values.
+   (Calling conventions vary and some sources define 'beta'
+   as the inverse of the scale).
 
    The probability distribution function is::
 
@@ -346,7 +348,8 @@ be found in any statistics text.
 
 .. function:: gauss(mu=0.0, sigma=1.0)
 
-   Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
+   Normal distribution, also called the Gaussian distribution.
+   *mu* is the mean,
    and *sigma* is the standard deviation.  This is slightly faster than
    the :func:`normalvariate` function defined below.
 
@@ -404,9 +407,9 @@ Alternative Generator
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
-   .. deprecated-removed:: 3.9 3.11
+   .. versionchanged:: 3.11
       Formerly the *seed* could be any hashable object.  Now it is limited to:
-      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
 .. class:: SystemRandom([seed])

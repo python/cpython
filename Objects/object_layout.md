@@ -36,7 +36,7 @@ and the ``dict`` field points to the dictionary.
 
 ## 3.12 pre-header
 
-In 3.12 the the pointer to the list of weak references is added to the
+In 3.12 the pointer to the list of weak references is added to the
 pre-header. In order to make space for it, the ``dict`` and ``values``
 pointers are combined into a single tagged pointer:
 
@@ -45,7 +45,7 @@ pointers are combined into a single tagged pointer:
 
 If the object has no physical dictionary, then the ``dict_or_values``
 has its low bit set to one, and points to the values array.
-If the object has a physical dictioanry, then the ``dict_or_values``
+If the object has a physical dictionary, then the ``dict_or_values``
 has its low bit set to zero, and points to the dictionary.
 
 The untagged form is chosen for the dictionary pointer, rather than

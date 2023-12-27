@@ -98,7 +98,7 @@ Expression input
 ================
 
 .. index:: single: input
-.. index:: builtin: eval
+.. index:: pair: built-in function; eval
 
 :func:`eval` is used for expression input.  It ignores leading whitespace. The
 string argument to :func:`eval` must have the following form:
