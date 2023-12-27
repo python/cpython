@@ -2,12 +2,11 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import _thread
-from collections import OrderedDict, deque
+from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
 import json
-import opcode
 import os
 import pickle
 import queue
@@ -50,6 +49,8 @@ _testcapi = import_helper.import_module('_testcapi')
 
 import _testinternalcapi
 
+
+NULL = None
 
 def decode_stderr(err):
     return err.decode('utf-8', 'replace').replace('\r', '')
@@ -296,26 +297,132 @@ class CAPITest(unittest.TestCase):
             # test _Py_CheckFunctionResult() instead.
             self.assertIn('returned a result with an exception set', err)
 
+    def test_buildvalue(self):
+        # Test Py_BuildValue() with object arguments
+        buildvalue = _testcapi.py_buildvalue
+        self.assertEqual(buildvalue(''), None)
+        self.assertEqual(buildvalue('()'), ())
+        self.assertEqual(buildvalue('[]'), [])
+        self.assertEqual(buildvalue('{}'), {})
+        self.assertEqual(buildvalue('()[]{}'), ((), [], {}))
+        self.assertEqual(buildvalue('O', 1), 1)
+        self.assertEqual(buildvalue('(O)', 1), (1,))
+        self.assertEqual(buildvalue('[O]', 1), [1])
+        self.assertRaises(SystemError, buildvalue, '{O}', 1)
+        self.assertEqual(buildvalue('OO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(OO)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[OO]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{OO}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{OOOO}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('((O))', 1), ((1,),))
+        self.assertEqual(buildvalue('((OO))', 1, 2), ((1, 2),))
+
+        self.assertEqual(buildvalue(' \t,:'), None)
+        self.assertEqual(buildvalue('O,', 1), 1)
+        self.assertEqual(buildvalue('   O   ', 1), 1)
+        self.assertEqual(buildvalue('\tO\t', 1), 1)
+        self.assertEqual(buildvalue('O,O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O, O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O,\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O,O)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O, O,)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue(' ( O O ) ', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('\t(\tO\tO\t)\t', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[O,O]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('[O, O,]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [ O O ] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [\tO\tO\t] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{O:O}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{O:O,O:O}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('{O: O, O: O,}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue(' { O O O O } ', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('\t{\tO\tO\tO\tO\t}\t', 1, 2, 3, 4), {1: 2, 3: 4})
+
+        self.assertRaises(SystemError, buildvalue, 'O', NULL)
+        self.assertRaises(SystemError, buildvalue, '(O)', NULL)
+        self.assertRaises(SystemError, buildvalue, '[O]', NULL)
+        self.assertRaises(SystemError, buildvalue, '{O}', NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '(OO)', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '(OO)', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '[OO]', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '[OO]', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '{OO}', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '{OO}', NULL, 2)
+
+    def test_buildvalue_ints(self):
+        # Test Py_BuildValue() with integer arguments
+        buildvalue = _testcapi.py_buildvalue_ints
+        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX
+        self.assertEqual(buildvalue('i', INT_MAX), INT_MAX)
+        self.assertEqual(buildvalue('i', INT_MIN), INT_MIN)
+        self.assertEqual(buildvalue('I', UINT_MAX), UINT_MAX)
+
+        self.assertEqual(buildvalue('h', SHRT_MAX), SHRT_MAX)
+        self.assertEqual(buildvalue('h', SHRT_MIN), SHRT_MIN)
+        self.assertEqual(buildvalue('H', USHRT_MAX), USHRT_MAX)
+
+        self.assertEqual(buildvalue('b', 127), 127)
+        self.assertEqual(buildvalue('b', -128), -128)
+        self.assertEqual(buildvalue('B', 255), 255)
+
+        self.assertEqual(buildvalue('c', ord('A')), b'A')
+        self.assertEqual(buildvalue('c', 255), b'\xff')
+        self.assertEqual(buildvalue('c', 256), b'\x00')
+        self.assertEqual(buildvalue('c', -1), b'\xff')
+
+        self.assertEqual(buildvalue('C', 255), chr(255))
+        self.assertEqual(buildvalue('C', 256), chr(256))
+        self.assertEqual(buildvalue('C', sys.maxunicode), chr(sys.maxunicode))
+        self.assertRaises(ValueError, buildvalue, 'C', -1)
+        self.assertRaises(ValueError, buildvalue, 'C', sys.maxunicode+1)
+
+        # gh-84489
+        self.assertRaises(ValueError, buildvalue, '(C )i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '[C ]i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '{Ci }i', -1, 2, 3)
+
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
-                         'need _testcapi.negative_refcount')
-    def test_negative_refcount(self):
+    def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
         # when calling _Py_NegativeRefcount() to abort Python.
-        code = textwrap.dedent("""
-            import _testcapi
-            from test import support
-
-            with support.SuppressCrashReport():
-                _testcapi.negative_refcount()
-        """)
+        code = textwrap.dedent(code)
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
                          br'_testcapimodule\.c:[0-9]+: '
                          br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
+
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount()')
+    def test_negative_refcount(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """
+        self.check_negative_refcount(code)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
+                         'need _testcapi.decref_freed_object()')
+    @support.skip_if_sanitizer("use after free on purpose",
+                               address=True, memory=True, ub=True)
+    def test_decref_freed_object(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.decref_freed_object()
+        """
+        self.check_negative_refcount(code)
 
     def test_trashcan_subclass(self):
         # bpo-35983: Check that the trashcan mechanism for "list" is NOT
@@ -362,6 +469,8 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_heap_ctype_doc_and_text_signature(self):
         self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
         self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
@@ -609,7 +718,7 @@ class CAPITest(unittest.TestCase):
 
         # Class creation from C
         with warnings_helper.check_warnings(
-                ('.*custom tp_new.*in Python 3.14.*', DeprecationWarning),
+                ('.* _testcapi.Subclass .* custom tp_new.*in Python 3.14.*', DeprecationWarning),
                 ):
             sub = _testcapi.make_type_with_base(Base)
         self.assertTrue(issubclass(sub, Base))
@@ -990,6 +1099,21 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
+    def test_get_type_module_name(self):
+        from collections import OrderedDict
+        ht = _testcapi.get_heaptype_for_name()
+        for cls, expected in {
+            int: 'builtins',
+            OrderedDict: 'collections',
+            ht: '_testcapi',
+        }.items():
+            with self.subTest(repr(cls)):
+                modname = _testinternalcapi.get_type_module_name(cls)
+                self.assertEqual(modname, expected)
+
+        ht.__module__ = 'test_module'
+        modname = _testinternalcapi.get_type_module_name(ht)
+        self.assertEqual(modname, 'test_module')
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
@@ -1404,6 +1528,7 @@ class TestPendingCalls(unittest.TestCase):
         maxtext = 250
         main_interpid = 0
         interpid = _interpreters.create()
+        self.addCleanup(lambda: _interpreters.destroy(interpid))
         _interpreters.run_string(interpid, f"""if True:
             import json
             import os
@@ -1897,6 +2022,137 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
 
+@requires_subinterpreters
+class InterpreterIDTests(unittest.TestCase):
+
+    InterpreterID = _testcapi.get_interpreterid_type()
+
+    def new_interpreter(self):
+        def ensure_destroyed(interpid):
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        id = _interpreters.create()
+        self.addCleanup(lambda: ensure_destroyed(id))
+        return id
+
+    def test_with_int(self):
+        id = self.InterpreterID(10, force=True)
+
+        self.assertEqual(int(id), 10)
+
+    def test_coerce_id(self):
+        class Int(str):
+            def __index__(self):
+                return 10
+
+        id = self.InterpreterID(Int(), force=True)
+        self.assertEqual(int(id), 10)
+
+    def test_bad_id(self):
+        for badid in [
+            object(),
+            10.0,
+            '10',
+            b'10',
+        ]:
+            with self.subTest(badid):
+                with self.assertRaises(TypeError):
+                    self.InterpreterID(badid)
+
+        badid = -1
+        with self.subTest(badid):
+            with self.assertRaises(ValueError):
+                self.InterpreterID(badid)
+
+        badid = 2**64
+        with self.subTest(badid):
+            with self.assertRaises(OverflowError):
+                self.InterpreterID(badid)
+
+    def test_exists(self):
+        id = self.new_interpreter()
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            self.InterpreterID(int(id) + 1)  # unforced
+
+    def test_does_not_exist(self):
+        id = self.new_interpreter()
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            self.InterpreterID(int(id) + 1)  # unforced
+
+    def test_destroyed(self):
+        id = _interpreters.create()
+        _interpreters.destroy(id)
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            self.InterpreterID(id)  # unforced
+
+    def test_str(self):
+        id = self.InterpreterID(10, force=True)
+        self.assertEqual(str(id), '10')
+
+    def test_repr(self):
+        id = self.InterpreterID(10, force=True)
+        self.assertEqual(repr(id), 'InterpreterID(10)')
+
+    def test_equality(self):
+        id1 = self.new_interpreter()
+        id2 = self.InterpreterID(id1)
+        id3 = self.InterpreterID(
+                self.new_interpreter())
+
+        self.assertTrue(id2 == id2)  # identity
+        self.assertTrue(id2 == id1)  # int-equivalent
+        self.assertTrue(id1 == id2)  # reversed
+        self.assertTrue(id2 == int(id2))
+        self.assertTrue(id2 == float(int(id2)))
+        self.assertTrue(float(int(id2)) == id2)
+        self.assertFalse(id2 == float(int(id2)) + 0.1)
+        self.assertFalse(id2 == str(int(id2)))
+        self.assertFalse(id2 == 2**1000)
+        self.assertFalse(id2 == float('inf'))
+        self.assertFalse(id2 == 'spam')
+        self.assertFalse(id2 == id3)
+
+        self.assertFalse(id2 != id2)
+        self.assertFalse(id2 != id1)
+        self.assertFalse(id1 != id2)
+        self.assertTrue(id2 != id3)
+
+    def test_linked_lifecycle(self):
+        id1 = _interpreters.create()
+        _testcapi.unlink_interpreter_refcount(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            0)
+
+        id2 = self.InterpreterID(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            1)
+
+        # The interpreter isn't linked to ID objects, so it isn't destroyed.
+        del id2
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            0)
+
+        _testcapi.link_interpreter_refcount(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            0)
+
+        id3 = self.InterpreterID(id1)
+        self.assertEqual(
+            _testinternalcapi.get_interpreter_refcount(id1),
+            1)
+
+        # The interpreter is linked now so is destroyed.
+        del id3
+        with self.assertRaises(_interpreters.InterpreterNotFoundError):
+            _testinternalcapi.get_interpreter_refcount(id1)
+
+
 class BuiltinStaticTypesTests(unittest.TestCase):
 
     TYPES = [
@@ -2011,7 +2267,7 @@ class TestThreadState(unittest.TestCase):
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
-                    if name.startswith('test_') and not name.endswith('_code'))
+                    if name.startswith('test_'))
 
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
@@ -2025,7 +2281,15 @@ class Test_testcapi(unittest.TestCase):
 class Test_testinternalcapi(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))
                     for name in dir(_testinternalcapi)
-                    if name.startswith('test_'))
+                    if name.startswith('test_')
+                    and not name.startswith('test_lock_'))
+
+
+@threading_helper.requires_working_threading()
+class Test_PyLock(unittest.TestCase):
+    locals().update((name, getattr(_testinternalcapi, name))
+                    for name in dir(_testinternalcapi)
+                    if name.startswith('test_lock_'))
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
@@ -2220,361 +2484,60 @@ class Test_Pep523API(unittest.TestCase):
         self.do_test(func, names)
 
 
-@contextlib.contextmanager
-def temporary_optimizer(opt):
-    old_opt = _testinternalcapi.get_optimizer()
-    _testinternalcapi.set_optimizer(opt)
-    try:
-        yield
-    finally:
-        _testinternalcapi.set_optimizer(old_opt)
+@unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
+class TestPyThreadId(unittest.TestCase):
+    def test_py_thread_id(self):
+        # gh-112535: Test _Py_ThreadId(): make sure that thread identifiers
+        # in a few threads are unique
+        py_thread_id = _testinternalcapi.py_thread_id
+        short_sleep = 0.010
 
+        class GetThreadId(threading.Thread):
+            def __init__(self):
+                super().__init__()
+                self.get_lock = threading.Lock()
+                self.get_lock.acquire()
+                self.started_lock = threading.Event()
+                self.py_tid = None
 
-@contextlib.contextmanager
-def clear_executors(func):
-    # Clear executors in func before and after running a block
-    func.__code__ = func.__code__.replace()
-    try:
-        yield
-    finally:
-        func.__code__ = func.__code__.replace()
+            def run(self):
+                self.started_lock.set()
+                self.get_lock.acquire()
+                self.py_tid = py_thread_id()
+                time.sleep(short_sleep)
+                self.py_tid2 = py_thread_id()
 
+        nthread = 5
+        threads = [GetThreadId() for _ in range(nthread)]
 
-class TestOptimizerAPI(unittest.TestCase):
+        # first make run sure that all threads are running
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.started_lock.wait()
 
-    def test_get_set_optimizer(self):
-        old = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.get_counter_optimizer()
-        try:
-            _testinternalcapi.set_optimizer(opt)
-            self.assertEqual(_testinternalcapi.get_optimizer(), opt)
-            _testinternalcapi.set_optimizer(None)
-            self.assertEqual(_testinternalcapi.get_optimizer(), None)
-        finally:
-            _testinternalcapi.set_optimizer(old)
+        # call _Py_ThreadId() in the main thread
+        py_thread_ids = [py_thread_id()]
 
+        # now call _Py_ThreadId() in each thread
+        for thread in threads:
+            thread.get_lock.release()
 
-    def test_counter_optimizer(self):
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent("""
-            def loop():
-                for _ in range(1000):
-                    pass
-        """), ns, ns)
-        loop = ns['loop']
+        # call _Py_ThreadId() in each thread and wait until threads complete
+        for thread in threads:
+            thread.join()
+            py_thread_ids.append(thread.py_tid)
+            # _PyThread_Id() should not change for a given thread.
+            # For example, it should remain the same after a short sleep.
+            self.assertEqual(thread.py_tid2, thread.py_tid)
 
-        for repeat in range(5):
-            opt = _testinternalcapi.get_counter_optimizer()
-            with temporary_optimizer(opt):
-                self.assertEqual(opt.get_count(), 0)
-                with clear_executors(loop):
-                    loop()
-                self.assertEqual(opt.get_count(), 1000)
+        # make sure that all _Py_ThreadId() are unique
+        for tid in py_thread_ids:
+            self.assertIsInstance(tid, int)
+            self.assertGreater(tid, 0)
+        self.assertEqual(len(set(py_thread_ids)), len(py_thread_ids),
+                         py_thread_ids)
 
-    def test_long_loop(self):
-        "Check that we aren't confused by EXTENDED_ARG"
-
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent("""
-            def nop():
-                pass
-
-            def long_loop():
-                for _ in range(10):
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-        """), ns, ns)
-        long_loop = ns['long_loop']
-
-        opt = _testinternalcapi.get_counter_optimizer()
-        with temporary_optimizer(opt):
-            self.assertEqual(opt.get_count(), 0)
-            long_loop()
-            self.assertEqual(opt.get_count(), 10)
-
-
-def get_first_executor(func):
-    code = func.__code__
-    co_code = code.co_code
-    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
-    for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD:
-            try:
-                return _testinternalcapi.get_executor(code, i)
-            except ValueError:
-                pass
-    return None
-
-
-class TestUops(unittest.TestCase):
-
-    def test_basic_loop(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(1000)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("SAVE_IP", uops)
-        self.assertIn("LOAD_FAST", uops)
-
-    def test_extended_arg(self):
-        "Check EXTENDED_ARG handling in superblock creation"
-        ns = {}
-        exec(textwrap.dedent("""
-            def many_vars():
-                # 260 vars, so z9 should have index 259
-                a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 42
-                b0 = b1 = b2 = b3 = b4 = b5 = b6 = b7 = b8 = b9 = 42
-                c0 = c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = 42
-                d0 = d1 = d2 = d3 = d4 = d5 = d6 = d7 = d8 = d9 = 42
-                e0 = e1 = e2 = e3 = e4 = e5 = e6 = e7 = e8 = e9 = 42
-                f0 = f1 = f2 = f3 = f4 = f5 = f6 = f7 = f8 = f9 = 42
-                g0 = g1 = g2 = g3 = g4 = g5 = g6 = g7 = g8 = g9 = 42
-                h0 = h1 = h2 = h3 = h4 = h5 = h6 = h7 = h8 = h9 = 42
-                i0 = i1 = i2 = i3 = i4 = i5 = i6 = i7 = i8 = i9 = 42
-                j0 = j1 = j2 = j3 = j4 = j5 = j6 = j7 = j8 = j9 = 42
-                k0 = k1 = k2 = k3 = k4 = k5 = k6 = k7 = k8 = k9 = 42
-                l0 = l1 = l2 = l3 = l4 = l5 = l6 = l7 = l8 = l9 = 42
-                m0 = m1 = m2 = m3 = m4 = m5 = m6 = m7 = m8 = m9 = 42
-                n0 = n1 = n2 = n3 = n4 = n5 = n6 = n7 = n8 = n9 = 42
-                o0 = o1 = o2 = o3 = o4 = o5 = o6 = o7 = o8 = o9 = 42
-                p0 = p1 = p2 = p3 = p4 = p5 = p6 = p7 = p8 = p9 = 42
-                q0 = q1 = q2 = q3 = q4 = q5 = q6 = q7 = q8 = q9 = 42
-                r0 = r1 = r2 = r3 = r4 = r5 = r6 = r7 = r8 = r9 = 42
-                s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = s9 = 42
-                t0 = t1 = t2 = t3 = t4 = t5 = t6 = t7 = t8 = t9 = 42
-                u0 = u1 = u2 = u3 = u4 = u5 = u6 = u7 = u8 = u9 = 42
-                v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = v8 = v9 = 42
-                w0 = w1 = w2 = w3 = w4 = w5 = w6 = w7 = w8 = w9 = 42
-                x0 = x1 = x2 = x3 = x4 = x5 = x6 = x7 = x8 = x9 = 42
-                y0 = y1 = y2 = y3 = y4 = y5 = y6 = y7 = y8 = y9 = 42
-                z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
-                while z9 > 0:
-                    z9 = z9 - 1
-        """), ns, ns)
-        many_vars = ns["many_vars"]
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            ex = get_first_executor(many_vars)
-            self.assertIsNone(ex)
-            many_vars()
-
-        ex = get_first_executor(many_vars)
-        self.assertIsNotNone(ex)
-        self.assertIn(("LOAD_FAST", 259, 0), list(ex))
-
-    def test_unspecialized_unpack(self):
-        # An example of an unspecialized opcode
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-                a, b = {1: 2, 3: 3}
-            assert a == 1 and b == 3
-            i = 0
-            while i < x:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("UNPACK_SEQUENCE", uops)
-
-    def test_pop_jump_if_false(self):
-        def testfunc(n):
-            i = 0
-            while i < n:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
-
-    def test_pop_jump_if_none(self):
-        def testfunc(a):
-            for x in a:
-                if x is None:
-                    x = 0
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
-
-    def test_pop_jump_if_not_none(self):
-        def testfunc(a):
-            for x in a:
-                if x is not None:
-                    x = 0
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc([1, 2, 3])
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_FALSE", uops)
-
-    def test_pop_jump_if_true(self):
-        def testfunc(n):
-            i = 0
-            while not i >= n:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_POP_JUMP_IF_TRUE", uops)
-
-    def test_jump_backward(self):
-        def testfunc(n):
-            i = 0
-            while i < n:
-                i += 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("JUMP_TO_TOP", uops)
-
-    def test_jump_forward(self):
-        def testfunc(n):
-            a = 0
-            while a < n:
-                if a < 0:
-                    a = -a
-                else:
-                    a = +a
-                a += 1
-            return a
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(10)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        # Since there is no JUMP_FORWARD instruction,
-        # look for indirect evidence: the += operator
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
-
-    def test_for_iter_range(self):
-        def testfunc(n):
-            total = 0
-            for i in range(n):
-                total += i
-            return total
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            total = testfunc(10)
-            self.assertEqual(total, 45)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        # for i, (opname, oparg) in enumerate(ex):
-        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_RANGE", uops)
-        # Verification that the jump goes past END_FOR
-        # is done by manual inspection of the output
-
-    def test_for_iter_list(self):
-        def testfunc(a):
-            total = 0
-            for i in a:
-                total += i
-            return total
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            a = list(range(10))
-            total = testfunc(a)
-            self.assertEqual(total, 45)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        # for i, (opname, oparg) in enumerate(ex):
-        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_LIST", uops)
-        # Verification that the jump goes past END_FOR
-        # is done by manual inspection of the output
-
-    def test_for_iter_tuple(self):
-        def testfunc(a):
-            total = 0
-            for i in a:
-                total += i
-            return total
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            a = tuple(range(10))
-            total = testfunc(a)
-            self.assertEqual(total, 45)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        # for i, (opname, oparg) in enumerate(ex):
-        #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_IS_ITER_EXHAUSTED_TUPLE", uops)
-        # Verification that the jump goes past END_FOR
-        # is done by manual inspection of the output
-
-    def test_list_edge_case(self):
-        def testfunc(it):
-            for x in it:
-                pass
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            a = [1, 2, 3]
-            it = iter(a)
-            testfunc(it)
-            a.append(4)
-            with self.assertRaises(StopIteration):
-                next(it)
 
 if __name__ == "__main__":
     unittest.main()

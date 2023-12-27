@@ -382,7 +382,7 @@ involving lots of brackets. Patch by Pablo Galindo.
 .. section: Core and Builtins
 
 :mod:`ctypes` now allocates memory on the stack instead of on the heap to
-pass arguments while calling a Python callback function. Patch by Dong-hee
+pass arguments while calling a Python callback function. Patch by Donghee
 Na.
 
 ..
@@ -441,7 +441,7 @@ Add a missing call to ``va_end()`` in ``Modules/_hashopenssl.c``.
 .. section: Core and Builtins
 
 Use :c:func:`PyObject_Vectorcall` while calling ctypes callback function.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -514,7 +514,7 @@ For performance, use the optimized string-searching implementations from
 .. section: Library
 
 :class:`~http.server.SimpleHTTPRequestHandler` now uses HTML5 grammar. Patch
-by Dong-hee Na.
+by Donghee Na.
 
 ..
 

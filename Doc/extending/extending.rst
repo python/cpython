@@ -242,7 +242,7 @@ needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
 
-We discuss the use of ``PyMODINIT_FUNC`` as a function return type later in this
+We discuss the use of :c:macro:`PyMODINIT_FUNC` as a function return type later in this
 sample.
 
 The :exc:`!spam.error` exception can be raised in your extension module using a
@@ -363,7 +363,7 @@ only non-\ ``static`` item defined in the module file::
        return PyModule_Create(&spammodule);
    }
 
-Note that PyMODINIT_FUNC declares the function as ``PyObject *`` return type,
+Note that :c:macro:`PyMODINIT_FUNC` declares the function as ``PyObject *`` return type,
 declares any special linkage declarations required by the platform, and for C++
 declares the function as ``extern "C"``.
 
@@ -735,7 +735,7 @@ Keyword Parameters for Extension Functions
 The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
 
    int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
-                                   const char *format, char *kwlist[], ...);
+                                   const char *format, char * const *kwlist, ...);
 
 The *arg* and *format* parameters are identical to those of the
 :c:func:`PyArg_ParseTuple` function.  The *kwdict* parameter is the dictionary of

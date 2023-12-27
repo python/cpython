@@ -11,14 +11,16 @@
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyNone_Type
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
-
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 
 #include <stdlib.h>               // strtol()
+
 
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
@@ -4705,6 +4707,14 @@ Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->fast_memo);
     Py_VISIT(self->reducer_override);
     Py_VISIT(self->buffer_callback);
+    PyMemoTable *memo = self->memo;
+    if (memo && memo->mt_table) {
+        Py_ssize_t i = memo->mt_allocated;
+        while (--i >= 0) {
+            Py_VISIT(memo->mt_table[i].me_key);
+        }
+    }
+
     return 0;
 }
 
@@ -5797,14 +5807,13 @@ instantiate(PyObject *cls, PyObject *args)
        into a newly created tuple. */
     assert(PyTuple_Check(args));
     if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
-        PyObject *func;
-        if (PyObject_GetOptionalAttr(cls, &_Py_ID(__getinitargs__), &func) < 0) {
+        int rc = PyObject_HasAttrWithError(cls, &_Py_ID(__getinitargs__));
+        if (rc < 0) {
             return NULL;
         }
-        if (func == NULL) {
+        if (!rc) {
             return PyObject_CallMethodOneArg(cls, &_Py_ID(__new__), cls);
         }
-        Py_DECREF(func);
     }
     return PyObject_CallObject(cls, args);
 }
@@ -7174,6 +7183,13 @@ Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->stack);
     Py_VISIT(self->pers_func);
     Py_VISIT(self->buffers);
+    PyObject **memo = self->memo;
+    if (memo) {
+        Py_ssize_t i = self->memo_size;
+        while (--i >= 0) {
+            Py_VISIT(memo[i]);
+        }
+    }
     return 0;
 }
 

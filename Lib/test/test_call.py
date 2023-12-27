@@ -65,7 +65,8 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):
-        msg = r"get expected at least 1 argument, got 0"
+        msg = (r"get\(\) takes at least 1 argument \(0 given\)|"
+               r"get expected at least 1 argument, got 0")
         self.assertRaisesRegex(TypeError, msg, {}.get)
 
         msg = r"expected 1 argument, got 0"
@@ -76,11 +77,13 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, getattr)
 
     def test_varargs1max(self):
-        msg = r"input expected at most 1 argument, got 2"
+        msg = (r"input\(\) takes at most 1 argument \(2 given\)|"
+               r"input expected at most 1 argument, got 2")
         self.assertRaisesRegex(TypeError, msg, input, 1, 2)
 
     def test_varargs2max(self):
-        msg = r"get expected at most 2 arguments, got 3"
+        msg = (r"get\(\) takes at most 2 arguments \(3 given\)|"
+               r"get expected at most 2 arguments, got 3")
         self.assertRaisesRegex(TypeError, msg, {}.get, 1, 2, 3)
 
     def test_varargs1_kw(self):
@@ -96,7 +99,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^list[.]index\(\) takes no keyword arguments$"
+        msg = r"^(list[.])?index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
@@ -914,6 +917,74 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         msg = "A.method_two_args() got multiple values for argument 'x'"
         with self.check_raises_type_error(msg):
             A().method_two_args("x", "y", x="oops")
+
+@cpython_only
+class TestErrorMessagesSuggestions(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_suggestion_includes(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertIn(f"Did you mean '{message}'?", str(cm.exception))
+
+    @contextlib.contextmanager
+    def check_suggestion_not_pressent(self):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertNotIn("Did you mean", str(cm.exception))
+
+    def test_unexpected_keyword_suggestion_valid_positions(self):
+        def foo(blech=None, /, aaa=None, *args, late1=None):
+            pass
+
+        cases = [
+            ("blach", None),
+            ("aa", "aaa"),
+            ("orgs", None),
+            ("late11", "late1"),
+        ]
+
+        for keyword, suggestion in cases:
+            with self.subTest(keyword):
+                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_pressent()
+                with ctx:
+                    foo(**{keyword:None})
+
+    def test_unexpected_keyword_suggestion_kinds(self):
+
+        def substitution(noise=None, more_noise=None, a = None, blech = None):
+            pass
+
+        def elimination(noise = None, more_noise = None, a = None, blch = None):
+            pass
+
+        def addition(noise = None, more_noise = None, a = None, bluchin = None):
+            pass
+
+        def substitution_over_elimination(blach = None, bluc = None):
+            pass
+
+        def substitution_over_addition(blach = None, bluchi = None):
+            pass
+
+        def elimination_over_addition(bluc = None, blucha = None):
+            pass
+
+        def case_change_over_substitution(BLuch=None, Luch = None, fluch = None):
+            pass
+
+        for func, suggestion in [
+            (addition, "bluchin"),
+            (substitution, "blech"),
+            (elimination, "blch"),
+            (addition, "bluchin"),
+            (substitution_over_elimination, "blach"),
+            (substitution_over_addition, "blach"),
+            (elimination_over_addition, "bluc"),
+            (case_change_over_substitution, "BLuch"),
+        ]:
+            with self.subTest(suggestion):
+                with self.check_suggestion_includes(suggestion):
+                    func(bluch=None)
 
 @cpython_only
 class TestRecursion(unittest.TestCase):

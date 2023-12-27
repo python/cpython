@@ -67,9 +67,8 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     positional host and port, with various optional keyword arguments
     following.  The return value is the same as loop.create_server().
 
-    Additional optional keyword arguments are loop (to set the event loop
-    instance to use) and limit (to set the buffer limit passed to the
-    StreamReader).
+    Additional optional keyword argument is limit (to set the buffer
+    limit passed to the StreamReader).
 
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
@@ -246,7 +245,19 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
+                def callback(task):
+                    exc = task.exception()
+                    if exc is not None:
+                        self._loop.call_exception_handler({
+                            'message': 'Unhandled exception in client_connected_cb',
+                            'exception': exc,
+                            'transport': transport,
+                        })
+                        transport.close()
+
                 self._task = self._loop.create_task(res)
+                self._task.add_done_callback(callback)
+
             self._strong_reader = None
 
     def connection_lost(self, exc):
@@ -395,9 +406,11 @@ class StreamWriter:
 
     def __del__(self, warnings=warnings):
         if not self._transport.is_closing():
-            self.close()
-            warnings.warn(f"unclosed {self!r}", ResourceWarning)
-
+            if self._loop.is_closed():
+                warnings.warn("loop is closed", ResourceWarning)
+            else:
+                self.close()
+                warnings.warn(f"unclosed {self!r}", ResourceWarning)
 
 class StreamReader:
 

@@ -39,7 +39,7 @@ except ImportError:
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/3.12/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -127,8 +127,8 @@ class Availability(SphinxDirective):
     # known platform, libc, and threading implementations
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
-        "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
-        "WASI", "Windows", "macOS",
+        "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
+        "Unix", "VxWorks", "WASI", "Windows", "macOS",
         # libc
         "BSD libc", "glibc", "musl",
         # POSIX platforms with pthreads
@@ -607,6 +607,13 @@ def parse_pdb_command(env, sig, signode):
     return fullname
 
 
+def parse_monitoring_event(env, sig, signode):
+    """Transform a monitoring event signature into RST nodes."""
+    signode += addnodes.desc_addname('sys.monitoring.events.', 'sys.monitoring.events.')
+    signode += addnodes.desc_name(sig, sig)
+    return sig
+
+
 def process_audit_events(app, doctree, fromdocname):
     for node in doctree.traverse(audit_event_list):
         break
@@ -707,6 +714,7 @@ def setup(app):
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
+    app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)

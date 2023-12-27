@@ -306,7 +306,7 @@ expect a function argument.
               itemgetter(*items)
 
    Return a callable object that fetches *item* from its operand using the
-   operand's :meth:`__getitem__` method.  If multiple items are specified,
+   operand's :meth:`~object.__getitem__` method.  If multiple items are specified,
    returns a tuple of lookup values.  For example:
 
    * After ``f = itemgetter(2)``, the call ``f(r)`` returns ``r[2]``.
@@ -326,7 +326,7 @@ expect a function argument.
                   return tuple(obj[item] for item in items)
           return g
 
-   The items can be any type accepted by the operand's :meth:`__getitem__`
+   The items can be any type accepted by the operand's :meth:`~object.__getitem__`
    method.  Dictionaries accept any :term:`hashable` value.  Lists, tuples, and
    strings accept an index or a slice:
 
