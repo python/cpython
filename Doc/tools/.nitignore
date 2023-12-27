@@ -37,7 +37,6 @@ Doc/library/audioop.rst
 Doc/library/bdb.rst
 Doc/library/cgi.rst
 Doc/library/chunk.rst
-Doc/library/cmd.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
