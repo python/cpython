@@ -1,0 +1,1 @@
+Enter the selected text when opening the "Replace" dialog.
