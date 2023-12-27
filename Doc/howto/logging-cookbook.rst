@@ -334,7 +334,7 @@ Suppose you configure logging with the following JSON:
 
 This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
 of severity ``ERROR`` and only events of this severity and higher will be tracked
-as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which 
+as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
 excludes those messages and add it to the relevant handler. This can be configured by
 adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
