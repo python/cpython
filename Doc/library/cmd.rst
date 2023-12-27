@@ -232,8 +232,8 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
 .. attribute:: Cmd.use_rawinput
 
    A flag, defaulting to true.  If true, :meth:`cmdloop` uses :func:`input` to
-   display a prompt and read the next command; if false, :data:`sys.stdout.write <sys.stdout>`
-   and :data:`sys.stdin.readline <sys.stdin>` are used. (This means that by importing
+   display a prompt and read the next command; if false, :data:`sys.stdout.write() <sys.stdout>`
+   and :data:`sys.stdin.readline() <sys.stdin>` are used. (This means that by importing
    :mod:`readline`, on systems that support it, the interpreter will automatically
    support :program:`Emacs`\ -like line editing  and command-history keystrokes.)
 
