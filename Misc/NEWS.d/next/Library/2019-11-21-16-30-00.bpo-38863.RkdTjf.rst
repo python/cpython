@@ -1,2 +1,0 @@
-Improve :func:`is_cgi` function in :mod:`http.server`, which enables processing
-the case that cgi directory is a child of another directory other than root.

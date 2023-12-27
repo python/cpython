@@ -10,7 +10,6 @@ from email import message
 from email.mime.nonmultipart import MIMENonMultipart
 
 
-
 class MIMEMessage(MIMENonMultipart):
     """Class representing message/* MIME documents."""
 
