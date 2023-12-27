@@ -2636,6 +2636,35 @@ class TestMove(BaseTest, unittest.TestCase):
         finally:
             os.rmdir(dst_dir)
 
+    # bpo-26791: Check that a symlink to a directory can
+    #            be moved into that directory.
+    @mock_rename
+    def _test_move_symlink_to_dir_into_dir(self, dst):
+        src = os.path.join(self.src_dir, 'linktodir')
+        dst_link = os.path.join(self.dst_dir, 'linktodir')
+        os.symlink(self.dst_dir, src, target_is_directory=True)
+        shutil.move(src, dst)
+        self.assertTrue(os.path.islink(dst_link))
+        self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+        self.assertFalse(os.path.exists(src))
+
+        # Repeat the move operation with the destination
+        # symlink already in place (should raise shutil.Error).
+        os.symlink(self.dst_dir, src, target_is_directory=True)
+        with self.assertRaises(shutil.Error):
+            shutil.move(src, dst)
+        self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+        self.assertTrue(os.path.exists(src))
+
+    @os_helper.skip_unless_symlink
+    def test_move_symlink_to_dir_into_dir(self):
+        self._test_move_symlink_to_dir_into_dir(self.dst_dir)
+
+    @os_helper.skip_unless_symlink
+    def test_move_symlink_to_dir_into_symlink_to_dir(self):
+        dst = os.path.join(self.src_dir, 'otherlinktodir')
+        os.symlink(self.dst_dir, dst, target_is_directory=True)
+        self._test_move_symlink_to_dir_into_dir(dst)
 
     @os_helper.skip_unless_dac_override
     @unittest.skipUnless(hasattr(os, 'lchflags')
