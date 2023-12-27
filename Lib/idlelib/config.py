@@ -661,13 +661,6 @@ class IdleConf:
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
 
-        if sys.platform == "darwin":
-        #if macosx.isAquaTk():
-            # XXX: ^^^ This test should be macosx.isAquaTk(),
-            # but that has some side effect that results in not
-            # calling the quit event handler.
-            del keyBindings['<<close-all-windows>>']
-
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
                     self.defaultCfg['keys'].has_section(keySetName)):
