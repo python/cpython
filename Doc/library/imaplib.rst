@@ -204,15 +204,26 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.append(mailbox, flags, date_time, message)
 
-   Append *message* to a specified mailbox.
+   Append *message* to a named *mailbox*.
    
-   *mailbox* ( ``string``): name of the mailbox where the message should be appended
-   
-   *flags* (list of ``string`` ): The flags parameter is a sequence of flags associated with the message. Flags are used to mark messages with certain attributes or states. Common flags include ``\\Seen`` (marks the message as read), ``\\FlagName`` (custom flags),  as (``flags = ["\\Seen", "\\FlagName]``) etc.
+   *flags* is a space-separated string containing IMAP flags tokens.
+   Must start with ``\``.
 
-   *date_time* (``string``): date and time associated with the message. Often of the format *"DD-Mon-YYYY HH:MM:SS" (e.g., "01-Jan-2023 12:00:00")*
-   
-   *message* (``string``): This parameter is the actual message that you want to append to the specified mailbox. This should be a string representing the entire email message, including headers and body.
+   System flags defined in :rfc:`3501` are:
+
+   * ``\Seen`` - Message has been read.
+   * ``\Answered`` - Message has been answered.
+   * ``\Flagged`` - Message is "flagged" for urgent/special attention.
+   * ``\Deleted`` - Message is "deleted" for removal by later ``EXPUNGE``.
+   * ``\Draft`` - Message has not completed composition (marked as a draft).
+   * ``\Recent`` - Message is "recently" arrived in this mailbox.
+
+
+   *date_time* is the date and time associated with the message.
+   Often of the format *"DD-Mon-YYYY HH:MM:SS" (e.g., "01-Jan-2023 12:00:00")*.
+
+   *message* is a string representing the entire email message, including
+   headers and body.
 
 
 .. method:: IMAP4.authenticate(mechanism, authobject)
