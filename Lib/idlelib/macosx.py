@@ -216,12 +216,10 @@ def overrideRootMenu(root, flist):
     root.bind('<<open-config-dialog>>', config_dialog)
     root.createcommand('::tk::mac::ShowPreferences', config_dialog)
     if flist:
-        root.bind('<<close-all-windows>>', flist.close_all_callback)
-
         # The binding above doesn't reliably work on all versions of Tk
         # on macOS. Adding command definition below does seem to do the
         # right thing for now.
-        root.createcommand('::tk::mac::Quit', lambda: "break")
+        root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
