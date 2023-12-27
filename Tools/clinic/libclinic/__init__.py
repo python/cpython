@@ -1,6 +1,6 @@
 from typing import Final
 
-from .error import (
+from .errors import (
     ClinicError,
 )
 from .formatting import (

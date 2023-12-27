@@ -3,7 +3,7 @@ import re
 import sys
 from typing import NoReturn
 
-from libclinic.error import ParseError
+from libclinic.errors import ParseError
 
 
 TokenAndCondition = tuple[str, str]
