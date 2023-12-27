@@ -1,2 +1,0 @@
-The bytecode compiler now attempts to apply runtime stack manipulations at
-compile-time (whenever it is feasible to do so).

@@ -6,14 +6,13 @@
               representations.
 
 .. index::
-   module: uu
-   module: base64
+   pair: module; base64
 
 --------------
 
 The :mod:`binascii` module contains a number of methods to convert between
 binary and various ASCII-encoded binary representations. Normally, you will not
-use these functions directly but use wrapper modules like :mod:`uu` or
+use these functions directly but use wrapper modules like
 :mod:`base64` instead. The :mod:`binascii` module contains
 low-level functions written in C for greater speed that are used by the
 higher-level modules.
@@ -49,7 +48,7 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, strict_mode=False)
+.. function:: a2b_base64(string, /, *, strict_mode=False)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
@@ -58,10 +57,11 @@ The :mod:`binascii` module defines the following functions:
    data will raise :exc:`binascii.Error`.
 
    Valid base64:
-      * Conforms to :rfc:`3548`.
-      * Contains only characters from the base64 alphabet.
-      * Contains no excess data after padding (including excess padding, newlines, etc.).
-      * Does not start with a padding.
+
+   * Conforms to :rfc:`3548`.
+   * Contains only characters from the base64 alphabet.
+   * Contains no excess data after padding (including excess padding, newlines, etc.).
+   * Does not start with a padding.
 
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.
@@ -107,7 +107,7 @@ The :mod:`binascii` module defines the following functions:
 
 .. function:: crc32(data[, value])
 
-   Compute CRC-32, the 32-bit checksum of *data*, starting with an
+   Compute CRC-32, the unsigned 32-bit checksum of *data*, starting with an
    initial CRC of *value*.  The default initial CRC is zero.  The algorithm
    is consistent with the ZIP file checksum.  Since the algorithm is designed for
    use as a checksum algorithm, it is not suitable for use as a general hash
@@ -121,9 +121,6 @@ The :mod:`binascii` module defines the following functions:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
-      To generate the same numeric value across all Python versions and
-      platforms, use ``crc32(data) & 0xffffffff``.
-
 
 .. function:: b2a_hex(data[, sep[, bytes_per_sep=1]])
               hexlify(data[, sep[, bytes_per_sep=1]])
@@ -181,9 +178,6 @@ The :mod:`binascii` module defines the following functions:
    Module :mod:`base64`
       Support for RFC compliant base64-style encoding in base 16, 32, 64,
       and 85.
-
-   Module :mod:`uu`
-      Support for UU encoding used on Unix.
 
    Module :mod:`quopri`
       Support for quoted-printable encoding used in MIME email messages.

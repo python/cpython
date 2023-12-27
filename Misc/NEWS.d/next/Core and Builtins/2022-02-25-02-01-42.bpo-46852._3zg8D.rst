@@ -1,3 +1,0 @@
-Rename the private undocumented ``float.__set_format__()`` method to
-``float.__setformat__()`` to fix a typo introduced in Python 3.7. The method
-is only used by test_float. Patch by Victor Stinner.

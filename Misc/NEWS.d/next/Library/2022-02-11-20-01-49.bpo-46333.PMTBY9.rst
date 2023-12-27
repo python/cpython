@@ -1,3 +1,0 @@
-The :meth:`__repr__` method of :class:`typing.ForwardRef` now
-includes the ``module`` parameter of :class:`typing.ForwardRef`
-when it is set.

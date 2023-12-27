@@ -102,7 +102,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_ctypes\ctypes.h" />
-    <ClInclude Include="..\Modules\_ctypes\ctypes_dlfcn.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ctypes\_ctypes.c" />

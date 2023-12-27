@@ -1,1 +1,0 @@
-Make various module ``__getattr__`` AttributeErrors more closely match a typical AttributeError

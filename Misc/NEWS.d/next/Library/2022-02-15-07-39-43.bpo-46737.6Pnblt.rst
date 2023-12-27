@@ -1,2 +1,0 @@
-:func:`random.gauss` and :func:`random.normalvariate` now have default
-arguments.
