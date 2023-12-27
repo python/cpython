@@ -666,9 +666,14 @@ callable object (normally a user-defined function).
    single: __name__ (method attribute)
    single: __module__ (method attribute)
 
-Special read-only attributes:
+Special read-only attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
+   :header-rows: 1
+
+   * - Attribute
+     - Meaning
 
    * - .. attribute:: method.__self__
      - Refers to the class instance object to which the method is
