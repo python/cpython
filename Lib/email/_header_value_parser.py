@@ -781,7 +781,7 @@ class MimeParameters(TokenList):
                     else:
                         try:
                             value = value.decode(charset, 'surrogateescape')
-                        except LookupError:
+                        except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for
                             # unknown character set to make it easy to find,
                             # because otherwise unknown charset is a silent
@@ -1218,12 +1218,21 @@ def get_bare_quoted_string(value):
         if value[0] in WSP:
             token, value = get_fws(value)
         elif value[:2] == '=?':
+            valid_ew = False
             try:
                 token, value = get_encoded_word(value)
                 bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
                     "encoded word inside quoted string"))
+                valid_ew = True
             except errors.HeaderParseError:
                 token, value = get_qcontent(value)
+            # Collapse the whitespace between two encoded words that occur in a
+            # bare-quoted-string.
+            if valid_ew and len(bare_quoted_string) > 1:
+                if (bare_quoted_string[-1].token_type == 'fws' and
+                        bare_quoted_string[-2].token_type == 'encoded-word'):
+                    bare_quoted_string[-1] = EWWhiteSpaceTerminal(
+                        bare_quoted_string[-1], 'fws')
         else:
             token, value = get_qcontent(value)
         bare_quoted_string.append(token)
@@ -1978,7 +1987,7 @@ def get_address_list(value):
         try:
             token, value = get_address(value)
             address_list.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2087,7 +2096,7 @@ def get_msg_id(value):
     except errors.HeaderParseError:
         try:
             token, value = get_no_fold_literal(value)
-        except errors.HeaderParseError as e:
+        except errors.HeaderParseError:
             try:
                 token, value = get_domain(value)
                 msg_id.defects.append(errors.ObsoleteHeaderDefect(
@@ -2370,7 +2379,7 @@ def get_section(value):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
-        section.defects.append(errors.InvalidHeaderError(
+        section.defects.append(errors.InvalidHeaderDefect(
                 "section number has an invalid leading 0"))
     section.number = int(digits)
     section.append(ValueTerminal(digits, 'digits'))
@@ -2434,7 +2443,6 @@ def get_parameter(value):
         raise errors.HeaderParseError("Parameter not followed by '='")
     param.append(ValueTerminal('=', 'parameter-separator'))
     value = value[1:]
-    leader = None
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         param.append(token)
@@ -2559,7 +2567,7 @@ def parse_mime_parameters(value):
         try:
             token, value = get_parameter(value)
             mime_parameters.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2617,7 +2625,6 @@ def parse_content_type_header(value):
     don't do that.
     """
     ctype = ContentType()
-    recover = False
     if not value:
         ctype.defects.append(errors.HeaderMissingRequiredValue(
             "Missing content type specification"))

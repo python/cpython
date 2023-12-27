@@ -7,8 +7,16 @@ Codec registry and support functions
 
    Register a new codec search function.
 
-   As side effect, this tries to load the :mod:`encodings` package, if not yet
+   As side effect, this tries to load the :mod:`!encodings` package, if not yet
    done, to make sure that it is always first in the list of search functions.
+
+.. c:function:: int PyCodec_Unregister(PyObject *search_function)
+
+   Unregister a codec search function and clear the registry's cache.
+   If the search function is not registered, do nothing.
+   Return 0 on success. Raise an exception and return -1 on error.
+
+   .. versionadded:: 3.10
 
 .. c:function:: int PyCodec_KnownEncoding(const char *encoding)
 

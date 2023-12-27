@@ -1,1 +1,0 @@
-``MainThread.native_id`` is now correctly reset in child processes spawned using :class:`multiprocessing.Process`, instead of retaining the parent's value.
