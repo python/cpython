@@ -31,7 +31,6 @@ import sys
 
 from tkinter.font import Font
 import idlelib
-from idlelib import macosx
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
