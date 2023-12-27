@@ -2039,6 +2039,59 @@ class TestTypeRegistration(TestCase):
                          NS(x='my_type{1}', y='my_type{42}'))
 
 
+# ===============================
+# Test Interspersed args and '--'
+# ===============================
+
+class TestInterspersedArgs(TestCase):
+    def setUp(self):
+        self.parser = ErrorRaisingArgumentParser()
+        self.parser.add_argument('-a', action='store_true')
+        self.parser.add_argument('foo')
+        self.parser.add_argument('rem', nargs='*')
+
+    def test_simple(self):
+        self.assertEqual(self.parser.parse_args('-a 3 5 6 9'.split()),
+                         NS(a=True, foo='3', rem=['5', '6', '9']))
+        self.assertEqual(self.parser.parse_args('3 -a'.split()),
+                         NS(a=True, foo='3', rem=[]))
+        self.assertEqual(self.parser.parse_args('3 4 5 -a'.split()),
+                         NS(a=True, foo='3', rem=['4', '5']))
+
+    def test_hyphens(self):
+        self.assertEqual(self.parser.parse_args('-a -- 3 5 6 9'.split()),
+                         NS(a=True, foo='3', rem=['5', '6', '9']))
+        self.assertEqual(self.parser.parse_args('-- 3 -a'.split()),
+                         NS(a=False, foo='3', rem=['-a']))
+        self.assertEqual(self.parser.parse_args('-- 3 4 5 -a'.split()),
+                         NS(a=False, foo='3', rem=['4', '5', '-a']))
+
+    def test_interspersed_args(self):
+        self.parser.disable_interspersed_args()
+        self.assertEqual(self.parser.parse_args('-a 3 5 6 9'.split()),
+                         NS(a=True, foo='3', rem=['5', '6', '9']))
+        self.assertEqual(self.parser.parse_args('3 -a'.split()),
+                         NS(a=False, foo='3', rem=['-a']))
+        self.assertEqual(self.parser.parse_args('3 4 5 -a'.split()),
+                         NS(a=False, foo='3', rem=['4', '5', '-a']))
+
+        self.parser.enable_interspersed_args()
+        self.assertEqual(self.parser.parse_args('3 4 5 -a'.split()),
+                         NS(a=True, foo='3', rem=['4', '5']))
+
+    def test_with_remainder(self):
+        self.parser = ErrorRaisingArgumentParser()
+        self.parser.add_argument('-a', action='store_true')
+        self.parser.add_argument('-b')
+        self.parser.add_argument('rem', nargs=argparse.REMAINDER)
+        self.assertEqual(self.parser.parse_args('-b 4 -a c -b 5'.split()),
+                         NS(a=True, b='4', rem=['c', '-b', '5']))
+
+        self.parser.disable_interspersed_args()
+        self.assertEqual(self.parser.parse_args('-b 4 -a c -b 5'.split()),
+                         NS(a=True, b='4', rem=['c', '-b', '5']))
+
+
 # ============
 # Action tests
 # ============
