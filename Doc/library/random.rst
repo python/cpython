@@ -433,14 +433,12 @@ Alternative Generator
       Override this method in subclasses to customise the :meth:`~random.random`
       behaviour of :class:`!Random` instances.
 
-   Optionally, a new generator can also supply the following method:
+   Optionally, a custom generator subclass can also supply the following method:
 
    .. method:: Random.getrandbits(k)
 
       Override this method in subclasses to customise the
-      :meth:`~random.getrandbits` behaviour of :class:`!Random` instances. This in
-      turn allows :meth:`!Random.randrange` to produce selections over an
-      arbitrarily large range.
+      :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
 
 
 .. class:: SystemRandom([seed])
