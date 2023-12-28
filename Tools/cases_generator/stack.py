@@ -1,8 +1,22 @@
-import sys
-from analyzer import StackItem
+import re
+from analyzer import StackItem, Instruction, Uop
 from dataclasses import dataclass
-from formatting import maybe_parenthesize
 from cwriter import CWriter
+
+
+def maybe_parenthesize(sym: str) -> str:
+    """Add parentheses around a string if it contains an operator
+       and is not already parenthesized.
+
+    An exception is made for '*' which is common and harmless
+    in the context where the symbolic size is used.
+    """
+    if sym.startswith("(") and sym.endswith(")"):
+        return sym
+    if re.match(r"^[\s\w*]+$", sym):
+        return sym
+    else:
+        return f"({sym})"
 
 
 def var_size(var: StackItem) -> str:
@@ -15,19 +29,31 @@ def var_size(var: StackItem) -> str:
     else:
         return var.size
 
-
+@dataclass
 class StackOffset:
     "The stack offset of the virtual base of the stack from the physical stack pointer"
 
-    def __init__(self) -> None:
-        self.popped: list[str] = []
-        self.pushed: list[str] = []
+    popped: list[str]
+    pushed: list[str]
+
+    @staticmethod
+    def empty() -> "StackOffset":
+        return StackOffset([], [])
 
     def pop(self, item: StackItem) -> None:
         self.popped.append(var_size(item))
 
     def push(self, item: StackItem) -> None:
         self.pushed.append(var_size(item))
+
+    def __sub__(self, other: "StackOffset") -> "StackOffset":
+        return StackOffset(
+            self.popped + other.pushed,
+            self.pushed + other.popped
+        )
+
+    def __neg__(self) -> "StackOffset":
+        return StackOffset(self.pushed, self.popped)
 
     def simplify(self) -> None:
         "Remove matching values from both the popped and pushed list"
@@ -88,9 +114,9 @@ class SizeMismatch(Exception):
 
 class Stack:
     def __init__(self) -> None:
-        self.top_offset = StackOffset()
-        self.base_offset = StackOffset()
-        self.peek_offset = StackOffset()
+        self.top_offset = StackOffset.empty()
+        self.base_offset = StackOffset.empty()
+        self.peek_offset = StackOffset.empty()
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
@@ -148,7 +174,7 @@ class Stack:
                 cast = "(PyObject *)" if var.type else ""
                 if var.name != "unused" and not var.is_array():
                     if var.condition:
-                        out.emit(f" if ({var.condition}) ")
+                        out.emit(f"if ({var.condition}) ")
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
                     )
@@ -166,3 +192,15 @@ class Stack:
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
+
+
+def get_stack_effect(inst: Instruction) -> Stack:
+    stack = Stack()
+    for uop in inst.parts:
+        if not isinstance(uop, Uop):
+            continue
+        for var in reversed(uop.stack.inputs):
+            stack.pop(var)
+        for i, var in enumerate(uop.stack.outputs):
+            stack.push(var)
+    return stack

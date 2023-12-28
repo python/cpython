@@ -806,7 +806,7 @@
             PyObject *exc_value;
             exc_value = stack_pointer[-1];
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            Py_XSETREF(exc_info->exc_value, exc_value);
+            Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
             stack_pointer += -1;
             break;
         }
@@ -1126,8 +1126,8 @@
             }
             null = NULL;
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + ((oparg & 1));
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -1162,8 +1162,8 @@
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + ((oparg & 1));
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -1180,8 +1180,8 @@
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + ((oparg & 1));
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -1534,7 +1534,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error_tier_two;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + (((0) ? 1 : 0));
+            stack_pointer += -2 + ((0) ? 1 : 0);
             break;
         }
 
@@ -1612,8 +1612,8 @@
                 if (attr == NULL) goto pop_1_error_tier_two;
             }
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = self_or_null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = self_or_null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1652,8 +1652,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1686,8 +1686,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1730,8 +1730,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1750,8 +1750,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1778,8 +1778,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -2467,8 +2467,8 @@
             assert(_PyType_HasFeature(Py_TYPE(attr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             self = owner;
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
-            stack_pointer += (((1) ? 1 : 0));
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -2487,8 +2487,8 @@
             attr = Py_NewRef(descr);
             self = owner;
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
-            stack_pointer += (((1) ? 1 : 0));
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -2504,7 +2504,7 @@
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
             stack_pointer[-1] = attr;
-            stack_pointer += (((0) ? 1 : 0));
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -2521,7 +2521,7 @@
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
             stack_pointer[-1] = attr;
-            stack_pointer += (((0) ? 1 : 0));
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -2550,8 +2550,8 @@
             attr = Py_NewRef(descr);
             self = owner;
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
-            stack_pointer += (((1) ? 1 : 0));
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -2663,7 +2663,7 @@
                 goto exit_unwind;
             }
             #endif
-            stack_pointer += (((0) ? 1 : 0));
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -3199,16 +3199,16 @@
             PyObject *start;
             PyObject *slice;
             oparg = CURRENT_OPARG();
-        if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
-            stop = stack_pointer[-1 - (((oparg == 3) ? 1 : 0))];
-            start = stack_pointer[-2 - (((oparg == 3) ? 1 : 0))];
+            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
+            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
+            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
-            if (slice == NULL) { stack_pointer += -2 - (((oparg == 3) ? 1 : 0)); goto error_tier_two; }
-            stack_pointer[-2 - (((oparg == 3) ? 1 : 0))] = slice;
-            stack_pointer += -1 - (((oparg == 3) ? 1 : 0));
+            if (slice == NULL) { stack_pointer += -2 - ((oparg == 3) ? 1 : 0); goto error_tier_two; }
+            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
+            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
             break;
         }
 

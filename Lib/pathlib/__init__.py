@@ -59,6 +59,7 @@ class PurePath(_abc.PurePathBase):
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
     )
+    pathmod = os.path
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -98,6 +99,9 @@ class PurePath(_abc.PurePathBase):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
         return (self.__class__, self.parts)
+
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def __fspath__(self):
         return str(self)
@@ -265,6 +269,24 @@ class Path(_abc.PathBase, PurePath):
         if "b" not in mode:
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
+
+    def read_text(self, encoding=None, errors=None, newline=None):
+        """
+        Open the file in text mode, read it, and close the file.
+        """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = io.text_encoding(encoding)
+        return _abc.PathBase.read_text(self, encoding, errors, newline)
+
+    def write_text(self, data, encoding=None, errors=None, newline=None):
+        """
+        Open the file in text mode, write to it, and close the file.
+        """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = io.text_encoding(encoding)
+        return _abc.PathBase.write_text(self, data, encoding, errors, newline)
 
     def iterdir(self):
         """Yield path objects of the directory contents.

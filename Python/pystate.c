@@ -236,6 +236,8 @@ tstate_is_bound(PyThreadState *tstate)
 static void bind_gilstate_tstate(PyThreadState *);
 static void unbind_gilstate_tstate(PyThreadState *);
 
+static void tstate_mimalloc_bind(PyThreadState *);
+
 static void
 bind_tstate(PyThreadState *tstate)
 {
@@ -255,6 +257,9 @@ bind_tstate(PyThreadState *tstate)
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
+
+    // mimalloc state needs to be initialized from the active thread.
+    tstate_mimalloc_bind(tstate);
 
     tstate->_status.bound = 1;
 }
@@ -1533,6 +1538,8 @@ PyThreadState_Clear(PyThreadState *tstate)
         tstate->on_delete(tstate->on_delete_data);
     }
 
+    _PyThreadState_ClearMimallocHeaps(tstate);
+
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
@@ -1951,6 +1958,20 @@ _PyThreadState_Bind(PyThreadState *tstate)
     }
 }
 
+#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+uintptr_t
+_Py_GetThreadLocal_Addr(void)
+{
+#ifdef HAVE_THREAD_LOCAL
+    // gh-112535: Use the address of the thread-local PyThreadState variable as
+    // a unique identifier for the current thread. Each thread has a unique
+    // _Py_tss_tstate variable with a unique address.
+    return (uintptr_t)&_Py_tss_tstate;
+#else
+#  error "no supported thread-local variable storage classifier"
+#endif
+}
+#endif
 
 /***********************************/
 /* routines for advanced debuggers */
@@ -2494,4 +2515,52 @@ _PyThreadState_MustExit(PyThreadState *tstate)
         return 0;
     }
     return 1;
+}
+
+/********************/
+/* mimalloc support */
+/********************/
+
+static void
+tstate_mimalloc_bind(PyThreadState *tstate)
+{
+#ifdef Py_GIL_DISABLED
+    struct _mimalloc_thread_state *mts = &((_PyThreadStateImpl*)tstate)->mimalloc;
+
+    // Initialize the mimalloc thread state. This must be called from the
+    // same thread that will use the thread state. The "mem" heap doubles as
+    // the "backing" heap.
+    mi_tld_t *tld = &mts->tld;
+    _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
+
+    // Initialize each heap
+    for (Py_ssize_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
+        _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none());
+    }
+
+    // By default, object allocations use _Py_MIMALLOC_HEAP_OBJECT.
+    // _PyObject_GC_New() and similar functions temporarily override this to
+    // use one of the GC heaps.
+    mts->current_object_heap = &mts->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+#endif
+}
+
+void
+_PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
+{
+#ifdef Py_GIL_DISABLED
+    if (!tstate->_status.bound) {
+        // The mimalloc heaps are only initialized when the thread is bound.
+        return;
+    }
+
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    for (Py_ssize_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
+        // Abandon all segments in use by this thread. This pushes them to
+        // a shared pool to later be reclaimed by other threads. It's important
+        // to do this before the thread state is destroyed so that objects
+        // remain visible to the GC.
+        _mi_heap_collect_abandon(&tstate_impl->mimalloc.heaps[i]);
+    }
+#endif
 }

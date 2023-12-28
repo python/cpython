@@ -297,24 +297,20 @@ static bool _mi_heap_init(void) {
     mi_thread_data_t* td = mi_thread_data_zalloc();
     if (td == NULL) return false;
 
-    mi_tld_t*  tld = &td->tld;
-    mi_heap_t* heap = &td->heap;
+    _mi_tld_init(&td->tld, &td->heap);
+    _mi_heap_init_ex(&td->heap, &td->tld, _mi_arena_id_none());
+    _mi_heap_set_default_direct(&td->heap);
+  }
+  return false;
+}
+
+void _mi_tld_init(mi_tld_t* tld, mi_heap_t* bheap) {
     _mi_memcpy_aligned(tld, &tld_empty, sizeof(*tld));
-    _mi_memcpy_aligned(heap, &_mi_heap_empty, sizeof(*heap));
-    heap->thread_id = _mi_thread_id();
-    _mi_random_init(&heap->random);
-    heap->cookie  = _mi_heap_random_next(heap) | 1;
-    heap->keys[0] = _mi_heap_random_next(heap);
-    heap->keys[1] = _mi_heap_random_next(heap);
-    heap->tld = tld;
-    tld->heap_backing = heap;
-    tld->heaps = heap;
     tld->segments.stats = &tld->stats;
     tld->segments.os = &tld->os;
     tld->os.stats = &tld->stats;
-    _mi_heap_set_default_direct(heap);
-  }
-  return false;
+    tld->heap_backing = bheap;
+    tld->heaps = bheap;
 }
 
 // Free the thread local default heap (called from `mi_thread_done`)
