@@ -2186,14 +2186,16 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(prog="pdb",
+                                     usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
                                      description=_usage,
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)
 
+    # We need to maunally get the script from args, because the first positional
+    # arguments could be either the script we need to debug, or the argument
+    # to the -m module
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-m', metavar='module')
-    group.add_argument('pyfile', nargs='?')
+    parser.add_argument('-m', metavar='module')
     parser.add_argument('args', nargs="*")
 
     if len(sys.argv) == 1:
@@ -2208,7 +2210,11 @@ def main():
         file = opts.m
         target = _ModuleTarget(file)
     else:
-        file = opts.pyfile
+        # No module is given, use the first positional argument as the script to debug
+        if not opts.args:
+            parser.error("one of the arguments -m pyfile is required")
+        file = opts.args[0]
+        opts.args = opts.args[1:]
         target = _ScriptTarget(file)
 
     target.check()
