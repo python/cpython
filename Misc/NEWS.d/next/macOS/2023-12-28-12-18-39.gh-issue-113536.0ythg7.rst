@@ -1,1 +1,1 @@
-`os.waitid` is now available on macOS
+:func:`os.waitid` is now available on macOS
