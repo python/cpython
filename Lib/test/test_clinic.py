@@ -22,7 +22,7 @@ with test_tools.imports_under_tool('clinic'):
 
 
 def _make_clinic(*, filename='clinic_tests'):
-    clang = clinic.CLanguage(None)
+    clang = clinic.CLanguage(filename)
     c = clinic.Clinic(clang, filename=filename, limited_capi=False)
     c.block_parser = clinic.BlockParser('', clang)
     return c
@@ -3920,7 +3920,7 @@ class ClinicReprTests(unittest.TestCase):
         self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
 
     def test_Monitor_repr(self):
-        monitor = clinic.cpp.Monitor()
+        monitor = libclinic.cpp.Monitor("test.c")
         self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
 
         monitor.line_number = 42
