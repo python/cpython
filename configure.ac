@@ -4757,6 +4757,7 @@ AC_CHECK_FUNCS([ \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
   pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
   pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
@@ -5101,6 +5102,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -6807,7 +6809,12 @@ AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 AS_VAR_IF([GNULD], [yes], [
   rpath_arg="-Wl,--enable-new-dtags,-rpath="
 ], [
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 ])
 
 AC_MSG_CHECKING([for --with-openssl-rpath])

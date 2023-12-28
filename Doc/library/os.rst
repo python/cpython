@@ -1001,10 +1001,13 @@ as internal buffering of data.
 
    .. audit-event:: os.chmod path,mode,dir_fd os.fchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
+
+   .. versionchanged:: 3.13
+      Added support on Windows.
 
 
 .. function:: fchown(fd, uid, gid)
@@ -2077,7 +2080,8 @@ features:
       Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.13
-      Added support for the *follow_symlinks* argument on Windows.
+      Added support for a file descriptor and the *follow_symlinks* argument
+      on Windows.
 
 
 .. function:: chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True)
@@ -4570,7 +4574,8 @@ written in Python, such as a mail server's external command delivery program.
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
    The positional-only arguments *path*, *args*, and *env* are similar to
-   :func:`execve`.
+   :func:`execve`. *env* is allowed to be ``None``, in which case current
+   process' environment is used.
 
    The *path* parameter is the path to the executable file.  The *path* should
    contain a directory.  Use :func:`posix_spawnp` to pass an executable file
@@ -4600,10 +4605,17 @@ written in Python, such as a mail server's external command delivery program.
 
       Performs ``os.dup2(fd, new_fd)``.
 
+   .. data:: POSIX_SPAWN_CLOSEFROM
+
+      (``os.POSIX_SPAWN_CLOSEFROM``, *fd*)
+
+      Performs ``os.closerange(fd, INF)``.
+
    These tuples correspond to the C library
    :c:func:`!posix_spawn_file_actions_addopen`,
-   :c:func:`!posix_spawn_file_actions_addclose`, and
-   :c:func:`!posix_spawn_file_actions_adddup2` API calls used to prepare
+   :c:func:`!posix_spawn_file_actions_addclose`,
+   :c:func:`!posix_spawn_file_actions_adddup2`, and
+   :c:func:`!posix_spawn_file_actions_addclosefrom_np` API calls used to prepare
    for the :c:func:`!posix_spawn` call itself.
 
    The *setpgroup* argument will set the process group of the child to the value
@@ -4644,6 +4656,13 @@ written in Python, such as a mail server's external command delivery program.
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      *env* parameter accepts ``None``.
+
+   .. versionchanged:: 3.13
+      ``os.POSIX_SPAWN_CLOSEFROM`` is available on platforms where
+      :c:func:`!posix_spawn_file_actions_addclosefrom_np` exists.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
@@ -4966,6 +4985,9 @@ written in Python, such as a mail server's external command delivery program.
    that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note::
+      This function is not available on macOS.
 
    .. versionadded:: 3.3
 

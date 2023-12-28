@@ -1597,8 +1597,9 @@ static PyGetSetDef type_getsets[] = {
 };
 
 static PyObject *
-type_repr(PyTypeObject *type)
+type_repr(PyObject *self)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
     if (type->tp_name == NULL) {
         // type_repr() called before the type is fully initialized
         // by PyType_Ready().
@@ -1630,8 +1631,9 @@ type_repr(PyTypeObject *type)
 }
 
 static PyObject *
-type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
+type_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
     PyObject *obj;
     PyThreadState *tstate = _PyThreadState_GET();
 
@@ -4917,14 +4919,15 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
 /* This is similar to PyObject_GenericGetAttr(),
    but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
 PyObject *
-_Py_type_getattro(PyTypeObject *type, PyObject *name)
+_Py_type_getattro(PyObject *type, PyObject *name)
 {
-    return _Py_type_getattro_impl(type, name, NULL);
+    return _Py_type_getattro_impl((PyTypeObject *)type, name, NULL);
 }
 
 static int
-type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
+type_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
     int res;
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         PyErr_Format(
@@ -5069,8 +5072,10 @@ _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
 
 
 static void
-type_dealloc(PyTypeObject *type)
+type_dealloc(PyObject *self)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
+
     // Assert this is a heap-allocated type object
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
@@ -5257,8 +5262,10 @@ PyDoc_STRVAR(type_doc,
 "type(name, bases, dict, **kwds) -> a new type");
 
 static int
-type_traverse(PyTypeObject *type, visitproc visit, void *arg)
+type_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
+
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
@@ -5286,8 +5293,10 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 }
 
 static int
-type_clear(PyTypeObject *type)
+type_clear(PyObject *self)
 {
+    PyTypeObject *type = (PyTypeObject *)self;
+
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -5334,9 +5343,9 @@ type_clear(PyTypeObject *type)
 }
 
 static int
-type_is_gc(PyTypeObject *type)
+type_is_gc(PyObject *type)
 {
-    return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
+    return ((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
 
@@ -5349,28 +5358,28 @@ PyTypeObject PyType_Type = {
     "type",                                     /* tp_name */
     sizeof(PyHeapTypeObject),                   /* tp_basicsize */
     sizeof(PyMemberDef),                        /* tp_itemsize */
-    (destructor)type_dealloc,                   /* tp_dealloc */
+    type_dealloc,                               /* tp_dealloc */
     offsetof(PyTypeObject, tp_vectorcall),      /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)type_repr,                        /* tp_repr */
+    type_repr,                                  /* tp_repr */
     &type_as_number,                            /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    (ternaryfunc)type_call,                     /* tp_call */
+    type_call,                                  /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)_Py_type_getattro,            /* tp_getattro */
-    (setattrofunc)type_setattro,                /* tp_setattro */
+    _Py_type_getattro,                          /* tp_getattro */
+    type_setattro,                              /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
     Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TYPE_SUBCLASS |
     Py_TPFLAGS_HAVE_VECTORCALL |
     Py_TPFLAGS_ITEMS_AT_END,                    /* tp_flags */
     type_doc,                                   /* tp_doc */
-    (traverseproc)type_traverse,                /* tp_traverse */
-    (inquiry)type_clear,                        /* tp_clear */
+    type_traverse,                              /* tp_traverse */
+    type_clear,                                 /* tp_clear */
     0,                                          /* tp_richcompare */
     offsetof(PyTypeObject, tp_weaklist),        /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -5387,7 +5396,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_alloc */
     type_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
-    (inquiry)type_is_gc,                        /* tp_is_gc */
+    type_is_gc,                                 /* tp_is_gc */
     .tp_vectorcall = type_vectorcall,
 };
 
@@ -6561,6 +6570,12 @@ PyDoc_STRVAR(object_doc,
 "When called, it accepts no arguments and returns a new featureless\n"
 "instance that has no instance attributes and cannot be given any.\n");
 
+static Py_hash_t
+object_hash(PyObject *obj)
+{
+    return _Py_HashPointer(obj);
+}
+
 PyTypeObject PyBaseObject_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "object",                                   /* tp_name */
@@ -6575,7 +6590,7 @@ PyTypeObject PyBaseObject_Type = {
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)_Py_HashPointer,                  /* tp_hash */
+    object_hash,                                /* tp_hash */
     0,                                          /* tp_call */
     object_str,                                 /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
@@ -10389,9 +10404,22 @@ supercheck(PyTypeObject *type, PyObject *obj)
         Py_XDECREF(class_attr);
     }
 
-    PyErr_SetString(PyExc_TypeError,
-                    "super(type, obj): "
-                    "obj must be an instance or subtype of type");
+    const char *type_or_instance, *obj_str;
+
+    if (PyType_Check(obj)) {
+        type_or_instance = "type";
+        obj_str = ((PyTypeObject*)obj)->tp_name;
+    }
+    else {
+        type_or_instance = "instance of";
+        obj_str = Py_TYPE(obj)->tp_name;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                "super(type, obj): obj (%s %.200s) is not "
+                "an instance or subtype of type (%.200s).",
+                type_or_instance, obj_str, type->tp_name);
+
     return NULL;
 }
 
