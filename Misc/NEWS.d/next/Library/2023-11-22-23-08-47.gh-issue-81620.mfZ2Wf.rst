@@ -1,0 +1,1 @@
+Add extra tests for :func:`random.binomialvariate`

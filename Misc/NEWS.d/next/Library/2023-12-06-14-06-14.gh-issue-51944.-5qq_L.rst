@@ -1,0 +1,6 @@
+Add the following constants to the :mod:`termios` module. These values are
+present in macOS system headers: ``ALTWERASE``, ``B14400``, ``B28800``,
+``B7200``, ``B76800``, ``CCAR_OFLOW``, ``CCTS_OFLOW``, ``CDSR_OFLOW``,
+``CDTR_IFLOW``, ``CIGNORE``, ``CRTS_IFLOW``, ``EXTPROC``, ``IUTF8``,
+``MDMBUF``, ``NL2``, ``NL3``, ``NOKERNINFO``, ``ONOEOT``, ``OXTABS``,
+``VDSUSP``, ``VSTATUS``.

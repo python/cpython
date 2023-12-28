@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=b6903a3e6458000730c3d83174d4b08d6d3e2ece
+expected_hacl_star_rev=521af282fdf6d60227335120f18ae9309a4b8e8c
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -40,7 +40,7 @@ fi
 
 declare -a dist_files
 dist_files=(
-  Hacl_Streaming_SHA2.h
+  Hacl_Hash_SHA2.h
   Hacl_Streaming_Types.h
   Hacl_Hash_SHA1.h
   internal/Hacl_Hash_SHA1.h
@@ -48,8 +48,8 @@ dist_files=(
   Hacl_Hash_SHA3.h
   internal/Hacl_Hash_MD5.h
   internal/Hacl_Hash_SHA3.h
-  internal/Hacl_SHA2_Generic.h
-  Hacl_Streaming_SHA2.c
+  Hacl_Hash_SHA2.c
+  internal/Hacl_Hash_SHA2.h
   Hacl_Hash_SHA1.c
   Hacl_Hash_MD5.c
   Hacl_Hash_SHA3.c
@@ -126,14 +126,8 @@ $sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_
 # compilation, but this is not necessary.
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
-# This header is useful for *other* algorithms that refer to SHA2, e.g. Ed25519
-# which needs to compute a digest of a message before signing it. Here, since no
-# other algorithm builds upon SHA2, this internal header is useless (and is not
-# included in $dist_files).
-$sed -i 's!#include.*internal/Hacl_Streaming_SHA2.h"!#include "Hacl_Streaming_SHA2.h"!g' "${all_files[@]}"
-
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Streaming_SHA2.h
+$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_SHA2.h
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.
