@@ -2194,9 +2194,11 @@ def main():
     # We need to maunally get the script from args, because the first positional
     # arguments could be either the script we need to debug, or the argument
     # to the -m module
-    parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
-    parser.add_argument('-m', metavar='module')
-    parser.add_argument('args', nargs="*")
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
+                        help='pdb commands to execute as if given in a .pdbrc file')
+    parser.add_argument('-m', metavar='module', dest='module')
+    parser.add_argument('pyfile', nargs='?')
+    parser.add_argument('args', nargs='*')
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2206,15 +2208,16 @@ def main():
 
     opts = parser.parse_args()
 
-    if opts.m:
-        file = opts.m
+    if opts.module:
+        file = opts.module
         target = _ModuleTarget(file)
+        # If the module is given, the first positional argument is not the script
+        if opts.pyfile:
+            opts.args = [opts.pyfile] + opts.args
     else:
-        # No module is given, use the first positional argument as the script to debug
-        if not opts.args:
+        if not opts.pyfile:
             parser.error("one of the arguments -m pyfile is required")
-        file = opts.args[0]
-        opts.args = opts.args[1:]
+        file = opts.pyfile
         target = _ScriptTarget(file)
 
     target.check()
@@ -2226,7 +2229,7 @@ def main():
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
-    pdb.rcLines.extend(opts.command)
+    pdb.rcLines.extend(opts.commands)
     while True:
         try:
             pdb._run(target)
