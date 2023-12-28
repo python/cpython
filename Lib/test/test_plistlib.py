@@ -852,15 +852,17 @@ class TestPlistlib(unittest.TestCase):
                                tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
         for fmt in ALL_FORMATS:
             s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
-            self.assertEqual(plistlib.loads(s, fmt=fmt, aware_datetime=True),
-                             dt)
+            loaded_dt = plistlib.loads(s, fmt=fmt, aware_datetime=True)
+            self.assertEqual(loaded_dt.tzinfo, datetime.UTC)
+            self.assertEqual(loaded_dt, dt)
 
     def test_dump_utc_aware_datetime(self):
         dt = datetime.datetime(2345, 6, 7, 8, 9, 10, tzinfo=datetime.UTC)
         for fmt in ALL_FORMATS:
             s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
-            self.assertEqual(plistlib.loads(s, fmt=fmt, aware_datetime=True),
-                             dt)
+            loaded_dt = plistlib.loads(s, fmt=fmt, aware_datetime=True)
+            self.assertEqual(loaded_dt.tzinfo, datetime.UTC)
+            self.assertEqual(loaded_dt, dt)
 
     @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
                          "Can't find timezone datebase")
