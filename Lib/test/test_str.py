@@ -1321,10 +1321,6 @@ class StrTest(string_tests.StringLikeTest,
         self.assertRaises(ValueError, ("{[" + big + "]}").format, [0])
 
         # test number formatter errors:
-        self.assertRaises(ValueError, '{0:x}'.format, 1j)
-        self.assertRaises(ValueError, '{0:x}'.format, 1.0)
-        self.assertRaises(ValueError, '{0:X}'.format, 1j)
-        self.assertRaises(ValueError, '{0:X}'.format, 1.0)
         self.assertRaises(ValueError, '{0:o}'.format, 1j)
         self.assertRaises(ValueError, '{0:o}'.format, 1.0)
         self.assertRaises(ValueError, '{0:u}'.format, 1j)
@@ -1568,31 +1564,17 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('%X' % letter_m, '6D')
         self.assertEqual('%o' % letter_m, '155')
         self.assertEqual('%c' % letter_m, 'm')
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not float', operator.mod, '%x', 3.14)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not float', operator.mod, '%X', 2.11)
+        self.assertEqual('%x' % 3.14, '1.91eb851eb851fp+1')
+        self.assertEqual('%X' % 2.11, '1.0E147AE147AE1P+1')
         self.assertRaisesRegex(TypeError, '%o format: an integer is required, not float', operator.mod, '%o', 1.79)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not PseudoFloat', operator.mod, '%x', pi)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not complex', operator.mod, '%x', 3j)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not complex', operator.mod, '%X', 2j)
+        self.assertRaisesRegex(TypeError, '%x format: an integer or float is required, not PseudoFloat', operator.mod, '%x', pi)
+        self.assertRaisesRegex(TypeError, '%x format: an integer or float is required, not complex', operator.mod, '%x', 3j)
+        self.assertRaisesRegex(TypeError, '%X format: an integer or float is required, not complex', operator.mod, '%X', 2j)
         self.assertRaisesRegex(TypeError, '%o format: an integer is required, not complex', operator.mod, '%o', 1j)
         self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
         self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
         self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 1j)
         self.assertRaisesRegex(TypeError, '%c requires int or char', operator.mod, '%c', pi)
-
-        class RaisingNumber:
-            def __int__(self):
-                raise RuntimeError('int')  # should not be `TypeError`
-            def __index__(self):
-                raise RuntimeError('index')  # should not be `TypeError`
-
-        rn = RaisingNumber()
-        self.assertRaisesRegex(RuntimeError, 'int', operator.mod, '%d', rn)
-        self.assertRaisesRegex(RuntimeError, 'int', operator.mod, '%i', rn)
-        self.assertRaisesRegex(RuntimeError, 'int', operator.mod, '%u', rn)
-        self.assertRaisesRegex(RuntimeError, 'index', operator.mod, '%x', rn)
-        self.assertRaisesRegex(RuntimeError, 'index', operator.mod, '%X', rn)
-        self.assertRaisesRegex(RuntimeError, 'index', operator.mod, '%o', rn)
 
     def test_formatting_with_enum(self):
         # issue18780

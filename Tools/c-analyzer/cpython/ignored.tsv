@@ -341,6 +341,7 @@ Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
+Python/codecs.c	-	Py_hexdigits_upper	-
 Python/codecs.c	-	ucnhash_capi	-
 Python/codecs.c	_PyCodecRegistry_Init	methods	-
 Python/compile.c	-	NO_LABEL	-

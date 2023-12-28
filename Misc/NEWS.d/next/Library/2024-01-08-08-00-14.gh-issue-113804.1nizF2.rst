@@ -1,0 +1,1 @@
+Support "x" and "X" format types for floats.  Patch by Sergey B Kirpichev.

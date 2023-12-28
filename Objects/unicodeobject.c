@@ -13710,11 +13710,13 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
         return -1;
 
     prec = arg->prec;
-    if (prec < 0)
+    if (prec < 0 && arg->ch != 'x' && arg->ch != 'X')
         prec = 6;
 
     if (arg->flags & F_ALT)
         dtoa_flags |= Py_DTSF_ALT;
+    if (arg->flags & F_SIGN)
+        dtoa_flags |= Py_DTSF_SIGN;
     p = PyOS_double_to_string(x, arg->ch, prec, dtoa_flags, NULL);
     if (p == NULL)
         return -1;
@@ -14249,12 +14251,30 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
     case 'X':
     {
         int ret = mainformatlong(v, arg, p_str, writer);
-        if (ret != 0)
+        if (ret != 0) {
+            if (ret == -1 && (arg->ch == 'x' || arg->ch == 'X') &&
+                PyErr_ExceptionMatches(PyExc_TypeError))
+            {
+                PyErr_Clear();
+                if (PyNumber_Check(v)) {
+                    PyObject *fobj = PyNumber_Float(v);
+                    if (fobj) {
+                        v = fobj;
+                        goto dofloats;
+                    }
+                }
+                PyErr_Format(PyExc_TypeError,
+                        "%%%c format: an integer or float is required, "
+                        "not %.200s",
+                        arg->ch, Py_TYPE(v)->tp_name);
+            }
             return ret;
+        }
         arg->sign = 1;
         break;
     }
 
+  dofloats:
     case 'e':
     case 'E':
     case 'f':

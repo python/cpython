@@ -1129,14 +1129,7 @@ float_conjugate_impl(PyObject *self)
     return float_float(self);
 }
 
-/* turn ASCII hex characters into integer values and vice versa */
-
-static char
-char_from_hex(int x)
-{
-    assert(0 <= x && x < 16);
-    return Py_hexdigits[x];
-}
+/* turn ASCII hex characters into integer values */
 
 static int
 hex_from_char(char c) {
@@ -1205,10 +1198,6 @@ hex_from_char(char c) {
 
 /* convert a float to a hexadecimal string */
 
-/* TOHEX_NBITS is DBL_MANT_DIG rounded up to the next integer
-   of the form 4k+1. */
-#define TOHEX_NBITS DBL_MANT_DIG + 3 - (DBL_MANT_DIG+2)%4
-
 /*[clinic input]
 float.hex
 
@@ -1224,54 +1213,19 @@ static PyObject *
 float_hex_impl(PyObject *self)
 /*[clinic end generated code: output=0ebc9836e4d302d4 input=bec1271a33d47e67]*/
 {
-    double x, m;
-    int e, shift, i, si, esign;
-    /* Space for 1+(TOHEX_NBITS-1)/4 digits, a decimal point, and the
-       trailing NUL byte. */
-    char s[(TOHEX_NBITS-1)/4+3];
+    PyObject *result = NULL;
+    double x = PyFloat_AS_DOUBLE(self);
+    char *buf = PyOS_double_to_string(x, 'x', -1, Py_DTSF_ALT, NULL);
 
-    CONVERT_TO_DOUBLE(self, x);
-
-    if (Py_IS_NAN(x) || Py_IS_INFINITY(x))
-        return float_repr((PyFloatObject *)self);
-
-    if (x == 0.0) {
-        if (copysign(1.0, x) == -1.0)
-            return PyUnicode_FromString("-0x0.0p+0");
-        else
-            return PyUnicode_FromString("0x0.0p+0");
+    if (buf) {
+        result = PyUnicode_FromString(buf);
+        PyMem_Free(buf);
+    }
+    else {
+        PyErr_NoMemory();
     }
 
-    m = frexp(fabs(x), &e);
-    shift = 1 - Py_MAX(DBL_MIN_EXP - e, 0);
-    m = ldexp(m, shift);
-    e -= shift;
-
-    si = 0;
-    s[si] = char_from_hex((int)m);
-    si++;
-    m -= (int)m;
-    s[si] = '.';
-    si++;
-    for (i=0; i < (TOHEX_NBITS-1)/4; i++) {
-        m *= 16.0;
-        s[si] = char_from_hex((int)m);
-        si++;
-        m -= (int)m;
-    }
-    s[si] = '\0';
-
-    if (e < 0) {
-        esign = (int)'-';
-        e = -e;
-    }
-    else
-        esign = (int)'+';
-
-    if (x < 0.0)
-        return PyUnicode_FromFormat("-0x%sp%c%d", s, esign, e);
-    else
-        return PyUnicode_FromFormat("0x%sp%c%d", s, esign, e);
+    return result;
 }
 
 /* Convert a hexadecimal string to a float. */

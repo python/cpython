@@ -269,6 +269,17 @@ class FormatTest(unittest.TestCase):
         testcommon('%g', 1.1, '1.1')
         testcommon('%#g', 1.1, '1.10000')
 
+        # hexadecimal floats
+        testcommon("%x", 3.14, '1.91eb851eb851fp+1')
+        testcommon("%#x", 3.14, '0x1.91eb851eb851fp+1')
+        testcommon("%X", 3.14, '1.91EB851EB851FP+1')
+        testcommon("%+.3x", 3.14, '+1.91fp+1')
+        testcommon("%x", -0.5, '-1p-1')
+        testcommon("%#x", -0.5, '-0x1p-1')
+        x = float.fromhex('0x0.003p+0')
+        testcommon("%040x", x, '0000000000000000000000000000000001.8p-11')
+        testcommon("%#040x", x, '0x00000000000000000000000000000001.8p-11')
+
         if verbose:
             print('Testing exceptions')
         test_exc_common('%', (), ValueError, "incomplete format")
@@ -279,9 +290,25 @@ class FormatTest(unittest.TestCase):
         test_exc_common('%d', b'1', TypeError,
                         "%d format: a real number is required, not bytes")
         test_exc_common('%x', '1', TypeError,
-                        "%x format: an integer is required, not str")
-        test_exc_common('%x', 3.14, TypeError,
-                        "%x format: an integer is required, not float")
+                        "%x format: an integer or float is required, not str")
+        test_exc_common('%d', 1j, TypeError,
+                        "%d format: a real number is required, not complex")
+        test_exc_common('%x', 1j, TypeError,
+                        "%x format: an integer or float is required, not complex")
+
+        class RaisingNumber:
+            def __int__(self):
+                raise RuntimeError('int')  # should not be `TypeError`
+            def __index__(self):
+                raise RuntimeError('index')  # should not be `TypeError`
+
+        rn = RaisingNumber()
+        test_exc_common('%d', rn, RuntimeError, 'int')
+        test_exc_common('%i', rn, RuntimeError, 'int')
+        test_exc_common('%u', rn, RuntimeError, 'int')
+        test_exc_common('%x', rn, RuntimeError, 'index')
+        test_exc_common('%X', rn, RuntimeError, 'index')
+        test_exc_common('%o', rn, RuntimeError, 'index')
 
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable

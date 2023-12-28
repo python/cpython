@@ -413,11 +413,14 @@ formatfloat(PyObject *v, int flags, int prec, int type,
         return NULL;
     }
 
-    if (prec < 0)
+    if (prec < 0 && type != 'x' && type != 'X')
         prec = 6;
 
     if (flags & F_ALT) {
         dtoa_flags |= Py_DTSF_ALT;
+    }
+    if (flags & F_SIGN) {
+        dtoa_flags |= Py_DTSF_SIGN;
     }
     p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
@@ -866,8 +869,24 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 }
 
                 temp = formatlong(v, flags, prec, c);
-                if (!temp)
+                if (!temp) {
+                    if ((c == 'x' || c == 'X') &&
+                        PyErr_ExceptionMatches(PyExc_TypeError))
+                    {
+                        PyErr_Clear();
+                        if (PyNumber_Check(v)) {
+                            PyObject *fobj = PyNumber_Float(v);
+                            if (fobj) {
+                                v = fobj;
+                                goto dofloats;
+                            }
+                        }
+                        PyErr_Format(PyExc_TypeError,
+                            "%%%c format: an integer or float is required, not %.200s",
+                            c, Py_TYPE(v)->tp_name);
+                    }
                     goto error;
+                }
                 assert(PyUnicode_IS_ASCII(temp));
                 pbuf = (const char *)PyUnicode_1BYTE_DATA(temp);
                 len = PyUnicode_GET_LENGTH(temp);
@@ -876,6 +895,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     fill = '0';
                 break;
 
+          dofloats:
             case 'e':
             case 'E':
             case 'f':

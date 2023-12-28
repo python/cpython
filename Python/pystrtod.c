@@ -4,6 +4,7 @@
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 
+#include <float.h>                // DBL_MANT_DIG
 #include <locale.h>               // localeconv()
 
 /* Case-insensitive string match used for nan and inf detection; t should be
@@ -401,6 +402,106 @@ _Py_string_to_number_with_underscores(
     return NULL;
 }
 
+/* Convert a float to a hexadecimal string [±][0x]h[.hhhhhhhh]p±d,
+   where the fractional part either is exact (precision < 0) or the
+   number of digits after the dot is equal to the precision.
+
+   The exponent d is written in decimal, it always contains at least one digit,
+   and it gives the power of 2 by which to multiply the coefficient.
+
+   x - the double to be converted
+   precision - the desired precision
+   always_add_sign - nonzero if a '+' sign should be included for x > 0
+   use_alt_formatting - nonzero if the hexadecimal prefix should be added.
+   upper - nonzero, if uppercase letters should be used for hexadecimal
+           numbers, prefix and the exponent separator.
+ */
+
+char *
+_Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
+                int use_alt_formatting, int upper)
+{
+    int e;
+    double m = frexp(fabs(x), &e);
+
+    if (precision < 0) {
+        precision = (DBL_MANT_DIG + 2 - (DBL_MANT_DIG+2)%4)/4;
+    }
+
+    if (m) {
+        /* normalization */
+        int shift = 1 - Py_MAX(DBL_MIN_EXP - e, 0);
+        m = ldexp(m, shift);
+        e -= shift;
+
+        do {
+            /* round to precision digits */
+            double frac = ldexp(m, 4*precision);
+            frac -= floor(frac);
+            frac *= 16.0;
+            m += ldexp(frac >= 8.0, -4*precision);
+            if ((int)(m) & 0x2) {
+                m /= 2.0;
+                e += 1;
+            }
+            else {
+                break;
+            }
+        } while (1);
+    }
+
+    /* Allocate space for [±][0x]  h[.] [hhhhhhhh]   p±  d            '\0' */
+    char *s = PyMem_Malloc(1 + 2 + 2 +   precision + 2 + DBL_MAX_EXP + 1);
+
+    /* sign and prefix */
+    int si = 0;
+    if (copysign(1.0, x) == -1.0) {
+        s[si] = '-';
+        si++;
+    }
+    else if (always_add_sign) {
+        s[si] = '+';
+        si++;
+    }
+    if (use_alt_formatting) {
+        s[si] = '0';
+        si++;
+        s[si] = upper ? 'X' : 'x';
+        si++;
+    }
+
+    /* mantissa */
+    const char *hexmap = upper ? Py_hexdigits_upper : Py_hexdigits;
+    assert(0 <= (int)m < 16);
+    s[si] = hexmap[(int)m];
+    si++;
+    m -= (int)m;
+    s[si] = '.';
+    for (int i = 0; i < precision; i++) {
+        si++;
+        m *= 16.0;
+        assert(0 <= (int)m < 16);
+        s[si] = hexmap[(int)m];
+        m -= (int)m;
+    }
+
+    /* clear trailing zeros from mantissa (and maybe the dot) */
+    while (s[si] == '0') {
+        si--;
+    }
+    if (s[si] != '.') {
+        si++;
+    }
+
+    /* exponent */
+    s[si] = upper ? 'P' : 'p';
+    si++;
+    int i = snprintf(s+si, DBL_MAX_EXP+1, "%+d", e);
+    si += i+1;
+
+    return PyMem_Realloc(s, si);
+}
+
 #if _PY_SHORT_FLOAT_REPR == 0
 
 /* Given a string that may have a decimal point in the current
@@ -771,6 +872,7 @@ char * PyOS_double_to_string(double val,
     case 'e':          /* exponent */
     case 'f':          /* fixed */
     case 'g':          /* general */
+    case 'x':          /* double in hexadecimal */
         break;
     case 'E':
         upper = 1;
@@ -783,6 +885,10 @@ char * PyOS_double_to_string(double val,
     case 'G':
         upper = 1;
         format_code = 'g';
+        break;
+    case 'X':
+        upper = 1;
+        format_code = 'x';
         break;
     case 'r':          /* repr format */
         /* Supplied precision is unused, must be 0. */
@@ -873,6 +979,14 @@ char * PyOS_double_to_string(double val,
         t = Py_DTST_FINITE;
         if (flags & Py_DTSF_ADD_DOT_0)
             format_code = 'Z';
+
+        /* Use own helper for hexadecimal notation, because the 'a' format
+           type of the stdlib behaves differently wrt the '#' option. */
+        if (format_code == 'x') {
+            PyMem_Free(buf);
+            return _Py_dg_dtoa_hex(val, precision, flags & Py_DTSF_SIGN,
+                                   flags & Py_DTSF_ALT, upper);
+        }
 
         PyOS_snprintf(format, sizeof(format), "%%%s.%i%c",
                       (flags & Py_DTSF_ALT ? "#" : ""), precision,
@@ -978,6 +1092,13 @@ format_float_short(double d, char format_code,
     char *digits, *digits_end;
     int decpt_as_int, sign, exp_len, exp = 0, use_exp = 0;
     Py_ssize_t decpt, digits_len, vdigits_start, vdigits_end;
+
+    if (format_code == 'x' && Py_IS_FINITE(d)) {
+        return _Py_dg_dtoa_hex(d, precision, always_add_sign,
+                               use_alt_formatting,
+                               float_strings == uc_float_strings);
+    }
+
     _Py_SET_53BIT_PRECISION_HEADER;
 
     /* _Py_dg_dtoa returns a digit string (no decimal point or exponent).
@@ -1230,6 +1351,14 @@ char * PyOS_double_to_string(double val,
     /* Validate format_code, and map upper and lower case. Compute the
        mode and make any adjustments as needed. */
     switch (format_code) {
+    /* hexadecimal floats */
+    case 'X':
+        float_strings = uc_float_strings;
+        /* Fall through. */
+    case 'x':
+        format_code = 'x';
+        mode = 2;
+        break;
     /* exponent */
     case 'E':
         float_strings = uc_float_strings;

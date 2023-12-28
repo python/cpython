@@ -588,6 +588,30 @@ The available presentation types for :class:`float` and
    |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
 
+Additionally, for :class:`float` available following representation types:
+
+   +---------+----------------------------------------------------------+
+   | Type    | Meaning                                                  |
+   +=========+==========================================================+
+   | ``'x'`` | Represent the number by a hexadecimal string in the      |
+   |         | form ``[±][0x]h[.hhh]p±d``, where there is one           |
+   |         | hexadecimal digit before the dot and the fractional part |
+   |         | either is exact or the number of its hexadecimal digits  |
+   |         | is equal to the specified precision.  The exponent ``d`` |
+   |         | is written in decimal, it always contains at least one   |
+   |         | digit, and it gives the power of 2 by which to multiply  |
+   |         | the coefficient.                                         |
+   |         |                                                          |
+   |         | If the ``'#'`` option is specified, the prefix ``'0x'``  |
+   |         | will be inserted before an integer part.                 |
+   +---------+----------------------------------------------------------+
+   | ``'X'`` | Same as ``'x'``, but uses uppercase digits, the ``0X``   |
+   |         | prefix and ``'P'`` as the exponent separator.            |
+   +---------+----------------------------------------------------------+
+
+.. versionchanged:: 3.13
+   Support ``'x'`` and ``'X'`` format types for :class:`float`.
+
 
 .. _formatexamples:
 

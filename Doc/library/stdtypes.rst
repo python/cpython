@@ -2430,9 +2430,9 @@ The conversion types are:
 +------------+-----------------------------------------------------+-------+
 | ``'u'``    | Obsolete type -- it is identical to ``'d'``.        | \(6)  |
 +------------+-----------------------------------------------------+-------+
-| ``'x'``    | Signed hexadecimal (lowercase).                     | \(2)  |
+| ``'x'``    | Signed hexadecimal integer or float (lowercase).    | \(2)  |
 +------------+-----------------------------------------------------+-------+
-| ``'X'``    | Signed hexadecimal (uppercase).                     | \(2)  |
+| ``'X'``    | Signed hexadecimal integer or float (uppercase).    | \(2)  |
 +------------+-----------------------------------------------------+-------+
 | ``'e'``    | Floating point exponential format (lowercase).      | \(3)  |
 +------------+-----------------------------------------------------+-------+
@@ -2473,8 +2473,16 @@ Notes:
    inserted before the first digit.
 
 (2)
-   The alternate form causes a leading ``'0x'`` or ``'0X'`` (depending on whether
-   the ``'x'`` or ``'X'`` format was used) to be inserted before the first digit.
+   The alternate form for an integer causes a leading ``'0x'`` or ``'0X'``
+   (depending on whether the ``'x'`` or ``'X'`` format was used) to be
+   inserted before the first digit.
+
+   For floats, represent the number by a hexadecimal string in the form
+   ``[±][0x]h[.hhh]p±d``, where there is one hexadecimal digit before the dot
+   and the fractional part either is exact or the number of its hexadecimal
+   digits is equal to the specified precision.  The exponent ``d`` is written
+   in decimal, it always contains at least one digit, and it gives the power
+   of 2 by which to multiply the coefficient.
 
 (3)
    The alternate form causes the result to always contain a decimal point, even if
@@ -2504,6 +2512,9 @@ that ``'\0'`` is the end of the string.
 .. versionchanged:: 3.1
    ``%f`` conversions for numbers whose absolute value is over 1e50 are no
    longer replaced by ``%g`` conversions.
+
+.. versionchanged:: 3.13
+   Support ``'x'`` and ``'X'`` format types for :class:`float`.
 
 
 .. index::

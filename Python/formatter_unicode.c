@@ -1047,6 +1047,7 @@ format_float_internal(PyObject *value,
     Py_ssize_t n_digits;
     Py_ssize_t n_remainder;
     Py_ssize_t n_total;
+    Py_ssize_t n_prefix = 0;
     int has_decimal;
     double val;
     int precision, default_precision = 6;
@@ -1059,7 +1060,7 @@ format_float_internal(PyObject *value,
     Py_UCS4 maxchar = 127;
     Py_UCS4 sign_char = '\0';
     int float_type; /* Used to see if we have a nan, inf, or regular float. */
-    PyObject *unicode_tmp = NULL;
+    PyObject *unicode_tmp = NULL, *prefix = NULL;
 
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
@@ -1100,7 +1101,7 @@ format_float_internal(PyObject *value,
         add_pct = 1;
     }
 
-    if (precision < 0)
+    if (precision < 0 && type != 'x' && type != 'X')
         precision = default_precision;
     else if (type == 'r')
         type = 'g';
@@ -1148,6 +1149,14 @@ format_float_internal(PyObject *value,
         ++index;
         --n_digits;
     }
+    if (PyUnicode_READ_CHAR(unicode_tmp, index) == '0'
+        && (PyUnicode_READ_CHAR(unicode_tmp, index + 1) == 'x'
+            || PyUnicode_READ_CHAR(unicode_tmp, index + 1) == 'X')) {
+        n_prefix = 2;
+        index += 2;
+        n_digits -= 2;
+        prefix = unicode_tmp;
+    }
 
     /* Determine if we have any "remainder" (after the digits, might include
        decimal or exponent or both (or neither)) */
@@ -1160,7 +1169,7 @@ format_float_internal(PyObject *value,
         goto done;
 
     /* Calculate how much memory we'll need. */
-    n_total = calc_number_widths(&spec, 0, sign_char, index,
+    n_total = calc_number_widths(&spec, n_prefix, sign_char, index,
                                  index + n_digits, n_remainder, has_decimal,
                                  &locale, format, &maxchar);
     if (n_total == -1) {
@@ -1174,7 +1183,7 @@ format_float_internal(PyObject *value,
     /* Populate the memory. */
     result = fill_number(writer, &spec,
                          unicode_tmp, index,
-                         NULL, 0, format->fill_char,
+                         prefix, n_prefix ? index - 2 : 0, format->fill_char,
                          &locale, 0);
 
 done:
@@ -1282,7 +1291,7 @@ format_complex_internal(PyObject *value,
            format the result. We take care of that later. */
         type = 'g';
 
-    if (precision < 0)
+    if (precision < 0 && type != 'x' && type != 'X')
         precision = default_precision;
     else if (type == 'r')
         type = 'g';
@@ -1574,6 +1583,8 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     case 'G':
     case 'n':
     case '%':
+    case 'x':
+    case 'X':
         /* no conversion, already a float.  do the formatting */
         return format_float_internal(obj, &format, writer);
 
@@ -1612,6 +1623,8 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     case 'g':
     case 'G':
     case 'n':
+    case 'x':
+    case 'X':
         /* no conversion, already a complex.  do the formatting */
         return format_complex_internal(obj, &format, writer);
 

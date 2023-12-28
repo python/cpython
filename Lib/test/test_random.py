@@ -599,7 +599,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
              '0x1.1ebb4352e4c4dp-1', '0x1.1a7422abf9c11p-1'])
         self.gen.seed("the quick brown fox", version=2)
         self.assertEqual([self.gen.random().hex() for i in range(4)],
-            ['0x1.1239ddfb11b7cp-3', '0x1.b3cbb5c51b120p-4',
+            ['0x1.1239ddfb11b7cp-3', '0x1.b3cbb5c51b12p-4',
              '0x1.8c4f55116b60fp-1', '0x1.63eb525174a27p-1'])
 
     def test_bug_27706(self):
@@ -607,8 +607,8 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
 
         self.gen.seed('nofar', version=1)   # hash('nofar') == 5990528763808513177
         self.assertEqual([self.gen.random().hex() for i in range(4)],
-            ['0x1.8645314505ad7p-1', '0x1.afb1f82e40a40p-5',
-             '0x1.2a59d2285e971p-1', '0x1.56977142a7880p-6'])
+            ['0x1.8645314505ad7p-1', '0x1.afb1f82e40a4p-5',
+             '0x1.2a59d2285e971p-1', '0x1.56977142a788p-6'])
 
         self.gen.seed('rachel', version=1)  # hash('rachel') == -9091735575445484789
         self.assertEqual([self.gen.random().hex() for i in range(4)],
@@ -639,8 +639,8 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
 
         self.gen.seed(b'nofar', version=1)   # hash('nofar') == 5990528763808513177
         self.assertEqual([self.gen.random().hex() for i in range(4)],
-            ['0x1.8645314505ad7p-1', '0x1.afb1f82e40a40p-5',
-             '0x1.2a59d2285e971p-1', '0x1.56977142a7880p-6'])
+            ['0x1.8645314505ad7p-1', '0x1.afb1f82e40a4p-5',
+             '0x1.2a59d2285e971p-1', '0x1.56977142a788p-6'])
 
         self.gen.seed(b'rachel', version=1)  # hash('rachel') == -9091735575445484789
         self.assertEqual([self.gen.random().hex() for i in range(4)],
