@@ -123,7 +123,6 @@ class PurePath(_abc.PurePathBase):
                 paths.append(path)
         # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
-        self._resolving = False
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -202,9 +201,7 @@ class PurePath(_abc.PurePathBase):
         tail = self._tail
         if not tail:
             return self
-        path = self._from_parsed_parts(drv, root, tail[:-1])
-        path._resolving = self._resolving
-        return path
+        return self._from_parsed_parts(drv, root, tail[:-1])
 
     @property
     def parents(self):
