@@ -4480,6 +4480,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
+   .. note::
+      This function is not available on macOS.
+
    .. versionadded:: 3.3
 
 
