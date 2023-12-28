@@ -1,0 +1,1 @@
+Let json.tool --json-lines handle empty rows

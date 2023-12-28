@@ -86,6 +86,24 @@ class TestTool(unittest.TestCase):
     }
     """)
 
+    jsonlines_emptylines_raw = textwrap.dedent("""\
+    {"foo":1}
+
+    {"bar":2}
+
+    """)
+
+    jsonlines_emptylines_expect = textwrap.dedent("""\
+    {
+        "foo": 1
+    }
+
+    {
+        "bar": 2
+    }
+
+    """)
+    
     def test_stdin_stdout(self):
         args = sys.executable, '-m', 'json.tool'
         process = subprocess.run(args, input=self.data, capture_output=True, text=True, check=True)
@@ -145,6 +163,12 @@ class TestTool(unittest.TestCase):
         args = sys.executable, '-m', 'json.tool', '--json-lines'
         process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, self.jsonlines_expect)
+        self.assertEqual(process.stderr, '')
+
+    def test_jsonlines_emptylines(self):
+        args = sys.executable, '-m', 'json.tool', '--json-lines'
+        process = subprocess.run(args, input=self.jsonlines_emptylines_raw, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, self.jsonlines_emptylines_expect)
         self.assertEqual(process.stderr, '')
 
     def test_help_flag(self):

@@ -15,6 +15,7 @@ import json
 import sys
 from pathlib import Path
 
+_SENTINEL = object()
 
 def main():
     prog = 'python -m json.tool'
@@ -62,7 +63,7 @@ def main():
     with options.infile as infile:
         try:
             if options.json_lines:
-                objs = (json.loads(line) for line in infile)
+                objs = (json.loads(line) if line.strip() else _SENTINEL for line in infile)
             else:
                 objs = (json.load(infile),)
 
@@ -72,7 +73,8 @@ def main():
                 out = options.outfile.open('w', encoding='utf-8')
             with out as outfile:
                 for obj in objs:
-                    json.dump(obj, outfile, **dump_args)
+                    if obj is not _SENTINEL:
+                        json.dump(obj, outfile, **dump_args)
                     outfile.write('\n')
         except ValueError as e:
             raise SystemExit(e)
