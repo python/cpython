@@ -473,96 +473,65 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
-    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
-    def test_issue18060_a(self):
+    def _test_issue18060(self, Vector):
         # The call to atan2() should succeed if the
         # class fields were correctly cloned in the
         # subclasses. Otherwise, it will segfault.
-        #
+        if sys.platform == 'win32':
+            libm = CDLL(find_library('msvcrt.dll'))
+        else:
+            libm = CDLL(find_library('m'))
+
+        libm.atan2.argtypes = [Vector]
+        libm.atan2.restype = c_double
+
+        arg = Vector(y=0.0, x=-1.0)
+        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
+    def test_issue18060_a(self):
         # This test case calls
         # PyCStructUnionType_update_stgdict() for each
         # _fields_ assignment, and PyCStgDict_clone()
         # for the Mid and Vector class definitions.
-        if sys.platform == 'win32':
-            libm = CDLL(find_library('msvcrt.dll'))
-        else:
-            libm = CDLL(find_library('m'))
-
         class Base(Structure):
             _fields_ = [('y', c_double),
                         ('x', c_double)]
-
         class Mid(Base):
             pass
-
         Mid._fields_ = []
-
         class Vector(Mid): pass
-
-        libm.atan2.argtypes = [Vector]
-        libm.atan2.restype = c_double
-
-        arg = Vector(y=0.0, x=-1.0)
-        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+        self._test_issue18060(Vector)
 
     @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_b(self):
-        # The call to atan2() should succeed if the
-        # class fields were correctly cloned in the
-        # subclasses. Otherwise, it will segfault.
-        #
         # This test case calls
         # PyCStructUnionType_update_stgdict() for each
         # _fields_ assignment.
-        if sys.platform == 'win32':
-            libm = CDLL(find_library('msvcrt.dll'))
-        else:
-            libm = CDLL(find_library('m'))
-
         class Base(Structure):
             _fields_ = [('y', c_double),
                         ('x', c_double)]
-
         class Mid(Base):
             _fields_ = []
-
         class Vector(Mid):
             _fields_ = []
-
-        libm.atan2.argtypes = [Vector]
-        libm.atan2.restype = c_double
-
-        arg = Vector(y=0.0, x=-1.0)
-        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+        self._test_issue18060(Vector)
 
     @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_c(self):
-        # The call to atan2() should succeed if the
-        # class fields were correctly cloned in the
-        # subclasses. Otherwise, it will segfault.
-        #
         # This test case calls
         # PyCStructUnionType_update_stgdict() for each
         # _fields_ assignment.
-        if sys.platform == 'win32':
-            libm = CDLL(find_library('msvcrt.dll'))
-        else:
-            libm = CDLL(find_library('m'))
-
         class Base(Structure):
             _fields_ = [('y', c_double)]
-
         class Mid(Base):
             _fields_ = []
-
         class Vector(Mid):
             _fields_ = [('x', c_double)]
-
-        libm.atan2.argtypes = [Vector]
-        libm.atan2.restype = c_double
-
-        arg = Vector(y=0.0, x=-1.0)
-        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+        self._test_issue18060(Vector)
 
     def test_array_in_struct(self):
         # See bpo-22273
