@@ -345,15 +345,15 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
             if dedent < 0:
                 text = text.replace("\n", "\n" + " " * -dedent)
             elif dedent > 0:
-                ret = []
+                temp: list[str] = []
                 for line in text.split("\n"):
-                    leading_space = len(line) - len(line.lstrip())
+                    leading_space: int = len(line) - len(line.lstrip())
                     if leading_space > dedent:
                         line = re.sub(r'(?m)^[ \t]{' + str(dedent) + r'}', '', line)
                     else:
                         line = re.sub(r'(?m)^[ \t]{' + str(leading_space) + r'}', '', line)
-                    ret.append(line)
-                text = "\n".join(ret)
+                    temp.append(line)
+                text = "\n".join(temp)
         res.append(text)
         line, col = tkn.end
     return "".join(res)
