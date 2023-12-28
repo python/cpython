@@ -130,7 +130,7 @@ def get_default_keydefs():
 def set_default_keydefs(keydefs):
     global _default_keydefs
     _default_keydefs = keydefs
-    
+
 
 if __name__ == '__main__':
     from unittest import main
