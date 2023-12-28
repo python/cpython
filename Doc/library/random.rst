@@ -415,22 +415,22 @@ Alternative Generator
 
    .. method:: Random.seed(a=None, version=2)
 
-      Override this method in subclasses to customise the :meth:`random.seed`
+      Override this method in subclasses to customise the :meth:`~random.seed`
       behaviour of :class:`Random` instances.
 
    .. method:: Random.getstate()
 
-      Override this method in subclasses to customise the :meth:`random.getstate`
+      Override this method in subclasses to customise the :meth:`~random.getstate`
       behaviour of :class:`Random` instances.
 
    .. method:: Random.setstate(state)
 
-      Override this method in subclasses to customise the :meth:`random.setstate`
+      Override this method in subclasses to customise the :meth:`~random.setstate`
       behaviour of :class:`Random` instances.
 
    .. method:: Random.random()
 
-      Override this method in subclasses to customise the :meth:`random.random`
+      Override this method in subclasses to customise the :meth:`~random.random`
       behaviour of :class:`Random` instances.
 
    Optionally, a new generator can also supply the following method:
@@ -438,7 +438,7 @@ Alternative Generator
    .. method:: Random.getrandbits(k)
 
       Override this method in subclasses to customise the
-      :meth:`random.getrandbits` behaviour of :class:`Random` instances. This in
+      :meth:`~random.getrandbits` behaviour of :class:`Random` instances. This in
       turn allows :meth:`!Random.randrange` to produce selections over an
       arbitrarily large range.
 
