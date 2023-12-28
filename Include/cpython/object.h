@@ -39,6 +39,10 @@ typedef struct _Py_Identifier {
     // Index in PyInterpreterState.unicode.ids.array. It is process-wide
     // unique and must be initialized to -1.
     Py_ssize_t index;
+    // Hidden PyMutex struct for non free-threaded build.
+    struct {
+        uint8_t v;
+    } mutex;
 } _Py_Identifier;
 
 #ifndef Py_BUILD_CORE

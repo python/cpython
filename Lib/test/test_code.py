@@ -144,6 +144,8 @@ from test.support import (cpython_only,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
+from test.support.bytecode_helper import (BytecodeTestCase,
+                                          instructions_with_positions)
 from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -384,10 +386,8 @@ class CodeTest(unittest.TestCase):
         code = traceback.tb_frame.f_code
 
         artificial_instructions = []
-        for instr, positions in zip(
-            dis.get_instructions(code, show_caches=True),
-            code.co_positions(),
-            strict=True
+        for instr, positions in instructions_with_positions(
+            dis.get_instructions(code), code.co_positions()
         ):
             # If any of the positions is None, then all have to
             # be None as well for the case above. There are still

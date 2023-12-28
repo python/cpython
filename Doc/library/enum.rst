@@ -235,6 +235,10 @@ Data Types
         >>> len(Color)
         3
 
+   .. attribute:: EnumType.__members__
+
+      Returns a mapping of every enum name to its member, including aliases
+
    .. method:: EnumType.__reversed__(cls)
 
       Returns each member in *cls* in reverse definition order::
@@ -242,9 +246,19 @@ Data Types
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
+   .. method:: EnumType._add_alias_
+
+      Adds a new name as an alias to an existing member.  Raises a
+      :exc:`NameError` if the name is already assigned to a different member.
+
+   .. method:: EnumType._add_value_alias_
+
+      Adds a new value as an alias to an existing member.  Raises a
+      :exc:`ValueError` if the value is already linked with a different member.
+
    .. versionadded:: 3.11
 
-      Before 3.11 ``enum`` used ``EnumMeta`` type, which is kept as an alias.
+      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
 
 .. class:: Enum
@@ -323,7 +337,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init_subclass__(cls, **kwds)
+   .. method:: Enum.__init_subclass__(cls, \**kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.
@@ -549,7 +563,7 @@ Data Types
 
    .. method:: __invert__(self):
 
-      Returns all the flags in *type(self)* that are not in self::
+      Returns all the flags in *type(self)* that are not in *self*::
 
          >>> ~white
          <Color: 0>
@@ -769,37 +783,41 @@ Supported ``__dunder__`` names
 :attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`~object.__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`!_value_` appropriately.  Once
-all the members are created it is no longer used.
+:meth:`~object.__new__`, if specified, must create and return the enum members;
+it is also a very good idea to set the member's :attr:`!_value_` appropriately.
+Once all the members are created it is no longer used.
 
 
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
-
-- ``_missing_`` -- a lookup function used when a value is not found; may be
-  overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
-  that will not be transformed into members, and will be removed from the final
-  class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
-  (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used to get an appropriate value for an enum
-  member; may be overridden
+- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
+  existing member.
+- :attr:`~Enum._name_` -- name of the member
+- :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
+- :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
+  may be overridden
+- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
+  :class:`str`, that will not be transformed into members, and will be removed
+  from the final class
+- :attr:`~Enum._order_` -- used in Python 2/3 code to ensure member order is
+  consistent (class attribute, removed during class creation)
+- :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
+  an enum member; may be overridden
 
   .. note::
 
-     For standard :class:`Enum` classes the next value chosen is the last value seen
-     incremented by one.
+     For standard :class:`Enum` classes the next value chosen is the highest
+     value seen incremented by one.
 
      For :class:`Flag` classes the next value chosen will be the next highest
-     power-of-two, regardless of the last value seen.
+     power-of-two.
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
 
 ---------------
 

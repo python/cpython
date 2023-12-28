@@ -135,6 +135,7 @@ def _debug_object_browser(parent):  # htest #
     node = TreeNode(sc.canvas, None, item)
     node.update()
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_debugobj', verbosity=2, exit=False)

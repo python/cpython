@@ -893,10 +893,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
              * only in combination with SSL_VERIFY_PEER flag. */
             int mode = SSL_get_verify_mode(self->ssl);
             if (mode & SSL_VERIFY_PEER) {
-                int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
-                verify_cb = SSL_get_verify_callback(self->ssl);
                 mode |= SSL_VERIFY_POST_HANDSHAKE;
-                SSL_set_verify(self->ssl, mode, verify_cb);
+                SSL_set_verify(self->ssl, mode, NULL);
             }
         } else {
             /* client socket */
@@ -2997,7 +2995,6 @@ static int
 _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
 {
     int mode;
-    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
 
     switch(n) {
     case PY_SSL_CERT_NONE:
@@ -3018,9 +3015,7 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
     /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
      * server sockets and SSL_set_post_handshake_auth() for client. */
 
-    /* keep current verify cb */
-    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
-    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
+    SSL_CTX_set_verify(self->ctx, mode, NULL);
     return 0;
 }
 
