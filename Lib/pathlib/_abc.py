@@ -87,9 +87,8 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                             continue
                     except OSError:
                         continue
-                name = entry.name
-                if match(name):
-                    yield parent_path._make_child_relpath(name)
+                if match(entry.name):
+                    yield parent_path._make_child_entry(entry)
 
 
 def _select_recursive(parent_paths, dir_only, follow_symlinks):
@@ -112,12 +111,12 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks):
                 for entry in entries:
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
-                            paths.append(path._make_child_relpath(entry.name))
+                            paths.append(path._make_child_entry(entry))
                             continue
                     except OSError:
                         pass
                     if not dir_only:
-                        yield path._make_child_relpath(entry.name)
+                        yield path._make_child_entry(entry)
 
 
 def _select_unique(paths):
@@ -787,6 +786,10 @@ class PathBase(PurePathBase):
         # context manager. This method is called by walk() and glob().
         from contextlib import nullcontext
         return nullcontext(self.iterdir())
+
+    def _make_child_entry(self, entry):
+        # Transform an entry yielded from _scandir() into a path object.
+        return entry
 
     def _make_child_relpath(self, name):
         path_str = str(self)
