@@ -34,10 +34,8 @@ instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`~Random.random`,
-:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
-Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
-allows :meth:`randrange` to produce selections over an arbitrarily large range.
+basic generator of your own devising: see the documentation on that class for
+more details.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
 uses the system function :func:`os.urandom` to generate random numbers
@@ -412,7 +410,10 @@ Alternative Generator
       ``None``, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
-   .. method:: Random.seed()
+   Subclasses of :class:`!Random` should override the following methods if they
+   wish to make use of a different basic generator:
+
+   .. method:: Random.seed(a=None, version=2)
 
       Override this method in subclasses to customise the :meth:`random.seed`
       behaviour of :class:`Random` instances.
@@ -422,20 +423,25 @@ Alternative Generator
       Override this method in subclasses to customise the :meth:`random.getstate`
       behaviour of :class:`Random` instances.
 
-   .. method:: Random.setstate()
+   .. method:: Random.setstate(state)
 
       Override this method in subclasses to customise the :meth:`random.setstate`
-      behaviour of :class:`Random` instances.
-
-   .. method:: Random.getrandbits()
-
-      Override this method in subclasses to customise the :meth:`random.getrandbits`
       behaviour of :class:`Random` instances.
 
    .. method:: Random.random()
 
       Override this method in subclasses to customise the :meth:`random.random`
       behaviour of :class:`Random` instances.
+
+   Optionally, a new generator can also supply the following method:
+
+   .. method:: Random.getrandbits(k)
+
+      Override this method in subclasses to customise the
+      :meth:`random.getrandbits` behaviour of :class:`Random` instances. This in
+      turn allows :meth:`!Random.randrange` to produce selections over an
+      arbitrarily large range.
+
 
 .. class:: SystemRandom([seed])
 
