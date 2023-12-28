@@ -2,7 +2,6 @@ import functools
 import ntpath
 import posixpath
 import sys
-import warnings
 from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from itertools import chain
@@ -384,7 +383,7 @@ class PurePathBase:
         else:
             raise ValueError(f"Invalid suffix {suffix!r}")
 
-    def relative_to(self, other, /, *_deprecated, walk_up=False):
+    def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
         related to the other path), raise ValueError.
@@ -392,13 +391,7 @@ class PurePathBase:
         The *walk_up* parameter controls whether `..` may be used to resolve
         the path.
         """
-        if _deprecated:
-            msg = ("support for supplying more than one positional argument "
-                   "to pathlib.PurePath.relative_to() is deprecated and "
-                   "scheduled for removal in Python 3.14")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            other = self.with_segments(other, *_deprecated)
-        elif not isinstance(other, PurePathBase):
+        if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
         for step, path in enumerate(chain([other], other.parents)):
             if path == self or path in self.parents:
@@ -410,18 +403,12 @@ class PurePathBase:
         else:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         parts = ['..'] * step + self._tail[len(path._tail):]
-        return self._from_parsed_parts('', '', parts)
+        return self.with_segments(*parts)
 
-    def is_relative_to(self, other, /, *_deprecated):
+    def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
         """
-        if _deprecated:
-            msg = ("support for supplying more than one argument to "
-                   "pathlib.PurePath.is_relative_to() is deprecated and "
-                   "scheduled for removal in Python 3.14")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            other = self.with_segments(other, *_deprecated)
-        elif not isinstance(other, PurePathBase):
+        if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
         return other == self or other in self.parents
 
@@ -832,6 +819,7 @@ class PathBase(PurePathBase):
             pattern_parts.append('')
         if pattern_parts[-1] == '**':
             # GH-70303: '**' only matches directories. Add trailing slash.
+            import warnings
             warnings.warn(
                 "Pattern ending '**' will match files and directories in a "
                 "future Python release. Add a trailing slash to match only "
