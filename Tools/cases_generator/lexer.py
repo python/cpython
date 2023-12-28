@@ -347,7 +347,7 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
             elif dedent > 0:
                 temp: list[str] = []
                 for line in text.split("\n"):
-                    leading_space: int = len(line) - len(line.lstrip())
+                    leading_space = len(line) - len(line.lstrip())
                     if leading_space > dedent:
                         line = re.sub(r'(?m)^[ \t]{' + str(dedent) + r'}', '', line)
                     else:
