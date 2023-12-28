@@ -12,10 +12,7 @@ import tkinter
 ## _tk_type and its initializer are private to this section.
 
 _tk_type = None
-
-def _on_quit():
-    # on quit callback, overridden in setupApp
-    pass
+_idle_root = None
 
 def _init_tk_type():
     """ Initialize _tk_type for isXyzTk functions.
@@ -37,23 +34,15 @@ def _init_tk_type():
                 _tk_type = "cocoa"
                 return
 
-        root = tkinter.Tk()
-
-        # Add an ::tk::mac::Quit command to the root because Tk
-        # seem to only call the quit command created in the 
-        # first `tkinter.Tk` instance.
-        root.createcommand('::tk::mac::Quit', lambda: _on_quit())
-
-        ws = root.tk.call('tk', 'windowingsystem')
+        ws = _idle_root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
             _tk_type = "xquartz"
         elif 'aqua' not in ws:
             _tk_type = "other"
-        elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
+        elif 'AppKit' in _idle_root.tk.call('winfo', 'server', '.'):
             _tk_type = "cocoa"
         else:
             _tk_type = "carbon"
-        root.destroy()
     else:
         _tk_type = "other"
     return
@@ -168,7 +157,6 @@ def overrideRootMenu(root, flist):
     from idlelib import mainmenu
     from idlelib import window
 
-
     closeItem = mainmenu.menudefs[0][1][-2]
 
     # Remove the last 3 items of the file menu: a separator, close window and
@@ -229,11 +217,6 @@ def overrideRootMenu(root, flist):
     if flist:
         root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
-        # Override the _on_quit helper, see comment in
-        # _init_tk_type for the background on this
-        global _on_quit
-        _on_quit = flist.close_all_callback
-
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
         menu = Menu(menubar, name='apple', tearoff=0)
@@ -277,6 +260,8 @@ def setupApp(root, flist):
     isAquaTk(), isCarbonTk(), isCocoaTk(), isXQuartz() functions which
     are initialized here as well.
     """
+    global _idle_root
+    _idle_root = root
     if isAquaTk():
         hideTkConsole(root)
         overrideRootMenu(root, flist)

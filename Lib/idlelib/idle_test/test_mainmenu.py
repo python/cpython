@@ -15,7 +15,7 @@ class MainMenuTest(unittest.TestCase):
         self.assertEqual(actual, expect)
 
     def test_default_keydefs(self):
-        self.assertGreaterEqual(len(mainmenu.default_keydefs), 50)
+        self.assertGreaterEqual(len(mainmenu.get_default_keydefs()), 50)
 
     def test_tcl_indexes(self):
         # Test tcl patterns used to find menuitem to alter.

@@ -1611,6 +1611,12 @@ def main():
     from idlelib.run import fix_scaling
     fix_scaling(root)
 
+    # start editor and/or shell windows:
+    fixwordbreaks(root)
+    fix_x11_paste(root)
+    flist = PyShellFileList(root)
+    macosx.setupApp(root, flist)
+
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
     if system() == 'Windows':
@@ -1629,11 +1635,6 @@ def main():
                  for iconfile in iconfiles]
         root.wm_iconphoto(True, *icons)
 
-    # start editor and/or shell windows:
-    fixwordbreaks(root)
-    fix_x11_paste(root)
-    flist = PyShellFileList(root)
-    macosx.setupApp(root, flist)
 
     if enable_edit:
         if not (cmd or script):
