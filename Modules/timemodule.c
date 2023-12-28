@@ -69,62 +69,20 @@ module time
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a668a08771581f36]*/
 
 
-#if defined(HAVE_TIMES) || defined(HAVE_CLOCK)
-static int
-check_ticks_per_second(long tps, const char *context)
-{
-    /* Effectively, check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
-       cannot overflow. */
-    if (tps >= 0 && (_PyTime_t)tps > _PyTime_MAX / SEC_TO_NS) {
-        PyErr_Format(PyExc_OverflowError, "%s is too large", context);
-        return -1;
-    }
-    return 0;
-}
-#endif  /* HAVE_TIMES || HAVE_CLOCK */
-
-#ifdef HAVE_TIMES
-
-# define ticks_per_second _PyRuntime.time.ticks_per_second
-
-static void
-ensure_ticks_per_second(void)
-{
-    if (_PyRuntime.time.ticks_per_second_initialized) {
-        return;
-    }
-    _PyRuntime.time.ticks_per_second_initialized = 1;
-# if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-    ticks_per_second = sysconf(_SC_CLK_TCK);
-    if (ticks_per_second < 1) {
-        ticks_per_second = -1;
-    }
-# elif defined(HZ)
-    ticks_per_second = HZ;
-# else
-    ticks_per_second = 60;  /* magic fallback value; may be bogus */
-# endif
-}
-
-#endif  /* HAVE_TIMES */
-
-
-PyStatus
-_PyTime_Init(void)
-{
-#ifdef HAVE_TIMES
-    ensure_ticks_per_second();
-#endif
-    return PyStatus_Ok();
-}
-
-
 /* Forward declarations */
 static int pysleep(_PyTime_t timeout);
 
 
 typedef struct {
     PyTypeObject *struct_time_type;
+#ifdef HAVE_TIMES
+    // times() clock frequency in hertz
+    _PyTimeFraction times_base;
+#endif
+#ifdef HAVE_CLOCK
+    // clock() frequency in hertz
+    _PyTimeFraction clock_base;
+#endif
 } time_module_state;
 
 static inline time_module_state*
@@ -184,7 +142,7 @@ PyDoc_STRVAR(time_ns_doc,
 \n\
 Return the current time in nanoseconds since the Epoch.");
 
-#if defined(HAVE_CLOCK)
+#ifdef HAVE_CLOCK
 
 #ifndef CLOCKS_PER_SEC
 #  ifdef CLK_TCK
@@ -195,15 +153,13 @@ Return the current time in nanoseconds since the Epoch.");
 #endif
 
 static int
-_PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+py_clock(time_module_state *state, _PyTime_t *tp, _Py_clock_info_t *info)
 {
-    if (check_ticks_per_second(CLOCKS_PER_SEC, "CLOCKS_PER_SEC") < 0) {
-        return -1;
-    }
+    _PyTimeFraction *base = &state->clock_base;
 
     if (info) {
         info->implementation = "clock()";
-        info->resolution = 1.0 / (double)CLOCKS_PER_SEC;
+        info->resolution = _PyTimeFraction_Resolution(base);
         info->monotonic = 1;
         info->adjustable = 0;
     }
@@ -215,7 +171,7 @@ _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
                         "or its value cannot be represented");
         return -1;
     }
-    _PyTime_t ns = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)CLOCKS_PER_SEC);
+    _PyTime_t ns = _PyTimeFraction_Mul(ticks, base);
     *tp = _PyTime_FromNanoseconds(ns);
     return 0;
 }
@@ -1277,8 +1233,38 @@ PyDoc_STRVAR(perf_counter_ns_doc,
 \n\
 Performance counter for benchmarking as nanoseconds.");
 
+
+#ifdef HAVE_TIMES
 static int
-_PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+process_time_times(time_module_state *state, _PyTime_t *tp,
+                   _Py_clock_info_t *info)
+{
+    _PyTimeFraction *base = &state->times_base;
+
+    struct tms process;
+    if (times(&process) == (clock_t)-1) {
+        return 0;
+    }
+
+    if (info) {
+        info->implementation = "times()";
+        info->resolution = _PyTimeFraction_Resolution(base);
+        info->monotonic = 1;
+        info->adjustable = 0;
+    }
+
+    _PyTime_t ns;
+    ns = _PyTimeFraction_Mul(process.tms_utime, base);
+    ns += _PyTimeFraction_Mul(process.tms_stime, base);
+    *tp = _PyTime_FromNanoseconds(ns);
+    return 1;
+}
+#endif
+
+
+static int
+py_process_time(time_module_state *state, _PyTime_t *tp,
+                _Py_clock_info_t *info)
 {
 #if defined(MS_WINDOWS)
     HANDLE process;
@@ -1381,41 +1367,27 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
     /* times() */
 #ifdef HAVE_TIMES
-    struct tms t;
-
-    if (times(&t) != (clock_t)-1) {
-        assert(_PyRuntime.time.ticks_per_second_initialized);
-        if (check_ticks_per_second(ticks_per_second, "_SC_CLK_TCK") < 0) {
-            return -1;
-        }
-        if (ticks_per_second != -1) {
-            if (info) {
-                info->implementation = "times()";
-                info->monotonic = 1;
-                info->adjustable = 0;
-                info->resolution = 1.0 / (double)ticks_per_second;
-            }
-
-            _PyTime_t ns;
-            ns = _PyTime_MulDiv(t.tms_utime, SEC_TO_NS, ticks_per_second);
-            ns += _PyTime_MulDiv(t.tms_stime, SEC_TO_NS, ticks_per_second);
-            *tp = _PyTime_FromNanoseconds(ns);
-            return 0;
-        }
+    int res = process_time_times(state, tp, info);
+    if (res < 0) {
+        return -1;
     }
+    if (res == 1) {
+        return 0;
+    }
+    // times() failed, ignore failure
 #endif
 
-    /* clock */
-    /* Currently, Python 3 requires clock() to build: see issue #22624 */
-    return _PyTime_GetClockWithInfo(tp, info);
+    /* clock(). Python 3 requires clock() to build (see gh-66814) */
+    return py_clock(state, tp, info);
 #endif
 }
 
 static PyObject *
-time_process_time(PyObject *self, PyObject *unused)
+time_process_time(PyObject *module, PyObject *unused)
 {
+    time_module_state *state = get_time_state(module);
     _PyTime_t t;
-    if (_PyTime_GetProcessTimeWithInfo(&t, NULL) < 0) {
+    if (py_process_time(state, &t, NULL) < 0) {
         return NULL;
     }
     return _PyFloat_FromPyTime(t);
@@ -1427,10 +1399,11 @@ PyDoc_STRVAR(process_time_doc,
 Process time for profiling: sum of the kernel and user-space CPU time.");
 
 static PyObject *
-time_process_time_ns(PyObject *self, PyObject *unused)
+time_process_time_ns(PyObject *module, PyObject *unused)
 {
+    time_module_state *state = get_time_state(module);
     _PyTime_t t;
-    if (_PyTime_GetProcessTimeWithInfo(&t, NULL) < 0) {
+    if (py_process_time(state, &t, NULL) < 0) {
         return NULL;
     }
     return _PyTime_AsNanosecondsObject(t);
@@ -1617,7 +1590,7 @@ sum of the kernel and user-space CPU time.");
 
 
 static PyObject *
-time_get_clock_info(PyObject *self, PyObject *args)
+time_get_clock_info(PyObject *module, PyObject *args)
 {
     char *name;
     _Py_clock_info_t info;
@@ -1656,7 +1629,8 @@ time_get_clock_info(PyObject *self, PyObject *args)
         }
     }
     else if (strcmp(name, "process_time") == 0) {
-        if (_PyTime_GetProcessTimeWithInfo(&t, &info) < 0) {
+        time_module_state *state = get_time_state(module);
+        if (py_process_time(state, &t, &info) < 0) {
             return NULL;
         }
     }
@@ -2113,6 +2087,28 @@ time_exec(PyObject *module)
             timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
             CloseHandle(timer);
         }
+    }
+#endif
+
+#ifdef HAVE_TIMES
+    long ticks_per_second;
+    if (_Py_GetTicksPerSecond(&ticks_per_second) < 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot read ticks_per_second");
+        return -1;
+    }
+    if (_PyTimeFraction_Set(&state->times_base, SEC_TO_NS,
+                            ticks_per_second) < 0) {
+        PyErr_Format(PyExc_OverflowError, "ticks_per_second is too large");
+        return -1;
+    }
+#endif
+
+#ifdef HAVE_CLOCK
+    if (_PyTimeFraction_Set(&state->clock_base, SEC_TO_NS,
+                            CLOCKS_PER_SEC) < 0) {
+        PyErr_Format(PyExc_OverflowError, "CLOCKS_PER_SEC is too large");
+        return -1;
     }
 #endif
 

@@ -10,7 +10,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import Literal, TextIO
+from typing import Any, Literal, TextIO
 
 from test import support
 from test.support import os_helper, MS_WINDOWS
@@ -18,7 +18,7 @@ from test.support import os_helper, MS_WINDOWS
 from .logger import Logger
 from .result import TestResult, State
 from .results import TestResults
-from .runtests import RunTests, JsonFile, JsonFileType
+from .runtests import RunTests, WorkerRunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, TestName,
@@ -162,7 +162,7 @@ class WorkerThread(threading.Thread):
         self._stopped = True
         self._kill()
 
-    def _run_process(self, runtests: RunTests, output_fd: int,
+    def _run_process(self, runtests: WorkerRunTests, output_fd: int,
                      tmp_dir: StrPath | None = None) -> int | None:
         popen = create_worker_process(runtests, output_fd, tmp_dir)
         self._popen = popen
@@ -243,34 +243,34 @@ class WorkerThread(threading.Thread):
 
             json_fd = json_tmpfile.fileno()
             if MS_WINDOWS:
-                json_handle = msvcrt.get_osfhandle(json_fd)
+                # The msvcrt module is only available on Windows;
+                # we run mypy with `--platform=linux` in CI
+                json_handle: int = msvcrt.get_osfhandle(json_fd)  # type: ignore[attr-defined]
                 json_file = JsonFile(json_handle,
                                      JsonFileType.WINDOWS_HANDLE)
             else:
                 json_file = JsonFile(json_fd, JsonFileType.UNIX_FD)
         return (json_file, json_tmpfile)
 
-    def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> RunTests:
-        """Create the worker RunTests."""
-
+    def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> WorkerRunTests:
         tests = (test_name,)
         if self.runtests.rerun:
             match_tests = self.runtests.get_match_tests(test_name)
         else:
             match_tests = None
 
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if match_tests:
             kwargs['match_tests'] = [(test, True) for test in match_tests]
         if self.runtests.output_on_failure:
             kwargs['verbose'] = True
             kwargs['output_on_failure'] = False
-        return self.runtests.copy(
+        return self.runtests.create_worker_runtests(
             tests=tests,
             json_file=json_file,
             **kwargs)
 
-    def run_tmp_files(self, worker_runtests: RunTests,
+    def run_tmp_files(self, worker_runtests: WorkerRunTests,
                       stdout_fd: int) -> tuple[int | None, list[StrPath]]:
         # gh-93353: Check for leaked temporary files in the parent process,
         # since the deletion of temporary files can happen late during
@@ -345,6 +345,7 @@ class WorkerThread(threading.Thread):
             json_file, json_tmpfile = self.create_json_file(stack)
             worker_runtests = self.create_worker_runtests(test_name, json_file)
 
+            retcode: str | int | None
             retcode, tmp_files = self.run_tmp_files(worker_runtests,
                                                     stdout_file.fileno())
 

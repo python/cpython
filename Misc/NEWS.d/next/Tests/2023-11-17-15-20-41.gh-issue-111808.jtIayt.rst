@@ -1,4 +1,0 @@
-Make the default value of ``test.support.infinite_recursion()`` to be
-conditional based on whether optimizations were used when compiling the
-interpreter. This helps with platforms like WASI whose stack size is greatly
-restricted in debug builds.
