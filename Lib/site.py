@@ -484,12 +484,12 @@ def _register_detect_pip_usage_in_repl():
         if typ is SyntaxError and (
             "pip install" in value.text or "pip3 install" in value.text
         ):
-            value.__notes__ = [
+            value.add_note(
                 "The Python package manager (pip) can only be used"
                 " from outside of Python.\n"
                 "Please try the `pip` command in a"
                 " separate terminal or command prompt."
-            ]
+            )
 
         old_excepthook(typ, value, traceback)
 
