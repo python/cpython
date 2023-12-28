@@ -315,10 +315,10 @@ class PurePathBase:
     @property
     def name(self):
         """The final path component, if any."""
-        tail = self._tail
-        if not tail:
+        path_str = str(self)
+        if not path_str or path_str == '.':
             return ''
-        return tail[-1]
+        return self.pathmod.basename(path_str)
 
     @property
     def suffix(self):
@@ -362,11 +362,10 @@ class PurePathBase:
         m = self.pathmod
         if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
             raise ValueError(f"Invalid name {name!r}")
-        tail = self._tail.copy()
-        if not tail:
+        parent, old_name = m.split(str(self))
+        if not old_name or old_name == '.':
             raise ValueError(f"{self!r} has an empty name")
-        tail[-1] = name
-        return self._from_parsed_parts(self.drive, self.root, tail)
+        return self.with_segments(parent, name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""

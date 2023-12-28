@@ -164,6 +164,25 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
+    @property
+    def name(self):
+        """The final path component, if any."""
+        tail = self._tail
+        if not tail:
+            return ''
+        return tail[-1]
+
+    def with_name(self, name):
+        """Return a new path with the file name changed."""
+        m = self.pathmod
+        if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
+            raise ValueError(f"Invalid name {name!r}")
+        tail = self._tail.copy()
+        if not tail:
+            raise ValueError(f"{self!r} has an empty name")
+        tail[-1] = name
+        return self._from_parsed_parts(self.drive, self.root, tail)
+
     def as_uri(self):
         """Return the path as a URI."""
         if not self.is_absolute():
