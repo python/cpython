@@ -1001,10 +1001,13 @@ as internal buffering of data.
 
    .. audit-event:: os.chmod path,mode,dir_fd os.fchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
+
+   .. versionchanged:: 3.13
+      Added support on Windows.
 
 
 .. function:: fchown(fd, uid, gid)
@@ -2077,7 +2080,8 @@ features:
       Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.13
-      Added support for the *follow_symlinks* argument on Windows.
+      Added support for a file descriptor and the *follow_symlinks* argument
+      on Windows.
 
 
 .. function:: chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True)
@@ -4981,6 +4985,9 @@ written in Python, such as a mail server's external command delivery program.
    that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note::
+      This function is not available on macOS.
 
    .. versionadded:: 3.3
 
