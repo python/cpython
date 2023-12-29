@@ -1,2 +1,0 @@
-test_concurrent_futures now cleans up multiprocessing to remove immediately
-temporary directories created by multiprocessing.util.get_temp_dir().

@@ -1,9 +1,0 @@
-Reduce the number of unit tests run for the PGO generation task.  This
-speeds up the task by a factor of about 15x.  Running the full unit test
-suite is slow.  This change may result in a slightly less optimized build
-since not as many code branches will be executed.  If you are willing to
-wait for the much slower build, the old behavior can be restored using
-'./configure [..] PROFILE_TASK="-m test --pgo-extended"'.  We make no
-guarantees as to which PGO task set produces a faster build.  Users who
-care should run their own relevant benchmarks as results can depend on
-the environment, workload, and compiler tool chain.

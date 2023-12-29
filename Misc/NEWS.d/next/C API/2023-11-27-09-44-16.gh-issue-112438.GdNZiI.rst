@@ -1,0 +1,2 @@
+Fix support of format units "es", "et", "es#", and "et#" in nested tuples in
+:c:func:`PyArg_ParseTuple`-like functions.

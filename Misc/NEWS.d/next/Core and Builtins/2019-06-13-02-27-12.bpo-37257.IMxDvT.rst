@@ -1,1 +1,0 @@
-Python's small object allocator (``obmalloc.c``) now allows (no more than) one empty arena to remain available for immediate reuse, without returning it to the OS.  This prevents thrashing in simple loops where an arena could be created and destroyed anew on each iteration.
