@@ -1591,8 +1591,8 @@ class FileFinder:
         else:
             self.path = _path_abspath(path)
         self._path_mtime = -1
-        self._path_cache = set()
-        self._relaxed_path_cache = set()
+        self._path_cache = dict()
+        self._relaxed_path_cache = dict()
         self._cache_is_normalized = False
 
     def invalidate_caches(self):
@@ -1628,8 +1628,12 @@ class FileFinder:
             cache_module = tail_module
             cache = self._path_cache
         # Check if the module is the name of a directory (and thus a package).
-        if cache_module in cache:
-            base_path = _path_join(self.path, tail_module)
+        try:
+            cache_path = cache[cache_module]
+        except KeyError:
+            pass
+        else:
+            base_path = _path_join(self.path, cache_path)
             for suffix, loader_class in self._loaders:
                 init_filename = '__init__' + suffix
                 full_path = _path_join(base_path, init_filename)
@@ -1641,15 +1645,21 @@ class FileFinder:
                 is_namespace = _path_isdir(base_path)
         # Check for a file w/ a proper suffix exists.
         for suffix, loader_class in self._loaders:
+            # XXX: Why is ValueError caught here?
+            #try:
+            #    full_path = _path_join(self.path, tail_module + suffix)
+            #except ValueError:
+            #    return None
+            _bootstrap._verbose_message('trying {}{} in {}', cache_module, suffix, self.path, verbosity=2)
             try:
-                full_path = _path_join(self.path, tail_module + suffix)
-            except ValueError:
-                return None
-            _bootstrap._verbose_message('trying {}', full_path, verbosity=2)
-            if cache_module + suffix in cache:
+                cache_path = cache[cache_module + suffix]
+            except KeyError:
+                pass
+
+            else:
+                full_path = _path_join(self.path, cache_path)
                 if _path_isfile(full_path):
-                    return self._get_spec(loader_class, fullname, full_path,
-                                          None, target)
+                    return self._get_spec(loader_class, fullname, full_path, None, target)
         if is_namespace:
             _bootstrap._verbose_message('possible namespace for {}', base_path)
             spec = _bootstrap.ModuleSpec(fullname, None)
@@ -1669,24 +1679,24 @@ class FileFinder:
         # We store two cached versions, to handle runtime changes of the
         # PYTHONCASEOK environment variable.
         if not sys.platform.startswith('win'):
-            self._path_cache = set(contents)
+            self._path_cache = { p: p for p in contents }
         else:
             # Windows users can import modules with case-insensitive file
             # suffixes (for legacy reasons). Make the suffix lowercase here
             # so it's done once instead of for every import. This is safe as
             # the specified suffixes to check against are always specified in a
             # case-sensitive manner.
-            lower_suffix_contents = set()
+            lower_suffix_contents = dict()
             for item in contents:
                 name, dot, suffix = item.partition('.')
                 if dot:
                     new_name = f'{name}.{suffix.lower()}'
                 else:
                     new_name = name
-                lower_suffix_contents.add(new_name)
+                lower_suffix_contents[new_name] = item
             self._path_cache = lower_suffix_contents
         if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS):
-            self._relaxed_path_cache = {fn.lower() for fn in contents}
+            self._relaxed_path_cache = {fn.lower(): fn for fn in contents}
 
         self._cache_is_normalized = False
 
@@ -1696,8 +1706,8 @@ class FileFinder:
         """
         from unicodedata import normalize
 
-        self._path_cache = { normalize('NFKC', p) for p in self._path_cache }
-        self._relaxed_path_cache = { normalize('NFKC', p) for p in self._relaxed_path_cache }
+        self._path_cache = { normalize('NFKC', p): p for p in self._path_cache }
+        self._relaxed_path_cache = { normalize('NFKC', p): p for p in self._relaxed_path_cache }
         self._cache_is_normalized = True
 
 
