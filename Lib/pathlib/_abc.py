@@ -191,11 +191,6 @@ class PurePathBase:
         # tail are normalized.
         '_drv', '_root', '_tail_cached',
 
-        # The `_str` slot stores the string representation of the path,
-        # computed from the drive, root and tail when `__str__()` is called
-        # for the first time. It's used to implement `_str_normcase`
-        '_str',
-
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `PathBase.resolve()`. This prevents duplicate
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
@@ -247,15 +242,6 @@ class PurePathBase:
         self._root = root
         self._tail_cached = tail
 
-    def _from_parsed_parts(self, drv, root, tail):
-        path_str = self._format_parsed_parts(drv, root, tail)
-        path = self.with_segments(path_str)
-        path._str = path_str or '.'
-        path._drv = drv
-        path._root = root
-        path._tail_cached = tail
-        return path
-
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
         if drv or root:
@@ -267,12 +253,7 @@ class PurePathBase:
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        try:
-            return self._str
-        except AttributeError:
-            self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._tail) or '.'
-            return self._str
+        return self._format_parsed_parts(self.drive, self.root, self._tail) or '.'
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
