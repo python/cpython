@@ -469,7 +469,7 @@ def register_standard_browsers():
         register("chrome", None, MacOSXOSAScript('google chrome'))
         register("firefox", None, MacOSXOSAScript('firefox'))
         register("safari", None, MacOSXOSAScript('safari'))
-        # OS X can use below Unix support (but we prefer using the OS X
+        # macOS can use below Unix support (but we prefer using the macOS
         # specific stuff)
 
     if sys.platform == "serenityos":
