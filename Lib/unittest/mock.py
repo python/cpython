@@ -1011,7 +1011,7 @@ class NonCallableMock(Base):
                 raise AssertionError(
                     f'{problem}\n'
                     f'Expected: {_CallList(calls)}'
-                    f'{self._calls_repr(prefix="  Actual").rstrip(".")}'
+                    f'{self._calls_repr(prefix="  Actual", display_empty=True).rstrip(".")}'
                 ) from cause
             return
 
@@ -1085,7 +1085,7 @@ class NonCallableMock(Base):
         return klass(**kw)
 
 
-    def _calls_repr(self, prefix="Calls"):
+    def _calls_repr(self, prefix="Calls", display_empty=False):
         """Renders self.mock_calls as a string.
 
         Example: "\nCalls: [call(1), call(2)]."
@@ -1093,7 +1093,7 @@ class NonCallableMock(Base):
         If self.mock_calls is empty, an empty string is returned. The
         output will be truncated if very long.
         """
-        if not self.mock_calls:
+        if not self.mock_calls and not display_empty:
             return ""
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 

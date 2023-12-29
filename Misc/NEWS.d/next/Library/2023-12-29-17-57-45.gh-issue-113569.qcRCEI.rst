@@ -1,0 +1,2 @@
+Display list of actual calls in unittest `Mock.assert_has_calls` failure
+message even if empty.

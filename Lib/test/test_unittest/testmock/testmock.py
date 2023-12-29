@@ -1547,6 +1547,8 @@ class MockTest(unittest.TestCase):
         mock = Mock(spec=f)
         mock(1)
 
+        uncalled_mock = Mock()
+
         with self.assertRaisesRegex(
                 AssertionError,
                 '^{}$'.format(
@@ -1556,6 +1558,14 @@ class MockTest(unittest.TestCase):
             mock.assert_has_calls([call()])
         self.assertIsNone(cm.exception.__cause__)
 
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape('Calls not found.\n'
+                              'Expected: [call()]\n'
+                              '  Actual: []'))) as cm:
+            uncalled_mock.assert_has_calls([call()])
+        self.assertIsNone(cm.exception.__cause__)
 
         with self.assertRaisesRegex(
                 AssertionError,
