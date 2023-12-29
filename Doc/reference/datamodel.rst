@@ -809,16 +809,34 @@ Built-in functions
 A built-in function object is a wrapper around a C function.  Examples of
 built-in functions are :func:`len` and :func:`math.sin` (:mod:`math` is a
 standard built-in module). The number and type of the arguments are
-determined by the C function. Special read-only attributes:
+determined by the C function.
 
-* :attr:`!__doc__` is the function's documentation string, or ``None`` if
-  unavailable. See :attr:`function.__doc__`.
-* :attr:`!__name__` is the function's name. See :attr:`function.__name__`.
-* :attr:`!__self__` is set to ``None`` (but see the next item).
-* :attr:`!__module__` is the name of
-  the module the function was defined in or ``None`` if unavailable.
-  See :attr:`function.__module__`.
+Special read-only attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. list-table::
+   :header-rows: 1
+
+   * - Attribute
+     - Meaning
+
+   * - .. attribute:: function.__doc__
+          :noindex:
+     - The function's documentation string, or ``None`` if unavailable.
+       See :attr:`function.__doc__`.
+
+   * - .. attribute:: function.__name__
+          :noindex:
+     - The function's name.
+       See :attr:`function.__name__`.
+
+   * - .. attribute:: function.__self__
+     - It is set to ``None`` (but see the next item)
+
+   * - .. attribute:: function.__module__
+          :noindex:
+     - The name of the module the function was defined in,
+       or ``None`` if unavailable. See :attr:`function.__module__`.
 
 .. _builtin-methods:
 
