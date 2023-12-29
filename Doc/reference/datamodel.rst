@@ -831,7 +831,7 @@ Special read-only attributes
        See :attr:`function.__name__`.
 
    * - .. attribute:: function.__self__
-     - It is set to ``None`` (but see the next item)
+     - It is set to ``None`` (but see :ref:`built-in methods <builtin-methods>`).
 
    * - .. attribute:: function.__module__
           :noindex:
