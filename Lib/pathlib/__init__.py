@@ -180,10 +180,8 @@ class PurePath(_abc.PurePathBase):
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
         path = _abc.PurePathBase.relative_to(self, other, walk_up=walk_up)
-        tail = path._raw_paths.copy()
-        path._str = self._format_parsed_parts('', '', tail) or '.'
         path._drv = path._root = ''
-        path._tail_cached = tail
+        path._tail_cached = path._raw_paths.copy()
         return path
 
     def is_relative_to(self, other, /, *_deprecated):
