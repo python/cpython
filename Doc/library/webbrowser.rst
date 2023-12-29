@@ -25,8 +25,8 @@ If the environment variable :envvar:`BROWSER` exists, it is interpreted as the
 defaults.  When the value of a list part contains the string ``%s``, then it is
 interpreted as a literal browser command line to be used with the argument URL
 substituted for ``%s``; if the value is a single word that refers to one of the
-already registered browsers this browser is added to the front of the search list; 
-if the part does not contain ``%s``, it is simply interpreted as the name of the 
+already registered browsers this browser is added to the front of the search list;
+if the part does not contain ``%s``, it is simply interpreted as the name of the
 browser to launch. [1]_
 
 .. versionchanged:: 3.13
