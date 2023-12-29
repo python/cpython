@@ -1,0 +1,1 @@
+Make hardcoded python name, a configurable parameter so that different implementations of python can override it instead of making huge diffs in sysconfig.py
