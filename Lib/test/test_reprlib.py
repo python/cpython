@@ -580,6 +580,16 @@ class ReprTests(unittest.TestCase):
                 with self.assertRaisesRegex(expected_error, expected_msg):
                     r.repr(test_object)
 
+    def test_shadowed_builtin(self):
+        # Issue #113570: repr() should not be fooled by a shadowed builtin
+        # function
+        class array:
+            def __repr__(self):
+                return "not array.array"
+
+        self.assertEqual(r(array()), "not array.array")
+
+
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:
         fp.write(text)

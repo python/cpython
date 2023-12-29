@@ -60,12 +60,26 @@ class Repr:
         return self.repr1(x, self.maxlevel)
 
     def repr1(self, x, level):
-        typename = type(x).__name__
-        if ' ' in typename:
-            parts = typename.split()
-            typename = '_'.join(parts)
-        if hasattr(self, 'repr_' + typename):
-            return getattr(self, 'repr_' + typename)(x, level)
+
+        _lookup = {
+            ("builtins", "tuple"): self.repr_tuple,
+            ("builtins", "list"): self.repr_list,
+            ("array", "array"): self.repr_array,
+            ("builtins", "set"): self.repr_set,
+            ("builtins", "frozenset"): self.repr_frozenset,
+            ("collections", "deque"): self.repr_deque,
+            ("builtins", "dict"): self.repr_dict,
+            ("builtins", "str"): self.repr_str,
+            ("builtins", "int"): self.repr_int,
+        }
+
+        _type = type(x)
+        module = _type.__module__
+        typename = _type.__name__
+
+        predefined_repr = _lookup.get((module, typename))
+        if predefined_repr:
+            return predefined_repr(x, level)
         else:
             return self.repr_instance(x, level)
 
