@@ -75,6 +75,15 @@ class PurePath(_abc.PurePathBase):
     """
 
     __slots__ = (
+        # The `_drv`, `_root` and `_tail_cached` slots store parsed and
+        # normalized parts of the path. They are set when any of the `drive`,
+        # `root` or `_tail` properties are accessed for the first time. The
+        # three-part division corresponds to the result of
+        # `os.path.splitroot()`, except that the tail is further split on path
+        # separators (i.e. it is a list of strings), and that the root and
+        # tail are normalized.
+        '_drv', '_root', '_tail_cached',
+
         # The `_str` slot stores the string representation of the path,
         # computed from the drive, root and tail when `__str__()` is called
         # for the first time. It's used to implement `_str_normcase`
@@ -135,25 +144,6 @@ class PurePath(_abc.PurePathBase):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
         return (self.__class__, self.parts)
-
-    def _from_parsed_parts(self, drv, root, tail):
-        path_str = self._format_parsed_parts(drv, root, tail)
-        path = self.with_segments(path_str)
-        path._str = path_str or '.'
-        path._drv = drv
-        path._root = root
-        path._tail_cached = tail
-        return path
-
-    def __str__(self):
-        """Return the string representation of the path, suitable for
-        passing to system calls."""
-        try:
-            return self._str
-        except AttributeError:
-            self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._tail) or '.'
-            return self._str
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -218,6 +208,96 @@ class PurePath(_abc.PurePathBase):
         if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
+
+    def __str__(self):
+        """Return the string representation of the path, suitable for
+        passing to system calls."""
+        try:
+            return self._str
+        except AttributeError:
+            self._str = self._format_parsed_parts(self.drive, self.root,
+                                                  self._tail) or '.'
+            return self._str
+
+    @classmethod
+    def _format_parsed_parts(cls, drv, root, tail):
+        if drv or root:
+            return drv + root + cls.pathmod.sep.join(tail)
+        elif tail and cls.pathmod.splitdrive(tail[0])[0]:
+            tail = ['.'] + tail
+        return cls.pathmod.sep.join(tail)
+
+    def _from_parsed_parts(self, drv, root, tail):
+        path_str = self._format_parsed_parts(drv, root, tail)
+        path = self.with_segments(path_str)
+        path._str = path_str or '.'
+        path._drv = drv
+        path._root = root
+        path._tail_cached = tail
+        return path
+
+    @classmethod
+    def _parse_path(cls, path):
+        if not path:
+            return '', '', []
+        sep = cls.pathmod.sep
+        altsep = cls.pathmod.altsep
+        if altsep:
+            path = path.replace(altsep, sep)
+        drv, root, rel = cls.pathmod.splitroot(path)
+        if not root and drv.startswith(sep) and not drv.endswith(sep):
+            drv_parts = drv.split(sep)
+            if len(drv_parts) == 4 and drv_parts[2] not in '?.':
+                # e.g. //server/share
+                root = sep
+            elif len(drv_parts) == 6:
+                # e.g. //?/unc/server/share
+                root = sep
+        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
+        return drv, root, parsed
+
+    @property
+    def drive(self):
+        """The drive prefix (letter or UNC path), if any."""
+        try:
+            return self._drv
+        except AttributeError:
+            path = _abc.PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(path)
+            return self._drv
+
+    @property
+    def root(self):
+        """The root of the path, if any."""
+        try:
+            return self._root
+        except AttributeError:
+            path = _abc.PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(path)
+            return self._root
+
+    @property
+    def _tail(self):
+        try:
+            return self._tail_cached
+        except AttributeError:
+            path = _abc.PurePathBase.__str__(self)
+            self._drv, self._root, self._tail_cached = self._parse_path(path)
+            return self._tail_cached
+
+    @property
+    def anchor(self):
+        """The concatenation of the drive and root, or ''."""
+        return self.drive + self.root
+
+    @property
+    def parts(self):
+        """An object providing sequence-like access to the
+        components in the filesystem path."""
+        if self.drive or self.root:
+            return (self.drive + self.root,) + tuple(self._tail)
+        else:
+            return tuple(self._tail)
 
     @property
     def parent(self):
@@ -419,7 +499,7 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _make_child_entry(self, entry):
+    def _make_child_entry(self, entry, is_dir=False):
         # Transform an entry yielded from _scandir() into a path object.
         path_str = entry.name if str(self) == '.' else entry.path
         path = self.with_segments(path_str)
