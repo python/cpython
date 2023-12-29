@@ -474,6 +474,10 @@ Deprecated
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
 
+* :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
+  Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
+  (Contributed by Inada Naoki in :gh:`73427`.)
+
 * :mod:`traceback`:
 
   * The field *exc_type* of :class:`traceback.TracebackException` is

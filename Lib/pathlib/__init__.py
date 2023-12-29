@@ -329,6 +329,10 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
+    def _make_child_entry(self, entry):
+        # Transform an entry yielded from _scandir() into a path object.
+        return self._make_child_relpath(entry.name)
+
     def absolute(self):
         """Return an absolute version of this path
         No normalization or symlink resolution is performed.
