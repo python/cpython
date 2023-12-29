@@ -517,11 +517,11 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    from ``PyObject``.
 
    Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
-   :c:type:`slot <PyTypeSlot>` when creating a class using negative
+   :c:type:`slot <PyType_Slot>` when creating a class using negative
    :c:member:`~PyType_Spec.basicsize`.
    It is mandatory in that case.
 
-   This flag is only used in :c:type:`PyTypeSlot`.
+   This flag is only used in :c:type:`PyType_Slot`.
    When setting :c:member:`~PyTypeObject.tp_members` during
    class creation, Python clears it and sets
    :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
