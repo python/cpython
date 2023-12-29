@@ -540,7 +540,7 @@ def register_standard_browsers():
         # and prepend to _tryorder
         for cmdline in userchoices:
             if all(x not in cmdline for x in " \t"):
-                # Assume this the name of a registered command, use
+                # Assume this is the name of a registered command, use
                 # that unless it is a GenericBrowser.
                 try:
                     command = _browsers[cmdline.lower()]
