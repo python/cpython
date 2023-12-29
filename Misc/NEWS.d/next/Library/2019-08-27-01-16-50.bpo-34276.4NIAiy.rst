@@ -1,1 +1,2 @@
-Makes sure that file URIs with multiple leading slashes (file:////, etc.) are properly round-tripped by urllib.parse. Patch by Ashwin Ramaswami
+Fix :func:`urllib.parse.urlunparse` and :func:`urllib.parse.urlunsplit` for URIs with path starting with multiple slashes and no authority.
+Based on patch by Ashwin Ramaswami.
