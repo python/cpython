@@ -2728,6 +2728,7 @@ class TestImportAccented(unittest.TestCase):
         exec(f"from {name} import SPAM", values, values)
         try:
             self.assertEqual(values["SPAM"], "spam")
+            self.assertIn(normalized, sys.modules)
         finally:
             del sys.modules[normalized]
 
