@@ -1622,11 +1622,11 @@ class FileFinder:
         if not tail_module.isascii() and not self._cache_is_normalized:
             self._normalize_cache()
         if _relax_case():
-            cache_module = tail_module.lower()
             cache = self._relaxed_path_cache
+            cache_module = tail_module.lower()
         else:
-            cache_module = tail_module
             cache = self._path_cache
+            cache_module = tail_module
         # Check if the module is the name of a directory (and thus a package).
         try:
             cache_path = cache[cache_module]
