@@ -1,0 +1,2 @@
+Fix a hang in :mod:`multiprocessing` when passing ``Pipe`` instances to
+workers on macOS.
