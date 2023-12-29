@@ -2719,14 +2719,17 @@ class TestImportAccented(unittest.TestCase):
         rmtree(self.dir_name)
 
     def assert_importing_possible(self, name):
+        normalized = unicodedata.normalize('NFKC', name)
         filename = os.path.join(self.dir_name, f"{name}.py")
         with open(filename, "w") as stream:
             stream.write("SPAM = 'spam'\n")
 
         values = {}
         exec(f"from {name} import SPAM", values, values)
-        self.assertEqual(values["SPAM"], "spam")
-        del sys.modules[unicodedata.normalize('NFKC', name)]
+        try:
+            self.assertEqual(values["SPAM"], "spam")
+        finally:
+            del sys.modules[normalized]
 
     def test_import_precomposed(self):
         name = 'M\u00E4dchen'
