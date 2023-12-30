@@ -508,6 +508,14 @@ class TestPlistlib(unittest.TestCase):
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
 
+    def test_loads_str(self):
+        pl = self._create()
+        b = plistlib.dumps(pl)
+        s = b.decode()
+        self.assertEqual(type(s), str)
+        pl2 = plistlib.loads(s)
+        self.assertEqual(pl, pl2)
+
     def test_indentation_array(self):
         data = [[[[[[[[{'test': b'aaaaaa'}]]]]]]]]
         self.assertEqual(plistlib.loads(plistlib.dumps(data)), data)
