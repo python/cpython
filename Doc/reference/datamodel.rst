@@ -828,6 +828,10 @@ Special read-only attributes
      - The function's name.
        See :attr:`function.__name__`.
 
+   * - .. attribute:: builtin_function.__qualname__
+     - The function's :term:`qualified name`.
+       See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
+
    * - .. attribute:: builtin_function.__self__
      - It is set to ``None`` (but see :ref:`built-in methods <builtin-methods>`).
 
