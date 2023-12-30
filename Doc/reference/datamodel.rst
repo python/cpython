@@ -820,21 +820,18 @@ Special read-only attributes
    * - Attribute
      - Meaning
 
-   * - .. attribute:: function.__doc__
-          :noindex:
+   * - .. attribute:: builtin_function.__doc__
      - The function's documentation string, or ``None`` if unavailable.
        See :attr:`function.__doc__`.
 
-   * - .. attribute:: function.__name__
-          :noindex:
+   * - .. attribute:: builtin_function.__name__
      - The function's name.
        See :attr:`function.__name__`.
 
-   * - .. attribute:: function.__self__
+   * - .. attribute:: builtin_function.__self__
      - It is set to ``None`` (but see :ref:`built-in methods <builtin-methods>`).
 
-   * - .. attribute:: function.__module__
-          :noindex:
+   * - .. attribute:: builtin_function.__module__
      - The name of the module the function was defined in,
        or ``None`` if unavailable. See :attr:`function.__module__`.
 
