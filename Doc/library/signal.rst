@@ -157,7 +157,7 @@ The variables defined in the :mod:`signal` module are:
 
    Alias to :data:`SIGCHLD`.
 
-   .. availability:: not macOS
+   .. availability:: not macOS.
 
 .. data:: SIGCONT
 
