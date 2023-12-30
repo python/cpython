@@ -1085,7 +1085,7 @@ class NonCallableMock(Base):
         return klass(**kw)
 
 
-    def _calls_repr(self, prefix="Calls", display_empty=False):
+    def _calls_repr(self, prefix="Calls", *, display_empty=False):
         """Renders self.mock_calls as a string.
 
         Example: "\nCalls: [call(1), call(2)]."
