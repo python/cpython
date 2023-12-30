@@ -1119,7 +1119,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
             return True
 
         async def c2(result):
-            # second task begins by releasing semaphore three times, for c1, c2, and c2
+            # second task begins by releasing semaphore three times, for c1, c2, and c3
             sem.release()
             sem.release()
             sem.release()
