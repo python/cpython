@@ -824,6 +824,10 @@ Special read-only attributes
      - The function's documentation string, or ``None`` if unavailable.
        See :attr:`function.__doc__`.
 
+   * - .. attribute:: builtin_function.__module__
+     - The name of the module the function was defined in,
+       or ``None`` if unavailable. See :attr:`function.__module__`.
+
    * - .. attribute:: builtin_function.__name__
      - The function's name.
        See :attr:`function.__name__`.
@@ -835,9 +839,6 @@ Special read-only attributes
    * - .. attribute:: builtin_function.__self__
      - It is set to ``None`` (but see :ref:`built-in methods <builtin-methods>`).
 
-   * - .. attribute:: builtin_function.__module__
-     - The name of the module the function was defined in,
-       or ``None`` if unavailable. See :attr:`function.__module__`.
 
 .. _builtin-methods:
 
