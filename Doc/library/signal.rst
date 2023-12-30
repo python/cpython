@@ -157,6 +157,8 @@ The variables defined in the :mod:`signal` module are:
 
    Alias to :data:`SIGCHLD`.
 
+   .. availability:: not macOS.
+
 .. data:: SIGCONT
 
    Continue the process if it is currently stopped
