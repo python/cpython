@@ -1377,6 +1377,9 @@ static PyObject *
 FutureObj_repr(FutureObj *fut)
 {
     ENSURE_FUTURE_ALIVE(fut)
+    if (asyncio_future_repr_func == NULL) {
+        return PyUnicode_FromFormat("<Future at %p>", fut);
+    }
     return PyObject_CallOneArg(asyncio_future_repr_func, (PyObject *)fut);
 }
 
