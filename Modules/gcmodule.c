@@ -1070,7 +1070,6 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 static void
 clear_freelists(PyInterpreterState *interp)
 {
-    // TODO: Unify with clear_all_freelists
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
     _PyDict_ClearFreeList(interp);
