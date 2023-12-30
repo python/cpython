@@ -1081,7 +1081,7 @@ clear_freelists(PyInterpreterState *interp)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
         _PyList_ClearFreeList(&tstate->freelist_state);
-        tstate = tstate->base.next;
+        tstate = (_PyThreadStateImpl *)tstate->base.next;
     }
     HEAD_UNLOCK(&_PyRuntime);
 #else
