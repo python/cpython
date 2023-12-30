@@ -73,7 +73,7 @@ class Repr:
     def repr1(self, x, level):
         _type = type(x)
         typename = _type.__name__
-        predefined_method = "repr_" + typename
+        method_name = "repr_" + typename
 
         if not hasattr(self, method_name):
             return self.repr_instance(x, level)
