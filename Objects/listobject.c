@@ -134,9 +134,8 @@ _PyList_ClearFreeList(PyFreeListState *state)
 }
 
 void
-_PyList_Fini(PyInterpreterState *interp)
+_PyList_Fini(PyFreeListState *state)
 {
-    PyFreeListState *state = _PyFreeListState_GET();
     _PyList_ClearFreeList(state);
 #if defined(Py_DEBUG) && PyList_MAXFREELIST > 0
     state->list.numfree = -1;
