@@ -820,6 +820,9 @@ Special read-only attributes
    * - Attribute
      - Meaning
 
+   * - .. attribute:: builtin_function.__class__
+     - The function's class.
+
    * - .. attribute:: builtin_function.__doc__
      - The function's documentation string, or ``None`` if unavailable.
        See :attr:`function.__doc__`.
