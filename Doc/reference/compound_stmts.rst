@@ -1368,6 +1368,8 @@ access the local variables of the function containing the def.  See section
       Support for forward references within annotations by preserving
       annotations in a string form at runtime instead of eager evaluation.
 
+   :pep:`318` - Decorators for Functions and Methods
+      Function and method decorators were introduced.
 
 .. _class:
 
