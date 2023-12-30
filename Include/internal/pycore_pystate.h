@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
@@ -238,6 +239,19 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 //
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
+
+static inline PyFreeListState* _PyFreeListState_GET(void) {
+    PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
+
+#ifdef Py_GIL_DISABLED
+    return &((_PyThreadStateImpl*)tstate)->freelist_state;
+#else
+    return &tstate->interp->freelist_state;
+#endif
+}
 
 #ifdef __cplusplus
 }

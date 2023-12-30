@@ -24,8 +24,9 @@ _Py_DECLARE_STR(list_err, "list index out of range");
 static struct _Py_list_state *
 get_list_state(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->list;
+    PyFreeListState *state = _PyFreeListState_GET();
+    assert(state != NULL);
+    return &state->list;
 }
 #endif
 
@@ -120,12 +121,12 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 }
 
 void
-_PyList_ClearFreeList(PyInterpreterState *interp)
+_PyList_ClearFreeList(PyFreeListState *state)
 {
 #if PyList_MAXFREELIST > 0
-    struct _Py_list_state *state = &interp->list;
-    while (state->numfree) {
-        PyListObject *op = state->free_list[--state->numfree];
+    struct _Py_list_state *list_state = &state->list;
+    while (list_state->numfree) {
+        PyListObject *op = list_state->free_list[--list_state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
@@ -135,10 +136,10 @@ _PyList_ClearFreeList(PyInterpreterState *interp)
 void
 _PyList_Fini(PyInterpreterState *interp)
 {
-    _PyList_ClearFreeList(interp);
+    PyFreeListState *state = _PyFreeListState_GET();
+    _PyList_ClearFreeList(state);
 #if defined(Py_DEBUG) && PyList_MAXFREELIST > 0
-    struct _Py_list_state *state = &interp->list;
-    state->numfree = -1;
+    state->list.numfree = -1;
 #endif
 }
 

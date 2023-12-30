@@ -11,6 +11,10 @@ extern "C" {
 #include "pycore_mimalloc.h"      // struct _mimalloc_thread_state
 
 
+typedef struct _Py_freelist_state {
+    struct _Py_list_state list;
+} _Py_freelist_state;
+
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
 // are intended to be private. The _PyThreadStateImpl fields not exposed.
@@ -20,6 +24,7 @@ typedef struct _PyThreadStateImpl {
 
 #ifdef Py_GIL_DISABLED
     struct _mimalloc_thread_state mimalloc;
+    struct _Py_freelist_state freelist_state;
 #endif
 
 } _PyThreadStateImpl;

@@ -1070,12 +1070,25 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 static void
 clear_freelists(PyInterpreterState *interp)
 {
+    // TODO: Unify with clear_all_freelists
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
-    _PyList_ClearFreeList(interp);
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
     _PyContext_ClearFreeList(interp);
+#if defined(Py_GIL_DISABLED)
+    HEAD_LOCK(&_PyRuntime);
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
+    while (tstate != NULL) {
+        _PyList_ClearFreeList(&tstate->freelist_state);
+        tstate = tstate->base.next;
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+#else
+    // Only free-lists per interpreter are existed.
+    PyFreeListState* state = _PyFreeListState_GET();
+    _PyList_ClearFreeList(state);
+#endif
 }
 
 // Show stats for objects in each generations
