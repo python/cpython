@@ -589,6 +589,16 @@ class ReprTests(unittest.TestCase):
 
         self.assertEqual(r(array()), "not array.array")
 
+    def test_custom_repr(self):
+        class MyRepr(Repr):
+
+            def repr_TextIOWrapper(self, obj, level):
+                if obj.name in {'<stdin>', '<stdout>', '<stderr>'}:
+                    return obj.name
+                return repr(obj)
+
+        aRepr = MyRepr()
+        self.assertEqual(aRepr.repr(sys.stdin), "<stdin>")
 
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:

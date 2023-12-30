@@ -36,6 +36,17 @@ def recursive_repr(fillvalue='...'):
     return decorating_function
 
 class Repr:
+    _lookup = {
+        "repr_tuple": ("builtins", "tuple"),
+        "repr_list": ("builtins", "list"),
+        "repr_array": ("array", "array"),
+        "repr_set": ("builtins", "set"),
+        "repr_frozenset": ("builtins", "frozenset"),
+        "repr_deque": ("collections", "deque"),
+        "repr_dict": ("builtins", "dict"),
+        "repr_str": ("builtins", "str"),
+        "repr_int": ("builtins", "int"),
+        }
 
     def __init__(
         self, *, maxlevel=6, maxtuple=6, maxlist=6, maxarray=5, maxdict=4,
@@ -60,28 +71,28 @@ class Repr:
         return self.repr1(x, self.maxlevel)
 
     def repr1(self, x, level):
-
-        _lookup = {
-            ("builtins", "tuple"): self.repr_tuple,
-            ("builtins", "list"): self.repr_list,
-            ("array", "array"): self.repr_array,
-            ("builtins", "set"): self.repr_set,
-            ("builtins", "frozenset"): self.repr_frozenset,
-            ("collections", "deque"): self.repr_deque,
-            ("builtins", "dict"): self.repr_dict,
-            ("builtins", "str"): self.repr_str,
-            ("builtins", "int"): self.repr_int,
-        }
-
         _type = type(x)
-        module = _type.__module__
         typename = _type.__name__
+        predefined_method = "repr_" + typename
 
-        predefined_repr = _lookup.get((module, typename))
-        if predefined_repr:
-            return predefined_repr(x, level)
-        else:
+        if not hasattr(self, method_name):
             return self.repr_instance(x, level)
+
+        # we have a predefined method for this type,
+        # but it has been set in a subclass
+        if method_name not in self._lookup:
+            return getattr(self, method_name)(x, level)
+
+        module = getattr(_type, "__module__", None)
+        is_shadowed = (module, typename) != self._lookup[method_name]
+
+        if is_shadowed:
+            # we have a predefined method for a class with
+            # the same name as x, but it is not x
+            return self.repr_instance(x, level)
+
+        return getattr(self, method_name)(x, level)
+
 
     def _join(self, pieces, level):
         if self.indent is None:
