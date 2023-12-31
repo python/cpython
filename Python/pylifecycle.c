@@ -1727,6 +1727,11 @@ flush_std_files(void)
 
 */
 
+static void
+finalize_free_lists(PyFreeListState *state)
+{
+    _PyList_Fini(state);
+}
 
 static void
 finalize_interp_types(PyInterpreterState *interp)
@@ -1751,15 +1756,27 @@ finalize_interp_types(PyInterpreterState *interp)
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
 
-    PyFreeListState *state = _PyFreeListState_GET();
     _PyDict_Fini(interp);
-    _PyList_Fini(state);
     _PyTuple_Fini(interp);
 
     _PySlice_Fini(interp);
 
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
+
+#if defined(Py_GIL_DISABLED)
+    HEAD_LOCK(&_PyRuntime);
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
+    while (tstate != NULL) {
+        finalize_free_lists(&tstate->freelist_state);
+        tstate = (_PyThreadStateImpl *)tstate->base.next;
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+#else
+    PyFreeListState *state = _PyFreeListState_GET();
+    finalize_free_lists(state);
+#endif
+
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);
 #endif
