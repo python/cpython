@@ -1062,13 +1062,19 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
     }
 }
 
+static void
+clear_freelists(PyFreeListState *state)
+{
+    _PyList_ClearFreeList(state);
+}
+
 /* Clear all free lists
  * All free lists are cleared during the collection of the highest generation.
  * Allocated items in the free list may keep a pymalloc arena occupied.
  * Clearing the free lists may give back memory to the OS earlier.
  */
 static void
-clear_freelists(PyInterpreterState *interp)
+clear_all_freelists(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
@@ -1079,14 +1085,14 @@ clear_freelists(PyInterpreterState *interp)
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
-        _PyList_ClearFreeList(&tstate->freelist_state);
+        clear_freelists(&tstate->freelist_state);
         tstate = (_PyThreadStateImpl *)tstate->base.next;
     }
     HEAD_UNLOCK(&_PyRuntime);
 #else
     // Only free-lists per interpreter are existed.
-    PyFreeListState* state = _PyFreeListState_GET();
-    _PyList_ClearFreeList(state);
+    PyFreeListState *state = _PyFreeListState_GET();
+    clear_freelists(state)
 #endif
 }
 
@@ -1497,7 +1503,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_freelists(tstate->interp);
+        clear_all_freelists(tstate->interp);
     }
 
     if (_PyErr_Occurred(tstate)) {
