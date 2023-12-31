@@ -86,7 +86,9 @@ This module defines the following functions:
    explanation of the keyword arguments.
 
    .. versionadded:: 3.4
-
+    
+    .. version changed:: 3.13  
+       *data* can be a string when *fmt* equals :data:`FMT_XML`.
 
 .. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
