@@ -279,17 +279,6 @@ Py_SetRecursionLimit(int new_limit)
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-#ifdef USE_STACKCHECK
-    if (PyOS_CheckStack()) {
-        ++tstate->c_recursion_remaining;
-        _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
-        return -1;
-    }
-    else {
-        tstate->c_recursion_remaining += (int)(PYOS_STACK_MARGIN/Py_C_FRAME_SIZE);
-        return 0;
-    }
-#endif
     if (tstate->recursion_headroom) {
         if (tstate->c_recursion_remaining < -50) {
             /* Overflowing while handling an overflow. Give up. */
@@ -298,6 +287,12 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     }
     else {
         if (tstate->c_recursion_remaining <= 0) {
+#ifdef USE_STACKCHECK
+            if (PyOS_CheckStack() == 0) {
+                tstate->c_recursion_remaining += (int)(PYOS_STACK_MARGIN/Py_C_FRAME_SIZE);
+                return 0;
+            }
+#endif
             tstate->recursion_headroom++;
             _PyErr_Format(tstate, PyExc_RecursionError,
                         "maximum recursion depth exceeded%s",
