@@ -842,6 +842,9 @@ Special read-only attributes
    * - .. attribute:: builtin_function.__self__
      - It is set to ``None`` (but see :ref:`built-in methods <builtin-methods>`).
 
+   * - .. attribute:: builtin_function.__text_signature__
+     - The function's signature as plain text, or ``None`` if unavailable.
+
 
 .. _builtin-methods:
 
