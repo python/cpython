@@ -724,7 +724,7 @@ static void perf_map_jit_write_entry(void *state, const void *code_addr,
     ev2.base.time_stamp = get_current_monotonic_ticks();
     ev2.unwind_data_size = sizeof(f) + eh_frame_size;
     ev2.eh_frame_hdr_size = sizeof(f);
-    ev2.mapped_size = ev2.unwind_data_size;
+    ev2.mapped_size = round_up(ev2.unwind_data_size, 16);
     int content_size = sizeof(ev2) + sizeof(f) + eh_frame_size;
     int padding_size = round_up(content_size, 8) - content_size;
     ev2.base.size = content_size + padding_size;
@@ -813,6 +813,7 @@ new_code_arena(void)
     void *start = &_Py_trampoline_func_start;
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
+    size_t chunk_size = round_up(code_size + 0x50, 16);
     // TODO: Check the effect of alignment of the code chunks. Initial investigation
     // showed that this has no effect on performance in x86-64 or aarch64 and the current
     // version has the advantage that the unwinder in GDB can unwind across JIT-ed code.
@@ -821,9 +822,9 @@ new_code_arena(void)
     // measurable performance improvement by rounding trampolines up to 32-bit
     // or 64-bit alignment.
 
-    size_t n_copies = mem_size / code_size;
+    size_t n_copies = mem_size / chunk_size;
     for (size_t i = 0; i < n_copies; i++) {
-        memcpy(memory + i * code_size, start, code_size * sizeof(char));
+        memcpy(memory + i * chunk_size, start, code_size * sizeof(char));
     }
     // Some systems may prevent us from creating executable code on the fly.
     int res = mprotect(memory, mem_size, PROT_READ | PROT_EXEC);
@@ -877,8 +878,8 @@ static inline py_trampoline
 code_arena_new_code(code_arena_t *code_arena)
 {
     py_trampoline trampoline = (py_trampoline)code_arena->current_addr;
-    code_arena->size_left -= code_arena->code_size;
-    code_arena->current_addr += code_arena->code_size;
+    code_arena->size_left -= round_up(code_arena->code_size + 0x50, 16);
+    code_arena->current_addr += round_up(code_arena->code_size + 0x50, 16);
     return trampoline;
 }
 
@@ -886,7 +887,7 @@ static inline py_trampoline
 compile_trampoline(void)
 {
     if ((perf_code_arena == NULL) ||
-        (perf_code_arena->size_left <= perf_code_arena->code_size)) {
+        (perf_code_arena->size_left <= round_up(perf_code_arena->code_size+0x50, 16))) {
         if (new_code_arena() < 0) {
             return NULL;
         }
