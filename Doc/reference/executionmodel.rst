@@ -139,8 +139,9 @@ namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the names are not found there, the
-builtins namespace is searched.  The :keyword:`!global` statement must precede
-all uses of the listed names.
+builtins namespace is searched.  If the name is also not in the builtins namespace, 
+a new variable is created in the global namespace.  The :keyword:`!global` statement 
+must precede all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
 in the same block.  If the nearest enclosing scope for a free variable contains
@@ -151,7 +152,8 @@ a global statement, the free variable is treated as a global.
 The :keyword:`nonlocal` statement causes corresponding names to refer
 to previously bound variables in the nearest enclosing function scope.
 :exc:`SyntaxError` is raised at compile time if the given name does not
-exist in any enclosing function scope. :ref:`Type parameters <type-params>`
+exist in any enclosing function scope, or if the nearest enclosing scope is 
+the global (module) scope. :ref:`Type parameters <type-params>`
 cannot be rebound with the :keyword:`!nonlocal` statement.
 
 .. index:: pair: module; __main__
