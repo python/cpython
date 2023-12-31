@@ -346,12 +346,12 @@ typedef struct {
     uint64_t mapped_size;
 } CodeUnwindingInfoEvent;
 
-const intptr_t kMillisecondsPerSecond = 1000;
-const intptr_t kMicrosecondsPerMillisecond = 1000;
-const intptr_t kMicrosecondsPerSecond = (kMicrosecondsPerMillisecond * kMillisecondsPerSecond);
-const intptr_t kNanosecondsPerMicrosecond = 1000;
-const intptr_t kNanosecondsPerMillisecond = (kNanosecondsPerMicrosecond * kMicrosecondsPerMillisecond);
-const intptr_t kNanosecondsPerSecond = (kNanosecondsPerMicrosecond * kMicrosecondsPerSecond);
+static const intptr_t kMillisecondsPerSecond = 1000;
+static const intptr_t kMicrosecondsPerMillisecond = 1000;
+static const intptr_t kMicrosecondsPerSecond = (kMicrosecondsPerMillisecond * kMillisecondsPerSecond);
+static const intptr_t kNanosecondsPerMicrosecond = 1000;
+static const intptr_t kNanosecondsPerMillisecond = (kNanosecondsPerMicrosecond * kMicrosecondsPerMillisecond);
+static const intptr_t kNanosecondsPerSecond = (kNanosecondsPerMicrosecond * kMicrosecondsPerSecond);
 
 // Dwarf encoding constants
 
@@ -387,7 +387,7 @@ static int64_t get_current_monotonic_ticks(void) {
     return result;
 }
 
-int64_t get_current_time_microseconds(void) {
+static int64_t get_current_time_microseconds(void) {
   // gettimeofday has microsecond resolution.
   struct timeval tv;
   if (gettimeofday(&tv, NULL) < 0) {
