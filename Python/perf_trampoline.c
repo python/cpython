@@ -189,12 +189,19 @@ struct code_arena_st {
 typedef struct code_arena_st code_arena_t;
 typedef struct trampoline_api_st trampoline_api_t;
 
+enum perf_trampoline_type {
+    PERF_TRAMPOLINE_UNSET = 0,
+    PERF_TRAMPOLINE_TYPE_MAP = 1,
+    PERF_TRAMPOLINE_TYPE_JITDUMP = 2,
+};
+
 #define perf_status _PyRuntime.ceval.perf.status
 #define extra_code_index _PyRuntime.ceval.perf.extra_code_index
 #define perf_code_arena _PyRuntime.ceval.perf.code_arena
 #define trampoline_api _PyRuntime.ceval.perf.trampoline_api
 #define perf_map_file _PyRuntime.ceval.perf.map_file
 #define persist_after_fork _PyRuntime.ceval.perf.persist_after_fork
+#define perf_trampoline_type _PyRuntime.ceval.perf.perf_trampoline_type
 
 static void
 perf_map_write_entry(void *state, const void *code_addr,
@@ -222,6 +229,7 @@ static void*
 perf_map_init_state(void)
 {
     PyUnstable_PerfMapState_Init();
+    perf_trampoline_type = PERF_TRAMPOLINE_TYPE_MAP;
     return NULL;
 }
 
@@ -1038,6 +1046,7 @@ _PyPerfTrampoline_Fini(void)
     }
     if (perf_status == PERF_STATUS_OK) {
         trampoline_api.free_state(trampoline_api.state);
+        perf_trampoline_type = PERF_TRAMPOLINE_UNSET;
     }
     extra_code_index = -1;
     perf_status = PERF_STATUS_NO_INIT;
@@ -1066,6 +1075,9 @@ _PyPerfTrampoline_AfterFork_Child(void)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     if (persist_after_fork) {
+        if (perf_trampoline_type != PERF_TRAMPOLINE_TYPE_MAP) {
+            return PyStatus_Error("Failed to copy perf map file as perf trampoline type is not type map.");
+        }
         _PyPerfTrampoline_Fini();
         char filename[256];
         pid_t parent_pid = getppid();

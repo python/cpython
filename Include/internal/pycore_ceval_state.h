@@ -52,6 +52,7 @@ struct _ceval_runtime_state {
     struct {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
         perf_status_t status;
+        int perf_trampoline_type;
         Py_ssize_t extra_code_index;
         struct code_arena_st *code_arena;
         struct trampoline_api_st trampoline_api;
