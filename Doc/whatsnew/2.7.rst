@@ -287,7 +287,7 @@ remains O(1).
 The standard library now supports use of ordered dictionaries in several
 modules.
 
-* The :mod:`ConfigParser` module uses them by default, meaning that
+* The :mod:`ConfigParser <configparser>` module uses them by default, meaning that
   configuration files can now be read, modified, and then written back
   in their original order.
 
@@ -1134,7 +1134,7 @@ changes, or look through the Subversion logs for all the details.
   another type that isn't a :class:`Mapping`.
   (Fixed by Daniel Stutzbach; :issue:`8729`.)
 
-* Constructors for the parsing classes in the :mod:`ConfigParser` module now
+* Constructors for the parsing classes in the :mod:`ConfigParser <configparser>` module now
   take an *allow_no_value* parameter, defaulting to false; if true,
   options without values will be allowed.  For example::
 

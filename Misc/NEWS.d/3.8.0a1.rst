@@ -5044,8 +5044,8 @@ functionality.
 .. nonce: C_K-J9
 .. section: Library
 
-`ConfigParser.items()` was fixed so that key-value pairs passed in via
-`vars` are not included in the resulting output.
+``ConfigParser.items()`` was fixed so that key-value pairs passed in via
+:func:`vars` are not included in the resulting output.
 
 ..
 

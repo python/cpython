@@ -1052,9 +1052,9 @@ complete list of changes, or look through the CVS logs for all the details.
   advantage of :class:`collections.deque` for improved performance.  (Contributed
   by Raymond Hettinger.)
 
-* The :mod:`ConfigParser` classes have been enhanced slightly. The :meth:`read`
+* The :mod:`ConfigParser <configparser>` classes have been enhanced slightly. The :meth:`~configparser.ConfigParser.read`
   method now returns a list of the files that were successfully parsed, and the
-  :meth:`set` method raises :exc:`TypeError` if passed a *value* argument that
+  :meth:`~configparser.ConfigParser.set` method raises :exc:`TypeError` if passed a *value* argument that
   isn't a string.   (Contributed by John Belmonte and David Goodger.)
 
 * The :mod:`curses` module now supports the ncurses extension
