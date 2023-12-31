@@ -1,0 +1,2 @@
+Use the PyOS_CheckStack to dynamically check for C stack usage on platforms
+that support it (just Windows for now).

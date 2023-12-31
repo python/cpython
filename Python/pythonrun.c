@@ -1525,7 +1525,7 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 #include <excpt.h>
 
 /*
- * Return non-zero when we run out of memory on the stack; zero otherwise.
+ * Return non-zero when we are low on memory on the stack; zero otherwise.
  */
 int
 PyOS_CheckStack(void)

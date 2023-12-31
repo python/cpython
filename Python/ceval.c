@@ -285,6 +285,10 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
+    else {
+        tstate->c_recursion_remaining += (int)(PYOS_STACK_MARGIN/Py_C_FRAME_SIZE);
+        return 0;
+    }
 #endif
     if (tstate->recursion_headroom) {
         if (tstate->c_recursion_remaining < -50) {

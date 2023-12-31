@@ -17,16 +17,32 @@ PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
 #endif
 
+/* C frame size approximations in "pointers".
+ * Note: These are for "typical" C frames, we expect PyEval_EvalDefault
+ * to use three times as much stack space.
+ * TO DO: We should determine the numbers more accurately at build time.
+ */
+#ifdef Py_DEBUG
+/* Debug frames are larger, very much so for Clang -O0. */
+#  ifdef __clang__
+#    define Py_C_FRAME_SIZE 400
+#  else
+#    define Py_C_FRAME_SIZE 100;
+#  endif
+#else
+#    define Py_C_FRAME_SIZE 25;
+#endif
+
 
 /* Stuff with no proper home (yet) */
 PyAPI_DATA(int) (*PyOS_InputHook)(void);
 
 /* Stack size, in "pointers" (so we get extra safety margins
    on 64-bit platforms).  On a 32-bit platform, this translates
-   to an 8k margin. */
-#define PYOS_STACK_MARGIN 2048
+   to an 40k margin. */
+#define PYOS_STACK_MARGIN 10000
 
-#if defined(WIN32) && !defined(MS_WIN64) && !defined(_M_ARM) && defined(_MSC_VER) && _MSC_VER >= 1300
+#if defined(WIN32) && !defined(_M_ARM) && defined(_MSC_VER) && _MSC_VER >= 1300
 /* Enable stack checking under Microsoft C */
 // When changing the platforms, ensure PyOS_CheckStack() docs are still correct
 #define USE_STACKCHECK
