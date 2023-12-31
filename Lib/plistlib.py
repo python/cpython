@@ -888,7 +888,7 @@ def loads(value, *, fmt=None, dict_type=dict):
     """Read a .plist file from a bytes object.
     Return the unpacked root object (which usually is a dictionary).
     """
-    if type(value) == str:
+    if isinstance(value, str):
         value = value.encode()
     fp = BytesIO(value)
     return load(fp, fmt=fmt, dict_type=dict_type)
