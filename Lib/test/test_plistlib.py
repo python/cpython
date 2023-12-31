@@ -517,7 +517,7 @@ class TestPlistlib(unittest.TestCase):
         self.assertEqual(pl, pl2)
 
     def test_loads_str_with_binary_fmt(self):
-        msg = 'value must be bytes when fmt is FMT_BINARY'
+        msg = "value must be bytes-like oebject when fmt is FMT_BINARY"
         with self.assertRaisesRegex(TypeError, msg):
             plistlib.loads('test', fmt=plistlib.FMT_BINARY)
 
