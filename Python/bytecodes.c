@@ -4065,6 +4065,14 @@ dummy_func(
             DEOPT_IF(!current_executor->base.vm_data.valid);
         }
 
+        // TO DO -- Support "super micro ops", so we can write
+        // op(_CHECK_VALIDITY_AND_SET_IP) = _CHECK_VALIDITY + _SET_IP;
+        op(_CHECK_VALIDITY_AND_SET_IP, (--)) {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->base.vm_data.valid);
+            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
+            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+        }
 
 // END BYTECODES //
 

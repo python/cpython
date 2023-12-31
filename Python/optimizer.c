@@ -512,9 +512,8 @@ translate_bytecode_to_trace(
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
-        RESERVE_RAW(3, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
-        ADD_TO_TRACE(_SET_IP, target, 0, target);
-        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, target, 0, target);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;

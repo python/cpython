@@ -203,6 +203,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_EXIT_TRACE] = HAS_DEOPT_FLAG,
     [_INSERT] = HAS_ARG_FLAG,
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
+    [_CHECK_VALIDITY_AND_SET_IP] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
@@ -256,6 +257,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
+    [_CHECK_VALIDITY_AND_SET_IP] = "_CHECK_VALIDITY_AND_SET_IP",
     [_COMPARE_OP] = "_COMPARE_OP",
     [_COMPARE_OP_FLOAT] = "_COMPARE_OP_FLOAT",
     [_COMPARE_OP_INT] = "_COMPARE_OP_INT",

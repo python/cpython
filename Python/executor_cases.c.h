@@ -3397,4 +3397,13 @@
             break;
         }
 
+        case _CHECK_VALIDITY_AND_SET_IP: {
+            oparg = CURRENT_OPARG();
+            TIER_TWO_ONLY
+            if (!current_executor->base.vm_data.valid) goto deoptimize;
+            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
+            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+            break;
+        }
+
 #undef TIER_TWO
