@@ -1092,7 +1092,7 @@ clear_all_freelists(PyInterpreterState *interp)
 #else
     // Only free-lists per interpreter are existed.
     PyFreeListState *state = _PyFreeListState_GET();
-    clear_freelists(state)
+    clear_freelists(state);
 #endif
 }
 
