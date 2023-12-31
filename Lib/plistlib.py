@@ -889,6 +889,8 @@ def loads(value, *, fmt=None, dict_type=dict):
     Return the unpacked root object (which usually is a dictionary).
     """
     if isinstance(value, str):
+        if fmt == FMT_BINARY:
+            raise TypeError("value must be bytes when fmt is FMT_BINARY")
         value = value.encode()
     fp = BytesIO(value)
     return load(fp, fmt=fmt, dict_type=dict_type)
