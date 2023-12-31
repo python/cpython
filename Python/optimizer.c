@@ -513,7 +513,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
         RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
-        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, target, 0, target);
+        uintptr_t ip_to_set = (uintptr_t)(_PyCode_CODE(code) + target);
+        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, ip_to_set, target);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;

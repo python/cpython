@@ -4038,8 +4038,7 @@ dummy_func(
 
         op(_SET_IP, (--)) {
             TIER_TWO_ONLY
-            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
-            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+            frame->instr_ptr = (_Py_CODEUNIT *)CURRENT_OPERAND();
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
@@ -4071,8 +4070,7 @@ dummy_func(
         op(_CHECK_VALIDITY_AND_SET_IP, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->base.vm_data.valid);
-            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
-            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+            frame->instr_ptr = (_Py_CODEUNIT *)CURRENT_OPERAND();
         }
 
 // END BYTECODES //
