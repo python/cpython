@@ -240,7 +240,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     the command executed by the server; in most cases, when data is
     returned, there should be at least one header line of the form
 
-    Content-type: <type>/<subtype>
+    Content-Type: <type>/<subtype>
 
     where <type> and <subtype> should be registered MIME types,
     e.g. "text/html" or "text/plain".
@@ -764,7 +764,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             return None
 
             self.send_response(HTTPStatus.OK)
-            self.send_header("Content-type", ctype)
+            self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
@@ -826,7 +826,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f.write(encoded)
         f.seek(0)
         self.send_response(HTTPStatus.OK)
-        self.send_header("Content-type", "text/html; charset=%s" % enc)
+        self.send_header("Content-Type", "text/html; charset=%s" % enc)
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         return f
@@ -883,7 +883,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         Argument is a PATH (a filename).
 
         Return value is a string of the form type/subtype,
-        usable for a MIME Content-type header.
+        usable for a MIME Content-Type header.
 
         The default implementation looks the file's extension
         up in the table self.extensions_map, using application/octet-stream
