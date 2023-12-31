@@ -183,7 +183,7 @@ PEP 391:  Dictionary Based Configuration for Logging
 
 The :mod:`logging` module provided two kinds of configuration, one style with
 function calls for each option or another style driven by an external file saved
-in a :mod:`ConfigParser` format.  Those options did not provide the flexibility
+in a :mod:`configparser` format.  Those options did not provide the flexibility
 to create configurations from JSON or YAML files, nor did they support
 incremental configuration, which is needed for specifying logger options from a
 command line.
@@ -2134,7 +2134,7 @@ configparser
 
 The :mod:`configparser` module was modified to improve usability and
 predictability of the default parser and its supported INI syntax.  The old
-:class:`ConfigParser` class was removed in favor of :class:`SafeConfigParser`
+:class:`!ConfigParser` class was removed in favor of :class:`!SafeConfigParser`
 which has in turn been renamed to :class:`~configparser.ConfigParser`. Support
 for inline comments is now turned off by default and section or option
 duplicates are not allowed in a single configuration source.
@@ -2414,7 +2414,7 @@ when one operand is much larger than the other (patch by Andress Bennetts in
 (:issue:`1569291` by Alexander Belopolsky). The :class:`BaseHTTPRequestHandler`
 has more efficient buffering (:issue:`3709` by Andrew Schaaf).  The
 :func:`operator.attrgetter` function has been sped-up (:issue:`10160` by
-Christos Georgiou).  And :class:`ConfigParser` loads multi-line arguments a bit
+Christos Georgiou).  And :class:`~configparser.ConfigParser` loads multi-line arguments a bit
 faster (:issue:`7113` by Łukasz Langa).
 
 
@@ -2614,8 +2614,8 @@ This section lists previously described changes and other bugfixes that may
 require changes to your code:
 
 * The :mod:`configparser` module has a number of clean-ups.  The major change is
-  to replace the old :class:`ConfigParser` class with long-standing preferred
-  alternative :class:`SafeConfigParser`.  In addition there are a number of
+  to replace the old :class:`!ConfigParser` class with long-standing preferred
+  alternative :class:`!SafeConfigParser`.  In addition there are a number of
   smaller incompatibilities:
 
   * The interpolation syntax is now validated on

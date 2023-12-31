@@ -1030,7 +1030,7 @@ Module changes
 
 Lots of improvements and bugfixes were made to Python's extensive standard
 library; some of the affected modules include :mod:`readline`,
-:mod:`ConfigParser`, :mod:`cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
+:mod:`ConfigParser <configparser>`, :mod:`cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
 :mod:`xmllib`, :mod:`aifc`, :mod:`chunk, wave`, :mod:`random`, :mod:`shelve`,
 and :mod:`nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
 
