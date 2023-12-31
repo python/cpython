@@ -39,7 +39,6 @@ Doc/library/cgi.rst
 Doc/library/chunk.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
-Doc/library/configparser.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
