@@ -249,15 +249,12 @@ _PyPerf_Callbacks _Py_perfmap_callbacks = {
 
 // Perf jitdump API
 
-// Jitdump perf format
-
 typedef struct {
     FILE* perf_map;
     PyThread_type_lock map_lock;
     void* mapped_buffer;
     size_t mapped_size;
 } PerfMapJitState;
-
 
 static PerfMapJitState perf_jit_map_state;
 
@@ -346,12 +343,7 @@ typedef struct {
     uint64_t mapped_size;
 } CodeUnwindingInfoEvent;
 
-static const intptr_t kMillisecondsPerSecond = 1000;
-static const intptr_t kMicrosecondsPerMillisecond = 1000;
-static const intptr_t kMicrosecondsPerSecond = (kMicrosecondsPerMillisecond * kMillisecondsPerSecond);
-static const intptr_t kNanosecondsPerMicrosecond = 1000;
-static const intptr_t kNanosecondsPerMillisecond = (kNanosecondsPerMicrosecond * kMicrosecondsPerMillisecond);
-static const intptr_t kNanosecondsPerSecond = (kNanosecondsPerMicrosecond * kMicrosecondsPerSecond);
+static const intptr_t nanoseconds_per_second = 1000000000;
 
 // Dwarf encoding constants
 
@@ -362,7 +354,6 @@ uint8_t kSData4 = 0x0b;
 uint8_t kPcRel = 0x10;
 uint8_t kDataRel = 0x30;
 uint8_t kOmit = 0xff;
-static const int kEhFrameHdrSize = 20;
 typedef struct {
     unsigned char version;
     unsigned char eh_frame_ptr_enc;
@@ -382,7 +373,7 @@ static int64_t get_current_monotonic_ticks(void) {
     }
     // Convert to nanoseconds.
     int64_t result = ts.tv_sec;
-    result *= kNanosecondsPerSecond;
+    result *= nanoseconds_per_second;
     result += ts.tv_nsec;
     return result;
 }
@@ -398,7 +389,7 @@ static int64_t get_current_time_microseconds(void) {
 }
 
 
-static int64_t round_up(int64_t value, int64_t multiple) {
+static size_t round_up(int64_t value, int64_t multiple) {
     if (multiple == 0) {
         // Avoid division by zero
         return value;
