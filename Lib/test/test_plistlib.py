@@ -512,7 +512,7 @@ class TestPlistlib(unittest.TestCase):
         pl = self._create()
         b = plistlib.dumps(pl)
         s = b.decode()
-        self.assertEqual(type(s), str)
+        self.assertIsInstance(s, str)
         pl2 = plistlib.loads(s)
         self.assertEqual(pl, pl2)
 
