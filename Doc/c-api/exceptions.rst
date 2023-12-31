@@ -427,7 +427,7 @@ Querying the error indicator
 .. c:function:: PyObject *PyErr_GetRaisedException(void)
 
    Return the exception currently being raised, clearing the error indicator at
-   the same time.
+   the same time. Return ``NULL`` if the error indicator is not set.
 
    This function is used by code that needs to catch exceptions,
    or code that needs to save and restore the error indicator temporarily.
