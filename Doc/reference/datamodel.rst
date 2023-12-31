@@ -840,7 +840,7 @@ Special read-only attributes
        See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
 
    * - .. attribute:: builtin_function.__self__
-     - It is set to ``None`` (but see :ref:`built-in methods <builtin-methods>`).
+     - This is always ``None`` (but see :ref:`built-in methods <builtin-methods>`).
 
    * - .. attribute:: builtin_function.__text_signature__
      - The function's signature as plain text, or ``None`` if unavailable.
