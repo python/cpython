@@ -881,12 +881,11 @@ class TestPlistlib(unittest.TestCase):
         # Save a naive datetime with aware_datetime set to true.  This will lead
         # to having different time as compared to the current machine's
         # timezone, which is UTC.
-        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=None)
+        dt = datetime.datetime(2003, 6, 7, 8, tzinfo=None)
         for fmt in ALL_FORMATS:
             s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
             parsed = plistlib.loads(s, aware_datetime=False)
-            expected = dt + datetime.timedelta(seconds=time.timezone)
-            self.assertEqual(parsed, expected)
+            self.assertEqual(parsed, dt)
 
 
 class TestBinaryPlistlib(unittest.TestCase):
