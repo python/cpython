@@ -2032,6 +2032,16 @@ PyCSimpleType_paramfunc(CDataObject *self)
 static PyObject *
 PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    PyObject *result = PyType_Type.tp_new(type, args, kwds);
+#if 0
+    printf("new: %p %p\n", type, result);
+#endif
+    return result;
+}
+
+static int
+PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
     PyTypeObject *result;
     StgDictObject *stgdict;
     PyObject *proto;
@@ -2042,20 +2052,21 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* create the new instance (which is a class,
        since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL)
-        return NULL;
+    result = (PyTypeObject *)self;  // by PyType_Type.tp_new()
+    PyTypeObject *type = Py_TYPE(self);
+#if 0
+    printf("ini: %p %p\n\n", type, result);
+#endif
 
     if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_type_), &proto) < 0) {
-        return NULL;
+        return -1;
     }
     if (!proto) {
         PyErr_SetString(PyExc_AttributeError,
                         "class must define a '_type_' attribute");
   error:
         Py_XDECREF(proto);
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
     if (PyUnicode_Check(proto)) {
         proto_str = PyUnicode_AsUTF8AndSize(proto, &proto_len);
@@ -2103,10 +2114,9 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
 #endif
     if (stgdict->format == NULL) {
-        Py_DECREF(result);
         Py_DECREF(proto);
         Py_DECREF((PyObject *)stgdict);
-        return NULL;
+        return -1;
     }
 
     stgdict->paramfunc = PyCSimpleType_paramfunc;
@@ -2122,9 +2132,8 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* replace the class dict by our updated spam dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
-        Py_DECREF(result);
         Py_DECREF((PyObject *)stgdict);
-        return NULL;
+        return -1;
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
@@ -2161,16 +2170,14 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             int x;
             meth = PyDescr_NewClassMethod(result, ml);
             if (!meth) {
-                Py_DECREF(result);
-                return NULL;
+                return -1;
             }
             x = PyDict_SetItemString(result->tp_dict,
                                      ml->ml_name,
                                      meth);
             Py_DECREF(meth);
             if (x == -1) {
-                Py_DECREF(result);
-                return NULL;
+                return -1;
             }
         }
     }
@@ -2180,8 +2187,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                                               proto, fmt);
         StgDictObject *sw_dict;
         if (swapped == NULL) {
-            Py_DECREF(result);
-            return NULL;
+            return -1;
         }
         sw_dict = PyType_stgdict(swapped);
 #ifdef WORDS_BIGENDIAN
@@ -2201,12 +2207,11 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #endif
         Py_DECREF(swapped);
         if (PyErr_Occurred()) {
-            Py_DECREF(result);
-            return NULL;
+            return -1;
         }
     };
 
-    return (PyObject *)result;
+    return 0;
 }
 
 /*
@@ -2328,7 +2333,7 @@ PyTypeObject PyCSimpleType_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
+    (initproc)PyCSimpleType_init,               /* tp_init */
     0,                                          /* tp_alloc */
     PyCSimpleType_new,                                  /* tp_new */
     0,                                          /* tp_free */
