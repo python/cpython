@@ -10404,9 +10404,22 @@ supercheck(PyTypeObject *type, PyObject *obj)
         Py_XDECREF(class_attr);
     }
 
-    PyErr_SetString(PyExc_TypeError,
-                    "super(type, obj): "
-                    "obj must be an instance or subtype of type");
+    const char *type_or_instance, *obj_str;
+
+    if (PyType_Check(obj)) {
+        type_or_instance = "type";
+        obj_str = ((PyTypeObject*)obj)->tp_name;
+    }
+    else {
+        type_or_instance = "instance of";
+        obj_str = Py_TYPE(obj)->tp_name;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                "super(type, obj): obj (%s %.200s) is not "
+                "an instance or subtype of type (%.200s).",
+                type_or_instance, obj_str, type->tp_name);
+
     return NULL;
 }
 

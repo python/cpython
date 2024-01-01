@@ -1825,6 +1825,14 @@ class AbstractPickleTests:
             t2 = self.loads(p)
             self.assert_is_copy(t, t2)
 
+    def test_unicode_memoization(self):
+        # Repeated str is re-used (even when escapes added).
+        for proto in protocols:
+            for s in '', 'xyz', 'xyz\n', 'x\\yz', 'x\xa1yz\r':
+                p = self.dumps((s, s), proto)
+                s1, s2 = self.loads(p)
+                self.assertIs(s1, s2)
+
     def test_bytes(self):
         for proto in protocols:
             for s in b'', b'xyz', b'xyz'*100:

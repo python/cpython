@@ -2,8 +2,10 @@ import io
 import os
 import sys
 import errno
+import ntpath
 import pathlib
 import pickle
+import posixpath
 import socket
 import stat
 import tempfile
@@ -13,6 +15,7 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import is_emscripten, is_wasi
+from test.support import set_recursion_limit
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
@@ -39,6 +42,50 @@ if hasattr(os, 'geteuid'):
 class PurePathTest(test_pathlib_abc.DummyPurePathTest):
     cls = pathlib.PurePath
 
+    # Make sure any symbolic links in the base test path are resolved.
+    base = os.path.realpath(TESTFN)
+
+    def test_concrete_class(self):
+        if self.cls is pathlib.PurePath:
+            expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
+        else:
+            expected = self.cls
+        p = self.cls('a')
+        self.assertIs(type(p), expected)
+
+    def test_concrete_pathmod(self):
+        if self.cls is pathlib.PurePosixPath:
+            expected = posixpath
+        elif self.cls is pathlib.PureWindowsPath:
+            expected = ntpath
+        else:
+            expected = os.path
+        p = self.cls('a')
+        self.assertIs(p.pathmod, expected)
+
+    def test_different_pathmods_unequal(self):
+        p = self.cls('a')
+        if p.pathmod is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        self.assertNotEqual(p, q)
+
+    def test_different_pathmods_unordered(self):
+        p = self.cls('a')
+        if p.pathmod is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        with self.assertRaises(TypeError):
+            p < q
+        with self.assertRaises(TypeError):
+            p <= q
+        with self.assertRaises(TypeError):
+            p > q
+        with self.assertRaises(TypeError):
+            p >= q
+
     def test_constructor_nested(self):
         P = self.cls
         P(FakePath("a/b/c"))
@@ -60,14 +107,28 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
 
     def test_pickling_common(self):
         P = self.cls
-        p = P('/a/b')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertIs(pp.__class__, p.__class__)
-            self.assertEqual(pp, p)
-            self.assertEqual(hash(pp), hash(p))
-            self.assertEqual(str(pp), str(p))
+        for pathstr in ('a', 'a/', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c', 'a/b/c/'):
+            with self.subTest(pathstr=pathstr):
+                p = P(pathstr)
+                for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+                    dumped = pickle.dumps(p, proto)
+                    pp = pickle.loads(dumped)
+                    self.assertIs(pp.__class__, p.__class__)
+                    self.assertEqual(pp, p)
+                    self.assertEqual(hash(pp), hash(p))
+                    self.assertEqual(str(pp), str(p))
+
+    def test_repr_common(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                clsname = p.__class__.__name__
+                r = repr(p)
+                # The repr() is in the form ClassName("forward-slashes path").
+                self.assertTrue(r.startswith(clsname + '('), r)
+                self.assertTrue(r.endswith(')'), r)
+                inner = r[len(clsname) + 1 : -1]
+                self.assertEqual(eval(inner), p.as_posix())
 
     def test_fspath_common(self):
         P = self.cls
@@ -944,6 +1005,19 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.addCleanup(os_helper.rmtree, d)
         return d
 
+    def test_matches_pathbase_api(self):
+        our_names = {name for name in dir(self.cls) if name[0] != '_'}
+        path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
+        self.assertEqual(our_names, path_names)
+        for attr_name in our_names:
+            if attr_name == 'pathmod':
+                # On Windows, Path.pathmod is ntpath, but PathBase.pathmod is
+                # posixpath, and so their docstrings differ.
+                continue
+            our_attr = getattr(self.cls, attr_name)
+            path_attr = getattr(pathlib._abc.PathBase, attr_name)
+            self.assertEqual(our_attr.__doc__, path_attr.__doc__)
+
     def test_concrete_class(self):
         if self.cls is pathlib.Path:
             expected = pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath
@@ -1586,6 +1660,48 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             for it in iters:
                 self.assertEqual(next(it), expected)
             path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = self.cls(self.base, 'deep')
+        path = base.joinpath(*(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
+
+    def test_glob_many_open_files(self):
+        depth = 30
+        P = self.cls
+        p = base = P(self.base) / 'deep'
+        p.mkdir()
+        for _ in range(depth):
+            p /= 'd'
+            p.mkdir()
+        pattern = '/'.join(['*'] * depth)
+        iters = [base.glob(pattern) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        iters = [base.rglob('d') for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = p / 'd'
+            for it in iters:
+                self.assertEqual(next(it), p)
+
+    def test_glob_above_recursion_limit(self):
+        recursion_limit = 50
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = self.cls(self.base, 'deep')
+        path = base.joinpath(*(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.glob('**/'))
 
 
 @only_posix
