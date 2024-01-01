@@ -1,4 +1,4 @@
-# Copyright 2001-2023 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2024 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
