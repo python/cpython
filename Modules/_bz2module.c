@@ -1,5 +1,9 @@
 /* _bz2 - Low-level Python interface to libbzip2. */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include <bzlib.h>

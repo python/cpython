@@ -54,16 +54,14 @@ class TaskGroup:
     async def __aenter__(self):
         if self._entered:
             raise RuntimeError(
-                f"TaskGroup {self!r} has been already entered")
-        self._entered = True
-
+                f"TaskGroup {self!r} has already been entered")
         if self._loop is None:
             self._loop = events.get_running_loop()
-
         self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
+        self._entered = True
 
         return self
 
@@ -160,10 +158,10 @@ class TaskGroup:
         if self._aborting:
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
-            task = self._loop.create_task(coro)
+            task = self._loop.create_task(coro, name=name)
         else:
-            task = self._loop.create_task(coro, context=context)
-        task.set_name(name)
+            task = self._loop.create_task(coro, name=name, context=context)
+
         # optimization: Immediately call the done callback if the task is
         # already done (e.g. if the coro was able to complete eagerly),
         # and skip scheduling a done callback

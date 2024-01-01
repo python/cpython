@@ -489,37 +489,37 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 #. The context expression (the expression given in the
    :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
 
-#. The context manager's :meth:`__enter__` is loaded for later use.
+#. The context manager's :meth:`~object.__enter__` is loaded for later use.
 
-#. The context manager's :meth:`__exit__` is loaded for later use.
+#. The context manager's :meth:`~object.__exit__` is loaded for later use.
 
-#. The context manager's :meth:`__enter__` method is invoked.
+#. The context manager's :meth:`~object.__enter__` method is invoked.
 
 #. If a target was included in the :keyword:`with` statement, the return value
-   from :meth:`__enter__` is assigned to it.
+   from :meth:`~object.__enter__` is assigned to it.
 
    .. note::
 
-      The :keyword:`with` statement guarantees that if the :meth:`__enter__`
-      method returns without an error, then :meth:`__exit__` will always be
+      The :keyword:`with` statement guarantees that if the :meth:`~object.__enter__`
+      method returns without an error, then :meth:`~object.__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
       be. See step 7 below.
 
 #. The suite is executed.
 
-#. The context manager's :meth:`__exit__` method is invoked.  If an exception
+#. The context manager's :meth:`~object.__exit__` method is invoked.  If an exception
    caused the suite to be exited, its type, value, and traceback are passed as
-   arguments to :meth:`__exit__`. Otherwise, three :const:`None` arguments are
+   arguments to :meth:`~object.__exit__`. Otherwise, three :const:`None` arguments are
    supplied.
 
    If the suite was exited due to an exception, and the return value from the
-   :meth:`__exit__` method was false, the exception is reraised.  If the return
+   :meth:`~object.__exit__` method was false, the exception is reraised.  If the return
    value was true, the exception is suppressed, and execution continues with the
    statement following the :keyword:`with` statement.
 
    If the suite was exited for any reason other than an exception, the return
-   value from :meth:`__exit__` is ignored, and execution proceeds at the normal
+   value from :meth:`~object.__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
 The following code::
@@ -642,14 +642,14 @@ Here's an overview of the logical flow of a match statement:
    specified below.  **Name bindings made during a successful pattern match
    outlive the executed block and can be used after the match statement**.
 
-      .. note::
+   .. note::
 
-         During failed pattern matches, some subpatterns may succeed.  Do not
-         rely on bindings being made for a failed match.  Conversely, do not
-         rely on variables remaining unchanged after a failed match.  The exact
-         behavior is dependent on implementation and may vary.  This is an
-         intentional decision made to allow different implementations to add
-         optimizations.
+      During failed pattern matches, some subpatterns may succeed.  Do not
+      rely on bindings being made for a failed match.  Conversely, do not
+      rely on variables remaining unchanged after a failed match.  The exact
+      behavior is dependent on implementation and may vary.  This is an
+      intentional decision made to allow different implementations to add
+      optimizations.
 
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
@@ -1058,7 +1058,7 @@ subject value:
 .. note:: Key-value pairs are matched using the two-argument form of the mapping
    subject's ``get()`` method.  Matched key-value pairs must already be present
    in the mapping, and not created on-the-fly via :meth:`__missing__` or
-   :meth:`__getitem__`.
+   :meth:`~object.__getitem__`.
 
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:
@@ -1170,8 +1170,10 @@ In simple terms ``CLS(P1, attr=P2)`` matches only if the following happens:
 * ``isinstance(<subject>, CLS)``
 * convert ``P1`` to a keyword pattern using ``CLS.__match_args__``
 * For each keyword argument ``attr=P2``:
-   * ``hasattr(<subject>, "attr")``
-   * ``P2`` matches ``<subject>.attr``
+
+  * ``hasattr(<subject>, "attr")``
+  * ``P2`` matches ``<subject>.attr``
+
 * ... and so on for the corresponding keyword argument/pattern pair.
 
 .. seealso::
@@ -1259,7 +1261,8 @@ except that the original function is not temporarily bound to the name ``func``.
 A list of :ref:`type parameters <type-params>` may be given in square brackets
 between the function's name and the opening parenthesis for its parameter list.
 This indicates to static type checkers that the function is generic. At runtime,
-the type parameters can be retrieved from the function's ``__type_params__``
+the type parameters can be retrieved from the function's
+:attr:`~function.__type_params__`
 attribute. See :ref:`generic-functions` for more.
 
 .. versionchanged:: 3.12
@@ -1838,36 +1841,36 @@ like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
 
 .. [#] In pattern matching, a sequence is defined as one of the following:
 
-      * a class that inherits from :class:`collections.abc.Sequence`
-      * a Python class that has been registered as :class:`collections.abc.Sequence`
-      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_SEQUENCE` bit set
-      * a class that inherits from any of the above
+   * a class that inherits from :class:`collections.abc.Sequence`
+   * a Python class that has been registered as :class:`collections.abc.Sequence`
+   * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_SEQUENCE` bit set
+   * a class that inherits from any of the above
 
    The following standard library classes are sequences:
 
-      * :class:`array.array`
-      * :class:`collections.deque`
-      * :class:`list`
-      * :class:`memoryview`
-      * :class:`range`
-      * :class:`tuple`
+   * :class:`array.array`
+   * :class:`collections.deque`
+   * :class:`list`
+   * :class:`memoryview`
+   * :class:`range`
+   * :class:`tuple`
 
    .. note:: Subject values of type ``str``, ``bytes``, and ``bytearray``
       do not match sequence patterns.
 
 .. [#] In pattern matching, a mapping is defined as one of the following:
 
-      * a class that inherits from :class:`collections.abc.Mapping`
-      * a Python class that has been registered as :class:`collections.abc.Mapping`
-      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_MAPPING` bit set
-      * a class that inherits from any of the above
+   * a class that inherits from :class:`collections.abc.Mapping`
+   * a Python class that has been registered as :class:`collections.abc.Mapping`
+   * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_MAPPING` bit set
+   * a class that inherits from any of the above
 
    The standard library classes :class:`dict` and :class:`types.MappingProxyType`
    are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
-   transformed into the function's ``__doc__`` attribute and therefore the
-   function's :term:`docstring`.
+   transformed into the function's :attr:`~function.__doc__` attribute and
+   therefore the function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
    transformed into the namespace's ``__doc__`` item and therefore the class's
