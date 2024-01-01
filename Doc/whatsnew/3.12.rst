@@ -343,7 +343,9 @@ cores. This is currently only available through the C-API,
 though a Python API is :pep:`anticipated for 3.13 <554>`.
 
 Use the new :c:func:`Py_NewInterpreterFromConfig` function to
-create an interpreter with its own GIL::
+create an interpreter with its own GIL:
+
+.. code-block:: c
 
    PyInterpreterConfig config = {
        .check_multi_interp_extensions = 1,
