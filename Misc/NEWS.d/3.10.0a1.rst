@@ -2527,7 +2527,7 @@ in Python 3.4 and removed in Python 3.5.
 .. nonce: BE7zbu
 .. section: Library
 
-Fix `cgi.parse_multipart` without content_length. Patch by Roger Duran
+Fix ``cgi.parse_multipart`` without content_length. Patch by Roger Duran
 
 ..
 

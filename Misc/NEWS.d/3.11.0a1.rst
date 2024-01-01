@@ -2808,7 +2808,7 @@ behaves differently than the similar implementation in :mod:`sysconfig`.
 .. nonce: 3hmkWw
 .. section: Library
 
-:class:`smtpd.MailmanProxy` is now removed as it is unusable without an
+:class:`!smtpd.MailmanProxy` is now removed as it is unusable without an
 external module, ``mailman``. Patch by Donghee Na.
 
 ..
