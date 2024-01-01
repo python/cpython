@@ -557,7 +557,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *pair = PyList_GET_ITEM(pairs, i);
             value = PyTuple_GET_ITEM(pair, 1);
-            W_OBJECT(value, p);
+            if (!w_object(value, p)) {
+                Py_DECREF(pairs);
+                return 0;
+            }
         }
         Py_DECREF(pairs);
     }
@@ -574,17 +577,17 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
-        W_OBJECT(co_code, p);
-        W_OBJECT(co->co_consts, p);
-        W_OBJECT(co->co_names, p);
-        W_OBJECT(co->co_localsplusnames, p);
-        W_OBJECT(co->co_localspluskinds, p);
-        W_OBJECT(co->co_filename, p);
-        W_OBJECT(co->co_name, p);
-        W_OBJECT(co->co_qualname, p);
+        w_object(co_code, p);
+        w_object(co->co_consts, p);
+        w_object(co->co_names, p);
+        w_object(co->co_localsplusnames, p);
+        w_object(co->co_localspluskinds, p);
+        w_object(co->co_filename, p);
+        w_object(co->co_name, p);
+        w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
-        W_OBJECT(co->co_linetable, p);
-        W_OBJECT(co->co_exceptiontable, p);
+        w_object(co->co_linetable, p);
+        w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
     }
     else if (PyObject_CheckBuffer(v)) {
