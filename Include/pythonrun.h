@@ -27,7 +27,7 @@ PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
 #  ifdef __clang__
 #    define Py_C_FRAME_SIZE 500
 #  else
-#    define Py_C_FRAME_SIZE 150
+#    define Py_C_FRAME_SIZE 200
 #  endif
 #else
 #    define Py_C_FRAME_SIZE 50
