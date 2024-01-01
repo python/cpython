@@ -44,7 +44,7 @@ class TestWeakSet(unittest.TestCase):
     def test_methods(self):
         weaksetmethods = dir(WeakSet)
         for method in dir(set):
-            if method == 'test_c_api' or method.startswith('_'):
+            if method.startswith('_'):
                 continue
             self.assertIn(method, weaksetmethods,
                          "WeakSet missing method " + method)

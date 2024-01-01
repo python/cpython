@@ -190,11 +190,11 @@ def addpackage(sitedir, name, known_paths):
                 if not dircase in known_paths and os.path.exists(dir):
                     sys.path.append(dir)
                     known_paths.add(dircase)
-            except Exception:
+            except Exception as exc:
                 print("Error processing line {:d} of {}:\n".format(n+1, fullname),
                       file=sys.stderr)
                 import traceback
-                for record in traceback.format_exception(*sys.exc_info()):
+                for record in traceback.format_exception(exc):
                     for line in record.splitlines():
                         print('  '+line, file=sys.stderr)
                 print("\nRemainder of file ignored", file=sys.stderr)
@@ -260,6 +260,10 @@ def check_enableusersite():
 #
 # See https://bugs.python.org/issue29585
 
+# Copy of sysconfig._get_implementation()
+def _get_implementation():
+    return 'Python'
+
 # Copy of sysconfig._getuserbase()
 def _getuserbase():
     env_base = os.environ.get("PYTHONUSERBASE", None)
@@ -275,7 +279,7 @@ def _getuserbase():
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
+        return joinuser(base, _get_implementation())
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
@@ -288,12 +292,14 @@ def _getuserbase():
 def _get_path(userbase):
     version = sys.version_info
 
+    implementation = _get_implementation()
+    implementation_lower = implementation.lower()
     if os.name == 'nt':
         ver_nodot = sys.winver.replace('.', '')
-        return f'{userbase}\\Python{ver_nodot}\\site-packages'
+        return f'{userbase}\\{implementation}{ver_nodot}\\site-packages'
 
     if sys.platform == 'darwin' and sys._framework:
-        return f'{userbase}/lib/python/site-packages'
+        return f'{userbase}/lib/{implementation_lower}/site-packages'
 
     return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
 
@@ -361,6 +367,8 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
+        implementation = _get_implementation().lower()
+        ver = sys.version_info
         if os.sep == '/':
             libdirs = [sys.platlibdir]
             if sys.platlibdir != "lib":
@@ -368,7 +376,7 @@ def getsitepackages(prefixes=None):
 
             for libdir in libdirs:
                 path = os.path.join(prefix, libdir,
-                                    "python%d.%d" % sys.version_info[:2],
+                                    f"{implementation}{ver[0]}.{ver[1]}",
                                     "site-packages")
                 sitepackages.append(path)
         else:
@@ -444,8 +452,7 @@ def enablerlcompleter():
 
         # Reading the initialization (config) file may not be enough to set a
         # completion key, so we set one first and then read the file.
-        readline_doc = getattr(readline, '__doc__', '')
-        if readline_doc is not None and 'libedit' in readline_doc:
+        if readline.backend == 'editline':
             readline.parse_and_bind('bind ^I rl_complete')
         else:
             readline.parse_and_bind('tab: complete')
@@ -492,20 +499,23 @@ def venv(known_paths):
         executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
-    exe_dir, _ = os.path.split(os.path.abspath(executable))
+    exe_dir = os.path.dirname(os.path.abspath(executable))
     site_prefix = os.path.dirname(exe_dir)
     sys._home = None
     conf_basename = 'pyvenv.cfg'
-    candidate_confs = [
-        conffile for conffile in (
-            os.path.join(exe_dir, conf_basename),
-            os.path.join(site_prefix, conf_basename)
+    candidate_conf = next(
+        (
+            conffile for conffile in (
+                os.path.join(exe_dir, conf_basename),
+                os.path.join(site_prefix, conf_basename)
             )
-        if os.path.isfile(conffile)
-        ]
+            if os.path.isfile(conffile)
+        ),
+        None
+    )
 
-    if candidate_confs:
-        virtual_conf = candidate_confs[0]
+    if candidate_conf:
+        virtual_conf = candidate_conf
         system_site = "true"
         # Issue 25185: Use UTF-8, as that's what the venv module uses when
         # writing the file.

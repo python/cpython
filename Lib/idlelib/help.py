@@ -278,7 +278,8 @@ def copy_strip():
             out.write(line.rstrip() + b'\n')
     print(f'{src} copied to {dst}')
 
-def show_idlehelp(parent):
+
+def _helpwindow(parent):
     "Create HelpWindow; called from Idle Help event handler."
     filename = join(abspath(dirname(__file__)), 'help.html')
     if not isfile(filename):
@@ -286,9 +287,10 @@ def show_idlehelp(parent):
         return
     HelpWindow(parent, filename, 'IDLE Help (%s)' % python_version())
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_help', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(show_idlehelp)
+    run(_helpwindow)
