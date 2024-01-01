@@ -89,6 +89,7 @@ typedef struct {
     char *buf;
     _Py_hashtable_t *hashtable;
     int version;
+    int allow_code;
 } WFILE;
 
 #define w_byte(c, p) do {                               \
@@ -224,6 +225,9 @@ w_short_pstring(const void *s, Py_ssize_t n, WFILE *p)
 #define W_TYPE(t, p) do { \
     w_byte((t) | flag, (p)); \
 } while(0)
+
+static PyObject *
+_PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code);
 
 static void
 w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
@@ -520,7 +524,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         }
         Py_ssize_t i = 0;
         while (_PySet_NextEntry(v, &pos, &value, &hash)) {
-            PyObject *dump = PyMarshal_WriteObjectToString(value, p->version);
+            PyObject *dump = _PyMarshal_WriteObjectToString(value,
+                                    p->version, p->allow_code);
             if (dump == NULL) {
                 p->error = WFERR_UNMARSHALLABLE;
                 Py_DECREF(pairs);
@@ -549,6 +554,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         Py_DECREF(pairs);
     }
     else if (PyCode_Check(v)) {
+        if (!p->allow_code) {
+            p->error = WFERR_UNMARSHALLABLE;
+            return;
+        }
         PyCodeObject *co = (PyCodeObject *)v;
         PyObject *co_code = _PyCode_GetCode(co);
         if (co_code == NULL) {
@@ -657,6 +666,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
     wf.end = wf.ptr + sizeof(buf);
     wf.error = WFERR_OK;
     wf.version = version;
+    wf.allow_code = 1;
     if (w_init_refs(&wf, version)) {
         return; /* caller must check PyErr_Occurred() */
     }
@@ -674,6 +684,7 @@ typedef struct {
     char *buf;
     Py_ssize_t buf_size;
     PyObject *refs;  /* a list */
+    int allow_code;
 } RFILE;
 
 static const char *
@@ -1364,6 +1375,11 @@ r_object(RFILE *p)
             PyObject* linetable = NULL;
             PyObject *exceptiontable = NULL;
 
+            if (!p->allow_code) {
+                PyErr_SetString(PyExc_ValueError,
+                                "loading of code objects is prohibited");
+                break;
+            }
             idx = r_ref_reserve(flag, p);
             if (idx < 0)
                 break;
@@ -1609,6 +1625,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
 {
     RFILE rf;
     PyObject *result;
+    rf.allow_code = 1;
     rf.fp = fp;
     rf.readable = NULL;
     rf.depth = 0;
@@ -1629,6 +1646,7 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
 {
     RFILE rf;
     PyObject *result;
+    rf.allow_code = 1;
     rf.fp = NULL;
     rf.readable = NULL;
     rf.ptr = str;
@@ -1645,8 +1663,8 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     return result;
 }
 
-PyObject *
-PyMarshal_WriteObjectToString(PyObject *x, int version)
+static PyObject *
+_PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
 {
     WFILE wf;
 
@@ -1661,6 +1679,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     wf.end = wf.ptr + PyBytes_GET_SIZE(wf.str);
     wf.error = WFERR_OK;
     wf.version = version;
+    wf.allow_code = allow_code;
     if (w_init_refs(&wf, version)) {
         Py_DECREF(wf.str);
         return NULL;
@@ -1685,6 +1704,12 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
     return wf.str;
 }
 
+PyObject *
+PyMarshal_WriteObjectToString(PyObject *x, int version)
+{
+    return _PyMarshal_WriteObjectToString(x, version, 1);
+}
+
 /* And an interface for Python programs... */
 /*[clinic input]
 marshal.dump
@@ -1696,6 +1721,9 @@ marshal.dump
     version: int(c_default="Py_MARSHAL_VERSION") = version
         Indicates the data format that dump should use.
     /
+    *
+    allow_code: bool = True
+        Allow to write code objects.
 
 Write the value on the open file.
 
@@ -1706,14 +1734,14 @@ to the file. The object will not be properly read back by load().
 
 static PyObject *
 marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
-                  int version)
-/*[clinic end generated code: output=aaee62c7028a7cb2 input=6c7a3c23c6fef556]*/
+                  int version, int allow_code)
+/*[clinic end generated code: output=429e5fd61c2196b9 input=041f7f6669b0aafb]*/
 {
     /* XXX Quick hack -- need to do this differently */
     PyObject *s;
     PyObject *res;
 
-    s = PyMarshal_WriteObjectToString(value, version);
+    s = _PyMarshal_WriteObjectToString(value, version, allow_code);
     if (s == NULL)
         return NULL;
     res = PyObject_CallMethodOneArg(file, &_Py_ID(write), s);
@@ -1727,6 +1755,9 @@ marshal.load
     file: object
         Must be readable binary file.
     /
+    *
+    allow_code: bool = True
+        Allow to load code objects.
 
 Read one value from the open file and return it.
 
@@ -1739,8 +1770,8 @@ dump(), load() will substitute None for the unmarshallable type.
 [clinic start generated code]*/
 
 static PyObject *
-marshal_load(PyObject *module, PyObject *file)
-/*[clinic end generated code: output=f8e5c33233566344 input=c85c2b594cd8124a]*/
+marshal_load_impl(PyObject *module, PyObject *file, int allow_code)
+/*[clinic end generated code: output=0c1aaf3546ae3ed3 input=2dca7b570653b82f]*/
 {
     PyObject *data, *result;
     RFILE rf;
@@ -1762,6 +1793,7 @@ marshal_load(PyObject *module, PyObject *file)
         result = NULL;
     }
     else {
+        rf.allow_code = allow_code;
         rf.depth = 0;
         rf.fp = NULL;
         rf.readable = file;
@@ -1787,6 +1819,9 @@ marshal.dumps
     version: int(c_default="Py_MARSHAL_VERSION") = version
         Indicates the data format that dumps should use.
     /
+    *
+    allow_code: bool = True
+        Allow to write code objects.
 
 Return the bytes object that would be written to a file by dump(value, file).
 
@@ -1795,10 +1830,11 @@ unsupported type.
 [clinic start generated code]*/
 
 static PyObject *
-marshal_dumps_impl(PyObject *module, PyObject *value, int version)
-/*[clinic end generated code: output=9c200f98d7256cad input=a2139ea8608e9b27]*/
+marshal_dumps_impl(PyObject *module, PyObject *value, int version,
+                   int allow_code)
+/*[clinic end generated code: output=115f90da518d1d49 input=167eaecceb63f0a8]*/
 {
-    return PyMarshal_WriteObjectToString(value, version);
+    return _PyMarshal_WriteObjectToString(value, version, allow_code);
 }
 
 /*[clinic input]
@@ -1806,6 +1842,9 @@ marshal.loads
 
     bytes: Py_buffer
     /
+    *
+    allow_code: bool = True
+        Allow to load code objects.
 
 Convert the bytes-like object to a value.
 
@@ -1814,13 +1853,14 @@ bytes in the input are ignored.
 [clinic start generated code]*/
 
 static PyObject *
-marshal_loads_impl(PyObject *module, Py_buffer *bytes)
-/*[clinic end generated code: output=9fc65985c93d1bb1 input=6f426518459c8495]*/
+marshal_loads_impl(PyObject *module, Py_buffer *bytes, int allow_code)
+/*[clinic end generated code: output=62c0c538d3edc31f input=14de68965b45aaa7]*/
 {
     RFILE rf;
     char *s = bytes->buf;
     Py_ssize_t n = bytes->len;
     PyObject* result;
+    rf.allow_code = allow_code;
     rf.fp = NULL;
     rf.readable = NULL;
     rf.ptr = s;
