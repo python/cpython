@@ -214,6 +214,12 @@ struct _ts {
 
 };
 
+#if defined(__has_feature)  /* Clang */
+#  if __has_feature(address_sanitizer) /* is ASAN enabled? */
+#    define HAS_ASAN 1
+#  endif
+#endif
+
 #ifdef Py_DEBUG
    // A debug build is likely built with low optimization level which implies
    // higher stack memory usage than a release build: use a lower limit.
@@ -227,9 +233,15 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 1200
 #elif defined(USE_STACKCHECK)
 #  define Py_C_RECURSION_LIMIT 4000
+#elif defined (HAS_ASAN)
+#  define Py_C_RECURSION_LIMIT 7000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
 #  define Py_C_RECURSION_LIMIT 10000
+#endif
+
+#ifdef HAS_ASAN
+#  undef HAS_ASAN
 #endif
 
 

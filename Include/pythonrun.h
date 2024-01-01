@@ -25,12 +25,12 @@ PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
 #ifdef Py_DEBUG
 /* Debug frames are larger, very much so for Clang -O0. */
 #  ifdef __clang__
-#    define Py_C_FRAME_SIZE 400
+#    define Py_C_FRAME_SIZE 500
 #  else
-#    define Py_C_FRAME_SIZE 100
+#    define Py_C_FRAME_SIZE 150
 #  endif
 #else
-#    define Py_C_FRAME_SIZE 25
+#    define Py_C_FRAME_SIZE 50
 #endif
 
 
