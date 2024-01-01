@@ -116,7 +116,7 @@ except ImportError:
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -876,6 +876,31 @@ class SSLObject:
         """
         return self._sslobj.getpeercert(binary_form)
 
+    def get_verified_chain(self):
+        """Returns verified certificate chain provided by the other
+        end of the SSL channel as a list of DER-encoded bytes.
+
+        If certificate verification was disabled method acts the same as
+        ``SSLSocket.get_unverified_chain``.
+        """
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
+
+    def get_unverified_chain(self):
+        """Returns raw certificate chain provided by the other
+        end of the SSL channel as a list of DER-encoded bytes.
+        """
+        chain = self._sslobj.get_unverified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
+
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``
         if a next protocol was not negotiated or if NPN is not supported by one
@@ -975,7 +1000,7 @@ class SSLSocket(socket):
         )
         self = cls.__new__(cls, **kwargs)
         super(SSLSocket, self).__init__(**kwargs)
-        self.settimeout(sock.gettimeout())
+        sock_timeout = sock.gettimeout()
         sock.detach()
 
         self._context = context
@@ -994,9 +1019,42 @@ class SSLSocket(socket):
             if e.errno != errno.ENOTCONN:
                 raise
             connected = False
+            blocking = self.getblocking()
+            self.setblocking(False)
+            try:
+                # We are not connected so this is not supposed to block, but
+                # testing revealed otherwise on macOS and Windows so we do
+                # the non-blocking dance regardless. Our raise when any data
+                # is found means consuming the data is harmless.
+                notconn_pre_handshake_data = self.recv(1)
+            except OSError as e:
+                # EINVAL occurs for recv(1) on non-connected on unix sockets.
+                if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    raise
+                notconn_pre_handshake_data = b''
+            self.setblocking(blocking)
+            if notconn_pre_handshake_data:
+                # This prevents pending data sent to the socket before it was
+                # closed from escaping to the caller who could otherwise
+                # presume it came through a successful TLS connection.
+                reason = "Closed before TLS handshake with data in recv buffer."
+                notconn_pre_handshake_data_error = SSLError(e.errno, reason)
+                # Add the SSLError attributes that _ssl.c always adds.
+                notconn_pre_handshake_data_error.reason = reason
+                notconn_pre_handshake_data_error.library = None
+                try:
+                    self.close()
+                except OSError:
+                    pass
+                try:
+                    raise notconn_pre_handshake_data_error
+                finally:
+                    # Explicitly break the reference cycle.
+                    notconn_pre_handshake_data_error = None
         else:
             connected = True
 
+        self.settimeout(sock_timeout)  # Must come after setblocking() calls.
         self._connected = connected
         if connected:
             # create the SSL object
@@ -1095,6 +1153,14 @@ class SSLSocket(socket):
         self._checkClosed()
         self._check_connected()
         return self._sslobj.getpeercert(binary_form)
+
+    @_sslcopydoc
+    def get_verified_chain(self):
+        return self._sslobj.get_verified_chain()
+
+    @_sslcopydoc
+    def get_unverified_chain(self):
+        return self._sslobj.get_unverified_chain()
 
     @_sslcopydoc
     def selected_npn_protocol(self):
@@ -1204,10 +1270,14 @@ class SSLSocket(socket):
 
     def recv_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
-        if buffer and (nbytes is None):
-            nbytes = len(buffer)
-        elif nbytes is None:
-            nbytes = 1024
+        if nbytes is None:
+            if buffer is not None:
+                with memoryview(buffer) as view:
+                    nbytes = view.nbytes
+                if not nbytes:
+                    nbytes = 1024
+            else:
+                nbytes = 1024
         if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(
