@@ -1038,8 +1038,7 @@ Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
 .. nonce: AixHW7
 .. section: Library
 
-:meth:`~!unittest.TestProgram.usageExit` is marked deprecated, to be removed
-in 3.13.
+:meth:`!usageExit` is marked deprecated xx, to be removed in 3.13.
 
 ..
 
