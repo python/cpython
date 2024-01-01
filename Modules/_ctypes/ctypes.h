@@ -41,6 +41,7 @@ typedef struct {
     PyTypeObject *PyComError_Type;
 #endif
     PyTypeObject *StructParam_Type;
+    PyTypeObject *Simple_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;

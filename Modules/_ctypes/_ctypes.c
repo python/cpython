@@ -135,8 +135,6 @@ PyObject *PyExc_ArgError = NULL;
 /* This dict maps ctypes types to POINTER types */
 PyObject *_ctypes_ptrtype_cache = NULL;
 
-static PyTypeObject Simple_Type;
-
 /* a callable object used for unpickling:
    strong reference to _ctypes._unpickle() function */
 static PyObject *_unpickle;
@@ -2029,16 +2027,6 @@ PyCSimpleType_paramfunc(CDataObject *self)
     return parg;
 }
 
-static PyObject *
-PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *result = PyType_Type.tp_new(type, args, kwds);
-#if 0
-    printf("new: %p %p\n", type, result);
-#endif
-    return result;
-}
-
 static int
 PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -2054,9 +2042,8 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
        since we are a metatype!) */
     result = (PyTypeObject *)self;  // by PyType_Type.tp_new()
     PyTypeObject *type = Py_TYPE(self);
-#if 0
-    printf("ini: %p %p\n\n", type, result);
-#endif
+
+    ctypes_state *st = GLOBAL_STATE();
 
     if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_type_), &proto) < 0) {
         return -1;
@@ -2140,7 +2127,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
      */
-    if (result->tp_base == &Simple_Type) {
+    if (result->tp_base == st->Simple_Type) {
         switch (*proto_str) {
         case 'z': /* c_char_p */
             ml = &c_char_p_method;
@@ -2335,7 +2322,7 @@ PyTypeObject PyCSimpleType_Type = {
     0,                                          /* tp_dictoffset */
     (initproc)PyCSimpleType_init,               /* tp_init */
     0,                                          /* tp_alloc */
-    PyCSimpleType_new,                                  /* tp_new */
+    0,                                          /* tp_new */
     0,                                          /* tp_free */
 };
 
@@ -3047,9 +3034,10 @@ PyCData_AtAddress(PyObject *type, void *buf)
 int _ctypes_simple_instance(PyObject *obj)
 {
     PyTypeObject *type = (PyTypeObject *)obj;
-
-    if (PyCSimpleTypeObject_Check(type))
-        return type->tp_base != &Simple_Type;
+    ctypes_state *st = GLOBAL_STATE();
+    if (PyCSimpleTypeObject_Check(type)) {
+        return type->tp_base != st->Simple_Type;
+    }
     return 0;
 }
 
@@ -4982,26 +4970,14 @@ static int Simple_bool(CDataObject *self)
     return memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
 }
 
-static PyNumberMethods Simple_as_number = {
-    0, /* nb_add */
-    0, /* nb_subtract */
-    0, /* nb_multiply */
-    0, /* nb_remainder */
-    0, /* nb_divmod */
-    0, /* nb_power */
-    0, /* nb_negative */
-    0, /* nb_positive */
-    0, /* nb_absolute */
-    (inquiry)Simple_bool, /* nb_bool */
-};
-
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
 static PyObject *
 Simple_repr(CDataObject *self)
 {
     PyObject *val, *result;
+    ctypes_state *st = GLOBAL_STATE();
 
-    if (Py_TYPE(self)->tp_base != &Simple_Type) {
+    if (Py_TYPE(self)->tp_base != st->Simple_Type) {
         return PyUnicode_FromFormat("<%s object at %p>",
                                    Py_TYPE(self)->tp_name, self);
     }
@@ -5016,46 +4992,54 @@ Simple_repr(CDataObject *self)
     return result;
 }
 
-static PyTypeObject Simple_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes._SimpleCData",
-    sizeof(CDataObject),                        /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)&Simple_repr,                     /* tp_repr */
-    &Simple_as_number,                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("XXX to be provided"),            /* tp_doc */
-    (traverseproc)PyCData_traverse,             /* tp_traverse */
-    (inquiry)PyCData_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    Simple_methods,                             /* tp_methods */
-    0,                                          /* tp_members */
-    Simple_getsets,                             /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)Simple_init,                      /* tp_init */
-    0,                                          /* tp_alloc */
-    GenericPyCData_new,                         /* tp_new */
-    0,                                          /* tp_free */
+static int
+Simple_traverse(CDataObject *self, visitproc visit, void *arg)
+{
+    PyTypeObject *base = Py_TYPE(self)->tp_base;
+    if (!base || !PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+        Py_VISIT(self);
+    }
+    return 0;
+}
+
+static int
+Simple_clear(CDataObject *self)
+{
+    PyCData_clear(self);
+    return 0;
+}
+
+static void
+Simple_dealloc(PyObject *self) {
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    Simple_clear((CDataObject *)self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot simple_slots[] = {
+    {Py_tp_repr, Simple_repr},
+    {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {Py_tp_methods, Simple_methods},
+    {Py_tp_getset,  Simple_getsets},
+    {Py_tp_new, GenericPyCData_new},
+    {Py_tp_init, Simple_init},
+    {Py_tp_traverse, Simple_traverse},
+    {Py_tp_clear, Simple_clear},
+    {Py_tp_dealloc, Simple_dealloc},
+    {Py_nb_bool, Simple_bool},
+    {0, NULL},
+};
+
+static PyType_Spec simple_spec = {
+    .name = "_ctypes._SimpleCData",
+    .basicsize = sizeof(CDataObject),
+    .flags = (Py_TPFLAGS_DEFAULT |
+              Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = simple_slots,
 };
 
 /******************************************************************/
@@ -5679,6 +5663,19 @@ _ctypes_add_types(PyObject *mod)
     TP = (PyTypeObject *)type;                                      \
 } while (0)
 
+#define MOD_ADD_HEAPTYPE(TP, SPEC, BASE, TP_TYPE) do {              \
+    PyObject *type = PyType_FromMetaclass(TP_TYPE, mod, SPEC,       \
+                                          (PyObject *)BASE);        \
+    if (type == NULL) {                                             \
+        return -1;                                                  \
+    }                                                               \
+    if (PyModule_AddType(mod, (PyTypeObject *)type) < 0) {          \
+        Py_DECREF(type);                                            \
+        return -1;                                                  \
+    }                                                               \
+    TP = (PyTypeObject *)type;                                      \
+} while (0)
+
     ctypes_state *st = GLOBAL_STATE();
 
     /* Note:
@@ -5711,7 +5708,8 @@ _ctypes_add_types(PyObject *mod)
     MOD_ADD_TYPE(&Union_Type, &UnionType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCPointer_Type, &PyCPointerType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCArray_Type, &PyCArrayType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&Simple_Type, &PyCSimpleType_Type, &PyCData_Type);
+    MOD_ADD_HEAPTYPE(st->Simple_Type, &simple_spec, &PyCData_Type,
+                     &PyCSimpleType_Type);
     MOD_ADD_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type, &PyCData_Type);
 
     /*************************************************
@@ -5737,6 +5735,7 @@ _ctypes_add_types(PyObject *mod)
 #undef TYPE_READY_BASE
 #undef MOD_ADD_TYPE
 #undef CREATE_TYPE
+#undef MOD_ADD_HEAPTYPE
     return 0;
 }
 
