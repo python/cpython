@@ -1290,7 +1290,7 @@ class FractionTest(unittest.TestCase):
                     self.assertEqual(float(format(f, fmt2)), float(rhs))
                     self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
 
-   def test_traceback_in_mod_and_floordiv_with_complex_objects(self):
+    def test_traceback_in_mod_and_floordiv_with_complex_objects(self):
         # See issue gh-102840 for more details.
 
         a = F(1, 2)
