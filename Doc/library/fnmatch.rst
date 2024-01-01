@@ -8,7 +8,7 @@
 
 .. index:: single: filenames; wildcard expansion
 
-.. index:: module: re
+.. index:: pair: module; re
 
 --------------
 
@@ -38,7 +38,7 @@ special characters used in shell-style wildcards are:
 For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
 
-.. index:: module: glob
+.. index:: pair: module; glob
 
 Note that the filename separator (``'/'`` on Unix) is *not* special to this
 module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
@@ -46,6 +46,9 @@ module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
+Also note that :func:`functools.lru_cache` with the *maxsize* of 32768 is used to
+cache the compiled regex patterns in the following functions: :func:`fnmatch`,
+:func:`fnmatchcase`, :func:`.filter`.
 
 .. function:: fnmatch(filename, pattern)
 

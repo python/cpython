@@ -19,7 +19,7 @@ function.
 
 Readline keybindings may be configured via an initialization file, typically
 ``.inputrc`` in your home directory.  See `Readline Init File
-<https://tiswww.cwru.edu/php/chet/readline/rluserman.html#SEC9>`_
+<https://tiswww.cwru.edu/php/chet/readline/rluserman.html#Readline-Init-File>`_
 in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.
@@ -27,16 +27,15 @@ Readline library in general.
 .. note::
 
   The underlying Readline library API may be implemented by
-  the ``libedit`` library instead of GNU readline.
+  the ``editline`` (``libedit``) library instead of GNU readline.
   On macOS the :mod:`readline` module detects which library is being used
   at run time.
 
-  The configuration file for ``libedit`` is different from that
+  The configuration file for ``editline`` is different from that
   of GNU readline. If you programmatically load configuration strings
-  you can check for the text "libedit" in :const:`readline.__doc__`
-  to differentiate between GNU readline and libedit.
+  you can use :data:`backend` to determine which library is being used.
 
-  If you use *editline*/``libedit`` readline emulation on macOS, the
+  If you use ``editline``/``libedit`` readline emulation on macOS, the
   initialization file located in your home directory is named
   ``.editrc``. For example, the following content in ``~/.editrc`` will
   turn ON *vi* keybindings and TAB completion::
@@ -44,6 +43,12 @@ Readline library in general.
     python:bind -v
     python:bind ^I rl_complete
 
+.. data:: backend
+
+   The name of the underlying Readline library being used, either
+   ``"readline"`` or ``"editline"``.
+
+   .. versionadded:: 3.13
 
 Init file
 ---------
@@ -213,6 +218,8 @@ Startup hooks
    if Python was compiled for a version of the library that supports it.
 
 
+.. _readline-completion:
+
 Completion
 ----------
 
@@ -259,7 +266,7 @@ with a custom completer, a different set of word delimiters should be set.
    These indexes are the *start* and *end* arguments passed to the
    :c:data:`rl_attempted_completion_function` callback of the
    underlying library.  The values may be different in the same
-   input editing scenario based on the underlying C readline implemtation.
+   input editing scenario based on the underlying C readline implementation.
    Ex: libedit is known to behave differently than libreadline.
 
 
