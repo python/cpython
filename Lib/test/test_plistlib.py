@@ -885,8 +885,7 @@ class TestPlistlib(unittest.TestCase):
         for fmt in ALL_FORMATS:
             s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
             parsed = plistlib.loads(s, aware_datetime=False)
-            expected = dt + 2 * datetime.timedelta(seconds=time.timezone)
-            self.assertEqual(parsed, expected)
+            self.assertEqual(parsed, dt)
 
 
 class TestBinaryPlistlib(unittest.TestCase):
