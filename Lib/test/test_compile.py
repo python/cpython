@@ -448,6 +448,10 @@ class TestSpecifics(unittest.TestCase):
         # See gh-113054
         compile('if (5 if 5 else T): 0', '<eval>', 'exec')
 
+    def test_condition_expression_with_redundant_comparisons_compiles(self):
+        # See gh-113054
+        compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
