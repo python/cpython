@@ -1,5 +1,5 @@
 import _ctypes_test
-import platform
+from platform import architecture as _architecture
 import struct
 import sys
 import unittest
@@ -8,6 +8,7 @@ from ctypes import (CDLL, Array, Structure, Union, POINTER, sizeof, byref, align
                     c_uint8, c_uint16, c_uint32,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
+from ctypes.util import find_library
 from struct import calcsize
 from collections import namedtuple
 from test import support
@@ -471,6 +472,66 @@ class StructureTestCase(unittest.TestCase):
         got = X.in_dll(dll, "last_tfrsuv_arg")
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
+
+    def _test_issue18060(self, Vector):
+        # The call to atan2() should succeed if the
+        # class fields were correctly cloned in the
+        # subclasses. Otherwise, it will segfault.
+        if sys.platform == 'win32':
+            libm = CDLL(find_library('msvcrt.dll'))
+        else:
+            libm = CDLL(find_library('m'))
+
+        libm.atan2.argtypes = [Vector]
+        libm.atan2.restype = c_double
+
+        arg = Vector(y=0.0, x=-1.0)
+        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
+    def test_issue18060_a(self):
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment, and PyCStgDict_clone()
+        # for the Mid and Vector class definitions.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        class Mid(Base):
+            pass
+        Mid._fields_ = []
+        class Vector(Mid): pass
+        self._test_issue18060(Vector)
+
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
+    def test_issue18060_b(self):
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        class Mid(Base):
+            _fields_ = []
+        class Vector(Mid):
+            _fields_ = []
+        self._test_issue18060(Vector)
+
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
+    def test_issue18060_c(self):
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment.
+        class Base(Structure):
+            _fields_ = [('y', c_double)]
+        class Mid(Base):
+            _fields_ = []
+        class Vector(Mid):
+            _fields_ = [('x', c_double)]
+        self._test_issue18060(Vector)
 
     def test_array_in_struct(self):
         # See bpo-22273
