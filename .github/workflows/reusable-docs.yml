@@ -41,7 +41,7 @@ jobs:
         git fetch origin ${{ env.refspec_base }} --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
     - name: 'Set up Python'
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3'
         cache: 'pip'
@@ -72,7 +72,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: 'Set up Python'
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'  # known to work with Sphinx 4.2
         cache: 'pip'
