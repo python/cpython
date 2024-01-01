@@ -1370,6 +1370,7 @@ access the local variables of the function containing the def.  See section
 
    :pep:`318` - Decorators for Functions and Methods
       Function and method decorators were introduced.
+      Class decorators were introduced in :pep:`3129`.
 
 .. _class:
 
