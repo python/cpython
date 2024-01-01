@@ -876,20 +876,6 @@ CDataType_repeat(PyObject *self, Py_ssize_t length)
     return PyCArrayType_from_ctype(self, length);
 }
 
-static PySequenceMethods CDataType_as_sequence = {
-    0,                          /* inquiry sq_length; */
-    0,                          /* binaryfunc sq_concat; */
-    CDataType_repeat,           /* intargfunc sq_repeat; */
-    0,                          /* intargfunc sq_item; */
-    0,                          /* intintargfunc sq_slice; */
-    0,                          /* intobjargproc sq_ass_item; */
-    0,                          /* intintobjargproc sq_ass_slice; */
-    0,                          /* objobjproc sq_contains; */
-
-    0,                          /* binaryfunc sq_inplace_concat; */
-    0,                          /* intargfunc sq_inplace_repeat; */
-};
-
 static int
 CDataType_clear(PyTypeObject *self)
 {
