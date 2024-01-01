@@ -939,7 +939,7 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
     return 0;
 }
 
-static PyType_Slot pycstruct_type_type_slots[] = {
+static PyType_Slot pycstruct_type_slots[] = {
     {Py_sq_repeat, CDataType_repeat},
     {Py_tp_setattro, PyCStructType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
@@ -950,14 +950,14 @@ static PyType_Slot pycstruct_type_type_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycstruct_type_type_spec = {
+PyType_Spec pycstruct_type_spec = {
     .name = "_ctypes.PyCStructType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = pycstruct_type_type_slots,
+    .slots = pycstruct_type_slots,
 };
 
-static PyType_Slot union_type_type_slots[] = {
+static PyType_Slot union_type_slots[] = {
     {Py_sq_repeat, CDataType_repeat},
     {Py_tp_setattro, UnionType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the Union Objects")},
@@ -968,11 +968,11 @@ static PyType_Slot union_type_type_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec union_type_type_spec = {
+static PyType_Spec union_type_spec = {
     .name = "_ctypes.UnionType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = union_type_type_slots,
+    .slots = union_type_slots,
 };
 
 /******************************************************************/
@@ -1188,7 +1188,7 @@ static PyMethodDef PyCPointerType_methods[] = {
     { NULL, NULL },
 };
 
-static PyType_Slot pycpointer_type_type_slots[] = {
+static PyType_Slot pycpointer_type_slots[] = {
     {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for the Pointer Objects")},
     {Py_tp_traverse, CDataType_traverse},
@@ -1198,11 +1198,11 @@ static PyType_Slot pycpointer_type_type_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec pycpointer_type_type_spec = {
+static PyType_Spec pycpointer_type_spec = {
     .name = "_ctypes.PyCPointerType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = pycpointer_type_type_slots,
+    .slots = pycpointer_type_slots,
 };
 
 
@@ -1542,7 +1542,7 @@ PyCArrayType_traverse(PyTypeObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static PyType_Slot pycarray_type_type_slots[] = {
+static PyType_Slot pycarray_type_slots[] = {
     {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
     {Py_tp_traverse, PyCArrayType_traverse},
@@ -1551,11 +1551,11 @@ static PyType_Slot pycarray_type_type_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec pycarray_type_type_spec = {
+static PyType_Spec pycarray_type_spec = {
     .name = "_ctypes.PyCArrayType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = pycarray_type_type_slots,
+    .slots = pycarray_type_slots,
 };
 
 /******************************************************************/
@@ -2209,7 +2209,7 @@ static PyMethodDef PyCSimpleType_methods[] = {
     { NULL, NULL },
 };
 
-static PyType_Slot pycsimple_type_type_slots[] = {
+static PyType_Slot pycsimple_type_slots[] = {
     {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for the PyCSimpleType Objects")},
     {Py_tp_methods, PyCSimpleType_methods},
@@ -2218,11 +2218,11 @@ static PyType_Slot pycsimple_type_type_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycsimple_type_type_spec = {
+PyType_Spec pycsimple_type_spec = {
     .name = "_ctypes.PyCSimpleType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = pycsimple_type_type_slots,
+    .slots = pycsimple_type_slots,
 };
 
 /******************************************************************/
@@ -2466,7 +2466,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)result;
 }
 
-static PyType_Slot pycfunc_ptr_type_type_slots[] = {
+static PyType_Slot pycfuncptr_type_slots[] = {
     {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for C function pointers")},
     {Py_tp_traverse, CDataType_traverse},
@@ -2476,11 +2476,11 @@ static PyType_Slot pycfunc_ptr_type_type_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec pycfunc_ptr_type_type_spec = {
+static PyType_Spec pycfuncptr_type_spec = {
     .name = "_ctypes.PyCFuncPtrType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = pycfunc_ptr_type_type_slots,
+    .slots = pycfuncptr_type_slots,
 };
 
 
@@ -5557,16 +5557,16 @@ _ctypes_add_types(PyObject *mod)
      *
      * Metaclasses
      */
-    CREATE_TYPE(mod, st->PyCStructType_Type, &pycstruct_type_type_spec,
+    CREATE_TYPE(mod, st->PyCStructType_Type, &pycstruct_type_spec,
                 &PyType_Type);
-    CREATE_TYPE(mod, st->UnionType_Type, &union_type_type_spec, &PyType_Type);
-    CREATE_TYPE(mod, st->PyCPointerType_Type, &pycpointer_type_type_spec,
+    CREATE_TYPE(mod, st->UnionType_Type, &union_type_spec, &PyType_Type);
+    CREATE_TYPE(mod, st->PyCPointerType_Type, &pycpointer_type_spec,
                 &PyType_Type);
-    CREATE_TYPE(mod, st->PyCArrayType_Type, &pycarray_type_type_spec,
+    CREATE_TYPE(mod, st->PyCArrayType_Type, &pycarray_type_spec,
                 &PyType_Type);
-    CREATE_TYPE(mod, st->PyCSimpleType_Type, &pycsimple_type_type_spec,
+    CREATE_TYPE(mod, st->PyCSimpleType_Type, &pycsimple_type_spec,
                 &PyType_Type);
-    CREATE_TYPE(mod, st->PyCFuncPtrType_Type, &pycfunc_ptr_type_type_spec,
+    CREATE_TYPE(mod, st->PyCFuncPtrType_Type, &pycfuncptr_type_spec,
                 &PyType_Type);
 
     /*************************************************
