@@ -52,7 +52,7 @@ or :class:`datetime.datetime` objects.
 
 This module defines the following functions:
 
-.. function:: load(fp, *, fmt=None, dict_type=dict)
+.. function:: load(fp, *, fmt=None, dict_type=dict, aware_datetime=False)
 
    Read a plist file. *fp* should be a readable and binary file object.
    Return the unpacked root object (which usually is a
@@ -69,6 +69,10 @@ This module defines the following functions:
    The *dict_type* is the type used for dictionaries that are read from the
    plist file.
 
+   When *aware_datetime* is true, fields with type ``datetime.datetime`` will
+   be created as :ref:`aware object <datetime-naive-aware>`, with
+   :attr:`!tzinfo` as :attr:`datetime.UTC`.
+
    XML data for the :data:`FMT_XML` format is parsed using the Expat parser
    from :mod:`xml.parsers.expat` -- see its documentation for possible
    exceptions on ill-formed XML.  Unknown elements will simply be ignored
@@ -79,8 +83,11 @@ This module defines the following functions:
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      The keyword-only parameter *aware_datetime* has been added.
 
-.. function:: loads(data, *, fmt=None, dict_type=dict)
+
+.. function:: loads(data, *, fmt=None, dict_type=dict, aware_datetime=False)
 
    Load a plist from a bytes object. See :func:`load` for an explanation of
    the keyword arguments.
@@ -88,7 +95,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+.. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
    Write *value* to a plist file. *Fp* should be a writable, binary
    file object.
@@ -107,6 +114,10 @@ This module defines the following functions:
    When *skipkeys* is false (the default) the function raises :exc:`TypeError`
    when a key of a dictionary is not a string, otherwise such keys are skipped.
 
+   When *aware_datetime* is true and any field with type ``datetime.datetime``
+   is set as a :ref:`aware object <datetime-naive-aware>`, it will convert to
+   UTC timezone before writing it.
+
    A :exc:`TypeError` will be raised if the object is of an unsupported type or
    a container that contains objects of unsupported types.
 
@@ -115,8 +126,11 @@ This module defines the following functions:
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      The keyword-only parameter *aware_datetime* has been added.
 
-.. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+
+.. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
    Return *value* as a plist-formatted bytes object. See
    the documentation for :func:`dump` for an explanation of the keyword
