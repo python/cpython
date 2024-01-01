@@ -906,9 +906,7 @@ CDataType_traverse(PyTypeObject *self, visitproc visit, void *arg)
     if (dict) {
         Py_VISIT(dict->proto);
     }
-    if (!(self->tp_base->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        Py_VISIT(Py_TYPE(self));
-    }
+    Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
 }
 
