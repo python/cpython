@@ -590,6 +590,8 @@ class Maildir(Mailbox):
         for subdir in self._toc_mtimes:
             path = self._paths[subdir]
             for entry in os.listdir(path):
+                if entry.startswith('.'):
+                    continue
                 p = os.path.join(path, entry)
                 if os.path.isdir(p):
                     continue
@@ -1196,7 +1198,11 @@ class MH(Mailbox):
     def get_sequences(self):
         """Return a name-to-key-list dictionary to define each sequence."""
         results = {}
-        with open(os.path.join(self._path, '.mh_sequences'), 'r', encoding='ASCII') as f:
+        try:
+            f = open(os.path.join(self._path, '.mh_sequences'), 'r', encoding='ASCII')
+        except FileNotFoundError:
+            return results
+        with f:
             all_keys = set(self.keys())
             for line in f:
                 try:
@@ -1219,9 +1225,8 @@ class MH(Mailbox):
 
     def set_sequences(self, sequences):
         """Set sequences using the given name-to-key-list dictionary."""
-        f = open(os.path.join(self._path, '.mh_sequences'), 'r+', encoding='ASCII')
+        f = open(os.path.join(self._path, '.mh_sequences'), 'w', encoding='ASCII')
         try:
-            os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))
             for name, keys in sequences.items():
                 if len(keys) == 0:
                     continue

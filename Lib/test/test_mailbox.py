@@ -681,6 +681,20 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self._box = mailbox.Maildir(self._path)
         self._check_basics()
 
+    def test_filename_leading_dot(self):
+        self.tearDown()
+        for subdir in '', 'tmp', 'new', 'cur':
+            os.mkdir(os.path.normpath(os.path.join(self._path, subdir)))
+        for subdir in 'tmp', 'new', 'cur':
+            fname = os.path.join(self._path, subdir, '.foo' + subdir)
+            with open(fname, 'wb') as f:
+                f.write(b"@")
+        self._box = mailbox.Maildir(self._path)
+        self.assertNotIn('.footmp', self._box)
+        self.assertNotIn('.foonew', self._box)
+        self.assertNotIn('.foocur', self._box)
+        self.assertEqual(list(self._box.iterkeys()), [])
+
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
         self.assertEqual(self._box._path, os.path.abspath(self._path))
@@ -1332,6 +1346,19 @@ class TestMH(TestMailbox, unittest.TestCase):
                       'flagged':[key0]})
         self._box.remove(key1)
         self.assertEqual(self._box.get_sequences(), {'flagged':[key0]})
+
+        self._box.set_sequences({'foo':[key0]})
+        self.assertEqual(self._box.get_sequences(), {'foo':[key0]})
+
+    def test_no_dot_mh_sequences_file(self):
+        path = os.path.join(self._path, 'foo.bar')
+        os.mkdir(path)
+        box = self._factory(path)
+        self.assertEqual(os.listdir(path), [])
+        self.assertEqual(box.get_sequences(), {})
+        self.assertEqual(os.listdir(path), [])
+        box.set_sequences({})
+        self.assertEqual(os.listdir(path), ['.mh_sequences'])
 
     def test_issue2625(self):
         msg0 = mailbox.MHMessage(self._template % 0)

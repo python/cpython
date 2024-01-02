@@ -364,6 +364,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
       The :attr:`!colon` attribute may also be set on a per-instance basis.
 
+   .. versionchanged:: 3.13
+      :class:`Maildir` now ignores files with a leading dot.
+
    :class:`!Maildir` instances have all of the methods of :class:`Mailbox` in
    addition to the following:
 
@@ -640,6 +643,10 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
    :class:`!MH` instances have all of the methods of :class:`Mailbox` in addition
    to the following:
+
+   .. versionchanged:: 3.13
+
+      Supported folders that don't contain a :file:`.mh_sequences` file.
 
 
    .. method:: list_folders()

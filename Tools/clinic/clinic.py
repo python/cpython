@@ -13,7 +13,6 @@ import builtins as bltns
 import collections
 import contextlib
 import copy
-import cpp
 import dataclasses as dc
 import enum
 import functools
@@ -50,6 +49,13 @@ from typing import (
     overload,
 )
 
+
+# Local imports.
+import libclinic
+import libclinic.cpp
+from libclinic import ClinicError
+
+
 # TODO:
 #
 # soon:
@@ -61,23 +67,6 @@ from typing import (
 #         and keyword-only
 #
 
-NO_VARARG = "PY_SSIZE_T_MAX"
-CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {
-    "_keywords",
-    "_parser",
-    "args",
-    "argsbuf",
-    "fastargs",
-    "kwargs",
-    "kwnames",
-    "nargs",
-    "noptargs",
-    "return_value",
-}
-
-# '#include "header.h"   // reason': column of '//' comment
-INCLUDE_COMMENT_COLUMN = 35
 
 # match '#define Py_LIMITED_API'
 LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
@@ -103,30 +92,7 @@ class Null:
 
 NULL = Null()
 
-sig_end_marker = '--'
-
 TemplateDict = dict[str, str]
-
-
-@dc.dataclass
-class ClinicError(Exception):
-    message: str
-    _: dc.KW_ONLY
-    lineno: int | None = None
-    filename: str | None = None
-
-    def __post_init__(self) -> None:
-        super().__init__(self.message)
-
-    def report(self, *, warn_only: bool = False) -> str:
-        msg = "Warning" if warn_only else "Error"
-        if self.filename is not None:
-            msg += f" in file {self.filename!r}"
-        if self.lineno is not None:
-            msg += f" on line {self.lineno}"
-        msg += ":\n"
-        msg += f"{self.message}\n"
-        return msg
 
 
 @overload
@@ -179,33 +145,6 @@ def fail(
     warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
-def quoted_for_c_string(s: str) -> str:
-    for old, new in (
-        ('\\', '\\\\'), # must be first!
-        ('"', '\\"'),
-        ("'", "\\'"),
-        ):
-        s = s.replace(old, new)
-    return s
-
-def c_repr(s: str) -> str:
-    return '"' + s + '"'
-
-
-def wrapped_c_string_literal(
-        text: str,
-        *,
-        width: int = 72,
-        suffix: str = '',
-        initial_indent: int = 0,
-        subsequent_indent: int = 4
-) -> str:
-    wrapped = textwrap.wrap(text, width=width, replace_whitespace=False,
-                            drop_whitespace=False, break_on_hyphens=False)
-    separator = '"' + suffix + '\n' + subsequent_indent * ' ' + '"'
-    return initial_indent * ' ' + '"' + separator.join(wrapped) + '"'
-
-
 is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
 def is_legal_py_identifier(s: str) -> bool:
@@ -230,12 +169,6 @@ def ensure_legal_c_identifier(s: str) -> str:
         return s + "_value"
     return s
 
-def format_escape(s: str) -> str:
-    # double up curly-braces, this string will be used
-    # as part of a format_map() template later
-    s = s.replace('{', '{{')
-    s = s.replace('}', '}}')
-    return s
 
 def linear_format(s: str, **kwargs: str) -> str:
     """
@@ -251,7 +184,6 @@ def linear_format(s: str, **kwargs: str) -> str:
             by the indent of the source line.
           * A newline will be added to the end.
     """
-
     lines = []
     for line in s.split('\n'):
         indent, curly, trailing = line.partition('{')
@@ -280,34 +212,6 @@ def linear_format(s: str, **kwargs: str) -> str:
         lines.extend([value, "\n"])
 
     return "".join(lines[:-1])
-
-def _add_prefix_and_suffix(s: str, prefix: str = "", suffix: str = "") -> str:
-    """
-    Return 's', with 'prefix' prepended and 'suffix' appended to all lines.
-
-    If the last line is empty, it remains unchanged.
-    If s is blank, returns s unchanged.
-
-    (textwrap.indent only adds to non-blank lines.)
-    """
-    *split, last = s.split("\n")
-    lines = [prefix + line + suffix + "\n" for line in split]
-    if last:
-        lines.append(prefix + last + suffix)
-    return "".join(lines)
-
-def indent_all_lines(s: str, prefix: str) -> str:
-    return _add_prefix_and_suffix(s, prefix=prefix)
-
-def suffix_all_lines(s: str, suffix: str) -> str:
-    return _add_prefix_and_suffix(s, suffix=suffix)
-
-
-def pprint_words(items: list[str]) -> str:
-    if len(items) <= 2:
-        return " and ".join(items)
-    else:
-        return ", ".join(items[:-1]) + " and " + items[-1]
 
 
 class CRenderData:
@@ -545,34 +449,6 @@ def permute_optional_groups(
     return tuple(accumulator)
 
 
-def strip_leading_and_trailing_blank_lines(s: str) -> str:
-    lines = s.rstrip().split('\n')
-    while lines:
-        line = lines[0]
-        if line.strip():
-            break
-        del lines[0]
-    return '\n'.join(lines)
-
-@functools.lru_cache()
-def normalize_snippet(
-        s: str,
-        *,
-        indent: int = 0
-) -> str:
-    """
-    Reformats s:
-        * removes leading and trailing blank lines
-        * ensures that it does not end with a newline
-        * dedents so the first nonwhite character on any line is at column "indent"
-    """
-    s = strip_leading_and_trailing_blank_lines(s)
-    s = textwrap.dedent(s)
-    if indent:
-        s = textwrap.indent(s, ' ' * indent)
-    return s
-
-
 def declare_parser(
         f: Function,
         *,
@@ -643,62 +519,7 @@ def declare_parser(
             }};
             #undef KWTUPLE
     """ % (format_ or fname)
-    return normalize_snippet(declarations)
-
-
-def wrap_declarations(
-        text: str,
-        length: int = 78
-) -> str:
-    """
-    A simple-minded text wrapper for C function declarations.
-
-    It views a declaration line as looking like this:
-        xxxxxxxx(xxxxxxxxx,xxxxxxxxx)
-    If called with length=30, it would wrap that line into
-        xxxxxxxx(xxxxxxxxx,
-                 xxxxxxxxx)
-    (If the declaration has zero or one parameters, this
-    function won't wrap it.)
-
-    If this doesn't work properly, it's probably better to
-    start from scratch with a more sophisticated algorithm,
-    rather than try and improve/debug this dumb little function.
-    """
-    lines = []
-    for line in text.split('\n'):
-        prefix, _, after_l_paren = line.partition('(')
-        if not after_l_paren:
-            lines.append(line)
-            continue
-        in_paren, _, after_r_paren = after_l_paren.partition(')')
-        if not _:
-            lines.append(line)
-            continue
-        if ',' not in in_paren:
-            lines.append(line)
-            continue
-        parameters = [x.strip() + ", " for x in in_paren.split(',')]
-        prefix += "("
-        if len(prefix) < length:
-            spaces = " " * len(prefix)
-        else:
-            spaces = " " * 4
-
-        while parameters:
-            line = prefix
-            first = True
-            while parameters:
-                if (not first and
-                    (len(line) + len(parameters[0]) > length)):
-                    break
-                line += parameters.pop(0)
-                first = False
-            if not parameters:
-                line = line.rstrip(", ") + ")" + after_r_paren
-            lines.append(line.rstrip())
-            prefix = spaces
-    return "\n".join(lines)
+    return libclinic.normalize_snippet(declarations)
 
 
 class CLanguage(Language):
@@ -710,67 +531,69 @@ class CLanguage(Language):
     stop_line     = "[{dsl_name} start generated code]*/"
     checksum_line = "/*[{dsl_name} end generated code: {arguments}]*/"
 
-    PARSER_PROTOTYPE_KEYWORD: Final[str] = normalize_snippet("""
+    NO_VARARG: Final[str] = "PY_SSIZE_T_MAX"
+
+    PARSER_PROTOTYPE_KEYWORD: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
     """)
-    PARSER_PROTOTYPE_KEYWORD___INIT__: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_KEYWORD___INIT__: Final[str] = libclinic.normalize_snippet("""
         static int
         {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
     """)
-    PARSER_PROTOTYPE_VARARGS: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_VARARGS: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *args)
     """)
-    PARSER_PROTOTYPE_FASTCALL: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_FASTCALL: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
     """)
-    PARSER_PROTOTYPE_FASTCALL_KEYWORDS: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_FASTCALL_KEYWORDS: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
     """)
-    PARSER_PROTOTYPE_DEF_CLASS: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_DEF_CLASS: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyTypeObject *{defining_class_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
     """)
-    PARSER_PROTOTYPE_NOARGS: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_NOARGS: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, PyObject *Py_UNUSED(ignored))
     """)
-    PARSER_PROTOTYPE_GETTER: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_GETTER: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({self_type}{self_name}, void *Py_UNUSED(context))
     """)
-    PARSER_PROTOTYPE_SETTER: Final[str] = normalize_snippet("""
+    PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
         static int
         {c_basename}({self_type}{self_name}, PyObject *value, void *Py_UNUSED(context))
     """)
-    METH_O_PROTOTYPE: Final[str] = normalize_snippet("""
+    METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
         static PyObject *
         {c_basename}({impl_parameters})
     """)
-    DOCSTRING_PROTOTYPE_VAR: Final[str] = normalize_snippet("""
+    DOCSTRING_PROTOTYPE_VAR: Final[str] = libclinic.normalize_snippet("""
         PyDoc_VAR({c_basename}__doc__);
     """)
-    DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
+    DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
         PyDoc_STRVAR({c_basename}__doc__,
         {docstring});
     """)
-    GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = normalize_snippet("""
+    GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
         PyDoc_STRVAR({getset_basename}__doc__,
         {docstring});
         #define {getset_basename}_HAS_DOCSTR
     """)
-    IMPL_DEFINITION_PROTOTYPE: Final[str] = normalize_snippet("""
+    IMPL_DEFINITION_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
         static {impl_return_type}
         {c_basename}_impl({impl_parameters})
     """)
-    METHODDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+    METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
         #define {methoddef_name}    \
             {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
     """)
-    GETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+    GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
         #if defined({getset_basename}_HAS_DOCSTR)
         #  define {getset_basename}_DOCSTR {getset_basename}__doc__
         #else
@@ -783,7 +606,7 @@ class CLanguage(Language):
         #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
         #endif
     """)
-    SETTERDEF_PROTOTYPE_DEFINE: Final[str] = normalize_snippet(r"""
+    SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
         #if defined({getset_name}_HAS_DOCSTR)
         #  define {getset_basename}_DOCSTR {getset_basename}__doc__
         #else
@@ -796,7 +619,7 @@ class CLanguage(Language):
         #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
         #endif
     """)
-    METHODDEF_PROTOTYPE_IFNDEF: Final[str] = normalize_snippet("""
+    METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
         #ifndef {methoddef_name}
             #define {methoddef_name}
         #endif /* !defined({methoddef_name}) */
@@ -825,8 +648,7 @@ class CLanguage(Language):
 
     def __init__(self, filename: str) -> None:
         super().__init__(filename)
-        self.cpp = cpp.Monitor(filename)
-        self.cpp.fail = fail  # type: ignore[method-assign]
+        self.cpp = libclinic.cpp.Monitor(filename)
 
     def parse_line(self, line: str) -> None:
         self.cpp.writeline(line)
@@ -863,9 +685,9 @@ class CLanguage(Language):
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
             minor=minversion[1],
-            message=c_repr(message),
+            message=libclinic.c_repr(message),
         )
-        return normalize_snippet(code)
+        return libclinic.normalize_snippet(code)
 
     def deprecate_positional_use(
             self,
@@ -894,7 +716,7 @@ class CLanguage(Language):
             params.values(), key=attrgetter("deprecated_positional")
         ):
             names = [repr(p.name) for p in group]
-            pstr = pprint_words(names)
+            pstr = libclinic.pprint_words(names)
             if len(names) == 1:
                 message += (
                     f" Parameter {pstr} will become a keyword-only parameter "
@@ -913,10 +735,10 @@ class CLanguage(Language):
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
             errcheck="",
-            message=wrapped_c_string_literal(message, width=64,
-                                             subsequent_indent=20),
+            message=libclinic.wrapped_c_string_literal(message, width=64,
+                                                       subsequent_indent=20),
         )
-        return normalize_snippet(code, indent=4)
+        return libclinic.normalize_snippet(code, indent=4)
 
     def deprecate_keyword_use(
             self,
@@ -963,7 +785,7 @@ class CLanguage(Language):
                 else:
                     condition = f"kwargs && PyDict_GET_SIZE(kwargs) && {condition}"
         names = [repr(p.name) for p in params.values()]
-        pstr = pprint_words(names)
+        pstr = libclinic.pprint_words(names)
         pl = 's' if len(params) != 1 else ''
         message = (
             f"Passing keyword argument{pl} {pstr} to "
@@ -974,7 +796,7 @@ class CLanguage(Language):
             params.values(), key=attrgetter("deprecated_keyword")
         ):
             names = [repr(p.name) for p in group]
-            pstr = pprint_words(names)
+            pstr = libclinic.pprint_words(names)
             pl = 's' if len(names) != 1 else ''
             message += (
                 f" Parameter{pl} {pstr} will become positional-only "
@@ -996,30 +818,10 @@ class CLanguage(Language):
         code = self.DEPRECATION_WARNING_PROTOTYPE.format(
             condition=condition,
             errcheck=errcheck,
-            message=wrapped_c_string_literal(message, width=64,
-                                             subsequent_indent=20),
+            message=libclinic.wrapped_c_string_literal(message, width=64,
+                                                       subsequent_indent=20),
         )
-        return normalize_snippet(code, indent=4)
-
-    def docstring_for_c_string(
-            self,
-            f: Function
-    ) -> str:
-        lines = []
-        # turn docstring into a properly quoted C string
-        for line in f.docstring.split('\n'):
-            lines.append('"')
-            lines.append(quoted_for_c_string(line))
-            lines.append('\\n"\n')
-
-        if lines[-2] == sig_end_marker:
-            # If we only have a signature, add the blank line that the
-            # __text_signature__ getter expects to be there.
-            lines.append('"\\n"')
-        else:
-            lines.pop()
-            lines.append('"')
-        return ''.join(lines)
+        return libclinic.normalize_snippet(code, indent=4)
 
     def output_templates(
             self,
@@ -1049,7 +851,7 @@ class CLanguage(Language):
                          and not f.critical_section)
         new_or_init = f.kind.new_or_init
 
-        vararg: int | str = NO_VARARG
+        vararg: int | str = self.NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
             if p.is_keyword_only():
@@ -1057,12 +859,12 @@ class CLanguage(Language):
                 if not p.is_optional():
                     min_kw_only = i - max_pos
             elif p.is_vararg():
-                if vararg != NO_VARARG:
+                if vararg != self.NO_VARARG:
                     fail("Too many var args")
                 pseudo_args += 1
                 vararg = i - 1
             else:
-                if vararg == NO_VARARG:
+                if vararg == self.NO_VARARG:
                     max_pos = i
                 if p.is_positional_only():
                     pos_only = i
@@ -1124,14 +926,14 @@ class CLanguage(Language):
             lines.append(prototype)
             parser_body_fields = fields
 
-            preamble = normalize_snippet("""
+            preamble = libclinic.normalize_snippet("""
                 {{
                     {return_value_declaration}
                     {parser_declarations}
                     {declarations}
                     {initializers}
             """) + "\n"
-            finale = normalize_snippet("""
+            finale = libclinic.normalize_snippet("""
                     {modifications}
                     {lock}
                     {return_value} = {c_basename}_impl({impl_arguments});
@@ -1183,7 +985,7 @@ class CLanguage(Language):
                 parser_prototype = self.PARSER_PROTOTYPE_DEF_CLASS
                 return_error = ('return NULL;' if simple_return
                                 else 'goto exit;')
-                parser_code = [normalize_snippet("""
+                parser_code = [libclinic.normalize_snippet("""
                     if (nargs) {{
                         PyErr_SetString(PyExc_TypeError, "{name}() takes no arguments");
                         %s
@@ -1223,7 +1025,7 @@ class CLanguage(Language):
                 argname = 'arg'
                 if parameters[0].name == argname:
                     argname += '_'
-                parser_prototype = normalize_snippet("""
+                parser_prototype = libclinic.normalize_snippet("""
                     static PyObject *
                     {c_basename}({self_type}{self_name}, PyObject *%s)
                     """ % argname)
@@ -1237,7 +1039,7 @@ class CLanguage(Language):
                         }}
                         """ % argname
                 parser_definition = parser_body(parser_prototype,
-                                                normalize_snippet(parsearg, indent=4))
+                                                libclinic.normalize_snippet(parsearg, indent=4))
 
         elif has_option_groups:
             # positional parameters with option groups
@@ -1271,15 +1073,16 @@ class CLanguage(Language):
                     argname_fmt = 'PyTuple_GET_ITEM(args, %d)'
 
             left_args = f"{nargs} - {max_pos}"
-            max_args = NO_VARARG if (vararg != NO_VARARG) else max_pos
+            max_args = self.NO_VARARG if (vararg != self.NO_VARARG) else max_pos
             if limited_capi:
                 parser_code = []
                 if nargs != 'nargs':
-                    parser_code.append(normalize_snippet(f'Py_ssize_t nargs = {nargs};', indent=4))
+                    nargs_def = f'Py_ssize_t nargs = {nargs};'
+                    parser_code.append(libclinic.normalize_snippet(nargs_def, indent=4))
                     nargs = 'nargs'
                 if min_pos == max_args:
                     pl = '' if min_pos == 1 else 's'
-                    parser_code.append(normalize_snippet(f"""
+                    parser_code.append(libclinic.normalize_snippet(f"""
                         if ({nargs} != {min_pos}) {{{{
                             PyErr_Format(PyExc_TypeError, "{{name}} expected {min_pos} argument{pl}, got %zd", {nargs});
                             goto exit;
@@ -1289,16 +1092,16 @@ class CLanguage(Language):
                 else:
                     if min_pos:
                         pl = '' if min_pos == 1 else 's'
-                        parser_code.append(normalize_snippet(f"""
+                        parser_code.append(libclinic.normalize_snippet(f"""
                             if ({nargs} < {min_pos}) {{{{
                                 PyErr_Format(PyExc_TypeError, "{{name}} expected at least {min_pos} argument{pl}, got %zd", {nargs});
                                 goto exit;
                             }}}}
                             """,
                             indent=4))
-                    if max_args != NO_VARARG:
+                    if max_args != self.NO_VARARG:
                         pl = '' if max_args == 1 else 's'
-                        parser_code.append(normalize_snippet(f"""
+                        parser_code.append(libclinic.normalize_snippet(f"""
                             if ({nargs} > {max_args}) {{{{
                                 PyErr_Format(PyExc_TypeError, "{{name}} expected at most {max_args} argument{pl}, got %zd", {nargs});
                                 goto exit;
@@ -1308,7 +1111,7 @@ class CLanguage(Language):
             else:
                 clinic.add_include('pycore_modsupport.h',
                                    '_PyArg_CheckPositional()')
-                parser_code = [normalize_snippet(f"""
+                parser_code = [libclinic.normalize_snippet(f"""
                     if (!_PyArg_CheckPositional("{{name}}", {nargs}, {min_pos}, {max_args})) {{{{
                         goto exit;
                     }}}}
@@ -1318,7 +1121,7 @@ class CLanguage(Language):
             for i, p in enumerate(parameters):
                 if p.is_vararg():
                     if fastcall:
-                        parser_code.append(normalize_snippet("""
+                        parser_code.append(libclinic.normalize_snippet("""
                             %s = PyTuple_New(%s);
                             if (!%s) {{
                                 goto exit;
@@ -1335,7 +1138,7 @@ class CLanguage(Language):
                                 max_pos
                             ), indent=4))
                     else:
-                        parser_code.append(normalize_snippet("""
+                        parser_code.append(libclinic.normalize_snippet("""
                             %s = PyTuple_GetSlice(%d, -1);
                             """ % (
                                 p.converter.parser_name,
@@ -1351,12 +1154,12 @@ class CLanguage(Language):
                     break
                 if has_optional or p.is_optional():
                     has_optional = True
-                    parser_code.append(normalize_snippet("""
+                    parser_code.append(libclinic.normalize_snippet("""
                         if (%s < %d) {{
                             goto skip_optional;
                         }}
                         """, indent=4) % (nargs, i + 1))
-                parser_code.append(normalize_snippet(parsearg, indent=4))
+                parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
 
             if parser_code is not None:
                 if has_optional:
@@ -1367,7 +1170,7 @@ class CLanguage(Language):
                 if fastcall:
                     clinic.add_include('pycore_modsupport.h',
                                        '_PyArg_ParseStack()')
-                    parser_code = [normalize_snippet("""
+                    parser_code = [libclinic.normalize_snippet("""
                         if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
                             {parse_arguments})) {{
                             goto exit;
@@ -1376,7 +1179,7 @@ class CLanguage(Language):
                 else:
                     flags = "METH_VARARGS"
                     parser_prototype = self.PARSER_PROTOTYPE_VARARGS
-                    parser_code = [normalize_snippet("""
+                    parser_code = [libclinic.normalize_snippet("""
                         if (!PyArg_ParseTuple(args, "{format_units}:{name}",
                             {parse_arguments})) {{
                             goto exit;
@@ -1393,13 +1196,16 @@ class CLanguage(Language):
                 if p.deprecated_keyword:
                     deprecated_keywords[i] = p
 
-            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
+            has_optional_kw = (
+                max(pos_only, min_pos) + min_kw_only
+                < len(converters) - int(vararg != self.NO_VARARG)
+            )
 
             if limited_capi:
                 parser_code = None
                 fastcall = False
             else:
-                if vararg == NO_VARARG:
+                if vararg == self.NO_VARARG:
                     clinic.add_include('pycore_modsupport.h',
                                        '_PyArg_UnpackKeywords()')
                     args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
@@ -1428,7 +1234,7 @@ class CLanguage(Language):
                     declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                     if has_optional_kw:
                         declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
-                    parser_code = [normalize_snippet("""
+                    parser_code = [libclinic.normalize_snippet("""
                         args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
                         if (!args) {{
                             goto exit;
@@ -1446,7 +1252,7 @@ class CLanguage(Language):
                     declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                     if has_optional_kw:
                         declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
-                    parser_code = [normalize_snippet("""
+                    parser_code = [libclinic.normalize_snippet("""
                         fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
                         if (!fastargs) {{
                             goto exit;
@@ -1479,19 +1285,19 @@ class CLanguage(Language):
                         parser_code.append("%s:" % add_label)
                         add_label = None
                     if not p.is_optional():
-                        parser_code.append(normalize_snippet(parsearg, indent=4))
+                        parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
                     elif i < pos_only:
                         add_label = 'skip_optional_posonly'
-                        parser_code.append(normalize_snippet("""
+                        parser_code.append(libclinic.normalize_snippet("""
                             if (nargs < %d) {{
                                 goto %s;
                             }}
                             """ % (i + 1, add_label), indent=4))
                         if has_optional_kw:
-                            parser_code.append(normalize_snippet("""
+                            parser_code.append(libclinic.normalize_snippet("""
                                 noptargs--;
                                 """, indent=4))
-                        parser_code.append(normalize_snippet(parsearg, indent=4))
+                        parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
                     else:
                         if i < max_pos:
                             label = 'skip_optional_pos'
@@ -1499,24 +1305,24 @@ class CLanguage(Language):
                         else:
                             label = 'skip_optional_kwonly'
                             first_opt = max_pos + min_kw_only
-                            if vararg != NO_VARARG:
+                            if vararg != self.NO_VARARG:
                                 first_opt += 1
                         if i == first_opt:
                             add_label = label
-                            parser_code.append(normalize_snippet("""
+                            parser_code.append(libclinic.normalize_snippet("""
                                 if (!noptargs) {{
                                     goto %s;
                                 }}
                                 """ % add_label, indent=4))
                         if i + 1 == len(parameters):
-                            parser_code.append(normalize_snippet(parsearg, indent=4))
+                            parser_code.append(libclinic.normalize_snippet(parsearg, indent=4))
                         else:
                             add_label = label
-                            parser_code.append(normalize_snippet("""
+                            parser_code.append(libclinic.normalize_snippet("""
                                 if (%s) {{
                                 """ % (argname_fmt % i), indent=4))
-                            parser_code.append(normalize_snippet(parsearg, indent=8))
-                            parser_code.append(normalize_snippet("""
+                            parser_code.append(libclinic.normalize_snippet(parsearg, indent=8))
+                            parser_code.append(libclinic.normalize_snippet("""
                                     if (!--noptargs) {{
                                         goto %s;
                                     }}
@@ -1535,7 +1341,7 @@ class CLanguage(Language):
                     assert not fastcall
                     flags = "METH_VARARGS|METH_KEYWORDS"
                     parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
-                    parser_code = [normalize_snippet("""
+                    parser_code = [libclinic.normalize_snippet("""
                         if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
                             {parse_arguments}))
                             goto exit;
@@ -1547,7 +1353,7 @@ class CLanguage(Language):
                 elif fastcall:
                     clinic.add_include('pycore_modsupport.h',
                                        '_PyArg_ParseStackAndKeywords()')
-                    parser_code = [normalize_snippet("""
+                    parser_code = [libclinic.normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
                             {parse_arguments})) {{
                             goto exit;
@@ -1556,7 +1362,7 @@ class CLanguage(Language):
                 else:
                     clinic.add_include('pycore_modsupport.h',
                                        '_PyArg_ParseTupleAndKeywordsFast()')
-                    parser_code = [normalize_snippet("""
+                    parser_code = [libclinic.normalize_snippet("""
                         if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
                             {parse_arguments})) {{
                             goto exit;
@@ -1603,7 +1409,7 @@ class CLanguage(Language):
                 declarations = '{base_type_ptr}'
                 clinic.add_include('pycore_modsupport.h',
                                    '_PyArg_NoKeywords()')
-                fields.insert(0, normalize_snippet("""
+                fields.insert(0, libclinic.normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
                     }}
@@ -1611,7 +1417,7 @@ class CLanguage(Language):
                 if not parses_positional:
                     clinic.add_include('pycore_modsupport.h',
                                        '_PyArg_NoPositional()')
-                    fields.insert(0, normalize_snippet("""
+                    fields.insert(0, libclinic.normalize_snippet("""
                         if ({self_type_check}!_PyArg_NoPositional("{name}", args)) {{
                             goto exit;
                         }}
@@ -1800,7 +1606,7 @@ class CLanguage(Language):
         out.append('        goto exit;\n')
         out.append("}")
 
-        template_dict['option_group_parsing'] = format_escape("".join(out))
+        template_dict['option_group_parsing'] = libclinic.format_escape("".join(out))
 
     def render_function(
             self,
@@ -1897,8 +1703,7 @@ class CLanguage(Language):
             template_dict['methoddef_name'] = f.c_basename.upper() + "_METHODDEF"
             template_dict['c_basename'] = f.c_basename
 
-        template_dict['docstring'] = self.docstring_for_c_string(f)
-
+        template_dict['docstring'] = libclinic.docstring_for_c_string(f.docstring)
         template_dict['self_name'] = template_dict['self_type'] = template_dict['self_type_check'] = ''
         template_dict['target_critical_section'] = ', '.join(f.target_critical_section)
         for converter in converters:
@@ -1911,7 +1716,7 @@ class CLanguage(Language):
         else:
             template_dict['impl_return_type'] = f.return_converter.type
 
-        template_dict['declarations'] = format_escape("\n".join(data.declarations))
+        template_dict['declarations'] = libclinic.format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
         template_dict['modifications'] = '\n\n'.join(data.modifications)
         template_dict['keywords_c'] = ' '.join('"' + k + '",'
@@ -1927,9 +1732,11 @@ class CLanguage(Language):
             template_dict['parse_arguments_comma'] = '';
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
-        template_dict['return_conversion'] = format_escape("".join(data.return_conversion).rstrip())
-        template_dict['post_parsing'] = format_escape("".join(data.post_parsing).rstrip())
-        template_dict['cleanup'] = format_escape("".join(data.cleanup))
+
+        template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())
+        template_dict['post_parsing'] = libclinic.format_escape("".join(data.post_parsing).rstrip())
+        template_dict['cleanup'] = libclinic.format_escape("".join(data.cleanup))
+
         template_dict['return_value'] = data.return_value
         template_dict['lock'] = "\n".join(data.lock)
         template_dict['unlock'] = "\n".join(data.unlock)
@@ -1973,12 +1780,12 @@ class CLanguage(Language):
             # mild hack:
             # reflow long impl declarations
             if name in {"impl_prototype", "impl_definition"}:
-                s = wrap_declarations(s)
+                s = libclinic.wrap_declarations(s)
 
             if clinic.line_prefix:
-                s = indent_all_lines(s, clinic.line_prefix)
+                s = libclinic.indent_all_lines(s, clinic.line_prefix)
             if clinic.line_suffix:
-                s = suffix_all_lines(s, clinic.line_suffix)
+                s = libclinic.suffix_all_lines(s, clinic.line_suffix)
 
             destination.append(s)
 
@@ -2263,6 +2070,9 @@ class BlockPrinter:
     language: Language
     f: io.StringIO = dc.field(default_factory=io.StringIO)
 
+    # '#include "header.h"   // reason': column of '//' comment
+    INCLUDE_COMMENT_COLUMN: Final[int] = 35
+
     def print_block(
             self,
             block: Block,
@@ -2318,7 +2128,7 @@ class BlockPrinter:
                     line = f'#include "{include.filename}"'
                 if include.reason:
                     comment = f'// {include.reason}\n'
-                    line = line.ljust(INCLUDE_COMMENT_COLUMN - 1) + comment
+                    line = line.ljust(self.INCLUDE_COMMENT_COLUMN - 1) + comment
                 output += line
 
             if current_condition:
@@ -3406,7 +3216,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             args.append(self.converter)
 
         if self.encoding:
-            args.append(c_repr(self.encoding))
+            args.append(libclinic.c_repr(self.encoding))
         elif self.subclass_of:
             args.append(self.subclass_of)
 
@@ -3584,8 +3394,8 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     @property
     def parser_name(self) -> str:
-        if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
-            return CLINIC_PREFIX + self.name
+        if self.name in libclinic.CLINIC_PREFIXED_ARGS: # bpo-39741
+            return libclinic.CLINIC_PREFIX + self.name
         else:
             return self.name
 
@@ -5867,7 +5677,7 @@ class DSLParser:
                     if isinstance(value, (bool, NoneType)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
-                        c_default = c_repr(value)
+                        c_default = libclinic.c_repr(value)
                     else:
                         c_default = py_default
 
@@ -6312,7 +6122,7 @@ class DSLParser:
         #     lines.append(f.return_converter.py_default)
 
         if not f.docstring_only:
-            lines.append("\n" + sig_end_marker + "\n")
+            lines.append("\n" + libclinic.SIG_END_MARKER + "\n")
 
         signature_line = "".join(lines)
 
