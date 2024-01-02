@@ -1727,11 +1727,6 @@ flush_std_files(void)
 
 */
 
-static void
-finalize_freelists(_PyFreeListState *state)
-{
-    _PyList_Fini(state);
-}
 
 static void
 finalize_interp_types(PyInterpreterState *interp)
@@ -1765,7 +1760,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFloat_Fini(interp);
 
     _PyFreeListState *state = _PyFreeListState_GET();
-    finalize_freelists(state);
+    _PyList_Fini(state);
 
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);
