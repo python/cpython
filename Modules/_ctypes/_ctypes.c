@@ -4995,8 +4995,8 @@ Simple_repr(CDataObject *self)
 static int
 Simple_traverse(CDataObject *self, visitproc visit, void *arg)
 {
-    PyTypeObject *base = Py_TYPE(self)->tp_base;
-    if (0) {  // Fixme
+    if (0) {
+        // FIXME: avoid a crash
         Py_VISIT(self);
     }
     return 0;
