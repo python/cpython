@@ -212,7 +212,7 @@ class HelperFunctionsTests(unittest.TestCase):
         try:
             pth_file.create()
             st = os.stat(pth_file.file_path)
-            os.chflags(target_file, st.st_flags | stat.UF_IMMUTABLE)
+            os.chflags(pth_file.file_path, st.st_flags | stat.UF_IMMUTABLE)
             site.addsitedir(pth_file.base_dir, set())
             self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
             self.assertIn(pth_file.base_dir, sys.path)
