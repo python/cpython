@@ -369,6 +369,23 @@ class TestMessageAPI(TestEmailBase):
         g.flatten(msg)
         self.assertEqual(fullrepr, s.getvalue())
 
+    def test_roundtrip(self) -> None:
+        """Tests for gh-113594 to check that a message can be roundtripped
+        without crashing or losing information.
+        """
+        email_raw_1 = \
+            b'Content-Type: multipart/mixed; boundary="==="\n\n--===\n' + \
+            b'Content-Type: message/plain\n \n \xe6\x82\xa80123456789012.3456789\n' + \
+            b'\n--===--\n'
+        email_raw_2 = b'Content-Type: multipart/mixed; boundary="==="\n\n--===\n' + \
+            b'Content-Type: message/plain\n \n \xe6\x82\xa80123456789012.34567890\n' + \
+            b'\n--===--\n'
+
+        message_1 = email.message_from_bytes(email_raw_1, policy=email.policy.SMTPUTF8)
+        print(message_1)
+        message_2 = email.message_from_bytes(email_raw_2, policy=email.policy.SMTPUTF8)
+        print(message_2)
+
     # test_headerregistry.TestContentTypeHeader.bad_params
     def test_bad_param(self):
         msg = email.message_from_string("Content-Type: blarg; baz; boo\n")
