@@ -1570,18 +1570,18 @@
       "fileName": "Modules/_decimal/libmpdec/vcdiv64.asm"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-23.3.1-py3-none-any.whl",
+      "SPDXID": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-23.3.2-py3-none-any.whl",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4b2baddc0673f73017e531648a9ee27e47925e7a"
+          "checksumValue": "8e48f55ab2965ee64bd55cc91a8077d184a33e30"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "55eb67bb6171d37447e82213be585b75fe2b12b359e993773aca4de9247a052b"
+          "checksumValue": "5052d7889c1f9d05224cd41741acb7c5d6fa735ab34e339624a614eaaa7e7d76"
         }
       ],
-      "fileName": "Lib/ensurepip/_bundled/pip-23.3.1-py3-none-any.whl"
+      "fileName": "Lib/ensurepip/_bundled/pip-23.3.2-py3-none-any.whl"
     }
   ],
   "packages": [
@@ -1700,19 +1700,19 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "7ccf472345f20d35bdc9d1841ff5f313260c2c33fe417f48c30ac46cccabf5be"
+          "checksumValue": "5052d7889c1f9d05224cd41741acb7c5d6fa735ab34e339624a614eaaa7e7d76"
         }
       ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/50/c2/e06851e8cc28dcad7c155f4753da8833ac06a5c704c109313b8d5a62968a/pip-23.2.1-py3-none-any.whl",
+      "downloadLocation": "https://files.pythonhosted.org/packages/15/aa/3f4c7bcee2057a76562a5b33ecbd199be08cdb4443a02e26bd2c3cf6fc39/pip-23.3.2-py3-none-any.whl",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:pypa:pip:23.2.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:pypa:pip:23.3.2:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         },
         {
           "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/pip@23.2.1",
+          "referenceLocator": "pkg:pypi/pip@23.3.2",
           "referenceType": "purl"
         }
       ],
@@ -1720,7 +1720,7 @@
       "name": "pip",
       "originator": "Organization: Python Packaging Authority",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "23.2.1"
+      "versionInfo": "23.3.2"
     }
   ],
   "relationships": [
@@ -2285,7 +2285,7 @@
       "spdxElementId": "SPDXRef-PACKAGE-mpdecimal"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-23.3.1-py3-none-any.whl",
+      "relatedSpdxElement": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-23.3.2-py3-none-any.whl",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     }

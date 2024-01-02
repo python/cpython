@@ -1642,9 +1642,9 @@ interval specified with nanosecond precision.
 .. nonce: UptGAn
 .. section: Library
 
-Remove from the :mod:`configparser` module: the :class:`SafeConfigParser`
-class, the :attr:`filename` property of the :class:`ParsingError` class, the
-:meth:`readfp` method of the :class:`ConfigParser` class, deprecated since
+Remove from the :mod:`configparser` module: the :class:`!SafeConfigParser`
+class, the :attr:`!filename` property of the :class:`~configparser.ParsingError` class, the
+:meth:`!readfp` method of the :class:`~configparser.ConfigParser` class, deprecated since
 Python 3.2.
 
 Patch by Hugo van Kemenade.
