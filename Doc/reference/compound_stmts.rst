@@ -1362,12 +1362,15 @@ access the local variables of the function containing the def.  See section
 
    :pep:`526` - Syntax for Variable Annotations
       Ability to type hint variable declarations, including class
-      variables and instance variables
+      variables and instance variables.
 
    :pep:`563` - Postponed Evaluation of Annotations
       Support for forward references within annotations by preserving
       annotations in a string form at runtime instead of eager evaluation.
 
+   :pep:`318` - Decorators for Functions and Methods
+      Function and method decorators were introduced.
+      Class decorators were introduced in :pep:`3129`.
 
 .. _class:
 
