@@ -1069,7 +1069,7 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
  * Clearing the free lists may give back memory to the OS earlier.
  */
 static void
-clear_all_freelists(PyInterpreterState *interp)
+clear_freelists(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
@@ -1499,7 +1499,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_all_freelists(tstate->interp);
+        clear_freelists(tstate->interp);
     }
 
     if (_PyErr_Occurred(tstate)) {
