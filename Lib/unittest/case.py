@@ -21,7 +21,7 @@ __unittest = True
 _subtest_msg_sentinel = object()
 
 DIFF_OMITTED = ('\nDiff is %s characters long. '
-                 'Set self.maxDiff to None to see it.')
+                 'Set self.maxDiff = None to see it.')
 
 class SkipTest(Exception):
     """
