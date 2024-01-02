@@ -1063,7 +1063,7 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 }
 
 static void
-clear_freelists(PyFreeListState *state)
+clear_freelists(_PyFreeListState *state)
 {
     _PyList_ClearFreeList(state);
 }
@@ -1091,7 +1091,7 @@ clear_all_freelists(PyInterpreterState *interp)
     HEAD_UNLOCK(&_PyRuntime);
 #else
     // Only free-lists per interpreter are existed.
-    PyFreeListState *state = _PyFreeListState_GET();
+    _PyFreeListState *state = _PyFreeListState_GET();
     clear_freelists(state);
 #endif
 }

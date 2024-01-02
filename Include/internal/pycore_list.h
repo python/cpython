@@ -15,7 +15,7 @@ extern void _PyList_DebugMallocStats(FILE *out);
 
 /* runtime lifecycle */
 
-extern void _PyList_Fini(PyFreeListState *);
+extern void _PyList_Fini(_PyFreeListState *);
 
 
 /* other API */
