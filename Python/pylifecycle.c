@@ -1727,11 +1727,6 @@ flush_std_files(void)
 
 */
 
-static void
-finalize_free_lists(_PyFreeListState *state)
-{
-    _PyList_Fini(state);
-}
 
 static void
 finalize_interp_types(PyInterpreterState *interp)
@@ -1764,19 +1759,10 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
 
-#if defined(Py_GIL_DISABLED)
-    // Finalize all per-thread free-lists.
-    HEAD_LOCK(&_PyRuntime);
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
-    while (tstate != NULL) {
-        finalize_free_lists(&tstate->freelist_state);
-        tstate = (_PyThreadStateImpl *)tstate->base.next;
-    }
-    HEAD_UNLOCK(&_PyRuntime);
-#else
+#ifndef Py_GIL_DISABLED
     // No per-thread free-lists in GIL builds;
     // we only need to finalize per-interpreter free-lists.
-    finalize_free_lists(&interp->freelist_state);
+    _Py_ClearFreeLists(&interp->freelist_state);
 #endif
 
 #ifdef Py_DEBUG

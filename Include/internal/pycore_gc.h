@@ -218,6 +218,11 @@ extern void _PyContext_ClearFreeList(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyInterpreterState *interp);
 extern void _Py_RunGC(PyThreadState *tstate);
 
+static inline void _Py_ClearFreeLists(_PyFreeListState *state)
+{
+    _PyList_ClearFreeList(state);
+}
+
 #ifdef __cplusplus
 }
 #endif

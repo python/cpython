@@ -1528,6 +1528,11 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
+#ifdef Py_GIL_DISABLED
+    // Each thread should clear own freelists for the free-threading build.
+    _PyFreeListState *freelist_state = &((_PyThreadStateImpl*)tstate)->freelist_state;
+    _Py_ClearFreeLists(freelist_state);
+#endif
     if (tstate->on_delete != NULL) {
         // For the "main" thread of each interpreter, this is meant
         // to be done in _PyInterpreterState_SetNotRunningMain().
