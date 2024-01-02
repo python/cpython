@@ -139,6 +139,7 @@ def compile_c_extension(
     ]
     include_dirs = [
         str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
+        str(MOD_DIR.parent.parent.parent / "Include" / "internal" / "mimalloc"),
         str(MOD_DIR.parent.parent.parent / "Parser"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer"),

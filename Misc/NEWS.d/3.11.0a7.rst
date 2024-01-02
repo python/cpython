@@ -1038,8 +1038,8 @@ Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
 .. nonce: AixHW7
 .. section: Library
 
-:meth:`~!unittest.TestProgram.usageExit` is marked deprecated, to be removed
-in 3.13.
+:meth:`!unittest.TestProgram.usageExit` is marked as deprecated,
+to be removed in Python 3.13.
 
 ..
 
