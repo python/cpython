@@ -22,6 +22,7 @@ extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha2(void);
 extern PyObject* PyInit__sha3(void);
 extern PyObject* PyInit__statistics(void);
+extern PyObject* PyInit__sysconfig(void);
 extern PyObject* PyInit__typing(void);
 extern PyObject* PyInit__blake2(void);
 extern PyObject* PyInit_time(void);
@@ -36,6 +37,7 @@ extern PyObject* PyInit__weakref(void);
 extern PyObject* PyInit_xxsubtype(void);
 extern PyObject* PyInit__xxsubinterpreters(void);
 extern PyObject* PyInit__xxinterpchannels(void);
+extern PyObject* PyInit__xxinterpqueues(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
 extern PyObject* PyInit__collections(void);
@@ -102,6 +104,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sha2", PyInit__sha2},
     {"_sha3", PyInit__sha3},
     {"_blake2", PyInit__blake2},
+    {"_sysconfig", PyInit__sysconfig},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
     {"_tokenize", PyInit__tokenize},
@@ -140,6 +143,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"xxsubtype", PyInit_xxsubtype},
     {"_xxsubinterpreters", PyInit__xxsubinterpreters},
     {"_xxinterpchannels", PyInit__xxinterpchannels},
+    {"_xxinterpqueues", PyInit__xxinterpqueues},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
 #endif

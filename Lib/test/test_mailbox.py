@@ -681,6 +681,20 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self._box = mailbox.Maildir(self._path)
         self._check_basics()
 
+    def test_filename_leading_dot(self):
+        self.tearDown()
+        for subdir in '', 'tmp', 'new', 'cur':
+            os.mkdir(os.path.normpath(os.path.join(self._path, subdir)))
+        for subdir in 'tmp', 'new', 'cur':
+            fname = os.path.join(self._path, subdir, '.foo' + subdir)
+            with open(fname, 'wb') as f:
+                f.write(b"@")
+        self._box = mailbox.Maildir(self._path)
+        self.assertNotIn('.footmp', self._box)
+        self.assertNotIn('.foonew', self._box)
+        self.assertNotIn('.foocur', self._box)
+        self.assertEqual(list(self._box.iterkeys()), [])
+
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
         self.assertEqual(self._box._path, os.path.abspath(self._path))
@@ -846,6 +860,92 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # Lock and unlock the mailbox. For Maildir, this does nothing.
         self._box.lock()
         self._box.unlock()
+
+    def test_get_info(self):
+        # Test getting message info from Maildir, not the message.
+        msg = mailbox.MaildirMessage(self._template % 0)
+        key = self._box.add(msg)
+        self.assertEqual(self._box.get_info(key), '')
+        msg.set_info('OurTestInfo')
+        self._box[key] = msg
+        self.assertEqual(self._box.get_info(key), 'OurTestInfo')
+
+    def test_set_info(self):
+        # Test setting message info from Maildir, not the message.
+        # This should immediately rename the message file.
+        msg = mailbox.MaildirMessage(self._template % 0)
+        key = self._box.add(msg)
+        def check_info(oldinfo, newinfo):
+            oldfilename = os.path.join(self._box._path, self._box._lookup(key))
+            newsubpath = self._box._lookup(key).split(self._box.colon)[0]
+            if newinfo:
+                newsubpath += self._box.colon + newinfo
+            newfilename = os.path.join(self._box._path, newsubpath)
+            # assert initial conditions
+            self.assertEqual(self._box.get_info(key), oldinfo)
+            if not oldinfo:
+                self.assertNotIn(self._box._lookup(key), self._box.colon)
+            self.assertTrue(os.path.exists(oldfilename))
+            if oldinfo != newinfo:
+                self.assertFalse(os.path.exists(newfilename))
+            # do the rename
+            self._box.set_info(key, newinfo)
+            # assert post conditions
+            if not newinfo:
+                self.assertNotIn(self._box._lookup(key), self._box.colon)
+            if oldinfo != newinfo:
+                self.assertFalse(os.path.exists(oldfilename))
+            self.assertTrue(os.path.exists(newfilename))
+            self.assertEqual(self._box.get_info(key), newinfo)
+        # none -> has info
+        check_info('', 'info1')
+        # has info -> same info
+        check_info('info1', 'info1')
+        # has info -> different info
+        check_info('info1', 'info2')
+        # has info -> none
+        check_info('info2', '')
+        # none -> none
+        check_info('', '')
+
+    def test_get_flags(self):
+        # Test getting message flags from Maildir, not the message.
+        msg = mailbox.MaildirMessage(self._template % 0)
+        key = self._box.add(msg)
+        self.assertEqual(self._box.get_flags(key), '')
+        msg.set_flags('T')
+        self._box[key] = msg
+        self.assertEqual(self._box.get_flags(key), 'T')
+
+    def test_set_flags(self):
+        msg = mailbox.MaildirMessage(self._template % 0)
+        key = self._box.add(msg)
+        self.assertEqual(self._box.get_flags(key), '')
+        self._box.set_flags(key, 'S')
+        self.assertEqual(self._box.get_flags(key), 'S')
+
+    def test_add_flag(self):
+        msg = mailbox.MaildirMessage(self._template % 0)
+        key = self._box.add(msg)
+        self.assertEqual(self._box.get_flags(key), '')
+        self._box.add_flag(key, 'B')
+        self.assertEqual(self._box.get_flags(key), 'B')
+        self._box.add_flag(key, 'B')
+        self.assertEqual(self._box.get_flags(key), 'B')
+        self._box.add_flag(key, 'AC')
+        self.assertEqual(self._box.get_flags(key), 'ABC')
+
+    def test_remove_flag(self):
+        msg = mailbox.MaildirMessage(self._template % 0)
+        key = self._box.add(msg)
+        self._box.set_flags(key, 'abc')
+        self.assertEqual(self._box.get_flags(key), 'abc')
+        self._box.remove_flag(key, 'b')
+        self.assertEqual(self._box.get_flags(key), 'ac')
+        self._box.remove_flag(key, 'b')
+        self.assertEqual(self._box.get_flags(key), 'ac')
+        self._box.remove_flag(key, 'ac')
+        self.assertEqual(self._box.get_flags(key), '')
 
     def test_folder (self):
         # Test for bug #1569790: verify that folders returned by .get_folder()
@@ -1246,6 +1346,19 @@ class TestMH(TestMailbox, unittest.TestCase):
                       'flagged':[key0]})
         self._box.remove(key1)
         self.assertEqual(self._box.get_sequences(), {'flagged':[key0]})
+
+        self._box.set_sequences({'foo':[key0]})
+        self.assertEqual(self._box.get_sequences(), {'foo':[key0]})
+
+    def test_no_dot_mh_sequences_file(self):
+        path = os.path.join(self._path, 'foo.bar')
+        os.mkdir(path)
+        box = self._factory(path)
+        self.assertEqual(os.listdir(path), [])
+        self.assertEqual(box.get_sequences(), {})
+        self.assertEqual(os.listdir(path), [])
+        box.set_sequences({})
+        self.assertEqual(os.listdir(path), ['.mh_sequences'])
 
     def test_issue2625(self):
         msg0 = mailbox.MHMessage(self._template % 0)

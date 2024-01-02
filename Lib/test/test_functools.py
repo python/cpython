@@ -26,9 +26,15 @@ import functools
 
 py_functools = import_helper.import_fresh_module('functools',
                                                  blocked=['_functools'])
-c_functools = import_helper.import_fresh_module('functools')
+c_functools = import_helper.import_fresh_module('functools',
+                                                fresh=['_functools'])
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
+
+_partial_types = [py_functools.partial]
+if c_functools:
+    _partial_types.append(c_functools.partial)
+
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -201,7 +207,7 @@ class TestPartial:
         kwargs = {'a': object(), 'b': object()}
         kwargs_reprs = ['a={a!r}, b={b!r}'.format_map(kwargs),
                         'b={b!r}, a={a!r}'.format_map(kwargs)]
-        if self.partial in (c_functools.partial, py_functools.partial):
+        if self.partial in _partial_types:
             name = 'functools.partial'
         else:
             name = self.partial.__name__
@@ -223,7 +229,7 @@ class TestPartial:
                        for kwargs_repr in kwargs_reprs])
 
     def test_recursive_repr(self):
-        if self.partial in (c_functools.partial, py_functools.partial):
+        if self.partial in _partial_types:
             name = 'functools.partial'
         else:
             name = self.partial.__name__
@@ -250,7 +256,7 @@ class TestPartial:
             f.__setstate__((capture, (), {}, {}))
 
     def test_pickle(self):
-        with self.AllowPickle():
+        with replaced_module('functools', self.module):
             f = self.partial(signature, ['asdf'], bar=[True])
             f.attr = []
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -333,7 +339,7 @@ class TestPartial:
         self.assertIs(type(r[0]), tuple)
 
     def test_recursive_pickle(self):
-        with self.AllowPickle():
+        with replaced_module('functools', self.module):
             f = self.partial(capture)
             f.__setstate__((f, (), {}, {}))
             try:
@@ -387,13 +393,8 @@ class TestPartial:
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
     if c_functools:
+        module = c_functools
         partial = c_functools.partial
-
-    class AllowPickle:
-        def __enter__(self):
-            return self
-        def __exit__(self, type, value, tb):
-            return False
 
     def test_attributes_unwritable(self):
         # attributes should not be writable
@@ -437,15 +438,9 @@ class TestPartialC(TestPartial, unittest.TestCase):
 
 
 class TestPartialPy(TestPartial, unittest.TestCase):
+    module = py_functools
     partial = py_functools.partial
 
-    class AllowPickle:
-        def __init__(self):
-            self._cm = replaced_module("functools", py_functools)
-        def __enter__(self):
-            return self._cm.__enter__()
-        def __exit__(self, type, value, tb):
-            return self._cm.__exit__(type, value, tb)
 
 if c_functools:
     class CPartialSubclass(c_functools.partial):
@@ -944,6 +939,8 @@ class TestCmpToKey:
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
 
+    @unittest.skipIf(support.MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_cmp_to_signature(self):
         self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
                          '(mycmp)')
@@ -1867,14 +1864,29 @@ class TestLRU:
         self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
         self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 
+    @support.skip_on_s390x
+    @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
+    def test_lru_recursion(self):
+
+        @self.module.lru_cache
+        def fib(n):
+            if n <= 1:
+                return n
+            return fib(n-1) + fib(n-2)
+
+        if not support.Py_DEBUG:
+            with support.infinite_recursion():
+                fib(2500)
+
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):
     return 3 * x + y
 
-@c_functools.lru_cache()
-def c_cached_func(x, y):
-    return 3 * x + y
+if c_functools:
+    @c_functools.lru_cache()
+    def c_cached_func(x, y):
+        return 3 * x + y
 
 
 class TestLRUPy(TestLRU, unittest.TestCase):
@@ -1891,18 +1903,20 @@ class TestLRUPy(TestLRU, unittest.TestCase):
         return 3 * x + y
 
 
+@unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestLRUC(TestLRU, unittest.TestCase):
-    module = c_functools
-    cached_func = c_cached_func,
+    if c_functools:
+        module = c_functools
+        cached_func = c_cached_func,
 
-    @module.lru_cache()
-    def cached_meth(self, x, y):
-        return 3 * x + y
+        @module.lru_cache()
+        def cached_meth(self, x, y):
+            return 3 * x + y
 
-    @staticmethod
-    @module.lru_cache()
-    def cached_staticmeth(x, y):
-        return 3 * x + y
+        @staticmethod
+        @module.lru_cache()
+        def cached_staticmeth(x, y):
+            return 3 * x + y
 
 
 class TestSingleDispatch(unittest.TestCase):
@@ -3104,6 +3118,9 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+
+    def test_module(self):
+        self.assertEqual(CachedCostItem.cost.__module__, CachedCostItem.__module__)
 
     def test_subclass_with___set__(self):
         """Caching still works for a subclass defining __set__."""

@@ -10,8 +10,8 @@
 --------------
 
 These functions provide access to some useful capabilities on Windows platforms.
-Some higher-level modules use these functions to build the  Windows
-implementations of their services.  For example, the :mod:`getpass` module uses
+Some higher-level modules use these functions to build the Windows
+implementations of their services. For example, the :mod:`getpass` module uses
 this in the implementation of the :func:`getpass` function.
 
 Further documentation on these functions can be found in the Platform API
@@ -35,11 +35,11 @@ File Operations
 
 .. function:: locking(fd, mode, nbytes)
 
-   Lock part of a file based on file descriptor *fd* from the C runtime.  Raises
-   :exc:`OSError` on failure.  The locked region of the file extends from the
+   Lock part of a file based on file descriptor *fd* from the C runtime. Raises
+   :exc:`OSError` on failure. The locked region of the file extends from the
    current file position for *nbytes* bytes, and may continue beyond the end of the
-   file.  *mode* must be one of the :const:`!LK_\*` constants listed below. Multiple
-   regions in a file may be locked at the same time, but may not overlap.  Adjacent
+   file. *mode* must be one of the :const:`!LK_\*` constants listed below. Multiple
+   regions in a file may be locked at the same time, but may not overlap. Adjacent
    regions are not merged; they must be unlocked individually.
 
    .. audit-event:: msvcrt.locking fd,mode,nbytes msvcrt.locking
@@ -49,7 +49,7 @@ File Operations
           LK_RLCK
 
    Locks the specified bytes. If the bytes cannot be locked, the program
-   immediately tries again after 1 second.  If, after 10 attempts, the bytes cannot
+   immediately tries again after 1 second. If, after 10 attempts, the bytes cannot
    be locked, :exc:`OSError` is raised.
 
 
@@ -74,9 +74,9 @@ File Operations
 
 .. function:: open_osfhandle(handle, flags)
 
-   Create a C runtime file descriptor from the file handle *handle*.  The *flags*
+   Create a C runtime file descriptor from the file handle *handle*. The *flags*
    parameter should be a bitwise OR of :const:`os.O_APPEND`, :const:`os.O_RDONLY`,
-   and :const:`os.O_TEXT`.  The returned file descriptor may be used as a parameter
+   and :const:`os.O_TEXT`. The returned file descriptor may be used as a parameter
    to :func:`os.fdopen` to create a file object.
 
    .. audit-event:: msvcrt.open_osfhandle handle,flags msvcrt.open_osfhandle
@@ -84,7 +84,7 @@ File Operations
 
 .. function:: get_osfhandle(fd)
 
-   Return the file handle for the file descriptor *fd*.  Raises :exc:`OSError` if
+   Return the file handle for the file descriptor *fd*. Raises :exc:`OSError` if
    *fd* is not recognized.
 
    .. audit-event:: msvcrt.get_osfhandle fd msvcrt.get_osfhandle
@@ -98,13 +98,14 @@ Console I/O
 
 .. function:: kbhit()
 
-   Return ``True`` if a keypress is waiting to be read.
+   Returns a nonzero value if a keypress is waiting to be read. Otherwise,
+   return 0.
 
 
 .. function:: getch()
 
    Read a keypress and return the resulting character as a byte string.
-   Nothing is echoed to the console.  This call will block if a keypress
+   Nothing is echoed to the console. This call will block if a keypress
    is not already available, but will not wait for :kbd:`Enter` to be
    pressed. If the pressed key was a special function key, this will
    return ``'\000'`` or ``'\xe0'``; the next call will return the keycode.
@@ -118,7 +119,7 @@ Console I/O
 
 .. function:: getche()
 
-   Similar to :func:`getch`, but the keypress will be echoed if it  represents a
+   Similar to :func:`getch`, but the keypress will be echoed if it represents a
    printable character.
 
 
@@ -157,4 +158,93 @@ Other Functions
 .. function:: heapmin()
 
    Force the :c:func:`malloc` heap to clean itself up and return unused blocks to
-   the operating system.  On failure, this raises :exc:`OSError`.
+   the operating system. On failure, this raises :exc:`OSError`.
+
+
+.. function:: set_error_mode(mode)
+
+   Changes the location where the C runtime writes an error message for an error
+   that might end the program. *mode* must be one of the :const:`!OUT_\*`
+   constants listed below  or :const:`REPORT_ERRMODE`. Returns the old setting
+   or -1 if an error occurs. Only available in
+   :ref:`debug build of Python <debug-build>`.
+
+
+.. data:: OUT_TO_DEFAULT
+
+   Error sink is determined by the app's type. Only available in
+   :ref:`debug build of Python <debug-build>`.
+
+
+.. data:: OUT_TO_STDERR
+
+   Error sink is a standard error. Only available in
+   :ref:`debug build of Python <debug-build>`.
+
+
+.. data:: OUT_TO_MSGBOX
+
+   Error sink is a message box. Only available in
+   :ref:`debug build of Python <debug-build>`.
+
+
+.. data:: REPORT_ERRMODE
+
+   Report the current error mode value. Only available in
+   :ref:`debug build of Python <debug-build>`.
+
+
+.. function:: CrtSetReportMode(type, mode)
+
+   Specifies the destination or destinations for a specific report type
+   generated by :c:func:`!_CrtDbgReport` in the MS VC++ runtime. *type* must be
+   one of the :const:`!CRT_\*` constants listed below. *mode* must be one of the
+   :const:`!CRTDBG_\*` constants listed below. Only available in
+   :ref:`debug build of Python <debug-build>`.
+
+
+.. function:: CrtSetReportFile(type, file)
+
+   After you use :func:`CrtSetReportMode` to specify :const:`CRTDBG_MODE_FILE`,
+   you can specify the file handle to receive the message text. *type* must be
+   one of the :const:`!CRT_\*` constants listed below. *file* shuld be the file
+   handle your want specified. Only available in
+   :ref:`debug build of Python <debug-build>`.
+
+
+.. data:: CRT_WARN
+
+   Warnings, messages, and information that doesn't need immediate attention.
+
+
+.. data:: CRT_ERROR
+
+   Errors, unrecoverable problems, and issues that require immediate attention.
+
+
+.. data:: CRT_ASSERT
+
+   Assertion failures.
+
+
+.. data:: CRTDBG_MODE_DEBUG
+
+   Writes the message to the debugger's output window.
+
+
+.. data:: CRTDBG_MODE_FILE
+
+   Writes the message to a user-supplied file handle. :func:`CrtSetReportFile`
+   should be called to define the specific file or stream to use as
+   the destination.
+
+
+.. data:: CRTDBG_MODE_WNDW
+
+   Creates a message box to display the message along with the ``Abort``,
+   ``Retry``, and ``Ignore`` buttons.
+
+
+.. data:: CRTDBG_REPORT_MODE
+
+   Returns current *mode* for the specified *type*.

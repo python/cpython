@@ -82,7 +82,7 @@ the test failed).
 .. nonce: eOBh8M
 .. section: Core and Builtins
 
-Suppress ImportError for invalid query for help() command. Patch by Dong-hee
+Suppress ImportError for invalid query for help() command. Patch by Donghee
 Na.
 
 ..
@@ -164,7 +164,7 @@ to calculate those doing pointer arithmetic.
 .. section: Core and Builtins
 
 :func:`os.sched_yield` now release the GIL while calling sched_yield(2).
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -465,7 +465,7 @@ Remove dead code from ``CALL_FUNCTION_EX`` opcode.
 .. nonce: VE8-zf
 .. section: Core and Builtins
 
-:class:`memoryview` now supports half-floats. Patch by Dong-hee Na and
+:class:`memoryview` now supports half-floats. Patch by Donghee Na and
 Antoine Pitrou.
 
 ..
@@ -857,7 +857,7 @@ code objects could be "deduplicated" during compilation.
 .. section: Core and Builtins
 
 Reduce allocation size of :class:`list` from :meth:`str.split` and
-:meth:`str.rsplit`. Patch by Dong-hee Na and Inada Naoki.
+:meth:`str.rsplit`. Patch by Donghee Na and Inada Naoki.
 
 ..
 
@@ -1913,7 +1913,7 @@ Stinner.
 .. nonce: Uxc9al
 .. section: Library
 
-Allow :mod:`venv` to pass along :envvar:`PYTHON*` variables to ``ensurepip``
+Allow :mod:`venv` to pass along :envvar:`!PYTHON*` variables to ``ensurepip``
 and ``pip`` when they do not impact path resolution
 
 ..
@@ -3742,7 +3742,7 @@ Fix :func:`ast.unparse` when ``ImportFrom.level`` is None
 
 Now :func:`~dis.dis` and :func:`~dis.get_instructions` handle operand values
 for instructions prefixed by ``EXTENDED_ARG_QUICK``. Patch by Sam Gross and
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -5004,7 +5004,7 @@ Patch by Illia Volochii and Adam Turner.
 .. section: Build
 
 Fix the build process of clang compiler for :program:`_bootstrap_python` if
-LTO optimization is applied. Patch by Matthias Görgens and Dong-hee Na.
+LTO optimization is applied. Patch by Matthias Görgens and Donghee Na.
 
 ..
 
@@ -5024,7 +5024,7 @@ LTO optimization is applied. Patch by Matthias Görgens and Dong-hee Na.
 .. section: Build
 
 CPython now uses the ThinLTO option as the default policy if the Clang
-compiler accepts the flag. Patch by Dong-hee Na.
+compiler accepts the flag. Patch by Donghee Na.
 
 ..
 
@@ -5350,7 +5350,7 @@ in a virtual environment.
 .. nonce: FbHZuS
 .. section: Windows
 
-Fix :file:`py.exe` launcher handling of ``-V:<company>/`` option when
+Fix :file:`py.exe` launcher handling of :samp:`-V:{<company>}/` option when
 default preferences have been set in environment variables or configuration
 files.
 

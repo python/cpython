@@ -24,7 +24,13 @@ extensions = [
     'sphinx.ext.doctest',
 ]
 
-# Skip if downstream redistributors haven't installed it
+# Skip if downstream redistributors haven't installed them
+try:
+    import notfound.extension
+except ImportError:
+    pass
+else:
+    extensions.append('notfound.extension')
 try:
     import sphinxext.opengraph
 except ImportError:
@@ -66,7 +72,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '3.2'
+needs_sphinx = '4.2'
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
@@ -157,10 +163,94 @@ nitpick_ignore = [
     ('envvar', 'USER'),
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
+    # Deprecated function that was never documented:
+    ('py:func', 'getargspec'),
+    ('py:func', 'inspect.getargspec'),
+    # Undocumented modules that users shouldn't have to worry about
+    # (implementation details of `os.path`):
+    ('py:mod', 'ntpath'),
+    ('py:mod', 'posixpath'),
+]
+
+# Temporary undocumented names.
+# In future this list must be empty.
+nitpick_ignore += [
+    # C API: Standard Python exception classes
+    ('c:data', 'PyExc_ArithmeticError'),
+    ('c:data', 'PyExc_AssertionError'),
+    ('c:data', 'PyExc_AttributeError'),
+    ('c:data', 'PyExc_BaseException'),
+    ('c:data', 'PyExc_BlockingIOError'),
+    ('c:data', 'PyExc_BrokenPipeError'),
+    ('c:data', 'PyExc_BufferError'),
+    ('c:data', 'PyExc_ChildProcessError'),
+    ('c:data', 'PyExc_ConnectionAbortedError'),
+    ('c:data', 'PyExc_ConnectionError'),
+    ('c:data', 'PyExc_ConnectionRefusedError'),
+    ('c:data', 'PyExc_ConnectionResetError'),
+    ('c:data', 'PyExc_EOFError'),
+    ('c:data', 'PyExc_Exception'),
+    ('c:data', 'PyExc_FileExistsError'),
+    ('c:data', 'PyExc_FileNotFoundError'),
+    ('c:data', 'PyExc_FloatingPointError'),
+    ('c:data', 'PyExc_GeneratorExit'),
+    ('c:data', 'PyExc_ImportError'),
+    ('c:data', 'PyExc_IndentationError'),
+    ('c:data', 'PyExc_IndexError'),
+    ('c:data', 'PyExc_InterruptedError'),
+    ('c:data', 'PyExc_IsADirectoryError'),
+    ('c:data', 'PyExc_KeyboardInterrupt'),
+    ('c:data', 'PyExc_KeyError'),
+    ('c:data', 'PyExc_LookupError'),
+    ('c:data', 'PyExc_MemoryError'),
+    ('c:data', 'PyExc_ModuleNotFoundError'),
+    ('c:data', 'PyExc_NameError'),
+    ('c:data', 'PyExc_NotADirectoryError'),
+    ('c:data', 'PyExc_NotImplementedError'),
+    ('c:data', 'PyExc_OSError'),
+    ('c:data', 'PyExc_OverflowError'),
+    ('c:data', 'PyExc_PermissionError'),
+    ('c:data', 'PyExc_ProcessLookupError'),
+    ('c:data', 'PyExc_RecursionError'),
+    ('c:data', 'PyExc_ReferenceError'),
+    ('c:data', 'PyExc_RuntimeError'),
+    ('c:data', 'PyExc_StopAsyncIteration'),
+    ('c:data', 'PyExc_StopIteration'),
+    ('c:data', 'PyExc_SyntaxError'),
+    ('c:data', 'PyExc_SystemError'),
+    ('c:data', 'PyExc_SystemExit'),
+    ('c:data', 'PyExc_TabError'),
+    ('c:data', 'PyExc_TimeoutError'),
+    ('c:data', 'PyExc_TypeError'),
+    ('c:data', 'PyExc_UnboundLocalError'),
+    ('c:data', 'PyExc_UnicodeDecodeError'),
+    ('c:data', 'PyExc_UnicodeEncodeError'),
+    ('c:data', 'PyExc_UnicodeError'),
+    ('c:data', 'PyExc_UnicodeTranslateError'),
+    ('c:data', 'PyExc_ValueError'),
+    ('c:data', 'PyExc_ZeroDivisionError'),
+    # C API: Standard Python warning classes
+    ('c:data', 'PyExc_BytesWarning'),
+    ('c:data', 'PyExc_DeprecationWarning'),
+    ('c:data', 'PyExc_FutureWarning'),
+    ('c:data', 'PyExc_ImportWarning'),
+    ('c:data', 'PyExc_PendingDeprecationWarning'),
+    ('c:data', 'PyExc_ResourceWarning'),
+    ('c:data', 'PyExc_RuntimeWarning'),
+    ('c:data', 'PyExc_SyntaxWarning'),
+    ('c:data', 'PyExc_UnicodeWarning'),
+    ('c:data', 'PyExc_UserWarning'),
+    ('c:data', 'PyExc_Warning'),
     # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
     ('py:meth', '_SubParsersAction.add_parser'),
+    # Attributes/methods/etc. that definitely should be documented better,
+    # but are deferred for now:
+    ('py:attr', '__annotations__'),
+    ('py:meth', '__missing__'),
+    ('py:attr', '__wrapped__'),
+    ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
 # gh-106948: Copy standard C types declared in the "c:type" domain to the
@@ -217,9 +307,8 @@ html_context = {
     "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
 
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
+# This 'Last updated on:' timestamp is inserted at the bottom of every page.
+html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime())
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
@@ -283,8 +372,6 @@ _stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
-    ('distributing/index', 'distributing.tex',
-     'Distributing Python Modules', _stdauthor, 'manual'),
     ('extending/index', 'extending.tex',
      'Extending and Embedding Python', _stdauthor, 'manual'),
     ('installing/index', 'installing.tex',
