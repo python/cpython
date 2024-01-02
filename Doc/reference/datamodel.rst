@@ -1613,11 +1613,9 @@ Basic customization
    the left operand's method has priority.  Virtual subclassing is
    not considered.
 
-   When no method returns any value other than NotImplemented, comparisons raise
-   a :exc:`TypeError`. However, the ``==`` and ``!=`` operators will not raise an
-   exception in that case, and will instead fall back to ``is`` and ``is not``,
-   respectively. That way, even though ``object().__eq__(object())`` returns
-   NotImplemented, ``object() == object()`` returns False.
+   When no appropriate method returns any value other than ``NotImplemented``, the
+   ``==`` and ``!=`` operators will fall back to ``is`` and ``is not``, respectively.
+   The other comparison operators raise a :exc:`TypeError` in that case.
 
 .. method:: object.__hash__(self)
 
