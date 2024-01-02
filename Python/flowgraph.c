@@ -464,8 +464,8 @@ no_redundant_nops(cfg_builder *g) {
     return true;
 }
 
-static basicblock*
-next_nonempty_block(basicblock *b)
+static struct _PyCfgBasicblock *
+next_nonempty_block(struct _PyCfgBasicblock *b)
 {
     while (b && b->b_iused == 0) {
         b = b->b_next;
