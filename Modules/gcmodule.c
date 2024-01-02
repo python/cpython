@@ -1063,7 +1063,7 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 }
 
 static void
-clear_freelists(_PyFreeListState *state)
+clear_freelists(_Py_freelist_state *state)
 {
     _PyList_ClearFreeList(state);
 }

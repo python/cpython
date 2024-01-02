@@ -1728,7 +1728,7 @@ flush_std_files(void)
 */
 
 static void
-finalize_free_lists(_PyFreeListState *state)
+finalize_free_lists(_Py_freelist_state *state)
 {
     _PyList_Fini(state);
 }

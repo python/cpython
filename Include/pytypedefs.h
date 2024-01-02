@@ -23,7 +23,6 @@ typedef struct _frame PyFrameObject;
 
 typedef struct _ts PyThreadState;
 typedef struct _is PyInterpreterState;
-typedef struct _Py_freelist_state _PyFreeListState;
 
 #ifdef __cplusplus
 }
