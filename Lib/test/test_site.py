@@ -643,7 +643,12 @@ class _pthFileTests(unittest.TestCase):
 
     def _get_pth_lines(self, libpath: str, *, import_site: bool):
         pth_lines = ['fake-path-name']
-        pth_lines.extend(libpath for _ in range(200))
+        # include 200 lines of `libpath` in _pth lines (or fewer
+        # if the `libpath` is long enough to get close to 32KB
+        # see https://github.com/python/cpython/issues/113628)
+        encoded_libpath_length = len(libpath.encode("utf-8"))
+        repetitions = min(200, 30000 // encoded_libpath_length)
+        pth_lines.extend(libpath for _ in range(repetitions))
         pth_lines.extend(['', '# comment'])
         if import_site:
             pth_lines.append('import site')
