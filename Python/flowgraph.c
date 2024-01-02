@@ -1721,6 +1721,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
        if (b->b_predecessors == 0) {
             b->b_iused = 0;
+            b->b_except_handler = 0;
        }
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {

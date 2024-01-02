@@ -452,6 +452,15 @@ class TestSpecifics(unittest.TestCase):
         # See gh-113054
         compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
 
+    def test_dead_code_with_except_handler_compiles(self):
+        compile(textwrap.dedent("""
+                if None:
+                    with CM:
+                        x = 1
+                else:
+                    x = 2
+               """), '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
