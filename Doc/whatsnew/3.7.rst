@@ -2004,15 +2004,15 @@ importlib
 ---------
 
 Methods
-:meth:`MetaPathFinder.find_module() <!importlib.abc.MetaPathFinder.find_module>`
+:meth:`!MetaPathFinder.find_module()`
 (replaced by
 :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`)
 and
-:meth:`PathEntryFinder.find_loader() <!importlib.abc.PathEntryFinder.find_loader>`
+:meth:`!PathEntryFinder.find_loader()`
 (replaced by
 :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
 both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`.
-(Contributed by Matthias Bussonnier in :issue:`29576`)
+(Contributed by Matthias Bussonnier in :issue:`29576`.)
 
 The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
 favour of :class:`importlib.abc.ResourceReader`.
