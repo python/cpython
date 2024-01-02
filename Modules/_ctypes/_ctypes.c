@@ -4995,11 +4995,8 @@ Simple_repr(CDataObject *self)
 static int
 Simple_traverse(CDataObject *self, visitproc visit, void *arg)
 {
-    if (0) {
-        // FIXME: avoid a crash
-        Py_VISIT(self);
-    }
-    return PyCData_traverse(self, visit, arg);;
+    Py_VISIT(Py_TYPE(self));
+    return PyCData_traverse(self, visit, arg);
 }
 
 static int
