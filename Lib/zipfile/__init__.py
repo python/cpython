@@ -1653,7 +1653,7 @@ class ZipFile:
 
             if (zinfo._end_offset is not None and
                 zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
-                raise BadZipFile(f"Overlapped entries: {zinfo.orig_filename!r}")
+                raise BadZipFile(f"Overlapped entries: {zinfo.orig_filename!r} (possible zip bomb)")
 
             # check for encrypted flag & handle password
             is_encrypted = zinfo.flag_bits & _MASK_ENCRYPTED
