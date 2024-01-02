@@ -121,12 +121,12 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 }
 
 void
-_PyList_ClearFreeList(_PyFreeListState *state)
+_PyList_ClearFreeList(_PyFreeListState *freelist_state)
 {
 #if PyList_MAXFREELIST > 0
-    struct _Py_list_state *list_state = &state->list;
-    while (list_state->numfree) {
-        PyListObject *op = list_state->free_list[--list_state->numfree];
+    struct _Py_list_state *state = &freelist_state->list;
+    while (state->numfree) {
+        PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
