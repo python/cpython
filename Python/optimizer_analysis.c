@@ -42,7 +42,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[last_set_ip].opcode = _SET_IP;
                 }
             }
-            if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG || opcode == _PUSH_FRAME) {
+            if ((_PyUop_Flags[opcode] & HAS_ERROR_FLAG) || opcode == _PUSH_FRAME) {
                 if (last_set_ip >= 0) {
                     buffer[last_set_ip].opcode = _SET_IP;
                 }
