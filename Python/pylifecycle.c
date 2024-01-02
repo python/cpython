@@ -1774,8 +1774,7 @@ finalize_interp_types(PyInterpreterState *interp)
     HEAD_UNLOCK(&_PyRuntime);
 #else
     // Only free-lists per interpreter are existed.
-    _PyFreeListState *state = _PyFreeListState_GET();
-    finalize_free_lists(state);
+    finalize_free_lists(&interp->freelist_state);
 #endif
 
 #ifdef Py_DEBUG
