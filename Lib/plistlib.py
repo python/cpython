@@ -155,7 +155,7 @@ def _date_from_string(s, aware_datetime):
 
 
 def _date_to_string(d, aware_datetime):
-    if aware_datetime and d.tzinfo is not None:
+    if aware_datetime:
         d = d.astimezone(datetime.UTC)
     return '%04d-%02d-%02dT%02d:%02d:%02dZ' % (
         d.year, d.month, d.day,
@@ -791,7 +791,7 @@ class _BinaryPlistWriter (object):
             self._fp.write(struct.pack('>Bd', 0x23, value))
 
         elif isinstance(value, datetime.datetime):
-            if self._aware_datetime and value.tzinfo is not None:
+            if self._aware_datetime:
                 dt = value.astimezone(datetime.UTC)
                 offset = dt - datetime.datetime(2001, 1, 1, tzinfo=datetime.UTC)
                 f = offset.total_seconds()
