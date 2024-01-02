@@ -641,6 +641,14 @@ class _pthFileTests(unittest.TestCase):
             sys_path.append(abs_path)
         return sys_path
 
+    def _get_pth_lines(self, libpath: str, *, import_site: bool):
+        pth_lines = ['fake-path-name']
+        pth_lines.extend(libpath for _ in range(200))
+        pth_lines.extend(['', '# comment'])
+        if import_site:
+            pth_lines.append('import site')
+        return pth_lines
+
     @support.requires_subprocess()
     def test_underpth_basic(self):
         pth_lines = ['#.', '# ..', *sys.path, '.', '..']
@@ -664,12 +672,7 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_nosite_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        pth_lines = [
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-        ]
+        pth_lines = self._get_pth_lines(libpath, import_site=False)
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
             os.path.dirname(exe_file),
@@ -693,13 +696,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ])
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True))
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
@@ -718,13 +716,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_dll_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ], exe_pth=False)
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True), exe_pth=False)
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
