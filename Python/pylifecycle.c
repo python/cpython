@@ -1765,6 +1765,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFloat_Fini(interp);
 
 #if defined(Py_GIL_DISABLED)
+    // Finalize all per-thread free-lists.
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
@@ -1773,7 +1774,8 @@ finalize_interp_types(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(&_PyRuntime);
 #else
-    // Only free-lists per interpreter are existed.
+    // No per-thread free-lists in GIL builds;
+    // we only need to finalize per-interpreter free-lists.
     finalize_free_lists(&interp->freelist_state);
 #endif
 
