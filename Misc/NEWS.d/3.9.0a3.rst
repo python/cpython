@@ -454,7 +454,7 @@ resilients to inaccessible sys.path entries (importlib_metadata v1.4.0).
 .. nonce: _S5VjC
 .. section: Library
 
-:class:`~!nntplib.NNTP` and :class:`~!nntplib.NNTP_SSL` now raise a
+:class:`!NNTP` and :class:`!NNTP_SSL` now raise a
 :class:`ValueError` if the given timeout for their constructor is zero to
 prevent the creation of a non-blocking socket. Patch by Donghee Na.
 
@@ -498,7 +498,7 @@ prevent the creation of a non-blocking socket. Patch by Donghee Na.
 .. section: Library
 
 Updated the Gmane domain from news.gmane.org to news.gmane.io which is used
-for examples of :class:`~!nntplib.NNTP` news reader server and nntplib tests.
+for examples of :class:`!NNTP` news reader server and nntplib tests.
 
 ..
 

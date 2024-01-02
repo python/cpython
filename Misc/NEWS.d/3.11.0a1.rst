@@ -3483,9 +3483,9 @@ Improved reprs of :mod:`threading` synchronization objects:
 Deprecated the following :mod:`unittest` functions, scheduled for removal in
 Python 3.13:
 
-* :func:`~!unittest.findTestCases`
-* :func:`~!unittest.makeSuite`
-* :func:`~!unittest.getTestCaseNames`
+* :func:`!findTestCases`
+* :func:`!makeSuite`
+* :func:`!getTestCaseNames`
 
 Use :class:`~unittest.TestLoader` methods instead:
 

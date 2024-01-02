@@ -1860,7 +1860,7 @@ Standard Library
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
-* :meth:`~!unittest.TestProgram.usageExit` is marked deprecated, to be removed
+* :meth:`!unittest.TestProgram.usageExit` is marked deprecated, to be removed
   in 3.13.
   (Contributed by Carlos Damázio in :gh:`67048`.)
 
