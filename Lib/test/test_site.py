@@ -643,8 +643,6 @@ class _pthFileTests(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_underpth_basic(self):
-        libpath = test.support.STDLIB_DIR
-        exe_prefix = os.path.dirname(sys.executable)
         pth_lines = ['#.', '# ..', *sys.path, '.', '..']
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
