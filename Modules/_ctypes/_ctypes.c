@@ -5002,17 +5002,11 @@ Simple_traverse(CDataObject *self, visitproc visit, void *arg)
     return PyCData_traverse(self, visit, arg);
 }
 
-static int
-Simple_clear(CDataObject *self)
-{
-    return PyCData_clear(self);
-}
-
 static void
 Simple_dealloc(PyObject *self) {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Simple_clear((CDataObject *)self);
+    PyCData_clear((CDataObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -5025,7 +5019,7 @@ static PyType_Slot simple_slots[] = {
     {Py_tp_new, GenericPyCData_new},
     {Py_tp_init, Simple_init},
     {Py_tp_traverse, Simple_traverse},
-    {Py_tp_clear, Simple_clear},
+    {Py_tp_clear, PyCData_clear},
     {Py_tp_dealloc, Simple_dealloc},
     {Py_nb_bool, Simple_bool},
     {0, NULL},
