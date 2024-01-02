@@ -2,6 +2,7 @@
 
 Suggested usage: from stat import *
 """
+import sys
 
 # Indices for stat struct members in the tuple returned by os.stat()
 
@@ -111,18 +112,31 @@ S_IXOTH = 0o0001  # execute by others
 
 # Names for file flags
 
+if sys.platform == "darwin":
+    # Group of bits in st_flags, specific to Apple platforms.
+
+    UF_SETTABLE = 0xffff      # owner settable flags
+    SF_SUPPORTED = 0x9f0000   # superuser supported flags
+    SF_SETTABLE  = 0x3ffff000 # superuser settable flags
+    SF_SYNTHETIC = 0xc0000000 # system read-only synthetic flags
+
 UF_NODUMP    = 0x00000001  # do not dump file
 UF_IMMUTABLE = 0x00000002  # file may not be changed
 UF_APPEND    = 0x00000004  # file may only be appended to
 UF_OPAQUE    = 0x00000008  # directory is opaque when viewed through a union stack
 UF_NOUNLINK  = 0x00000010  # file may not be renamed or deleted
-UF_COMPRESSED = 0x00000020 # OS X: file is hfs-compressed
-UF_HIDDEN    = 0x00008000  # OS X: file should not be displayed
+UF_COMPRESSED = 0x00000020 # macOS: file is compressed
+UF_TRACKED   = 0x00000040  # macOS: used for handling document IDs
+UF_DATAVAULT = 0x00008000  # macOS: entitlement needed for I/O
+UF_HIDDEN    = 0x00008000  # macOS: file should not be displayed
 SF_ARCHIVED  = 0x00010000  # file may be archived
 SF_IMMUTABLE = 0x00020000  # file may not be changed
 SF_APPEND    = 0x00040000  # file may only be appended to
+SF_RESTRICTED = 0x00080000 # macOS: entitlement needed for writing
 SF_NOUNLINK  = 0x00100000  # file may not be renamed or deleted
 SF_SNAPSHOT  = 0x00200000  # file is a snapshot file
+SF_FIRMLINK  = 0x00800000  # macOS: file is a firmlink
+SF_DATALESS  = 0x40000000  # macOS: file is a dataless object
 
 
 _filemode_table = (
