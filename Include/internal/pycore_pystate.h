@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _Py_freelist_state
+#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 
@@ -241,7 +241,7 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
-static inline _Py_freelist_state* _PyFreeListState_GET(void)
+static inline _PyFreeListState* _PyFreeListState_GET(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG

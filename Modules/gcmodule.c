@@ -27,7 +27,7 @@
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyDict_MaybeUntrack()
-#include "pycore_freelist.h"      // _Py_freelist_state
+#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_object.h"
@@ -1064,7 +1064,7 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
 }
 
 static void
-clear_freelists(_Py_freelist_state *state)
+clear_freelists(_PyFreeListState *state)
 {
     _PyList_ClearFreeList(state);
 }

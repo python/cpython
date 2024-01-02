@@ -1728,7 +1728,7 @@ flush_std_files(void)
 */
 
 static void
-finalize_free_lists(_Py_freelist_state *state)
+finalize_free_lists(_PyFreeListState *state)
 {
     _PyList_Fini(state);
 }
@@ -1773,7 +1773,8 @@ finalize_interp_types(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(&_PyRuntime);
 #else
-    _Py_freelist_state *state = _PyFreeListState_GET();
+    // Only free-lists per interpreter are existed.
+    _PyFreeListState *state = _PyFreeListState_GET();
     finalize_free_lists(state);
 #endif
 
