@@ -1455,6 +1455,12 @@ clear_datastack(PyThreadState *tstate)
     }
 }
 
+void _Py_ClearFreeLists(_PyFreeListState *state)
+{
+    _PyList_ClearFreeList(state);
+}
+
+
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
