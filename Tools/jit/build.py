@@ -32,6 +32,7 @@ TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
 INCLUDE = CPYTHON / "Include"
 INCLUDE_INTERNAL = INCLUDE / "internal"
+INCLUDE_INTERNAL_MIMALLOC = INCLUDE_INTERNAL / "mimalloc"
 PYTHON = CPYTHON / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
@@ -293,6 +294,7 @@ class Target(typing.Generic[S, R]):
             "-I.",
             f"-I{INCLUDE}",
             f"-I{INCLUDE_INTERNAL}",
+            f"-I{INCLUDE_INTERNAL_MIMALLOC}",
             f"-I{PYTHON}",
             "-O3",
             "-c",
