@@ -166,18 +166,27 @@ heapremove_internal(PyObject *heap, Py_ssize_t index, int siftup_func(PyListObje
 
     returnitem = PyList_GET_ITEM(heap, index);
     PyList_SET_ITEM(heap, index, lastelt);
+    /* sift down if new item is less than old, else up */
+    int value = 0;
     if (index > 0){
-        /* there is no max version of heapremove */
-        if (siftdown((PyListObject *)heap, 0, &index)) {
-            Py_DECREF(returnitem);
-            return NULL;
-        }
+        value = PyObject_RichCompareBool(lastelt, returnitem, Py_LT);
+        if (value < 0)
+            goto err;
     }
-    if (siftup_func((PyListObject *)heap, index)) {
-        Py_DECREF(returnitem);
-        return NULL;
-    }
+    /* the only _max version to call this method is _heappop_max
+     * where index is 0.  So, we need no indirection for the
+     * for 'siftdown' which is only called if index > 0
+     */
+    if (value)
+        value = siftdown((PyListObject *)heap, 0, &index);
+    else
+        value = siftup_func((PyListObject *)heap, index);
+    if (value)
+        goto err;
     return returnitem;
+err:
+    Py_DECREF(returnitem);
+    return NULL;
 }
 
 /*[clinic input]
@@ -334,6 +343,10 @@ _heapq_heapfix_impl(PyObject *module, PyObject *heap, Py_ssize_t index)
         return NULL;
     }
 
+    /* we cannot compare the value with the previous value so we
+     * must first sift down, and then sift up from the
+     * new resting position
+     */
     if (index > 0){
         if (siftdown((PyListObject *)heap, 0, &index))
             return NULL;

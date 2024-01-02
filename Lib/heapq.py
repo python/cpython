@@ -185,9 +185,12 @@ def heapremove(heap, index):
     except IndexError:  # if this was the last item
         return result
 
-    if index > 0:
-        index = _siftdown(heap, 0, index)
-    _siftup(heap, index)
+    # since we have the old value, we can compare with it and
+    # decide on the direction of sift
+    if index > 0 and lastelt < result:
+        _siftdown(heap, 0, index)
+    else:
+        _siftup(heap, index)
     return result
 
 def heapfix(heap, index):
@@ -195,6 +198,8 @@ def heapfix(heap, index):
     heap[index]  # trigger an index error for invalid indices
     if index < 0:
         index += len(heap)
+    # we don't have the previous value.  Must sift down first, then up
+    # from the new resting position.
     if index > 0:
         index = _siftdown(heap, 0, index)
     _siftup(heap, index)
