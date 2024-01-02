@@ -18,6 +18,7 @@ import io
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import sysconfig
