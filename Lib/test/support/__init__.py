@@ -2377,7 +2377,7 @@ def _get_c_recursion_limit():
         return _testcapi.Py_C_RECURSION_LIMIT
     except (ImportError, AttributeError):
         # Originally taken from Include/cpython/pystate.h .
-        return 8000
+        return 4000
 
 # The default C recursion limit.
 Py_C_RECURSION_LIMIT = _get_c_recursion_limit()

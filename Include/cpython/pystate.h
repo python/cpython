@@ -227,7 +227,7 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 1200
 #else
    // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 8000
+#  define Py_C_RECURSION_LIMIT 4000
 #endif
 
 

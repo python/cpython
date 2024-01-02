@@ -1876,7 +1876,7 @@ class TestLRU:
 
         if not support.Py_DEBUG:
             with support.infinite_recursion():
-                fib(2500)
+                fib(1250)
 
 
 @py_functools.lru_cache()
