@@ -1083,6 +1083,7 @@ clear_all_freelists(PyInterpreterState *interp)
     _PyAsyncGen_ClearFreeLists(interp);
     _PyContext_ClearFreeList(interp);
 #if defined(Py_GIL_DISABLED)
+    // Finalize all per-thread free-lists.
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
@@ -1091,7 +1092,8 @@ clear_all_freelists(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(&_PyRuntime);
 #else
-    // Only free-lists per interpreter are existed.
+    // No per-thread free-lists in GIL builds;
+    // we only need to finalize per-interpreter free-lists.
     clear_freelists(&interp->freelist_state);
 #endif
 }
