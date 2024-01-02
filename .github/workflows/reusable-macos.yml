@@ -4,7 +4,7 @@ on:
       config_hash:
         required: true
         type: string
-      free-threaded:
+      free-threading:
         required: false
         type: boolean
         default: false
@@ -35,7 +35,7 @@ jobs:
         ./configure \
           --config-cache \
           --with-pydebug \
-          ${{ inputs.free-threaded && '--disable-gil' || '' }} \
+          ${{ inputs.free-threading && '--disable-gil' || '' }} \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
