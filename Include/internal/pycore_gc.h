@@ -209,6 +209,7 @@ extern Py_ssize_t _PyGC_CollectNoFail(PyThreadState *tstate);
 
 
 // Functions to clear types free lists
+extern void _Py_ClearFreeLists(_PyFreeListState *state);
 extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
 extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);
 extern void _PyList_ClearFreeList(_PyFreeListState *state);

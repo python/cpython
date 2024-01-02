@@ -1063,12 +1063,6 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
     }
 }
 
-static void
-clear_freelists(_PyFreeListState *state)
-{
-    _PyList_ClearFreeList(state);
-}
-
 /* Clear all free lists
  * All free lists are cleared during the collection of the highest generation.
  * Allocated items in the free list may keep a pymalloc arena occupied.
@@ -1087,14 +1081,14 @@ clear_all_freelists(PyInterpreterState *interp)
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
-        clear_freelists(&tstate->freelist_state);
+        _Py_ClearFreeLists(&tstate->freelist_state);
         tstate = (_PyThreadStateImpl *)tstate->base.next;
     }
     HEAD_UNLOCK(&_PyRuntime);
 #else
     // No per-thread free-lists in GIL builds;
     // we only need to finalize per-interpreter free-lists.
-    clear_freelists(&interp->freelist_state);
+    _Py_ClearFreeLists(&interp->freelist_state);
 #endif
 }
 
