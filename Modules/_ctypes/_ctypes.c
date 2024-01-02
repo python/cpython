@@ -4992,10 +4992,13 @@ Simple_repr(CDataObject *self)
     return result;
 }
 
+
 static int
 Simple_traverse(CDataObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(self));
+    if (!PyType_HasFeature(&PyCData_Type, Py_TPFLAGS_HEAPTYPE)) {
+        Py_VISIT(Py_TYPE(self));
+    }
     return PyCData_traverse(self, visit, arg);
 }
 
