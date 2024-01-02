@@ -449,6 +449,15 @@ _PyCfgBuilder_Addop(cfg_builder *g, int opcode, int oparg, location loc)
 }
 
 
+static basicblock *
+next_nonempty_block(basicblock *b)
+{
+    while (b && b->b_iused == 0) {
+        b = b->b_next;
+    }
+    return b;
+}
+
 /***** debugging helpers *****/
 
 #ifndef NDEBUG
@@ -462,15 +471,6 @@ no_redundant_nops(cfg_builder *g) {
         }
     }
     return true;
-}
-
-static struct _PyCfgBasicblock *
-next_nonempty_block(struct _PyCfgBasicblock *b)
-{
-    while (b && b->b_iused == 0) {
-        b = b->b_next;
-    }
-    return b;
 }
 
 static bool
@@ -990,7 +990,7 @@ remove_redundant_nops(basicblock *bb) {
                 }
             }
             else {
-                basicblock* next = next_nonempty_block(bb->b_next);
+                basicblock *next = next_nonempty_block(bb->b_next);
                 /* or if last instruction in BB and next BB has same line number */
                 if (next) {
                     location next_loc = NO_LOCATION;
