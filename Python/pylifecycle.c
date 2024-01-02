@@ -1773,7 +1773,7 @@ finalize_interp_types(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(&_PyRuntime);
 #else
-    _PyFreeListState *state = _PyFreeListState_GET();
+    _Py_freelist_state *state = _PyFreeListState_GET();
     finalize_free_lists(state);
 #endif
 

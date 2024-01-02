@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_freelist.h"      // _Py_freelist_state
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 
