@@ -1092,7 +1092,7 @@ clear_all_freelists(PyInterpreterState *interp)
     HEAD_UNLOCK(&_PyRuntime);
 #else
     // Only free-lists per interpreter are existed.
-    _PyFreeListState *state = _PyFreeListState_GET();
+    _Py_freelist_state *state = _PyFreeListState_GET();
     clear_freelists(state);
 #endif
 }
