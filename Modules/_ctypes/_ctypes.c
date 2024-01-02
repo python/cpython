@@ -4999,14 +4999,13 @@ Simple_traverse(CDataObject *self, visitproc visit, void *arg)
         // FIXME: avoid a crash
         Py_VISIT(self);
     }
-    return 0;
+    return PyCData_traverse(self, visit, arg);;
 }
 
 static int
 Simple_clear(CDataObject *self)
 {
-    PyCData_clear(self);
-    return 0;
+    return PyCData_clear(self);
 }
 
 static void
