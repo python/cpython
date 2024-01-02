@@ -4996,7 +4996,7 @@ static int
 Simple_traverse(CDataObject *self, visitproc visit, void *arg)
 {
     PyTypeObject *base = Py_TYPE(self)->tp_base;
-    if (!base || !PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+    if (0) {  // Fixme
         Py_VISIT(self);
     }
     return 0;
