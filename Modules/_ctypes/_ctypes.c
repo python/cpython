@@ -2041,7 +2041,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     /* create the new instance (which is a class,
        since we are a metatype!) */
     result = (PyTypeObject *)self;  // by PyType_Type.tp_new()
-    PyTypeObject *type = Py_TYPE(self);
 
     ctypes_state *st = GLOBAL_STATE();
 
@@ -2169,6 +2168,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
 
+    PyTypeObject *type = Py_TYPE(self);
     if (type == &PyCSimpleType_Type && fmt->setfunc_swapped && fmt->getfunc_swapped) {
         PyObject *swapped = CreateSwappedType(type, args, kwds,
                                               proto, fmt);
@@ -3035,6 +3035,7 @@ int _ctypes_simple_instance(PyObject *obj)
 {
     PyTypeObject *type = (PyTypeObject *)obj;
     ctypes_state *st = GLOBAL_STATE();
+
     if (PyCSimpleTypeObject_Check(type)) {
         return type->tp_base != st->Simple_Type;
     }
@@ -5702,7 +5703,7 @@ _ctypes_add_types(PyObject *mod)
     MOD_ADD_TYPE(&PyCPointer_Type, &PyCPointerType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCArray_Type, &PyCArrayType_Type, &PyCData_Type);
     MOD_ADD_HEAPTYPE(st->Simple_Type, &simple_spec, &PyCData_Type,
-                     &PyCSimpleType_Type);
+                 &PyCSimpleType_Type);
     MOD_ADD_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type, &PyCData_Type);
 
     /*************************************************
