@@ -2360,6 +2360,8 @@ func(
 """
         self._check_error(code, "parenthesis '\\)' does not match opening parenthesis '\\['")
 
+        self._check_error("match y:\n case e(e=v,v,", " was never closed")
+
         # Examples with dencodings
         s = b'# coding=latin\n(aaaaaaaaaaaaaaaaa\naaaaaaaaaaa\xb5'
         self._check_error(s, r"'\(' was never closed")
