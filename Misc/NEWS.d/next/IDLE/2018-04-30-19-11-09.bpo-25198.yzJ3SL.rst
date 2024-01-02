@@ -1,0 +1,2 @@
+Use user preferences to set font size in IDLE Textview and Help and allow dynamic font
+sizing using keybindings or mouse wheel.

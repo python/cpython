@@ -28,16 +28,18 @@ from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
 
-from tkinter import Toplevel, Text, Menu
+from tkinter import Toplevel, Text, Menu, EventType
 from tkinter.ttk import Frame, Menubutton, Scrollbar, Style
 from tkinter import font as tkfont
 
 from idlelib.config import idleConf
+from idlelib.textview import FontSizer
 
 ## About IDLE ##
 
 
 ## IDLE Help ##
+
 
 class HelpParser(HTMLParser):
     """Render help.html into a text widget.
@@ -67,7 +69,7 @@ class HelpParser(HTMLParser):
     def indent(self, amt=1):
         "Change indent (+1, 0, -1) and tags."
         self.level += amt
-        self.tags = '' if self.level == 0 else 'l'+str(self.level)
+        self.tags = '' if self.level == 0 else f'l{self.level}'
 
     def handle_starttag(self, tag, attrs):
         "Handle starttags in help.html."
@@ -175,26 +177,37 @@ class HelpText(Text):
         Text.__init__(self, parent, wrap='word', highlightthickness=0,
                       padx=5, borderwidth=0, width=uwide, height=uhigh)
 
-        normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
-        fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
-        self['font'] = (normalfont, 12)
-        self.tag_configure('em', font=(normalfont, 12, 'italic'))
-        self.tag_configure('h1', font=(normalfont, 20, 'bold'))
-        self.tag_configure('h2', font=(normalfont, 18, 'bold'))
-        self.tag_configure('h3', font=(normalfont, 15, 'bold'))
-        self.tag_configure('pre', font=(fixedfont, 12), background='#f6f6ff')
-        self.tag_configure('preblock', font=(fixedfont, 10), lmargin1=25,
-                borderwidth=1, relief='solid', background='#eeffcc')
-        self.tag_configure('l1', lmargin1=25, lmargin2=25)
-        self.tag_configure('l2', lmargin1=50, lmargin2=50)
-        self.tag_configure('l3', lmargin1=75, lmargin2=75)
-        self.tag_configure('l4', lmargin1=100, lmargin2=100)
+        self.create_fonts()
+        self.configure_tags()
 
         self.parser = HelpParser(self)
         with open(filename, encoding='utf-8') as f:
             contents = f.read()
         self.parser.feed(contents)
+
         self['state'] = 'disabled'
+        self.focus_set()
+
+    def create_fonts(self):
+        "Create fonts to be used with tags."
+        base_size = idleConf.GetOption('main', 'EditorWindow',
+                                       'font-size', type='int')
+        normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
+        fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
+
+        self.base_font = tkfont.Font(self, (normalfont, base_size))
+        self['font'] = self.base_font
+
+        # Define styling for each font tag used in html.
+        self.fonts = fonts = {}
+        fonts['em'] = tkfont.Font(self, family=normalfont, slant='italic')
+        for tag in ('h3', 'h2', 'h1'):
+            fonts[tag] = tkfont.Font(self, family=normalfont, weight='bold')
+        for tag in ('pre', 'preblock'):
+            fonts[tag] = tkfont.Font(self, family=fixedfont)
+        self.scale_tagfonts(base_size)
+
+        FontSizer(self)
 
     def findfont(self, names):
         "Return name of first font family derived from names."
@@ -205,6 +218,24 @@ class HelpText(Text):
             elif name.lower() in (x.lower()
                                   for x in tkfont.families(root=self)):
                 return name
+
+    def configure_tags(self):
+        "Configure tags used in parsing."
+        for tag in ('em', 'h1', 'h2', 'h3', 'pre', 'preblock'):
+            self.tag_configure(tag, font=self.fonts[tag])
+        self.tag_configure('pre', background='#f6f6ff')
+        self.tag_configure('preblock', lmargin1=25, borderwidth=1,
+                           relief='solid', background='#eeffcc')
+        for level in range(1, 5):
+            self.tag_configure(f'l{level}', lmargin1=25*level, lmargin2=25*level)
+
+    def scale_tagfonts(self, base):
+        "Scale tag sizes based on the size of normal text."
+        # Scale percentages are from Sphinx classic.css.
+        scale = {'h3': 1.2, 'h2': 1.4, 'h1': 1.6,
+                 'em': 1.0, 'pre': 1.0, 'preblock': 0.9}
+        for tag in self.fonts:
+            self.fonts[tag]['size'] = int(base * scale[tag])
 
 
 class HelpFrame(Frame):

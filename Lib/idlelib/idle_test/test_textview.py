@@ -11,8 +11,9 @@ requires('gui')
 
 import os
 import unittest
-from tkinter import Tk, TclError, CHAR, NONE, WORD
+from tkinter import Tk, Text, TclError, CHAR, NONE, WORD
 from tkinter.ttk import Button
+from tkinter import font as tkfont
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
 
@@ -227,6 +228,77 @@ class ButtonClickTest(unittest.TestCase):
             self.assertEqual(get('1.0', '1.end'), f.readline().strip())
             f.readline()
             self.assertEqual(get('3.0', '3.end'), f.readline().strip())
+
+
+class FontSizerTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = Text(root)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.text
+
+    def setUp(self):
+        text = self.text
+        text.insert('end', 'Test Text')
+        self.sizer = tv.FontSizer(text)
+
+    def tearDown(self):
+        del self.sizer
+
+    def test_increase_font_size(self):
+        text = self.text
+        font = tkfont.Font(text, ('courier', 30))
+        text['font'] = font
+        eq = self.assertEqual
+        text.focus_set()
+
+        eq(font['size'], 30)
+        text.event_generate('<<increase_font_size>>')
+        eq(font['size'], 31)
+        text.event_generate('<<increase_font_size>>')
+        eq(font['size'], 32)
+
+    def test_decrease_font_size(self):
+        text = self.text
+        font = tkfont.Font(text, ('courier', 30))
+        text['font'] = font
+        eq = self.assertEqual
+        text.focus_set()
+
+        eq(font['size'], 30)
+        text.event_generate('<<decrease_font_size>>')
+        eq(font['size'], 29)
+        text.event_generate('<<decrease_font_size>>')
+        eq(font['size'], 28)
+
+    def test_increase_font_size_tuple(self):
+        text = self.text
+        font = ('Arial', 45, 'bold italic')
+        text['font'] = font
+        eq = self.assertEqual
+        text.focus_set()
+
+        eq(text.tk.splitlist(text['font'])[1], '45')
+        text.event_generate('<<increase_font_size>>')
+        eq(text.tk.splitlist(text['font'])[1], '46')
+        text.event_generate('<<increase_font_size>>')
+        eq(text.tk.splitlist(text['font'])[1], '47')
+
+    def test_decrease_font_size_tuple(self):
+        text = self.text
+        font = ('Arial', 45)
+        text['font'] = font
+        eq = self.assertEqual
+        text.focus_set()
+
+        eq(text.tk.splitlist(text['font'])[1], '45')
+        text.event_generate('<<decrease_font_size>>')
+        eq(text.tk.splitlist(text['font'])[1], '44')
+        text.event_generate('<<decrease_font_size>>')
+        eq(text.tk.splitlist(text['font'])[1], '43')
 
 
 if __name__ == '__main__':

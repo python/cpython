@@ -1,12 +1,88 @@
 """Simple text browser for IDLE
 
 """
+import sys
 from tkinter import Toplevel, Text, TclError,\
     HORIZONTAL, VERTICAL, NS, EW, NSEW, NONE, WORD, SUNKEN
+from tkinter.font import Font
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
 from idlelib.colorizer import color_config
+
+darwin = sys.platform == 'darwin'
+MINIMUM_FONT_SIZE = 6
+MAXIMUM_FONT_SIZE = 100
+
+
+class FontSizer:
+    "Support dynamic text font resizing."
+    def __init__(self, text):
+        """"Add font resizing functionality to text widget.
+
+        Args:
+            text: Tk widget with font attribute to size.
+        """
+        self.text = text
+        self.bind_events()
+
+    def bind_events(self):
+        "Bind events to the widget."
+        shortcut = 'Command' if darwin else 'Control'
+        # Bind to keys with or without shift.
+        self.text.event_add(
+                '<<increase_font_size>>',
+                f'<{shortcut}-Key-equal>', f'<{shortcut}-Key-plus>')
+        self.text.bind('<<increase_font_size>>', self.increase_font_size)
+
+        self.text.event_add(
+                '<<decrease_font_size>>',
+                f'<{shortcut}-Key-minus>', f'<{shortcut}-Key-underscore>')
+        self.text.bind('<<decrease_font_size>>', self.decrease_font_size)
+
+        # Windows and Mac use MouseWheel.
+        self.text.bind('<Control-MouseWheel>', self.update_mousewheel)
+        # Linux uses Button 4 and Button 5 for the mousewheel.
+        self.text.bind('<Control-Button-4>', self.decrease_font_size)
+        self.text.bind('<Control-Button-5>', self.increase_font_size)
+
+    def set_text_fontsize(new_size):
+        def sizer(self, event=None):
+            "Set the font size for this widget and its tags."
+            def resize(fontname):
+                try:
+                    font = Font(self.text, name=fontname, exists=True)
+                    font['size'] = new_size(font['size'])
+                except TclError:
+                    font = list(self.text.tk.splitlist(fontname))
+                    if len(font) > 1:
+                        font[1] = new_size(int(font[1]))
+                return font
+
+            self.text['font'] = resize(self.text['font'])
+            for tag in self.text.tag_names():
+                tag_font = self.text.tag_cget(tag, 'font')
+                if tag_font:
+                    tag_font = resize(tag_font)
+            return 'break'
+        return sizer
+
+    @set_text_fontsize
+    def increase_font_size(fontsize):
+        "Make font size larger."
+        return min(fontsize + 1, MAXIMUM_FONT_SIZE)
+
+    @set_text_fontsize
+    def decrease_font_size(fontsize):
+        "Make font size smaller."
+        return max(fontsize - 1, MINIMUM_FONT_SIZE)
+
+    def update_mousewheel(self, event):
+        "Adjust font size based on mouse wheel direction."
+        if (event.delta < 0) == (not darwin):
+            return self.decrease_font_size()
+        else:
+            return self.increase_font_size()
 
 
 class AutoHideScrollbar(Scrollbar):
@@ -94,8 +170,8 @@ class ViewFrame(Frame):
 
         self.button_ok = button_ok = Button(
                 self, text='Close', command=self.ok, takefocus=False)
-        self.textframe.pack(side='top', expand=True, fill='both')
         button_ok.pack(side='bottom')
+        self.textframe.pack(side='top', expand=True, fill='both')
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
