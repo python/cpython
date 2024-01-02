@@ -648,6 +648,9 @@ class _pthFileTests(unittest.TestCase):
         # see https://github.com/python/cpython/issues/113628)
         encoded_libpath_length = len(libpath.encode("utf-8"))
         repetitions = min(200, 30000 // encoded_libpath_length)
+        if repetitions <= 2:
+            self.skipTest(
+                f"Python stdlib path is too long ({encoded_libpath_length:,} bytes)")
         pth_lines.extend(libpath for _ in range(repetitions))
         pth_lines.extend(['', '# comment'])
         if import_site:
