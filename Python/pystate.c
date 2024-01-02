@@ -1529,7 +1529,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->context);
 
 #ifdef Py_GIL_DISABLED
-    // Each thread should clear own freelists for the free-threading build.
+    // Each thread should clear own freelists in free-threading builds.
     _PyFreeListState *freelist_state = &((_PyThreadStateImpl*)tstate)->freelist_state;
     _Py_ClearFreeLists(freelist_state);
 #endif
