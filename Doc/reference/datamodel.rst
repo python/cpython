@@ -1615,7 +1615,6 @@ Basic customization
 
    When no appropriate method returns any value other than ``NotImplemented``, the
    ``==`` and ``!=`` operators will fall back to ``is`` and ``is not``, respectively.
-   The other comparison operators raise a :exc:`TypeError` in that case.
 
 .. method:: object.__hash__(self)
 
