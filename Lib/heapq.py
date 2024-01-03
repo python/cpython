@@ -193,17 +193,6 @@ def heapremove(heap, index):
         _siftup(heap, index)
     return result
 
-def heapfix(heap, index):
-    """Restore the heap invariant if element at the given index has changed."""
-    heap[index]  # trigger an index error for invalid indices
-    if index < 0:
-        index += len(heap)
-    # we don't have the previous value.  Must sift down first, then up
-    # from the new resting position.
-    if index > 0:
-        index = _siftdown(heap, 0, index)
-    _siftup(heap, index)
-
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(x)) time."""
     n = len(x)
@@ -254,7 +243,6 @@ def _siftdown(heap, startpos, pos):
             continue
         break
     heap[pos] = newitem
-    return pos
 
 # The child indices of heap index pos are already heaps, and we want to make
 # a heap at index pos too.  We do this by bubbling the smaller child of

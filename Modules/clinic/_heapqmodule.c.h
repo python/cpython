@@ -194,51 +194,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_heapq_heapfix__doc__,
-"heapfix($module, heap, index, /)\n"
-"--\n"
-"\n"
-"Restore the heap invariant when the element at the given index has been modified.");
-
-#define _HEAPQ_HEAPFIX_METHODDEF    \
-    {"heapfix", _PyCFunction_CAST(_heapq_heapfix), METH_FASTCALL, _heapq_heapfix__doc__},
-
-static PyObject *
-_heapq_heapfix_impl(PyObject *module, PyObject *heap, Py_ssize_t index);
-
-static PyObject *
-_heapq_heapfix(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *heap;
-    Py_ssize_t index;
-
-    if (!_PyArg_CheckPositional("heapfix", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (!PyList_Check(args[0])) {
-        _PyArg_BadArgument("heapfix", "argument 1", "list", args[0]);
-        goto exit;
-    }
-    heap = args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
-    }
-    return_value = _heapq_heapfix_impl(module, heap, index);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_heapq_heapify__doc__,
 "heapify($module, heap, /)\n"
 "--\n"
@@ -360,4 +315,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d721773c4515367 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2b5eef72a3b55d76 input=a9049054013a1b77]*/

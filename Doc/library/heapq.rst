@@ -91,13 +91,6 @@ The following functions are provided:
    .. versionadded:: 3.13
 
 
-.. function:: heapfix(heap, index):
-
-   Restore the heap invariant after the object at ``heap[index]`` has been modified.
-
-   .. versionadded:: 3.13
-
-
 The module also offers three general purpose functions based on heaps.
 
 

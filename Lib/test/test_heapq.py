@@ -290,42 +290,6 @@ class TestHeap:
             self.check_invariant(data)
         self.assertFalse(data)
 
-    def test_fix(self):
-        data = [random.random() for i in range(100)]
-        self.module.heapify(data)
-        heapset = set(data)
-        self.assertEqual(len(data), len(heapset))
-
-        with self.assertRaises(IndexError) as e:
-            self.module.heapfix(data, len(data))
-        with self.assertRaises(IndexError) as e:
-            self.module.heapfix(data, -len(data) - 1)
-        self.check_invariant(data)
-        self.assertEqual(heapset, set(data))
-
-        for i in range(200):
-            i = random.randrange(-len(data), len(data))
-            if random.random() < 0.05:
-                i = 0  # ensure we try 0
-            elif random.random() < 0.05:
-                i = len(data) - 1
-            replace = random.random()
-            # print(len(data), i, data[i], replace)
-            heapset.remove(data[i])
-            heapset.add(replace)
-            data[i] = replace
-            self.module.heapfix(data, i)
-            self.assertEqual(heapset, set(data))
-            self.check_invariant(data)
-        self.assertEqual(len(data), 100)
-
-    def test_fix_err(self):
-        data = [random.random() for i in range(100)]
-        self.module.heapify(data)
-        with self.assertRaisesRegex(TypeError, r"not supported.*'str' and 'float'"):
-            data[50] = "foo"
-            self.module.heapfix(data, 50)
-
     def test_remove_ops(self):
         # test the efficienty of heapremove as opposed to
         # a simple remove and heapify

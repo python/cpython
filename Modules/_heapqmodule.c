@@ -22,11 +22,10 @@ module _heapq
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d7cca0a2e4c0ceb3]*/
 
 static int
-siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t *ppos)
+siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
     PyObject *newitem, *parent, **arr;
     Py_ssize_t parentpos, size;
-    Py_ssize_t pos = *ppos;
     int cmp;
 
     assert(PyList_Check(heap));
@@ -64,7 +63,6 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t *ppos)
         arr[pos] = parent;
         pos = parentpos;
     }
-    *ppos = pos;
     return 0;
 }
 
@@ -115,7 +113,7 @@ siftup(PyListObject *heap, Py_ssize_t pos)
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
-    return siftdown(heap, startpos, &pos);
+    return siftdown(heap, startpos, pos);
 }
 
 /*[clinic input]
@@ -135,7 +133,7 @@ _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item)
     if (PyList_Append(heap, item))
         return NULL;
     Py_ssize_t pos = PyList_GET_SIZE(heap)-1;
-    if (siftdown((PyListObject *)heap, 0, &pos))
+    if (siftdown((PyListObject *)heap, 0, pos))
         return NULL;
     Py_RETURN_NONE;
 }
@@ -178,7 +176,7 @@ heapremove_internal(PyObject *heap, Py_ssize_t index, int siftup_func(PyListObje
      * for 'siftdown' which is only called if index > 0
      */
     if (value)
-        value = siftdown((PyListObject *)heap, 0, &index);
+        value = siftdown((PyListObject *)heap, 0, index);
     else
         value = siftup_func((PyListObject *)heap, index);
     if (value)
@@ -316,44 +314,6 @@ _heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index)
 /*[clinic end generated code: output=58466c577a3d8e33 input=b9ab21fc7cfb6e2a]*/
 {
     return heapremove_internal(heap, index, siftup);
-}
-
-/*[clinic input]
-_heapq.heapfix
-
-    heap: object(subclass_of='&PyList_Type')
-    index: Py_ssize_t
-    /
-
-Restore the heap invariant when the element at the given index has been modified.
-[clinic start generated code]*/
-
-static PyObject *
-_heapq_heapfix_impl(PyObject *module, PyObject *heap, Py_ssize_t index)
-/*[clinic end generated code: output=c06b38e98a062214 input=2eb44272c71f3106]*/
-{
-    Py_ssize_t n;
-
-    /* raises IndexError if the heap is empty */
-    n = PyList_GET_SIZE(heap);
-    if (index < 0)
-        index += n;
-    if (index < 0 || index >= n) {
-        PyErr_SetString(PyExc_IndexError, "index out of range");
-        return NULL;
-    }
-
-    /* we cannot compare the value with the previous value so we
-     * must first sift down, and then sift up from the
-     * new resting position
-     */
-    if (index > 0){
-        if (siftdown((PyListObject *)heap, 0, &index))
-            return NULL;
-    }
-    if (siftup((PyListObject *)heap, index))
-        return NULL;
-    Py_RETURN_NONE;
 }
 
 
@@ -619,7 +579,6 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ__HEAPIFY_MAX_METHODDEF
     _HEAPQ__HEAPREPLACE_MAX_METHODDEF
     _HEAPQ_HEAPREMOVE_METHODDEF
-    _HEAPQ_HEAPFIX_METHODDEF
     {NULL, NULL}           /* sentinel */
 };
 
