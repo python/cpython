@@ -10,14 +10,28 @@ Expressions
 This chapter explains the meaning of the elements of expressions in Python.
 
 **Syntax Notes:** In this and the following chapters, extended BNF notation will
-be used to describe syntax, not lexical analysis.  When (one alternative of) a
-syntax rule has the form
+be used to describe syntax (but not tokenization/lexical analysis). Extended BNF
+uses syntax rules like the following:
 
-.. productionlist:: python-grammar
-   name: `othername`
+.. productionlist:: grammar-example
+    a_expr:  `m_expr` | `a_expr` "+" `m_expr` | `a_expr` "-" `m_expr`
 
-and no semantics are given, the semantics of this form of ``name`` are the same
-as for ``othername``.
+This rule indicates that an :token:`~grammar-example:a_expr` ("a" is for
+addition, but subtraction has the same precedence) is one of the following:
+
+* Just an :token:`~python-grammar:m_expr` (the "m" is for
+  multiplication-like operations),
+* A :token:`~grammar-example:a_expr`, followed by a "+" sign,
+  followed by an :token:`~python-grammar:m_expr`,
+* A :token:`~grammar-example:a_expr`, followed by a "-" sign,
+  followed by an :token:`~python-grammar:m_expr`.
+
+For concreteness, given that ``x * y``, ``x / y``, ``a[i]`` and ``foo.bar`` are
+instances of :token:`~python-grammar:m_expr`, the rule implies that ``x * y``,
+``x / y + a[i]``, and (recursively) ``foo.bar + x * y - a[i]`` are all instances
+of :token:`~grammar-example:a_expr`. Unless specified otherwise, the semantic of
+all of those expressions considered as an :token:`~grammar-example:a_expr` is
+the same as their semantic when considered as a :token:`~python-grammar:m_expr`.
 
 
 .. _conversions:
