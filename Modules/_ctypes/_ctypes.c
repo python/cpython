@@ -2077,7 +2077,10 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    if (type == st->PyCSimpleType_Type && fmt->setfunc_swapped && fmt->getfunc_swapped) {
+    if (type == st->PyCSimpleType_Type
+        && fmt->setfunc_swapped
+        && fmt->getfunc_swapped)
+    {
         PyObject *swapped = CreateSwappedType(type, args, kwds,
                                               proto, fmt);
         StgDictObject *sw_dict;
