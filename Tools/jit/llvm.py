@@ -7,10 +7,10 @@ LLVM_VERSION = 16
 
 
 def get_tool_version(name: str, *, echo: bool = False) -> int | None:
+    args = [name, "--version"]
+    if echo:
+        print(shlex.join(args))
     try:
-        args = [name, "--version"]
-        if echo:
-            print(shlex.join(args))
         process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
     except FileNotFoundError:
         return None
@@ -29,10 +29,10 @@ def find_tool(tool: str, *, echo: bool = False) -> str | None:
     if get_tool_version(path, echo=echo) == LLVM_VERSION:
         return path
     # My homebrew homies:
+    args = ["brew", "--prefix", f"llvm@{LLVM_VERSION}"]
+    if echo:
+        print(shlex.join(args))
     try:
-        args = ["brew", "--prefix", f"llvm@{LLVM_VERSION}"]
-        if echo:
-            print(shlex.join(args))
         process = subprocess.run(args, check=True, stdout=subprocess.PIPE)
     except (FileNotFoundError, subprocess.CalledProcessError):
         return None
