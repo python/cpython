@@ -427,23 +427,26 @@ class PurePathBase:
     @property
     def parent(self):
         """The logical parent of the path."""
-        path, name = self.pathmod.split(str(self))
-        if name and name != '.':
-            path = self.with_segments(path)
-            path._resolving = self._resolving
-            return path
+        path = str(self)
+        parent = self.pathmod.dirname(path)
+        if path != parent:
+            parent = self.with_segments(parent)
+            parent._resolving = self._resolving
+            return parent
         return self
 
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
-        split = self.pathmod.split
-        paths = []
-        path, name = split(str(self))
-        while name and name != '.':
-            paths.append(self.with_segments(path))
-            path, name = split(path)
-        return tuple(paths)
+        dirname = self.pathmod.dirname
+        path = str(self)
+        parent = dirname(path)
+        parents = []
+        while path != parent:
+            parents.append(self.with_segments(parent))
+            path = parent
+            parent = dirname(path)
+        return tuple(parents)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
@@ -952,11 +955,13 @@ class PathBase(PurePathBase):
         *parts* is a reversed list of parts following the anchor.
         """
         split = self.pathmod.split
+        path = str(self)
+        parent, name = split(path)
         names = []
-        path, name = split(str(self))
-        while name and name != '.':
+        while path != parent:
             names.append(name)
-            path, name = split(path)
+            path = parent
+            parent, name = split(path)
         if not names:
             return self, []
         return self.with_segments(path), names
@@ -980,7 +985,9 @@ class PathBase(PurePathBase):
         link_count = 0
         while parts:
             part = parts.pop()
-            if part == '..':
+            if not part or part == '.':
+                continue
+            elif part == '..':
                 if not path._tail:
                     if path.root:
                         # Delete '..' segment immediately following root
