@@ -147,8 +147,8 @@ clinic.
 .. nonce: yRWQ1y
 .. section: Core and Builtins
 
-Improve the output of ``co_lines`` by emitting only one entry for each line
-range.
+Improve the output of :meth:`codeobject.co_lines` by emitting only one entry
+for each line range.
 
 ..
 
