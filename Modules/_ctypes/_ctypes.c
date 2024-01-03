@@ -2205,11 +2205,13 @@ static PyMethodDef PyCSimpleType_methods[] = {
 };
 
 static PyType_Slot pycsimple_type_slots[] = {
-    {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for the PyCSimpleType Objects")},
     {Py_tp_methods, PyCSimpleType_methods},
     {Py_tp_new, PyCSimpleType_new},
     {Py_tp_traverse, PyCSimpleType_traverse},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
