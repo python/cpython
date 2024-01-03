@@ -1876,8 +1876,7 @@ class TestLRU:
 
         if not support.Py_DEBUG:
             with support.infinite_recursion():
-                fib(1250)
-
+                self.assertRaises(RecursionError, fib, 2000)
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):
