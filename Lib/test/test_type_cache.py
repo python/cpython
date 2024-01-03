@@ -76,72 +76,166 @@ class TypeCacheTests(unittest.TestCase):
         new_version = type_get_version(C)
         self.assertEqual(new_version, orig_version + 5)
 
-    def test_specialization_user_type_no_tag_overflow(self):
+        _clear_type_cache()
+
+
+@support.cpython_only
+class TypeCacheWithSpecializationTests(unittest.TestCase):
+    def tearDown(self):
+        _clear_type_cache()
+
+    def _assign_and_check_valid_version(self, user_type):
+        type_modified(user_type)
+        type_assign_version(user_type)
+        self.assertNotEqual(type_get_version(user_type), 0)
+
+    def _assign_and_check_version_0(self, user_type):
+        type_modified(user_type)
+        type_assign_specific_version_unsafe(user_type, 0)
+        self.assertEqual(type_get_version(user_type), 0)
+
+    def _all_opnames(self, func):
+        return set(instr.opname for instr in dis.Bytecode(func, adaptive=True))
+
+    def _check_specialization(self, func, arg, opname, *, should_specialize):
+        self.assertIn(opname, self._all_opnames(func))
+
+        for _ in range(100):
+            func(arg)
+
+        if should_specialize:
+            self.assertNotIn(opname, self._all_opnames(func))
+        else:
+            self.assertIn(opname, self._all_opnames(func))
+
+    def test_class_load_attr_specialization_user_type(self):
         class A:
             def foo(self):
                 pass
 
-        class B:
-            def foo(self):
-                pass
+        self._assign_and_check_valid_version(A)
 
-        type_modified(A)
-        type_assign_version(A)
-        type_modified(B)
-        type_assign_version(B)
-        self.assertNotEqual(type_get_version(A), 0)
-        self.assertNotEqual(type_get_version(B), 0)
-        self.assertNotEqual(type_get_version(A), type_get_version(B))
+        def load_foo_1(type_):
+            type_.foo
 
-        def get_foo(type_):
+        self._check_specialization(load_foo_1, A, "LOAD_ATTR", should_specialize=True)
+        del load_foo_1
+
+        self._assign_and_check_version_0(A)
+
+        def load_foo_2(type_):
             return type_.foo
 
-        self.assertIn(
-            "LOAD_ATTR",
-            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
-        )
+        self._check_specialization(load_foo_2, A, "LOAD_ATTR", should_specialize=False)
 
-        get_foo(A)
-        get_foo(A)
+    def test_class_load_attr_specialization_static_type(self):
+        self._assign_and_check_valid_version(str)
+        self._assign_and_check_valid_version(bytes)
 
-        # check that specialization has occurred
-        self.assertNotIn(
-            "LOAD_ATTR",
-            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
-        )
+        def get_capitalize_1(type_):
+            return type_.capitalize
 
-    def test_specialization_user_type_tag_overflow(self):
-        class A:
-            def foo(self):
-                pass
+        self._check_specialization(get_capitalize_1, str, "LOAD_ATTR", should_specialize=True)
+        self.assertEqual(get_capitalize_1(str)('hello'), 'Hello')
+        self.assertEqual(get_capitalize_1(bytes)(b'hello'), b'Hello')
+        del get_capitalize_1
 
+        # Permanently overflow the static type version counter, and force str and bytes
+        # to have tp_version_tag == 0
+        for _ in range(2**16):
+            type_modified(str)
+            type_assign_version(str)
+            type_modified(bytes)
+            type_assign_version(bytes)
+
+        self.assertEqual(type_get_version(str), 0)
+        self.assertEqual(type_get_version(bytes), 0)
+
+        def get_capitalize_2(type_):
+            return type_.capitalize
+
+        self._check_specialization(get_capitalize_2, str, "LOAD_ATTR", should_specialize=False)
+        self.assertEqual(get_capitalize_2(str)('hello'), 'Hello')
+        self.assertEqual(get_capitalize_2(bytes)(b'hello'), b'Hello')
+
+    def test_property_load_attr_specialization_user_type(self):
+        class G:
+            @property
+            def x(self):
+                return 9
+
+        self._assign_and_check_valid_version(G)
+
+        def load_x_1(instance):
+            instance.x
+
+        self._check_specialization(load_x_1, G(), "LOAD_ATTR", should_specialize=True)
+        del load_x_1
+
+        self._assign_and_check_version_0(G)
+
+        def load_x_2(instance):
+            instance.x
+
+        self._check_specialization(load_x_2, G(), "LOAD_ATTR", should_specialize=False)
+
+    def test_store_attr_specialization_user_type(self):
         class B:
-            def foo(self):
+            __slots__ = ("bar",)
+
+        self._assign_and_check_valid_version(B)
+
+        def store_bar_1(type_):
+            type_.bar = 10
+
+        self._check_specialization(store_bar_1, B(), "STORE_ATTR", should_specialize=True)
+        del store_bar_1
+
+        self._assign_and_check_version_0(B)
+
+        def store_bar_2(type_):
+            type_.bar = 10
+
+        self._check_specialization(store_bar_2, B(), "STORE_ATTR", should_specialize=False)
+
+    def test_class_call_specialization_user_type(self):
+        class F:
+            def __init__(self):
                 pass
 
-        type_modified(A)
-        type_assign_specific_version_unsafe(A, 0)
-        type_modified(B)
-        type_assign_specific_version_unsafe(B, 0)
-        self.assertEqual(type_get_version(A), 0)
-        self.assertEqual(type_get_version(B), 0)
+        self._assign_and_check_valid_version(F)
 
-        def get_foo(type_):
-            return type_.foo
+        def call_class_1(type_):
+            type_()
 
-        self.assertIn(
-            "LOAD_ATTR",
-            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
-        )
+        self._check_specialization(call_class_1, F, "CALL", should_specialize=True)
+        del call_class_1
 
-        get_foo(A)
-        get_foo(A)
+        self._assign_and_check_version_0(F)
 
-        # check that specialization has not occurred due to version tag == 0
-        self.assertIn(
-            "LOAD_ATTR",
-            [instr.opname for instr in dis.Bytecode(get_foo, adaptive=True)],
-        )
+        def call_class_2(type_):
+            type_()
+
+        self._check_specialization(call_class_2, F, "CALL", should_specialize=False)
+
+    def test_to_bool_specialization_user_type(self):
+        class H:
+            pass
+
+        self._assign_and_check_valid_version(H)
+
+        def to_bool_1(instance):
+            not instance
+
+        self._check_specialization(to_bool_1, H(), "TO_BOOL", should_specialize=True)
+        del to_bool_1
+
+        self._assign_and_check_version_0(H)
+
+        def to_bool_2(instance):
+            not instance
+
+        self._check_specialization(to_bool_2, H(), "TO_BOOL", should_specialize=False)
 
 
 if __name__ == "__main__":
