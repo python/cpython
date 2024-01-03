@@ -1533,11 +1533,13 @@ PyCArrayType_traverse(PyTypeObject *self, visitproc visit, void *arg)
 }
 
 static PyType_Slot pycarray_type_slots[] = {
-    {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
     {Py_tp_traverse, PyCArrayType_traverse},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, PyCArrayType_new},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
