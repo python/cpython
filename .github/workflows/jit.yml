@@ -61,16 +61,18 @@ jobs:
     env:
       CC: ${{ matrix.compiler }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Windows
         if: runner.os == 'Windows'
         run: |
           choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+
       - name: macOS
         if: runner.os == 'macOS'
         run: |
@@ -79,6 +81,7 @@ jobs:
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 3
           ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
