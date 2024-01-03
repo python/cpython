@@ -62,9 +62,9 @@ class Hole:
     replace = dataclasses.replace
 
 
-S = typing.TypeVar("S", schema.COFFSection, schema.ELFSection, schema.MachOSection)
-R = typing.TypeVar(
-    "R", schema.COFFRelocation, schema.ELFRelocation, schema.MachORelocation
+_S = typing.TypeVar("_S", schema.COFFSection, schema.ELFSection, schema.MachOSection)
+_R = typing.TypeVar(
+    "_R", schema.COFFRelocation, schema.ELFRelocation, schema.MachORelocation
 )
 
 
@@ -83,7 +83,7 @@ class Stencil:
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def emit_aarch64_trampoline(self, hole: Hole) -> typing.Generator[Hole, None, None]:
+    def emit_aarch64_trampoline(self, hole: Hole) -> typing.Iterator[Hole]:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
         base = len(self.body)
         where = slice(hole.offset, hole.offset + 4)
@@ -187,7 +187,7 @@ def _symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
 
 
 @dataclasses.dataclass
-class Target(typing.Generic[S, R]):
+class Target(typing.Generic[_S, _R]):
     triple: str
     _: dataclasses.KW_ONLY
     alignment: int = 1
@@ -232,7 +232,7 @@ class Target(typing.Generic[S, R]):
         # ...and also COFF:
         output = output[output.index(b"[", 1, None) :]
         output = output[: output.rindex(b"]", None, -1) + 1]
-        sections: list[dict[typing.Literal["Section"], S]] = json.loads(output)
+        sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
         assert group.code.symbols["_JIT_ENTRY"] == 0
@@ -274,10 +274,10 @@ class Target(typing.Generic[S, R]):
                 hole = hole.replace(value=value, symbol=symbol, addend=addend)
             stencil.holes.append(hole)
 
-    def _handle_section(self, section: S, group: StencilGroup) -> None:
+    def _handle_section(self, section: _S, group: StencilGroup) -> None:
         raise NotImplementedError()
 
-    def _handle_relocation(self, base: int, relocation: R, raw: bytes) -> Hole:
+    def _handle_relocation(self, base: int, relocation: _R, raw: bytes) -> Hole:
         raise NotImplementedError()
 
     async def _compile(
@@ -559,7 +559,7 @@ def get_target(
     return dataclasses.replace(target, debug=debug, verbose=verbose)
 
 
-def dump_header() -> typing.Generator[str, None, None]:
+def dump_header() -> typing.Iterator[str]:
     yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
     yield ""
     yield "typedef enum {"
@@ -594,7 +594,7 @@ def dump_header() -> typing.Generator[str, None, None]:
     yield ""
 
 
-def dump_footer(opnames: list[str]) -> typing.Generator[str, None, None]:
+def dump_footer(opnames: list[str]) -> typing.Iterator[str]:
     yield "#define INIT_STENCIL(STENCIL) {                         \\"
     yield "    .body_size = Py_ARRAY_LENGTH(STENCIL##_body) - 1,   \\"
     yield "    .body = STENCIL##_body,                             \\"
@@ -618,7 +618,7 @@ def dump_footer(opnames: list[str]) -> typing.Generator[str, None, None]:
     yield "}"
 
 
-def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Generator[str, None, None]:
+def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
     yield from dump_header()
     opnames = []
     for opname, stencil in sorted(stencil_groups.items()):
