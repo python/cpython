@@ -175,7 +175,8 @@ static void _CallPythonObject(void *mem,
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
-            if (!CDataObject_Check(obj)) {
+            ctypes_state *st = GLOBAL_STATE();
+            if (!CDataObject_Check(st, obj)) {
                 Py_DECREF(obj);
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
