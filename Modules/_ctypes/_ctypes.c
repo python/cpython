@@ -2464,12 +2464,14 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyType_Slot pycfuncptr_type_slots[] = {
-    {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for C function pointers")},
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, PyCFuncPtrType_new},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
