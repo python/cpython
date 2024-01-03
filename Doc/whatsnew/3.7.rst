@@ -2306,7 +2306,7 @@ Changes in the Python API
 
 * :func:`~cgi.parse_multipart` now accepts the *encoding* and *errors*
   arguments and returns the same results as
-  :class:`~FieldStorage`: for non-file fields, the value associated to a key
+  :class:`!FieldStorage`: for non-file fields, the value associated to a key
   is a list of strings, not bytes.
   (Contributed by Pierre Quentel in :issue:`29979`.)
 

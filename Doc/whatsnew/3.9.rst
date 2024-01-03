@@ -931,7 +931,7 @@ Deprecated
 * Passing ``None`` as the first argument to the :func:`shlex.split` function
   has been deprecated.  (Contributed by Zackery Spytz in :issue:`33262`.)
 
-* :func:`smtpd.MailmanProxy` is now deprecated as it is unusable without
+* :func:`!smtpd.MailmanProxy` is now deprecated as it is unusable without
   an external module, ``mailman``.  (Contributed by Samuel Colvin in :issue:`35800`.)
 
 * The :mod:`lib2to3` module now emits a :exc:`PendingDeprecationWarning`.
