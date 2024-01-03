@@ -1,0 +1,2 @@
+Changed the Windows build to write out generated frozen modules into the
+build tree instead of the source tree.
