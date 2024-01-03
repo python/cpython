@@ -8,8 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_object.h"           // _Py_REF_IS_MERGED()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_object.h"           // _Py_REF_IS_MERGED()
 
 static inline int _is_dead(PyObject *obj)
 {
