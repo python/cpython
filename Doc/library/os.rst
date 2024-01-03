@@ -1132,7 +1132,7 @@ as internal buffering of data.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. function:: isatty(fd, /)
@@ -1452,7 +1452,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. function:: preadv(fd, buffers, offset, flags=0, /)
@@ -1522,7 +1522,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. function:: pwrite(fd, str, offset, /)
@@ -1786,7 +1786,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. function:: write(fd, str, /)
