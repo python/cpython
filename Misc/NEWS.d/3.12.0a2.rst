@@ -695,7 +695,7 @@ Make sure ``patch.dict()`` can be applied on async functions.
 .. nonce: jUpzF3
 .. section: Library
 
-Remove modules :mod:`asyncore` and :mod:`asynchat`, which were deprecated by
+Remove modules :mod:`!asyncore` and :mod:`!asynchat`, which were deprecated by
 :pep:`594`.
 
 ..

@@ -1845,7 +1845,7 @@ signal
 smtpd
 -----
 
-The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
+The :mod:`!smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
 (size extension).  Per the standard, these extensions are enabled if and only
 if the client initiates the session with an ``EHLO`` command.
 

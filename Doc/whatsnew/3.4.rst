@@ -1369,9 +1369,9 @@ error.  (Contributed by Atsuo Ishimoto and Hynek Schlawack in
 smtpd
 -----
 
-The :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
+The :class:`!SMTPServer` and :class:`!SMTPChannel` classes now
 accept a *map* keyword argument which, if specified, is passed in to
-:class:`asynchat.async_chat` as its *map* argument.  This allows an application
+:class:`!asynchat.async_chat` as its *map* argument.  This allows an application
 to avoid affecting the global socket map.  (Contributed by Vinay Sajip in
 :issue:`11959`.)
 
@@ -2370,7 +2370,7 @@ Changes in the Python API
   :issue:`18011`.)  Note: this change was also inadvertently applied in Python
   3.3.3.
 
-* The :attr:`~cgi.FieldStorage.file` attribute is now automatically closed when
+* The :attr:`!file` attribute is now automatically closed when
   the creating :class:`!cgi.FieldStorage` instance is garbage collected. If you
   were pulling the file object out separately from the :class:`!cgi.FieldStorage`
   instance and not keeping the instance alive, then you should either store the

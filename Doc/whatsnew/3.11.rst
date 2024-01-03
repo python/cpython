@@ -1747,7 +1747,7 @@ Modules
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
 
-* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+* The :mod:`!asynchat`, :mod:`!asyncore` and  :mod:`!smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
   warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
@@ -1877,8 +1877,8 @@ and will be removed in Python 3.12.
 C APIs pending removal are
 :ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
-* The :mod:`asynchat` module
-* The :mod:`asyncore` module
+* The :mod:`!asynchat` module
+* The :mod:`!asyncore` module
 * The :ref:`entire distutils package <distutils-deprecated>`
 * The :mod:`!imp` module
 * The :class:`typing.io <typing.IO>` namespace
@@ -1902,10 +1902,10 @@ C APIs pending removal are
 * :func:`!importlib.util.set_package_wrapper`
 * :class:`!pkgutil.ImpImporter`
 * :class:`!pkgutil.ImpLoader`
-* :meth:`pathlib.Path.link_to`
+* :meth:`!pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`
-* :envvar:`PYTHONTHREADDEBUG` environment variable
+* :envvar:`!PYTHONTHREADDEBUG` environment variable
 * The following deprecated aliases in :mod:`unittest`:
 
     ============================ =============================== ===============
@@ -2007,7 +2007,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
 
-* Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
+* Removed the :class:`!MailmanProxy` class in the :mod:`!smtpd` module,
   as it is unusable without the external :mod:`!mailman` package.
   (Contributed by Donghee Na in :issue:`35800`.)
 

@@ -2304,9 +2304,9 @@ Changes in the Python API
 * The :attr:`struct.Struct.format` type is now :class:`str` instead of
   :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
 
-* :func:`~cgi.parse_multipart` now accepts the *encoding* and *errors*
+* :func:`!cgi.parse_multipart` now accepts the *encoding* and *errors*
   arguments and returns the same results as
-  :class:`~FieldStorage`: for non-file fields, the value associated to a key
+  :class:`!FieldStorage`: for non-file fields, the value associated to a key
   is a list of strings, not bytes.
   (Contributed by Pierre Quentel in :issue:`29979`.)
 

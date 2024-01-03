@@ -1858,12 +1858,12 @@ structure.
 asyncore
 --------
 
-:class:`asyncore.dispatcher` now provides a
-:meth:`~asyncore.dispatcher.handle_accepted()` method
+:class:`!asyncore.dispatcher` now provides a
+:meth:`!handle_accepted()` method
 returning a ``(sock, addr)`` pair which is called when a connection has actually
 been established with a new remote endpoint. This is supposed to be used as a
-replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
-the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
+replacement for old :meth:`!handle_accept()` and avoids
+the user  to call :meth:`!accept()` directly.
 
 (Contributed by Giampaolo Rodolà; :issue:`6706`.)
 
@@ -2737,8 +2737,8 @@ require changes to your code:
   thread-state aware APIs (such as :c:func:`PyEval_SaveThread`
   and :c:func:`PyEval_RestoreThread`) should be used instead.
 
-* Due to security risks, :func:`asyncore.handle_accept` has been deprecated, and
-  a new function, :func:`asyncore.handle_accepted`, was added to replace it.
+* Due to security risks, :func:`!asyncore.handle_accept` has been deprecated, and
+  a new function, :func:`!asyncore.handle_accepted`, was added to replace it.
 
   (Contributed by Giampaolo Rodola in :issue:`6706`.)
 
