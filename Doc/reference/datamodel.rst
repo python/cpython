@@ -1271,7 +1271,7 @@ Methods on code objects
 
    The items yielded generated will have the following properties:
 
-   * The first range yielded will have a ``start`` of 0;
+   * The first range yielded will have a ``start`` of 0.
    * The ``(start, end)`` ranges will be non-decreasing and consecutive. That
      is, for any pair of :class:`tuple`\s, the start of the second will equal
      to the end of the first.
