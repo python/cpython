@@ -14,5 +14,5 @@
     <String Id="NoDowngrade">A newer version of !(loc.ProductName) is already installed.</String>
     <String Id="IncorrectCore">An incorrect version of a prerequisite package is installed. Please uninstall any other versions of !(loc.ProductName) and try installing this again.</String>
     <String Id="NoTargetDir">The TARGETDIR variable must be provided when invoking this installer.</String>
-    <String Id="ManufacturerSupportUrl">http://www.python.org/</String>
+    <String Id="ManufacturerSupportUrl">https://www.python.org/</String>
 </WixLocalization>

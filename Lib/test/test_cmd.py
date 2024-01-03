@@ -6,16 +6,14 @@ Original by Michael Schneider
 
 import cmd
 import sys
+import doctest
 import unittest
 import io
+import textwrap
 from test import support
 from unittest.mock import patch
-
-try:
-    import readline
-except ImportError:
-    readline = None
-
+from test.support.import_helper import import_module
+from test.support.pty_helper import run_pty
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -76,7 +74,7 @@ class samplecmdclass(cmd.Cmd):
     >>> mycmd.complete_help("12")
     []
     >>> sorted(mycmd.complete_help(""))
-    ['add', 'exit', 'help', 'shell']
+    ['add', 'exit', 'help', 'life', 'meaning', 'shell']
 
     Test for the function do_help():
     >>> mycmd.do_help("testet")
@@ -85,11 +83,19 @@ class samplecmdclass(cmd.Cmd):
     help text for add
     >>> mycmd.onecmd("help add")
     help text for add
+    >>> mycmd.onecmd("help meaning")  # doctest: +NORMALIZE_WHITESPACE
+    Try and be nice to people, avoid eating fat, read a good book every
+    now and then, get some walking in, and try to live together in peace
+    and harmony with people of all creeds and nations.
     >>> mycmd.do_help("")
     <BLANKLINE>
     Documented commands (type help <topic>):
     ========================================
     add  help
+    <BLANKLINE>
+    Miscellaneous help topics:
+    ==========================
+    life  meaning
     <BLANKLINE>
     Undocumented commands:
     ======================
@@ -121,16 +127,21 @@ class samplecmdclass(cmd.Cmd):
     This test includes the preloop(), postloop(), default(), emptyline(),
     parseline(), do_help() functions
     >>> mycmd.use_rawinput=0
-    >>> mycmd.cmdqueue=["", "add", "add 4 5", "help", "help add","exit"]
-    >>> mycmd.cmdloop()
+
+    >>> mycmd.cmdqueue=["add", "add 4 5", "", "help", "help add", "exit"]
+    >>> mycmd.cmdloop()  # doctest: +REPORT_NDIFF
     Hello from preloop
-    help text for add
     *** invalid number of arguments
+    9
     9
     <BLANKLINE>
     Documented commands (type help <topic>):
     ========================================
     add  help
+    <BLANKLINE>
+    Miscellaneous help topics:
+    ==========================
+    life  meaning
     <BLANKLINE>
     Undocumented commands:
     ======================
@@ -169,6 +180,17 @@ class samplecmdclass(cmd.Cmd):
 
     def help_add(self):
         print("help text for add")
+        return
+
+    def help_meaning(self):
+        print("Try and be nice to people, avoid eating fat, read a "
+              "good book every now and then, get some walking in, "
+              "and try to live together in peace and harmony with "
+              "people of all creeds and nations.")
+        return
+
+    def help_life(self):
+        print("Always look on the bright side of life")
         return
 
     def do_exit(self, arg):
@@ -225,41 +247,72 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) \n"
              "(Cmd) *** Unknown syntax: EOF\n"))
 
-    @unittest.skipIf(readline is None, 'No readline module')
-    @patch('readline.get_line_buffer', return_value='foo')
-    @patch('readline.get_begidx', return_value=2)
-    @patch('readline.get_endidx', return_value=2)
     def test_complete_with_None_from_parseline(self, *args):
+        readline = import_module('readline')
 
-        class CustomCmd(cmd.Cmd):
-            def parseline(self, line):
-                return None, None, line
+        with (patch('readline.get_line_buffer', return_value='foo'),
+              patch('readline.get_begidx', return_value=2),
+              patch('readline.get_endidx', return_value=2)):
+            class CustomCmd(cmd.Cmd):
+                def parseline(self, line):
+                    return None, None, line
 
-            def completedefault(self, *args):
-                return ['via_completedefault']
+                def completedefault(self, *args):
+                    return ['via_completedefault']
 
-        c = CustomCmd()
-        self.assertEqual(c.complete("", 0), "via_completedefault")
+            c = CustomCmd()
+            self.assertEqual(c.complete("", 0), "via_completedefault")
 
 
-def test_main(verbose=None):
-    from test import test_cmd
-    support.run_doctest(test_cmd, verbose)
-    support.run_unittest(TestAlternateInput)
+class CmdPrintExceptionClass(cmd.Cmd):
+    """
+    GH-80731
+    cmd.Cmd should print the correct exception in default()
+    >>> mycmd = CmdPrintExceptionClass()
+    >>> try:
+    ...     raise ValueError("test")
+    ... except ValueError:
+    ...     mycmd.onecmd("not important")
+    (<class 'ValueError'>, ValueError('test'))
+    """
 
-def test_coverage(coverdir):
-    trace = support.import_module('trace')
-    tracer=trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
-                        trace=0, count=1)
-    tracer.run('import importlib; importlib.reload(cmd); test_main()')
-    r=tracer.results()
-    print("Writing coverage results...")
-    r.write_results(show_missing=True, summary=True, coverdir=coverdir)
+    def default(self, line):
+        print(sys.exc_info()[:2])
+
+
+@support.requires_subprocess()
+class CmdTestReadline(unittest.TestCase):
+    def setUpClass():
+        # Ensure that the readline module is loaded
+        # If this fails, the test is skipped because SkipTest will be raised
+        readline = import_module('readline')
+
+    def test_basic_completion(self):
+        script = textwrap.dedent("""
+            import cmd
+            class simplecmd(cmd.Cmd):
+                def do_tab_completion_test(self, args):
+                    print('tab completion success')
+                    return True
+
+            simplecmd().cmdloop()
+        """)
+
+        # 't' and complete 'ab_completion_test' to 'tab_completion_test'
+        input = b"t\t\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'ab_completion_test', output)
+        self.assertIn(b'tab completion success', output)
+
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == "__main__":
-    if "-c" in sys.argv:
-        test_coverage('/tmp/cmd.cover')
-    elif "-i" in sys.argv:
+    if "-i" in sys.argv:
         samplecmdclass().cmdloop()
     else:
-        test_main()
+        unittest.main()

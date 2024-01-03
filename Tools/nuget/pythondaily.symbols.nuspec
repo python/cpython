@@ -5,9 +5,7 @@
     <title>Python (Daily build)</title>
     <version>0.0.0.0</version>
     <authors>Python Software Foundation</authors>
-    <licenseUrl>https://docs.python.org/3/license.html</licenseUrl>
     <projectUrl>https://www.python.org/</projectUrl>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Contains symbols for the daily build of Python.</description>
     <iconUrl>https://www.python.org/static/favicon.ico</iconUrl>
     <tags>python</tags>

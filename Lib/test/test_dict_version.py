@@ -1,12 +1,12 @@
 """
-Test implementation of the PEP 509: dictionary versionning.
+Test implementation of the PEP 509: dictionary versioning.
 """
 import unittest
-from test import support
+from test.support import import_helper
 
 # PEP 509 is implemented in CPython but other Python implementations
 # don't require to implement it
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 
 
 class DictVersionTests(unittest.TestCase):
@@ -80,14 +80,14 @@ class DictVersionTests(unittest.TestCase):
 
         # setting a key to the same value with dict.__setitem__
         # must change the version
-        self.check_version_changed(d, d.__setitem__, 'key', value)
+        self.check_version_dont_change(d, d.__setitem__, 'key', value)
 
         # setting a key to the same value with dict.update
         # must change the version
-        self.check_version_changed(d, d.update, key=value)
+        self.check_version_dont_change(d, d.update, key=value)
 
         d2 = self.new_dict(key=value)
-        self.check_version_changed(d, d.update, d2)
+        self.check_version_dont_change(d, d.update, d2)
 
     def test_setitem_equal(self):
         class AlwaysEqual:
@@ -98,20 +98,25 @@ class DictVersionTests(unittest.TestCase):
         value2 = AlwaysEqual()
         self.assertTrue(value1 == value2)
         self.assertFalse(value1 != value2)
+        self.assertIsNot(value1, value2)
 
         d = self.new_dict()
         self.check_version_changed(d, d.__setitem__, 'key', value1)
+        self.assertIs(d['key'], value1)
 
         # setting a key to a value equal to the current value
         # with dict.__setitem__() must change the version
         self.check_version_changed(d, d.__setitem__, 'key', value2)
+        self.assertIs(d['key'], value2)
 
         # setting a key to a value equal to the current value
         # with dict.update() must change the version
         self.check_version_changed(d, d.update, key=value1)
+        self.assertIs(d['key'], value1)
 
         d2 = self.new_dict(key=value2)
         self.check_version_changed(d, d.update, d2)
+        self.assertIs(d['key'], value2)
 
     def test_setdefault(self):
         d = self.new_dict()

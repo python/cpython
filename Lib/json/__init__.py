@@ -1,4 +1,4 @@
-r"""JSON (JavaScript Object Notation) <http://json.org> is a subset of
+r"""JSON (JavaScript Object Notation) <https://json.org> is a subset of
 JavaScript syntax (ECMA-262 3rd edition) used as a lightweight data
 interchange format.
 
@@ -133,7 +133,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``)
@@ -195,7 +195,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``) in
@@ -296,7 +296,7 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
 
 
-def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
+def loads(s, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
@@ -329,8 +329,6 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
-
-    The ``encoding`` argument is ignored and deprecated.
     """
     if isinstance(s, str):
         if s.startswith('\ufeff'):

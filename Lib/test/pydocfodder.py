@@ -2,86 +2,8 @@
 
 import types
 
-class A_classic:
-    "A classic class."
-    def A_method(self):
-        "Method defined in A."
-    def AB_method(self):
-        "Method defined in A and B."
-    def AC_method(self):
-        "Method defined in A and C."
-    def AD_method(self):
-        "Method defined in A and D."
-    def ABC_method(self):
-        "Method defined in A, B and C."
-    def ABD_method(self):
-        "Method defined in A, B and D."
-    def ACD_method(self):
-        "Method defined in A, C and D."
-    def ABCD_method(self):
-        "Method defined in A, B, C and D."
-
-
-class B_classic(A_classic):
-    "A classic class, derived from A_classic."
-    def AB_method(self):
-        "Method defined in A and B."
-    def ABC_method(self):
-        "Method defined in A, B and C."
-    def ABD_method(self):
-        "Method defined in A, B and D."
-    def ABCD_method(self):
-        "Method defined in A, B, C and D."
-    def B_method(self):
-        "Method defined in B."
-    def BC_method(self):
-        "Method defined in B and C."
-    def BD_method(self):
-        "Method defined in B and D."
-    def BCD_method(self):
-        "Method defined in B, C and D."
-
-class C_classic(A_classic):
-    "A classic class, derived from A_classic."
-    def AC_method(self):
-        "Method defined in A and C."
-    def ABC_method(self):
-        "Method defined in A, B and C."
-    def ACD_method(self):
-        "Method defined in A, C and D."
-    def ABCD_method(self):
-        "Method defined in A, B, C and D."
-    def BC_method(self):
-        "Method defined in B and C."
-    def BCD_method(self):
-        "Method defined in B, C and D."
-    def C_method(self):
-        "Method defined in C."
-    def CD_method(self):
-        "Method defined in C and D."
-
-class D_classic(B_classic, C_classic):
-    "A classic class, derived from B_classic and C_classic."
-    def AD_method(self):
-        "Method defined in A and D."
-    def ABD_method(self):
-        "Method defined in A, B and D."
-    def ACD_method(self):
-        "Method defined in A, C and D."
-    def ABCD_method(self):
-        "Method defined in A, B, C and D."
-    def BD_method(self):
-        "Method defined in B and D."
-    def BCD_method(self):
-        "Method defined in B, C and D."
-    def CD_method(self):
-        "Method defined in C and D."
-    def D_method(self):
-        "Method defined in D."
-
-
-class A_new(object):
-    "A new-style class."
+class A:
+    "A class."
 
     def A_method(self):
         "Method defined in A."
@@ -119,8 +41,8 @@ class A_new(object):
 
     A_int_alias = int
 
-class B_new(A_new):
-    "A new-style class, derived from A_new."
+class B(A):
+    "A class, derived from A."
 
     def AB_method(self):
         "Method defined in A and B."
@@ -139,8 +61,8 @@ class B_new(A_new):
     def BCD_method(self):
         "Method defined in B, C and D."
 
-class C_new(A_new):
-    "A new-style class, derived from A_new."
+class C(A):
+    "A class, derived from A."
 
     def AC_method(self):
         "Method defined in A and C."
@@ -159,8 +81,8 @@ class C_new(A_new):
     def CD_method(self):
         "Method defined in C and D."
 
-class D_new(B_new, C_new):
-    """A new-style class, derived from B_new and C_new.
+class D(B, C):
+    """A class, derived from B and C.
     """
 
     def AD_method(self):
