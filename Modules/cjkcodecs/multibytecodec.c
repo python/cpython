@@ -829,7 +829,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
             excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
                                            "ssnns",
                                            ctx->codec->encoding,
-                                           (const char*)PyUnicode_AsUTF8(inbuf),
+                                           PyUnicode_AsUTF8(inbuf),
                                            inpos, inpos + datalen,
                                            "pending buffer overflow");
             PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);

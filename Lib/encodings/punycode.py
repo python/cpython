@@ -1,4 +1,4 @@
-""" Codec for the Punicode encoding, as specified in RFC 3492
+""" Codec for the Punycode encoding, as specified in RFC 3492
 
 Written by Martin v. Löwis.
 """
@@ -134,7 +134,7 @@ def decode_generalized_number(extended, extpos, bias, errors):
             char = ord(extended[extpos])
         except IndexError:
             if errors == "strict":
-                b_extended = extended.encode("ascii")
+                b_extended = extended.encode("utf-8", errors="backslashreplace")
                 raise UnicodeDecodeError("punycode", b_extended, extpos, extpos+1, "incomplete punycode string")
             return extpos + 1, None
         extpos += 1
@@ -143,7 +143,7 @@ def decode_generalized_number(extended, extpos, bias, errors):
         elif 0x30 <= char <= 0x39:
             digit = char - 22 # 0x30-26
         elif errors == "strict":
-            b_extended = extended.encode("ascii")
+            b_extended = extended.encode("utf-8", errors="backslashreplace")
             raise UnicodeDecodeError("punycode", b_extended, extpos-1, extpos, f"Invalid extended code point '{extended[extpos-1]}'")
         else:
             return extpos, None
@@ -162,8 +162,17 @@ def insertion_sort(base, extended, errors):
     bias = 72
     extpos = 0
     while extpos < len(extended):
-        newpos, delta = decode_generalized_number(extended, extpos,
-                                                  bias, errors)
+        try:
+            newpos, delta = decode_generalized_number(extended, extpos,
+                                                      bias, errors)
+        except UnicodeDecodeError as exc:
+            raise UnicodeDecodeError(
+                "punycode",
+                base.encode("utf-8", errors="backslashreplace")
+                    + b"-"
+                    + extended.encode("utf-8", errors="backslashreplace"),
+                pos + exc.start, pos + exc.end, exc.reason)
+
         if delta is None:
             # There was an error in decoding. We can't continue because
             # synchronization is lost.
@@ -172,7 +181,12 @@ def insertion_sort(base, extended, errors):
         char += pos // (len(base) + 1)
         if char > 0x10FFFF:
             if errors == "strict":
-                raise UnicodeDecodeError("punycode", base, pos, newpos, f"Invalid character U+{char:x}")
+                raise UnicodeDecodeError(
+                    "punycode",
+                    base.encode("utf-8", errors="backslashreplace")
+                        + b"-"
+                        + extended.encode("utf-8", errors="backslashreplace"),
+                    pos, pos+1, f"Invalid character U+{char:x}")
             char = ord('?')
         pos = pos % (len(base) + 1)
         base = base[:pos] + chr(char) + base[pos:]
@@ -204,7 +218,7 @@ class Codec(codecs.Codec):
 
     def decode(self, input, errors='strict'):
         if errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeDecodeError("punycode", input, 0, 0, "Unsupported error handling "+errors)
+            raise UnicodeDecodeError("punycode", input, 0, 1, f"Unsupported error handling {errors}")
         res = punycode_decode(input, errors)
         return res, len(input)
 
@@ -215,7 +229,7 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
         if self.errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeDecodeError("punycode", input, 0, 0, "Unsupported error handling "+self.errors)
+            raise UnicodeDecodeError("punycode", input, 0, 1, f"Unsupported error handling {self.errors}")
         return punycode_decode(input, self.errors)
 
 class StreamWriter(Codec,codecs.StreamWriter):
