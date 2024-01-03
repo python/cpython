@@ -1252,7 +1252,7 @@ Oberkirch in :issue:`21800`.)
 imghdr
 ------
 
-The :func:`~!imghdr.what` function now recognizes the
+The :func:`!what` function now recognizes the
 `OpenEXR <https://www.openexr.com>`_ format
 (contributed by Martin Vignali and Claudiu Popa in :issue:`20295`),
 and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format
