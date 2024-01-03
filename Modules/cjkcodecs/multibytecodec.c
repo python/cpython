@@ -830,7 +830,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
                                            "ssnns",
                                            ctx->codec->encoding,
                                            PyUnicode_AsUTF8(inbuf),
-                                           inpos, inpos + datalen,
+                                           inpos, datalen,
                                            "pending buffer overflow");
             PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
             goto errorexit;
@@ -1301,7 +1301,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
 
     if (buffersize > MAXDECPENDING) {
         excobj = PyUnicodeDecodeError_Create(self->codec->encoding,
-                   (const char *)buffer, buffersize,
+                   PyBytes_AS_STRING(buffer), buffersize,
                    0, buffersize,
                    "pending buffer too large");
         PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);
