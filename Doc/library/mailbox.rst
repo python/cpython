@@ -568,8 +568,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    is a callable object that accepts a file-like message representation (which
    behaves as if opened in binary mode) and returns a custom representation. If
    *factory* is ``None``, :class:`mboxMessage` is used as the default message
-   representation. If *create* is ``True``, the mailbox is created if it does not
-   exist.
+   representation (but this is not the same as setting *factory* to
+   :class:`mboxMessage`). If *create* is ``True``, the mailbox is created if it
+   does not exist.
 
    The mbox format is the classic format for storing mail on Unix systems. All
    messages in an mbox mailbox are stored in a single file with the beginning of
@@ -835,8 +836,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    is a callable object that accepts a file-like message representation (which
    behaves as if opened in binary mode) and returns a custom representation. If
    *factory* is ``None``, :class:`MMDFMessage` is used as the default message
-   representation. If *create* is ``True``, the mailbox is created if it does not
-   exist.
+   representation (but this is not the same as setting *factory* to
+   :class:`mboxMessage`). If *create* is ``True``, the mailbox is created if it
+   does not exist.
 
    MMDF is a single-file mailbox format invented for the Multichannel Memorandum
    Distribution Facility, a mail transfer agent. Each message is in the same
@@ -1713,4 +1715,3 @@ due to malformed messages in the mailbox::
 
    for box in boxes.itervalues():
        box.close()
-
