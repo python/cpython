@@ -12,6 +12,7 @@
     <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
     <!-- pyconfig.h is updated by pythoncore.vcxproj, so it's always in pythoncore's IntDir -->
     <GeneratedPyConfigDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\pythoncore\</GeneratedPyConfigDir>
+    <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen_$(Configuration)\</GeneratedFrozenModulesDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
