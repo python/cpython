@@ -1,3 +1,5 @@
+from operator import indexOf
+
 """Heap queue algorithm (a.k.a. priority queue).
 
 Heaps are arrays for which a[k] <= a[2*k+1] and a[k] <= a[2*k+2] for
@@ -169,6 +171,17 @@ def heappushpop(heap, item):
         item, heap[0] = heap[0], item
         _siftup(heap, 0)
     return item
+
+def heapremove(heap, value, *, key = None):
+    """Remove and return the element corresponding to 'value' from the heap, maintaining
+    the heap invariant.
+    The first element comparing equal to 'value' is removed.
+    If a 'key' callable is provided, it is called
+    for each entry in the heap to produce a value to compare with 'value'.
+    Raises ValueError if item is not found in the heap.
+    """
+    index = heap.index(value) if key is None else indexOf(map(key, heap), value)
+    return heapremove_index(heap, index)
 
 def heapremove_index(heap, index):
     """Remove the element at the given index maintaining the heap invariant.

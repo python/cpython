@@ -81,6 +81,22 @@ The following functions are provided:
    combination returns the smaller of the two values, leaving the larger value
    on the heap.
 
+.. function:: heapremove(heap, value, *, key=None):
+
+   Remove the item corresponding to *value* from *heap* while maintaining
+   the heap invariant.
+
+   The heap is searched for the first item comparing equal to *value*.
+
+   If the _callable_ *key* is provided, it will be called for each item
+   before comparing the result with *value*.
+
+   Returns the removed item.
+
+   Raises :exc:`ValueError` if no item corresponding to *value* is found.
+
+   .. versionadded:: 3.13
+
 
 .. function:: heapremove_index(heap, index):
 

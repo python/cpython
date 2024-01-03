@@ -331,6 +331,42 @@ class TestHeap:
         #  print(c1, c2)
         self.assertTrue(c2 > c1 * 10)
 
+    def test_remove(self):
+
+        data = [random.random() for i in range(100)]
+        heap = data[:]
+        self.module.heapify(heap)
+
+        with self.assertRaises(ValueError):
+            self.module.heapremove(heap, "foo")
+
+        item = data[50]
+        self.check_invariant(heap)
+        found = self.module.heapremove(heap, item)
+        self.check_invariant(heap)
+        assert found is item
+        assert found not in heap
+
+    def test_remove_key(self):
+
+        data = [(random.random(), random.random()) for i in range(100)]
+
+        heap = data[:]
+        self.module.heapify(heap)
+
+        key = lambda k: k[1]
+
+        with self.assertRaises(ValueError):
+            self.module.heapremove(heap, "foo", key=key)
+
+        item = data[50]
+        self.check_invariant(heap)
+        assert item in heap
+        found = self.module.heapremove(heap, item[1], key = key)
+        self.check_invariant(heap)
+        assert found is item
+        assert found not in heap
+
 
 class TestHeapPython(TestHeap, TestCase):
     module = py_heapq
