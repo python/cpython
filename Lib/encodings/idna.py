@@ -107,7 +107,7 @@ def ToASCII(label):
     # Step 8: Check size
     if 0 < len(label) < 64:
         return label
-    label = label.decode("punycode", errors="replace")
+    label = label[len(ace_prefix):].decode("punycode", errors="replace")
     raise UnicodeEncodeError("idna", label, 0, len(label), "label empty or too long")
 
 def ToUnicode(label):
