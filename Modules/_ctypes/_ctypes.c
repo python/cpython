@@ -1177,12 +1177,14 @@ static PyMethodDef PyCPointerType_methods[] = {
 };
 
 static PyType_Slot pycpointer_type_slots[] = {
-    {Py_sq_repeat, CDataType_repeat},
     {Py_tp_doc, PyDoc_STR("metatype for the Pointer Objects")},
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, PyCPointerType_methods},
     {Py_tp_new, PyCPointerType_new},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
