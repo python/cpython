@@ -169,6 +169,10 @@ class ShlexTest(unittest.TestCase):
         """Test data splitting with posix parser"""
         self.splitTest(self.posix_data, comments=True)
 
+    def testSplitBytes(self):
+        """Test byte objects splitting"""
+        self.assertEqual(shlex.split(b"split words"), [b"split", b"words"])
+
     def testCompat(self):
         """Test compatibility interface"""
         for i in range(len(self.data)):
@@ -337,6 +341,23 @@ class ShlexTest(unittest.TestCase):
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
 
+    def testQuoteBytes(self):
+        """Test quoting of byte objects"""
+        # Copied from testQuote
+        safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
+        unicode_sample = '\xe9\xe0\xdf'  # e + acute accent, a + grave, sharp s
+        unsafe = '"`$\\!' + unicode_sample
+
+        self.assertEqual(shlex.quote(b''), b"''")
+        self.assertEqual(shlex.quote(safeunquoted.encode("ascii")), safeunquoted.encode("ascii"))
+        self.assertEqual(shlex.quote(b'test file name'), b"'test file name'")
+        for u in unsafe:
+            self.assertEqual(shlex.quote(('test%sname' % u).encode("utf-8")),
+                             ("'test%sname'" % u).encode("utf-8"))
+        for u in unsafe:
+            self.assertEqual(shlex.quote(("test%s'name'" % u).encode("utf-8")),
+                             ("'test%s'\"'\"'name'\"'\"''" % u).encode("utf-8"))
+
     def testJoin(self):
         for split_command, command in [
             (['a ', 'b'], "'a ' b"),
@@ -348,6 +369,9 @@ class ShlexTest(unittest.TestCase):
                 joined = shlex.join(split_command)
                 self.assertEqual(joined, command)
 
+    def testEmptyJoin(self):
+        self.assertEqual(shlex.join([]), "")
+
     def testJoinRoundtrip(self):
         all_data = self.data + self.posix_data
         for command, *split_command in all_data:
@@ -355,6 +379,46 @@ class ShlexTest(unittest.TestCase):
                 joined = shlex.join(split_command)
                 resplit = shlex.split(joined)
                 self.assertEqual(split_command, resplit)
+
+    def testJoinBytes(self):
+        self.assertEqual(shlex.join([b"Join", b"me"]), b"Join me")
+        self.assertEqual(shlex.join([b"Just_me"]), b"Just_me")
+
+    def testJoinBytesAndStrings(self):
+        """Test join can handle combinations of string and byte objects"""
+        # String then bytes
+        with self.assertWarns(BytesWarning,
+                              msg="All objects passed to join must be of the same type."
+                                  "Converting all to str."):
+            self.assertEqual(shlex.join(["str_object", b"byte_object"]), "str_object byte_object")
+
+        # Bytes then string
+        with self.assertWarns(BytesWarning,
+                              msg="All objects passed to join must be of the same type."
+                                  "Converting all to bytes."):
+            self.assertEqual(shlex.join([b"byte_object", "str_object"]), b"byte_object str_object")
+
+        # Random combination
+        with self.assertWarns(BytesWarning):
+            import random
+
+            words = "This is a fully formed sentence, to test the join functionality."
+
+            new_words = []
+            for word in words.split(" "):
+                if bool(random.randint(0, 1)):
+                    new_words.append(word.encode("ascii"))
+                else:
+                    new_words.append(word)
+
+            # ensure at least one bytes object to raise warning
+            if isinstance(new_words[2], str):
+                new_words[2] = new_words[2].encode("ascii")
+
+            if isinstance(new_words[0], bytes):
+                self.assertEqual(shlex.join(new_words), words.encode("ascii"))
+            else:
+                self.assertEqual(shlex.join(new_words), words)
 
     def testPunctuationCharsReadOnly(self):
         punctuation_chars = "/|$%^"
