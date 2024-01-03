@@ -585,7 +585,7 @@ queue.
 nntplib
 -------
 
-:class:`~!nntplib.NNTP` and :class:`~!nntplib.NNTP_SSL` now raise a :class:`ValueError`
+:class:`!NNTP` and :class:`!NNTP_SSL` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Donghee Na in :issue:`39259`.)
 
