@@ -33,7 +33,6 @@ Doc/library/asyncio-task.rst
 Doc/library/bdb.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
-Doc/library/configparser.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
