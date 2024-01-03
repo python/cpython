@@ -878,7 +878,7 @@ size of decompressed data. (Contributed by Nikolaus Rath in :issue:`15955`.)
 cgi
 ---
 
-The :class:`!FieldStorage` class now supports the :term:`context manager`
+The :class:`~cgi.FieldStorage` class now supports the :term:`context manager`
 protocol.  (Contributed by Berker Peksag in :issue:`20289`.)
 
 
@@ -1714,7 +1714,7 @@ support :rfc:`6531` (SMTPUTF8).
 sndhdr
 ------
 
-The :func:`!what` and :func:`!whathdr` functions  now return
+The :func:`~sndhdr.what` and :func:`~sndhdr.whathdr` functions  now return
 a :func:`~collections.namedtuple`.  (Contributed by Claudiu Popa in
 :issue:`18615`.)
 
