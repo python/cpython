@@ -272,7 +272,7 @@ class Future:
             raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
         if isinstance(exception, type):
             exception = exception()
-        if type(exception) is StopIteration:
+        if isinstance(exception, StopIteration):
             new_exc = RuntimeError("StopIteration interacts badly with "
                                    "generators and cannot be raised into a "
                                    "Future")

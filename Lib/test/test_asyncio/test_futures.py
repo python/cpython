@@ -292,6 +292,21 @@ class BaseFutureTests:
         self.assertRegex(str(exc), 'StopIteration .* cannot be raised')
         self.assertIsInstance(cause, StopIteration)
 
+    def test_stop_iteration_subclass_exception(self):
+        class MyStopIteration(StopIteration):
+            pass
+        exc = MyStopIteration()
+        f = self._new_future(loop=self.loop)
+        f.set_exception(exc)
+        self.assertFalse(f.cancelled())
+        self.assertTrue(f.done())
+        self.assertRaises(RuntimeError, f.result)
+        exc = f.exception()
+        cause = exc.__cause__
+        self.assertIsInstance(exc, RuntimeError)
+        self.assertRegex(str(exc), 'StopIteration .* cannot be raised')
+        self.assertIsInstance(cause, StopIteration)
+
     def test_exception_class(self):
         f = self._new_future(loop=self.loop)
         f.set_exception(RuntimeError)
