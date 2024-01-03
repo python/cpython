@@ -73,6 +73,11 @@ class Repr:
     def repr1(self, x, level):
         _type = type(x)
         typename = _type.__name__
+
+        if " " in typename:
+            parts = typename.split()
+            typename = "_".join(parts)
+
         method_name = "repr_" + typename
 
         if not hasattr(self, method_name):
@@ -92,7 +97,6 @@ class Repr:
             return self.repr_instance(x, level)
 
         return getattr(self, method_name)(x, level)
-
 
     def _join(self, pieces, level):
         if self.indent is None:
