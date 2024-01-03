@@ -41,11 +41,11 @@ typedef struct {
     PyTypeObject *PyComError_Type;
 #endif
     PyTypeObject *StructParam_Type;
-    PyTypeObject *PyCSimpleType_Type;
     PyTypeObject *PyCStructType_Type;
     PyTypeObject *UnionType_Type;
     PyTypeObject *PyCPointerType_Type;
     PyTypeObject *PyCArrayType_Type;
+    PyTypeObject *PyCSimpleType_Type;
     PyTypeObject *PyCFuncPtrType_Type;
 } ctypes_state;
 
