@@ -147,32 +147,33 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_heapq_heapremove__doc__,
-"heapremove($module, heap, index, /)\n"
+PyDoc_STRVAR(_heapq_heapremove_index__doc__,
+"heapremove_index($module, heap, index, /)\n"
 "--\n"
 "\n"
 "Remove the element at the given index maintaining the heap invariant.\n"
 "\n"
 "Returns the removed item.");
 
-#define _HEAPQ_HEAPREMOVE_METHODDEF    \
-    {"heapremove", _PyCFunction_CAST(_heapq_heapremove), METH_FASTCALL, _heapq_heapremove__doc__},
+#define _HEAPQ_HEAPREMOVE_INDEX_METHODDEF    \
+    {"heapremove_index", _PyCFunction_CAST(_heapq_heapremove_index), METH_FASTCALL, _heapq_heapremove_index__doc__},
 
 static PyObject *
-_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index);
+_heapq_heapremove_index_impl(PyObject *module, PyObject *heap,
+                             Py_ssize_t index);
 
 static PyObject *
-_heapq_heapremove(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_heapq_heapremove_index(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *heap;
     Py_ssize_t index;
 
-    if (!_PyArg_CheckPositional("heapremove", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("heapremove_index", nargs, 2, 2)) {
         goto exit;
     }
     if (!PyList_Check(args[0])) {
-        _PyArg_BadArgument("heapremove", "argument 1", "list", args[0]);
+        _PyArg_BadArgument("heapremove_index", "argument 1", "list", args[0]);
         goto exit;
     }
     heap = args[0];
@@ -188,7 +189,7 @@ _heapq_heapremove(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
         index = ival;
     }
-    return_value = _heapq_heapremove_impl(module, heap, index);
+    return_value = _heapq_heapremove_index_impl(module, heap, index);
 
 exit:
     return return_value;
@@ -315,4 +316,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2b5eef72a3b55d76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=051f8247c4f85985 input=a9049054013a1b77]*/

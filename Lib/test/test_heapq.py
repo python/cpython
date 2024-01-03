@@ -263,16 +263,16 @@ class TestHeap:
         self.assertEqual(hsort(data, LT), target)
         self.assertRaises(TypeError, data, LE)
 
-    def test_remove(self):
+    def test_remove_index(self):
         data = [random.random() for i in range(100)]
         self.module.heapify(data)
         heapset = set(data)
         self.assertEqual(len(data), len(heapset))
 
         with self.assertRaises(IndexError) as e:
-            self.module.heapremove(data, len(data))
+            self.module.heapremove_index(data, len(data))
         with self.assertRaises(IndexError) as e:
-            self.module.heapremove(data, -len(data) - 1)
+            self.module.heapremove_index(data, -len(data) - 1)
         self.check_invariant(data)
         self.assertEqual(heapset, set(data))
 
@@ -285,12 +285,12 @@ class TestHeap:
             v = data[i]
             # print(len(data), i, v)
             heapset.remove(v)
-            self.assertIs(self.module.heapremove(data, i), v)
+            self.assertIs(self.module.heapremove_index(data, i), v)
             self.assertEqual(heapset, set(data))
             self.check_invariant(data)
         self.assertFalse(data)
 
-    def test_remove_ops(self):
+    def test_remove_index_ops(self):
         # test the efficienty of heapremove as opposed to
         # a simple remove and heapify
 
@@ -317,7 +317,7 @@ class TestHeap:
 
         HC.opcount = 0
         while data:
-            self.module.heapremove(data, random.randrange(0, len(data)))
+            self.module.heapremove_index(data, random.randrange(0, len(data)))
         c1 = HC.opcount
 
         data = heapcopy

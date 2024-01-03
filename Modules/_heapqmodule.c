@@ -298,7 +298,7 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
 
 
 /*[clinic input]
-_heapq.heapremove
+_heapq.heapremove_index
 
     heap: object(subclass_of='&PyList_Type')
     index: Py_ssize_t
@@ -310,8 +310,9 @@ Returns the removed item.
 [clinic start generated code]*/
 
 static PyObject *
-_heapq_heapremove_impl(PyObject *module, PyObject *heap, Py_ssize_t index)
-/*[clinic end generated code: output=58466c577a3d8e33 input=b9ab21fc7cfb6e2a]*/
+_heapq_heapremove_index_impl(PyObject *module, PyObject *heap,
+                             Py_ssize_t index)
+/*[clinic end generated code: output=d4157859dfa7484a input=84eff69c62afff1d]*/
 {
     return heapremove_internal(heap, index, siftup);
 }
@@ -578,7 +579,7 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ__HEAPPOP_MAX_METHODDEF
     _HEAPQ__HEAPIFY_MAX_METHODDEF
     _HEAPQ__HEAPREPLACE_MAX_METHODDEF
-    _HEAPQ_HEAPREMOVE_METHODDEF
+    _HEAPQ_HEAPREMOVE_INDEX_METHODDEF
     {NULL, NULL}           /* sentinel */
 };
 
