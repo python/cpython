@@ -944,13 +944,15 @@ PyType_Spec pycstruct_type_spec = {
 };
 
 static PyType_Slot union_type_slots[] = {
-    {Py_sq_repeat, CDataType_repeat},
     {Py_tp_setattro, UnionType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the Union Objects")},
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, UnionType_new},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
