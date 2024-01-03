@@ -1278,7 +1278,7 @@ Add negative indexing support to :attr:`PurePath.parents
 (Contributed by Yaroslav Pankovych in :issue:`21041`.)
 
 Add :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
-supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
+supersedes :meth:`!link_to`. The new method has the same argument
 order as :meth:`~pathlib.Path.symlink_to`.
 (Contributed by Barney Gale in :issue:`39950`.)
 
@@ -1740,7 +1740,7 @@ Deprecated
 
   (Contributed by Jelle Zijlstra in :gh:`87889`.)
 
-* :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
+* :meth:`!pathlib.Path.link_to` is deprecated and slated for removal in
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
   (Contributed by Barney Gale in :issue:`39950`.)
 
