@@ -3617,7 +3617,7 @@ allow access to handlers by name.
 .. nonce: uw6x5z
 .. section: Library
 
-The :mod:`smtpd` module was removed per the schedule in :pep:`594`.
+The :mod:`!smtpd` module was removed per the schedule in :pep:`594`.
 
 ..
 
