@@ -13,9 +13,6 @@ extern "C" {
 
 static inline int _is_dead(PyObject *obj)
 {
-    if (obj == NULL) {
-        return 0;
-    }
     // Explanation for the Py_REFCNT() check: when a weakref's target is part
     // of a long chain of deallocations which triggers the trashcan mechanism,
     // clearing the weakrefs can be delayed long after the target's refcount
