@@ -776,6 +776,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     PyObject *inbuf = NULL;
     Py_ssize_t inpos, datalen;
     PyObject *origpending = NULL;
+    PyObject *excobj = NULL;
 
     if (PyUnicode_Check(unistr))
         ucvt = NULL;
@@ -825,8 +826,13 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     if (inpos < datalen) {
         if (datalen - inpos > MAXENCPENDING) {
             /* normal codecs can't reach here */
-            PyErr_SetString(PyExc_UnicodeError,
-                            "pending buffer overflow");
+            excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
+                                           "ssnns",
+                                           ctx->codec->encoding,
+                                           (const char*)PyUnicode_AsUTF8(inbuf),
+                                           inpos, inpos + datalen,
+                                           "pending buffer overflow");
+            PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
             goto errorexit;
         }
         ctx->pending = PyUnicode_Substring(inbuf, inpos, datalen);
@@ -845,6 +851,7 @@ errorexit:
     Py_XDECREF(ucvt);
     Py_XDECREF(origpending);
     Py_XDECREF(inbuf);
+    Py_XDECREF(excobj);
     return NULL;
 }
 
@@ -853,16 +860,25 @@ decoder_append_pending(MultibyteStatefulDecoderContext *ctx,
                        MultibyteDecodeBuffer *buf)
 {
     Py_ssize_t npendings;
+    PyObject *excobj = NULL;
 
     npendings = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
     if (npendings + ctx->pendingsize > MAXDECPENDING ||
         npendings > PY_SSIZE_T_MAX - ctx->pendingsize) {
-            PyErr_SetString(PyExc_UnicodeError, "pending buffer overflow");
-            return -1;
+            Py_ssize_t bufsize = (Py_ssize_t)(buf->inbuf_end - buf->inbuf_top);
+            excobj = PyUnicodeDecodeError_Create(ctx->codec->encoding,
+                       (const char *)buf->inbuf_top, bufsize,
+                       0, bufsize, "pending buffer overflow");
+            PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);
+            goto errorexit;
     }
     memcpy(ctx->pending + ctx->pendingsize, buf->inbuf, npendings);
     ctx->pendingsize += npendings;
     return 0;
+
+errorexit:
+    Py_XDECREF(excobj);
+    return -1;
 }
 
 static int
@@ -931,15 +947,22 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
     Py_ssize_t statesize;
     const char *pendingbuffer = NULL;
     Py_ssize_t pendingsize;
+    PyObject *excobj = NULL;
 
     if (self->pending != NULL) {
         pendingbuffer = PyUnicode_AsUTF8AndSize(self->pending, &pendingsize);
         if (pendingbuffer == NULL) {
-            return NULL;
+            goto errorexit;
         }
         if (pendingsize > MAXENCPENDING*4) {
-            PyErr_SetString(PyExc_UnicodeError, "pending buffer too large");
-            return NULL;
+            excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
+                                           "ssnns",
+                                           self->codec->encoding,
+                                           pendingbuffer,
+                                           0, pendingsize,
+                                           "pending buffer too large");
+            PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
+            goto errorexit;
         }
         statebytes[0] = (unsigned char)pendingsize;
         memcpy(statebytes + 1, pendingbuffer, pendingsize);
@@ -955,6 +978,9 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
     return (PyObject *)_PyLong_FromByteArray(statebytes, statesize,
                                              1 /* little-endian */ ,
                                              0 /* unsigned */ );
+errorexit:
+    Py_XDECREF(excobj);
+    return NULL;
 }
 
 /*[clinic input]
@@ -970,6 +996,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
 {
     PyObject *pending = NULL;
     unsigned char statebytes[1 + MAXENCPENDING*4 + sizeof(self->state.c)];
+    PyObject *excobj = NULL;
 
     if (_PyLong_AsByteArray(statelong, statebytes, sizeof(statebytes),
                             1 /* little-endian */ ,
@@ -978,8 +1005,14 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
     }
 
     if (statebytes[0] > MAXENCPENDING*4) {
-        PyErr_SetString(PyExc_UnicodeError, "pending buffer too large");
-        return NULL;
+        excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
+                                       "ssnns",
+                                       self->codec->encoding,
+                                       statebytes,
+                                       0, sizeof(statebytes),
+                                       "pending buffer too large");
+        PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
+        goto errorexit;
     }
 
     pending = PyUnicode_DecodeUTF8((const char *)statebytes+1,
@@ -996,6 +1029,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
 
 errorexit:
     Py_XDECREF(pending);
+    Py_XDECREF(excobj);
     return NULL;
 }
 
@@ -1246,6 +1280,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     Py_ssize_t buffersize;
     const char *bufferstr;
     unsigned char statebytes[8];
+    PyObject *excobj = NULL;
 
     if (!PyArg_ParseTuple(state, "SO!;setstate(): illegal state argument",
                           &buffer, &PyLong_Type, &statelong))
@@ -1265,7 +1300,12 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     }
 
     if (buffersize > MAXDECPENDING) {
-        PyErr_SetString(PyExc_UnicodeError, "pending buffer too large");
+        excobj = PyUnicodeDecodeError_Create(self->codec->encoding,
+                   (const char *)buffer, buffersize,
+                   0, buffersize,
+                   "pending buffer too large");
+        PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);
+        Py_XDECREF(excobj);
         return NULL;
     }
 

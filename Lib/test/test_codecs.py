@@ -482,11 +482,11 @@ class UTF32Test(ReadTest, unittest.TestCase):
     def test_badbom(self):
         s = io.BytesIO(4*b"\xff")
         f = codecs.getreader(self.encoding)(s)
-        self.assertRaises(UnicodeError, f.read)
+        self.assertRaises(UnicodeDecodeError, f.read)
 
         s = io.BytesIO(8*b"\xff")
         f = codecs.getreader(self.encoding)(s)
-        self.assertRaises(UnicodeError, f.read)
+        self.assertRaises(UnicodeDecodeError, f.read)
 
     def test_partial(self):
         self.check_partial(
@@ -666,11 +666,11 @@ class UTF16Test(ReadTest, unittest.TestCase):
     def test_badbom(self):
         s = io.BytesIO(b"\xff\xff")
         f = codecs.getreader(self.encoding)(s)
-        self.assertRaises(UnicodeError, f.read)
+        self.assertRaises(UnicodeDecodeError, f.read)
 
         s = io.BytesIO(b"\xff\xff\xff\xff")
         f = codecs.getreader(self.encoding)(s)
-        self.assertRaises(UnicodeError, f.read)
+        self.assertRaises(UnicodeDecodeError, f.read)
 
     def test_partial(self):
         self.check_partial(
@@ -1356,13 +1356,13 @@ class PunycodeTest(unittest.TestCase):
 
     def test_decode_invalid(self):
         testcases = [
-            (b"xn--w&", "strict", UnicodeError()),
+            (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"xn--w&", 0, 6, "")),
             (b"xn--w&", "ignore", "xn-"),
         ]
         for puny, errors, expected in testcases:
             with self.subTest(puny=puny, errors=errors):
                 if isinstance(expected, Exception):
-                    self.assertRaises(UnicodeError, puny.decode, "punycode", errors)
+                    self.assertRaises(UnicodeDecodeError, puny.decode, "punycode", errors)
                 else:
                     self.assertEqual(puny.decode("punycode", errors), expected)
 
@@ -1532,7 +1532,7 @@ class NameprepTest(unittest.TestCase):
             orig = str(orig, "utf-8", "surrogatepass")
             if prepped is None:
                 # Input contains prohibited characters
-                self.assertRaises(UnicodeError, nameprep, orig)
+                self.assertRaises(UnicodeEncodeError, nameprep, orig)
             else:
                 prepped = str(prepped, "utf-8", "surrogatepass")
                 try:
@@ -1555,9 +1555,9 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
 
     def test_builtin_decode_length_limit(self):
-        with self.assertRaisesRegex(UnicodeError, "way too long"):
+        with self.assertRaisesRegex(UnicodeDecodeError, "way too long"):
             (b"xn--016c"+b"a"*1100).decode("idna")
-        with self.assertRaisesRegex(UnicodeError, "too long"):
+        with self.assertRaisesRegex(UnicodeDecodeError, "too long"):
             (b"xn--016c"+b"a"*70).decode("idna")
 
     def test_stream(self):
@@ -1744,14 +1744,14 @@ class CodecsModuleTest(unittest.TestCase):
                 self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
-        self.assertRaises(UnicodeError, codecs.encode, 'abc', 'undefined')
-        self.assertRaises(UnicodeError, codecs.decode, b'abc', 'undefined')
-        self.assertRaises(UnicodeError, codecs.encode, '', 'undefined')
-        self.assertRaises(UnicodeError, codecs.decode, b'', 'undefined')
+        self.assertRaises(UnicodeEncodeError, codecs.encode, 'abc', 'undefined')
+        self.assertRaises(UnicodeDecodeError, codecs.decode, b'abc', 'undefined')
+        self.assertRaises(UnicodeEncodeError, codecs.encode, '', 'undefined')
+        self.assertRaises(UnicodeDecodeError, codecs.decode, b'', 'undefined')
         for errors in ('strict', 'ignore', 'replace', 'backslashreplace'):
-            self.assertRaises(UnicodeError,
+            self.assertRaises(UnicodeEncodeError,
                 codecs.encode, 'abc', 'undefined', errors)
-            self.assertRaises(UnicodeError,
+            self.assertRaises(UnicodeDecodeError,
                 codecs.decode, b'abc', 'undefined', errors)
 
     def test_file_closes_if_lookup_error_raised(self):

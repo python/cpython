@@ -134,7 +134,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
             char = ord(extended[extpos])
         except IndexError:
             if errors == "strict":
-                raise UnicodeError("incomplete punicode string")
+                b_extended = extended.encode("ascii")
+                raise UnicodeDecodeError("punycode", b_extended, extpos, extpos+1, "incomplete punycode string")
             return extpos + 1, None
         extpos += 1
         if 0x41 <= char <= 0x5A: # A-Z
@@ -142,8 +143,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
         elif 0x30 <= char <= 0x39:
             digit = char - 22 # 0x30-26
         elif errors == "strict":
-            raise UnicodeError("Invalid extended code point '%s'"
-                               % extended[extpos-1])
+            b_extended = extended.encode("ascii")
+            raise UnicodeDecodeError("punycode", b_extended, extpos-1, extpos, f"Invalid extended code point '{extended[extpos-1]}'")
         else:
             return extpos, None
         t = T(j, bias)
@@ -171,7 +172,7 @@ def insertion_sort(base, extended, errors):
         char += pos // (len(base) + 1)
         if char > 0x10FFFF:
             if errors == "strict":
-                raise UnicodeError("Invalid character U+%x" % char)
+                raise UnicodeDecodeError("punycode", base, pos, newpos, f"Invalid character U+{char:x}")
             char = ord('?')
         pos = pos % (len(base) + 1)
         base = base[:pos] + chr(char) + base[pos:]
@@ -203,7 +204,7 @@ class Codec(codecs.Codec):
 
     def decode(self, input, errors='strict'):
         if errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeError("Unsupported error handling "+errors)
+            raise UnicodeDecodeError("punycode", input, 0, 0, "Unsupported error handling "+errors)
         res = punycode_decode(input, errors)
         return res, len(input)
 
@@ -214,7 +215,7 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
         if self.errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeError("Unsupported error handling "+self.errors)
+            raise UnicodeDecodeError("punycode", input, 0, 0, "Unsupported error handling "+self.errors)
         return punycode_decode(input, self.errors)
 
 class StreamWriter(Codec,codecs.StreamWriter):
