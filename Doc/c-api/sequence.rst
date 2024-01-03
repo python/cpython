@@ -9,7 +9,7 @@ Sequence Protocol
 .. c:function:: int PySequence_Check(PyObject *o)
 
    Return ``1`` if the object provides the sequence protocol, and ``0`` otherwise.
-   Note that it returns ``1`` for Python classes with a :meth:`__getitem__`
+   Note that it returns ``1`` for Python classes with a :meth:`~object.__getitem__`
    method, unless they are :class:`dict` subclasses, since in general it
    is impossible to determine what type of keys the class supports.  This
    function always succeeds.

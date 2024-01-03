@@ -1,1 +1,0 @@
-Added *case_sensitive* argument to :meth:`pathlib.PurePath.match`

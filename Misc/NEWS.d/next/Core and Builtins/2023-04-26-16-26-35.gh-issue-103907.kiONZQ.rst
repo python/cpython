@@ -1,2 +1,0 @@
-Don't modify the refcounts of known immortal objects (:const:`True`,
-:const:`False`, and :const:`None`) in the main interpreter loop.

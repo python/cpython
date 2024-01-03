@@ -1,2 +1,0 @@
-:func:`functools.update_wrapper` now sets the ``__type_params__`` attribute
-(added by :pep:`695`).

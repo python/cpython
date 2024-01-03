@@ -1,2 +1,0 @@
-Fix ``zipfile.Zipfile`` creating invalid zip files when ``force_zip64`` was
-used to add files to them. Patch by Carey Metcalfe.
