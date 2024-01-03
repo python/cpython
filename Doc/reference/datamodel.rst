@@ -1288,7 +1288,7 @@ Methods on code objects
    .. seealso::
 
       :pep:`626` - Precise line numbers for debugging and other tools.
-        The PEP that introduced the :meth:`!co_lines` method.
+         The PEP that introduced the :meth:`!co_lines` method.
 
 
 .. _frame-objects:
