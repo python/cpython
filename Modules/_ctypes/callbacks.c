@@ -345,13 +345,10 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
     p = CThunkObject_new(nargs);
-    if (p == NULL)
+    if (p == NULL) {
         return NULL;
-
-#ifdef Py_DEBUG
-    ctypes_state *st = GLOBAL_STATE();
-    assert(CThunk_CheckExact(st, (PyObject *)p));
-#endif
+    }
+    assert(CThunk_CheckExact(GLOBAL_STATE(), (PyObject *)p));
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {

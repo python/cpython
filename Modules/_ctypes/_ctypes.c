@@ -2934,16 +2934,14 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
     }
     dict->flags |= DICTFLAG_FINAL;
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
-    if (cmem == NULL)
+    if (cmem == NULL) {
         return NULL;
-#ifdef Py_DEBUG
-    ctypes_state *st = GLOBAL_STATE();
-    assert(CDataObject_Check(st, cmem));
-#endif
+    }
+    assert(CDataObject_Check(GLOBAL_STATE(), cmem));
     cmem->b_length = dict->length;
     cmem->b_size = dict->size;
     if (base) { /* use base's buffer */
-        assert(CDataObject_Check(st, base));
+        assert(CDataObject_Check(GLOBAL_STATE(), base));
         cmem->b_ptr = adr;
         cmem->b_needsfree = 0;
         cmem->b_base = (CDataObject *)Py_NewRef(base);
@@ -2982,12 +2980,10 @@ PyCData_AtAddress(PyObject *type, void *buf)
     dict->flags |= DICTFLAG_FINAL;
 
     pd = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
-    if (!pd)
+    if (!pd) {
         return NULL;
-#ifdef Py_DEBUG
-    ctypes_state *st = GLOBAL_STATE();
-    assert(CDataObject_Check(st, pd));
-#endif
+    }
+    assert(CDataObject_Check(GLOBAL_STATE(), pd));
     pd->b_ptr = (char *)buf;
     pd->b_length = dict->length;
     pd->b_size = dict->size;

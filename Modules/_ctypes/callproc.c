@@ -1686,12 +1686,13 @@ sizeof_func(PyObject *self, PyObject *obj)
     StgDictObject *dict;
 
     dict = PyType_stgdict(obj);
-    if (dict)
+    if (dict) {
         return PyLong_FromSsize_t(dict->size);
-
+    }
     ctypes_state *st = GLOBAL_STATE();
-    if (CDataObject_Check(st, obj))
+    if (CDataObject_Check(st, obj)) {
         return PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
+    }
     PyErr_SetString(PyExc_TypeError,
                     "this type has no size");
     return NULL;
