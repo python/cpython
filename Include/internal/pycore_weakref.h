@@ -23,14 +23,8 @@ static inline int _is_dead(PyObject *obj)
     // be able to "see" the target object even though it is supposed to be
     // unreachable.  See issue gh-60806.
 #if defined(Py_GIL_DISABLED)
-    Py_ssize_t refcount = Py_REFCNT(obj);
-    if (refcount == 0) {
-        // In freethreading CPython, Py_REFCNT is only estimated count,
-        // so need to check shared refcount value too.
-        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&obj->ob_ref_shared);
-        return _Py_REF_IS_MERGED(shared);
-    }
-    return 0;
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&obj->ob_ref_shared);
+    return shared == _Py_REF_SHARED(0, _Py_REF_MERGED);
 #else
     return (Py_REFCNT(obj) == 0);
 #endif
