@@ -924,13 +924,15 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 }
 
 static PyType_Slot pycstruct_type_slots[] = {
-    {Py_sq_repeat, CDataType_repeat},
     {Py_tp_setattro, PyCStructType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, PyCStructType_new},
+    
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
