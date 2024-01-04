@@ -1010,8 +1010,8 @@ class NonCallableMock(Base):
                                     for e in expected])
                 raise AssertionError(
                     f'{problem}\n'
-                    f'Expected: {_CallList(calls)}'
-                    f'{self._calls_repr(prefix="  Actual").rstrip(".")}'
+                    f'Expected: {_CallList(calls)}\n'
+                    f'  Actual: {safe_repr(self.mock_calls)}'
                 ) from cause
             return
 
@@ -1085,7 +1085,7 @@ class NonCallableMock(Base):
         return klass(**kw)
 
 
-    def _calls_repr(self, prefix="Calls"):
+    def _calls_repr(self):
         """Renders self.mock_calls as a string.
 
         Example: "\nCalls: [call(1), call(2)]."
@@ -1095,7 +1095,7 @@ class NonCallableMock(Base):
         """
         if not self.mock_calls:
             return ""
-        return f"\n{prefix}: {safe_repr(self.mock_calls)}."
+        return f"\nCalls: {safe_repr(self.mock_calls)}."
 
 
 # Denylist for forbidden attribute names in safe mode

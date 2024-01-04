@@ -1,0 +1,2 @@
+Indicate if there were no actual calls in unittest
+:meth:`~unittest.mock.Mock.assert_has_calls` failure.
