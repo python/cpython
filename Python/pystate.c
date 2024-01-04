@@ -2533,6 +2533,11 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     mi_tld_t *tld = &mts->tld;
     _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
 
+    // Exiting threads push any remaining in-use segments to the abandoned
+    // pool to be re-claimed later by other threads. We use per-interpreter
+    // pools to keep Python objects from different interpreters separate.
+    tld->segments.abandoned = &tstate->interp->mimalloc.abandoned_pool;
+
     // Initialize each heap
     for (Py_ssize_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
         _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none());
