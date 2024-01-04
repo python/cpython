@@ -184,9 +184,10 @@ The module defines the following:
 ``/dev/poll`` Polling Objects
 -----------------------------
 
-Solaris and derivatives have ``/dev/poll``. While :c:func:`!select` is
-O(highest file descriptor) and :c:func:`!poll` is O(number of file
-descriptors), ``/dev/poll`` is O(active file descriptors).
+Solaris and derivatives have ``/dev/poll``.
+While :c:func:`!select` is :math:`O(highest file descriptor)` and
+:c:func:`!poll` is :math:`O(number of file descriptors)`,
+``/dev/poll`` is :math:`O(active file descriptors)`.
 
 ``/dev/poll`` behaviour is very close to the standard :c:func:`!poll`
 object.
@@ -381,8 +382,9 @@ scalability for network servers that service many, many clients at the same
 time. :c:func:`!poll` scales better because the system call only requires listing
 the file descriptors of interest, while :c:func:`!select` builds a bitmap, turns
 on bits for the fds of interest, and then afterward the whole bitmap has to be
-linearly scanned again. :c:func:`!select` is O(highest file descriptor), while
-:c:func:`!poll` is O(number of file descriptors).
+linearly scanned again.
+:c:func:`!select` is :math:`O(highest file descriptor)`,
+while :c:func:`!poll` is :math:`O(number of file descriptors)`.
 
 
 .. method:: poll.register(fd[, eventmask])
