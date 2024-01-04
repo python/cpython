@@ -708,7 +708,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         if self._loop.get_debug():
             logger.info("%r was closed by peer", self)
         if self._buffer:
-            self._close(BrokenPipeError())
+            self._close(BrokenPipeError(errno.EPIPE, os.strerror(errno.EPIPE)))
         else:
             self._close()
 

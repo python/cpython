@@ -1,4 +1,5 @@
 import enum
+import errno
 
 from types import TracebackType
 from typing import final, Optional, Type
@@ -112,7 +113,7 @@ class Timeout:
             if self._task.uncancel() <= self._cancelling and exc_type is exceptions.CancelledError:
                 # Since there are no new cancel requests, we're
                 # handling this.
-                raise TimeoutError from exc_val
+                raise TimeoutError(errno.ETIMEDOUT, 'timed out') from exc_val
         elif self._state is _State.ENTERED:
             self._state = _State.EXITED
 

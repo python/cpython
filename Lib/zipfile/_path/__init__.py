@@ -1,4 +1,6 @@
+import errno
 import io
+import os
 import posixpath
 import zipfile
 import itertools
@@ -284,10 +286,10 @@ class Path:
         to io.TextIOWrapper().
         """
         if self.is_dir():
-            raise IsADirectoryError(self)
+            raise IsADirectoryError(errno.EISDIR, os.strerror(errno.EISDIR), self)
         zip_mode = mode[0]
         if not self.exists() and zip_mode == 'r':
-            raise FileNotFoundError(self)
+            raise FileNotFoundError(errno.ENOENT, 'No such file', self)
         stream = self.root.open(self.at, zip_mode, pwd=pwd)
         if 'b' in mode:
             if args or kwargs:

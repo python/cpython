@@ -3,8 +3,10 @@ Interface adapters for low-level readers.
 """
 
 import abc
+import errno
 import io
 import itertools
+import os
 from typing import BinaryIO, List
 
 from .abc import Traversable, TraversableResources
@@ -67,7 +69,7 @@ class ResourceContainer(Traversable):
         return itertools.chain(files, dirs)
 
     def open(self, *args, **kwargs):
-        raise IsADirectoryError()
+        raise IsADirectoryError(errno.EISDIR, os.strerror(errno.EISDIR))
 
 
 class ResourceHandle(Traversable):
