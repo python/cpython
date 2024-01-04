@@ -15,8 +15,10 @@ class TestFilemode:
     statmod = None
 
     file_flags = {'SF_APPEND', 'SF_ARCHIVED', 'SF_IMMUTABLE', 'SF_NOUNLINK',
-                  'SF_SNAPSHOT', 'UF_APPEND', 'UF_COMPRESSED', 'UF_HIDDEN',
-                  'UF_IMMUTABLE', 'UF_NODUMP', 'UF_NOUNLINK', 'UF_OPAQUE'}
+                  'SF_SNAPSHOT', 'SF_RESTRICTED', 'SF_FIRMLINK', 'SF_DATALESS',
+                  'UF_APPEND', 'UF_COMPRESSED', 'UF_HIDDEN', 'UF_IMMUTABLE', 
+                  'UF_NODUMP', 'UF_NOUNLINK', 'UF_OPAQUE', 'UF_TRACKED', 
+                  'UF_DATAVAULT'} 
 
     formats = {'S_IFBLK', 'S_IFCHR', 'S_IFDIR', 'S_IFIFO', 'S_IFLNK',
                'S_IFREG', 'S_IFSOCK', 'S_IFDOOR', 'S_IFPORT', 'S_IFWHT'}
