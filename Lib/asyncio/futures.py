@@ -277,7 +277,7 @@ class Future:
                                    "generators and cannot be raised into a "
                                    "Future")
             new_exc.__cause__ = exception
-            new_exc.__context = exception.__context__
+            new_exc.__context__ = exception
             exception = new_exc
         self._exception = exception
         self._exception_tb = exception.__traceback__

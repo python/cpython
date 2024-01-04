@@ -597,7 +597,7 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
         PyErr_SetString(PyExc_TypeError, "invalid exception object");
         return NULL;
     }
-    if (PyObject_IsInstance(exc_val, (PyObject *)PyExc_StopIteration)) {
+    if (PyErr_GivenExceptionMatches(exc_val, PyExc_StopIteration)) {
         const char *msg = "StopIteration interacts badly with "
                           "generators and cannot be raised into a "
                           "Future";
