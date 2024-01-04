@@ -1,1 +1,0 @@
-Properly handle SSL connection closing in asyncio StreamWriter.drain() call.

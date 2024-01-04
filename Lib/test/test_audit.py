@@ -1,260 +1,295 @@
 """Tests for sys.audit and sys.addaudithook
 """
 
-import os
 import subprocess
 import sys
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
     raise unittest.SkipTest("test only relevant when sys.audit is available")
 
-
-class TestHook:
-    """Used in standard hook tests to collect any logged events.
-
-    Should be used in a with block to ensure that it has no impact
-    after the test completes. Audit hooks cannot be removed, so the
-    best we can do for the test run is disable it by calling close().
-    """
-
-    def __init__(self, raise_on_events=None, exc_type=RuntimeError):
-        self.raise_on_events = raise_on_events or ()
-        self.exc_type = exc_type
-        self.seen = []
-        self.closed = False
-
-    def __enter__(self, *a):
-        sys.addaudithook(self)
-        return self
-
-    def __exit__(self, *a):
-        self.close()
-
-    def close(self):
-        self.closed = True
-
-    @property
-    def seen_events(self):
-        return [i[0] for i in self.seen]
-
-    def __call__(self, event, args):
-        if self.closed:
-            return
-        self.seen.append((event, args))
-        if event in self.raise_on_events:
-            raise self.exc_type("saw event " + event)
-
-
-class TestFinalizeHook:
-    """Used in the test_finalize_hooks function to ensure that hooks
-    are correctly cleaned up, that they are notified about the cleanup,
-    and are unable to prevent it.
-    """
-
-    def __init__(self):
-        print("Created", id(self), file=sys.stderr, flush=True)
-
-    def __call__(self, event, args):
-        # Avoid recursion when we call id() below
-        if event == "builtins.id":
-            return
-
-        print(event, id(self), file=sys.stderr, flush=True)
-
-        if event == "cpython._PySys_ClearAuditHooks":
-            raise RuntimeError("Should be ignored")
-        elif event == "cpython.PyInterpreterState_Clear":
-            raise RuntimeError("Should be ignored")
-
-
-def run_finalize_test():
-    """Called by test_finalize_hooks in a subprocess."""
-    sys.addaudithook(TestFinalizeHook())
+AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
-    def test_basic(self):
-        with TestHook() as hook:
-            sys.audit("test_event", 1, 2, 3)
-            self.assertEqual(hook.seen[0][0], "test_event")
-            self.assertEqual(hook.seen[0][1], (1, 2, 3))
+    maxDiff = None
 
-    def test_block_add_hook(self):
-        # Raising an exception should prevent a new hook from being added,
-        # but will not propagate out.
-        with TestHook(raise_on_events="sys.addaudithook") as hook1:
-            with TestHook() as hook2:
-                sys.audit("test_event")
-                self.assertIn("test_event", hook1.seen_events)
-                self.assertNotIn("test_event", hook2.seen_events)
-
-    def test_block_add_hook_baseexception(self):
-        # Raising BaseException will propagate out when adding a hook
-        with self.assertRaises(BaseException):
-            with TestHook(
-                raise_on_events="sys.addaudithook", exc_type=BaseException
-            ) as hook1:
-                # Adding this next hook should raise BaseException
-                with TestHook() as hook2:
-                    pass
-
-    def test_finalize_hooks(self):
-        events = []
+    @support.requires_subprocess()
+    def run_test_in_subprocess(self, *args):
         with subprocess.Popen(
-            [
-                sys.executable,
-                "-c",
-                "import test.test_audit; test.test_audit.run_finalize_test()",
-            ],
+            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         ) as p:
             p.wait()
-            for line in p.stderr:
-                events.append(line.strip().partition(" "))
-        firstId = events[0][2]
-        self.assertSequenceEqual(
-            [
-                ("Created", " ", firstId),
-                ("cpython._PySys_ClearAuditHooks", " ", firstId),
-            ],
-            events,
+            return p, p.stdout.read(), p.stderr.read()
+
+    def do_test(self, *args):
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
+
+        sys.stdout.write(stdout)
+        sys.stderr.write(stderr)
+        if proc.returncode:
+            self.fail(stderr)
+
+    def run_python(self, *args, expect_stderr=False):
+        events = []
+        proc, stdout, stderr = self.run_test_in_subprocess(*args)
+        if not expect_stderr or support.verbose:
+            sys.stderr.write(stderr)
+        return (
+            proc.returncode,
+            [line.strip().partition(" ") for line in stdout.splitlines()],
+            stderr,
         )
+
+    def test_basic(self):
+        self.do_test("test_basic")
+
+    def test_block_add_hook(self):
+        self.do_test("test_block_add_hook")
+
+    def test_block_add_hook_baseexception(self):
+        self.do_test("test_block_add_hook_baseexception")
+
+    def test_marshal(self):
+        import_helper.import_module("marshal")
+
+        self.do_test("test_marshal")
 
     def test_pickle(self):
-        pickle = support.import_module("pickle")
+        import_helper.import_module("pickle")
 
-        class PicklePrint:
-            def __reduce_ex__(self, p):
-                return str, ("Pwned!",)
-
-        payload_1 = pickle.dumps(PicklePrint())
-        payload_2 = pickle.dumps(("a", "b", "c", 1, 2, 3))
-
-        # Before we add the hook, ensure our malicious pickle loads
-        self.assertEqual("Pwned!", pickle.loads(payload_1))
-
-        with TestHook(raise_on_events="pickle.find_class") as hook:
-            with self.assertRaises(RuntimeError):
-                # With the hook enabled, loading globals is not allowed
-                pickle.loads(payload_1)
-            # pickles with no globals are okay
-            pickle.loads(payload_2)
+        self.do_test("test_pickle")
 
     def test_monkeypatch(self):
-        class A:
-            pass
-
-        class B:
-            pass
-
-        class C(A):
-            pass
-
-        a = A()
-
-        with TestHook() as hook:
-            # Catch name changes
-            C.__name__ = "X"
-            # Catch type changes
-            C.__bases__ = (B,)
-            # Ensure bypassing __setattr__ is still caught
-            type.__dict__["__bases__"].__set__(C, (B,))
-            # Catch attribute replacement
-            C.__init__ = B.__init__
-            # Catch attribute addition
-            C.new_attr = 123
-            # Catch class changes
-            a.__class__ = B
-
-        actual = [(a[0], a[1]) for e, a in hook.seen if e == "object.__setattr__"]
-        self.assertSequenceEqual(
-            [(C, "__name__"), (C, "__bases__"), (C, "__bases__"), (a, "__class__")],
-            actual,
-        )
+        self.do_test("test_monkeypatch")
 
     def test_open(self):
-        # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
-        try:
-            import ssl
-
-            load_dh_params = ssl.create_default_context().load_dh_params
-        except ImportError:
-            load_dh_params = None
-
-        # Try a range of "open" functions.
-        # All of them should fail
-        with TestHook(raise_on_events={"open"}) as hook:
-            for fn, *args in [
-                (open, support.TESTFN, "r"),
-                (open, sys.executable, "rb"),
-                (open, 3, "wb"),
-                (open, support.TESTFN, "w", -1, None, None, None, False, lambda *a: 1),
-                (load_dh_params, support.TESTFN),
-            ]:
-                if not fn:
-                    continue
-                self.assertRaises(RuntimeError, fn, *args)
-
-        actual_mode = [(a[0], a[1]) for e, a in hook.seen if e == "open" and a[1]]
-        actual_flag = [(a[0], a[2]) for e, a in hook.seen if e == "open" and not a[1]]
-        self.assertSequenceEqual(
-            [
-                i
-                for i in [
-                    (support.TESTFN, "r"),
-                    (sys.executable, "r"),
-                    (3, "w"),
-                    (support.TESTFN, "w"),
-                    (support.TESTFN, "rb") if load_dh_params else None,
-                ]
-                if i is not None
-            ],
-            actual_mode,
-        )
-        self.assertSequenceEqual([], actual_flag)
+        self.do_test("test_open", os_helper.TESTFN)
 
     def test_cantrace(self):
-        traced = []
+        self.do_test("test_cantrace")
 
-        def trace(frame, event, *args):
-            if frame.f_code == TestHook.__call__.__code__:
-                traced.append(event)
+    def test_mmap(self):
+        self.do_test("test_mmap")
 
-        old = sys.settrace(trace)
-        try:
-            with TestHook() as hook:
-                # No traced call
-                eval("1")
+    def test_excepthook(self):
+        returncode, events, stderr = self.run_python("test_excepthook")
+        if not returncode:
+            self.fail(f"Expected fatal exception\n{stderr}")
 
-                # No traced call
-                hook.__cantrace__ = False
-                eval("2")
+        self.assertSequenceEqual(
+            [("sys.excepthook", " ", "RuntimeError('fatal-error')")], events
+        )
 
-                # One traced call
-                hook.__cantrace__ = True
-                eval("3")
+    def test_unraisablehook(self):
+        returncode, events, stderr = self.run_python("test_unraisablehook")
+        if returncode:
+            self.fail(stderr)
 
-                # Two traced calls (writing to private member, eval)
-                hook.__cantrace__ = 1
-                eval("4")
+        self.assertEqual(events[0][0], "sys.unraisablehook")
+        self.assertEqual(
+            events[0][2],
+            "RuntimeError('nonfatal-error') Exception ignored for audit hook test",
+        )
 
-                # One traced call (writing to private member)
-                hook.__cantrace__ = 0
-        finally:
-            sys.settrace(old)
+    def test_winreg(self):
+        import_helper.import_module("winreg")
+        returncode, events, stderr = self.run_python("test_winreg")
+        if returncode:
+            self.fail(stderr)
 
-        self.assertSequenceEqual(["call"] * 4, traced)
+        self.assertEqual(events[0][0], "winreg.OpenKey")
+        self.assertEqual(events[1][0], "winreg.OpenKey/result")
+        expected = events[1][2]
+        self.assertTrue(expected)
+        self.assertSequenceEqual(["winreg.EnumKey", " ", f"{expected} 0"], events[2])
+        self.assertSequenceEqual(["winreg.EnumKey", " ", f"{expected} 10000"], events[3])
+        self.assertSequenceEqual(["winreg.PyHKEY.Detach", " ", expected], events[4])
+
+    def test_socket(self):
+        import_helper.import_module("socket")
+        returncode, events, stderr = self.run_python("test_socket")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "socket.gethostname")
+        self.assertEqual(events[1][0], "socket.__new__")
+        self.assertEqual(events[2][0], "socket.bind")
+        self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
+
+    def test_gc(self):
+        returncode, events, stderr = self.run_python("test_gc")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(
+            [event[0] for event in events],
+            ["gc.get_objects", "gc.get_referrers", "gc.get_referents"]
+        )
+
+
+    def test_http(self):
+        import_helper.import_module("http.client")
+        returncode, events, stderr = self.run_python("test_http_client")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "http.client.connect")
+        self.assertEqual(events[0][2], "www.python.org 80")
+        self.assertEqual(events[1][0], "http.client.send")
+        if events[1][2] != '[cannot send]':
+            self.assertIn('HTTP', events[1][2])
+
+
+    def test_sqlite3(self):
+        sqlite3 = import_helper.import_module("sqlite3")
+        returncode, events, stderr = self.run_python("test_sqlite3")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [ev[0] for ev in events]
+        expected = ["sqlite3.connect", "sqlite3.connect/handle"] * 2
+
+        if hasattr(sqlite3.Connection, "enable_load_extension"):
+            expected += [
+                "sqlite3.enable_load_extension",
+                "sqlite3.load_extension",
+            ]
+        self.assertEqual(actual, expected)
+
+
+    def test_sys_getframe(self):
+        returncode, events, stderr = self.run_python("test_sys_getframe")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys._getframe", "test_sys_getframe")]
+
+        self.assertEqual(actual, expected)
+
+    def test_sys_getframemodulename(self):
+        returncode, events, stderr = self.run_python("test_sys_getframemodulename")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys._getframemodulename", "0")]
+
+        self.assertEqual(actual, expected)
+
+
+    def test_threading(self):
+        returncode, events, stderr = self.run_python("test_threading")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [
+            ("_thread.start_new_thread", "(<test_func>, (), None)"),
+            ("test.test_func", "()"),
+            ("_thread.start_joinable_thread", "(<test_func>,)"),
+            ("test.test_func", "()"),
+        ]
+
+        self.assertEqual(actual, expected)
+
+
+    def test_wmi_exec_query(self):
+        import_helper.import_module("_wmi")
+        returncode, events, stderr = self.run_python("test_wmi_exec_query")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_wmi.exec_query", "SELECT * FROM Win32_OperatingSystem")]
+
+        self.assertEqual(actual, expected)
+
+    def test_syslog(self):
+        syslog = import_helper.import_module("syslog")
+
+        returncode, events, stderr = self.run_python("test_syslog")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print('Events:', *events, sep='\n  ')
+
+        self.assertSequenceEqual(
+            events,
+            [('syslog.openlog', ' ', f'python 0 {syslog.LOG_USER}'),
+            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test'),
+            ('syslog.setlogmask', ' ', f'{syslog.LOG_DEBUG}'),
+            ('syslog.closelog', '', ''),
+            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test2'),
+            ('syslog.openlog', ' ', f'audit-tests.py 0 {syslog.LOG_USER}'),
+            ('syslog.openlog', ' ', f'audit-tests.py {syslog.LOG_NDELAY} {syslog.LOG_LOCAL0}'),
+            ('syslog.openlog', ' ', f'None 0 {syslog.LOG_USER}'),
+            ('syslog.closelog', '', '')]
+        )
+
+    def test_not_in_gc(self):
+        returncode, _, stderr = self.run_python("test_not_in_gc")
+        if returncode:
+            self.fail(stderr)
+
+    def test_time(self):
+        returncode, events, stderr = self.run_python("test_time", "print")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("time.sleep", "0"),
+                    ("time.sleep", "0.0625"),
+                    ("time.sleep", "-1")]
+
+        self.assertEqual(actual, expected)
+
+    def test_time_fail(self):
+        returncode, events, stderr = self.run_python("test_time", "fail",
+                                                     expect_stderr=True)
+        self.assertNotEqual(returncode, 0)
+        self.assertIn('hook failed', stderr.splitlines()[-1])
+
+    def test_sys_monitoring_register_callback(self):
+        returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys.monitoring.register_callback", "(None,)")]
+
+        self.assertEqual(actual, expected)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 2 and sys.argv[1] == "spython_test":
-        # Doesn't matter what we add - it will be blocked
-        sys.addaudithook(None)
-
-        sys.exit(0)
-
     unittest.main()
