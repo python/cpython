@@ -131,7 +131,7 @@ mi_decl_cache_align static const mi_tld_t tld_empty = {
   0,
   false,
   NULL, NULL,
-  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, tld_empty_stats, tld_empty_os }, // segments
+  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, tld_empty_stats, tld_empty_os, &_mi_abandoned_default }, // segments
   { 0, tld_empty_stats }, // os
   { MI_STATS_NULL }       // stats
 };
