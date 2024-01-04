@@ -816,7 +816,8 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
-* :attr:`~codeobject.co_lnotab`: use the ``co_lines`` attribute instead.
+* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
+  instead.
 
 * :class:`typing.Text` (:gh:`92332`).
 
