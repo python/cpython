@@ -30,17 +30,17 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'H'``   | unsigned short     | int               | 2                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'i'``   | signed int         | int               | 2                     |       |
+| ``'i'``   | signed int         | int               | 2                     | \(2)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'I'``   | unsigned int       | int               | 2                     |       |
+| ``'I'``   | unsigned int       | int               | 2                     | \(2)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'l'``   | signed long        | int               | 4                     |       |
+| ``'l'``   | signed long        | int               | 4                     | \(2)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'L'``   | unsigned long      | int               | 4                     |       |
+| ``'L'``   | unsigned long      | int               | 4                     | \(2)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'q'``   | signed long long   | int               | 8                     |       |
+| ``'q'``   | signed long long   | int               | 8                     | \(2)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'Q'``   | unsigned long long | int               | 8                     |       |
+| ``'Q'``   | unsigned long long | int               | 8                     | \(2)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'f'``   | float              | float             | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -59,6 +59,13 @@ Notes:
 
    .. deprecated-removed:: 3.3 3.16
       Please migrate to ``'w'`` typecode.
+
+(2)
+   Int data types (signed or unsigned) can be 16 or 32 bits depending on the platform. The
+   same way that long data types can be 32 or 64 bits depending on the platform. On most
+   machines that run GNU C Library, an int is a 32-bit quantity. On most machines, long 
+   int is also 32-bit, the same size as int. And lastly, on most machines, long long int 
+   are 64-bit quantities. View more at: https://www.gnu.org/software/libc/manual/html_node/Range-of-Type.html
 
 
 The actual representation of values is determined by the machine architecture
