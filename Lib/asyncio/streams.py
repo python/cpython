@@ -246,6 +246,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
                 def callback(task):
+                    if task.cancelled():
+                        transport.close()
+                        return
                     exc = task.exception()
                     if exc is not None:
                         self._loop.call_exception_handler({
