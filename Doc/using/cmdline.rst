@@ -1077,14 +1077,6 @@ conflict.
 
    .. versionadded:: 3.7
 
-.. envvar:: PYTHONHISTORY
-
-   This environment variable can be used to set the location of a
-   ``.python_history`` file (by default, it is ``.python_history`` in the
-   user's home directory).
-
-   .. versionadded:: 3.8
-
 .. envvar:: PYTHONWARNDEFAULTENCODING
 
    If this environment variable is set to a non-empty string, issue a
@@ -1144,6 +1136,14 @@ conflict.
    If this variable is set to ``1``, the interpreter will colorize various kinds
    of output. Setting it to ``0`` deactivates this behavior.
    See also :ref:`using-on-controlling-color`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_HISTORY
+
+   This environment variable can be used to set the location of a
+   ``.python_history`` file (by default, it is ``.python_history`` in the
+   user's home directory).
 
    .. versionadded:: 3.13
 

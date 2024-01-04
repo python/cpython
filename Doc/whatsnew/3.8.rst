@@ -539,10 +539,6 @@ Other Language Changes
   :meth:`~__setstate__` method.
   (Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
 
-* The new :envvar:`PYTHONHISTORY` environment variable can be used to change
-  the location of a ``.python_history`` file.
-  (Contributed by Levi Sabah and Zackery Spytz in :issue:`29779`.)
-
 New Modules
 ===========
 
