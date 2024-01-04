@@ -2392,11 +2392,12 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             else {
+                code->co_executors->executors[oparg & 255] = NULL;
                 opcode = this_instr->op.code = executor->vm_data.opcode;
                 this_instr->op.arg = executor->vm_data.oparg;
                 oparg = (oparg & (~255)) | executor->vm_data.oparg;
-                code->co_executors->executors[oparg&255] = NULL;
                 Py_DECREF(executor);
+                next_instr = this_instr;
                 DISPATCH_GOTO();
             }
             DISPATCH();
