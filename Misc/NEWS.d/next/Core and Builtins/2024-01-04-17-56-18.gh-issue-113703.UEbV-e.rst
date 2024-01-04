@@ -1,0 +1,2 @@
+Fix regression of ``codeop.compile_command`` raising an error when
+encountering incomplete f-strings.

@@ -66,7 +66,7 @@ def _maybe_compile(compiler, source, filename, symbol):
                 compiler(source + "\n", filename, symbol)
                 return None
             except SyntaxError as e:
-                if "incomplete input" in str(e):
+                if "incomplete input" in str(e) or "unterminated triple" in str(e):
                     return None
                 # fallthrough
 

@@ -153,6 +153,10 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         """)
         self.assertIn(expected, output)
 
+    def test_incomplete(self):
+        self.assertEqual(self.console.runsource('a = f"""'), True)
+        self.assertEqual(self.console.runsource('a = \\'), True)
+
 
 class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
 
