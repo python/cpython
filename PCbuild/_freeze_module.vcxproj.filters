@@ -166,6 +166,9 @@
     <ClCompile Include="..\Python\future.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\gc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\gcmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -417,6 +417,7 @@ PYTHON_OBJS=	\
 		Python/frame.o \
 		Python/frozenmain.o \
 		Python/future.o \
+		Python/gc.o \
 		Python/getargs.o \
 		Python/getcompiler.o \
 		Python/getcopyright.o \
