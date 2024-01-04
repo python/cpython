@@ -131,7 +131,7 @@ mi_decl_cache_align static const mi_tld_t tld_empty = {
   0,
   false,
   NULL, NULL,
-  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, tld_empty_stats, tld_empty_os }, // segments
+  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, tld_empty_stats, tld_empty_os, &_mi_abandoned_default }, // segments
   { 0, tld_empty_stats }, // os
   { MI_STATS_NULL }       // stats
 };
@@ -148,7 +148,7 @@ extern mi_heap_t _mi_heap_main;
 static mi_tld_t tld_main = {
   0, false,
   &_mi_heap_main, & _mi_heap_main,
-  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, &tld_main.stats, &tld_main.os }, // segments
+  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, &tld_main.stats, &tld_main.os, &_mi_abandoned_default }, // segments
   { 0, &tld_main.stats },  // os
   { MI_STATS_NULL }       // stats
 };
@@ -308,6 +308,7 @@ void _mi_tld_init(mi_tld_t* tld, mi_heap_t* bheap) {
     _mi_memcpy_aligned(tld, &tld_empty, sizeof(*tld));
     tld->segments.stats = &tld->stats;
     tld->segments.os = &tld->os;
+    tld->segments.abandoned = &_mi_abandoned_default;
     tld->os.stats = &tld->stats;
     tld->heap_backing = bheap;
     tld->heaps = bheap;
