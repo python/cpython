@@ -3924,7 +3924,10 @@ class ConfigDictTest(BaseTest):
 
     def test_111615(self):
         # See gh-111615
-        import multiprocessing as mp
+        try:
+            import multiprocessing as mp
+        except ImportError:  # see gh-113692
+            raise unittest.SkipTest('multiprocessing not available, needed for this test')
 
         config = {
             'version': 1,
