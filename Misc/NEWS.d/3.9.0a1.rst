@@ -2069,7 +2069,7 @@ Restores instantiation of Windows IOCP event loops from the non-main thread.
 .. section: Library
 
 Add default implementation of the :meth:`ast.NodeVisitor.visit_Constant`
-method which emits a deprecation warning and calls corresponding methody
+method which emits a deprecation warning and calls corresponding methods
 ``visit_Num()``, ``visit_Str()``, etc.
 
 ..
@@ -2534,7 +2534,7 @@ object when `self._spec_signature` exists. Patch by Elizabeth Uselton
 .. nonce: iXGuoi
 .. section: Library
 
-Make `from tkinter import *` import only the expected objects.
+Make ``from tkinter import *`` import only the expected objects.
 
 ..
 
@@ -3117,9 +3117,9 @@ Ensure cookies with ``expires`` attribute are handled in
 .. section: Library
 
 Fix an unintended ValueError from :func:`subprocess.run` when checking for
-conflicting `input` and `stdin` or `capture_output` and `stdout` or `stderr`
-args when they were explicitly provided but with `None` values within a
-passed in `**kwargs` dict rather than as passed directly by name. Patch
+conflicting *input* and *stdin* or *capture_output* and *stdout* or *stderr*
+args when they were explicitly provided but with ``None`` values within a
+passed in ``**kwargs`` dict rather than as passed directly by name. Patch
 contributed by Rémi Lapeyre.
 
 ..
@@ -3546,7 +3546,7 @@ Patch by Stein Karlsen.
 .. nonce: XaJDei
 .. section: Library
 
-lib2to3 now recognizes expressions after ``*`` and `**` like in ``f(*[] or
+lib2to3 now recognizes expressions after ``*`` and ``**`` like in ``f(*[] or
 [])``.
 
 ..

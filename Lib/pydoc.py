@@ -201,7 +201,10 @@ def _getargspec(object):
     try:
         signature = inspect.signature(object)
         if signature:
-            return str(signature)
+            name = getattr(object, '__name__', '')
+            # <lambda> function are always single-line and should not be formatted
+            max_width = (80 - len(name)) if name != '<lambda>' else None
+            return signature.format(max_width=max_width)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
@@ -342,6 +345,8 @@ def sort_attributes(attrs, object):
 
 def ispackage(path):
     """Guess whether a path refers to a package directory."""
+    warnings.warn('The pydoc.ispackage() function is deprecated',
+                  DeprecationWarning, stacklevel=2)
     if os.path.isdir(path):
         for ext in ('.py', '.pyc'):
             if os.path.isfile(os.path.join(path, '__init__' + ext)):

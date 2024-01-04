@@ -399,10 +399,14 @@ PEP 626: Precise line numbers for debugging and other tools
 PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
 Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
 
-The ``f_lineno`` attribute of frame objects will always contain the expected line number.
+The :attr:`~frame.f_lineno` attribute of frame objects will always contain the
+expected line number.
 
-The ``co_lnotab`` attribute of code objects is deprecated and will be removed in 3.12.
-Code that needs to convert from offset to line number should use the new ``co_lines()`` method instead.
+The :attr:`~codeobject.co_lnotab` attribute of
+:ref:`code objects <code-objects>` is deprecated and
+will be removed in 3.12.
+Code that needs to convert from offset to line number should use the new
+:meth:`~codeobject.co_lines` method instead.
 
 PEP 634: Structural Pattern Matching
 ------------------------------------
@@ -1276,7 +1280,7 @@ Add negative indexing support to :attr:`PurePath.parents
 (Contributed by Yaroslav Pankovych in :issue:`21041`.)
 
 Add :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
-supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
+supersedes :meth:`!link_to`. The new method has the same argument
 order as :meth:`~pathlib.Path.symlink_to`.
 (Contributed by Barney Gale in :issue:`39950`.)
 
@@ -1738,7 +1742,7 @@ Deprecated
 
   (Contributed by Jelle Zijlstra in :gh:`87889`.)
 
-* :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
+* :meth:`!pathlib.Path.link_to` is deprecated and slated for removal in
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
   (Contributed by Barney Gale in :issue:`39950`.)
 
@@ -1769,7 +1773,7 @@ Deprecated
   * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
     :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
 
-* The threading debug (:envvar:`PYTHONTHREADDEBUG` environment variable) is
+* The threading debug (:envvar:`!PYTHONTHREADDEBUG` environment variable) is
   deprecated in Python 3.10 and will be removed in Python 3.12. This feature
   requires a :ref:`debug build of Python <debug-build>`.
   (Contributed by Victor Stinner in :issue:`44584`.)
@@ -1959,11 +1963,11 @@ Changes in the C API
        source_buf = PyBytes_AsString(source_bytes_object);
        code = Py_CompileString(source_buf, filename, Py_file_input);
 
-  * For ``FrameObject`` objects, the ``f_lasti`` member now represents a wordcode
+  * For ``FrameObject`` objects, the :attr:`~frame.f_lasti` member now represents a wordcode
     offset instead of a simple offset into the bytecode string. This means that this
     number needs to be multiplied by 2 to be used with APIs that expect a byte offset
     instead (like :c:func:`PyCode_Addr2Line` for example). Notice as well that the
-    ``f_lasti`` member of ``FrameObject`` objects is not considered stable: please
+    :attr:`!f_lasti` member of ``FrameObject`` objects is not considered stable: please
     use :c:func:`PyFrame_GetLineNumber` instead.
 
 CPython bytecode changes

@@ -605,8 +605,8 @@ Opt out serialization/deserialization for _random.Random
 .. nonce: jxJ4yn
 .. section: Core and Builtins
 
-Rename `PyPegen*` functions to `PyParser*`, so that we can remove the old
-set of `PyParser*` functions that were using the old parser, but keep
+Rename ``PyPegen*`` functions to ``PyParser*``, so that we can remove the old
+set of ``PyParser*`` functions that were using the old parser, but keep
 everything backwards-compatible.
 
 ..
@@ -2527,7 +2527,7 @@ in Python 3.4 and removed in Python 3.5.
 .. nonce: BE7zbu
 .. section: Library
 
-Fix `cgi.parse_multipart` without content_length. Patch by Roger Duran
+Fix ``cgi.parse_multipart`` without content_length. Patch by Roger Duran
 
 ..
 

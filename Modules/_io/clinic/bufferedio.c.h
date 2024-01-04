@@ -327,6 +327,33 @@ _io__Buffered_simple_flush(buffered *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(_io__Buffered_closed_HAS_DOCSTR)
+#  define _io__Buffered_closed_DOCSTR _io__Buffered_closed__doc__
+#else
+#  define _io__Buffered_closed_DOCSTR NULL
+#endif
+#if defined(_IO__BUFFERED_CLOSED_GETSETDEF)
+#  undef _IO__BUFFERED_CLOSED_GETSETDEF
+#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)_io__Buffered_closed_set, _io__Buffered_closed_DOCSTR},
+#else
+#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, NULL, _io__Buffered_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io__Buffered_closed_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_closed_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_closed_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__Buffered_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -437,6 +464,60 @@ _io__Buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
 
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_writable_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_io__Buffered_name_HAS_DOCSTR)
+#  define _io__Buffered_name_DOCSTR _io__Buffered_name__doc__
+#else
+#  define _io__Buffered_name_DOCSTR NULL
+#endif
+#if defined(_IO__BUFFERED_NAME_GETSETDEF)
+#  undef _IO__BUFFERED_NAME_GETSETDEF
+#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)_io__Buffered_name_set, _io__Buffered_name_DOCSTR},
+#else
+#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, NULL, _io__Buffered_name_DOCSTR},
+#endif
+
+static PyObject *
+_io__Buffered_name_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_name_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_name_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if defined(_io__Buffered_mode_HAS_DOCSTR)
+#  define _io__Buffered_mode_DOCSTR _io__Buffered_mode__doc__
+#else
+#  define _io__Buffered_mode_DOCSTR NULL
+#endif
+#if defined(_IO__BUFFERED_MODE_GETSETDEF)
+#  undef _IO__BUFFERED_MODE_GETSETDEF
+#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)_io__Buffered_mode_set, _io__Buffered_mode_DOCSTR},
+#else
+#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, NULL, _io__Buffered_mode_DOCSTR},
+#endif
+
+static PyObject *
+_io__Buffered_mode_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_mode_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_mode_get_impl(self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -1164,4 +1245,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8ad39a45531d7f2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=442b05b9a117df6c input=a9049054013a1b77]*/

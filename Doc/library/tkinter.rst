@@ -58,8 +58,8 @@ details that are unchanged.
    * `Modern Tkinter for Busy Python Developers <https://tkdocs.com/book.html>`_
       By Mark Roseman. (ISBN 978-1999149567)
 
-   * `Python and Tkinter Programming <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
-      By Alan Moore. (ISBN 978-1788835886)
+   * `Python GUI programming with Tkinter <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
+      By Alan D. Moore. (ISBN 978-1788835886)
 
    * `Programming Python <https://learning-python.com/about-pp4e.html>`_
       By Mark Lutz; has excellent coverage of Tkinter. (ISBN 978-0596158101)
