@@ -226,6 +226,14 @@ typedef unsigned short mode_t;
 #  define UF_COMPRESSED 0x00000020
 #endif
 
+#ifndef UF_TRACKED
+#  define UF_TRACKED 0x00000040
+#endif
+
+#ifndef UF_DATAVAULT
+#  define UF_DATAVAULT 0x00000080
+#endif
+
 #ifndef UF_HIDDEN
 #  define UF_HIDDEN 0x00008000
 #endif
@@ -248,6 +256,14 @@ typedef unsigned short mode_t;
 
 #ifndef SF_SNAPSHOT
 #  define SF_SNAPSHOT 0x00200000
+#endif
+
+#ifndef SF_FIRMLINK
+#  define SF_FIRMLINK 0x00800000
+#endif
+
+#ifndef SF_DATALESS
+#  define SF_DATALESS 0x40000000
 #endif
 
 static mode_t
@@ -472,13 +488,24 @@ UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\
 UF_OPAQUE: directory is opaque when viewed through a union stack\n\
 UF_NOUNLINK: file may not be renamed or deleted\n\
-UF_COMPRESSED: OS X: file is hfs-compressed\n\
-UF_HIDDEN: OS X: file should not be displayed\n\
+UF_COMPRESSED: macOS: file is hfs-compressed\n\
+UF_TRACKED: used for dealing with document IDs\n\
+UF_DATAVAULT: entitlement required for reading and writing\n\
+UF_HIDDEN: macOS: file should not be displayed\n\
 SF_ARCHIVED: file may be archived\n\
 SF_IMMUTABLE: file may not be changed\n\
 SF_APPEND: file may only be appended to\n\
+SF_RESTRICTED: entitlement required for writing\n\
 SF_NOUNLINK: file may not be renamed or deleted\n\
 SF_SNAPSHOT: file is a snapshot file\n\
+SF_FIRMLINK: file is a firmlink\n\
+SF_DATALESS: file is a dataless object\n\
+\n\
+On macOS:\n\
+UF_SETTABLE: mask of owner changable flags\n\
+SF_SETTABLE: mask of super user changeable flags\n\
+SF_SUPPORTED: mask of super user supported flags\n\
+SF_SYNTHETIC: mask of read-only synthetic flags\n\
 \n"
 
 "ST_MODE\n\
@@ -549,12 +576,24 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, UF_OPAQUE);
     ADD_INT_MACRO(module, UF_NOUNLINK);
     ADD_INT_MACRO(module, UF_COMPRESSED);
+    ADD_INT_MACRO(module, UF_TRACKED);
+    ADD_INT_MACRO(module, UF_DATAVAULT);
     ADD_INT_MACRO(module, UF_HIDDEN);
     ADD_INT_MACRO(module, SF_ARCHIVED);
     ADD_INT_MACRO(module, SF_IMMUTABLE);
     ADD_INT_MACRO(module, SF_APPEND);
     ADD_INT_MACRO(module, SF_NOUNLINK);
     ADD_INT_MACRO(module, SF_SNAPSHOT);
+    ADD_INT_MACRO(module, SF_FIRMLINK);
+    ADD_INT_MACRO(module, SF_DATALESS);
+
+#ifdef UF_SETTABLE
+    ADD_INT_MACRO(module, UF_SETTABLE);
+    ADD_INT_MACRO(module, SF_SUPPORTED);
+    ADD_INT_MACRO(module, SF_SETTABLE);
+    ADD_INT_MACRO(module, SF_SYNTHETIC);
+#endif
+
 
     const char* st_constants[] = {
         "ST_MODE",
