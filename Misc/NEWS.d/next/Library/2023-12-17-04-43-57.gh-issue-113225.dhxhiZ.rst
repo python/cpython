@@ -1,0 +1,1 @@
+Speed up :meth:`pathlib.Path.glob` by using :attr:`os.DirEntry.path` where possible.
