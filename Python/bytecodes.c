@@ -2364,17 +2364,28 @@ dummy_func(
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            Py_INCREF(executor);
-            if (executor->execute == _PyUOpExecute) {
-                current_executor = (_PyUOpExecutorObject *)executor;
-                GOTO_TIER_TWO();
+            if (executor->vm_data.valid) {
+                Py_INCREF(executor);
+                if (executor->execute == _PyUOpExecute) {
+                    current_executor = (_PyUOpExecutorObject *)executor;
+                    GOTO_TIER_TWO();
+                }
+                next_instr = executor->execute(executor, frame, stack_pointer);
+                frame = tstate->current_frame;
+                if (next_instr == NULL) {
+                    goto resume_with_error;
+                }
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            next_instr = executor->execute(executor, frame, stack_pointer);
-            frame = tstate->current_frame;
-            if (next_instr == NULL) {
-                goto resume_with_error;
+            else {
+                code->co_executors->executors[oparg & 255] = NULL;
+                opcode = this_instr->op.code = executor->vm_data.opcode;
+                this_instr->op.arg = executor->vm_data.oparg;
+                oparg = (oparg & (~255)) | executor->vm_data.oparg;
+                Py_DECREF(executor);
+                next_instr = this_instr;
+                DISPATCH_GOTO();
             }
-            stack_pointer = _PyFrame_GetStackPointer(frame);
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {

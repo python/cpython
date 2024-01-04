@@ -1347,6 +1347,19 @@ class TestMH(TestMailbox, unittest.TestCase):
         self._box.remove(key1)
         self.assertEqual(self._box.get_sequences(), {'flagged':[key0]})
 
+        self._box.set_sequences({'foo':[key0]})
+        self.assertEqual(self._box.get_sequences(), {'foo':[key0]})
+
+    def test_no_dot_mh_sequences_file(self):
+        path = os.path.join(self._path, 'foo.bar')
+        os.mkdir(path)
+        box = self._factory(path)
+        self.assertEqual(os.listdir(path), [])
+        self.assertEqual(box.get_sequences(), {})
+        self.assertEqual(os.listdir(path), [])
+        box.set_sequences({})
+        self.assertEqual(os.listdir(path), ['.mh_sequences'])
+
     def test_issue2625(self):
         msg0 = mailbox.MHMessage(self._template % 0)
         msg0.add_sequence('foo')
