@@ -247,6 +247,63 @@ class TestFilemode:
             modvalue = getattr(self.statmod, key)
             self.assertEqual(value, modvalue, key)
 
+    @unittest.skipUnless(sys.platform == "darwin", "macOS system check")
+    def test_macosx_attribute_values(self):
+        self.assertEqual(self.statmod.UF_SETTABLE, 0x0000ffff)
+        self.assertEqual(self.statmod.UF_NODUMP, 0x00000001)
+        self.assertEqual(self.statmod.UF_IMMUTABLE, 0x00000002)
+        self.assertEqual(self.statmod.UF_APPEND, 0x00000004)
+        self.assertEqual(self.statmod.UF_OPAQUE, 0x00000008)
+        self.assertEqual(self.statmod.UF_COMPRESSED, 0x00000020)
+        self.assertEqual(self.statmod.UF_TRACKED, 0x00000040)
+        self.assertEqual(self.statmod.UF_DATAVAULT, 0x00000080)
+        self.assertEqual(self.statmod.UF_HIDDEN, 0x00008000)
+
+        self.assertEqual(self.statmod.SF_SUPPORTED, 0x009f0000)
+        self.assertEqual(self.statmod.SF_SETTABLE, 0x3fff0000)
+        self.assertEqual(self.statmod.SF_SYNTHETIC, 0xc0000000)
+        self.assertEqual(self.statmod.SF_ARCHIVED, 0x00010000)
+        self.assertEqual(self.statmod.SF_IMMUTABLE, 0x00020000)
+        self.assertEqual(self.statmod.SF_APPEND, 0x00040000)
+        self.assertEqual(self.statmod.SF_RESTRICTED, 0x00080000)
+        self.assertEqual(self.statmod.SF_NOUNLINK, 0x00100000)
+        self.assertEqual(self.statmod.SF_FIRMLINK, 0x00800000)
+        self.assertEqual(self.statmod.SF_DATALESS, 0x40000000)
+
+        self.assertFalse(isinstance(self.statmod.S_IFMT, int))
+        self.assertEqual(self.statmod.S_IFIFO, 0o010000)
+        self.assertEqual(self.statmod.S_IFCHR, 0o020000)
+        self.assertEqual(self.statmod.S_IFDIR, 0o040000)
+        self.assertEqual(self.statmod.S_IFBLK, 0o060000)
+        self.assertEqual(self.statmod.S_IFREG, 0o100000)
+        self.assertEqual(self.statmod.S_IFLNK, 0o120000)
+        self.assertEqual(self.statmod.S_IFSOCK, 0o140000)
+
+        if self.statmod is c_stat:
+            self.assertEqual(self.statmod.S_IFWHT, 0o160000)
+
+        self.assertEqual(self.statmod.S_IRWXU, 0o000700)
+        self.assertEqual(self.statmod.S_IRUSR, 0o000400)
+        self.assertEqual(self.statmod.S_IWUSR, 0o000200)
+        self.assertEqual(self.statmod.S_IXUSR, 0o000100)
+        self.assertEqual(self.statmod.S_IRWXG, 0o000070)
+        self.assertEqual(self.statmod.S_IRGRP, 0o000040)
+        self.assertEqual(self.statmod.S_IWGRP, 0o000020)
+        self.assertEqual(self.statmod.S_IXGRP, 0o000010)
+        self.assertEqual(self.statmod.S_IRWXO, 0o000007)
+        self.assertEqual(self.statmod.S_IROTH, 0o000004)
+        self.assertEqual(self.statmod.S_IWOTH, 0o000002)
+        self.assertEqual(self.statmod.S_IXOTH, 0o000001)
+        self.assertEqual(self.statmod.S_ISUID, 0o004000)
+        self.assertEqual(self.statmod.S_ISGID, 0o002000)
+        self.assertEqual(self.statmod.S_ISVTX, 0o001000)
+
+        self.assertFalse(hasattr(self.statmod, "S_ISTXT"))
+        self.assertEqual(self.statmod.S_IREAD, self.statmod.S_IRUSR)
+        self.assertEqual(self.statmod.S_IWRITE, self.statmod.S_IWUSR)
+        self.assertEqual(self.statmod.S_IEXEC, self.statmod.S_IXUSR)
+
+
 
 @unittest.skipIf(c_stat is None, 'need _stat extension')
 class TestFilemodeCStat(TestFilemode, unittest.TestCase):
