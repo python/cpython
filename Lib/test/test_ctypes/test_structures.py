@@ -13,6 +13,10 @@ from struct import calcsize
 from collections import namedtuple
 from test import support
 
+StructureType = type(Structure)
+# _CData is not exported to Python, so we have to access it from __base__.
+_CData = Array.__base__
+
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -69,6 +73,25 @@ class StructureTestCase(unittest.TestCase):
                "f": c_float,
                "d": c_double,
                }
+
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(_CData.__name__, "_CData")
+        self.assertEqual(Structure.mro(), [Structure, _CData, object])
+
+        self.assertEqual(StructureType.__name__, "PyCStructType")
+        self.assertEqual(type(StructureType), type)
+
+    def test_instantiation(self):
+        with self.assertRaisesRegex(TypeError, "abstract class"):
+            Structure()
+
+        StructureType("Foo", (Structure,), {})
+
+    def test_immutability(self):
+        for t in [Structure, StructureType]:
+            msg = "cannot set 'foo' attribute of immutable type"
+            with self.assertRaisesRegex(TypeError, msg):
+                t.foo = "bar"
 
     def test_simple_structs(self):
         for code, tp in self.formats.items():

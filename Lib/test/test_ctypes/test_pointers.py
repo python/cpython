@@ -17,8 +17,31 @@ ctype_types = [c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
 python_types = [int, int, int, int, int, int,
                 int, int, int, int, float, float]
 
+PointerType = type(_Pointer)
+# _CData is not exported to Python, so we have to access it from __base__.
+_CData = Structure.__base__
+
 
 class PointersTestCase(unittest.TestCase):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(_CData.__name__, "_CData")
+        self.assertEqual(_Pointer.mro(), [_Pointer, _CData, object])
+
+        self.assertEqual(PointerType.__name__, "PyCPointerType")
+        self.assertEqual(type(PointerType), type)
+
+    def test_abstract_class(self):
+        with self.assertRaisesRegex(TypeError, "Cannot create instance: has no _type"):
+            _Pointer()
+
+        PointerType("Foo", (_Pointer,), {})
+
+    def test_immutability(self):
+        for t in [_Pointer, PointerType]:
+            msg = "cannot set 'foo' attribute of immutable type"
+            with self.assertRaisesRegex(TypeError, msg):
+                t.foo = "bar"
+
     def test_pointer_crash(self):
 
         class A(POINTER(c_ulong)):
