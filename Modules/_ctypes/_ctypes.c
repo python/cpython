@@ -930,7 +930,7 @@ static PyType_Slot pycstruct_type_slots[] = {
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, PyCStructType_new},
-    
+
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
@@ -1529,7 +1529,13 @@ static int
 PyCArrayType_traverse(PyTypeObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
+}
+
+static int
+PyCArrayType_clear(PyObject *self)
+{
+    return PyType_Type.tp_clear(self);
 }
 
 static PyType_Slot pycarray_type_slots[] = {
@@ -1537,6 +1543,7 @@ static PyType_Slot pycarray_type_slots[] = {
     {Py_tp_traverse, PyCArrayType_traverse},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, PyCArrayType_new},
+    {Py_tp_clear, PyCArrayType_clear},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
@@ -2192,7 +2199,13 @@ static int
 PyCSimpleType_traverse(PyTypeObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
+}
+
+static int
+PyCSimpleType_clear(PyObject *self)
+{
+    return PyType_Type.tp_clear(self);
 }
 
 static PyMethodDef PyCSimpleType_methods[] = {
@@ -2209,6 +2222,7 @@ static PyType_Slot pycsimple_type_slots[] = {
     {Py_tp_methods, PyCSimpleType_methods},
     {Py_tp_new, PyCSimpleType_new},
     {Py_tp_traverse, PyCSimpleType_traverse},
+    {Py_tp_clear, PyCSimpleType_clear},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
