@@ -19,8 +19,12 @@ SPHINXERRORHANDLING = -W
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j $(JOBS) \
-                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
+ALLSPHINXOPTS = -b $(BUILDER) \
+                -d build/doctrees \
+                -j $(JOBS) \
+                $(PAPEROPT_$(PAPER)) \
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) \
+                . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help
 help:
@@ -142,7 +146,7 @@ htmlview: html
 
 .PHONY: htmllive
 htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
-htmllive: SPHINXOPTS = --re-ignore="/venv/"
+htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
 htmllive: html
 
 .PHONY: clean

@@ -255,7 +255,7 @@ all tags in a namespace.  Patch by Stefan Behnel.
 .. nonce: Lpm-SI
 .. section: Library
 
-`pathlib.path.link_to()` is now implemented. It creates a hard link pointing
+``pathlib.path.link_to()`` is now implemented. It creates a hard link pointing
 to a path.
 
 ..

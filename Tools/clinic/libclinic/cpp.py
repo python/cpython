@@ -3,6 +3,11 @@ import re
 import sys
 from typing import NoReturn
 
+from .errors import ParseError
+
+
+__all__ = ["Monitor"]
+
 
 TokenAndCondition = tuple[str, str]
 TokenStack = list[TokenAndCondition]
@@ -32,7 +37,7 @@ class Monitor:
 
     Anyway this implementation seems to work well enough for the CPython sources.
     """
-    filename: str | None = None
+    filename: str
     _: dc.KW_ONLY
     verbose: bool = False
 
@@ -59,14 +64,8 @@ class Monitor:
         """
         return " && ".join(condition for token, condition in self.stack)
 
-    def fail(self, *a: object) -> NoReturn:
-        if self.filename:
-            filename = " " + self.filename
-        else:
-            filename = ''
-        print("Error at" + filename, "line", self.line_number, ":")
-        print("   ", ' '.join(str(x) for x in a))
-        sys.exit(-1)
+    def fail(self, msg: str) -> NoReturn:
+        raise ParseError(msg, filename=self.filename, lineno=self.line_number)
 
     def writeline(self, line: str) -> None:
         self.line_number += 1
@@ -74,7 +73,7 @@ class Monitor:
 
         def pop_stack() -> TokenAndCondition:
             if not self.stack:
-                self.fail("#" + token + " without matching #if / #ifdef / #ifndef!")
+                self.fail(f"#{token} without matching #if / #ifdef / #ifndef!")
             return self.stack.pop()
 
         if self.continuation:
@@ -145,7 +144,7 @@ class Monitor:
 
         if token in {'if', 'ifdef', 'ifndef', 'elif'}:
             if not condition:
-                self.fail("Invalid format for #" + token + " line: no argument!")
+                self.fail(f"Invalid format for #{token} line: no argument!")
             if token in {'if', 'elif'}:
                 if not is_a_simple_defined(condition):
                     condition = "(" + condition + ")"
@@ -155,7 +154,8 @@ class Monitor:
             else:
                 fields = condition.split()
                 if len(fields) != 1:
-                    self.fail("Invalid format for #" + token + " line: should be exactly one argument!")
+                    self.fail(f"Invalid format for #{token} line: "
+                              "should be exactly one argument!")
                 symbol = fields[0]
                 condition = 'defined(' + symbol + ')'
                 if token == 'ifndef':

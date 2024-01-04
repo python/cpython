@@ -518,11 +518,11 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
-        uint32_t extras = 0;
+        uint32_t extended = 0;
 
         if (opcode == EXTENDED_ARG) {
             instr++;
-            extras += 1;
+            extended = 1;
             opcode = instr->op.code;
             oparg = (oparg << 8) | instr->op.arg;
             if (opcode == EXTENDED_ARG) {
@@ -577,6 +577,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             }
 
             case JUMP_BACKWARD:
+            case JUMP_BACKWARD_NO_INTERRUPT:
             {
                 if (instr + 2 - oparg == initial_instr && code == initial_code) {
                     RESERVE(1);
@@ -623,15 +624,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         int offset = expansion->uops[i].offset + 1;
                         switch (expansion->uops[i].size) {
                             case OPARG_FULL:
-                                if (extras && OPCODE_HAS_JUMP(opcode)) {
-                                    if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
-                                        oparg -= extras;
-                                    }
-                                    else {
-                                        assert(opcode != JUMP_BACKWARD);
-                                        oparg += extras;
-                                    }
-                                }
+                                assert(opcode != JUMP_BACKWARD_NO_INTERRUPT && opcode != JUMP_BACKWARD);
                                 break;
                             case OPARG_CACHE_1:
                                 operand = read_u16(&instr[offset].cache);
@@ -656,7 +649,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
                                 if (uop == _FOR_ITER_TIER_TWO) {
-                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1;
+                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1 + extended;
                                     assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
                                             _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
                                 }

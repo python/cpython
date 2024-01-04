@@ -123,6 +123,9 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
   const bool force = collect >= MI_FORCE;
   _mi_deferred_free(heap, force);
 
+  // gh-112532: we may be called from a thread that is not the owner of the heap
+  bool is_main_thread = _mi_is_main_thread() && heap->thread_id == _mi_thread_id();
+
   // note: never reclaim on collect but leave it to threads that need storage to reclaim
   const bool force_main =
     #ifdef NDEBUG
@@ -130,7 +133,7 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
     #else
       collect >= MI_FORCE
     #endif
-      && _mi_is_main_thread() && mi_heap_is_backing(heap) && !heap->no_reclaim;
+      && is_main_thread && mi_heap_is_backing(heap) && !heap->no_reclaim;
 
   if (force_main) {
     // the main thread is abandoned (end-of-program), try to reclaim all abandoned segments.
@@ -164,7 +167,7 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
   }
 
   // collect regions on program-exit (or shared library unload)
-  if (force && _mi_is_main_thread() && mi_heap_is_backing(heap)) {
+  if (force && is_main_thread && mi_heap_is_backing(heap)) {
     _mi_thread_data_collect();  // collect thread data cache
     _mi_arena_collect(true /* force purge */, &heap->tld->stats);
   }
@@ -206,18 +209,28 @@ mi_heap_t* mi_heap_get_backing(void) {
   return bheap;
 }
 
+void _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id)
+{
+  _mi_memcpy_aligned(heap, &_mi_heap_empty, sizeof(mi_heap_t));
+  heap->tld = tld;
+  heap->thread_id = _mi_thread_id();
+  heap->arena_id = arena_id;
+  if (heap == tld->heap_backing) {
+    _mi_random_init(&heap->random);
+  }
+  else {
+    _mi_random_split(&tld->heap_backing->random, &heap->random);
+  }
+  heap->cookie = _mi_heap_random_next(heap) | 1;
+  heap->keys[0] = _mi_heap_random_next(heap);
+  heap->keys[1] = _mi_heap_random_next(heap);
+}
+
 mi_decl_nodiscard mi_heap_t* mi_heap_new_in_arena(mi_arena_id_t arena_id) {
   mi_heap_t* bheap = mi_heap_get_backing();
   mi_heap_t* heap = mi_heap_malloc_tp(bheap, mi_heap_t);  // todo: OS allocate in secure mode?
   if (heap == NULL) return NULL;
-  _mi_memcpy_aligned(heap, &_mi_heap_empty, sizeof(mi_heap_t));
-  heap->tld = bheap->tld;
-  heap->thread_id = _mi_thread_id();
-  heap->arena_id = arena_id;
-  _mi_random_split(&bheap->random, &heap->random);
-  heap->cookie = _mi_heap_random_next(heap) | 1;
-  heap->keys[0] = _mi_heap_random_next(heap);
-  heap->keys[1] = _mi_heap_random_next(heap);
+  _mi_heap_init_ex(heap, bheap->tld, arena_id);
   heap->no_reclaim = true;  // don't reclaim abandoned pages or otherwise destroy is unsafe
   // push on the thread local heaps list
   heap->next = heap->tld->heaps;
