@@ -156,7 +156,7 @@ _xidata_init(_PyCrossInterpreterData *data)
     assert(data->data == NULL);
     assert(data->obj == NULL);
     *data = (_PyCrossInterpreterData){0};
-    data->interpid = -1;
+    _PyCrossInterpreterData_INTERPID(data) = -1;
 }
 
 static inline void
@@ -193,7 +193,9 @@ _PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
     // Ideally every object would know its owning interpreter.
     // Until then, we have to rely on the caller to identify it
     // (but we don't need it in all cases).
-    data->interpid = (interp != NULL) ? interp->id : -1;
+    _PyCrossInterpreterData_INTERPID(data) = (interp != NULL)
+        ? interp->id
+        : -1;
     data->new_object = new_object;
 }
 
@@ -223,8 +225,8 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
     assert(data != NULL);
     // This must be called in the owning interpreter.
     assert(interp == NULL
-           || data->interpid == -1
-           || data->interpid == interp->id);
+           || _PyCrossInterpreterData_INTERPID(data) == -1
+           || _PyCrossInterpreterData_INTERPID(data) == interp->id);
     _xidata_clear(data);
 }
 
@@ -238,7 +240,7 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
 
     // data->obj may be NULL, so we don't check it.
 
-    if (data->interpid < 0) {
+    if (_PyCrossInterpreterData_INTERPID(data) < 0) {
         _PyErr_SetString(tstate, PyExc_SystemError, "missing interp");
         return -1;
     }
@@ -318,7 +320,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
-    data->interpid = -1;
+    _PyCrossInterpreterData_INTERPID(data) = -1;
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
@@ -337,7 +339,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    data->interpid = interp->id;
+    _PyCrossInterpreterData_INTERPID(data) = interp->id;
     if (_check_xidata(tstate, data) != 0) {
         (void)_PyCrossInterpreterData_Release(data);
         return -1;
@@ -374,7 +376,8 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
     }
 
     // Switch to the original interpreter.
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interpid);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(
+                                    _PyCrossInterpreterData_INTERPID(data));
     if (interp == NULL) {
         // The interpreter was already destroyed.
         // This function shouldn't have been called.
@@ -811,7 +814,7 @@ _tuple_shared_free(void* data)
 #endif
     for (Py_ssize_t i = 0; i < shared->len; i++) {
         if (shared->data[i] != NULL) {
-            assert(shared->data[i]->interpid == interpid);
+            assert(_PyCrossInterpreterData_INTERPID(shared->data[i]) == interpid);
             _PyCrossInterpreterData_Release(shared->data[i]);
             PyMem_RawFree(shared->data[i]);
             shared->data[i] = NULL;
@@ -1600,7 +1603,7 @@ _sharednsitem_has_value(_PyXI_namespace_item *item, int64_t *p_interpid)
         return 0;
     }
     if (p_interpid != NULL) {
-        *p_interpid = item->data->interpid;
+        *p_interpid = _PyCrossInterpreterData_INTERPID(item->data);
     }
     return 1;
 }
@@ -2014,7 +2017,7 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
     PyThreadState *prev = tstate;
     if (interp != tstate->interp) {
         tstate = PyThreadState_New(interp);
-        tstate->_whence = _PyThreadState_WHENCE_EXEC;
+        _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_EXEC);
         // XXX Possible GILState issues?
         session->prev_tstate = PyThreadState_Swap(tstate);
         assert(session->prev_tstate == prev);
