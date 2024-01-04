@@ -209,14 +209,14 @@ class TimeRE(dict):
             'p': self.__seqToRE(self.locale_time.am_pm, 'p'),
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
-                                'Z'),
+                                'Z', fallback='[a-z]{2,5}'),
             '%': '%'})
         base.__setitem__('W', base.__getitem__('U').replace('U', 'W'))
         base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
         base.__setitem__('x', self.pattern(self.locale_time.LC_date))
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
 
-    def __seqToRE(self, to_convert, directive):
+    def __seqToRE(self, to_convert, directive, fallback=None):
         """Convert a list to a regex string for matching a directive.
 
         Want possible matching values to be from longest to shortest.  This
@@ -232,8 +232,9 @@ class TimeRE(dict):
         else:
             return ''
         regex = '|'.join(re_escape(stuff) for stuff in to_convert)
-        regex = '(?P<%s>%s' % (directive, regex)
-        return '%s)' % regex
+        if fallback is not None:
+            regex = f'({regex})|({fallback})'
+        return f'(?P<{directive}>{regex})'
 
     def pattern(self, format):
         """Return regex pattern for the format string.

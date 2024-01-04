@@ -2611,10 +2611,19 @@ Notes:
 
       1. any value in ``time.tzname`` for your machine's locale
       2. the hard-coded values ``UTC`` and ``GMT``
+      3. any two to five character abbreviation
 
-      So someone living in Japan may have ``JST``, ``UTC``, and ``GMT`` as
-      valid values, but probably not ``EST``. It will raise ``ValueError`` for
-      invalid values.
+      If none of criteria above are met, it will raise a ``ValueError``.
+
+      The string in ``%Z`` cannot be reliably used as an indicator of the timezone
+      because timezone abbreviations are inherently ambiguous. It must be accompanied
+      by ``%z`` to produce a TZ-aware datetime object. Because of this, the validation
+      is fairly lax. If you'd like to be stricter about the validation for ``%Z``, you
+      may check the ``tzname`` property on the datetime object to do so.
+
+   .. versionchanged:: 3.12
+      ``%Z`` accepts a wider range of inputs by matching on any string
+      that is two to five characters.
 
    .. versionchanged:: 3.2
       When the ``%z`` directive is provided to the :meth:`strptime` method, an

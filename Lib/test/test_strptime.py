@@ -400,6 +400,23 @@ class StrptimeTests(unittest.TestCase):
             _strptime._strptime("-01:3030", "%z")
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
+    def test_tz_abbreviations_with_Z(self):
+        create_time_struct = lambda tz_abbr: (
+            (1900, 1, 1, 0, 0, 0, 0, 1, -1, tz_abbr, None), 0, 0
+        )
+        accepted_abbrs = ['CT', 'BST', 'CHST', 'CHADT']
+        for abbr in accepted_abbrs:
+            with self.subTest(f'%Z should match {abbr}'):
+                self.assertEqual(
+                    _strptime._strptime(abbr, "%Z"),
+                    create_time_struct(abbr),
+                )
+        rejected_abbrs = ['', 'A', 'ABCDEF']
+        for abbr in rejected_abbrs:
+            with self.subTest(f'%Z should raise ValueError with {abbr}'):
+                with self.assertRaises(ValueError):
+                    _strptime._strptime(abbr, "%Z")
+
     @skip_if_buggy_ucrt_strfptime
     @unittest.skipIf(
         support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
@@ -758,11 +775,6 @@ class CacheTests(unittest.TestCase):
         second_time_re = _strptime._TimeRE_cache
         # They should not be equal.
         self.assertIsNot(first_time_re, second_time_re)
-        # Make sure old names no longer accepted.
-        with self.assertRaises(ValueError):
-            _strptime._strptime_time(oldtzname[0], '%Z')
-        with self.assertRaises(ValueError):
-            _strptime._strptime_time(oldtzname[1], '%Z')
 
 
 if __name__ == '__main__':
