@@ -115,9 +115,9 @@ S_IXOTH = 0o0001  # execute by others
 if sys.platform == "darwin":
     # Group of bits in st_flags, specific to Apple platforms.
 
-    UF_SETTABLE = 0xffff      # owner settable flags
-    SF_SUPPORTED = 0x9f0000   # superuser supported flags
-    SF_SETTABLE  = 0x3ffff000 # superuser settable flags
+    UF_SETTABLE = 0x0000ffff  # owner settable flags
+    SF_SUPPORTED = 0x009f0000 # superuser supported flags
+    SF_SETTABLE  = 0x3fff0000 # superuser settable flags
     SF_SYNTHETIC = 0xc0000000 # system read-only synthetic flags
 
 UF_NODUMP    = 0x00000001  # do not dump file
@@ -127,7 +127,7 @@ UF_OPAQUE    = 0x00000008  # directory is opaque when viewed through a union sta
 UF_NOUNLINK  = 0x00000010  # file may not be renamed or deleted
 UF_COMPRESSED = 0x00000020 # macOS: file is compressed
 UF_TRACKED   = 0x00000040  # macOS: used for handling document IDs
-UF_DATAVAULT = 0x00008000  # macOS: entitlement needed for I/O
+UF_DATAVAULT = 0x00000080  # macOS: entitlement needed for I/O
 UF_HIDDEN    = 0x00008000  # macOS: file should not be displayed
 SF_ARCHIVED  = 0x00010000  # file may be archived
 SF_IMMUTABLE = 0x00020000  # file may not be changed
