@@ -3141,7 +3141,7 @@ class Win32NtTests(unittest.TestCase):
         # st_ctime and st_mtime should be the same
         self.assertEqual(stat1.st_ctime, stat2.st_ctime)
         self.assertEqual(stat1.st_mtime, stat2.st_mtime)
-        
+
         # st_atime should be the same or later
         self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
 
