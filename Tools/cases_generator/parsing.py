@@ -71,6 +71,9 @@ class Block(Node):
 class StackEffect(Node):
     name: str = field(compare=False)  # __eq__ only uses type, cond, size
     type: str = ""  # Optional `:type`
+    # Optional `(type, aux)`
+    type_prop: None | tuple[str, None | str] = \
+        field(default_factory=lambda: None, init=True, compare=False, hash=False)
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
@@ -253,14 +256,24 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
+        #   IDENTIFIER [':' [IDENTIFIER [TIMES]] ['~' '(' IDENTIFIER ['+' IDENTIFIER] ')']] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
+            type_prop = None
             if self.expect(lx.COLON):
-                type_text = self.require(lx.IDENTIFIER).text.strip()
-                if self.expect(lx.TIMES):
-                    type_text += " *"
+                if i := self.expect(lx.IDENTIFIER):
+                    type_text = i.text.strip()
+                    if self.expect(lx.TIMES):
+                        type_text += " *"
+                if self.expect(lx.NOT):
+                    self.require(lx.LPAREN)
+                    type_prop_text = self.require(lx.IDENTIFIER).text.strip()
+                    aux = None
+                    if self.expect(lx.PLUS):
+                        aux = self.require(lx.IDENTIFIER).text.strip()
+                    type_prop = (type_prop_text, aux)
+                    self.require(lx.RPAREN)
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
@@ -277,7 +290,7 @@ class Parser(PLexer):
                 self.require(lx.RBRACKET)
                 type_text = "PyObject **"
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, cond_text, size_text)
+            return StackEffect(tkn.text, type_text, type_prop, cond_text, size_text)
         return None
 
     @contextual

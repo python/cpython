@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import lexer
 import parser
 from typing import Optional
@@ -21,6 +21,10 @@ class Properties:
     uses_co_names: bool
     uses_locals: bool
     has_free: bool
+
+    pure: bool
+    guard: bool
+    mandatory: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -45,6 +49,10 @@ class Properties:
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
             has_free=any(p.has_free for p in properties),
+
+            pure=all(p.pure for p in properties),
+            guard=all(p.guard for p in properties),
+            mandatory=any(p.mandatory for p in properties),
         )
 
 
@@ -64,6 +72,10 @@ SKIP_PROPERTIES = Properties(
     uses_co_names=False,
     uses_locals=False,
     has_free=False,
+
+    pure=False,
+    guard=False,
+    mandatory=False,
 )
 
 
@@ -88,6 +100,8 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
+    type_prop: None | tuple[str, None | str] = \
+        field(default_factory=lambda: None, init=True, compare=False, hash=False)
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -259,7 +273,7 @@ def override_error(
 
 
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
-    return StackItem(item.name, item.type, item.cond, (item.size or "1"))
+    return StackItem(item.name, item.type, item.cond, (item.size or "1"), type_prop=item.type_prop)
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
@@ -440,6 +454,10 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
         and not has_free,
         has_free=has_free,
+
+        pure="pure" in op.annotations,
+        guard="guard" in op.annotations,
+        mandatory="mandatory" in op.annotations,
     )
 
 

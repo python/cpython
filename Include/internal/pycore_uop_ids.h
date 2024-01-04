@@ -229,9 +229,8 @@ extern "C" {
 #define _GUARD_IS_NOT_NONE_POP 376
 #define _JUMP_TO_TOP 377
 #define _SAVE_RETURN_OFFSET 378
-#define _INSERT 379
-#define _CHECK_VALIDITY 380
-#define MAX_UOP_ID 380
+#define _CHECK_VALIDITY 379
+#define MAX_UOP_ID 379
 
 #ifdef __cplusplus
 }

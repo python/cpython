@@ -1877,6 +1877,59 @@ is_pseudo_target(int pseudo, int target) {
     return false;
 }
 
+extern const uint8_t _PyOpcode_ispure[462];
+#ifdef NEED_OPCODE_METADATA
+const uint8_t _PyOpcode_ispure[462] = {
+    [LOAD_FAST] = 1,
+    [LOAD_FAST_AND_CLEAR] = 1,
+    [LOAD_CONST] = 1,
+    [STORE_FAST] = 1,
+    [POP_TOP] = 1,
+    [PUSH_NULL] = 1,
+    [END_SEND] = 1,
+    [UNARY_NOT] = 1,
+    [COPY] = 1,
+    [SWAP] = 1,
+    [END_FOR] = 1,
+    [RETURN_VALUE] = 1,
+    [RETURN_CONST] = 1,
+    [_BINARY_OP_MULTIPLY_INT] = 1,
+    [_BINARY_OP_ADD_INT] = 1,
+    [_BINARY_OP_SUBTRACT_INT] = 1,
+    [_BINARY_OP_MULTIPLY_FLOAT] = 1,
+    [_BINARY_OP_ADD_FLOAT] = 1,
+    [_BINARY_OP_SUBTRACT_FLOAT] = 1,
+    [_BINARY_OP_ADD_UNICODE] = 1,
+    [_POP_FRAME] = 1,
+    [_INIT_CALL_PY_EXACT_ARGS] = 1,
+    [_PUSH_FRAME] = 1,
+};
+
+#endif // NEED_OPCODE_METADATA
+
+extern const uint8_t _PyOpcode_isguard[462];
+#ifdef NEED_OPCODE_METADATA
+const uint8_t _PyOpcode_isguard[462] = {
+    [RESUME_CHECK] = 1,
+    [_GUARD_BOTH_INT] = 1,
+    [_GUARD_BOTH_FLOAT] = 1,
+    [_GUARD_BOTH_UNICODE] = 1,
+    [_GUARD_GLOBALS_VERSION] = 1,
+    [_GUARD_BUILTINS_VERSION] = 1,
+    [_GUARD_TYPE_VERSION] = 1,
+    [_CHECK_MANAGED_OBJECT_HAS_VALUES] = 1,
+    [_GUARD_DORV_VALUES] = 1,
+    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = 1,
+    [_GUARD_KEYS_VERSION] = 1,
+    [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = 1,
+    [_CHECK_PEP_523] = 1,
+    [_CHECK_FUNCTION_EXACT_ARGS] = 1,
+    [_CHECK_STACK_SPACE] = 1,
+    [_SAVE_RETURN_OFFSET] = 1,
+};
+
+#endif // NEED_OPCODE_METADATA
+
 
 #ifdef __cplusplus
 }

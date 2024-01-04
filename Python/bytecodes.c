@@ -161,7 +161,7 @@ dummy_func(
             }
         }
 
-        inst(RESUME_CHECK, (--)) {
+        mandatory guard inst(RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -208,13 +208,13 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        inst(LOAD_FAST, (-- value)) {
+        pure inst(LOAD_FAST, (-- value)) {
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
         }
 
-        inst(LOAD_FAST_AND_CLEAR, (-- value)) {
+        pure inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = NULL;
@@ -229,12 +229,12 @@ dummy_func(
             Py_INCREF(value2);
         }
 
-        inst(LOAD_CONST, (-- value)) {
+        pure inst(LOAD_CONST, (-- value)) {
             value = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(value);
         }
 
-        inst(STORE_FAST, (value --)) {
+        pure inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -257,11 +257,11 @@ dummy_func(
             SETLOCAL(oparg2, value2);
         }
 
-        inst(POP_TOP, (value --)) {
+        pure inst(POP_TOP, (value --)) {
             DECREF_INPUTS();
         }
 
-        inst(PUSH_NULL, (-- res)) {
+        pure inst(PUSH_NULL, (-- res)) {
             res = NULL;
         }
 
@@ -281,7 +281,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(END_SEND, (receiver, value -- value)) {
+        pure inst(END_SEND, (receiver, value -- value)) {
             Py_DECREF(receiver);
         }
 
@@ -303,7 +303,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(UNARY_NOT, (value -- res)) {
+        pure inst(UNARY_NOT, (value -- res)) {
             assert(PyBool_Check(value));
             res = Py_IsFalse(value) ? Py_True : Py_False;
         }
@@ -411,12 +411,12 @@ dummy_func(
             // BINARY_OP_INPLACE_ADD_UNICODE,  // See comments at that opcode.
         };
 
-        op(_GUARD_BOTH_INT, (left, right -- left, right)) {
+        guard op(_GUARD_BOTH_INT, (left, right -- left:  ~(PYINT_TYPE), right:  ~(PYINT_TYPE))) {
             DEOPT_IF(!PyLong_CheckExact(left));
             DEOPT_IF(!PyLong_CheckExact(right));
         }
 
-        op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
+        pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res: ~(PYINT_TYPE))) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -424,7 +424,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        op(_BINARY_OP_ADD_INT, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_INT, (left, right -- res: ~(PYINT_TYPE))) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -432,7 +432,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
+        pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res: ~(PYINT_TYPE))) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -447,12 +447,12 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_BOTH_INT + unused/1 + _BINARY_OP_SUBTRACT_INT;
 
-        op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
+        guard op(_GUARD_BOTH_FLOAT, (left, right -- left: ~(PYFLOAT_TYPE), right: ~(PYFLOAT_TYPE))) {
             DEOPT_IF(!PyFloat_CheckExact(left));
             DEOPT_IF(!PyFloat_CheckExact(right));
         }
 
-        op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res: ~(PYFLOAT_TYPE))) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval *
@@ -460,7 +460,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res: ~(PYFLOAT_TYPE))) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval +
@@ -468,7 +468,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res: ~(PYFLOAT_TYPE))) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval -
@@ -483,12 +483,12 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_FLOAT) =
             _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_SUBTRACT_FLOAT;
 
-        op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
+        guard op(_GUARD_BOTH_UNICODE, (left, right -- left: ~(PYUNICODE_TYPE), right: ~(PYUNICODE_TYPE))) {
             DEOPT_IF(!PyUnicode_CheckExact(left));
             DEOPT_IF(!PyUnicode_CheckExact(right));
         }
 
-        op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res: ~(PYUNICODE_TYPE))) {
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
@@ -801,7 +801,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        op(_POP_FRAME, (retval --)) {
+        pure op(_POP_FRAME, (retval --)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -1458,14 +1458,14 @@ dummy_func(
             builtins_version/1 +
             _LOAD_GLOBAL;
 
-        op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
+        mandatory guard op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             DEOPT_IF(!PyDict_CheckExact(dict));
             DEOPT_IF(dict->ma_keys->dk_version != version);
             assert(DK_IS_UNICODE(dict->ma_keys));
         }
 
-        op(_GUARD_BUILTINS_VERSION, (version/1 --)) {
+        mandatory guard op(_GUARD_BUILTINS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             DEOPT_IF(!PyDict_CheckExact(dict));
             DEOPT_IF(dict->ma_keys->dk_version != version);
@@ -1900,13 +1900,13 @@ dummy_func(
             LOAD_ATTR,
         };
 
-        op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
+        guard op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner: ~(GUARD_TYPE_VERSION_TYPE + type_version))) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version);
         }
 
-        op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
+        mandatory guard op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
@@ -2081,7 +2081,7 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        op(_GUARD_DORV_VALUES, (owner -- owner)) {
+        guard op(_GUARD_DORV_VALUES, (owner -- owner: ~(GUARD_DORV_VALUES_TYPE))) {
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv));
@@ -2721,7 +2721,7 @@ dummy_func(
             DEOPT_IF(r->len <= 0);
         }
 
-        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+        op(_ITER_NEXT_RANGE, (iter -- iter, next: ~(PYINT_TYPE))) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             assert(r->len > 0);
@@ -2879,13 +2879,13 @@ dummy_func(
             exc_info->exc_value = Py_NewRef(new_exc);
         }
 
-        op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
+        guard op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner: ~(GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE))) {
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
         }
 
-        op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
+        guard op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner: ~(GUARD_KEYS_VERSION_TYPE + keys_version))) {
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
             DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version);
@@ -3100,7 +3100,7 @@ dummy_func(
 
         macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL;
 
-        op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+        guard op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable: ~(PYMETHOD_TYPE), null: ~(NULL_TYPE), unused[oparg])) {
             DEOPT_IF(null != NULL);
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type);
         }
@@ -3114,11 +3114,11 @@ dummy_func(
             Py_DECREF(callable);
         }
 
-        op(_CHECK_PEP_523, (--)) {
+        mandatory guard op(_CHECK_PEP_523, (--)) {
             DEOPT_IF(tstate->interp->eval_frame);
         }
 
-        op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        guard op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable: ~(PYFUNCTION_TYPE_VERSION_TYPE + func_version), self_or_null, unused[oparg])) {
             DEOPT_IF(!PyFunction_Check(callable));
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version);
@@ -3126,14 +3126,14 @@ dummy_func(
             DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL));
         }
 
-        op(_CHECK_STACK_SPACE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        mandatory guard op(_CHECK_STACK_SPACE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        mandatory pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int argcount = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3150,7 +3150,7 @@ dummy_func(
         // The 'unused' output effect represents the return value
         // (which will be pushed when the frame returns).
         // It is needed so CALL_PY_EXACT_ARGS matches its family.
-        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
+        pure op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
@@ -3877,7 +3877,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
+        pure inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
             assert(oparg > 0);
             top = Py_NewRef(bottom);
         }
@@ -3906,7 +3906,7 @@ dummy_func(
 
         macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _BINARY_OP;
 
-        inst(SWAP, (bottom, unused[oparg-2], top --
+        pure inst(SWAP, (bottom, unused[oparg-2], top --
                     top, unused[oparg-2], bottom)) {
             assert(oparg >= 2);
         }
@@ -4042,7 +4042,8 @@ dummy_func(
             frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
         }
 
-        op(_SAVE_RETURN_OFFSET, (--)) {
+        // Not exactly a guard, but not pure either, is just required.
+        mandatory guard op(_SAVE_RETURN_OFFSET, (--)) {
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             #endif
@@ -4056,10 +4057,6 @@ dummy_func(
             DEOPT_IF(1);
         }
 
-        op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {
-            // Inserts TOS at position specified by oparg;
-            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
-        }
 
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY

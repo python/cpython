@@ -330,6 +330,32 @@ def generate_pseudo_targets(analysis: Analysis, out: CWriter) -> None:
     out.emit("}\n\n")
 
 
+def generate_tier2_properties(analysis: Analysis, out: CWriter) -> None:
+    table_size = len(analysis.instructions) + len(analysis.uops)
+
+    out.emit(f"extern const uint8_t _PyOpcode_ispure[{table_size}];\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
+    out.emit(f"const uint8_t _PyOpcode_ispure[{table_size}] = {{\n")
+
+    for name, inst in (analysis.instructions | analysis.uops).items():
+        if inst.properties.pure:
+            out.emit(f"[{name}] = 1,\n")
+
+    out.emit("};\n\n")
+    out.emit("#endif // NEED_OPCODE_METADATA\n\n")
+
+    out.emit(f"extern const uint8_t _PyOpcode_isguard[{table_size}];\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
+    out.emit(f"const uint8_t _PyOpcode_isguard[{table_size}] = {{\n")
+
+    for name, inst in (analysis.instructions | analysis.uops).items():
+        if inst.properties.guard:
+            out.emit(f"[{name}] = 1,\n")
+
+    out.emit("};\n\n")
+    out.emit("#endif // NEED_OPCODE_METADATA\n\n")
+
+
 def generate_opcode_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO
 ) -> None:
@@ -358,6 +384,8 @@ def generate_opcode_metadata(
         generate_deopt_table(analysis, out)
         generate_extra_cases(analysis, out)
         generate_pseudo_targets(analysis, out)
+        generate_tier2_properties(analysis, out)
+
 
 
 arg_parser = argparse.ArgumentParser(
