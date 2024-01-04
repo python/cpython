@@ -1,27 +1,6 @@
-/*
-
-  Reference Cycle Garbage Collection
-  ==================================
-
-  Neil Schemenauer <nas@arctrix.com>
-
-  Based on a post on the python-dev list.  Ideas from Guido van Rossum,
-  Eric Tiedemann, and various others.
-
-  http://www.arctrix.com/nas/python/gc/
-
-  The following mailing list threads provide a historical perspective on
-  the design of this module.  Note that a fair amount of refinement has
-  occurred since those discussions.
-
-  http://mail.python.org/pipermail/python-dev/2000-March/002385.html
-  http://mail.python.org/pipermail/python-dev/2000-March/002434.html
-  http://mail.python.org/pipermail/python-dev/2000-March/002497.html
-
-  For a highlevel view of the collection process, read the collect
-  function.
-
-*/
+//  This implements the reference cycle garbage collector.
+//  The Python module inteface to the collector is in gcmodule.c.
+//  See https://devguide.python.org/internals/garbage-collector/
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
