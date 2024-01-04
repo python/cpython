@@ -301,7 +301,13 @@ class Path(_abc.PathBase, PurePath):
 
     def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
-        return self._make_child_relpath(entry.name)
+        path_str = entry.name if str(self) == '.' else entry.path
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = self._tail + [entry.name]
+        return path
 
     def absolute(self):
         """Return an absolute version of this path
