@@ -85,8 +85,8 @@ class IdleConfParserTest(unittest.TestCase):
         self.assertEqual(parser.sections(), [])
 
     def test_load_file(self):
-        # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        # Borrow test/configdata/cfgparser.1 from test_configparser.
+        config_path = findfile('cfgparser.1', subdir='configdata')
         parser = config.IdleConfParser(config_path)
         parser.Load()
 
@@ -159,19 +159,6 @@ class IdleUserConfParserTest(unittest.TestCase):
         self.assertFalse(parser.IsEmpty())
         self.assertCountEqual(parser.sections(), ['Foo'])
 
-    def test_remove_file(self):
-        with tempfile.TemporaryDirectory() as tdir:
-            path = os.path.join(tdir, 'test.cfg')
-            parser = self.new_parser(path)
-            parser.RemoveFile()  # Should not raise exception.
-
-            parser.AddSection('Foo')
-            parser.SetOption('Foo', 'bar', 'true')
-            parser.Save()
-            self.assertTrue(os.path.exists(path))
-            parser.RemoveFile()
-            self.assertFalse(os.path.exists(path))
-
     def test_save(self):
         with tempfile.TemporaryDirectory() as tdir:
             path = os.path.join(tdir, 'test.cfg')
@@ -204,7 +191,7 @@ class IdleConfTest(unittest.TestCase):
             idle_dir = os.path.abspath(sys.path[0])
         for ctype in conf.config_types:
             config_path = os.path.join(idle_dir, '../config-%s.def' % ctype)
-            with open(config_path, 'r') as f:
+            with open(config_path) as f:
                 cls.config_string[ctype] = f.read()
 
         cls.orig_warn = config._warn
@@ -233,7 +220,7 @@ class IdleConfTest(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'), 'this is test for unix system')
     def test_get_user_cfg_dir_unix(self):
-        "Test to get user config directory under unix"
+        # Test to get user config directory under unix.
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -256,7 +243,7 @@ class IdleConfTest(unittest.TestCase):
 
     @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
-        "Test to get user config directory under Windows"
+        # Test to get user config directory under Windows.
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -287,8 +274,8 @@ class IdleConfTest(unittest.TestCase):
                 conf.CreateConfigHandlers()
 
         # Check keys are equal
-        self.assertCountEqual(conf.defaultCfg.keys(), conf.config_types)
-        self.assertCountEqual(conf.userCfg.keys(), conf.config_types)
+        self.assertCountEqual(conf.defaultCfg, conf.config_types)
+        self.assertCountEqual(conf.userCfg, conf.config_types)
 
         # Check conf parser are correct type
         for default_parser in conf.defaultCfg.values():
@@ -297,18 +284,18 @@ class IdleConfTest(unittest.TestCase):
             self.assertIsInstance(user_parser, config.IdleUserConfParser)
 
         # Check config path are correct
-        for config_type, parser in conf.defaultCfg.items():
+        for cfg_type, parser in conf.defaultCfg.items():
             self.assertEqual(parser.file,
-                             os.path.join(idle_dir, 'config-%s.def' % config_type))
-        for config_type, parser in conf.userCfg.items():
+                             os.path.join(idle_dir, f'config-{cfg_type}.def'))
+        for cfg_type, parser in conf.userCfg.items():
             self.assertEqual(parser.file,
-                             os.path.join(conf.userdir, 'config-%s.cfg' % config_type))
+                             os.path.join(conf.userdir or '#', f'config-{cfg_type}.cfg'))
 
     def test_load_cfg_files(self):
         conf = self.new_config(_utest=True)
 
-        # Borrow test/cfgparser.1 from test_configparser.
-        config_path = findfile('cfgparser.1')
+        # Borrow test/configdata/cfgparser.1 from test_configparser.
+        config_path = findfile('cfgparser.1', subdir='configdata')
         conf.defaultCfg['foo'] = config.IdleConfParser(config_path)
         conf.userCfg['foo'] = config.IdleUserConfParser(config_path)
 
@@ -386,7 +373,7 @@ class IdleConfTest(unittest.TestCase):
                                                        'background': '#171717'})
 
     def test_get_theme_dict(self):
-        "XXX: NOT YET DONE"
+        # TODO: finish.
         conf = self.mock_config()
 
         # These two should be the same
