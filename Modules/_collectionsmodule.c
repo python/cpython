@@ -488,6 +488,7 @@ consume_iterator(PyObject *it)
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.extend
 
     deque: dequeobject
@@ -498,30 +499,30 @@ Extend the right side of the deque with elements from the iterable
 [clinic start generated code]*/
 
 static PyObject *
-_collections_deque_extend(dequeobject *deque, PyObject *iterable)
-/*[clinic end generated code: output=a58014bf32cb0b9d input=5a75e68f72ed8f09]*/
+_collections_deque_extend_impl(dequeobject *deque, PyObject *iterable)
+/*[clinic end generated code: output=f3e9dc9c46c1743e input=dc36931049537123]*/
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
-    Py_ssize_t maxlen = deque->maxlen;
+    PyObject *list = NULL;
+    PyObject *result = NULL;
 
     /* Handle case where id(deque) == id(iterable) */
     if ((PyObject *)deque == iterable) {
-        PyObject *result;
-        PyObject *s = PySequence_List(iterable);
-        if (s == NULL)
+        list = PySequence_List(iterable);
+        if (list == NULL)
             return NULL;
-        result = _collections_deque_extend(deque, s);
-        Py_DECREF(s);
-        return result;
+        iterable = list;
     }
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
-        return NULL;
+        goto done;
 
-    if (maxlen == 0)
-        return consume_iterator(it);
+    if (deque->maxlen == 0) {
+        result = consume_iterator(it);
+        goto done;
+    }
 
     /* Space saving heuristic.  Start filling from the left */
     if (Py_SIZE(deque) == 0) {
@@ -538,10 +539,14 @@ _collections_deque_extend(dequeobject *deque, PyObject *iterable)
         Py_XDECREF(res.trimmed);
         if (res.err) {
             Py_DECREF(it);
-            return NULL;
+            goto done;
         }
     }
-    return finalize_iterator(it);
+    result = finalize_iterator(it);
+
+done:
+    Py_XDECREF(list);
+    return result;
 }
 
 /*[clinic input]

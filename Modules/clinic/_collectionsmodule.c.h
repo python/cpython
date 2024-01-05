@@ -115,6 +115,21 @@ PyDoc_STRVAR(_collections_deque_extend__doc__,
 #define _COLLECTIONS_DEQUE_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)_collections_deque_extend, METH_O, _collections_deque_extend__doc__},
 
+static PyObject *
+_collections_deque_extend_impl(dequeobject *deque, PyObject *iterable);
+
+static PyObject *
+_collections_deque_extend(dequeobject *deque, PyObject *iterable)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque_extend_impl(deque, iterable);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_collections_deque_extendleft__doc__,
 "extendleft($self, iterable, /)\n"
 "--\n"
@@ -575,4 +590,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b5cbcfc19c5a2f7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=871228ba5b3cd690 input=a9049054013a1b77]*/
