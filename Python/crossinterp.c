@@ -128,21 +128,21 @@ _init_not_shareable_error_type(PyInterpreterState *interp)
         return _PyStatus_ERR("could not initialize NotShareableError");
     }
 
-    interp->xi.PyExc_NotShareableError = exctype;
+    _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError = exctype;
     return _PyStatus_OK();
 }
 
 static void
 _fini_not_shareable_error_type(PyInterpreterState *interp)
 {
-    Py_CLEAR(interp->xi.PyExc_NotShareableError);
+    Py_CLEAR(_PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError);
 }
 
 static PyObject *
 _get_not_shareable_error_type(PyInterpreterState *interp)
 {
-    assert(interp->xi.PyExc_NotShareableError != NULL);
-    return interp->xi.PyExc_NotShareableError;
+    assert(_PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError != NULL);
+    return _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
 }
 
 
@@ -420,13 +420,13 @@ _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
 static inline struct _xidregistry *
 _get_global_xidregistry(_PyRuntimeState *runtime)
 {
-    return &runtime->xi.registry;
+    return &_PyRuntimeState_GetXIState(runtime)->registry;
 }
 
 static inline struct _xidregistry *
 _get_xidregistry(PyInterpreterState *interp)
 {
-    return &interp->xi.registry;
+    return &_PyInterpreterState_GetXIState(interp)->registry;
 }
 
 static inline struct _xidregistry *
