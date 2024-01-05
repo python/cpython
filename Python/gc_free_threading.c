@@ -27,5 +27,4 @@ _PyGC_Clear_FreeList(PyInterpreterState *interp)
     HEAD_UNLOCK(&_PyRuntime);
 }
 
-
 #endif

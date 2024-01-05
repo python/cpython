@@ -21,4 +21,5 @@ _PyGC_Clear_FreeList(PyInterpreterState *interp)
     _PyFreeListState* state = _PyFreeListState_GET();
     _PyList_ClearFreeList(state);
 }
+
 #endif
