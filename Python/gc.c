@@ -777,8 +777,9 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
             _PyWeakref_ClearRef((PyWeakReference *)op);
         }
 
-        if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
+        if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
             continue;
+        }
 
         /* It supports weakrefs.  Does it have any?
          *
@@ -870,10 +871,12 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 
         /* copy-paste of weakrefobject.c's handle_callback() */
         temp = PyObject_CallOneArg(callback, (PyObject *)wr);
-        if (temp == NULL)
+        if (temp == NULL) {
             PyErr_WriteUnraisable(callback);
-        else
+        }
+        else {
             Py_DECREF(temp);
+        }
 
         /* Give up the reference we created in the first pass.  When
          * op's refcount hits 0 (which it may or may not do right now),
@@ -961,7 +964,8 @@ finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
         PyObject *op = FROM_GC(gc);
         gc_list_move(gc, &seen);
         if (!_PyGCHead_FINALIZED(gc) &&
-                (finalize = Py_TYPE(op)->tp_finalize) != NULL) {
+            (finalize = Py_TYPE(op)->tp_finalize) != NULL)
+        {
             _PyGCHead_SET_FINALIZED(gc);
             Py_INCREF(op);
             finalize(op);
@@ -1264,7 +1268,9 @@ gc_select_generation(GCState *gcstate)
             */
             if (i == NUM_GENERATIONS - 1
                 && gcstate->long_lived_pending < gcstate->long_lived_total / 4)
+            {
                 continue;
+            }
             return i;
         }
     }
@@ -1329,14 +1335,17 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         t1 = _PyTime_GetPerfCounter();
     }
 
-    if (PyDTrace_GC_START_ENABLED())
+    if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
+    }
 
     /* update collection and allocation counters */
-    if (generation+1 < NUM_GENERATIONS)
+    if (generation+1 < NUM_GENERATIONS) {
         gcstate->generations[generation+1].count += 1;
-    for (i = 0; i <= generation; i++)
+    }
+    for (i = 0; i <= generation; i++) {
         gcstate->generations[i].count = 0;
+    }
 
     /* merge younger generations with one we are currently collecting */
     for (i = 0; i < generation; i++) {
@@ -1483,9 +1492,11 @@ referrersvisit(PyObject* obj, void *arg)
 {
     PyObject *objs = arg;
     Py_ssize_t i;
-    for (i = 0; i < PyTuple_GET_SIZE(objs); i++)
-        if (PyTuple_GET_ITEM(objs, i) == obj)
+    for (i = 0; i < PyTuple_GET_SIZE(objs); i++) {
+        if (PyTuple_GET_ITEM(objs, i) == obj) {
             return 1;
+        }
+    }
     return 0;
 }
 
@@ -1498,11 +1509,13 @@ gc_referrers_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
     for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(gc)) {
         obj = FROM_GC(gc);
         traverse = Py_TYPE(obj)->tp_traverse;
-        if (obj == objs || obj == resultlist)
+        if (obj == objs || obj == resultlist) {
             continue;
+        }
         if (traverse(obj, referrersvisit, objs)) {
-            if (PyList_Append(resultlist, obj) < 0)
+            if (PyList_Append(resultlist, obj) < 0) {
                 return 0; /* error */
+            }
         }
     }
     return 1; /* no error */
@@ -1652,24 +1665,28 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
     if (!(gcstate->debug & _PyGC_DEBUG_SAVEALL)
         && gcstate->garbage != NULL && PyList_GET_SIZE(gcstate->garbage) > 0) {
         const char *message;
-        if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE)
-            message = "gc: %zd uncollectable objects at " \
-                "shutdown";
-        else
-            message = "gc: %zd uncollectable objects at " \
-                "shutdown; use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them";
+        if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
+            message = "gc: %zd uncollectable objects at shutdown";
+        }
+        else {
+            message = "gc: %zd uncollectable objects at shutdown; " \
+                "use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them";
+        }
         /* PyErr_WarnFormat does too many things and we are at shutdown,
            the warnings module's dependencies (e.g. linecache) may be gone
            already. */
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
                                      "gc", NULL, message,
                                      PyList_GET_SIZE(gcstate->garbage)))
+        {
             PyErr_WriteUnraisable(NULL);
+        }
         if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
             PyObject *repr = NULL, *bytes = NULL;
             repr = PyObject_Repr(gcstate->garbage);
-            if (!repr || !(bytes = PyUnicode_EncodeFSDefault(repr)))
+            if (!repr || !(bytes = PyUnicode_EncodeFSDefault(repr))) {
                 PyErr_WriteUnraisable(gcstate->garbage);
+            }
             else {
                 PySys_WriteStderr(
                     "      %s\n",
