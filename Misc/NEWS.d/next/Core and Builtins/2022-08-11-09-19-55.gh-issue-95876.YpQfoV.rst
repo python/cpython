@@ -1,4 +1,0 @@
-Fix format string in ``_PyPegen_raise_error_known_location`` that can lead
-to memory corruption on some 64bit systems. The function was building a
-tuple with ``i`` (int) instead of ``n`` (Py_ssize_t) for Py_ssize_t
-arguments.

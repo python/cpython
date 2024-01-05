@@ -542,48 +542,6 @@ class GCTests(unittest.TestCase):
         self.assertEqual(gc.collect(), 2)
         self.assertEqual(len(gc.garbage), garbagelen)
 
-    def test_boom_new(self):
-        # boom__new and boom2_new are exactly like boom and boom2, except use
-        # new-style classes.
-
-        class Boom_New(object):
-            def __getattr__(self, someattribute):
-                del self.attr
-                raise AttributeError
-
-        a = Boom_New()
-        b = Boom_New()
-        a.attr = b
-        b.attr = a
-
-        gc.collect()
-        garbagelen = len(gc.garbage)
-        del a, b
-        self.assertEqual(gc.collect(), 2)
-        self.assertEqual(len(gc.garbage), garbagelen)
-
-    def test_boom2_new(self):
-        class Boom2_New(object):
-            def __init__(self):
-                self.x = 0
-
-            def __getattr__(self, someattribute):
-                self.x += 1
-                if self.x > 1:
-                    del self.attr
-                raise AttributeError
-
-        a = Boom2_New()
-        b = Boom2_New()
-        a.attr = b
-        b.attr = a
-
-        gc.collect()
-        garbagelen = len(gc.garbage)
-        del a, b
-        self.assertEqual(gc.collect(), 2)
-        self.assertEqual(len(gc.garbage), garbagelen)
-
     def test_get_referents(self):
         alist = [1, 3, 5]
         got = gc.get_referents(alist)

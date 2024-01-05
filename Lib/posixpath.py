@@ -28,14 +28,14 @@ import stat
 import genericpath
 from genericpath import *
 
-__all__ = ["normcase","isabs","join","splitdrive","split","splitext",
+__all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime","islink","exists","lexists","isdir","isfile",
            "ismount", "expanduser","expandvars","normpath","abspath",
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath"]
+           "commonpath", "isjunction"]
 
 
 def _get_sep(path):
@@ -135,6 +135,35 @@ def splitdrive(p):
     return p[:0], p
 
 
+def splitroot(p):
+    """Split a pathname into drive, root and tail. On Posix, drive is always
+    empty; the root may be empty, a single slash, or two slashes. The tail
+    contains anything after the root. For example:
+
+        splitroot('foo/bar') == ('', '', 'foo/bar')
+        splitroot('/foo/bar') == ('', '/', 'foo/bar')
+        splitroot('//foo/bar') == ('', '//', 'foo/bar')
+        splitroot('///foo/bar') == ('', '/', '//foo/bar')
+    """
+    p = os.fspath(p)
+    if isinstance(p, bytes):
+        sep = b'/'
+        empty = b''
+    else:
+        sep = '/'
+        empty = ''
+    if p[:1] != sep:
+        # Relative path, e.g.: 'foo'
+        return empty, empty, p
+    elif p[1:2] != sep or p[2:3] == sep:
+        # Absolute path, e.g.: '/foo', '///foo', '////foo', etc.
+        return empty, sep, p[1:]
+    else:
+        # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
+        # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
+        return empty, p[:2], p[2:]
+
+
 # Return the tail (basename) part of a path, same as split(path)[1].
 
 def basename(p):
@@ -158,16 +187,14 @@ def dirname(p):
     return head
 
 
-# Is a path a symbolic link?
-# This will always return false on systems where os.lstat doesn't exist.
+# Is a path a junction?
 
-def islink(path):
-    """Test whether a path is a symbolic link"""
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError, AttributeError):
-        return False
-    return stat.S_ISLNK(st.st_mode)
+def isjunction(path):
+    """Test whether a path is a junction
+    Junctions are not a part of posix semantics"""
+    os.fspath(path)
+    return False
+
 
 # Being true for dangling symbolic links is also useful.
 
@@ -195,6 +222,7 @@ def ismount(path):
         if stat.S_ISLNK(s1.st_mode):
             return False
 
+    path = os.fspath(path)
     if isinstance(path, bytes):
         parent = join(path, b'..')
     else:
@@ -361,13 +389,7 @@ except ImportError:
             dotdot = '..'
         if path == empty:
             return dot
-        initial_slashes = path.startswith(sep)
-        # POSIX allows one or two initial slashes, but treats three or more
-        # as single slash.
-        # (see https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13)
-        if (initial_slashes and
-            path.startswith(sep*2) and not path.startswith(sep*3)):
-            initial_slashes = 2
+        _, initial_slashes, path = splitroot(path)
         comps = path.split(sep)
         new_comps = []
         for comp in comps:
@@ -379,9 +401,7 @@ except ImportError:
             elif new_comps:
                 new_comps.pop()
         comps = new_comps
-        path = sep.join(comps)
-        if initial_slashes:
-            path = sep*initial_slashes + path
+        path = initial_slashes + sep.join(comps)
         return path or dot
 
 else:

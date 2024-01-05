@@ -1,0 +1,1 @@
+Fix import of :mod:`unittest.mock` when CPython is built without docstrings.

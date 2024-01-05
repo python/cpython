@@ -1,2 +1,0 @@
-Suppress writing an XML declaration in open files in ``ElementTree.write()``
-with ``encoding='unicode'`` and ``xml_declaration=None``.

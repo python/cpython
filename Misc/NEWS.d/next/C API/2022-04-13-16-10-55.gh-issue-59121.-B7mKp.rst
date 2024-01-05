@@ -1,1 +1,0 @@
-Fixed an assert that prevented ``PyRun_InteractiveOne`` from providing tracebacks when parsing from the provided FD.

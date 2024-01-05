@@ -1,2 +1,0 @@
-Fix a crash occurring when :c:func:`PyEval_GetFrame` is called while the
-topmost Python frame is in a partially-initialized state.

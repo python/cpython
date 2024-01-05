@@ -1,5 +1,0 @@
-:exc:`NameError` and :exc:`AttributeError` spelling suggestions provided
-since :gh:`82711` are now also emitted by the pure Python
-:mod:`traceback` module. Tests for those suggestions now exercise both
-implementations to ensure they are equivalent. Patch by Carl Friedrich
-Bolz-Tereick and Łukasz Langa.

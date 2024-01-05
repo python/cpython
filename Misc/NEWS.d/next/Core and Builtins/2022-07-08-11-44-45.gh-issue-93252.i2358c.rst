@@ -1,2 +1,0 @@
-Fix an issue that caused internal frames to outlive failed Python function
-calls, possibly resulting in memory leaks or hard interpreter crashes.

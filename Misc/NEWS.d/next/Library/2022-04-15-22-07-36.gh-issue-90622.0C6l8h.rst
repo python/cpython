@@ -1,4 +1,0 @@
-Worker processes for :class:`concurrent.futures.ProcessPoolExecutor` are no
-longer spawned on demand (a feature added in 3.9) when the multiprocessing
-context start method is ``"fork"`` as that can lead to deadlocks in the
-child processes due to a fork happening while threads are running.

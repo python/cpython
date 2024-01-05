@@ -686,7 +686,7 @@ added.
 
 Update documentation to state that to activate virtual environments under
 fish one should use `source`, not `.` as documented at
-https://fishshell.com/docs/current/commands.html#source.
+https://fishshell.com/docs/current/cmds/source.html.
 
 ..
 
