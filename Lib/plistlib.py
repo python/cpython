@@ -890,8 +890,8 @@ def loads(value, *, fmt=None, dict_type=dict):
     """
     if isinstance(value, str):
         if fmt == FMT_BINARY:
-            msg = "value must be bytes-like object when fmt is FMT_BINARY"
-            raise TypeError(msg)
+            raise TypeError("value must be bytes-like object when fmt is "
+                            "FMT_BINARY")
         value = value.encode()
     fp = BytesIO(value)
     return load(fp, fmt=fmt, dict_type=dict_type)
