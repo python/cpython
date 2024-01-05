@@ -61,7 +61,7 @@ Function Objects
 
 .. class:: Function
 
-   Class :class:`Function` instances describe functions defined by def
+   Class :class:`!Function` instances describe functions defined by def
    statements.  They have the following attributes:
 
 
@@ -114,7 +114,7 @@ Class Objects
 
 .. class:: Class
 
-   Class :class:`Class` instances describe classes defined by class
+   Class :class:`!Class` instances describe classes defined by class
    statements.  They have the same attributes as Functions and two more.
 
 
@@ -155,11 +155,11 @@ Class Objects
 
    .. attribute:: super
 
-      A list of :class:`Class` objects which describe the immediate base
+      A list of :class:`!Class` objects which describe the immediate base
       classes of the class being described.  Classes which are named as
       superclasses but which are not discoverable by :func:`readmodule_ex`
       are listed as a string with the class name instead of as
-      :class:`Class` objects.
+      :class:`!Class` objects.
 
 
    .. attribute:: methods
