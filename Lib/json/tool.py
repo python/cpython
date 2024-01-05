@@ -13,6 +13,7 @@ Usage::
 import argparse
 import json
 import sys
+from pathlib import Path
 
 
 def main():
@@ -25,9 +26,9 @@ def main():
                         help='a JSON file to be validated or pretty-printed',
                         default=sys.stdin)
     parser.add_argument('outfile', nargs='?',
-                        type=argparse.FileType('w', encoding="utf-8"),
+                        type=Path,
                         help='write the output of infile to outfile',
-                        default=sys.stdout)
+                        default=None)
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     parser.add_argument('--no-ensure-ascii', dest='ensure_ascii', action='store_false',
@@ -58,15 +59,21 @@ def main():
         dump_args['indent'] = None
         dump_args['separators'] = ',', ':'
 
-    with options.infile as infile, options.outfile as outfile:
+    with options.infile as infile:
         try:
             if options.json_lines:
                 objs = (json.loads(line) for line in infile)
             else:
-                objs = (json.load(infile), )
-            for obj in objs:
-                json.dump(obj, outfile, **dump_args)
-                outfile.write('\n')
+                objs = (json.load(infile),)
+
+            if options.outfile is None:
+                out = sys.stdout
+            else:
+                out = options.outfile.open('w', encoding='utf-8')
+            with out as outfile:
+                for obj in objs:
+                    json.dump(obj, outfile, **dump_args)
+                    outfile.write('\n')
         except ValueError as e:
             raise SystemExit(e)
 
