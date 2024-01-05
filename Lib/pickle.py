@@ -1791,7 +1791,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files')
     parser.add_argument(
-        'pickle_file', type=argparse.FileType('br'),
+        'pickle_file',
         nargs='*', help='the pickle file')
     parser.add_argument(
         '-t', '--test', action='store_true',
@@ -1807,6 +1807,10 @@ if __name__ == "__main__":
             parser.print_help()
         else:
             import pprint
-            for f in args.pickle_file:
-                obj = load(f)
+            for fn in args.pickle_file:
+                if fn == '-':
+                    obj = load(sys.stdin.buffer)
+                else:
+                    with open(fn, 'rb') as f:
+                        obj = load(f)
                 pprint.pprint(obj)
