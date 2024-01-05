@@ -4,8 +4,6 @@
   What's New in Python 2.6
 ****************************
 
-.. XXX add trademark info for Apple, Microsoft, SourceForge.
-
 :Author: A.M. Kuchling (amk at amk.ca)
 
 .. $Id$
@@ -1051,8 +1049,6 @@ the :mod:`io` module:
   sockets, but Python 2.6 hasn't restructured its file and socket objects
   in this way.
 
-  .. XXX should 2.6 register them in io.py?
-
 * :class:`BufferedIOBase` is an abstract base class that
   buffers data in memory to reduce the number of
   system calls used, making I/O processing more efficient.
@@ -1132,8 +1128,6 @@ can use this operation to lock memory in place
 while an external caller could be modifying the contents,
 so there's a corresponding ``PyBuffer_Release(Py_buffer *view)`` to
 indicate that the external caller is done.
-
-.. XXX PyObject_GetBuffer not documented in c-api
 
 The *flags* argument to :c:func:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
