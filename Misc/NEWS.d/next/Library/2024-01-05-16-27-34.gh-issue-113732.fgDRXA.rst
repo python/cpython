@@ -1,0 +1,2 @@
+Fix support of :data:`~csv.QUOTE_NOTNULL` and :data:`~csv.QUOTE_STRINGS` in
+:func:`csv.reader`.
