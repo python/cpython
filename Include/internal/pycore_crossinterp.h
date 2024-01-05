@@ -194,7 +194,6 @@ extern void _PyXI_Fini(PyInterpreterState *interp);
 extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
 extern void _PyXI_FiniTypes(PyInterpreterState *interp);
 
-#define _PyRuntimeState_GetXIState(runtime) (&(runtime)->xi)
 #define _PyInterpreterState_GetXIState(interp) (&(interp)->xi)
 
 
