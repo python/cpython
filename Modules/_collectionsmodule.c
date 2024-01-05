@@ -1203,6 +1203,7 @@ deque_len(dequeobject *deque)
 }
 
 /*[clinic input]
+@critical_section
 @text_signature "($self, value, [start, [stop]])"
 _collections.deque.index
 
@@ -1220,7 +1221,7 @@ Raises ValueError if the value is not present.
 static PyObject *
 _collections_deque_index_impl(dequeobject *deque, PyObject *v,
                               Py_ssize_t start, Py_ssize_t stop)
-/*[clinic end generated code: output=5b2a991d7315b3cf input=b31d3a5c49cb8725]*/
+/*[clinic end generated code: output=5b2a991d7315b3cf input=3f189081c79a28a5]*/
 {
     Py_ssize_t i, n;
     PyObject *item;

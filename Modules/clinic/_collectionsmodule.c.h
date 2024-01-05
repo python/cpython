@@ -303,7 +303,9 @@ _collections_deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = _collections_deque_index_impl(deque, v, start, stop);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -548,4 +550,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e82801f66853ad40 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=246da3f1a260075d input=a9049054013a1b77]*/
