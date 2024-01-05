@@ -1167,7 +1167,7 @@ _collections_deque_count_impl(dequeobject *deque, PyObject *v)
 }
 
 static int
-deque_contains(dequeobject *deque, PyObject *v)
+deque_contains_locked(dequeobject *deque, PyObject *v)
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
@@ -1196,6 +1196,15 @@ deque_contains(dequeobject *deque, PyObject *v)
         }
     }
     return 0;
+}
+
+static int
+deque_contains(dequeobject *deque, PyObject *v)
+{
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    int result = deque_contains_locked(deque, v);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static Py_ssize_t
