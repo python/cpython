@@ -134,21 +134,38 @@ gc_get_debug_impl(PyObject *module)
     return gcstate->debug;
 }
 
-PyDoc_STRVAR(gc_set_thresh__doc__,
-"set_threshold(threshold0, [threshold1, threshold2]) -> None\n"
-"\n"
-"Sets the collection thresholds.  Setting threshold0 to zero disables\n"
-"collection.\n");
+/*[clinic input]
+gc.set_threshold
+
+    threshold0: int
+    [
+    threshold1: int
+    [
+    threshold2: int
+    ]
+    ]
+    /
+
+Set the collection thresholds (the collection frequency).
+
+Setting 'threshold0' to zero disables collection.
+[clinic start generated code]*/
 
 static PyObject *
-gc_set_threshold(PyObject *self, PyObject *args)
+gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
+                      int threshold1, int group_right_2, int threshold2)
+/*[clinic end generated code: output=2e3c7c7dd59060f3 input=0d9612db50984eec]*/
 {
     GCState *gcstate = get_gc_state();
-    if (!PyArg_ParseTuple(args, "i|ii:set_threshold",
-                          &gcstate->generations[0].threshold,
-                          &gcstate->generations[1].threshold,
-                          &gcstate->generations[2].threshold))
-        return NULL;
+
+    gcstate->generations[0].threshold = threshold0;
+    if (group_right_1) {
+        gcstate->generations[1].threshold = threshold1;
+    }
+    if (group_right_2) {
+        gcstate->generations[2].threshold = threshold2;
+    }
+
     for (int i = 3; i < NUM_GENERATIONS; i++) {
         /* generations higher than 2 get the same threshold */
         gcstate->generations[i].threshold = gcstate->generations[2].threshold;
@@ -453,7 +470,7 @@ static PyMethodDef GcMethods[] = {
     GC_SET_DEBUG_METHODDEF
     GC_GET_DEBUG_METHODDEF
     GC_GET_COUNT_METHODDEF
-    {"set_threshold",  gc_set_threshold, METH_VARARGS, gc_set_thresh__doc__},
+    GC_SET_THRESHOLD_METHODDEF
     GC_GET_THRESHOLD_METHODDEF
     GC_COLLECT_METHODDEF
     GC_GET_OBJECTS_METHODDEF

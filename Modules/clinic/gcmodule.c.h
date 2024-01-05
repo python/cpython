@@ -214,6 +214,58 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(gc_set_threshold__doc__,
+"set_threshold(threshold0, [threshold1, [threshold2]])\n"
+"Set the collection thresholds (the collection frequency).\n"
+"\n"
+"Setting \'threshold0\' to zero disables collection.");
+
+#define GC_SET_THRESHOLD_METHODDEF    \
+    {"set_threshold", (PyCFunction)gc_set_threshold, METH_VARARGS, gc_set_threshold__doc__},
+
+static PyObject *
+gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
+                      int threshold1, int group_right_2, int threshold2);
+
+static PyObject *
+gc_set_threshold(PyObject *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int threshold0;
+    int group_right_1 = 0;
+    int threshold1 = 0;
+    int group_right_2 = 0;
+    int threshold2 = 0;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "i:set_threshold", &threshold0)) {
+                goto exit;
+            }
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "ii:set_threshold", &threshold0, &threshold1)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "iii:set_threshold", &threshold0, &threshold1, &threshold2)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            group_right_2 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "gc.set_threshold requires 1 to 3 arguments");
+            goto exit;
+    }
+    return_value = gc_set_threshold_impl(module, threshold0, group_right_1, threshold1, group_right_2, threshold2);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(gc_get_threshold__doc__,
 "get_threshold($module, /)\n"
 "--\n"
@@ -425,4 +477,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c345e7b4ce6085a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=baf84a8c233e3848 input=a9049054013a1b77]*/
