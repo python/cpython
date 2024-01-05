@@ -1,0 +1,2 @@
+Raise deprecation warnings from :class:`pathlib.PurePath` and not its
+private base class ``PurePathBase``.
