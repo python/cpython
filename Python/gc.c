@@ -1354,10 +1354,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* handy references */
     young = GEN_HEAD(gcstate, generation);
-    if (generation < NUM_GENERATIONS-1)
+    if (generation < NUM_GENERATIONS-1) {
         old = GEN_HEAD(gcstate, generation+1);
-    else
+    }
+    else {
         old = young;
+    }
     validate_list(old, collecting_clear_unreachable_clear);
 
     deduce_unreachable(young, &unreachable);
