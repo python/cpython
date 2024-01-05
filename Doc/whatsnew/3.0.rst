@@ -555,8 +555,8 @@ very extensive changes to the standard library.  :pep:`3108` is the
 reference for the major changes to the library.  Here's a capsule
 review:
 
-* Many old modules were removed.  Some, like :mod:`gopherlib` (no
-  longer used) and :mod:`md5` (replaced by :mod:`hashlib`), were
+* Many old modules were removed.  Some, like :mod:`!gopherlib` (no
+  longer used) and :mod:`!md5` (replaced by :mod:`hashlib`), were
   already deprecated by :pep:`4`.  Others were removed as a result
   of the removal of support for various platforms such as Irix, BeOS
   and Mac OS 9 (see :pep:`11`).  Some modules were also selected for
@@ -626,7 +626,7 @@ review:
 Some other changes to standard library modules, not covered by
 :pep:`3108`:
 
-* Killed :mod:`sets`.  Use the built-in :func:`set` class.
+* Killed :mod:`!sets`.  Use the built-in :func:`set` class.
 
 * Cleanup of the :mod:`sys` module: removed :func:`sys.exitfunc`,
   :func:`sys.exc_clear`, :data:`sys.exc_type`, :data:`sys.exc_value`,
@@ -648,7 +648,7 @@ Some other changes to standard library modules, not covered by
 
 * Cleanup of the :mod:`random` module: removed the :func:`jumpahead` API.
 
-* The :mod:`new` module is gone.
+* The :mod:`!new` module is gone.
 
 * The functions :func:`os.tmpnam`, :func:`os.tempnam` and
   :func:`os.tmpfile` have been removed in favor of the :mod:`tempfile`
