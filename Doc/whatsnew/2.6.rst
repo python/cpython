@@ -2916,8 +2916,8 @@ Deprecations and Removals
 
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6,
-  the :attr:`message` attribute is being deprecated in favor of the
-  :attr:`args` attribute.
+  the :attr:`!message` attribute is being deprecated in favor of the
+  :attr:`~BaseException.args` attribute.
 
 * (3.0-warning mode) Python 3.0 will feature a reorganized standard
   library that will drop many outdated modules and rename others.
@@ -2925,51 +2925,51 @@ Deprecations and Removals
   when they are imported.
 
   The list of deprecated modules is:
-  :mod:`audiodev`,
-  :mod:`bgenlocations`,
-  :mod:`buildtools`,
-  :mod:`bundlebuilder`,
-  :mod:`Canvas`,
-  :mod:`compiler`,
-  :mod:`dircache`,
-  :mod:`dl`,
-  :mod:`fpformat`,
-  :mod:`gensuitemodule`,
-  :mod:`ihooks`,
-  :mod:`imageop`,
-  :mod:`imgfile`,
-  :mod:`linuxaudiodev`,
-  :mod:`mhlib`,
-  :mod:`mimetools`,
-  :mod:`multifile`,
-  :mod:`new`,
-  :mod:`pure`,
-  :mod:`statvfs`,
-  :mod:`sunaudiodev`,
-  :mod:`test.testall`, and
-  :mod:`toaiff`.
+  :mod:`!audiodev`,
+  :mod:`!bgenlocations`,
+  :mod:`!buildtools`,
+  :mod:`!bundlebuilder`,
+  :mod:`!Canvas`,
+  :mod:`!compiler`,
+  :mod:`!dircache`,
+  :mod:`!dl`,
+  :mod:`!fpformat`,
+  :mod:`!gensuitemodule`,
+  :mod:`!ihooks`,
+  :mod:`!imageop`,
+  :mod:`!imgfile`,
+  :mod:`!linuxaudiodev`,
+  :mod:`!mhlib`,
+  :mod:`!mimetools`,
+  :mod:`!multifile`,
+  :mod:`!new`,
+  :mod:`!pure`,
+  :mod:`!statvfs`,
+  :mod:`!sunaudiodev`,
+  :mod:`!test.testall`, and
+  :mod:`!toaiff`.
 
-* The :mod:`gopherlib` module has been removed.
+* The :mod:`!gopherlib` module has been removed.
 
-* The :mod:`MimeWriter` module and :mod:`mimify` module
+* The :mod:`!MimeWriter` module and :mod:`!mimify` module
   have been deprecated; use the :mod:`email`
   package instead.
 
-* The :mod:`md5` module has been deprecated; use the :mod:`hashlib` module
+* The :mod:`!md5` module has been deprecated; use the :mod:`hashlib` module
   instead.
 
-* The :mod:`posixfile` module has been deprecated; :func:`fcntl.lockf`
+* The :mod:`!posixfile` module has been deprecated; :func:`fcntl.lockf`
   provides better locking.
 
-* The :mod:`popen2` module has been deprecated; use the :mod:`subprocess`
+* The :mod:`!popen2` module has been deprecated; use the :mod:`subprocess`
   module.
 
-* The :mod:`rgbimg` module has been removed.
+* The :mod:`!rgbimg` module has been removed.
 
-* The :mod:`sets` module has been deprecated; it's better to
+* The :mod:`!sets` module has been deprecated; it's better to
   use the built-in :class:`set` and :class:`frozenset` types.
 
-* The :mod:`sha` module has been deprecated; use the :mod:`hashlib` module
+* The :mod:`!sha` module has been deprecated; use the :mod:`hashlib` module
   instead.
 
 
