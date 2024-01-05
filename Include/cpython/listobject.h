@@ -21,9 +21,6 @@ typedef struct {
     Py_ssize_t allocated;
 } PyListObject;
 
-PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
-PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
-
 /* Cast argument to PyListObject* type. */
 #define _PyList_CAST(op) \
     (assert(PyList_Check(op)), _Py_CAST(PyListObject*, (op)))
@@ -41,7 +38,12 @@ static inline Py_ssize_t PyList_GET_SIZE(PyObject *op) {
 static inline void
 PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyListObject *list = _PyList_CAST(op);
+    assert(0 <= index);
+    assert(index < list->allocated);
     list->ob_item[index] = value;
 }
 #define PyList_SET_ITEM(op, index, value) \
     PyList_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))
+
+PyAPI_FUNC(int) PyList_Extend(PyObject *self, PyObject *iterable);
+PyAPI_FUNC(int) PyList_Clear(PyObject *self);

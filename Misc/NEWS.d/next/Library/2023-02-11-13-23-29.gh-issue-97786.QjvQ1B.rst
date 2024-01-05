@@ -1,2 +1,0 @@
-Fix potential undefined behaviour in corner cases of floating-point-to-time
-conversions.

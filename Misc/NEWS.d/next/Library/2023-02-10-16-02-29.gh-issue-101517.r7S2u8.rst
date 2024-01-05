@@ -1,1 +1,0 @@
-Fixed bug where :mod:`bdb` looks up the source line with :mod:`linecache` with a ``lineno=None``, which causes it to fail with an unhandled exception.
