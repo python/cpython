@@ -254,12 +254,12 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
     // data->obj may be NULL, so we don't check it.
 
     if (_PyCrossInterpreterData_INTERPID(data) < 0) {
-        _PyErr_SetString(tstate, PyExc_SystemError, "missing interp");
+        PyErr_SetString(PyExc_SystemError, "missing interp");
         return -1;
     }
 
     if (data->new_object == NULL) {
-        _PyErr_SetString(tstate, PyExc_SystemError, "missing new_object func");
+        PyErr_SetString(PyExc_SystemError, "missing new_object func");
         return -1;
     }
 
