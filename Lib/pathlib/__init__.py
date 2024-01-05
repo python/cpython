@@ -166,6 +166,33 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
+    def relative_to(self, other, /, *_deprecated, walk_up=False):
+        """Return the relative path to another path identified by the passed
+        arguments.  If the operation is not possible (because this is not
+        related to the other path), raise ValueError.
+
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        return _abc.PurePathBase.relative_to(self, other, walk_up=walk_up)
+
+    def is_relative_to(self, other, /, *_deprecated):
+        """Return True if the path is relative to another path or False.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one argument to "
+                   "pathlib.PurePath.is_relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        return _abc.PurePathBase.is_relative_to(self, other)
+
     def as_uri(self):
         """Return the path as a URI."""
         if not self.is_absolute():

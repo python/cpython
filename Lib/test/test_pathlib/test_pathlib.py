@@ -214,6 +214,19 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
                 self.assertEqual(q, p)
                 self.assertEqual(repr(q), r)
 
+    def test_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.relative_to('a', 'b')
+            p.relative_to('a', 'b', walk_up=True)
+
+    def test_is_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.is_relative_to('a', 'b')
+
 
 class PurePosixPathTest(PurePathTest):
     cls = pathlib.PurePosixPath
