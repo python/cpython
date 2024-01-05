@@ -1,0 +1,21 @@
+Add a radix tree based memory map to track in-use obmalloc arenas. Use to
+replace the old implementation of address_in_range(). The radix tree
+approach makes it easy to increase pool sizes beyond the OS page size.
+Boosting the pool and arena size allows obmalloc to handle a significantly
+higher percentage of requests from its ultra-fast paths.
+
+It also has the advantage of eliminating the memory unsanitary behavior of
+the previous address_in_range(). The old address_in_range() was marked with
+the annotations _Py_NO_SANITIZE_ADDRESS, _Py_NO_SANITIZE_THREAD, and
+_Py_NO_SANITIZE_MEMORY. Those annotations are no longer needed.
+
+To disable the radix tree map, set a preprocessor flag as follows:
+`-DWITH_PYMALLOC_RADIX_TREE=0`.
+
+When MTE is enabled on aarch64 platforms, Python 3.9 crashes because
+of an invalid access to memory caused by the address_in_range function.
+With the radix tree implementation, we never dereference the pointer
+passed to address_in_range or any pointer derived from it so no
+MTE violation can occur.
+
+Co-authored-by: Tim Peters <tim.peters@gmail.com>
