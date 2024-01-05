@@ -16947,7 +16947,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
 printf %s "checking ipv6 stack type... " >&6; }
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
