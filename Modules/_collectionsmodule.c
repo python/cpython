@@ -1071,6 +1071,7 @@ _collections_deque_rotate_impl(dequeobject *deque, Py_ssize_t n)
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.reverse
 
     deque: dequeobject
@@ -1080,7 +1081,7 @@ Reverse *IN PLACE*
 
 static PyObject *
 _collections_deque_reverse_impl(dequeobject *deque)
-/*[clinic end generated code: output=8f859d206158686e input=651e0257414fac22]*/
+/*[clinic end generated code: output=8f859d206158686e input=40b6ff9d466609da]*/
 {
     block *leftblock = deque->leftblock;
     block *rightblock = deque->rightblock;
