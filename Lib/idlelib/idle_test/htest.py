@@ -190,7 +190,7 @@ HelpSource_spec = {
            "<Escape>, [Cancel], or [X] prints None to shell"
     }
 
-_helpwindow_spec = {
+show_idlehelp_spec = {
     'file': 'help',
     'kwds': {},
     'msg': "If the help text displays, this works.\n"
