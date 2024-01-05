@@ -6,6 +6,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
@@ -1913,6 +1914,7 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
     if (state->asend_numfree) {
         state->asend_numfree--;
         o = state->asend_freelist[state->asend_numfree];
+        _PyGC_CLEAR_FINALIZED((PyObject *)o);
         _Py_NewReference((PyObject *)o);
     }
     else
