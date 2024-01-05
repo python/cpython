@@ -1219,8 +1219,8 @@ If a code object represents a function, the first item in
 :attr:`~codeobject.co_consts` is
 the documentation string of the function, or ``None`` if undefined.
 
-The :meth:`!co_positions` method
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Methods on code objects
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. method:: codeobject.co_positions()
 
@@ -1254,6 +1254,41 @@ The :meth:`!co_positions` method
       deactivate printing the extra traceback information, the
       :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
       environment variable can be used.
+
+.. method:: codeobject.co_lines()
+
+   Returns an iterator that yields information about successive ranges of
+   :term:`bytecode`\s. Each item yielded is a ``(start, end, lineno)``
+   :class:`tuple`:
+
+   * ``start`` (an :class:`int`) represents the offset (inclusive) of the start
+     of the :term:`bytecode` range
+   * ``end`` (an :class:`int`) represents the offset (inclusive) of the end of
+     the :term:`bytecode` range
+   * ``lineno`` is an :class:`int` representing the line number of the
+     :term:`bytecode` range, or ``None`` if the bytecodes in the given range
+     have no line number
+
+   The items yielded generated will have the following properties:
+
+   * The first range yielded will have a ``start`` of 0.
+   * The ``(start, end)`` ranges will be non-decreasing and consecutive. That
+     is, for any pair of :class:`tuple`\s, the ``start`` of the second will be
+     equal to the ``end`` of the first.
+   * No range will be backwards: ``end >= start`` for all triples.
+   * The :class:`tuple` yielded will have ``end`` equal to the size of the
+     :term:`bytecode`.
+
+   Zero-width ranges, where ``start == end``, are allowed. Zero-width ranges
+   are used for lines that are present in the source code, but have been
+   eliminated by the :term:`bytecode` compiler.
+
+   .. versionadded:: 3.10
+
+   .. seealso::
+
+      :pep:`626` - Precise line numbers for debugging and other tools.
+         The PEP that introduced the :meth:`!co_lines` method.
 
 
 .. _frame-objects:
