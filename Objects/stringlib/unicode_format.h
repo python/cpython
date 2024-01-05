@@ -2,6 +2,7 @@
     unicode_format.h -- implementation of str.format().
 */
 
+#include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 
 /************************************************************************/

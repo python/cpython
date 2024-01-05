@@ -4,7 +4,7 @@ from tkinter import TclError
 import os
 from test.support import requires
 
-from test.test_tkinter.support import (requires_tcl,
+from test.test_tkinter.support import (requires_tk,
                                   get_tk_patchlevel, widget_eq,
                                   AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (
@@ -613,7 +613,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.checkColorParam(widget, 'inactiveselectbackground')
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_configure_insertunfocussed(self):
         widget = self.create()
         self.checkEnumParam(widget, 'insertunfocussed',
@@ -924,7 +924,7 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         for i in range(4):
             self.assertIsInstance(coords[i], float)
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_moveto(self):
         widget = self.create()
         i1 = widget.create_rectangle(1, 1, 20, 20, tags='group')
@@ -969,7 +969,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
         self.checkEnumParam(widget, 'activestyle',
                             'dotbox', 'none', 'underline')
 
-    test_configure_justify = requires_tcl(8, 6, 5)(StandardOptionsTests.test_configure_justify)
+    test_configure_justify = requires_tk(8, 6, 5)(StandardOptionsTests.test_configure_justify)
 
     def test_configure_listvariable(self):
         widget = self.create()
@@ -1108,7 +1108,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_from(self):
         widget = self.create()
-        conv = float if get_tk_patchlevel() >= (8, 6, 10) else float_round
+        conv = float if get_tk_patchlevel(self.root) >= (8, 6, 10) else float_round
         self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
 
     def test_configure_label(self):
@@ -1235,19 +1235,19 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.checkBooleanParam(widget, 'opaqueresize')
 
-    @requires_tcl(8, 6, 5)
+    @requires_tk(8, 6, 5)
     def test_configure_proxybackground(self):
         widget = self.create()
         self.checkColorParam(widget, 'proxybackground')
 
-    @requires_tcl(8, 6, 5)
+    @requires_tk(8, 6, 5)
     def test_configure_proxyborderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'proxyborderwidth',
                               0, 1.3, 2.9, 6, -2, '10p',
                               conv=False)
 
-    @requires_tcl(8, 6, 5)
+    @requires_tk(8, 6, 5)
     def test_configure_proxyrelief(self):
         widget = self.create()
         self.checkReliefParam(widget, 'proxyrelief')
