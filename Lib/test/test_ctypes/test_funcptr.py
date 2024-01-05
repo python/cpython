@@ -11,10 +11,34 @@ except AttributeError:
     # fake to enable this test on Linux
     WINFUNCTYPE = CFUNCTYPE
 
+
+FuncPtrType = type(_CFuncPtr)
+# _CData is not exported to Python, so we have to access it from __base__.
+_CData = Structure.__base__
+
 lib = CDLL(_ctypes_test.__file__)
 
 
 class CFuncPtrTestCase(unittest.TestCase):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(_CData.__name__, "_CData")
+        self.assertEqual(_CFuncPtr.mro(), [_CFuncPtr, _CData, object])
+
+        self.assertEqual(FuncPtrType.__name__, "PyCFuncPtrType")
+        self.assertEqual(type(FuncPtrType), type)
+
+    def test_abstract_class(self):
+        with self.assertRaisesRegex(TypeError, "abstract class"):
+            _CFuncPtr()
+
+        FuncPtrType("Foo", (_CFuncPtr,), {"_flags_": 0})
+
+    def test_immutability(self):
+        for t in [_CFuncPtr, FuncPtrType]:
+            msg = "cannot set 'foo' attribute of immutable type"
+            with self.assertRaisesRegex(TypeError, msg):
+                t.foo = "bar"
+
     def test_basic(self):
         X = WINFUNCTYPE(c_int, c_int, c_int)
 
