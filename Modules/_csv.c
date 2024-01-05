@@ -619,18 +619,18 @@ parse_save_field(ReaderObj *self)
     else {
         field = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                         (void *) self->field, self->field_len);
-        if (field == NULL)
+        if (field == NULL) {
             return -1;
+        }
         if (self->unquoted_field &&
             self->field_len != 0 &&
             (quoting == QUOTE_NONNUMERIC || quoting == QUOTE_STRINGS))
         {
-            PyObject *tmp;
-
-            tmp = PyNumber_Float(field);
+            PyObject *tmp = PyNumber_Float(field);
             Py_DECREF(field);
-            if (tmp == NULL)
+            if (tmp == NULL) {
                 return -1;
+            }
             field = tmp;
         }
         self->field_len = 0;
