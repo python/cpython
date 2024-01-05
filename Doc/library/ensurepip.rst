@@ -125,7 +125,9 @@ Module API
    *verbosity* controls the level of output to :data:`sys.stdout` from the
    bootstrapping operation.
 
-   .. versionchanged:: 3.9 the *prefix* parameter was added.
+   .. versionchanged:: 3.13
+
+      The *prefix* parameter was added.
 
    .. audit-event:: ensurepip.bootstrap root ensurepip.bootstrap
 
