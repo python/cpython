@@ -59,6 +59,7 @@ class PurePath(_abc.PurePathBase):
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
     )
+    pathmod = os.path
 
     def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
@@ -98,6 +99,9 @@ class PurePath(_abc.PurePathBase):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
         return (self.__class__, self.parts)
+
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def __fspath__(self):
         return str(self)
@@ -266,6 +270,24 @@ class Path(_abc.PathBase, PurePath):
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
 
+    def read_text(self, encoding=None, errors=None, newline=None):
+        """
+        Open the file in text mode, read it, and close the file.
+        """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = io.text_encoding(encoding)
+        return _abc.PathBase.read_text(self, encoding, errors, newline)
+
+    def write_text(self, data, encoding=None, errors=None, newline=None):
+        """
+        Open the file in text mode, write to it, and close the file.
+        """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = io.text_encoding(encoding)
+        return _abc.PathBase.write_text(self, data, encoding, errors, newline)
+
     def iterdir(self):
         """Yield path objects of the directory contents.
 
@@ -276,6 +298,16 @@ class Path(_abc.PathBase, PurePath):
 
     def _scandir(self):
         return os.scandir(self)
+
+    def _make_child_entry(self, entry):
+        # Transform an entry yielded from _scandir() into a path object.
+        path_str = entry.name if str(self) == '.' else entry.path
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = self._tail + [entry.name]
+        return path
 
     def absolute(self):
         """Return an absolute version of this path

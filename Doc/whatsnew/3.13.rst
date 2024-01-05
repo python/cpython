@@ -289,6 +289,10 @@ os
   ``False`` on Windows.
   (Contributed by Serhiy Storchaka in :gh:`59616`)
 
+* Add support of :func:`os.fchmod` and a file descriptor
+  in :func:`os.chmod` on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`113191`)
+
 * :func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
   process use the current process environment.
   (Contributed by Jakub Kulik in :gh:`113119`.)
@@ -470,6 +474,10 @@ Deprecated
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
 
+* :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
+  Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
+  (Contributed by Inada Naoki in :gh:`73427`.)
+
 * :mod:`traceback`:
 
   * The field *exc_type* of :class:`traceback.TracebackException` is
@@ -551,6 +559,9 @@ Deprecated
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
+
+* Deprecate undocumented :func:`!pydoc.ispackage` function.
+  (Contributed by Zackery Spytz in :gh:`64020`.)
 
 
 Pending Removal in Python 3.14
@@ -805,7 +816,8 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
-* :attr:`~codeobject.co_lnotab`: use the ``co_lines`` attribute instead.
+* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
+  instead.
 
 * :class:`typing.Text` (:gh:`92332`).
 
@@ -1001,6 +1013,10 @@ importlib
   for migration advice.
   (Contributed by Jason R. Coombs in :gh:`106532`.)
 
+* Remove deprecated :meth:`~object.__getitem__` access for
+  :class:`!importlib.metadata.EntryPoint` objects.
+  (Contributed by Jason R. Coombs in :gh:`113175`.)
+
 locale
 ------
 
@@ -1154,6 +1170,9 @@ Changes in the Python API
   must provide ``_is_main_interpreter()``, just like the module's
   other "private" attributes.
   (See :gh:`112826`.)
+
+* :class:`mailbox.Maildir` now ignores files with a leading dot.
+  (Contributed by Zackery Spytz in :gh:`65559`.)
 
 
 Build Changes

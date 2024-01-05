@@ -1052,7 +1052,7 @@ their ``__init__`` method (for example, file objects) or in their
 crypt
 -----
 
-Addition of salt and modular crypt format (hashing method) and the :func:`~!crypt.mksalt`
+Addition of salt and modular crypt format (hashing method) and the :func:`!mksalt`
 function to the :mod:`!crypt` module.
 
 (:issue:`10924`)
@@ -1845,7 +1845,7 @@ signal
 smtpd
 -----
 
-The :mod:`smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
+The :mod:`!smtpd` module now supports :rfc:`5321` (extended SMTP) and :rfc:`1870`
 (size extension).  Per the standard, these extensions are enabled if and only
 if the client initiates the session with an ``EHLO`` command.
 
