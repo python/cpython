@@ -1,2 +1,0 @@
-Write accurate compression level metadata in :mod:`gzip` archives, rather
-than always signaling maximum compression.

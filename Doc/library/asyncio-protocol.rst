@@ -156,7 +156,8 @@ Base Transport
    will be received.  After all buffered data is flushed, the
    protocol's :meth:`protocol.connection_lost()
    <BaseProtocol.connection_lost>` method will be called with
-   :const:`None` as its argument.
+   :const:`None` as its argument. The transport should not be
+   used once it is closed.
 
 .. method:: BaseTransport.is_closing()
 
@@ -553,7 +554,7 @@ accept factories that return streaming protocols.
    a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once.  Once `eof_received()` is called,
+   is called at most once.  Once ``eof_received()`` is called,
    ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
@@ -683,7 +684,7 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 Subprocess Protocols
 --------------------
 
-Datagram Protocol instances should be constructed by protocol
+Subprocess Protocol instances should be constructed by protocol
 factories passed to the :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell` methods.
 
@@ -706,6 +707,9 @@ factories passed to the :meth:`loop.subprocess_exec` and
 .. method:: SubprocessProtocol.process_exited()
 
    Called when the child process has exited.
+
+   It can be called before :meth:`~SubprocessProtocol.pipe_data_received` and
+   :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
 
 
 Examples
@@ -745,7 +749,7 @@ received data, and close the connection::
         loop = asyncio.get_running_loop()
 
         server = await loop.create_server(
-            lambda: EchoServerProtocol(),
+            EchoServerProtocol,
             '127.0.0.1', 8888)
 
         async with server:
@@ -849,7 +853,7 @@ method, sends back received data::
         # One protocol instance will be created to serve all
         # client requests.
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: EchoServerProtocol(),
+            EchoServerProtocol,
             local_addr=('127.0.0.1', 9999))
 
         try:
@@ -993,7 +997,7 @@ loop.subprocess_exec() and SubprocessProtocol
 An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
-The subprocess is created by th :meth:`loop.subprocess_exec` method::
+The subprocess is created by the :meth:`loop.subprocess_exec` method::
 
     import asyncio
     import sys
@@ -1002,12 +1006,26 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
         def __init__(self, exit_future):
             self.exit_future = exit_future
             self.output = bytearray()
+            self.pipe_closed = False
+            self.exited = False
+
+        def pipe_connection_lost(self, fd, exc):
+            self.pipe_closed = True
+            self.check_for_exit()
 
         def pipe_data_received(self, fd, data):
             self.output.extend(data)
 
         def process_exited(self):
-            self.exit_future.set_result(True)
+            self.exited = True
+            # process_exited() method can be called before
+            # pipe_connection_lost() method: wait until both methods are
+            # called.
+            self.check_for_exit()
+
+        def check_for_exit(self):
+            if self.pipe_closed and self.exited:
+                self.exit_future.set_result(True)
 
     async def get_date():
         # Get a reference to the event loop as we plan to use

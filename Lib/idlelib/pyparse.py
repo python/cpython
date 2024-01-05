@@ -133,7 +133,7 @@ class Parser:
         self.code = s
         self.study_level = 0
 
-    def find_good_parse_start(self, is_char_in_string, _synchre=_synchre):
+    def find_good_parse_start(self, is_char_in_string):
         """
         Return index of a good place to begin parsing, as close to the
         end of the string as possible.  This will be the start of some
@@ -179,14 +179,10 @@ class Parser:
         # Peeking back worked; look forward until _synchre no longer
         # matches.
         i = pos + 1
-        while 1:
-            m = _synchre(code, i)
-            if m:
-                s, i = m.span()
-                if not is_char_in_string(s):
-                    pos = s
-            else:
-                break
+        while m := _synchre(code, i):
+            s, i = m.span()
+            if not is_char_in_string(s):
+                pos = s
         return pos
 
     def set_lo(self, lo):

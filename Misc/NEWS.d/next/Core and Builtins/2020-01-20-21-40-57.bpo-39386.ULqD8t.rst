@@ -1,1 +1,0 @@
-Prevent double awaiting of async iterator.

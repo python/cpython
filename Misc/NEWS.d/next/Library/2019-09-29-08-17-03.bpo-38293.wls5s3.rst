@@ -1,1 +1,0 @@
-Add :func:`copy.copy` and :func:`copy.deepcopy` support to :func:`property` objects.
