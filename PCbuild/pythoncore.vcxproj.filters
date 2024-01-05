@@ -1289,6 +1289,12 @@
     <ClCompile Include="..\Python\gc.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\gc_free_threading.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_gil.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\getargs.c">
       <Filter>Python</Filter>
     </ClCompile>

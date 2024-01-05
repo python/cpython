@@ -249,6 +249,7 @@ extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);
 extern void _PyContext_ClearFreeList(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyInterpreterState *interp);
 extern void _Py_RunGC(PyThreadState *tstate);
+extern void _PyGC_Clear_FreeList(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }
