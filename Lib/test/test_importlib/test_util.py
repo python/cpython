@@ -657,14 +657,26 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
     def run_with_own_gil(self, script):
         interpid = _interpreters.create(isolated=True)
-        excsnap = _interpreters.run_string(interpid, script)
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
         if excsnap is not None:
             if excsnap.type.__name__ == 'ImportError':
                 raise ImportError(excsnap.msg)
 
     def run_with_shared_gil(self, script):
         interpid = _interpreters.create(isolated=False)
-        excsnap = _interpreters.run_string(interpid, script)
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
         if excsnap is not None:
             if excsnap.type.__name__ == 'ImportError':
                 raise ImportError(excsnap.msg)

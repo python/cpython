@@ -343,7 +343,9 @@ cores. This is currently only available through the C-API,
 though a Python API is :pep:`anticipated for 3.13 <554>`.
 
 Use the new :c:func:`Py_NewInterpreterFromConfig` function to
-create an interpreter with its own GIL::
+create an interpreter with its own GIL:
+
+.. code-block:: c
 
    PyInterpreterConfig config = {
        .check_multi_interp_extensions = 1,
@@ -1323,7 +1325,8 @@ Deprecated
   ``int``, convert to int explicitly: ``~int(x)``. (Contributed by Tim Hoffmann
   in :gh:`103487`.)
 
-* Accessing ``co_lnotab`` on code objects was deprecated in Python 3.10 via :pep:`626`,
+* Accessing :attr:`~codeobject.co_lnotab` on code objects was deprecated in
+  Python 3.10 via :pep:`626`,
   but it only got a proper :exc:`DeprecationWarning` in 3.12,
   therefore it will be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
@@ -1430,7 +1433,7 @@ and will be removed in Python 3.14.
 
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
-* The ``co_lnotab`` attribute of code objects.
+* The :attr:`~codeobject.co_lnotab` attribute of code objects.
 
 Pending Removal in Python 3.15
 ------------------------------
@@ -1893,6 +1896,15 @@ Changes in the Python API
 
   * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
     raise a :exc:`TabError`.
+
+* The :mod:`threading` module now expects the :mod:`!_thread` module to have
+  an ``_is_main_interpreter`` attribute.  It is a function with no
+  arguments that returns ``True`` if the current interpreter is the
+  main interpreter.
+
+  Any library or application that provides a custom ``_thread`` module
+  should provide ``_is_main_interpreter()``.
+  (See :gh:`112826`.)
 
 Build Changes
 =============

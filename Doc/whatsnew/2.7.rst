@@ -287,7 +287,7 @@ remains O(1).
 The standard library now supports use of ordered dictionaries in several
 modules.
 
-* The :mod:`ConfigParser` module uses them by default, meaning that
+* The :mod:`ConfigParser <configparser>` module uses them by default, meaning that
   configuration files can now be read, modified, and then written back
   in their original order.
 
@@ -858,9 +858,10 @@ Some smaller changes made to the core Python language are:
 
   .. XXX bytearray doesn't seem to be documented
 
-* When using ``@classmethod`` and ``@staticmethod`` to wrap
+* When using :class:`@classmethod <classmethod>` and
+  :class:`@staticmethod <staticmethod>` to wrap
   methods as class or static methods, the wrapper object now
-  exposes the wrapped function as their :ref:`__func__ <instance-methods>`
+  exposes the wrapped function as their :attr:`~method.__func__`
   attribute.
   (Contributed by Amaury Forgeot d'Arc, after a suggestion by
   George Sakkis; :issue:`5982`.)
@@ -1133,7 +1134,7 @@ changes, or look through the Subversion logs for all the details.
   another type that isn't a :class:`Mapping`.
   (Fixed by Daniel Stutzbach; :issue:`8729`.)
 
-* Constructors for the parsing classes in the :mod:`ConfigParser` module now
+* Constructors for the parsing classes in the :mod:`ConfigParser <configparser>` module now
   take an *allow_no_value* parameter, defaulting to false; if true,
   options without values will be allowed.  For example::
 
@@ -1416,7 +1417,7 @@ changes, or look through the Subversion logs for all the details.
   :func:`~math.lgamma` for the natural log of the Gamma function.
   (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
 
-* The :mod:`multiprocessing` module's :class:`Manager*` classes
+* The :mod:`multiprocessing` module's :class:`!Manager*` classes
   can now be passed a callable that will be called whenever
   a subprocess is started, along with a set of arguments that will be
   passed to the callable.
@@ -2405,7 +2406,7 @@ Other Changes and Fixes
   :issue:`5464`.)
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
-  with an existing :file:`.py` counterpart, the :attr:`co_filename`
+  with an existing :file:`.py` counterpart, the :attr:`~codeobject.co_filename`
   attributes of the resulting code objects are overwritten when the
   original filename is obsolete.  This can happen if the file has been
   renamed, moved, or is accessed through different paths.  (Patch by

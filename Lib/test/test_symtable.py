@@ -337,7 +337,6 @@ class CommandLineTest(unittest.TestCase):
                 symtable.main(['-'])
             self.assertEqual(stdout.getvalue(), out)
         lines = out.splitlines()
-        print(out)
         self.assertIn("symbol table for module from file '<stdin>':", lines)
 
 

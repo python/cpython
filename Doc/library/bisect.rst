@@ -19,9 +19,9 @@ linear searches or frequent resorting.
 The module is called :mod:`bisect` because it uses a basic bisection
 algorithm to do its work.  Unlike other bisection tools that search for a
 specific value, the functions in this module are designed to locate an
-insertion point. Accordingly, the functions never call an :meth:`__eq__`
+insertion point. Accordingly, the functions never call an :meth:`~object.__eq__`
 method to determine whether a value has been found.  Instead, the
-functions only call the :meth:`__lt__` method and will return an insertion
+functions only call the :meth:`~object.__lt__` method and will return an insertion
 point between values in an array.
 
 .. _bisect functions:
@@ -73,7 +73,7 @@ The following functions are provided:
    Insert *x* in *a* in sorted order.
 
    This function first runs :py:func:`~bisect.bisect_left` to locate an insertion point.
-   Next, it runs the :meth:`insert` method on *a* to insert *x* at the
+   Next, it runs the :meth:`!insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
 
    To support inserting records in a table, the *key* function (if any) is
@@ -93,7 +93,7 @@ The following functions are provided:
    entries of *x*.
 
    This function first runs :py:func:`~bisect.bisect_right` to locate an insertion point.
-   Next, it runs the :meth:`insert` method on *a* to insert *x* at the
+   Next, it runs the :meth:`!insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
 
    To support inserting records in a table, the *key* function (if any) is
