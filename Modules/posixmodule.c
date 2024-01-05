@@ -16293,10 +16293,12 @@ windows_namespace(void)
     PyDict_Clear(d);
 
     int res = PyDict_SetItemString(d, "constants", consts);
+    Py_CLEAR(consts);
     if (res < 0) {
         goto error;
     }
     res = PyDict_SetItemString(d, "errors", errors);
+    Py_CLEAR(errors);
     if (res < 0) {
         goto error;
     }
