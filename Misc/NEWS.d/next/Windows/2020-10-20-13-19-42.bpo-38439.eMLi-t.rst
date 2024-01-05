@@ -1,1 +1,0 @@
-Updates the icons for IDLE in the Windows Store package.

@@ -3,14 +3,18 @@ from c_parser.info import (
     TypeDeclaration,
     POTSType,
     FuncPtr,
+)
+from c_parser.match import (
     is_pots,
     is_funcptr,
 )
 from .info import (
     IGNORED,
     UNKNOWN,
-    is_system_type,
     SystemType,
+)
+from .match import (
+    is_system_type,
 )
 
 

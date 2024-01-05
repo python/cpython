@@ -1,9 +1,7 @@
 import logging
-import os.path
 import sys
 
 from c_common.scriptutil import (
-    CLIArgSpec as Arg,
     add_verbosity_cli,
     add_traceback_cli,
     add_kind_filtering_cli,
@@ -14,7 +12,6 @@ from c_common.scriptutil import (
     get_prog,
     main_for_filenames,
 )
-from .preprocessor import get_preprocessor
 from .preprocessor.__main__ import (
     add_common_cli as add_preprocessor_cli,
 )
@@ -64,8 +61,9 @@ def fmt_raw(filename, item, *, showfwd=None):
 
 
 def fmt_summary(filename, item, *, showfwd=None):
-    if item.filename and item.filename != os.path.join('.', filename):
+    if item.filename != filename:
         yield f'> {item.filename}'
+
     if showfwd is None:
         LINE = ' {lno:>5} {kind:10} {funcname:40} {fwd:1} {name:40} {data}'
     else:
@@ -147,7 +145,7 @@ def add_output_cli(parser):
     parser.add_argument('--showfwd', action='store_true', default=None)
     parser.add_argument('--no-showfwd', dest='showfwd', action='store_false', default=None)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         pass
     return process_args
 
@@ -172,6 +170,7 @@ def cmd_parse(filenames, *,
               fmt='summary',
               showfwd=None,
               iter_filenames=None,
+              relroot=None,
               **kwargs
               ):
     if 'get_file_preprocessor' not in kwargs:
@@ -180,9 +179,10 @@ def cmd_parse(filenames, *,
         do_fmt = FORMATS[fmt]
     except KeyError:
         raise ValueError(f'unsupported fmt {fmt!r}')
-    for filename in main_for_filenames(filenames, iter_filenames):
+    for filename, relfile in main_for_filenames(filenames, iter_filenames, relroot):
         for item in _iter_parsed(filename, **kwargs):
-            for line in do_fmt(filename, item, showfwd=showfwd):
+            item = item.fix_filename(relroot, fixroot=False, normalize=False)
+            for line in do_fmt(relfile, item, showfwd=showfwd):
                 print(line)
 
 
@@ -239,6 +239,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *, subset='parse'):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )

@@ -1,2 +1,0 @@
-In ``importlib.metadata.PackageNotFoundError``, make reference to the
-package metadata being missing to improve the user experience.

@@ -43,19 +43,19 @@ _log_to_stderr = False
 
 def sub_debug(msg, *args):
     if _logger:
-        _logger.log(SUBDEBUG, msg, *args)
+        _logger.log(SUBDEBUG, msg, *args, stacklevel=2)
 
 def debug(msg, *args):
     if _logger:
-        _logger.log(DEBUG, msg, *args)
+        _logger.log(DEBUG, msg, *args, stacklevel=2)
 
 def info(msg, *args):
     if _logger:
-        _logger.log(INFO, msg, *args)
+        _logger.log(INFO, msg, *args, stacklevel=2)
 
 def sub_warning(msg, *args):
     if _logger:
-        _logger.log(SUBWARNING, msg, *args)
+        _logger.log(SUBWARNING, msg, *args, stacklevel=2)
 
 def get_logger():
     '''
@@ -64,8 +64,7 @@ def get_logger():
     global _logger
     import logging
 
-    logging._acquireLock()
-    try:
+    with logging._lock:
         if not _logger:
 
             _logger = logging.getLogger(LOGGER_NAME)
@@ -78,9 +77,6 @@ def get_logger():
             else:
                 atexit._exithandlers.remove((_exit_function, (), {}))
                 atexit._exithandlers.append((_exit_function, (), {}))
-
-    finally:
-        logging._releaseLock()
 
     return _logger
 
@@ -120,7 +116,7 @@ def is_abstract_socket_namespace(address):
         return address[0] == 0
     elif isinstance(address, str):
         return address[0] == "\0"
-    raise TypeError('address type of {address!r} unrecognized')
+    raise TypeError(f'address type of {address!r} unrecognized')
 
 
 abstract_sockets_supported = _platform_supports_abstract_sockets()
@@ -419,7 +415,7 @@ def _close_stdin():
     try:
         fd = os.open(os.devnull, os.O_RDONLY)
         try:
-            sys.stdin = open(fd, closefd=False)
+            sys.stdin = open(fd, encoding="utf-8", closefd=False)
         except:
             os.close(fd)
             raise
@@ -446,13 +442,15 @@ def _flush_std_streams():
 
 def spawnv_passfds(path, args, passfds):
     import _posixsubprocess
+    import subprocess
     passfds = tuple(sorted(map(int, passfds)))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
-            args, [os.fsencode(path)], True, passfds, None, None,
+            args, [path], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, None, None, None, -1, None)
+            False, False, -1, None, None, None, -1, None,
+            subprocess._USE_VFORK)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)

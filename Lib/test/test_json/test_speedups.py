@@ -59,6 +59,15 @@ class TestEncode(CTest):
         with self.assertRaises(ZeroDivisionError):
             enc('spam', 4)
 
+    def test_bad_markers_argument_to_encoder(self):
+        # https://bugs.python.org/issue45269
+        with self.assertRaisesRegex(
+            TypeError,
+            r'make_encoder\(\) argument 1 must be dict or None, not int',
+        ):
+            self.json.encoder.c_make_encoder(1, None, None, None, ': ', ', ',
+                                             False, False, False)
+
     def test_bad_bool_args(self):
         def test(name):
             self.json.encoder.JSONEncoder(**{name: BadBool()}).encode({'a': 1})

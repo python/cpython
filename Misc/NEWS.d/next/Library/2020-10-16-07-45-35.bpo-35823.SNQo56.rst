@@ -1,2 +1,0 @@
-Use ``vfork()`` instead of ``fork()`` for :func:`subprocess.Popen` on Linux
-to improve performance in cases where it is deemed safe.

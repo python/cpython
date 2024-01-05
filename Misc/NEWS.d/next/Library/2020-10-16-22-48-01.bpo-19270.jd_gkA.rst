@@ -1,2 +1,0 @@
-:meth:`sched.scheduler.cancel()` will now cancel the correct event, if two
-events with same priority are scheduled for the same time. Patch by Bar Harel.
