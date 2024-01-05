@@ -109,9 +109,8 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         ensurepip.bootstrap(prefix="/foo/bar/")
         self.run_pip.assert_called_once_with(
             [
-                "install", "--no-index", "--find-links",
-                unittest.mock.ANY, "--prefix", "/foo/bar/",
-                "setuptools", "pip",
+                "install", "--no-cache-dir", "--no-index", "--find-links",
+                unittest.mock.ANY, "--prefix", "/foo/bar/", "pip",
             ],
             unittest.mock.ANY,
         )
