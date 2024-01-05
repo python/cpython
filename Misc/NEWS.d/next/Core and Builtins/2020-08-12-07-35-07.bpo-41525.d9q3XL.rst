@@ -1,1 +1,0 @@
-The output of ``python --help`` contains now only ASCII characters.

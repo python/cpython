@@ -1,1 +1,0 @@
-fix bug allowing Enums to be extended via multiple inheritance
