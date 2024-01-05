@@ -1,1 +1,0 @@
-Skip some tests in _test_all_chown_common() on VxWorks.

@@ -30,6 +30,7 @@ button.pack(side=BOTTOM)
 tk.mainloop()
 """
 
+import collections
 import enum
 import sys
 import types
@@ -143,8 +144,31 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
         dict[key] = value
     return dict
 
+class _VersionInfoType(collections.namedtuple('_VersionInfoType',
+        ('major', 'minor', 'micro', 'releaselevel', 'serial'))):
+    def __str__(self):
+        if self.releaselevel == 'final':
+            return f'{self.major}.{self.minor}.{self.micro}'
+        else:
+            return f'{self.major}.{self.minor}{self.releaselevel[0]}{self.serial}'
 
-class EventType(enum.StrEnum):
+def _parse_version(version):
+    import re
+    m = re.fullmatch(r'(\d+)\.(\d+)([ab.])(\d+)', version)
+    major, minor, releaselevel, serial = m.groups()
+    major, minor, serial = int(major), int(minor), int(serial)
+    if releaselevel == '.':
+        micro = serial
+        serial = 0
+        releaselevel = 'final'
+    else:
+        micro = 0
+        releaselevel = {'a': 'alpha', 'b': 'beta'}[releaselevel]
+    return _VersionInfoType(major, minor, micro, releaselevel, serial)
+
+
+@enum._simple_enum(enum.StrEnum)
+class EventType:
     KeyPress = '2'
     Key = KeyPress
     KeyRelease = '3'
@@ -184,8 +208,6 @@ class EventType(enum.StrEnum):
     Activate = '36'
     Deactivate = '37'
     MouseWheel = '38'
-
-    __str__ = str.__str__
 
 
 class Event:
@@ -292,12 +314,37 @@ def _get_default_root(what=None):
     if not _support_default_root:
         raise RuntimeError("No master specified and tkinter is "
                            "configured to not support default root")
-    if not _default_root:
+    if _default_root is None:
         if what:
             raise RuntimeError(f"Too early to {what}: no default root window")
         root = Tk()
         assert _default_root is root
     return _default_root
+
+
+def _get_temp_root():
+    global _support_default_root
+    if not _support_default_root:
+        raise RuntimeError("No master specified and tkinter is "
+                           "configured to not support default root")
+    root = _default_root
+    if root is None:
+        assert _support_default_root
+        _support_default_root = False
+        root = Tk()
+        _support_default_root = True
+        assert _default_root is None
+        root.withdraw()
+        root._temporary = True
+    return root
+
+
+def _destroy_temp_root(master):
+    if getattr(master, '_temporary', False):
+        try:
+            master.destroy()
+        except TclError:
+            pass
 
 
 def _tkerror(err):
@@ -342,7 +389,7 @@ class Variable:
         if name is not None and not isinstance(name, str):
             raise TypeError("name must be a string")
         global _varnum
-        if not master:
+        if master is None:
             master = _get_default_root('create variable')
         self._root = master._root()
         self._tk = master.tk
@@ -491,15 +538,11 @@ class Variable:
             self._tk.call("trace", "vinfo", self._name))]
 
     def __eq__(self, other):
-        """Comparison for equality (==).
-
-        Note: if the Variable's master matters to behavior
-        also compare self._master == other._master
-        """
         if not isinstance(other, Variable):
             return NotImplemented
-        return self.__class__.__name__ == other.__class__.__name__ \
-            and self._name == other._name
+        return (self._name == other._name
+                and self.__class__.__name__ == other.__class__.__name__
+                and self._tk == other._tk)
 
 
 class StringVar(Variable):
@@ -808,7 +851,7 @@ class Misc:
         function which shall be called. Additional parameters
         are given as parameters to the function call.  Return
         identifier to cancel scheduling with after_cancel."""
-        if not func:
+        if func is None:
             # I'd rather use time.sleep(ms*0.001)
             self.tk.call('after', ms)
             return None
@@ -821,7 +864,11 @@ class Misc:
                         self.deletecommand(name)
                     except TclError:
                         pass
-            callit.__name__ = func.__name__
+            try:
+                callit.__name__ = func.__name__
+            except AttributeError:
+                # Required for callable classes (bpo-44404)
+                callit.__name__ = type(func).__name__
             name = self._register(callit)
             return self.tk.call('after', ms, name)
 
@@ -853,6 +900,85 @@ class Misc:
     def bell(self, displayof=0):
         """Ring a display's bell."""
         self.tk.call(('bell',) + self._displayof(displayof))
+
+    def tk_busy_cget(self, option):
+        """Return the value of busy configuration option.
+
+        The widget must have been previously made busy by
+        tk_busy_hold().  Option may have any of the values accepted by
+        tk_busy_hold().
+        """
+        return self.tk.call('tk', 'busy', 'cget', self._w, '-'+option)
+    busy_cget = tk_busy_cget
+
+    def tk_busy_configure(self, cnf=None, **kw):
+        """Query or modify the busy configuration options.
+
+        The widget must have been previously made busy by
+        tk_busy_hold().  Options may have any of the values accepted by
+        tk_busy_hold().
+
+        Please note that the option database is referenced by the widget
+        name or class.  For example, if a Frame widget with name "frame"
+        is to be made busy, the busy cursor can be specified for it by
+        either call:
+
+            w.option_add('*frame.busyCursor', 'gumby')
+            w.option_add('*Frame.BusyCursor', 'gumby')
+        """
+        if kw:
+            cnf = _cnfmerge((cnf, kw))
+        elif cnf:
+            cnf = _cnfmerge(cnf)
+        if cnf is None:
+            return self._getconfigure(
+                        'tk', 'busy', 'configure', self._w)
+        if isinstance(cnf, str):
+            return self._getconfigure1(
+                        'tk', 'busy', 'configure', self._w, '-'+cnf)
+        self.tk.call('tk', 'busy', 'configure', self._w, *self._options(cnf))
+    busy_config = busy_configure = tk_busy_config = tk_busy_configure
+
+    def tk_busy_current(self, pattern=None):
+        """Return a list of widgets that are currently busy.
+
+        If a pattern is given, only busy widgets whose path names match
+        a pattern are returned.
+        """
+        return [self._nametowidget(x) for x in
+                self.tk.splitlist(self.tk.call(
+                   'tk', 'busy', 'current', pattern))]
+    busy_current = tk_busy_current
+
+    def tk_busy_forget(self):
+        """Make this widget no longer busy.
+
+        User events will again be received by the widget.
+        """
+        self.tk.call('tk', 'busy', 'forget', self._w)
+    busy_forget = tk_busy_forget
+
+    def tk_busy_hold(self, **kw):
+        """Make this widget appear busy.
+
+        The specified widget and its descendants will be blocked from
+        user interactions.  Normally update() should be called
+        immediately afterward to insure that the hold operation is in
+        effect before the application starts its processing.
+
+        The only supported configuration option is:
+
+            cursor: the cursor to be displayed when the widget is made
+                    busy.
+        """
+        self.tk.call('tk', 'busy', 'hold', self._w, *self._options(kw))
+    busy = busy_hold = tk_busy = tk_busy_hold
+
+    def tk_busy_status(self):
+        """Return True if the widget is busy, False otherwise."""
+        return self.tk.getboolean(self.tk.call(
+                'tk', 'busy', 'status', self._w))
+    busy_status = tk_busy_status
 
     # Clipboard handling:
     def clipboard_get(self, **kw):
@@ -1031,6 +1157,11 @@ class Misc:
 
     lift = tkraise
 
+    def info_patchlevel(self):
+        """Returns the exact version of the Tcl library."""
+        patchlevel = self.tk.call('info', 'patchlevel')
+        return _parse_version(patchlevel)
+
     def winfo_atom(self, name, displayof=0):
         """Return integer which represents atom NAME."""
         args = ('winfo', 'atom') + self._displayof(displayof) + (name,)
@@ -1164,8 +1295,7 @@ class Misc:
             self.tk.call('winfo', 'reqwidth', self._w))
 
     def winfo_rgb(self, color):
-        """Return tuple of decimal values for red, green, blue for
-        COLOR in this widget."""
+        """Return a tuple of integer RGB values in range(65536) for color in this widget."""
         return self._getints(
             self.tk.call('winfo', 'rgb', self._w, color))
 
@@ -1397,10 +1527,24 @@ class Misc:
         return self._bind(('bind', self._w), sequence, func, add)
 
     def unbind(self, sequence, funcid=None):
-        """Unbind for this widget for event SEQUENCE  the
-        function identified with FUNCID."""
-        self.tk.call('bind', self._w, sequence, '')
-        if funcid:
+        """Unbind for this widget the event SEQUENCE.
+
+        If FUNCID is given, only unbind the function identified with FUNCID
+        and also delete the corresponding Tcl command.
+
+        Otherwise destroy the current binding for SEQUENCE, leaving SEQUENCE
+        unbound.
+        """
+        if funcid is None:
+            self.tk.call('bind', self._w, sequence, '')
+        else:
+            lines = self.tk.call('bind', self._w, sequence).split('\n')
+            prefix = f'if {{"[{funcid} '
+            keep = '\n'.join(line for line in lines
+                             if not line.startswith(prefix))
+            if not keep.strip():
+                keep = ''
+            self.tk.call('bind', self._w, sequence, keep)
             self.deletecommand(funcid)
 
     def bind_all(self, sequence=None, func=None, add=None):
@@ -1408,7 +1552,7 @@ class Misc:
         An additional boolean parameter ADD specifies whether FUNC will
         be called additionally to the other bound function or whether
         it will replace the previous function. See bind for the return value."""
-        return self._bind(('bind', 'all'), sequence, func, add, 0)
+        return self._root()._bind(('bind', 'all'), sequence, func, add, True)
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
@@ -1422,7 +1566,7 @@ class Misc:
         whether it will replace the previous function. See bind for
         the return value."""
 
-        return self._bind(('bind', className), sequence, func, add, 0)
+        return self._root()._bind(('bind', className), sequence, func, add, True)
 
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
@@ -1542,7 +1686,7 @@ class Misc:
     def _root(self):
         """Internal function."""
         w = self
-        while w.master: w = w.master
+        while w.master is not None: w = w.master
         return w
     _subst_format = ('%#', '%b', '%f', '%h', '%k',
              '%s', '%t', '%w', '%x', '%y',
@@ -2075,7 +2219,7 @@ class Wm:
         the bitmap if None is given.
 
         Under Windows, the DEFAULT parameter can be used to set the icon
-        for the widget and any descendents that don't have an icon set
+        for the widget and any descendants that don't have an icon set
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
@@ -2254,7 +2398,7 @@ class Tk(Misc, Wm):
 
     def __init__(self, screenName=None, baseName=None, className='Tk',
                  useTk=True, sync=False, use=None):
-        """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
+        """Return a new top level widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
         It is constructed from sys.argv[0] without extensions if None is given. CLASSNAME
@@ -2306,7 +2450,7 @@ class Tk(Misc, Wm):
         self.tk.createcommand('exit', _exit)
         self._tclCommands.append('tkerror')
         self._tclCommands.append('exit')
-        if _support_default_root and not _default_root:
+        if _support_default_root and _default_root is None:
             _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
@@ -2321,9 +2465,9 @@ class Tk(Misc, Wm):
             _default_root = None
 
     def readprofile(self, baseName, className):
-        """Internal function. It reads BASENAME.tcl and CLASSNAME.tcl into
-        the Tcl Interpreter and calls exec on the contents of BASENAME.py and
-        CLASSNAME.py if such a file exists in the home directory."""
+        """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
+        the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
+        .CLASSNAME.py if such a file exists in the home directory."""
         import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
@@ -2349,6 +2493,7 @@ class Tk(Misc, Wm):
         should when sys.stderr is None."""
         import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
+        sys.last_exc = val
         sys.last_type = exc
         sys.last_value = val
         sys.last_traceback = tb
@@ -2534,7 +2679,7 @@ class BaseWidget(Misc):
 
     def _setup(self, master, cnf):
         """Internal function. Sets up information about children."""
-        if not master:
+        if master is None:
             master = _get_default_root()
         self.master = master
         self.tk = master.tk
@@ -2568,7 +2713,7 @@ class BaseWidget(Misc):
         if kw:
             cnf = _cnfmerge((cnf, kw))
         self.widgetName = widgetName
-        BaseWidget._setup(self, master, cnf)
+        self._setup(master, cnf)
         if self._tclCommands is None:
             self._tclCommands = []
         classes = [(k, v) for k, v in cnf.items() if isinstance(k, type)]
@@ -2712,7 +2857,7 @@ class Canvas(Widget, XView, YView):
         """Add tag NEWTAG to item which is closest to pixel at X, Y.
         If several match take the top-most.
         All items closer than HALO are considered overlapping (all are
-        closests). If START is specified the next below this tag is taken."""
+        closest). If START is specified the next below this tag is taken."""
         self.addtag(newtag, 'closest', x, y, halo, start)
 
     def addtag_enclosed(self, newtag, x1, y1, x2, y2):
@@ -2765,7 +2910,7 @@ class Canvas(Widget, XView, YView):
 
     def coords(self, *args):
         """Return a list of coordinates for the item given in ARGS."""
-        # XXX Should use _flatten on args
+        args = _flatten(args)
         return [self.tk.getdouble(x) for x in
                            self.tk.splitlist(
                    self.tk.call((self._w, 'coords') + args))]
@@ -2987,6 +3132,8 @@ class Canvas(Widget, XView, YView):
         return self.tk.call(self._w, 'type', tagOrId) or None
 
 
+_checkbutton_count = 0
+
 class Checkbutton(Widget):
     """Checkbutton widget which is either in on- or off-state."""
 
@@ -3001,6 +3148,14 @@ class Checkbutton(Widget):
         selectcolor, selectimage, state, takefocus, text, textvariable,
         underline, variable, width, wraplength."""
         Widget.__init__(self, master, 'checkbutton', cnf, kw)
+
+    def _setup(self, master, cnf):
+        if not cnf.get('name'):
+            global _checkbutton_count
+            name = self.__class__.__name__.lower()
+            _checkbutton_count += 1
+            cnf['name'] = f'!{name}{_checkbutton_count}'
+        super()._setup(master, cnf)
 
     def deselect(self):
         """Put the button in off-state."""
@@ -3307,7 +3462,7 @@ class Menu(Widget):
         self.add('command', cnf or kw)
 
     def add_radiobutton(self, cnf={}, **kw):
-        """Addd radio menu item."""
+        """Add radio menu item."""
         self.add('radiobutton', cnf or kw)
 
     def add_separator(self, cnf={}, **kw):
@@ -3332,7 +3487,7 @@ class Menu(Widget):
         self.insert(index, 'command', cnf or kw)
 
     def insert_radiobutton(self, index, cnf={}, **kw):
-        """Addd radio menu item at INDEX."""
+        """Add radio menu item at INDEX."""
         self.insert(index, 'radiobutton', cnf or kw)
 
     def insert_separator(self, index, cnf={}, **kw):
@@ -3368,8 +3523,7 @@ class Menu(Widget):
     def index(self, index):
         """Return the index of a menu item identified by INDEX."""
         i = self.tk.call(self._w, 'index', index)
-        if i == 'none': return None
-        return self.tk.getint(i)
+        return None if i in ('', 'none') else self.tk.getint(i)  # GH-103685.
 
     def invoke(self, index):
         """Invoke a menu item identified by INDEX and execute
@@ -3575,25 +3729,28 @@ class Text(Widget, XView, YView):
         return self.tk.getboolean(self.tk.call(
             self._w, 'compare', index1, op, index2))
 
-    def count(self, index1, index2, *args): # new in Tk 8.5
+    def count(self, index1, index2, *options): # new in Tk 8.5
         """Counts the number of relevant things between the two indices.
-        If index1 is after index2, the result will be a negative number
+
+        If INDEX1 is after INDEX2, the result will be a negative number
         (and this holds for each of the possible options).
 
-        The actual items which are counted depends on the options given by
-        args. The result is a list of integers, one for the result of each
-        counting option given. Valid counting options are "chars",
+        The actual items which are counted depends on the options given.
+        The result is a tuple of integers, one for the result of each
+        counting option given, if more than one option is specified,
+        otherwise it is an integer. Valid counting options are "chars",
         "displaychars", "displayindices", "displaylines", "indices",
-        "lines", "xpixels" and "ypixels". There is an additional possible
+        "lines", "xpixels" and "ypixels". The default value, if no
+        option is specified, is "indices". There is an additional possible
         option "update", which if given then all subsequent options ensure
         that any possible out of date information is recalculated."""
-        args = ['-%s' % arg for arg in args if not arg.startswith('-')]
-        args += [index1, index2]
-        res = self.tk.call(self._w, 'count', *args) or None
-        if res is not None and len(args) <= 3:
-            return (res, )
-        else:
-            return res
+        options = ['-%s' % arg for arg in options]
+        res = self.tk.call(self._w, 'count', *options, index1, index2)
+        if not isinstance(res, int):
+            res = self._getints(res)
+            if len(res) == 1:
+                res, = res
+        return res
 
     def debug(self, boolean=None):
         """Turn on the internal consistency checks of the B-Tree inside the text
@@ -3949,7 +4106,7 @@ class _setit:
 
     def __call__(self, *args):
         self.__var.set(self.__value)
-        if self.__callback:
+        if self.__callback is not None:
             self.__callback(self.__value, *args)
 
 
@@ -3998,7 +4155,7 @@ class Image:
 
     def __init__(self, imgtype, name=None, cnf={}, master=None, **kw):
         self.name = None
-        if not master:
+        if master is None:
             master = _get_default_root('create image')
         self.tk = getattr(master, 'tk', master)
         if not name:
@@ -4008,8 +4165,6 @@ class Image:
         elif kw: cnf = kw
         options = ()
         for k, v in cnf.items():
-            if callable(v):
-                v = self._register(v)
             options = options + ('-'+k, v)
         self.tk.call(('image', 'create', imgtype, name,) + options)
         self.name = name
@@ -4036,8 +4191,6 @@ class Image:
         for k, v in _cnfmerge(kw).items():
             if v is not None:
                 if k[-1] == '_': k = k[:-1]
-                if callable(v):
-                    v = self._register(v)
                 res = res + ('-'+k, v)
         self.tk.call((self.name, 'config') + res)
 
