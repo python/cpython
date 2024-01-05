@@ -194,7 +194,7 @@ _PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
     // Until then, we have to rely on the caller to identify it
     // (but we don't need it in all cases).
     _PyCrossInterpreterData_INTERPID(data) = (interp != NULL)
-        ? interp->id
+        ? PyInterpreterState_GetID(interp)
         : -1;
     data->new_object = new_object;
 }
@@ -339,7 +339,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    _PyCrossInterpreterData_INTERPID(data) = interp->id;
+    _PyCrossInterpreterData_INTERPID(data) = PyInterpreterState_GetID(interp);
     if (_check_xidata(tstate, data) != 0) {
         (void)_PyCrossInterpreterData_Release(data);
         return -1;
