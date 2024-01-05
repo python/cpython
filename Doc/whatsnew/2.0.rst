@@ -1139,7 +1139,7 @@ module.
   Unix, not to be confused with :program:`gzip`\ -format files (which are
   supported by the :mod:`gzip` module) (Contributed by James C. Ahlstrom.)
 
-* :mod:`imputil`: A module that provides a simpler way for writing customized
+* :mod:`!imputil`: A module that provides a simpler way for writing customized
   import hooks, in comparison to the existing :mod:`!ihooks` module.  (Implemented
   by Greg Stein, with much discussion on python-dev along the way.)
 
