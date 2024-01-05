@@ -219,6 +219,13 @@ write code that handles both IP versions correctly.  Address objects are
       ``True`` if the address is reserved for link-local usage.  See
       :RFC:`3927`.
 
+   .. attribute:: ipv6_mapped
+
+      :class:`IPv4Address` object representing the IPv4-mapped IPv6 address. See :RFC:`4291`.
+
+      .. versionadded:: 3.13
+
+
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 

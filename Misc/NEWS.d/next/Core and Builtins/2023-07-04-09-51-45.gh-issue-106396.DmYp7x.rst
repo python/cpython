@@ -1,3 +1,0 @@
-When the format specification of an f-string expression is empty, the parser now
-generates an empty :class:`ast.JoinedStr` node for it instead of an one-element
-:class:`ast.JoinedStr` with an empty string :class:`ast.Constant`.

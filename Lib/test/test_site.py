@@ -465,10 +465,48 @@ class ImportSideEffectTests(unittest.TestCase):
             else:
                 self.fail("sitecustomize not imported automatically")
 
-    @test.support.requires_resource('network')
-    @test.support.system_must_validate_cert
+    @support.requires_subprocess()
+    def test_customization_modules_on_startup(self):
+        mod_names = [
+            'sitecustomize'
+        ]
+
+        if site.ENABLE_USER_SITE:
+            mod_names.append('usercustomize')
+
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, temp_dir)
+
+        with EnvironmentVarGuard() as environ:
+            environ['PYTHONPATH'] = temp_dir
+
+            for module_name in mod_names:
+                os_helper.rmtree(temp_dir)
+                os.mkdir(temp_dir)
+
+                customize_path = os.path.join(temp_dir, f'{module_name}.py')
+                eyecatcher = f'EXECUTED_{module_name}'
+
+                with open(customize_path, 'w') as f:
+                    f.write(f'print("{eyecatcher}")')
+
+                output = subprocess.check_output([sys.executable, '-c', '""'])
+                self.assertIn(eyecatcher, output.decode('utf-8'))
+
+                # -S blocks any site-packages
+                output = subprocess.check_output([sys.executable, '-S', '-c', '""'])
+                self.assertNotIn(eyecatcher, output.decode('utf-8'))
+
+                # -s blocks user site-packages
+                if 'usercustomize' == module_name:
+                    output = subprocess.check_output([sys.executable, '-s', '-c', '""'])
+                    self.assertNotIn(eyecatcher, output.decode('utf-8'))
+
+
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
+    @test.support.requires_resource('network')
+    @test.support.system_must_validate_cert
     def test_license_exists_at_url(self):
         # This test is a bit fragile since it depends on the format of the
         # string displayed by license in the absence of a LICENSE file.
@@ -576,7 +614,7 @@ class _pthFileTests(unittest.TestCase):
                 _pth_file = os.path.splitext(exe_file)[0] + '._pth'
             else:
                 _pth_file = os.path.splitext(dll_file)[0] + '._pth'
-            with open(_pth_file, 'w') as f:
+            with open(_pth_file, 'w', encoding='utf8') as f:
                 for line in lines:
                     print(line, file=f)
             return exe_file
@@ -603,17 +641,31 @@ class _pthFileTests(unittest.TestCase):
             sys_path.append(abs_path)
         return sys_path
 
+    def _get_pth_lines(self, libpath: str, *, import_site: bool):
+        pth_lines = ['fake-path-name']
+        # include 200 lines of `libpath` in _pth lines (or fewer
+        # if the `libpath` is long enough to get close to 32KB
+        # see https://github.com/python/cpython/issues/113628)
+        encoded_libpath_length = len(libpath.encode("utf-8"))
+        repetitions = min(200, 30000 // encoded_libpath_length)
+        if repetitions <= 2:
+            self.skipTest(
+                f"Python stdlib path is too long ({encoded_libpath_length:,} bytes)")
+        pth_lines.extend(libpath for _ in range(repetitions))
+        pth_lines.extend(['', '# comment'])
+        if import_site:
+            pth_lines.append('import site')
+        return pth_lines
+
     @support.requires_subprocess()
     def test_underpth_basic(self):
-        libpath = test.support.STDLIB_DIR
-        exe_prefix = os.path.dirname(sys.executable)
         pth_lines = ['#.', '# ..', *sys.path, '.', '..']
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
             os.path.dirname(exe_file),
             pth_lines)
 
-        output = subprocess.check_output([exe_file, '-c',
+        output = subprocess.check_output([exe_file, '-X', 'utf8', '-c',
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
         ], encoding='utf-8', errors='surrogateescape')
         actual_sys_path = output.rstrip().split('\n')
@@ -628,12 +680,7 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_nosite_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        pth_lines = [
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-        ]
+        pth_lines = self._get_pth_lines(libpath, import_site=False)
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
             os.path.dirname(exe_file),
@@ -657,13 +704,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ])
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True))
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
@@ -682,13 +724,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_dll_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ], exe_pth=False)
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True), exe_pth=False)
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'

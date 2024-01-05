@@ -27,16 +27,15 @@ Readline library in general.
 .. note::
 
   The underlying Readline library API may be implemented by
-  the ``libedit`` library instead of GNU readline.
+  the ``editline`` (``libedit``) library instead of GNU readline.
   On macOS the :mod:`readline` module detects which library is being used
   at run time.
 
-  The configuration file for ``libedit`` is different from that
+  The configuration file for ``editline`` is different from that
   of GNU readline. If you programmatically load configuration strings
-  you can check for the text "libedit" in :const:`readline.__doc__`
-  to differentiate between GNU readline and libedit.
+  you can use :data:`backend` to determine which library is being used.
 
-  If you use *editline*/``libedit`` readline emulation on macOS, the
+  If you use ``editline``/``libedit`` readline emulation on macOS, the
   initialization file located in your home directory is named
   ``.editrc``. For example, the following content in ``~/.editrc`` will
   turn ON *vi* keybindings and TAB completion::
@@ -44,6 +43,12 @@ Readline library in general.
     python:bind -v
     python:bind ^I rl_complete
 
+.. data:: backend
+
+   The name of the underlying Readline library being used, either
+   ``"readline"`` or ``"editline"``.
+
+   .. versionadded:: 3.13
 
 Init file
 ---------
@@ -212,6 +217,8 @@ Startup hooks
    readline starts reading input characters.  This function only exists
    if Python was compiled for a version of the library that supports it.
 
+
+.. _readline-completion:
 
 Completion
 ----------

@@ -1,5 +1,9 @@
 /* fcntl module */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #ifdef HAVE_SYS_FILE_H
@@ -208,11 +212,12 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                 memcpy(str, buf, len);
             }
-            PyBuffer_Release(&pstr); /* No further access to str below this point */
             if (ret < 0) {
                 PyErr_SetFromErrno(PyExc_OSError);
+                PyBuffer_Release(&pstr);
                 return NULL;
             }
+            PyBuffer_Release(&pstr);
             if (mutate_arg) {
                 return PyLong_FromLong(ret);
             }
@@ -237,8 +242,8 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             ret = ioctl(fd, code, buf);
             Py_END_ALLOW_THREADS
             if (ret < 0) {
-                PyBuffer_Release(&pstr);
                 PyErr_SetFromErrno(PyExc_OSError);
+                PyBuffer_Release(&pstr);
                 return NULL;
             }
             PyBuffer_Release(&pstr);
