@@ -1351,7 +1351,7 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
 }
 
 static PyObject *
-deque_item(dequeobject *deque, Py_ssize_t i)
+deque_item_locked(dequeobject *deque, Py_ssize_t i)
 {
     block *b;
     PyObject *item;
@@ -1387,6 +1387,15 @@ deque_item(dequeobject *deque, Py_ssize_t i)
     }
     item = b->data[i];
     return Py_NewRef(item);
+}
+
+static PyObject *
+deque_item(dequeobject *deque, Py_ssize_t i)
+{
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    PyObject *result = deque_item_locked(deque, i);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
