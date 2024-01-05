@@ -55,11 +55,21 @@ class StructFieldsTestCase(unittest.TestCase):
         x.char = b'a\0b\0'
         self.assertEqual(bytes(x), b'a\x00###')
 
-    def test_6(self):
+    def test_cfield_instantiation(self):
         class X(Structure):
             _fields_ = [("x", c_int)]
         CField = type(X.x)
-        self.assertRaises(TypeError, CField)
+        self.assertRaisesRegex(TypeError,
+                               "cannot create '_ctypes.CField' instances",
+                               CField)
+
+    def test_cfield_immutability(self):
+        class X(Structure):
+            _fields_ = [("x", c_int)]
+        CField = type(X.x)
+        msg = "cannot set 'foo' attribute of immutable type '_ctypes.CField'"
+        with self.assertRaisesRegex(TypeError, msg):
+            CField.foo = "bar"
 
     def test_gh99275(self):
         class BrokenStructure(Structure):
