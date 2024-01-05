@@ -1,1 +1,0 @@
-Fixed a bug where importlib.resources.as_file was leaving file pointers open

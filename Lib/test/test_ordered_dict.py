@@ -122,6 +122,17 @@ class OrderedDictTests:
         self.OrderedDict(Spam())
         self.assertEqual(calls, ['keys'])
 
+    def test_overridden_init(self):
+        # Sync-up pure Python OD class with C class where
+        # a consistent internal state is created in __new__
+        # rather than __init__.
+        OrderedDict = self.OrderedDict
+        class ODNI(OrderedDict):
+            def __init__(*args, **kwargs):
+                pass
+        od = ODNI()
+        od['a'] = 1  # This used to fail because __init__ was bypassed
+
     def test_fromkeys(self):
         OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abc')
@@ -362,7 +373,7 @@ class OrderedDictTests:
         OrderedDict = self.OrderedDict
         od = OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])
         self.assertEqual(repr(od),
-            "OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])")
+            "OrderedDict({'c': 1, 'b': 2, 'a': 3, 'd': 4, 'e': 5, 'f': 6})")
         self.assertEqual(eval(repr(od)), od)
         self.assertEqual(repr(OrderedDict()), "OrderedDict()")
 
@@ -372,7 +383,7 @@ class OrderedDictTests:
         od = OrderedDict.fromkeys('abc')
         od['x'] = od
         self.assertEqual(repr(od),
-            "OrderedDict([('a', None), ('b', None), ('c', None), ('x', ...)])")
+            "OrderedDict({'a': None, 'b': None, 'c': None, 'x': ...})")
 
     def test_repr_recursive_values(self):
         OrderedDict = self.OrderedDict

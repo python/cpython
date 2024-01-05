@@ -109,9 +109,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if '-w' in args.test_args or '--verbose2' in args.test_args:
-        print("WARNING: -w/--verbose2 option should not be used to bisect!")
-        print()
+    for opt in ('-w', '--rerun', '--verbose2'):
+        if opt in args.test_args:
+            print(f"WARNING: {opt} option should not be used to bisect!")
+            print()
 
     if args.input:
         with open(args.input) as fp:

@@ -37,3 +37,6 @@ ac_cv_header_netpacket_packet_h=no
 # disable accept for WASM runtimes without sock_accept
 #ac_cv_func_accept=no
 #ac_cv_func_accept4=no
+
+# Disable int-conversion for wask-sdk as it triggers an error from version 17.
+ac_cv_disable_int_conversion=yes

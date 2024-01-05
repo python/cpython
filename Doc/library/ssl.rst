@@ -25,7 +25,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    Some behavior may be platform dependent, since calls are made to the
    operating system socket APIs.  The installed version of OpenSSL may also
-   cause variations in behavior. For example, TLSv1.3 with OpenSSL version
+   cause variations in behavior. For example, TLSv1.3 comes with OpenSSL version
    1.1.1.
 
 .. warning::
@@ -43,8 +43,10 @@ This module provides a class, :class:`ssl.SSLSocket`, which is derived from the
 :class:`socket.socket` type, and provides a socket-like wrapper that also
 encrypts and decrypts the data going over the socket with SSL.  It supports
 additional methods such as :meth:`getpeercert`, which retrieves the
-certificate of the other side of the connection, and :meth:`cipher`, which
-retrieves the cipher being used for the secure connection.
+certificate of the other side of the connection, :meth:`cipher`, which
+retrieves the cipher being used for the secure connection or
+:meth:`get_verified_chain`, :meth:`get_unverified_chain` which retrieves
+certificate chain.
 
 For more sophisticated applications, the :class:`ssl.SSLContext` class
 helps manage settings and certificates, which can then be inherited
@@ -139,7 +141,7 @@ purposes.
    The settings are: :data:`PROTOCOL_TLS_CLIENT` or
    :data:`PROTOCOL_TLS_SERVER`, :data:`OP_NO_SSLv2`, and :data:`OP_NO_SSLv3`
    with high encryption cipher suites without RC4 and
-   without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
+   without unauthenticated cipher suites. Passing :const:`~Purpose.SERVER_AUTH`
    as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
    and either loads CA certificates (when at least one of *cafile*, *capath* or
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
@@ -320,7 +322,7 @@ Random generation
 
    Mix the given *bytes* into the SSL pseudo-random number generator.  The
    parameter *entropy* (a float) is a lower bound on the entropy contained in
-   string (so you can always use :const:`0.0`).  See :rfc:`1750` for more
+   string (so you can always use ``0.0``).  See :rfc:`1750` for more
    information on sources of entropy.
 
    .. versionchanged:: 3.5
@@ -906,6 +908,12 @@ Constants
 
    .. versionadded:: 3.7
 
+.. data:: HAS_PSK
+
+   Whether the OpenSSL library has built-in support for TLS-PSK.
+
+   .. versionadded:: 3.13
+
 .. data:: CHANNEL_BINDING_TYPES
 
    List of supported TLS channel binding types.  Strings in this list
@@ -1054,7 +1062,7 @@ SSL Sockets
 
    .. versionchanged:: 3.5
       The :meth:`shutdown` does not reset the socket timeout each time bytes
-      are received or sent. The socket timeout is now to maximum total duration
+      are received or sent. The socket timeout is now the maximum total duration
       of the shutdown.
 
    .. deprecated:: 3.6
@@ -1087,8 +1095,8 @@ SSL sockets also have the following additional methods and attributes:
    cause write operations.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration to read up to *len*
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration to read up to *len*
       bytes.
 
    .. deprecated:: 3.6
@@ -1106,8 +1114,8 @@ SSL sockets also have the following additional methods and attributes:
    also cause read operations.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration to write *buf*.
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration to write *buf*.
 
    .. deprecated:: 3.6
       Use :meth:`~SSLSocket.send` instead of :meth:`~SSLSocket.write`.
@@ -1134,14 +1142,14 @@ SSL sockets also have the following additional methods and attributes:
       :attr:`~SSLSocket.context` is true.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time bytes are received or sent.
-      The socket timeout is now to maximum total duration of the handshake.
+      The socket timeout is no longer reset each time bytes are received or sent.
+      The socket timeout is now the maximum total duration of the handshake.
 
    .. versionchanged:: 3.7
       Hostname or IP address is matched by OpenSSL during handshake. The
       function :func:`match_hostname` is no longer used. In case OpenSSL
       refuses a hostname or IP address, the handshake is aborted early and
-      a TLS alert message is send to the peer.
+      a TLS alert message is sent to the peer.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
@@ -1210,6 +1218,22 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.9
       IPv6 address strings no longer have a trailing new line.
 
+.. method:: SSLSocket.get_verified_chain()
+
+   Returns verified certificate chain provided by the other
+   end of the SSL channel as a list of DER-encoded bytes.
+   If certificate verification was disabled method acts the same as
+   :meth:`~SSLSocket.get_unverified_chain`.
+
+   .. versionadded:: 3.13
+
+.. method:: SSLSocket.get_unverified_chain()
+
+   Returns raw certificate chain provided by the other
+   end of the SSL channel as a list of DER-encoded bytes.
+
+   .. versionadded:: 3.13
+
 .. method:: SSLSocket.cipher()
 
    Returns a three-value tuple containing the name of the cipher being used, the
@@ -1218,7 +1242,7 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.shared_ciphers()
 
-   Return the list of ciphers shared by the client during the handshake.  Each
+   Return the list of ciphers available in both the client and server.  Each
    entry of the returned list is a three-value tuple containing the name of the
    cipher, the version of the SSL protocol that defines its use, and the number
    of secret bits the cipher uses.  :meth:`~SSLSocket.shared_ciphers` returns
@@ -1380,18 +1404,18 @@ to speed up repeated connections from the same clients.
    Here's a table showing which versions in a client (down the side) can connect
    to which versions in a server (along the top):
 
-     .. table::
+   .. table::
 
-       ========================  ============  ============  =============  =========  ===========  ===========
-        *client* / **server**    **SSLv2**     **SSLv3**     **TLS** [3]_   **TLSv1**  **TLSv1.1**  **TLSv1.2**
-       ------------------------  ------------  ------------  -------------  ---------  -----------  -----------
-        *SSLv2*                    yes           no            no [1]_        no         no         no
-        *SSLv3*                    no            yes           no [2]_        no         no         no
-        *TLS* (*SSLv23*) [3]_      no [1]_       no [2]_       yes            yes        yes        yes
-        *TLSv1*                    no            no            yes            yes        no         no
-        *TLSv1.1*                  no            no            yes            no         yes        no
-        *TLSv1.2*                  no            no            yes            no         no         yes
-       ========================  ============  ============  =============  =========  ===========  ===========
+      ========================  ============  ============  =============  =========  ===========  ===========
+       *client* / **server**    **SSLv2**     **SSLv3**     **TLS** [3]_   **TLSv1**  **TLSv1.1**  **TLSv1.2**
+      ------------------------  ------------  ------------  -------------  ---------  -----------  -----------
+       *SSLv2*                    yes           no            no [1]_        no         no         no
+       *SSLv3*                    no            yes           no [2]_        no         no         no
+       *TLS* (*SSLv23*) [3]_      no [1]_       no [2]_       yes            yes        yes        yes
+       *TLSv1*                    no            no            yes            yes        no         no
+       *TLSv1.1*                  no            no            yes            no         yes        no
+       *TLSv1.2*                  no            no            yes            no         no         yes
+      ========================  ============  ============  =============  =========  ===========  ===========
 
    .. rubric:: Footnotes
    .. [1] :class:`SSLContext` disables SSLv2 with :data:`OP_NO_SSLv2` by default.
@@ -1484,9 +1508,9 @@ to speed up repeated connections from the same clients.
    load CA certificates from other locations, too.
 
    The *purpose* flag specifies what kind of CA certificates are loaded. The
-   default settings :data:`Purpose.SERVER_AUTH` loads certificates, that are
+   default settings :const:`Purpose.SERVER_AUTH` loads certificates, that are
    flagged and trusted for TLS web server authentication (client side
-   sockets). :data:`Purpose.CLIENT_AUTH` loads CA certificates for client
+   sockets). :const:`Purpose.CLIENT_AUTH` loads CA certificates for client
    certificate verification on the server side.
 
    .. versionadded:: 3.4
@@ -1656,8 +1680,9 @@ to speed up repeated connections from the same clients.
    Due to the early negotiation phase of the TLS connection, only limited
    methods and attributes are usable like
    :meth:`SSLSocket.selected_alpn_protocol` and :attr:`SSLSocket.context`.
-   The :meth:`SSLSocket.getpeercert`,
-   :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compression` methods require that
+   The :meth:`SSLSocket.getpeercert`, :meth:`SSLSocket.get_verified_chain`,
+   :meth:`SSLSocket.get_unverified_chain` :meth:`SSLSocket.cipher`
+   and :meth:`SSLSocket.compression` methods require that
    the TLS connection has progressed beyond the TLS Client Hello and therefore
    will not return meaningful values nor can they be called safely.
 
@@ -1719,7 +1744,7 @@ to speed up repeated connections from the same clients.
    .. versionadded:: 3.3
 
    .. seealso::
-      `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.im/en/blog/2011-ssl-perfect-forward-secrecy>`_
+      `SSL/TLS & Perfect Forward Secrecy <https://vincent.bernat.ch/en/blog/2011-ssl-perfect-forward-secrecy>`_
          Vincent Bernat.
 
 .. method:: SSLContext.wrap_socket(sock, server_side=False, \
@@ -1729,7 +1754,7 @@ to speed up repeated connections from the same clients.
    Wrap an existing Python socket *sock* and return an instance of
    :attr:`SSLContext.sslsocket_class` (default :class:`SSLSocket`). The
    returned SSL socket is tied to the context, its settings and certificates.
-   *sock* must be a :data:`~socket.SOCK_STREAM` socket; other
+   *sock* must be a :const:`~socket.SOCK_STREAM` socket; other
    socket types are unsupported.
 
    The parameter ``server_side`` is a boolean which identifies whether
@@ -1986,6 +2011,100 @@ to speed up repeated connections from the same clients.
 
          >>> ssl.create_default_context().verify_mode  # doctest: +SKIP
          <VerifyMode.CERT_REQUIRED: 2>
+
+.. method:: SSLContext.set_psk_client_callback(callback)
+
+   Enables TLS-PSK (pre-shared key) authentication on a client-side connection.
+
+   In general, certificate based authentication should be preferred over this method.
+
+   The parameter ``callback`` is a callable object with the signature:
+   ``def callback(hint: str | None) -> tuple[str | None, bytes]``.
+   The ``hint`` parameter is an optional identity hint sent by the server.
+   The return value is a tuple in the form (client-identity, psk).
+   Client-identity is an optional string which may be used by the server to
+   select a corresponding PSK for the client. The string must be less than or
+   equal to ``256`` octets when UTF-8 encoded. PSK is a
+   :term:`bytes-like object` representing the pre-shared key. Return a zero
+   length PSK to reject the connection.
+
+   Setting ``callback`` to :const:`None` removes any existing callback.
+
+   .. note::
+      When using TLS 1.3:
+
+      - the ``hint`` parameter is always :const:`None`.
+      - client-identity must be a non-empty string.
+
+   Example usage::
+
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+      context.check_hostname = False
+      context.verify_mode = ssl.CERT_NONE
+      context.maximum_version = ssl.TLSVersion.TLSv1_2
+      context.set_ciphers('PSK')
+
+      # A simple lambda:
+      psk = bytes.fromhex('c0ffee')
+      context.set_psk_client_callback(lambda hint: (None, psk))
+
+      # A table using the hint from the server:
+      psk_table = { 'ServerId_1': bytes.fromhex('c0ffee'),
+                    'ServerId_2': bytes.fromhex('facade')
+      }
+      def callback(hint):
+          return 'ClientId_1', psk_table.get(hint, b'')
+      context.set_psk_client_callback(callback)
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_PSK` is
+   ``False``.
+
+   .. versionadded:: 3.13
+
+.. method:: SSLContext.set_psk_server_callback(callback, identity_hint=None)
+
+   Enables TLS-PSK (pre-shared key) authentication on a server-side connection.
+
+   In general, certificate based authentication should be preferred over this method.
+
+   The parameter ``callback`` is a callable object with the signature:
+   ``def callback(identity: str | None) -> bytes``.
+   The ``identity`` parameter is an optional identity sent by the client which can
+   be used to select a corresponding PSK.
+   The return value is a :term:`bytes-like object` representing the pre-shared key.
+   Return a zero length PSK to reject the connection.
+
+   Setting ``callback`` to :const:`None` removes any existing callback.
+
+   The parameter ``identity_hint`` is an optional identity hint string sent to
+   the client. The string must be less than or equal to ``256`` octets when
+   UTF-8 encoded.
+
+   .. note::
+      When using TLS 1.3 the ``identity_hint`` parameter is not sent to the client.
+
+   Example usage::
+
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+      context.maximum_version = ssl.TLSVersion.TLSv1_2
+      context.set_ciphers('PSK')
+
+      # A simple lambda:
+      psk = bytes.fromhex('c0ffee')
+      context.set_psk_server_callback(lambda identity: psk)
+
+      # A table using the identity of the client:
+      psk_table = { 'ClientId_1': bytes.fromhex('c0ffee'),
+                    'ClientId_2': bytes.fromhex('facade')
+      }
+      def callback(identity):
+          return psk_table.get(identity, b'')
+      context.set_psk_server_callback(callback, 'ServerId_1')
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_PSK` is
+   ``False``.
+
+   .. versionadded:: 3.13
 
 .. index:: single: certificates
 
@@ -2414,6 +2533,8 @@ provided.
    - :meth:`~SSLSocket.read`
    - :meth:`~SSLSocket.write`
    - :meth:`~SSLSocket.getpeercert`
+   - :meth:`~SSLSocket.get_verified_chain`
+   - :meth:`~SSLSocket.get_unverified_chain`
    - :meth:`~SSLSocket.selected_alpn_protocol`
    - :meth:`~SSLSocket.selected_npn_protocol`
    - :meth:`~SSLSocket.cipher`
@@ -2592,7 +2713,7 @@ disabled by default.
    >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
 
-The SSL context created above will only allow TLSv1.2 and later (if
+The SSL context created above will only allow TLSv1.3 and later (if
 supported by your system) connections to a server. :const:`PROTOCOL_TLS_CLIENT`
 implies certificate validation and hostname checks by default. You have to
 load certificates into the context.
