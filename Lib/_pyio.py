@@ -33,19 +33,17 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 # Rebind for compatibility
 BlockingIOError = BlockingIOError
 
-# Does io.IOBase finalizer log the exception if the close() method fails?
-# The exception is ignored silently by default in release build.
-_IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
 # Does open() check its 'errors' argument?
-_CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
+_CHECK_ERRORS = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
 
 
 def text_encoding(encoding, stacklevel=2):
     """
     A helper function to choose the text encoding.
 
-    When encoding is not None, just return it.
-    Otherwise, return the default text encoding (i.e. "locale").
+    When encoding is not None, this function returns it.
+    Otherwise, this function returns the default text encoding
+    (i.e. "locale" or "utf-8" depends on UTF-8 mode).
 
     This function emits an EncodingWarning if *encoding* is None and
     sys.flags.warn_default_encoding is true.
@@ -55,7 +53,10 @@ def text_encoding(encoding, stacklevel=2):
     However, please consider using encoding="utf-8" for new APIs.
     """
     if encoding is None:
-        encoding = "locale"
+        if sys.flags.utf8_mode:
+            encoding = "utf-8"
+        else:
+            encoding = "locale"
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn("'encoding' argument not specified.",
@@ -299,22 +300,6 @@ except AttributeError:
     open_code = _open_code_with_warning
 
 
-def __getattr__(name):
-    if name == "OpenWrapper":
-        # bpo-43680: Until Python 3.9, _pyio.open was not a static method and
-        # builtins.open was set to OpenWrapper to not become a bound method
-        # when set to a class variable. _io.open is a built-in function whereas
-        # _pyio.open is a Python function. In Python 3.10, _pyio.open() is now
-        # a static method, and builtins.open() is now io.open().
-        import warnings
-        warnings.warn('OpenWrapper is deprecated, use open instead',
-                      DeprecationWarning, stacklevel=2)
-        global OpenWrapper
-        OpenWrapper = open
-        return OpenWrapper
-    raise AttributeError(name)
-
-
 # In normal operation, both `UnsupportedOperation`s should be bound to the
 # same object.
 try:
@@ -326,8 +311,7 @@ except AttributeError:
 
 class IOBase(metaclass=abc.ABCMeta):
 
-    """The abstract base class for all I/O classes, acting on streams of
-    bytes. There is no public constructor.
+    """The abstract base class for all I/O classes.
 
     This class provides dummy implementations for many methods that
     derived classes can override selectively; the default implementations
@@ -429,18 +413,9 @@ class IOBase(metaclass=abc.ABCMeta):
         if closed:
             return
 
-        if _IOBASE_EMITS_UNRAISABLE:
-            self.close()
-        else:
-            # The try/except block is in case this is called at program
-            # exit time, when it's possible that globals have already been
-            # deleted, and then the close() call might fail.  Since
-            # there's nothing we can do about such failures and they annoy
-            # the end users, we suppress the traceback.
-            try:
-                self.close()
-            except:
-                pass
+        # If close() fails, the caller logs the exception with
+        # sys.unraisablehook. close() must be called at the end at __del__().
+        self.close()
 
     ### Inquiries ###
 
@@ -651,10 +626,7 @@ class RawIOBase(IOBase):
     def readall(self):
         """Read until EOF, using multiple read() call."""
         res = bytearray()
-        while True:
-            data = self.read(DEFAULT_BUFFER_SIZE)
-            if not data:
-                break
+        while data := self.read(DEFAULT_BUFFER_SIZE):
             res += data
         if res:
             return bytes(res)
@@ -1142,6 +1114,7 @@ class BufferedReader(_BufferedIOMixin):
         do at most one raw read to satisfy it.  We never return more
         than self.buffer_size.
         """
+        self._checkClosed("peek of closed file")
         with self._read_lock:
             return self._peek_unlocked(size)
 
@@ -1160,6 +1133,7 @@ class BufferedReader(_BufferedIOMixin):
         """Reads up to size bytes, with at most one read() system call."""
         # Returns up to size bytes.  If at least one byte is buffered, we
         # only return buffered bytes.  Otherwise, we do one raw read.
+        self._checkClosed("read of closed file")
         if size < 0:
             size = self.buffer_size
         if size == 0:
@@ -1176,6 +1150,8 @@ class BufferedReader(_BufferedIOMixin):
     # performance reasons).
     def _readinto(self, buf, read1):
         """Read data into *buf* with at most one system call."""
+
+        self._checkClosed("readinto of closed file")
 
         # Need to create a memoryview object of type 'b', otherwise
         # we may not be able to assign bytes to it, and slicing it
@@ -1226,6 +1202,7 @@ class BufferedReader(_BufferedIOMixin):
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
             raise ValueError("invalid whence value")
+        self._checkClosed("seek of closed file")
         with self._read_lock:
             if whence == 1:
                 pos -= len(self._read_buf) - self._read_pos
@@ -1833,7 +1810,7 @@ class TextIOBase(IOBase):
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream
-    I/O. There is no public constructor.
+    I/O.
     """
 
     def read(self, size=-1):
@@ -1985,7 +1962,7 @@ class TextIOWrapper(TextIOBase):
     r"""Character and line based layer over a BufferedIOBase object, buffer.
 
     encoding gives the name of the encoding that the stream will be
-    decoded or encoded with. It defaults to locale.getpreferredencoding(False).
+    decoded or encoded with. It defaults to locale.getencoding().
 
     errors determines the strictness of encoding and decoding (see the
     codecs.register) and defaults to "strict".
@@ -2019,19 +1996,7 @@ class TextIOWrapper(TextIOBase):
         encoding = text_encoding(encoding)
 
         if encoding == "locale":
-            try:
-                encoding = os.device_encoding(buffer.fileno()) or "locale"
-            except (AttributeError, UnsupportedOperation):
-                pass
-
-        if encoding == "locale":
-            try:
-                import locale
-            except ImportError:
-                # Importing locale may fail if Python is being built
-                encoding = "utf-8"
-            else:
-                encoding = locale.getpreferredencoding(False)
+            encoding = self._get_locale_encoding()
 
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
@@ -2164,6 +2129,8 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(encoding, str):
                 raise TypeError("invalid encoding: %r" % encoding)
+            if encoding == "locale":
+                encoding = self._get_locale_encoding()
 
         if newline is Ellipsis:
             newline = self._readnl
@@ -2267,6 +2234,15 @@ class TextIOWrapper(TextIOBase):
             chars = self._decoded_chars[offset:offset + n]
         self._decoded_chars_used += len(chars)
         return chars
+
+    def _get_locale_encoding(self):
+        try:
+            import locale
+        except ImportError:
+            # Importing locale may fail if Python is being built
+            return "utf-8"
+        else:
+            return locale.getencoding()
 
     def _rewind_decoded_chars(self, n):
         """Rewind the _decoded_chars buffer."""

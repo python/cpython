@@ -1,3 +1,5 @@
+from types import GenericAlias
+
 __all__ = ["TopologicalSorter", "CycleError"]
 
 _NODE_OUT = -1
@@ -244,3 +246,5 @@ class TopologicalSorter:
             node_group = self.get_ready()
             yield from node_group
             self.done(*node_group)
+
+    __class_getitem__ = classmethod(GenericAlias)
