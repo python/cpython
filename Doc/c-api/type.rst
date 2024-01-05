@@ -103,7 +103,7 @@ Type Objects
    :c:func:`PyType_AddWatcher` will be called whenever
    :c:func:`PyType_Modified` reports a change to *type*. (The callback may be
    called only once for a series of consecutive modifications to *type*, if
-   :c:func:`PyType_Lookup` is not called on *type* between the modifications;
+   :c:func:`!_PyType_Lookup` is not called on *type* between the modifications;
    this is an implementation detail and subject to change.)
 
    An extension should never call ``PyType_Watch`` with a *watcher_id* that was
@@ -215,7 +215,7 @@ Type Objects
    ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
    are not necessarily defined in the same module as their superclass.
    See :c:type:`PyCMethod` to get the class that defines the method.
-   See :c:func:`PyType_GetModuleByDef` for cases when ``PyCMethod`` cannot
+   See :c:func:`PyType_GetModuleByDef` for cases when :c:type:`!PyCMethod` cannot
    be used.
 
    .. versionadded:: 3.9
@@ -461,26 +461,39 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      The following fields cannot be set at all using :c:type:`PyType_Spec` and
-      :c:type:`PyType_Slot`:
+      The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
-      * :c:member:`~PyTypeObject.tp_dict`
-      * :c:member:`~PyTypeObject.tp_mro`
-      * :c:member:`~PyTypeObject.tp_cache`
-      * :c:member:`~PyTypeObject.tp_subclasses`
-      * :c:member:`~PyTypeObject.tp_weaklist`
+         * :c:member:`~PyTypeObject.tp_weaklistoffset`
+           (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
+         * :c:member:`~PyTypeObject.tp_dictoffset`
+           (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
+         * :c:member:`~PyTypeObject.tp_vectorcall_offset`
+           (use ``"__vectorcalloffset__"`` in
+           :ref:`PyMemberDef <pymemberdef-offsets>`)
+
+         If it is not possible to switch to a ``MANAGED`` flag (for example,
+         for vectorcall or to support Python older than 3.12), specify the
+         offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+         See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
+         for details.
+
+      The following fields cannot be set at all when creating a heap type:
+
       * :c:member:`~PyTypeObject.tp_vectorcall`
-      * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
-      * :c:member:`~PyTypeObject.tp_dictoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead)
-      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+        (use :c:member:`~PyTypeObject.tp_new` and/or
+        :c:member:`~PyTypeObject.tp_init`)
+
+      * Internal fields:
+        :c:member:`~PyTypeObject.tp_dict`,
+        :c:member:`~PyTypeObject.tp_mro`,
+        :c:member:`~PyTypeObject.tp_cache`,
+        :c:member:`~PyTypeObject.tp_subclasses`, and
+        :c:member:`~PyTypeObject.tp_weaklist`.
 
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
       To avoid issues, use the *bases* argument of
-      :py:func:`PyType_FromSpecWithBases` instead.
+      :c:func:`PyType_FromSpecWithBases` instead.
 
      .. versionchanged:: 3.9
 

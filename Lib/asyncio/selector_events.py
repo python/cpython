@@ -261,22 +261,17 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             except (AttributeError, TypeError, ValueError):
                 # This code matches selectors._fileobj_to_fd function.
                 raise ValueError(f"Invalid file object: {fd!r}") from None
-        try:
-            transport = self._transports[fileno]
-        except KeyError:
-            pass
-        else:
-            if not transport.is_closing():
-                raise RuntimeError(
-                    f'File descriptor {fd!r} is used by transport '
-                    f'{transport!r}')
+        transport = self._transports.get(fileno)
+        if transport and not transport.is_closing():
+            raise RuntimeError(
+                f'File descriptor {fd!r} is used by transport '
+                f'{transport!r}')
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
         handle = events.Handle(callback, args, self, None)
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             self._selector.register(fd, selectors.EVENT_READ,
                                     (handle, None))
         else:
@@ -290,30 +285,27 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def _remove_reader(self, fd):
         if self.is_closed():
             return False
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             return False
+        mask, (reader, writer) = key.events, key.data
+        mask &= ~selectors.EVENT_READ
+        if not mask:
+            self._selector.unregister(fd)
         else:
-            mask, (reader, writer) = key.events, key.data
-            mask &= ~selectors.EVENT_READ
-            if not mask:
-                self._selector.unregister(fd)
-            else:
-                self._selector.modify(fd, mask, (None, writer))
+            self._selector.modify(fd, mask, (None, writer))
 
-            if reader is not None:
-                reader.cancel()
-                return True
-            else:
-                return False
+        if reader is not None:
+            reader.cancel()
+            return True
+        else:
+            return False
 
     def _add_writer(self, fd, callback, *args):
         self._check_closed()
         handle = events.Handle(callback, args, self, None)
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             self._selector.register(fd, selectors.EVENT_WRITE,
                                     (None, handle))
         else:
@@ -328,24 +320,22 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """Remove a writer callback."""
         if self.is_closed():
             return False
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             return False
+        mask, (reader, writer) = key.events, key.data
+        # Remove both writer and connector.
+        mask &= ~selectors.EVENT_WRITE
+        if not mask:
+            self._selector.unregister(fd)
         else:
-            mask, (reader, writer) = key.events, key.data
-            # Remove both writer and connector.
-            mask &= ~selectors.EVENT_WRITE
-            if not mask:
-                self._selector.unregister(fd)
-            else:
-                self._selector.modify(fd, mask, (reader, None))
+            self._selector.modify(fd, mask, (reader, None))
 
-            if writer is not None:
-                writer.cancel()
-                return True
-            else:
-                return False
+        if writer is not None:
+            writer.cancel()
+            return True
+        else:
+            return False
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""

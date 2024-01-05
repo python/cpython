@@ -1078,7 +1078,8 @@ class _ClassFinder(ast.NodeVisitor):
 
             # First, let's see if there are any method definitions
             for member in self.cls.__dict__.values():
-                if isinstance(member, types.FunctionType):
+                if (isinstance(member, types.FunctionType) and
+                    member.__module__ == self.cls.__module__):
                     for lineno, end_lineno in self.lineno_found:
                         if lineno <= member.__code__.co_firstlineno <= end_lineno:
                             return lineno
@@ -2869,6 +2870,8 @@ class Parameter:
 
         return formatted
 
+    __replace__ = replace
+
     def __repr__(self):
         return '<{} "{}">'.format(self.__class__.__name__, self)
 
@@ -3129,6 +3132,8 @@ class Signature:
         return type(self)(parameters,
                           return_annotation=return_annotation)
 
+    __replace__ = replace
+
     def _hash_basis(self):
         params = tuple(param for param in self.parameters.values()
                              if param.kind != _KEYWORD_ONLY)
@@ -3311,6 +3316,16 @@ class Signature:
         return '<{} {}>'.format(self.__class__.__name__, self)
 
     def __str__(self):
+        return self.format()
+
+    def format(self, *, max_width=None):
+        """Create a string representation of the Signature object.
+
+        If *max_width* integer is passed,
+        signature will try to fit into the *max_width*.
+        If signature is longer than *max_width*,
+        all parameters will be on separate lines.
+        """
         result = []
         render_pos_only_separator = False
         render_kw_only_separator = True
@@ -3348,6 +3363,8 @@ class Signature:
             result.append('/')
 
         rendered = '({})'.format(', '.join(result))
+        if max_width is not None and len(rendered) > max_width:
+            rendered = '(\n    {}\n)'.format(',\n    '.join(result))
 
         if self.return_annotation is not _empty:
             anno = formatannotation(self.return_annotation)

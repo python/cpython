@@ -5,8 +5,12 @@
 
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #include <stdlib.h>               // free()
 #include <string.h>
@@ -1338,13 +1342,13 @@ PyDoc_STRVAR(Decompressor_unused_data_doc,
 "Data found after the end of the compressed stream.");
 
 static PyMemberDef Decompressor_members[] = {
-    {"check", T_INT, offsetof(Decompressor, check), READONLY,
+    {"check", Py_T_INT, offsetof(Decompressor, check), Py_READONLY,
      Decompressor_check_doc},
-    {"eof", T_BOOL, offsetof(Decompressor, eof), READONLY,
+    {"eof", Py_T_BOOL, offsetof(Decompressor, eof), Py_READONLY,
      Decompressor_eof_doc},
-    {"needs_input", T_BOOL, offsetof(Decompressor, needs_input), READONLY,
+    {"needs_input", Py_T_BOOL, offsetof(Decompressor, needs_input), Py_READONLY,
      Decompressor_needs_input_doc},
-    {"unused_data", T_OBJECT_EX, offsetof(Decompressor, unused_data), READONLY,
+    {"unused_data", Py_T_OBJECT_EX, offsetof(Decompressor, unused_data), Py_READONLY,
      Decompressor_unused_data_doc},
     {NULL}
 };
@@ -1498,15 +1502,7 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
 static int
 module_add_int_constant(PyObject *m, const char *name, long long value)
 {
-    PyObject *o = PyLong_FromLongLong(value);
-    if (o == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(m, name, o) == 0) {
-        return 0;
-    }
-    Py_DECREF(o);
-    return -1;
+    return PyModule_Add(m, name, PyLong_FromLongLong(value));
 }
 
 static int

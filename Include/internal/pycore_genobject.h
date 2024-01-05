@@ -11,9 +11,10 @@ extern "C" {
 extern PyObject *_PyGen_yf(PyGenObject *);
 extern void _PyGen_Finalize(PyObject *self);
 
-// _asyncio shared extensions uses _PyGen_SetStopIterationValue() and
-// _PyGen_FetchStopIterationValue()
+// Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
+
+// Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 
 extern PyObject *_PyCoro_GetAwaitableIter(PyObject *o);

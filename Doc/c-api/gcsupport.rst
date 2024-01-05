@@ -25,8 +25,8 @@ include the :c:macro:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
 
 Constructors for container types must conform to two rules:
 
-#. The memory for the object must be allocated using :c:func:`PyObject_GC_New`
-   or :c:func:`PyObject_GC_NewVar`.
+#. The memory for the object must be allocated using :c:macro:`PyObject_GC_New`
+   or :c:macro:`PyObject_GC_NewVar`.
 
 #. Once all the fields which may contain references to other containers are
    initialized, it must call :c:func:`PyObject_GC_Track`.
@@ -52,19 +52,19 @@ rules:
       class that implements the garbage collector protocol and the child class
       does *not* include the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
 
-.. c:function:: TYPE* PyObject_GC_New(TYPE, PyTypeObject *type)
+.. c:macro:: PyObject_GC_New(TYPE, typeobj)
 
-   Analogous to :c:func:`PyObject_New` but for container objects with the
+   Analogous to :c:macro:`PyObject_New` but for container objects with the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
 
-.. c:function:: TYPE* PyObject_GC_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
+.. c:macro:: PyObject_GC_NewVar(TYPE, typeobj, size)
 
-   Analogous to :c:func:`PyObject_NewVar` but for container objects with the
+   Analogous to :c:macro:`PyObject_NewVar` but for container objects with the
    :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
 
 .. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
 
-   Analogous to :c:func:`PyObject_GC_New` but allocates *extra_size*
+   Analogous to :c:macro:`PyObject_GC_New` but allocates *extra_size*
    bytes at the end of the object (at offset
    :c:member:`~PyTypeObject.tp_basicsize`).
    The allocated memory is initialized to zeros,
@@ -85,7 +85,7 @@ rules:
 
 .. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
 
-   Resize an object allocated by :c:func:`PyObject_NewVar`.  Returns the
+   Resize an object allocated by :c:macro:`PyObject_NewVar`.  Returns the
    resized object or ``NULL`` on failure.  *op* must not be tracked by the collector yet.
 
 
@@ -128,8 +128,8 @@ rules:
 
 .. c:function:: void PyObject_GC_Del(void *op)
 
-   Releases memory allocated to an object using :c:func:`PyObject_GC_New` or
-   :c:func:`PyObject_GC_NewVar`.
+   Releases memory allocated to an object using :c:macro:`PyObject_GC_New` or
+   :c:macro:`PyObject_GC_NewVar`.
 
 
 .. c:function:: void PyObject_GC_UnTrack(void *op)
@@ -143,7 +143,7 @@ rules:
 
 .. versionchanged:: 3.8
 
-   The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
+   The :c:func:`!_PyObject_GC_TRACK` and :c:func:`!_PyObject_GC_UNTRACK` macros
    have been removed from the public C API.
 
 The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter of this type:
