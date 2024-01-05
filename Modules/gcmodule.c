@@ -219,6 +219,10 @@ static PyObject *
 gc_get_referrers_impl(PyObject *module, PyObject *args)
 /*[clinic end generated code: output=296a09587f6a86b5 input=bae96961b14a0922]*/
 {
+    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return _PyGC_GetReferrers(interp, args);
 }
