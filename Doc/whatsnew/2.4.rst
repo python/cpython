@@ -387,13 +387,13 @@ The standard library provides a number of ways to execute a subprocess, offering
 different features and different levels of complexity.
 ``os.system(command)`` is easy to use, but slow (it runs a shell process
 which executes the command) and dangerous (you have to be careful about escaping
-the shell's metacharacters).  The :mod:`popen2` module offers classes that can
+the shell's metacharacters).  The :mod:`!popen2` module offers classes that can
 capture standard output and standard error from the subprocess, but the naming
 is confusing.  The :mod:`subprocess` module cleans  this up, providing a unified
 interface that offers all the features you might need.
 
-Instead of :mod:`popen2`'s collection of classes, :mod:`subprocess` contains a
-single class called :class:`Popen`  whose constructor supports a number of
+Instead of :mod:`!popen2`'s collection of classes, :mod:`subprocess` contains a
+single class called :class:`subprocess.Popen`  whose constructor supports a number of
 different keyword arguments. ::
 
    class Popen(args, bufsize=0, executable=None,
@@ -1529,7 +1529,7 @@ code:
   will now always be unequal, and  relative comparisons (``<``, ``>``) will raise
   a :exc:`TypeError`.
 
-* :func:`dircache.listdir` now passes exceptions to the caller instead of
+* :func:`!dircache.listdir` now passes exceptions to the caller instead of
   returning empty lists.
 
 * :func:`LexicalHandler.startDTD` used to receive the public and system IDs in

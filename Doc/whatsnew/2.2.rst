@@ -143,8 +143,8 @@ To make the set of types complete, new type objects such as :func:`dict` and
            return fcntl.lockf(self.fileno(), operation,
                               length, start, whence)
 
-The now-obsolete :mod:`posixfile` module contained a class that emulated all of
-a file object's methods and also added a :meth:`lock` method, but this class
+The now-obsolete :mod:`!posixfile` module contained a class that emulated all of
+a file object's methods and also added a :meth:`!lock` method, but this class
 couldn't be passed to internal functions that expected a built-in file,
 something which is possible with our new :class:`LockableFile`.
 
