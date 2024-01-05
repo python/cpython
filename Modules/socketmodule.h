@@ -1,5 +1,7 @@
 /* Socket module header file */
 
+#include "pycore_time.h"          // _PyTime_t
+
 /* Includes needed for the sockaddr_* symbols below */
 #ifndef MS_WINDOWS
 #ifdef __VMS
@@ -8,9 +10,7 @@
 #   include <sys/socket.h>
 # endif
 # include <netinet/in.h>
-# if !defined(__CYGWIN__)
-#  include <netinet/tcp.h>
-# endif
+# include <netinet/tcp.h>
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
@@ -78,6 +78,15 @@ struct SOCKADDR_BTH_REDEF {
 # else
 typedef int socklen_t;
 # endif /* IPPROTO_IPV6 */
+
+/* Remove ifdef once Py_WINVER >= 0x0604
+ * socket.h only defines AF_HYPERV if _WIN32_WINNT is at that level or higher
+ * so for now it's just manually defined.
+ */
+# ifndef AF_HYPERV
+#  define AF_HYPERV 34
+# endif
+# include <hvsocket.h>
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_SYS_UN_H
@@ -91,6 +100,8 @@ typedef int socklen_t;
 #  include <asm/types.h>
 # endif
 # include <linux/netlink.h>
+#elif defined(HAVE_NETLINK_NETLINK_H)
+# include <netlink/netlink.h>
 #else
 #  undef AF_NETLINK
 #endif
@@ -131,6 +142,8 @@ typedef int socklen_t;
 
 #ifdef HAVE_LINUX_CAN_H
 # include <linux/can.h>
+#elif defined(HAVE_NETCAN_CAN_H)
+# include <netcan/can.h>
 #else
 # undef AF_CAN
 # undef PF_CAN
@@ -192,6 +205,21 @@ typedef int socklen_t;
 
 #endif /* HAVE_SOCKADDR_ALG */
 
+#ifdef __EMSCRIPTEN__
+// wasm32-emscripten sockets only support subset of IPv4 and IPv6.
+// SCTP protocol crashes runtime.
+#ifdef IPPROTO_SCTP
+#  undef IPPROTO_SCTP
+#endif
+// setsockopt() fails with ENOPROTOOPT, getsockopt only supports SO_ERROR.
+// undef SO_REUSEADDR and SO_REUSEPORT so they cannot be used.
+#ifdef SO_REUSEADDR
+#  undef SO_REUSEADDR
+#endif
+#ifdef SO_REUSEPORT
+#  undef SO_REUSEPORT
+#endif
+#endif // __EMSCRIPTEN__
 
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
@@ -225,6 +253,11 @@ typedef int SOCKET_T;
 #define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
 #endif
 
+// AF_HYPERV is only supported on Windows
+#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#  define HAVE_AF_HYPERV
+#endif
+
 /* Socket address */
 typedef union sock_addr {
     struct sockaddr_in in;
@@ -255,7 +288,7 @@ typedef union sock_addr {
 #ifdef HAVE_NETPACKET_PACKET_H
     struct sockaddr_ll ll;
 #endif
-#ifdef HAVE_LINUX_CAN_H
+#if defined(HAVE_LINUX_CAN_H) || defined(HAVE_NETCAN_CAN_H)
     struct sockaddr_can can;
 #endif
 #ifdef HAVE_SYS_KERN_CONTROL_H
@@ -272,6 +305,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_LINUX_TIPC_H
     struct sockaddr_tipc tipc;
+#endif
+#ifdef HAVE_AF_HYPERV
+    SOCKADDR_HV hv;
 #endif
 } sock_addr_t;
 
@@ -290,6 +326,7 @@ typedef struct {
                                         sets a Python exception */
     _PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
+    struct _socket_state *state;
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/
@@ -342,7 +379,8 @@ typedef struct {
 
 */
 
-/* C API for usage by other Python modules */
+/* C API for usage by other Python modules.
+ * Always add new things to the end for binary compatibility. */
 typedef struct {
     PyTypeObject *Sock_Type;
     PyObject *error;
