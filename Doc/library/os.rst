@@ -3928,6 +3928,11 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.fork "" os.fork
 
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
@@ -3948,6 +3953,11 @@ written in Python, such as a mail server's external command delivery program.
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
    .. audit-event:: os.forkpty "" os.forkpty
+
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
 
    .. versionchanged:: 3.8
       Calling ``forkpty()`` in a subinterpreter is no longer supported
@@ -4469,6 +4479,9 @@ written in Python, such as a mail server's external command delivery program.
    that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note::
+      This function is not available on macOS.
 
    .. versionadded:: 3.3
 

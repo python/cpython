@@ -986,19 +986,19 @@ ttk.Treeview
 
       The valid options/values are:
 
-      id
+      *id*
          Returns the column name. This is a read-only option.
-      anchor: One of the standard Tk anchor values.
+      *anchor*: One of the standard Tk anchor values.
          Specifies how the text in this column should be aligned with respect
          to the cell.
-      minwidth: width
+      *minwidth*: width
          The minimum width of the column in pixels. The treeview widget will
          not make the column any smaller than specified by this option when
          the widget is resized or the user drags a column.
-      stretch: ``True``/``False``
+      *stretch*: ``True``/``False``
          Specifies whether the column's width should be adjusted when
          the widget is resized.
-      width: width
+      *width*: width
          The width of the column in pixels.
 
       To configure the tree column, call this with column = "#0"
@@ -1041,14 +1041,14 @@ ttk.Treeview
 
       The valid options/values are:
 
-      text: text
+      *text*: text
          The text to display in the column heading.
-      image: imageName
+      *image*: imageName
          Specifies an image to display to the right of the column heading.
-      anchor: anchor
+      *anchor*: anchor
          Specifies how the heading text should be aligned. One of the standard
          Tk anchor values.
-      command: callback
+      *command*: callback
          A callback to be invoked when the heading label is pressed.
 
       To configure the tree column heading, call this with column = "#0".
@@ -1515,23 +1515,24 @@ Layouts
 A layout can be just ``None``, if it takes no options, or a dict of
 options specifying how to arrange the element. The layout mechanism
 uses a simplified version of the pack geometry manager: given an
-initial cavity, each element is allocated a parcel. Valid
-options/values are:
+initial cavity, each element is allocated a parcel.
 
-side: whichside
+The valid options/values are:
+
+*side*: whichside
    Specifies which side of the cavity to place the element; one of
    top, right, bottom or left. If omitted, the element occupies the
    entire cavity.
 
-sticky: nswe
+*sticky*: nswe
    Specifies where the element is placed inside its allocated parcel.
 
-unit: 0 or 1
+*unit*: 0 or 1
    If set to 1, causes the element and all of its descendants to be treated as
    a single element for the purposes of :meth:`Widget.identify` et al. It's
    used for things like scrollbar thumbs with grips.
 
-children: [sublayout... ]
+*children*: [sublayout... ]
    Specifies a list of elements to place inside the element. Each
    element is a tuple (or other sequence type) where the first item is
    the layout name, and the other is a `Layout`_.
