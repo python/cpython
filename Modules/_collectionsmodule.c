@@ -1290,6 +1290,7 @@ _collections_deque_index_impl(dequeobject *deque, PyObject *v,
 */
 
 /*[clinic input]
+@critical_section
 _collections.deque.insert
 
     deque: dequeobject
@@ -1303,25 +1304,25 @@ Insert value before index
 static PyObject *
 _collections_deque_insert_impl(dequeobject *deque, Py_ssize_t index,
                                PyObject *value)
-/*[clinic end generated code: output=f913d56fc97caddf input=0593cc27bffa766a]*/
+/*[clinic end generated code: output=f913d56fc97caddf input=5366fe3bf43c5231]*/
 {
     Py_ssize_t n = Py_SIZE(deque);
     PyObject *rv;
 
-    if (deque->maxlen == Py_SIZE(deque)) {
+    if (deque->maxlen == n) {
         PyErr_SetString(PyExc_IndexError, "deque already at its maximum size");
         return NULL;
     }
     if (index >= n)
-        return _collections_deque_append(deque, value);
+        return _collections_deque_append_impl(deque, value);
     if (index <= -n || index == 0)
-        return _collections_deque_appendleft(deque, value);
+        return _collections_deque_appendleft_impl(deque, value);
     if (_deque_rotate(deque, -index))
         return NULL;
     if (index < 0)
-        rv = _collections_deque_append(deque, value);
+        rv = _collections_deque_append_impl(deque, value);
     else
-        rv = _collections_deque_appendleft(deque, value);
+        rv = _collections_deque_appendleft_impl(deque, value);
     if (rv == NULL)
         return NULL;
     Py_DECREF(rv);
