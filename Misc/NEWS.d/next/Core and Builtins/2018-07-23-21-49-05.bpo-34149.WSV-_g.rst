@@ -1,1 +1,0 @@
-Fix min and max functions to get default behavior when key is None.

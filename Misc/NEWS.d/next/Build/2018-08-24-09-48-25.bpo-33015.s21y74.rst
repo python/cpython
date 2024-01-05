@@ -1,3 +1,0 @@
-Fix an undefined behaviour in the pthread implementation of
-:c:func:`PyThread_start_new_thread`: add a function wrapper to always return
-``NULL``.

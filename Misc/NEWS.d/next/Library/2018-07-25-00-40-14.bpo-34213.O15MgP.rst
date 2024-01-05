@@ -1,1 +1,0 @@
-Allow frozen dataclasses to have a field named "object". Previously this conflicted with an internal use of "object".

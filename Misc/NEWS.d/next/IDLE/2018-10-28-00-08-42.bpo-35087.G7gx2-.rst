@@ -1,2 +1,0 @@
-Update idlelib help files for the current doc build. The main change is the
-elimination of chapter-section numbers.

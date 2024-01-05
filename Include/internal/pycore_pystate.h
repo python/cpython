@@ -4,209 +4,240 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pystate.h"
-#include "pythread.h"
-
-#include "pycore_ceval.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
-#include "pycore_warnings.h"
+#include "pycore_runtime.h"       // _PyRuntime
 
 
-/* GIL state */
-
-struct _gilstate_runtime_state {
-    int check_enabled;
-    /* Assuming the current thread holds the GIL, this is the
-       PyThreadState for the current thread. */
-    _Py_atomic_address tstate_current;
-    PyThreadFrameGetter getframe;
-    /* The single PyInterpreterState used by this process'
-       GILState implementation
-    */
-    /* TODO: Given interp_main, it may be possible to kill this ref */
-    PyInterpreterState *autoInterpreterState;
-    Py_tss_t autoTSSkey;
-};
-
-/* hook for PyEval_GetFrame(), requested for Psyco */
-#define _PyThreadState_GetFrame _PyRuntime.gilstate.getframe
-
-/* Issue #26558: Flag to disable PyGILState_Check().
-   If set to non-zero, PyGILState_Check() always return 1. */
-#define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
-
-
-/* interpreter state */
-
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(PY_INT64_T);
-
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+// Values for PyThreadState.state. A thread must be in the "attached" state
+// before calling most Python APIs. If the GIL is enabled, then "attached"
+// implies that the thread holds the GIL and "detached" implies that the
+// thread does not hold the GIL (or is in the process of releasing it). In
+// `--disable-gil` builds, multiple threads may be "attached" to the same
+// interpreter at the same time. Only the "bound" thread may perform the
+// transitions between "attached" and "detached" on its own PyThreadState.
+//
+// The "gc" state is used to implement stop-the-world pauses, such as for
+// cyclic garbage collection. It is only used in `--disable-gil` builds. It is
+// similar to the "detached" state, but only the thread performing a
+// stop-the-world pause may transition threads between the "detached" and "gc"
+// states. A thread trying to "attach" from the "gc" state will block until
+// it is transitioned back to "detached" when the stop-the-world pause is
+// complete.
+//
+// State transition diagram:
+//
+//            (bound thread)        (stop-the-world thread)
+// [attached]       <->       [detached]       <->       [gc]
+//
+// See `_PyThreadState_Attach()` and `_PyThreadState_Detach()`.
+#define _Py_THREAD_DETACHED     0
+#define _Py_THREAD_ATTACHED     1
+#define _Py_THREAD_GC           2
 
 
-/* cross-interpreter data */
-
-struct _xid;
-
-// _PyCrossInterpreterData is similar to Py_buffer as an effectively
-// opaque struct that holds data outside the object machinery.  This
-// is necessary to pass safely between interpreters in the same process.
-typedef struct _xid {
-    // data is the cross-interpreter-safe derivation of a Python object
-    // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
-    // new_object func (below) encodes the data.
-    void *data;
-    // obj is the Python object from which the data was derived.  This
-    // is non-NULL only if the data remains bound to the object in some
-    // way, such that the object must be "released" (via a decref) when
-    // the data is released.  In that case the code that sets the field,
-    // likely a registered "crossinterpdatafunc", is responsible for
-    // ensuring it owns the reference (i.e. incref).
-    PyObject *obj;
-    // interp is the ID of the owning interpreter of the original
-    // object.  It corresponds to the active interpreter when
-    // _PyObject_GetCrossInterpreterData() was called.  This should only
-    // be set by the cross-interpreter machinery.
-    //
-    // We use the ID rather than the PyInterpreterState to avoid issues
-    // with deleted interpreters.
-    int64_t interp;
-    // new_object is a function that returns a new object in the current
-    // interpreter given the data.  The resulting object (a new
-    // reference) will be equivalent to the original object.  This field
-    // is required.
-    PyObject *(*new_object)(struct _xid *);
-    // free is called when the data is released.  If it is NULL then
-    // nothing will be done to free the data.  For some types this is
-    // okay (e.g. bytes) and for those types this field should be set
-    // to NULL.  However, for most the data was allocated just for
-    // cross-interpreter use, so it must be freed when
-    // _PyCrossInterpreterData_Release is called or the memory will
-    // leak.  In that case, at the very least this field should be set
-    // to PyMem_RawFree (the default if not explicitly set to NULL).
-    // The call will happen with the original interpreter activated.
-    void (*free)(void *);
-} _PyCrossInterpreterData;
-
-typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
-
-PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
-
-/* cross-interpreter data registry */
-
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(PyTypeObject *, crossinterpdatafunc);
-PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
-
-struct _xidregitem;
-
-struct _xidregitem {
-    PyTypeObject *cls;
-    crossinterpdatafunc getdata;
-    struct _xidregitem *next;
-};
+/* Check if the current thread is the main thread.
+   Use _Py_IsMainInterpreter() to check if it's the main interpreter. */
+static inline int
+_Py_IsMainThread(void)
+{
+    unsigned long thread = PyThread_get_thread_ident();
+    return (thread == _PyRuntime.main_thread);
+}
 
 
-/* Full Python runtime state */
+static inline PyInterpreterState *
+_PyInterpreterState_Main(void)
+{
+    return _PyRuntime.interpreters.main;
+}
 
-typedef struct pyruntimestate {
-    int initialized;
-    int core_initialized;
-    PyThreadState *finalizing;
+static inline int
+_Py_IsMainInterpreter(PyInterpreterState *interp)
+{
+    return (interp == _PyInterpreterState_Main());
+}
 
-    struct pyinterpreters {
-        PyThread_type_lock mutex;
-        PyInterpreterState *head;
-        PyInterpreterState *main;
-        /* _next_interp_id is an auto-numbered sequence of small
-           integers.  It gets initialized in _PyInterpreterState_Init(),
-           which is called in Py_Initialize(), and used in
-           PyInterpreterState_New().  A negative interpreter ID
-           indicates an error occurred.  The main interpreter will
-           always have an ID of 0.  Overflow results in a RuntimeError.
-           If that becomes a problem later then we can adjust, e.g. by
-           using a Python int. */
-        int64_t next_id;
-    } interpreters;
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry {
-        PyThread_type_lock mutex;
-        struct _xidregitem *head;
-    } xidregistry;
+static inline int
+_Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
+{
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
+}
 
-#define NEXITFUNCS 32
-    void (*exitfuncs[NEXITFUNCS])(void);
-    int nexitfuncs;
-
-    struct _gc_runtime_state gc;
-    struct _warnings_runtime_state warnings;
-    struct _ceval_runtime_state ceval;
-    struct _gilstate_runtime_state gilstate;
-
-    // XXX Consolidate globals found via the check-c-globals script.
-} _PyRuntimeState;
-
-#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
-/* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
-
-PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
-PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
-
-/* Initialize _PyRuntimeState.
-   Return NULL on success, or return an error message on failure. */
-PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
-
-#define _Py_CURRENTLY_FINALIZING(tstate) \
-    (_PyRuntime.finalizing == tstate)
+// Export for _xxsubinterpreters module.
+PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
 
 
-/* Variable and macro for in-line access to current thread
+static inline const PyConfig *
+_Py_GetMainConfig(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Main();
+    if (interp == NULL) {
+        return NULL;
+    }
+    return _PyInterpreterState_GetConfig(interp);
+}
+
+
+/* Only handle signals on the main thread of the main interpreter. */
+static inline int
+_Py_ThreadCanHandleSignals(PyInterpreterState *interp)
+{
+    return (_Py_IsMainThread() && _Py_IsMainInterpreter(interp));
+}
+
+
+/* Variable and static inline functions for in-line access to current thread
    and interpreter state */
+
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+extern _Py_thread_local PyThreadState *_Py_tss_tstate;
+#endif
+
+#ifndef NDEBUG
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
+int _PyThreadState_MustExit(PyThreadState *tstate);
+
+// Export for most shared extensions, used via _PyThreadState_GET() static
+// inline function.
+PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
 /* Get the current Python thread state.
 
-   Efficient macro reading directly the 'gilstate.tstate_current' atomic
-   variable. The macro is unsafe: it does not check for error and it can
-   return NULL.
+   This function is unsafe: it does not check for error and it can return NULL.
 
    The caller must hold the GIL.
 
-   See also PyThreadState_Get() and PyThreadState_GET(). */
-#define _PyThreadState_GET() \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyRuntime.gilstate.tstate_current))
+   See also PyThreadState_Get() and PyThreadState_GetUnchecked(). */
+static inline PyThreadState*
+_PyThreadState_GET(void)
+{
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+    return _Py_tss_tstate;
+#else
+    return _PyThreadState_GetCurrent();
+#endif
+}
 
-/* Redefine PyThreadState_GET() as an alias to _PyThreadState_GET() */
-#undef PyThreadState_GET
-#define PyThreadState_GET() _PyThreadState_GET()
+// Attaches the current thread to the interpreter.
+//
+// This may block while acquiring the GIL (if the GIL is enabled) or while
+// waiting for a stop-the-world pause (if the GIL is disabled).
+//
+// High-level code should generally call PyEval_RestoreThread() instead, which
+// calls this function.
+void _PyThreadState_Attach(PyThreadState *tstate);
+
+// Detaches the current thread from the interpreter.
+//
+// High-level code should generally call PyEval_SaveThread() instead, which
+// calls this function.
+void _PyThreadState_Detach(PyThreadState *tstate);
+
+
+static inline void
+_Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
+{
+    if (tstate == NULL) {
+        _Py_FatalErrorFunc(func,
+            "the function must be called with the GIL held, "
+            "after Python initialization and before Python finalization, "
+            "but the GIL is released (the current Python thread state is NULL)");
+    }
+}
+
+// Call Py_FatalError() if tstate is NULL
+#define _Py_EnsureTstateNotNULL(tstate) \
+    _Py_EnsureFuncTstateNotNULL(__func__, (tstate))
+
 
 /* Get the current interpreter state.
 
-   The macro is unsafe: it does not check for error and it can return NULL.
+   The function is unsafe: it does not check for error and it can return NULL.
 
    The caller must hold the GIL.
 
-   See also _PyInterpreterState_Get()
+   See also PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
-#define _PyInterpreterState_GET_UNSAFE() (_PyThreadState_GET()->interp)
+static inline PyInterpreterState* _PyInterpreterState_GET(void) {
+    PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
+    return tstate->interp;
+}
+
+
+// PyThreadState functions
+
+extern PyThreadState * _PyThreadState_New(
+    PyInterpreterState *interp,
+    int whence);
+extern void _PyThreadState_Bind(PyThreadState *tstate);
+extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
+extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);
+
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
+
+/* The implementation of sys._current_exceptions()  Returns a dict mapping
+   thread id to that thread's current exception.
+*/
+extern PyObject* _PyThread_CurrentExceptions(void);
 
 
 /* Other */
 
-PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
-PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(void);
+extern PyThreadState * _PyThreadState_Swap(
+    _PyRuntimeState *runtime,
+    PyThreadState *newts);
+
+extern PyStatus _PyInterpreterState_Enable(_PyRuntimeState *runtime);
+
+#ifdef HAVE_FORK
+extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
+extern void _PySignal_AfterFork(void);
+#endif
+
+// Export for the stable ABI
+PyAPI_FUNC(int) _PyState_AddModule(
+    PyThreadState *tstate,
+    PyObject* module,
+    PyModuleDef* def);
+
+
+extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
+
+#define HEAD_LOCK(runtime) \
+    PyMutex_LockFlags(&(runtime)->interpreters.mutex, _Py_LOCK_DONT_DETACH)
+#define HEAD_UNLOCK(runtime) \
+    PyMutex_Unlock(&(runtime)->interpreters.mutex)
+
+// Get the configuration of the current interpreter.
+// The caller must hold the GIL.
+// Export for test_peg_generator.
+PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
+
+// Get the single PyInterpreterState used by this process' GILState
+// implementation.
+//
+// This function doesn't check for error. Return NULL before _PyGILState_Init()
+// is called and after _PyGILState_Fini() is called.
+//
+// See also PyInterpreterState_Get() and _PyInterpreterState_GET().
+extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
 #ifdef __cplusplus
 }

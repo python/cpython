@@ -1,3 +1,0 @@
-Store a weak reference to stream reader to break strong references loop
-between reader and protocol.  It allows to detect and close the socket if
-the stream is deleted (garbage collected) without ``close()`` call.

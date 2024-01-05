@@ -1,2 +1,0 @@
-The UTF-8 Mode is now also enabled by the "POSIX" locale, not only by the "C"
-locale.

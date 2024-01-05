@@ -1,2 +1,0 @@
-Fix usage of GetLastError() instead of errno in os.execve() and
-os.truncate().

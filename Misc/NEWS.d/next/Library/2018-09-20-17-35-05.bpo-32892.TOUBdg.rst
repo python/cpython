@@ -1,4 +1,0 @@
-The parser now represents all constants as :class:`ast.Constant` instead of
-using specific constant AST types (``Num``, ``Str``, ``Bytes``,
-``NameConstant`` and ``Ellipsis``). These classes are considered deprecated
-and will be removed in future Python versions.

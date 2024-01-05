@@ -1,2 +1,0 @@
-Raise RuntimeError when ``executor.submit`` is called during interpreter
-shutdown.

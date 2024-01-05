@@ -1,1 +1,0 @@
-Add generic version of ``collections.OrderedDict`` to the ``typing`` module.  Patch by Ismo Toijala.

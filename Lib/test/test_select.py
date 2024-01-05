@@ -1,9 +1,12 @@
 import errno
-import os
 import select
+import subprocess
 import sys
+import textwrap
 import unittest
 from test import support
+
+support.requires_working_socket(module=True)
 
 @unittest.skipIf((sys.platform[:3]=='win'),
                  "can't easily test on this system")
@@ -44,28 +47,41 @@ class SelectTestCase(unittest.TestCase):
         self.assertIsNot(r, x)
         self.assertIsNot(w, x)
 
+    @support.requires_fork()
     def test_select(self):
-        cmd = 'for i in 0 1 2 3 4 5 6 7 8 9; do echo testing...; sleep 1; done'
-        p = os.popen(cmd, 'r')
-        for tout in (0, 1, 2, 4, 8, 16) + (None,)*10:
-            if support.verbose:
-                print('timeout =', tout)
-            rfd, wfd, xfd = select.select([p], [], [], tout)
-            if (rfd, wfd, xfd) == ([], [], []):
-                continue
-            if (rfd, wfd, xfd) == ([p], [], []):
-                line = p.readline()
+        code = textwrap.dedent('''
+            import time
+            for i in range(10):
+                print("testing...", flush=True)
+                time.sleep(0.050)
+        ''')
+        cmd = [sys.executable, '-I', '-c', code]
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
+            pipe = proc.stdout
+            for timeout in (0, 1, 2, 4, 8, 16) + (None,)*10:
                 if support.verbose:
-                    print(repr(line))
-                if not line:
+                    print(f'timeout = {timeout}')
+                rfd, wfd, xfd = select.select([pipe], [], [], timeout)
+                self.assertEqual(wfd, [])
+                self.assertEqual(xfd, [])
+                if not rfd:
+                    continue
+                if rfd == [pipe]:
+                    line = pipe.readline()
                     if support.verbose:
-                        print('EOF')
-                    break
-                continue
-            self.fail('Unexpected return values from select():', rfd, wfd, xfd)
-        p.close()
+                        print(repr(line))
+                    if not line:
+                        if support.verbose:
+                            print('EOF')
+                        break
+                    continue
+                self.fail('Unexpected return values from select():',
+                          rfd, wfd, xfd)
 
     # Issue 16230: Crash on select resized list
+    @unittest.skipIf(
+        support.is_emscripten, "Emscripten cannot select a fd multiple times."
+    )
     def test_select_mutated(self):
         a = []
         class F:
@@ -74,6 +90,12 @@ class SelectTestCase(unittest.TestCase):
                 return sys.__stdout__.fileno()
         a[:] = [F()] * 10
         self.assertEqual(select.select([], a, []), ([], a[:5], []))
+
+    def test_disallow_instantiation(self):
+        support.check_disallow_instantiation(self, type(select.poll()))
+
+        if hasattr(select, 'devpoll'):
+            support.check_disallow_instantiation(self, type(select.devpoll()))
 
 def tearDownModule():
     support.reap_children()

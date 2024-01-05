@@ -1,2 +1,0 @@
-``PyRun_SimpleFileExFlags`` removes ``__cached__`` from module in addition
-to ``__file__``.

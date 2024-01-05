@@ -1,3 +1,0 @@
-The UTF-7 decoder now raises :exc:`UnicodeDecodeError` for ill-formed
-sequences starting with "+" (as specified in RFC 2152).  Patch by Zackery
-Spytz.

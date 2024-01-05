@@ -1,2 +1,0 @@
-Avoids a possible integer underflow (undefined behavior) in the time
-module's year handling code when passed a very low negative year value.

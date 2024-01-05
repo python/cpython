@@ -1,2 +1,0 @@
-Fix regression in ``webbrowser`` where default browsers may be preferred
-over browsers in the ``BROWSER`` environment variable.

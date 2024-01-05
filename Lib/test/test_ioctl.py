@@ -1,6 +1,7 @@
 import array
 import unittest
-from test.support import import_module, get_attribute
+from test.support import get_attribute
+from test.support.import_helper import import_module
 import os, struct
 fcntl = import_module('fcntl')
 termios = import_module('termios')
@@ -11,9 +12,9 @@ try:
 except OSError:
     raise unittest.SkipTest("Unable to open /dev/tty")
 else:
-    # Skip if another process is in foreground
-    r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
-    tty.close()
+    with tty:
+        # Skip if another process is in foreground
+        r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
     rpgrp = struct.unpack("i", r)[0]
     if rpgrp not in (os.getpgrp(), os.getsid(0)):
         raise unittest.SkipTest("Neither the process group nor the session "
@@ -48,7 +49,7 @@ class IoctlTests(unittest.TestCase):
         else:
             buf.append(fill)
         with open("/dev/tty", "rb") as tty:
-            r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, 1)
+            r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, True)
         rpgrp = buf[0]
         self.assertEqual(r, 0)
         self.assertIn(rpgrp, ids)

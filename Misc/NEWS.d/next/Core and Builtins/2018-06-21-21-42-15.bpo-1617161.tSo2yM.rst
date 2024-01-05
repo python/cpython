@@ -1,7 +1,0 @@
-The hash of :class:`BuiltinMethodType` instances (methods of built-in classes)
-now depends on the hash of the identity of *__self__* instead of its value.
-The hash and equality of :class:`ModuleType` and :class:`MethodWrapperType`
-instances (methods of user-defined classes and some methods of built-in classes
-like ``str.__add__``) now depend on the hash and equality of the identity
-of *__self__* instead of its value.  :class:`MethodWrapperType` instances no
-longer support ordering.

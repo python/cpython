@@ -1,1 +1,0 @@
-Make error message more revealing when there are non-str objects in ``__all__``.

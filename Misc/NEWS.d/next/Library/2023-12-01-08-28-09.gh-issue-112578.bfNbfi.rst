@@ -1,0 +1,1 @@
+Fix a spurious :exc:`RuntimeWarning` when executing the :mod:`zipfile` module.

@@ -1,2 +1,0 @@
-On AIX with AF_UNIX family sockets getsockname() does not provide 'sockname',
-so skip calls to transport.get_extra_info('sockname')

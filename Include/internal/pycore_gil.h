@@ -4,12 +4,11 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_condvar.h"
-#include "pycore_atomic.h"
+#include "pycore_condvar.h"       // PyCOND_T
 
 #ifndef Py_HAVE_CONDVAR
 #  error You need either a POSIX-compatible or a Windows system!
@@ -25,10 +24,10 @@ struct _gil_runtime_state {
     unsigned long interval;
     /* Last PyThreadState holding / having held the GIL. This helps us
        know whether anyone else was scheduled after we dropped the GIL. */
-    _Py_atomic_address last_holder;
+    PyThreadState* last_holder;
     /* Whether the GIL is already taken (-1 if uninitialized). This is
        atomic because it can be read without any lock taken in ceval.c. */
-    _Py_atomic_int locked;
+    int locked;
     /* Number of GIL switches since the beginning. */
     unsigned long switch_number;
     /* This condition variable allows one or several threads to wait

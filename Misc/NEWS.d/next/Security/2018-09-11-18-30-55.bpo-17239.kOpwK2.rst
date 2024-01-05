@@ -1,3 +1,0 @@
-The xml.sax and xml.dom.minidom parsers no longer processes external
-entities by default. External DTD and ENTITY declarations no longer
-load files or create network connections.

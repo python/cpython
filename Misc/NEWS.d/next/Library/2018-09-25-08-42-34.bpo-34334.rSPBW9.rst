@@ -1,2 +1,0 @@
-In :class:`QueueHandler`, clear `exc_text` from :class:`LogRecord` to
-prevent traceback from being written twice.

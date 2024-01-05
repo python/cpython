@@ -73,6 +73,10 @@ class addinfourl(addinfo):
         self.url = url
         self.code = code
 
+    @property
+    def status(self):
+        return self.code
+
     def getcode(self):
         return self.code
 

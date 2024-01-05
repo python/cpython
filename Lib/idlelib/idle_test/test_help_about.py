@@ -36,7 +36,7 @@ class LiveDialogTest(unittest.TestCase):
         del cls.root
 
     def test_build_bits(self):
-        self.assertIn(help_about.build_bits(), ('32', '64'))
+        self.assertIn(help_about.bits, ('32', '64'))
 
     def test_dialog_title(self):
         """Test about dialog title"""
@@ -61,6 +61,8 @@ class LiveDialogTest(unittest.TestCase):
                 button.invoke()
                 get = dialog._current_textview.viewframe.textframe.text.get
                 lines = printer._Printer__lines
+                if len(lines) < 2:
+                    self.fail(name + ' full text was not found')
                 self.assertEqual(lines[0], get('1.0', '1.end'))
                 self.assertEqual(lines[1], get('2.0', '2.end'))
                 dialog._current_textview.destroy()
@@ -69,7 +71,7 @@ class LiveDialogTest(unittest.TestCase):
         """Test buttons that display files."""
         dialog = self.dialog
         button_sources = [(self.dialog.readme, 'README.txt', 'readme'),
-                          (self.dialog.idle_news, 'NEWS.txt', 'news'),
+                          (self.dialog.idle_news, 'News3.txt', 'news'),
                           (self.dialog.idle_credits, 'CREDITS.txt', 'credits')]
 
         for button, filename, name in button_sources:
@@ -105,7 +107,7 @@ class DefaultTitleTest(unittest.TestCase):
         """Test about dialog title"""
         self.assertEqual(self.dialog.title(),
                          f'About IDLE {python_version()}'
-                         f' ({help_about.build_bits()} bit)')
+                         f' ({help_about.bits} bit)')
 
 
 class CloseTest(unittest.TestCase):
@@ -132,7 +134,7 @@ class CloseTest(unittest.TestCase):
             self.dialog.winfo_class()
 
 
-class Dummy_about_dialog():
+class Dummy_about_dialog:
     # Dummy class for testing file display functions.
     idle_credits = About.show_idle_credits
     idle_readme = About.show_readme

@@ -1,2 +1,0 @@
-Fixed error handling in pickling methods when fail to look up builtin
-"getattr". Sped up pickling iterators.

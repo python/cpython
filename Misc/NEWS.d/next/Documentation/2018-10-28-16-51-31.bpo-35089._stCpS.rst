@@ -1,2 +1,0 @@
-Remove mention of ``typing.io`` and ``typing.re``. Their types should be
-imported from ``typing`` directly.

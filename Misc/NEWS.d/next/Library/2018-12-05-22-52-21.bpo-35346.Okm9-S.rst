@@ -1,2 +1,0 @@
-Drop Mac OS 9 and Rhapsody support from the :mod:`platform` module. Rhapsody
-last release was in 2000. Mac OS 9 last release was in 2001.
