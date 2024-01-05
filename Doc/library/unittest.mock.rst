@@ -72,6 +72,7 @@ available, and then make assertions about how they have been used:
 :attr:`side_effect` allows you to perform side effects, including raising an
 exception when a mock is called:
 
+   >>> from unittest.mock import Mock
    >>> mock = Mock(side_effect=KeyError('foo'))
    >>> mock()
    Traceback (most recent call last):
@@ -188,7 +189,7 @@ code if they are used incorrectly:
    >>> mock_function('wrong arguments')
    Traceback (most recent call last):
     ...
-   TypeError: <lambda>() takes exactly 3 arguments (1 given)
+   TypeError: missing a required argument: 'b'
 
 :func:`create_autospec` can also be used on classes, where it copies the signature of
 the ``__init__`` method, and on callable objects where it copies the signature of
@@ -204,8 +205,10 @@ The Mock Class
     import asyncio
     import inspect
     import unittest
+    import threading
     from unittest.mock import sentinel, DEFAULT, ANY
     from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
+    from unittest.mock import ThreadingMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -312,6 +315,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
             ...
             AssertionError: Expected 'method' to have been called once. Called 2 times.
+            Calls: [call(), call()].
 
         .. versionadded:: 3.6
 
@@ -339,7 +343,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'mock' to be called once. Called 2 times.
-
+            Calls: [call('foo', bar='baz'), call('other', bar='values')].
 
     .. method:: assert_any_call(*args, **kwargs)
 
@@ -389,6 +393,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'hello' to not have been called. Called 1 times.
+            Calls: [call()].
 
         .. versionadded:: 3.5
 
@@ -406,7 +411,7 @@ the *new_callable* argument to :func:`patch`.
             False
 
         .. versionchanged:: 3.6
-           Added two keyword only argument to the reset_mock function.
+           Added two keyword-only arguments to the reset_mock function.
 
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
@@ -416,8 +421,8 @@ the *new_callable* argument to :func:`patch`.
         parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
 
-        .. note:: *return_value*, and :attr:`side_effect` are keyword only
-                  argument.
+        .. note:: *return_value*, and :attr:`side_effect` are keyword-only
+                  arguments.
 
 
     .. method:: mock_add_spec(spec, spec_set=False)
@@ -813,14 +818,15 @@ This applies to :meth:`~Mock.assert_called_with`,
 :meth:`~Mock.assert_any_call`.  When :ref:`auto-speccing`, it will also
 apply to method calls on the mock object.
 
-   .. versionchanged:: 3.4
-      Added signature introspection on specced and autospecced mock objects.
+.. versionchanged:: 3.4
+   Added signature introspection on specced and autospecced mock objects.
 
 
 .. class:: PropertyMock(*args, **kwargs)
 
-   A mock intended to be used as a property, or other descriptor, on a class.
-   :class:`PropertyMock` provides :meth:`__get__` and :meth:`__set__` methods
+   A mock intended to be used as a :class:`property`, or other
+   :term:`descriptor`, on a class. :class:`PropertyMock` provides
+   :meth:`~object.__get__` and :meth:`~object.__set__` methods
    so you can specify a return value when it is fetched.
 
    Fetching a :class:`PropertyMock` instance from an object calls the mock, with
@@ -951,7 +957,7 @@ object::
         >>> asyncio.run(main())
         >>> mock.assert_awaited_once()
         >>> asyncio.run(main())
-        >>> mock.method.assert_awaited_once()
+        >>> mock.assert_awaited_once()
         Traceback (most recent call last):
         ...
         AssertionError: Expected mock to have been awaited once. Awaited 2 times.
@@ -969,7 +975,7 @@ object::
         >>> mock.assert_awaited_with('other')
         Traceback (most recent call last):
         ...
-        AssertionError: expected call not found.
+        AssertionError: expected await not found.
         Expected: mock('other')
         Actual: mock('foo', bar='bar')
 
@@ -1096,6 +1102,51 @@ object::
       >>> asyncio.run(main('bar'))
       >>> mock.await_args_list
       [call('foo'), call('bar')]
+
+
+.. class:: ThreadingMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, *, timeout=UNSET, **kwargs)
+
+  A version of :class:`MagicMock` for multithreading tests. The
+  :class:`ThreadingMock` object provides extra methods to wait for a call to
+  be invoked, rather than assert on it immediately.
+
+  The default timeout is specified by the ``timeout`` argument, or if unset by the
+  :attr:`ThreadingMock.DEFAULT_TIMEOUT` attribute, which defaults to blocking (``None``).
+
+  You can configure the global default timeout by setting :attr:`ThreadingMock.DEFAULT_TIMEOUT`.
+
+  .. method:: wait_until_called(*, timeout=UNSET)
+
+      Waits until the mock is called.
+
+      If a timeout was passed at the creation of the mock or if a timeout
+      argument is passed to this function, the function raises an
+      :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock)
+        >>> thread.start()
+        >>> mock.wait_until_called(timeout=1)
+        >>> thread.join()
+
+  .. method:: wait_until_any_call_with(*args, **kwargs)
+
+      Waits until the mock is called with the specified arguments.
+
+      If a timeout was passed at the creation of the mock
+      the function raises an :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock, args=("arg1", "arg2",), kwargs={"arg": "thing"})
+        >>> thread.start()
+        >>> mock.wait_until_any_call_with("arg1", "arg2", arg="thing")
+        >>> thread.join()
+
+  .. attribute:: DEFAULT_TIMEOUT
+
+    Global default timeout in seconds to create instances of :class:`ThreadingMock`.
+
+  .. versionadded:: 3.13
 
 
 Calling
@@ -1387,9 +1438,9 @@ patch
 
     .. note::
 
-        .. versionchanged:: 3.5
-           If you are patching builtins in a module then you don't
-           need to pass ``create=True``, it will be added by default.
+       .. versionchanged:: 3.5
+          If you are patching builtins in a module then you don't
+          need to pass ``create=True``, it will be added by default.
 
     Patch can be used as a :class:`TestCase` class decorator. It works by
     decorating each test method in the class. This reduces the boilerplate
@@ -1657,8 +1708,9 @@ Keywords can be used in the :func:`patch.dict` call to set values in the diction
 :func:`patch.dict` can be used with dictionary like objects that aren't actually
 dictionaries. At the very minimum they must support item getting, setting,
 deleting and either iteration or membership test. This corresponds to the
-magic methods :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
-:meth:`__iter__` or :meth:`__contains__`.
+magic methods :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
+:meth:`~object.__delitem__` and either :meth:`~container.__iter__` or
+:meth:`~object.__contains__`.
 
     >>> class Container:
     ...     def __init__(self):
@@ -2121,7 +2173,7 @@ For example:
    >>> object() in mock
    False
 
-The two equality methods, :meth:`__eq__` and :meth:`__ne__`, are special.
+The two equality methods, :meth:`!__eq__` and :meth:`!__ne__`, are special.
 They do the default equality comparison on identity, using the
 :attr:`~Mock.side_effect` attribute, unless you change their return value to
 return something else::
@@ -2437,7 +2489,7 @@ behaviour you can switch it off by setting the module level switch
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
-:data:`mock.FILTER_DIR`.
+:const:`mock.FILTER_DIR`.
 
 
 mock_open
@@ -2471,8 +2523,8 @@ mock_open
       *read_data* is now reset on each call to the *mock*.
 
    .. versionchanged:: 3.8
-      Added :meth:`__iter__` to implementation so that iteration (such as in for
-      loops) correctly consumes *read_data*.
+      Added :meth:`~container.__iter__` to implementation so that iteration
+      (such as in for loops) correctly consumes *read_data*.
 
 Using :func:`open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
@@ -2481,8 +2533,8 @@ are closed properly and is becoming common::
         f.write('something')
 
 The issue is that even if you mock out the call to :func:`open` it is the
-*returned object* that is used as a context manager (and has :meth:`__enter__` and
-:meth:`__exit__` called).
+*returned object* that is used as a context manager (and has :meth:`~object.__enter__` and
+:meth:`~object.__exit__` called).
 
 Mocking context managers with a :class:`MagicMock` is common enough and fiddly
 enough that a helper function is useful. ::
@@ -2654,7 +2706,7 @@ able to use autospec. On the other hand it is much better to design your
 objects so that introspection is safe [#]_.
 
 A more serious problem is that it is common for instance attributes to be
-created in the :meth:`__init__` method and not to exist on the class at all.
+created in the :meth:`~object.__init__` method and not to exist on the class at all.
 *autospec* can't know about any dynamically created attributes and restricts
 the api to visible attributes. ::
 
@@ -2695,8 +2747,9 @@ this particular scenario:
     AttributeError: Mock object has no attribute 'a'
 
 Probably the best way of solving the problem is to add class attributes as
-default values for instance members initialised in :meth:`__init__`. Note that if
-you are only setting default attributes in :meth:`__init__` then providing them via
+default values for instance members initialised in :meth:`~object.__init__`.
+Note that if
+you are only setting default attributes in :meth:`!__init__` then providing them via
 class attributes (shared between instances of course) is faster too. e.g.
 
 .. code-block:: python

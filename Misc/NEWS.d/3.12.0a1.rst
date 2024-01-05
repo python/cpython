@@ -82,7 +82,7 @@ the test failed).
 .. nonce: eOBh8M
 .. section: Core and Builtins
 
-Suppress ImportError for invalid query for help() command. Patch by Dong-hee
+Suppress ImportError for invalid query for help() command. Patch by Donghee
 Na.
 
 ..
@@ -164,7 +164,7 @@ to calculate those doing pointer arithmetic.
 .. section: Core and Builtins
 
 :func:`os.sched_yield` now release the GIL while calling sched_yield(2).
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -203,7 +203,7 @@ the interpreter.
 .. nonce: LYAWlE
 .. section: Core and Builtins
 
-Bugfix: :func:`PyFunction_GetAnnotations` should return a borrowed
+Bugfix: :c:func:`PyFunction_GetAnnotations` should return a borrowed
 reference. It was returning a new reference.
 
 ..
@@ -465,7 +465,7 @@ Remove dead code from ``CALL_FUNCTION_EX`` opcode.
 .. nonce: VE8-zf
 .. section: Core and Builtins
 
-:class:`memoryview` now supports half-floats. Patch by Dong-hee Na and
+:class:`memoryview` now supports half-floats. Patch by Donghee Na and
 Antoine Pitrou.
 
 ..
@@ -736,7 +736,7 @@ new types.
 .. nonce: 6eoc8k
 .. section: Core and Builtins
 
-On WASI :data:`~errno.ENOTCAPABLE` is now mapped to :exc:`PermissionError`.
+On WASI :const:`~errno.ENOTCAPABLE` is now mapped to :exc:`PermissionError`.
 The :mod:`errno` modules exposes the new error number. ``getpath.py`` now
 ignores :exc:`PermissionError` when it cannot open landmark files
 ``pybuilddir.txt`` and ``pyenv.cfg``.
@@ -857,7 +857,7 @@ code objects could be "deduplicated" during compilation.
 .. section: Core and Builtins
 
 Reduce allocation size of :class:`list` from :meth:`str.split` and
-:meth:`str.rsplit`. Patch by Dong-hee Na and Inada Naoki.
+:meth:`str.rsplit`. Patch by Donghee Na and Inada Naoki.
 
 ..
 
@@ -1913,7 +1913,7 @@ Stinner.
 .. nonce: Uxc9al
 .. section: Library
 
-Allow :mod:`venv` to pass along :envvar:`PYTHON*` variables to ``ensurepip``
+Allow :mod:`venv` to pass along :envvar:`!PYTHON*` variables to ``ensurepip``
 and ``pip`` when they do not impact path resolution
 
 ..
@@ -2028,8 +2028,8 @@ resources.
 .. nonce: NzdREm
 .. section: Library
 
-Remove deprecated :func:`importlib.utils.set_loader` and
-:func:`importlib.utils.module_for_loader` from :mod:`importlib.utils`.
+Remove deprecated :func:`!importlib.util.set_loader` and
+:func:`!importlib.util.module_for_loader` from :mod:`importlib.util`.
 
 ..
 
@@ -2649,8 +2649,8 @@ calling any callbacks. Patch by Kumar Aditya.
 .. nonce: i807-g
 .. section: Library
 
-Fail gracefully if :data:`~errno.EPERM` or :data:`~errno.ENOSYS` is raised
-when loading :mod:`crypt` methods. This may happen when trying to load
+Fail gracefully if :const:`~errno.EPERM` or :const:`~errno.ENOSYS` is raised
+when loading :mod:`!crypt` methods. This may happen when trying to load
 ``MD5`` on a Linux kernel with :abbr:`FIPS (Federal Information Processing
 Standard)` enabled.
 
@@ -2698,8 +2698,8 @@ Upgrade bundled pip to 22.2.
 .. nonce: VT34A5
 .. section: Library
 
-Fix check for existence of :data:`os.EFD_CLOEXEC`, :data:`os.EFD_NONBLOCK`
-and :data:`os.EFD_SEMAPHORE` flags on older kernel versions where these
+Fix check for existence of :const:`os.EFD_CLOEXEC`, :const:`os.EFD_NONBLOCK`
+and :const:`os.EFD_SEMAPHORE` flags on older kernel versions where these
 flags are not present. Patch by Kumar Aditya.
 
 ..
@@ -2752,7 +2752,7 @@ by Shin-myoung-serp.
 .. section: Library
 
 Add deprecation warning for enum ``member.member`` access (e.g.
-``Color.RED.BLUE``).
+``Color.RED.BLUE``). Remove ``EnumMeta.__getattr__``.
 
 ..
 
@@ -3553,7 +3553,7 @@ Make :class:`multiprocessing.Pool` raise an exception if
 .. nonce: HY0Uzj
 .. section: Library
 
-Add :data:`os.PIDFD_NONBLOCK` flag to open a file descriptor for a process
+Add :const:`os.PIDFD_NONBLOCK` flag to open a file descriptor for a process
 with :func:`os.pidfd_open` in non-blocking mode. Patch by Kumar Aditya.
 
 ..
@@ -3617,7 +3617,7 @@ allow access to handlers by name.
 .. nonce: uw6x5z
 .. section: Library
 
-The :mod:`smtpd` module was removed per the schedule in :pep:`594`.
+The :mod:`!smtpd` module was removed per the schedule in :pep:`594`.
 
 ..
 
@@ -3742,7 +3742,7 @@ Fix :func:`ast.unparse` when ``ImportFrom.level`` is None
 
 Now :func:`~dis.dis` and :func:`~dis.get_instructions` handle operand values
 for instructions prefixed by ``EXTENDED_ARG_QUICK``. Patch by Sam Gross and
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -4171,7 +4171,7 @@ Add an index_pages parameter to support using non-default index page names.
 .. nonce: qtT3CE
 .. section: Library
 
-Drop support for :class:`bytes` on :attr:`sys.path`.
+Drop support for :class:`bytes` on :data:`sys.path`.
 
 ..
 
@@ -4559,8 +4559,7 @@ The minimum Sphinx version required to build the documentation is now 3.2.
 .. section: Documentation
 
 Augmented documentation of asyncio.create_task(). Clarified the need to keep
-strong references to tasks and added a code snippet detailing how to to
-this.
+strong references to tasks and added a code snippet detailing how to do this.
 
 ..
 
@@ -5005,7 +5004,7 @@ Patch by Illia Volochii and Adam Turner.
 .. section: Build
 
 Fix the build process of clang compiler for :program:`_bootstrap_python` if
-LTO optimization is applied. Patch by Matthias Görgens and Dong-hee Na.
+LTO optimization is applied. Patch by Matthias Görgens and Donghee Na.
 
 ..
 
@@ -5025,7 +5024,7 @@ LTO optimization is applied. Patch by Matthias Görgens and Dong-hee Na.
 .. section: Build
 
 CPython now uses the ThinLTO option as the default policy if the Clang
-compiler accepts the flag. Patch by Dong-hee Na.
+compiler accepts the flag. Patch by Donghee Na.
 
 ..
 
@@ -5066,7 +5065,7 @@ are stubs and not functional.
 .. nonce: Bsswsc
 .. section: Build
 
-Add a new ``--with-dsymutil`` configure option to to link debug information
+Add a new ``--with-dsymutil`` configure option to link debug information
 in macOS. Patch by Pablo Galindo.
 
 ..
@@ -5309,7 +5308,7 @@ parameter. Patch by Kumar Aditya.
 .. section: Build
 
 Python now always use the ``%zu`` and ``%zd`` printf formats to format a
-``size_t`` or ``Py_ssize_t`` number. Building Python 3.12 requires a C11
+:c:type:`size_t` or ``Py_ssize_t`` number. Building Python 3.12 requires a C11
 compiler, so these printf formats are now always supported. Patch by Victor
 Stinner.
 
@@ -5351,7 +5350,7 @@ in a virtual environment.
 .. nonce: FbHZuS
 .. section: Windows
 
-Fix :file:`py.exe` launcher handling of ``-V:<company>/`` option when
+Fix :file:`py.exe` launcher handling of :samp:`-V:{<company>}/` option when
 default preferences have been set in environment variables or configuration
 files.
 
@@ -5401,7 +5400,7 @@ Update libffi to 3.4.3
 .. nonce: kV4K_1
 .. section: Windows
 
-Fixes a potential buffer overrun in :mod:`msilib`.
+Fixes a potential buffer overrun in :mod:`!msilib`.
 
 ..
 
@@ -5857,8 +5856,8 @@ Configuration for the :ref:`integer string conversion length limitation
 
 Extensions classes that set ``tp_dictoffset`` and ``tp_weaklistoffset`` lose
 the support for multiple inheritance, but are now safe. Extension classes
-should use :const:`Py_TPFLAGS_MANAGED_DICT` and
-:const:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
+should use :c:macro:`Py_TPFLAGS_MANAGED_DICT` and
+:c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
 
 ..
 
@@ -5899,7 +5898,7 @@ Support C extensions using managed dictionaries by setting the
 .. nonce: QoDHEu
 .. section: C API
 
-API for implementing vectorcall (:c:data:`Py_TPFLAGS_HAVE_VECTORCALL`,
+API for implementing vectorcall (:c:macro:`Py_TPFLAGS_HAVE_VECTORCALL`,
 :c:func:`PyVectorcall_NARGS` and :c:func:`PyVectorcall_Call`) was added to
 the limited API and stable ABI.
 
@@ -5921,12 +5920,12 @@ Philip Georgi.
 .. nonce: -DdGEy
 .. section: C API
 
-The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+The :c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
 when the class's :py:meth:`~object.__call__` method is reassigned. This
 makes vectorcall safe to use with mutable types (i.e. heap types without the
 :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag). Mutable types that do
 not override :c:member:`~PyTypeObject.tp_call` now inherit the
-:const:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
+:c:macro:`Py_TPFLAGS_HAVE_VECTORCALL` flag.
 
 ..
 
@@ -5935,7 +5934,7 @@ not override :c:member:`~PyTypeObject.tp_call` now inherit the
 .. nonce: aiRSgr
 .. section: C API
 
-Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+Creating :c:macro:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
 bases is deprecated and is planned to be disabled in Python 3.14.
 
 ..

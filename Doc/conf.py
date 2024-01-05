@@ -24,7 +24,13 @@ extensions = [
     'sphinx.ext.doctest',
 ]
 
-# Skip if downstream redistributors haven't installed it
+# Skip if downstream redistributors haven't installed them
+try:
+    import notfound.extension
+except ImportError:
+    pass
+else:
+    extensions.append('notfound.extension')
 try:
     import sphinxext.opengraph
 except ImportError:
@@ -66,13 +72,195 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '3.2'
+needs_sphinx = '4.2'
 
+# Ignore any .rst files in the includes/ directory;
+# they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
+
+nitpick_ignore = [
+    # Standard C functions
+    ('c:func', 'calloc'),
+    ('c:func', 'dlopen'),
+    ('c:func', 'exec'),
+    ('c:func', 'fcntl'),
+    ('c:func', 'fork'),
+    ('c:func', 'free'),
+    ('c:func', 'gmtime'),
+    ('c:func', 'localtime'),
+    ('c:func', 'main'),
+    ('c:func', 'malloc'),
+    ('c:func', 'printf'),
+    ('c:func', 'realloc'),
+    ('c:func', 'snprintf'),
+    ('c:func', 'sprintf'),
+    ('c:func', 'stat'),
+    ('c:func', 'system'),
+    ('c:func', 'time'),
+    ('c:func', 'vsnprintf'),
+    # Standard C types
+    ('c:type', 'FILE'),
+    ('c:type', 'int64_t'),
+    ('c:type', 'intmax_t'),
+    ('c:type', 'off_t'),
+    ('c:type', 'ptrdiff_t'),
+    ('c:type', 'siginfo_t'),
+    ('c:type', 'size_t'),
+    ('c:type', 'ssize_t'),
+    ('c:type', 'time_t'),
+    ('c:type', 'uint64_t'),
+    ('c:type', 'uintmax_t'),
+    ('c:type', 'uintptr_t'),
+    ('c:type', 'va_list'),
+    ('c:type', 'wchar_t'),
+    ('c:type', '__int64'),
+    ('c:type', 'unsigned __int64'),
+    # Standard C structures
+    ('c:struct', 'in6_addr'),
+    ('c:struct', 'in_addr'),
+    ('c:struct', 'stat'),
+    ('c:struct', 'statvfs'),
+    # Standard C macros
+    ('c:macro', 'LLONG_MAX'),
+    ('c:macro', 'LLONG_MIN'),
+    ('c:macro', 'LONG_MAX'),
+    ('c:macro', 'LONG_MIN'),
+    # Standard C variables
+    ('c:data', 'errno'),
+    # Standard environment variables
+    ('envvar', 'BROWSER'),
+    ('envvar', 'COLUMNS'),
+    ('envvar', 'COMSPEC'),
+    ('envvar', 'DISPLAY'),
+    ('envvar', 'HOME'),
+    ('envvar', 'HOMEDRIVE'),
+    ('envvar', 'HOMEPATH'),
+    ('envvar', 'IDLESTARTUP'),
+    ('envvar', 'LANG'),
+    ('envvar', 'LANGUAGE'),
+    ('envvar', 'LC_ALL'),
+    ('envvar', 'LC_CTYPE'),
+    ('envvar', 'LC_COLLATE'),
+    ('envvar', 'LC_MESSAGES'),
+    ('envvar', 'LC_MONETARY'),
+    ('envvar', 'LC_NUMERIC'),
+    ('envvar', 'LC_TIME'),
+    ('envvar', 'LINES'),
+    ('envvar', 'LOGNAME'),
+    ('envvar', 'PAGER'),
+    ('envvar', 'PATH'),
+    ('envvar', 'PATHEXT'),
+    ('envvar', 'SOURCE_DATE_EPOCH'),
+    ('envvar', 'TEMP'),
+    ('envvar', 'TERM'),
+    ('envvar', 'TMP'),
+    ('envvar', 'TMPDIR'),
+    ('envvar', 'TZ'),
+    ('envvar', 'USER'),
+    ('envvar', 'USERNAME'),
+    ('envvar', 'USERPROFILE'),
+    # Deprecated function that was never documented:
+    ('py:func', 'getargspec'),
+    ('py:func', 'inspect.getargspec'),
+    # Undocumented modules that users shouldn't have to worry about
+    # (implementation details of `os.path`):
+    ('py:mod', 'ntpath'),
+    ('py:mod', 'posixpath'),
+]
+
+# Temporary undocumented names.
+# In future this list must be empty.
+nitpick_ignore += [
+    # C API: Standard Python exception classes
+    ('c:data', 'PyExc_ArithmeticError'),
+    ('c:data', 'PyExc_AssertionError'),
+    ('c:data', 'PyExc_AttributeError'),
+    ('c:data', 'PyExc_BaseException'),
+    ('c:data', 'PyExc_BlockingIOError'),
+    ('c:data', 'PyExc_BrokenPipeError'),
+    ('c:data', 'PyExc_BufferError'),
+    ('c:data', 'PyExc_ChildProcessError'),
+    ('c:data', 'PyExc_ConnectionAbortedError'),
+    ('c:data', 'PyExc_ConnectionError'),
+    ('c:data', 'PyExc_ConnectionRefusedError'),
+    ('c:data', 'PyExc_ConnectionResetError'),
+    ('c:data', 'PyExc_EOFError'),
+    ('c:data', 'PyExc_Exception'),
+    ('c:data', 'PyExc_FileExistsError'),
+    ('c:data', 'PyExc_FileNotFoundError'),
+    ('c:data', 'PyExc_FloatingPointError'),
+    ('c:data', 'PyExc_GeneratorExit'),
+    ('c:data', 'PyExc_ImportError'),
+    ('c:data', 'PyExc_IndentationError'),
+    ('c:data', 'PyExc_IndexError'),
+    ('c:data', 'PyExc_InterruptedError'),
+    ('c:data', 'PyExc_IsADirectoryError'),
+    ('c:data', 'PyExc_KeyboardInterrupt'),
+    ('c:data', 'PyExc_KeyError'),
+    ('c:data', 'PyExc_LookupError'),
+    ('c:data', 'PyExc_MemoryError'),
+    ('c:data', 'PyExc_ModuleNotFoundError'),
+    ('c:data', 'PyExc_NameError'),
+    ('c:data', 'PyExc_NotADirectoryError'),
+    ('c:data', 'PyExc_NotImplementedError'),
+    ('c:data', 'PyExc_OSError'),
+    ('c:data', 'PyExc_OverflowError'),
+    ('c:data', 'PyExc_PermissionError'),
+    ('c:data', 'PyExc_ProcessLookupError'),
+    ('c:data', 'PyExc_RecursionError'),
+    ('c:data', 'PyExc_ReferenceError'),
+    ('c:data', 'PyExc_RuntimeError'),
+    ('c:data', 'PyExc_StopAsyncIteration'),
+    ('c:data', 'PyExc_StopIteration'),
+    ('c:data', 'PyExc_SyntaxError'),
+    ('c:data', 'PyExc_SystemError'),
+    ('c:data', 'PyExc_SystemExit'),
+    ('c:data', 'PyExc_TabError'),
+    ('c:data', 'PyExc_TimeoutError'),
+    ('c:data', 'PyExc_TypeError'),
+    ('c:data', 'PyExc_UnboundLocalError'),
+    ('c:data', 'PyExc_UnicodeDecodeError'),
+    ('c:data', 'PyExc_UnicodeEncodeError'),
+    ('c:data', 'PyExc_UnicodeError'),
+    ('c:data', 'PyExc_UnicodeTranslateError'),
+    ('c:data', 'PyExc_ValueError'),
+    ('c:data', 'PyExc_ZeroDivisionError'),
+    # C API: Standard Python warning classes
+    ('c:data', 'PyExc_BytesWarning'),
+    ('c:data', 'PyExc_DeprecationWarning'),
+    ('c:data', 'PyExc_FutureWarning'),
+    ('c:data', 'PyExc_ImportWarning'),
+    ('c:data', 'PyExc_PendingDeprecationWarning'),
+    ('c:data', 'PyExc_ResourceWarning'),
+    ('c:data', 'PyExc_RuntimeWarning'),
+    ('c:data', 'PyExc_SyntaxWarning'),
+    ('c:data', 'PyExc_UnicodeWarning'),
+    ('c:data', 'PyExc_UserWarning'),
+    ('c:data', 'PyExc_Warning'),
+    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
+    # be resolved, as the method is currently undocumented. For context, see
+    # https://github.com/python/cpython/pull/103289.
+    ('py:meth', '_SubParsersAction.add_parser'),
+    # Attributes/methods/etc. that definitely should be documented better,
+    # but are deferred for now:
+    ('py:attr', '__annotations__'),
+    ('py:meth', '__missing__'),
+    ('py:attr', '__wrapped__'),
+    ('py:meth', 'index'),  # list.index, tuple.index, etc.
+]
+
+# gh-106948: Copy standard C types declared in the "c:type" domain to the
+# "c:identifier" domain, since "c:function" markup looks for types in the
+# "c:identifier" domain. Use list() to not iterate on items which are being
+# added
+for role, name in list(nitpick_ignore):
+    if role == 'c:type':
+        nitpick_ignore.append(('c:identifier', name))
+del role, name
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
@@ -81,6 +269,11 @@ smartquotes_excludes = {
 
 # Avoid a warning with Sphinx >= 2.0
 master_doc = 'contents'
+
+# Allow translation of index directives
+gettext_additional_targets = [
+    'index',
+]
 
 # Options for HTML output
 # -----------------------
@@ -105,17 +298,17 @@ if any('htmlhelp' in arg for arg in sys.argv):
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
 
-# Deployment preview information, from Netlify
-# (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+# Deployment preview information
+# (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
 html_context = {
-    "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
-    "repository_url": os.getenv("REPOSITORY_URL"),
-    "pr_id": os.getenv("REVIEW_ID")
+    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
+    "repository_url": repository_url.removesuffix(".git") if repository_url else None,
+    "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
 
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
+# This 'Last updated on:' timestamp is inserted at the bottom of every page.
+html_last_updated_fmt = time.strftime('%b %d, %Y (%H:%M UTC)', time.gmtime())
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
@@ -179,8 +372,6 @@ _stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
-    ('distributing/index', 'distributing.tex',
-     'Distributing Python Modules', _stdauthor, 'manual'),
     ('extending/index', 'extending.tex',
      'Extending and Embedding Python', _stdauthor, 'manual'),
     ('installing/index', 'installing.tex',
@@ -220,7 +411,6 @@ epub_publisher = 'Python Software Foundation'
 # match any of the following regexes (using re.match).
 coverage_ignore_modules = [
     r'[T|t][k|K]',
-    r'Tix',
 ]
 
 coverage_ignore_functions = [
@@ -252,8 +442,49 @@ coverage_ignore_c_items = {
 # Options for the link checker
 # ----------------------------
 
-# Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
+linkcheck_allowed_redirects = {
+    # bpo-NNNN -> BPO -> GH Issues
+    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': r'https://github.com/python/cpython/issues/\d+',
+    # GH-NNNN used to refer to pull requests
+    r'https://github.com/python/cpython/issues/\d+': r'https://github.com/python/cpython/pull/\d+',
+    # :source:`something` linking files in the repository
+    r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
+    # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
+    r'http://www.python.org/$': 'https://www.python.org/$',
+    # Used in license page, keep as is
+    r'https://www.zope.org/': r'https://www.zope.dev/',
+    # Microsoft's redirects to learn.microsoft.com
+    r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
+    r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
+    r'https://go.microsoft.com/fwlink/\?LinkID=\d+': 'https://learn.microsoft.com/.*',
+    # Language redirects
+    r'https://toml.io': 'https://toml.io/en/',
+    r'https://www.redhat.com': 'https://www.redhat.com/en',
+    # Other redirects
+    r'https://www.boost.org/libs/.+': r'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
+    r'https://support.microsoft.com/en-us/help/\d+': 'https://support.microsoft.com/en-us/topic/.+',
+    r'https://perf.wiki.kernel.org$': 'https://perf.wiki.kernel.org/index.php/Main_Page',
+    r'https://www.sqlite.org': 'https://www.sqlite.org/index.html',
+    r'https://mitpress.mit.edu/sicp$': 'https://mitpress.mit.edu/9780262510875/structure-and-interpretation-of-computer-programs/',
+    r'https://www.python.org/psf/': 'https://www.python.org/psf-landing/',
+}
+
+linkcheck_anchors_ignore = [
+    # ignore anchors that start with a '/', e.g. Wikipedia media files:
+    # https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg
+    r'\/.*',
+]
+
+linkcheck_ignore = [
+    # The crawler gets "Anchor not found"
+    r'https://developer.apple.com/documentation/.+?#.*',
+    r'https://devguide.python.org.+?/#.*',
+    r'https://github.com.+?#.*',
+    # Robot crawlers not allowed: "403 Client Error: Forbidden"
+    r'https://support.enthought.com/hc/.*',
+    # SSLError CertificateError, even though it is valid
+    r'https://unix.org/version2/whatsnew/lp64_wp.html',
+]
 
 
 # Options for extensions
@@ -268,7 +499,7 @@ ogp_site_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
 ogp_image = '_static/og-image.png'
 ogp_custom_meta_tags = [
-    '<meta property="og:image:width" content="200">',
-    '<meta property="og:image:height" content="200">',
-    '<meta name="theme-color" content="#3776ab">',
+    '<meta property="og:image:width" content="200" />',
+    '<meta property="og:image:height" content="200" />',
+    '<meta name="theme-color" content="#3776ab" />',
 ]

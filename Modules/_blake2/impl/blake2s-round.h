@@ -86,6 +86,6 @@
   LOAD_MSG_ ##r ##_4(buf4); \
   G2(row1,row2,row3,row4,buf4); \
   UNDIAGONALIZE(row1,row2,row3,row4); \
- 
+
 #endif
 

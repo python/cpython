@@ -47,6 +47,7 @@ def clean_lines(text):
 '''
 
 # XXX Handle these.
+# Tab separated:
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
@@ -70,6 +71,7 @@ Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
 Modules/_ssl_data.h
+Modules/_ssl_data_31.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
 Modules/cjkcodecs/mappings_*.h
@@ -81,9 +83,15 @@ Objects/unicodetype_db.h
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
+Python/executor_cases.c.h
 
 # not actually source
 Python/bytecodes.c
+
+# mimalloc
+Objects/mimalloc/*.c
+Include/internal/mimalloc/*.h
+Include/internal/mimalloc/mimalloc/*.h
 
 # @end=conf@
 ''')
@@ -91,6 +99,7 @@ Python/bytecodes.c
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
+
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
@@ -104,11 +113,22 @@ glob	dirname
 *	.
 *	./Include
 *	./Include/internal
+*   ./Include/internal/mimalloc
 
-Modules/_tkinter.c	/usr/include/tcl8.6
-Modules/tkappinit.c	/usr/include/tcl
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
+Modules/_elementtree.c	Modules/expat
+Modules/_hacl/*.c	Modules/_hacl/include
+Modules/_hacl/*.h	Modules/_hacl/include
+Modules/md5module.c	Modules/_hacl/include
+Modules/sha1module.c	Modules/_hacl/include
+Modules/sha2module.c	Modules/_hacl/include
+Modules/sha3module.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
+
+# possible system-installed headers, just in case
+Modules/_tkinter.c	/usr/include/tcl8.6
+Modules/_uuidmodule.c	/usr/include/uuid
+Modules/tkappinit.c	/usr/include/tcl
 
 # @end=tsv@
 ''')[1:]
@@ -173,6 +193,7 @@ Modules/_datetimemodule.c	Py_BUILD_CORE	1
 Modules/_functoolsmodule.c	Py_BUILD_CORE	1
 Modules/_heapqmodule.c	Py_BUILD_CORE	1
 Modules/_io/*.c	Py_BUILD_CORE	1
+Modules/_io/*.h	Py_BUILD_CORE	1
 Modules/_localemodule.c	Py_BUILD_CORE	1
 Modules/_operator.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
@@ -212,6 +233,7 @@ Include/cpython/fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
 Include/cpython/fileutils.h	Py_CPYTHON_FILEUTILS_H	1
 Include/cpython/frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
 Include/cpython/import.h	Py_CPYTHON_IMPORT_H	1
+Include/cpython/interpreteridobject.h	Py_CPYTHON_INTERPRETERIDOBJECT_H	1
 Include/cpython/listobject.h	Py_CPYTHON_LISTOBJECT_H	1
 Include/cpython/methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
 Include/cpython/object.h	Py_CPYTHON_OBJECT_H	1
@@ -258,13 +280,6 @@ Modules/expat/xmlparse.c	HAVE_EXPAT_CONFIG_H	1
 Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
 Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 
-# from Modules/_sha3/sha3module.c
-Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c	PLATFORM_BYTE_ORDER	4321  # force big-endian
-Modules/_sha3/kcp/*.c	KeccakOpt	64
-Modules/_sha3/kcp/*.c	KeccakP200_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP400_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP800_excluded	1
-
 # others
 Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
 Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
@@ -296,6 +311,7 @@ MAX_SIZES = {
     # First match wins.
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
+    _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
     _abs('Modules/termios.c'): (10_000, 800),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
@@ -303,6 +319,7 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (35_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
 
@@ -314,7 +331,6 @@ MAX_SIZES = {
     _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/opcode_targets.h'): (10_000, 500),
     _abs('Python/stdlib_module_names.h'): (5_000, 500),
-    _abs('Python/importlib.h'): (200_000, 5000),
 
     # These large files are currently ignored (see above).
     _abs('Modules/_ssl_data.h'): (80_000, 10_000),
