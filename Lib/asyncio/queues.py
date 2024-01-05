@@ -2,6 +2,7 @@ __all__ = ('Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty')
 
 import collections
 import heapq
+from types import GenericAlias
 
 from . import locks
 from . import mixins
@@ -17,7 +18,7 @@ class QueueFull(Exception):
     pass
 
 
-class Queue(mixins._LoopBoundedMixin):
+class Queue(mixins._LoopBoundMixin):
     """A queue, useful for coordinating producer and consumer coroutines.
 
     If maxsize is less than or equal to zero, the queue size is infinite. If it
@@ -68,8 +69,7 @@ class Queue(mixins._LoopBoundedMixin):
     def __str__(self):
         return f'<{type(self).__name__} {self._format()}>'
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     def _format(self):
         result = f'maxsize={self._maxsize!r}'

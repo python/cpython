@@ -1,3 +1,0 @@
-Add :data:`threading.__excepthook__` to allow retrieving the original value
-of :func:`threading.excepthook` in case it is set to a broken or a different
-value. Patch by Mario Corchero.

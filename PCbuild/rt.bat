@@ -32,7 +32,7 @@ set pcbuild=%~dp0
 set suffix=
 set qmode=
 set dashO=
-set regrtestargs=
+set regrtestargs=--fast-ci
 set exe=
 
 :CheckOpts
@@ -48,7 +48,7 @@ if NOT "%1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
 
 if not defined prefix set prefix=%pcbuild%amd64
 set exe=%prefix%\python%suffix%.exe
-set cmd="%exe%" %dashO% -u -Wd -E -bb -m test %regrtestargs%
+set cmd="%exe%" %dashO% -m test %regrtestargs%
 if defined qmode goto Qmode
 
 echo Deleting .pyc files ...

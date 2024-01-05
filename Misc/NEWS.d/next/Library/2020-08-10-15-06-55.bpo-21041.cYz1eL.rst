@@ -1,1 +1,0 @@
-:attr:`pathlib.PurePath.parents` now supports negative indexing. Patch contributed by Yaroslav Pankovych.

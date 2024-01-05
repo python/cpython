@@ -6,7 +6,7 @@ from . import events
 _global_lock = threading.Lock()
 
 
-class _LoopBoundedMixin:
+class _LoopBoundMixin:
     _loop = None
 
     def _get_loop(self):
@@ -17,5 +17,5 @@ class _LoopBoundedMixin:
                 if self._loop is None:
                     self._loop = loop
         if loop is not self._loop:
-            raise RuntimeError(f'{type(self).__name__} have already bounded to another loop')
+            raise RuntimeError(f'{self!r} is bound to a different event loop')
         return loop
