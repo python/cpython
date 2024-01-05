@@ -93,17 +93,15 @@ Module API
    Returns a string specifying the available version of pip that will be
    installed when bootstrapping an environment.
 
-.. function:: bootstrap(root=None, prefix=None, upgrade=False, user=False, \
+.. function:: bootstrap(root=None, upgrade=False, user=False, \
                         altinstall=False, default_pip=False, \
-                        verbosity=0)
+                        verbosity=0, prefix=None)
 
    Bootstraps ``pip`` into the current or designated environment.
 
    *root* specifies an alternative root directory to install relative to.
    If *root* is ``None``, then installation uses the default install location
    for the current environment.
-
-   *prefix* specifies the directory prefix to use when installing.
 
    *upgrade* indicates whether or not to upgrade an existing installation
    of an earlier version of ``pip`` to the available version.
@@ -125,9 +123,11 @@ Module API
    *verbosity* controls the level of output to :data:`sys.stdout` from the
    bootstrapping operation.
 
+   *prefix* specifies the directory prefix to use when installing.
+
    .. versionchanged:: 3.13
 
-      The *prefix* parameter was added.
+      The *prefix* parameter.
 
    .. audit-event:: ensurepip.bootstrap root ensurepip.bootstrap
 

@@ -120,9 +120,9 @@ def _disable_pip_configuration_settings():
     os.environ['PIP_CONFIG_FILE'] = os.devnull
 
 
-def bootstrap(*, root=None, prefix=None, upgrade=False, user=False,
+def bootstrap(*, root=None, upgrade=False, user=False,
               altinstall=False, default_pip=False,
-              verbosity=0):
+              verbosity=0, prefix=None):
     """
     Bootstrap pip into the current Python installation (or the given root
     and directory prefix).
@@ -130,20 +130,22 @@ def bootstrap(*, root=None, prefix=None, upgrade=False, user=False,
     Note that calling this function will alter both sys.path and os.environ.
     """
     # Discard the return value
-    _bootstrap(root=root, prefix=prefix, upgrade=upgrade, user=user,
+    _bootstrap(root=root, upgrade=upgrade, user=user,
                altinstall=altinstall, default_pip=default_pip,
-               verbosity=verbosity)
+               verbosity=verbosity, prefix=prefix)
 
 
-def _bootstrap(*, root=None, prefix=None, upgrade=False, user=False,
+def _bootstrap(*, root=None, upgrade=False, user=False,
               altinstall=False, default_pip=False,
-              verbosity=0):
+              verbosity=0, prefix=None):
     """
     Bootstrap pip into the current Python installation (or the given root
     and directory prefix). Returns pip command status code.
 
     Note that calling this function will alter both sys.path and os.environ.
     """
+    if root is not None and prefix is not None:
+        raise ValueError("Cannot use 'root' and 'prefix' together")
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
