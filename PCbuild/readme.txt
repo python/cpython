@@ -138,12 +138,13 @@ _zoneinfo
 _decimal
 _elementtree
 _hashlib
-_msi
 _multiprocessing
 _overlapped
 _socket
 _testbuffer
 _testcapi
+_testclinic
+_testclinic_limited
 _testconsole
 _testimportmultiple
 _testmultiphase
@@ -169,7 +170,7 @@ _lzma
     Homepage:
         https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1q of the OpenSSL secure sockets
+    Python wrapper for version 3.0 of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -188,7 +189,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.39.4, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.44.2, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 _tkinter
@@ -251,9 +252,11 @@ against a profiling library and contain extra debug information. The
 PGUpdate configuration takes the profiling data and generates optimized
 binaries.
 
-The build_pgo.bat script automates the creation of optimized binaries.
-It creates the PGI files, runs the unit test suite or PyBench with the
-PGI python, and finally creates the optimized files.
+The build.bat script has an argument `--pgo` that automate the creation
+of optimized binaries.
+It creates the PGI files, runs the unit test suite with the PGI python,
+and finally creates the optimized files.
+You can customize the job for profiling with `--pgo-job <job>` option.
 
 See
     https://docs.microsoft.com/en-us/cpp/build/profile-guided-optimizations
@@ -283,10 +286,38 @@ The property files used are:
  * python (versions, directories and build names)
  * pyproject (base settings for all projects)
  * openssl (used by projects dependent upon OpenSSL)
- * tcltk (used by _tkinter, tcl, tk and tix projects)
+ * tcltk (used by _tkinter, tcl, and tk projects)
 
 The pyproject property file defines all of the build settings for each
 project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
 for different configurations.
+
+Add a new project
+-----------------
+
+For example, add a new _testclinic_limited project to build a new
+_testclinic_limited extension, the file Modules/_testclinic_limited.c:
+
+* In PCbuild/, copy _testclinic.vcxproj to _testclinic_limited.vcxproj,
+  replace RootNamespace value with `_testclinic_limited`, replace
+  `_asyncio.c` with `_testclinic_limited.c`.
+* Open Visual Studio, open PCbuild\pcbuild.sln solution, add the
+  PCbuild\_testclinic_limited.vcxproj project to the solution ("add existing
+  project).
+* Add a dependency on the python project to the new _testclinic_limited
+  project.
+* Save and exit Visual Studio.
+* Add `;_testclinic_limited` to `<TestModules Include="...">` in
+  PCbuild\pcbuild.proj.
+* Update "exts" in Tools\msi\lib\lib_files.wxs file or in
+  Tools\msi\test\test_files.wxs file (for tests).
+* PC\layout\main.py needs updating if you add a test-only extension whose name
+  doesn't start with "_test".
+* Add the extension to PCbuild\readme.txt (this file).
+* Build Python from scratch (clean the solution) to check that the new project
+  is built successfully.
+* Ensure the new .vcxproj and .vcxproj.filters files are added to your commit,
+  as well as the changes to pcbuild.sln, pcbuild.proj and any other modified
+  files.

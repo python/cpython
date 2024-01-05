@@ -153,9 +153,9 @@ Lundh.  A detailed explanation of the interface was written up as :pep:`100`,
 significant points about the Unicode interfaces.
 
 In Python source code, Unicode strings are written as ``u"string"``.  Arbitrary
-Unicode characters can be written using a new escape sequence, ``\uHHHH``, where
+Unicode characters can be written using a new escape sequence, :samp:`\\u{HHHH}`, where
 *HHHH* is a 4-digit hexadecimal number from 0000 to FFFF.  The existing
-``\xHHHH`` escape sequence can also be used, and octal escapes can be used for
+:samp:`\\x{HH}` escape sequence can also be used, and octal escapes can be used for
 characters up to U+01FF, which is represented by ``\777``.
 
 Unicode strings, just like regular strings, are an immutable sequence type.
@@ -664,16 +664,16 @@ extra set of parentheses to pass both values as a tuple:  ``L.append( (1,2) )``.
 
 The earlier versions of these methods were more forgiving because they used an
 old function in Python's C interface to parse their arguments; 2.0 modernizes
-them to use :func:`PyArg_ParseTuple`, the current argument parsing function,
+them to use :c:func:`PyArg_ParseTuple`, the current argument parsing function,
 which provides more helpful error messages and treats multi-argument calls as
 errors.  If you absolutely must use 2.0 but can't fix your code, you can edit
 :file:`Objects/listobject.c` and define the preprocessor symbol
 ``NO_STRICT_LIST_APPEND`` to preserve the old behaviour; this isn't recommended.
 
 Some of the functions in the :mod:`socket` module are still forgiving in this
-way.  For example, :func:`socket.connect( ('hostname', 25) )` is the correct
-form, passing a tuple representing an IP address, but :func:`socket.connect(
-'hostname', 25 )` also works. :func:`socket.connect_ex` and :func:`socket.bind`
+way.  For example, ``socket.connect( ('hostname', 25) )`` is the correct
+form, passing a tuple representing an IP address, but ``socket.connect('hostname', 25)``
+also works. :meth:`socket.connect_ex <socket.socket.connect_ex>` and :meth:`socket.bind <socket.socket.bind>`
 are similarly easy-going.  2.0alpha1 tightened these functions up, but because
 the documentation actually used the erroneous multiple argument form, many
 people wrote code which would break with the stricter checking.  GvR backed out
@@ -766,7 +766,7 @@ file, :file:`Include/pyport.h`.
 
 Vladimir Marangozov's long-awaited malloc restructuring was completed, to make
 it easy to have the Python interpreter use a custom allocator instead of C's
-standard :func:`malloc`.  For documentation, read the comments in
+standard :c:func:`malloc`.  For documentation, read the comments in
 :file:`Include/pymem.h` and :file:`Include/objimpl.h`.  For the lengthy
 discussions during which the interface was hammered out, see the web archives of
 the 'patches' and 'python-dev' lists at python.org.
@@ -794,15 +794,15 @@ are generating Python code would run into this limit.  A patch by Charles G.
 Waldman raises the limit from ``2**16`` to ``2**32``.
 
 Three new convenience functions intended for adding constants to a module's
-dictionary at module initialization time were added: :func:`PyModule_AddObject`,
-:func:`PyModule_AddIntConstant`, and :func:`PyModule_AddStringConstant`.  Each
+dictionary at module initialization time were added: :c:func:`PyModule_AddObject`,
+:c:func:`PyModule_AddIntConstant`, and :c:func:`PyModule_AddStringConstant`.  Each
 of these functions takes a module object, a null-terminated C string containing
 the name to be added, and a third argument for the value to be assigned to the
 name.  This third argument is, respectively, a Python object, a C long, or a C
 string.
 
-A wrapper API was added for Unix-style signal handlers. :func:`PyOS_getsig` gets
-a signal handler and :func:`PyOS_setsig` will set a new handler.
+A wrapper API was added for Unix-style signal handlers. :c:func:`PyOS_getsig` gets
+a signal handler and :c:func:`PyOS_setsig` will set a new handler.
 
 .. ======================================================================
 
@@ -933,7 +933,7 @@ using it::
    parser.parse( 'hamlet.xml' )
 
 For more information, consult the Python documentation, or the XML HOWTO at
-http://pyxml.sourceforge.net/topics/howto/xml-howto.html.
+https://pyxml.sourceforge.net/topics/howto/xml-howto.html.
 
 
 DOM Support
@@ -1030,9 +1030,9 @@ Module changes
 
 Lots of improvements and bugfixes were made to Python's extensive standard
 library; some of the affected modules include :mod:`readline`,
-:mod:`ConfigParser`, :mod:`cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
-:mod:`xmllib`, :mod:`aifc`, :mod:`chunk, wave`, :mod:`random`, :mod:`shelve`,
-and :mod:`nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
+:mod:`ConfigParser <configparser>`, :mod:`!cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
+:mod:`xmllib`, :mod:`!aifc`, :mod:`!chunk`, :mod:`wave`, :mod:`random`, :mod:`shelve`,
+and :mod:`!nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
 
 Brian Gallew contributed OpenSSL support for the :mod:`socket` module.  OpenSSL
 is an implementation of the Secure Socket Layer, which encrypts the data being
@@ -1095,8 +1095,8 @@ module.
   GNU gettext message catalog library. (Integrated by Barry Warsaw, from separate
   contributions by Martin  von Löwis, Peter Funk, and James Henstridge.)
 
-* :mod:`linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
-  twin to the existing :mod:`sunaudiodev` module. (Contributed by Peter Bosch,
+* :mod:`!linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
+  twin to the existing :mod:`!sunaudiodev` module. (Contributed by Peter Bosch,
   with fixes by Jeremy Hylton.)
 
 * :mod:`mmap`: An interface to memory-mapped files on both Windows and Unix.  A
@@ -1139,8 +1139,8 @@ module.
   Unix, not to be confused with :program:`gzip`\ -format files (which are
   supported by the :mod:`gzip` module) (Contributed by James C. Ahlstrom.)
 
-* :mod:`imputil`: A module that provides a simpler way for writing customized
-  import hooks, in comparison to the existing :mod:`ihooks` module.  (Implemented
+* :mod:`!imputil`: A module that provides a simpler way for writing customized
+  import hooks, in comparison to the existing :mod:`!ihooks` module.  (Implemented
   by Greg Stein, with much discussion on python-dev along the way.)
 
 .. ======================================================================

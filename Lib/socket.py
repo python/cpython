@@ -702,16 +702,15 @@ class SocketIO(io.RawIOBase):
         self._checkReadable()
         if self._timeout_occurred:
             raise OSError("cannot read from timed out object")
-        while True:
-            try:
-                return self._sock.recv_into(b)
-            except timeout:
-                self._timeout_occurred = True
-                raise
-            except error as e:
-                if e.errno in _blocking_errnos:
-                    return None
-                raise
+        try:
+            return self._sock.recv_into(b)
+        except timeout:
+            self._timeout_occurred = True
+            raise
+        except error as e:
+            if e.errno in _blocking_errnos:
+                return None
+            raise
 
     def write(self, b):
         """Write the given bytes or bytearray object *b* to the socket
@@ -910,7 +909,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         # address, effectively preventing this one from accepting
         # connections. Also, it may set the process in a state where
         # it'll no longer respond to any signals or graceful kills.
-        # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        # See: https://learn.microsoft.com/windows/win32/winsock/using-so-reuseaddr-and-so-exclusiveaddruse
         if os.name not in ('nt', 'cygwin') and \
                 hasattr(_socket, 'SO_REUSEADDR'):
             try:

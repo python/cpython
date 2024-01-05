@@ -4,6 +4,7 @@ import contextlib
 import errno
 import io
 import multiprocessing
+from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 import os
 import pathlib
 import signal
@@ -11,9 +12,12 @@ import socket
 import stat
 import sys
 import threading
+import time
 import unittest
 from unittest import mock
 import warnings
+
+from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import wait_process
@@ -1712,11 +1716,11 @@ class PolicyTests(unittest.TestCase):
     def create_policy(self):
         return asyncio.DefaultEventLoopPolicy()
 
-    def test_get_default_child_watcher(self):
+    @mock.patch('asyncio.unix_events.can_use_pidfd')
+    def test_get_default_child_watcher(self, m_can_use_pidfd):
+        m_can_use_pidfd.return_value = False
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-        unix_events.can_use_pidfd = mock.Mock()
-        unix_events.can_use_pidfd.return_value = False
         with self.assertWarns(DeprecationWarning):
             watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
@@ -1725,10 +1729,9 @@ class PolicyTests(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIs(watcher, policy.get_child_watcher())
 
+        m_can_use_pidfd.return_value = True
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-        unix_events.can_use_pidfd = mock.Mock()
-        unix_events.can_use_pidfd.return_value = True
         with self.assertWarns(DeprecationWarning):
             watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
@@ -1884,20 +1887,26 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         if pid == 0:
             # child
             try:
-                loop = asyncio.get_event_loop_policy().get_event_loop()
+                with self.assertWarns(DeprecationWarning):
+                    loop = asyncio.get_event_loop_policy().get_event_loop()
+                os.write(w, b'LOOP:' + str(id(loop)).encode())
             except RuntimeError:
                 os.write(w, b'NO LOOP')
-            except:
-                os.write(w, b'ERROR:' + ascii(sys.exc_info()).encode())
+            except BaseException as e:
+                os.write(w, b'ERROR:' + ascii(e).encode())
             finally:
                 os._exit(0)
         else:
             # parent
-            self.assertEqual(os.read(r, 100), b'NO LOOP')
+            result = os.read(r, 100)
+            self.assertEqual(result[:5], b'LOOP:', result)
+            self.assertNotEqual(int(result[5:]), id(loop))
             wait_process(pid, exitcode=0)
 
     @hashlib_helper.requires_hashdigest('md5')
     def test_fork_signal_handling(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
         # Sending signal to the forked process should not affect the parent
         # process
         ctx = multiprocessing.get_context('fork')
@@ -1908,8 +1917,14 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         parent_handled = manager.Event()
 
         def child_main():
-            signal.signal(signal.SIGTERM, lambda *args: child_handled.set())
+            def on_sigterm(*args):
+                child_handled.set()
+                sys.exit()
+
+            signal.signal(signal.SIGTERM, on_sigterm)
             child_started.set()
+            while True:
+                time.sleep(1)
 
         async def main():
             loop = asyncio.get_running_loop()
@@ -1919,7 +1934,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             process.start()
             child_started.wait()
             os.kill(process.pid, signal.SIGTERM)
-            process.join()
+            process.join(timeout=support.SHORT_TIMEOUT)
 
             async def func():
                 await asyncio.sleep(0.1)
@@ -1930,11 +1945,14 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
         asyncio.run(main())
 
+        child_handled.wait(timeout=support.SHORT_TIMEOUT)
         self.assertFalse(parent_handled.is_set())
         self.assertTrue(child_handled.is_set())
 
     @hashlib_helper.requires_hashdigest('md5')
     def test_fork_asyncio_run(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
         ctx = multiprocessing.get_context('fork')
         manager = ctx.Manager()
         self.addCleanup(manager.shutdown)
@@ -1952,6 +1970,8 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
     @hashlib_helper.requires_hashdigest('md5')
     def test_fork_asyncio_subprocess(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
         ctx = multiprocessing.get_context('fork')
         manager = ctx.Manager()
         self.addCleanup(manager.shutdown)

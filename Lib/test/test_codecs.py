@@ -1,7 +1,9 @@
 import codecs
 import contextlib
+import copy
 import io
 import locale
+import pickle
 import sys
 import unittest
 import encodings
@@ -1760,6 +1762,76 @@ class CodecsModuleTest(unittest.TestCase):
 
             file().close.assert_called()
 
+    def test_copy(self):
+        orig = codecs.lookup('utf-8')
+        dup = copy.copy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertTrue(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        orig = codecs.lookup("base64")
+        dup = copy.copy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertFalse(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+    def test_deepcopy(self):
+        orig = codecs.lookup('utf-8')
+        dup = copy.deepcopy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertTrue(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        orig = codecs.lookup("base64")
+        dup = copy.deepcopy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertFalse(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+    def test_pickle(self):
+        codec_info = codecs.lookup('utf-8')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled_codec_info = pickle.dumps(codec_info)
+                unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertIsNot(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info.name, unpickled_codec_info.name)
+                self.assertEqual(
+                     codec_info.incrementalencoder,
+                     unpickled_codec_info.incrementalencoder
+                )
+                self.assertTrue(unpickled_codec_info._is_text_encoding)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        codec_info = codecs.lookup('base64')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled_codec_info = pickle.dumps(codec_info)
+                unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertIsNot(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info.name, unpickled_codec_info.name)
+                self.assertEqual(
+                     codec_info.incrementalencoder,
+                     unpickled_codec_info.incrementalencoder
+                )
+                self.assertFalse(unpickled_codec_info._is_text_encoding)
+
 
 class StreamReaderTest(unittest.TestCase):
 
@@ -1770,6 +1842,61 @@ class StreamReaderTest(unittest.TestCase):
     def test_readlines(self):
         f = self.reader(self.stream)
         self.assertEqual(f.readlines(), ['\ud55c\n', '\uae00'])
+
+    def test_copy(self):
+        f = self.reader(Queue(b'\xed\x95\x9c\n\xea\xb8\x80'))
+        with self.assertRaisesRegex(TypeError, 'StreamReader'):
+            copy.copy(f)
+        with self.assertRaisesRegex(TypeError, 'StreamReader'):
+            copy.deepcopy(f)
+
+    def test_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                f = self.reader(Queue(b'\xed\x95\x9c\n\xea\xb8\x80'))
+                with self.assertRaisesRegex(TypeError, 'StreamReader'):
+                    pickle.dumps(f, proto)
+
+
+class StreamWriterTest(unittest.TestCase):
+
+    def setUp(self):
+        self.writer = codecs.getwriter('utf-8')
+
+    def test_copy(self):
+        f = self.writer(Queue(b''))
+        with self.assertRaisesRegex(TypeError, 'StreamWriter'):
+            copy.copy(f)
+        with self.assertRaisesRegex(TypeError, 'StreamWriter'):
+            copy.deepcopy(f)
+
+    def test_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                f = self.writer(Queue(b''))
+                with self.assertRaisesRegex(TypeError, 'StreamWriter'):
+                    pickle.dumps(f, proto)
+
+
+class StreamReaderWriterTest(unittest.TestCase):
+
+    def setUp(self):
+        self.reader = codecs.getreader('latin1')
+        self.writer = codecs.getwriter('utf-8')
+
+    def test_copy(self):
+        f = codecs.StreamReaderWriter(Queue(b''), self.reader, self.writer)
+        with self.assertRaisesRegex(TypeError, 'StreamReaderWriter'):
+            copy.copy(f)
+        with self.assertRaisesRegex(TypeError, 'StreamReaderWriter'):
+            copy.deepcopy(f)
+
+    def test_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                f = codecs.StreamReaderWriter(Queue(b''), self.reader, self.writer)
+                with self.assertRaisesRegex(TypeError, 'StreamReaderWriter'):
+                    pickle.dumps(f, proto)
 
 
 class EncodedFileTest(unittest.TestCase):
@@ -2819,24 +2946,20 @@ class TransformCodecTest(unittest.TestCase):
                 self.assertIsNone(failure.exception.__cause__)
 
     @unittest.skipUnless(zlib, "Requires zlib support")
-    def test_custom_zlib_error_is_wrapped(self):
+    def test_custom_zlib_error_is_noted(self):
         # Check zlib codec gives a good error for malformed input
-        msg = "^decoding with 'zlib_codec' codec failed"
-        with self.assertRaisesRegex(Exception, msg) as failure:
+        msg = "decoding with 'zlib_codec' codec failed"
+        with self.assertRaises(zlib.error) as failure:
             codecs.decode(b"hello", "zlib_codec")
-        self.assertIsInstance(failure.exception.__cause__,
-                                                type(failure.exception))
+        self.assertEqual(msg, failure.exception.__notes__[0])
 
-    def test_custom_hex_error_is_wrapped(self):
+    def test_custom_hex_error_is_noted(self):
         # Check hex codec gives a good error for malformed input
-        msg = "^decoding with 'hex_codec' codec failed"
-        with self.assertRaisesRegex(Exception, msg) as failure:
+        import binascii
+        msg = "decoding with 'hex_codec' codec failed"
+        with self.assertRaises(binascii.Error) as failure:
             codecs.decode(b"hello", "hex_codec")
-        self.assertIsInstance(failure.exception.__cause__,
-                                                type(failure.exception))
-
-    # Unfortunately, the bz2 module throws OSError, which the codec
-    # machinery currently can't wrap :(
+        self.assertEqual(msg, failure.exception.__notes__[0])
 
     # Ensure codec aliases from http://bugs.python.org/issue7475 work
     def test_aliases(self):
@@ -2860,11 +2983,8 @@ class TransformCodecTest(unittest.TestCase):
         self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
 
 
-# The codec system tries to wrap exceptions in order to ensure the error
-# mentions the operation being performed and the codec involved. We
-# currently *only* want this to happen for relatively stateless
-# exceptions, where the only significant information they contain is their
-# type and a single str argument.
+# The codec system tries to add notes to exceptions in order to ensure
+# the error mentions the operation being performed and the codec involved.
 
 # Use a local codec registry to avoid appearing to leak objects when
 # registering multiple search functions
@@ -2874,10 +2994,10 @@ def _get_test_codec(codec_name):
     return _TEST_CODECS.get(codec_name)
 
 
-class ExceptionChainingTest(unittest.TestCase):
+class ExceptionNotesTest(unittest.TestCase):
 
     def setUp(self):
-        self.codec_name = 'exception_chaining_test'
+        self.codec_name = 'exception_notes_test'
         codecs.register(_get_test_codec)
         self.addCleanup(codecs.unregister, _get_test_codec)
 
@@ -2901,91 +3021,77 @@ class ExceptionChainingTest(unittest.TestCase):
         _TEST_CODECS[self.codec_name] = codec_info
 
     @contextlib.contextmanager
-    def assertWrapped(self, operation, exc_type, msg):
-        full_msg = r"{} with {!r} codec failed \({}: {}\)".format(
-                  operation, self.codec_name, exc_type.__name__, msg)
-        with self.assertRaisesRegex(exc_type, full_msg) as caught:
+    def assertNoted(self, operation, exc_type, msg):
+        full_msg = r"{} with {!r} codec failed".format(
+                  operation, self.codec_name)
+        with self.assertRaises(exc_type) as caught:
             yield caught
-        self.assertIsInstance(caught.exception.__cause__, exc_type)
-        self.assertIsNotNone(caught.exception.__cause__.__traceback__)
+        self.assertIn(full_msg, caught.exception.__notes__[0])
+        caught.exception.__notes__.clear()
 
     def raise_obj(self, *args, **kwds):
         # Helper to dynamically change the object raised by a test codec
         raise self.obj_to_raise
 
-    def check_wrapped(self, obj_to_raise, msg, exc_type=RuntimeError):
+    def check_note(self, obj_to_raise, msg, exc_type=RuntimeError):
         self.obj_to_raise = obj_to_raise
         self.set_codec(self.raise_obj, self.raise_obj)
-        with self.assertWrapped("encoding", exc_type, msg):
+        with self.assertNoted("encoding", exc_type, msg):
             "str_input".encode(self.codec_name)
-        with self.assertWrapped("encoding", exc_type, msg):
+        with self.assertNoted("encoding", exc_type, msg):
             codecs.encode("str_input", self.codec_name)
-        with self.assertWrapped("decoding", exc_type, msg):
+        with self.assertNoted("decoding", exc_type, msg):
             b"bytes input".decode(self.codec_name)
-        with self.assertWrapped("decoding", exc_type, msg):
+        with self.assertNoted("decoding", exc_type, msg):
             codecs.decode(b"bytes input", self.codec_name)
 
     def test_raise_by_type(self):
-        self.check_wrapped(RuntimeError, "")
+        self.check_note(RuntimeError, "")
 
     def test_raise_by_value(self):
-        msg = "This should be wrapped"
-        self.check_wrapped(RuntimeError(msg), msg)
+        msg = "This should be noted"
+        self.check_note(RuntimeError(msg), msg)
 
     def test_raise_grandchild_subclass_exact_size(self):
-        msg = "This should be wrapped"
+        msg = "This should be noted"
         class MyRuntimeError(RuntimeError):
             __slots__ = ()
-        self.check_wrapped(MyRuntimeError(msg), msg, MyRuntimeError)
+        self.check_note(MyRuntimeError(msg), msg, MyRuntimeError)
 
     def test_raise_subclass_with_weakref_support(self):
-        msg = "This should be wrapped"
+        msg = "This should be noted"
         class MyRuntimeError(RuntimeError):
             pass
-        self.check_wrapped(MyRuntimeError(msg), msg, MyRuntimeError)
+        self.check_note(MyRuntimeError(msg), msg, MyRuntimeError)
 
-    def check_not_wrapped(self, obj_to_raise, msg):
-        def raise_obj(*args, **kwds):
-            raise obj_to_raise
-        self.set_codec(raise_obj, raise_obj)
-        with self.assertRaisesRegex(RuntimeError, msg):
-            "str input".encode(self.codec_name)
-        with self.assertRaisesRegex(RuntimeError, msg):
-            codecs.encode("str input", self.codec_name)
-        with self.assertRaisesRegex(RuntimeError, msg):
-            b"bytes input".decode(self.codec_name)
-        with self.assertRaisesRegex(RuntimeError, msg):
-            codecs.decode(b"bytes input", self.codec_name)
-
-    def test_init_override_is_not_wrapped(self):
+    def test_init_override(self):
         class CustomInit(RuntimeError):
             def __init__(self):
                 pass
-        self.check_not_wrapped(CustomInit, "")
+        self.check_note(CustomInit, "")
 
-    def test_new_override_is_not_wrapped(self):
+    def test_new_override(self):
         class CustomNew(RuntimeError):
             def __new__(cls):
                 return super().__new__(cls)
-        self.check_not_wrapped(CustomNew, "")
+        self.check_note(CustomNew, "")
 
-    def test_instance_attribute_is_not_wrapped(self):
-        msg = "This should NOT be wrapped"
+    def test_instance_attribute(self):
+        msg = "This should be noted"
         exc = RuntimeError(msg)
         exc.attr = 1
-        self.check_not_wrapped(exc, "^{}$".format(msg))
+        self.check_note(exc, "^{}$".format(msg))
 
-    def test_non_str_arg_is_not_wrapped(self):
-        self.check_not_wrapped(RuntimeError(1), "1")
+    def test_non_str_arg(self):
+        self.check_note(RuntimeError(1), "1")
 
-    def test_multiple_args_is_not_wrapped(self):
+    def test_multiple_args(self):
         msg_re = r"^\('a', 'b', 'c'\)$"
-        self.check_not_wrapped(RuntimeError('a', 'b', 'c'), msg_re)
+        self.check_note(RuntimeError('a', 'b', 'c'), msg_re)
 
     # http://bugs.python.org/issue19609
-    def test_codec_lookup_failure_not_wrapped(self):
+    def test_codec_lookup_failure(self):
         msg = "^unknown encoding: {}$".format(self.codec_name)
-        # The initial codec lookup should not be wrapped
         with self.assertRaisesRegex(LookupError, msg):
             "str input".encode(self.codec_name)
         with self.assertRaisesRegex(LookupError, msg):
@@ -3367,6 +3473,28 @@ class StreamRecoderTest(unittest.TestCase):
         self.assertEqual(sr.readline(), b'abc\n')
         self.assertEqual(sr.readline(), b'789\n')
 
+    def test_copy(self):
+        bio = io.BytesIO()
+        codec = codecs.lookup('ascii')
+        sr = codecs.StreamRecoder(bio, codec.encode, codec.decode,
+                                  encodings.ascii.StreamReader, encodings.ascii.StreamWriter)
+
+        with self.assertRaisesRegex(TypeError, 'StreamRecoder'):
+            copy.copy(sr)
+        with self.assertRaisesRegex(TypeError, 'StreamRecoder'):
+            copy.deepcopy(sr)
+
+    def test_pickle(self):
+        q = Queue(b'')
+        codec = codecs.lookup('ascii')
+        sr = codecs.StreamRecoder(q, codec.encode, codec.decode,
+                                  encodings.ascii.StreamReader, encodings.ascii.StreamWriter)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                with self.assertRaisesRegex(TypeError, 'StreamRecoder'):
+                    pickle.dumps(sr, proto)
+
 
 @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class LocaleCodecTest(unittest.TestCase):
@@ -3509,9 +3637,10 @@ class Rot13UtilTest(unittest.TestCase):
     $ echo "Hello World" | python -m encodings.rot_13
     """
     def test_rot13_func(self):
+        from encodings.rot_13 import rot13
         infile = io.StringIO('Gb or, be abg gb or, gung vf gur dhrfgvba')
         outfile = io.StringIO()
-        encodings.rot_13.rot13(infile, outfile)
+        rot13(infile, outfile)
         outfile.seek(0)
         plain_text = outfile.read()
         self.assertEqual(

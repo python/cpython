@@ -97,9 +97,15 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
     if workers != 1 and ProcessPoolExecutor is not None:
+        import multiprocessing
+        if multiprocessing.get_start_method() == 'fork':
+            mp_context = multiprocessing.get_context('forkserver')
+        else:
+            mp_context = None
         # If workers == 0, let ProcessPoolExecutor choose
         workers = workers or None
-        with ProcessPoolExecutor(max_workers=workers) as executor:
+        with ProcessPoolExecutor(max_workers=workers,
+                                 mp_context=mp_context) as executor:
             results = executor.map(partial(compile_file,
                                            ddir=ddir, force=force,
                                            rx=rx, quiet=quiet,
@@ -166,13 +172,13 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     if stripdir is not None:
         fullname_parts = fullname.split(os.path.sep)
         stripdir_parts = stripdir.split(os.path.sep)
-        ddir_parts = list(fullname_parts)
 
-        for spart, opart in zip(stripdir_parts, fullname_parts):
-            if spart == opart:
-                ddir_parts.remove(spart)
-
-        dfile = os.path.join(*ddir_parts)
+        if stripdir_parts != fullname_parts[:len(stripdir_parts)]:
+            if quiet < 2:
+                print("The stripdir path {!r} is not a valid prefix for "
+                      "source path {!r}; ignoring".format(stripdir, fullname))
+        else:
+            dfile = os.path.join(*fullname_parts[len(stripdir_parts):])
 
     if prependdir is not None:
         if dfile is None:

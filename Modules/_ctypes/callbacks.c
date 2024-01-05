@@ -8,9 +8,8 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_call.h"            // _PyObject_CallNoArgs()
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #include <stdbool.h>
 
@@ -28,23 +27,11 @@
 
 /**************************************************************/
 
-static void
-CThunkObject_dealloc(PyObject *myself)
-{
-    CThunkObject *self = (CThunkObject *)myself;
-    PyObject_GC_UnTrack(self);
-    Py_XDECREF(self->converters);
-    Py_XDECREF(self->callable);
-    Py_XDECREF(self->restype);
-    if (self->pcl_write)
-        Py_ffi_closure_free(self->pcl_write);
-    PyObject_GC_Del(self);
-}
-
 static int
 CThunkObject_traverse(PyObject *myself, visitproc visit, void *arg)
 {
     CThunkObject *self = (CThunkObject *)myself;
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->converters);
     Py_VISIT(self->callable);
     Py_VISIT(self->restype);
@@ -61,36 +48,35 @@ CThunkObject_clear(PyObject *myself)
     return 0;
 }
 
-PyTypeObject PyCThunk_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.CThunkObject",
-    sizeof(CThunkObject),                       /* tp_basicsize */
-    sizeof(ffi_type),                           /* tp_itemsize */
-    CThunkObject_dealloc,                       /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,                            /* tp_flags */
-    PyDoc_STR("CThunkObject"),                  /* tp_doc */
-    CThunkObject_traverse,                      /* tp_traverse */
-    CThunkObject_clear,                         /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
+static void
+CThunkObject_dealloc(PyObject *myself)
+{
+    CThunkObject *self = (CThunkObject *)myself;
+    PyTypeObject *tp = Py_TYPE(myself);
+    PyObject_GC_UnTrack(self);
+    (void)CThunkObject_clear(myself);
+    if (self->pcl_write) {
+        Py_ffi_closure_free(self->pcl_write);
+    }
+    PyObject_GC_Del(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot cthunk_slots[] = {
+    {Py_tp_doc, (void *)PyDoc_STR("CThunkObject")},
+    {Py_tp_dealloc, CThunkObject_dealloc},
+    {Py_tp_traverse, CThunkObject_traverse},
+    {Py_tp_clear, CThunkObject_clear},
+    {0, NULL},
+};
+
+PyType_Spec cthunk_spec = {
+    .name = "_ctypes.CThunkObject",
+    .basicsize = sizeof(CThunkObject),
+    .itemsize = sizeof(ffi_type),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+    .slots = cthunk_slots,
 };
 
 /**************************************************************/
@@ -229,8 +215,9 @@ static void _CallPythonObject(void *mem,
 
     result = PyObject_Vectorcall(callable, args, nargs, NULL);
     if (result == NULL) {
-        _PyErr_WriteUnraisableMsg("on calling ctypes callback function",
-                                  callable);
+        PyErr_FormatUnraisable(
+                "Exception ignored on calling ctypes callback function %R",
+                callable);
     }
 
 #ifdef MS_WIN32
@@ -271,22 +258,23 @@ static void _CallPythonObject(void *mem,
 
         if (keep == NULL) {
             /* Could not convert callback result. */
-            _PyErr_WriteUnraisableMsg("on converting result "
-                                      "of ctypes callback function",
-                                      callable);
-        }
-        else if (keep == Py_None) {
-            /* Nothing to keep */
-            Py_DECREF(keep);
+            PyErr_FormatUnraisable(
+                    "Exception ignored on converting result "
+                    "of ctypes callback function %R",
+                    callable);
         }
         else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
-            if (-1 == PyErr_WarnEx(PyExc_RuntimeWarning,
-                                   "memory leak in callback function.",
-                                   1))
-            {
-                _PyErr_WriteUnraisableMsg("on converting result "
-                                          "of ctypes callback function",
-                                          callable);
+            if (keep == Py_None) {
+                /* Nothing to keep */
+                Py_DECREF(keep);
+            }
+            else if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                                  "memory leak in callback function.",
+                                  1) == -1) {
+                PyErr_FormatUnraisable(
+                        "Exception ignored on converting result "
+                        "of ctypes callback function %R",
+                        callable);
             }
         }
     }
@@ -321,7 +309,8 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nargs)
     CThunkObject *p;
     Py_ssize_t i;
 
-    p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nargs);
+    ctypes_state *st = GLOBAL_STATE();
+    p = PyObject_GC_NewVar(CThunkObject, st->PyCThunk_Type, nargs);
     if (p == NULL) {
         return NULL;
     }
@@ -358,7 +347,10 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     if (p == NULL)
         return NULL;
 
-    assert(CThunk_CheckExact((PyObject *)p));
+#ifdef Py_DEBUG
+    ctypes_state *st = GLOBAL_STATE();
+    assert(CThunk_CheckExact(st, (PyObject *)p));
+#endif
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
@@ -426,25 +418,29 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
-#if defined(__clang__)
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+        // GH-85272, GH-23327, GH-100540: On macOS,
+        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is checked at runtime because the
+        // symbol might not be available at runtime when targeting macOS 10.14
+        // or earlier. Even if ffi_prep_closure_loc() is called in practice,
+        // the deprecated ffi_prep_closure() code path is needed if
+        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is false.
+        //
+        // On non-macOS platforms, even if HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is
+        // defined as 1 and ffi_prep_closure_loc() is used in practice, this
+        // code path is still compiled and emits a compiler warning. The
+        // deprecated code path is likely to be removed by a simple
+        // optimization pass.
+        //
+        // Ignore the compiler warning on the ffi_prep_closure() deprecation,
+        // rather than using complex #if/#else code paths for the different
+        // platforms.
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
-
-#if defined(__clang__)
-        #pragma clang diagnostic pop
-#endif
-#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-        #pragma GCC diagnostic pop
-#endif
-
+        _Py_COMP_DIAG_POP
 #endif
     }
+
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_closure failed with %d", result);
@@ -489,12 +485,22 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 
     {
         PyObject *py_rclsid = PyLong_FromVoidPtr((void *)rclsid);
+        if (py_rclsid == NULL) {
+            Py_DECREF(func);
+            PyErr_WriteUnraisable(context ? context : Py_None);
+            return E_FAIL;
+        }
         PyObject *py_riid = PyLong_FromVoidPtr((void *)riid);
+        if (py_riid == NULL) {
+            Py_DECREF(func);
+            Py_DECREF(py_rclsid);
+            PyErr_WriteUnraisable(context ? context : Py_None);
+            return E_FAIL;
+        }
         PyObject *py_ppv = PyLong_FromVoidPtr(ppv);
-        if (!py_rclsid || !py_riid || !py_ppv) {
-            Py_XDECREF(py_rclsid);
-            Py_XDECREF(py_riid);
-            Py_XDECREF(py_ppv);
+        if (py_ppv == NULL) {
+            Py_DECREF(py_rclsid);
+            Py_DECREF(py_riid);
             Py_DECREF(func);
             PyErr_WriteUnraisable(context ? context : Py_None);
             return E_FAIL;

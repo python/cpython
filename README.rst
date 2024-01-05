@@ -1,4 +1,4 @@
-This is Python version 3.12.0 alpha 3
+This is Python version 3.13.0 alpha 2
 =====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
@@ -14,7 +14,7 @@ This is Python version 3.12.0 alpha 3
    :target: https://discuss.python.org/
 
 
-Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -76,6 +76,9 @@ to macOS framework and universal builds.  Refer to `Mac/README.rst
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
 
+To build Windows installer, see `Tools/msi/README.txt
+<https://github.com/python/cpython/blob/main/Tools/msi/README.txt>`_.
+
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
 
@@ -133,7 +136,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.12 <https://docs.python.org/3.12/whatsnew/3.12.html>`_ document.  For a more
+3.13 <https://docs.python.org/3.13/whatsnew/3.13.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -146,7 +149,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.12 <https://docs.python.org/3.12/>`_ is online,
+`Documentation for Python 3.13 <https://docs.python.org/3.13/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -177,7 +180,7 @@ is printed about a failed test or a traceback or core dump is produced,
 something is wrong.
 
 By default, tests are prevented from overusing resources like disk space and
-memory.  To enable these tests, run ``make testall``.
+memory.  To enable these tests, run ``make buildbottest``.
 
 If any tests fail, you can re-run the failing test(s) in verbose mode.  For
 example, if ``test_os`` and ``test_gdb`` failed, you can run::
@@ -206,46 +209,22 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.12 with 3.12 being the
-primary version, you would execute ``make install`` in your 3.12 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.13 with 3.13 being the
+primary version, you would execute ``make install`` in your 3.13 build directory
 and ``make altinstall`` in the others.
-
-
-Issue Tracker and Mailing List
-------------------------------
-
-Bug reports are welcome!  You can use Github to `report bugs
-<https://github.com/python/cpython/issues>`_, and/or `submit pull requests
-<https://github.com/python/cpython/pulls>`_.
-
-You can also follow development discussion on the `python-dev mailing list
-<https://mail.python.org/mailman/listinfo/python-dev/>`_.
-
-
-Proposals for enhancement
--------------------------
-
-If you have a proposal to change Python, you may want to send an email to the
-`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
-Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
-All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`peps.python.org <https://peps.python.org/>`_.
-
-.. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
-.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 Release Schedule
 ----------------
 
-See :pep:`693` for Python 3.12 release details.
+See :pep:`719` for Python 3.13 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
 
-Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
 Copyright © 2000 BeOpen.com.  All rights reserved.
 

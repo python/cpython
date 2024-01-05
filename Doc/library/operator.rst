@@ -59,9 +59,9 @@ truth tests, identity tests, and boolean operations:
               __not__(obj)
 
    Return the outcome of :keyword:`not` *obj*.  (Note that there is no
-   :meth:`__not__` method for object instances; only the interpreter core defines
-   this operation.  The result is affected by the :meth:`__bool__` and
-   :meth:`__len__` methods.)
+   :meth:`!__not__` method for object instances; only the interpreter core defines
+   this operation.  The result is affected by the :meth:`~object.__bool__` and
+   :meth:`~object.__len__` methods.)
 
 
 .. function:: truth(obj)
@@ -244,7 +244,7 @@ Operations which work with sequences (some of them with mappings too) include:
 
 .. function:: length_hint(obj, default=0)
 
-   Return an estimated length for the object *o*. First try to return its
+   Return an estimated length for the object *obj*. First try to return its
    actual length, then an estimate using :meth:`object.__length_hint__`, and
    finally return the default value.
 
@@ -306,7 +306,7 @@ expect a function argument.
               itemgetter(*items)
 
    Return a callable object that fetches *item* from its operand using the
-   operand's :meth:`__getitem__` method.  If multiple items are specified,
+   operand's :meth:`~object.__getitem__` method.  If multiple items are specified,
    returns a tuple of lookup values.  For example:
 
    * After ``f = itemgetter(2)``, the call ``f(r)`` returns ``r[2]``.
@@ -326,8 +326,8 @@ expect a function argument.
                   return tuple(obj[item] for item in items)
           return g
 
-   The items can be any type accepted by the operand's :meth:`__getitem__`
-   method.  Dictionaries accept any hashable value.  Lists, tuples, and
+   The items can be any type accepted by the operand's :meth:`~object.__getitem__`
+   method.  Dictionaries accept any :term:`hashable` value.  Lists, tuples, and
    strings accept an index or a slice:
 
       >>> itemgetter(1)('ABCDEFG')
