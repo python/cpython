@@ -3472,12 +3472,6 @@ class ProtocolTests(BaseTestCase):
             vars(NonPR).keys(), vars(D).keys() | acceptable_extra_attrs
         )
 
-    def test_nonruntime_protocols_not_unnecessarily_introspected(self) -> None:
-        class Foo(Protocol):
-            x = 1
-
-        self.assertFalse(hasattr(Foo, "__non_callable_proto_members__"))
-
     def test_custom_subclasshook(self):
         class P(Protocol):
             x = 1

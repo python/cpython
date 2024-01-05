@@ -1848,6 +1848,7 @@ class _ProtocolMeta(ABCMeta):
                     "@runtime_checkable protocols"
                 )
             if (
+                # this attribute is set by @runtime_checkable:
                 cls.__non_callable_proto_members__
                 and cls.__dict__.get("__subclasshook__") is _proto_hook
             ):
@@ -1884,6 +1885,7 @@ class _ProtocolMeta(ABCMeta):
                 val = getattr_static(instance, attr)
             except AttributeError:
                 break
+            # this attribute is set by @runtime_checkable:
             if val is None and attr not in cls.__non_callable_proto_members__:
                 break
         else:
