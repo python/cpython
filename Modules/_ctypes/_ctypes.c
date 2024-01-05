@@ -449,8 +449,8 @@ static PyType_Spec structparam_spec = {
 
 /*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
-  __metaclass__ will call the constructor StructUnionType_new.  It replaces the
-  tp_dict member with a new instance of StgDict, and initializes the C
+  __metaclass__ will call the constructor StructUnionType_new/init.  It replaces
+  the tp_dict member with a new instance of StgDict, and initializes the C
   accessible fields somehow.
 */
 
@@ -2715,8 +2715,9 @@ PyCData_clear(CDataObject *self)
 {
     Py_CLEAR(self->b_objects);
     if ((self->b_needsfree)
-        && _CDataObject_HasExternalBuffer(self))
+        && _CDataObject_HasExternalBuffer(self)) {
         PyMem_Free(self->b_ptr);
+    }
     self->b_ptr = NULL;
     Py_CLEAR(self->b_base);
     return 0;

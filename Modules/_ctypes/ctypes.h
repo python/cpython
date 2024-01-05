@@ -186,7 +186,7 @@ extern PyTypeObject PyCStructType_Type;
 #define ArrayObject_Check(st, v)        PyObject_TypeCheck((v), (st)->PyCArray_Type)
 #define PointerObject_Check(st, v)      PyObject_TypeCheck((v), (st)->PyCPointer_Type)
 #define PyCPointerTypeObject_Check(v)   PyObject_TypeCheck(v, &PyCPointerType_Type)
-#define PyCFuncPtrObject_Check(st,v)    PyObject_TypeCheck((v), (st)->PyCFuncPtr_Type)
+#define PyCFuncPtrObject_Check(st, v)   PyObject_TypeCheck((v), (st)->PyCFuncPtr_Type)
 #define PyCFuncPtrTypeObject_Check(v)   PyObject_TypeCheck(v, &PyCFuncPtrType_Type)
 #define PyCStructTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCStructType_Type)
 
