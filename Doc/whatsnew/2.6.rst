@@ -3110,8 +3110,8 @@ Port-Specific Changes: Windows
 
 * The :mod:`msvcrt` module now supports
   both the normal and wide char variants of the console I/O
-  API.  The :func:`getwch` function reads a keypress and returns a Unicode
-  value, as does the :func:`getwche` function.  The :func:`putwch` function
+  API.  The :func:`~msvcrt.getwch` function reads a keypress and returns a Unicode
+  value, as does the :func:`~msvcrt.getwche` function.  The :func:`~msvcrt.putwch` function
   takes a Unicode character and writes it to the console.
   (Contributed by Christian Heimes.)
 
@@ -3120,24 +3120,24 @@ Port-Specific Changes: Windows
   directory path.  (Contributed by Josiah Carlson; :issue:`957650`.)
 
 * The :mod:`socket` module's socket objects now have an
-  :meth:`ioctl` method that provides a limited interface to the
+  :meth:`~socket.socket.ioctl` method that provides a limited interface to the
   :c:func:`WSAIoctl` system interface.
 
-* The :mod:`_winreg` module now has a function,
-  :func:`ExpandEnvironmentStrings`,
+* The :mod:`_winreg <winreg>` module now has a function,
+  :func:`~winreg.ExpandEnvironmentStrings`,
   that expands environment variable references such as ``%NAME%``
   in an input string.  The handle objects provided by this
   module now support the context protocol, so they can be used
   in :keyword:`with` statements. (Contributed by Christian Heimes.)
 
-  :mod:`_winreg` also has better support for x64 systems,
-  exposing the :func:`DisableReflectionKey`, :func:`EnableReflectionKey`,
-  and :func:`QueryReflectionKey` functions, which enable and disable
+  :mod:`_winreg <winreg>` also has better support for x64 systems,
+  exposing the :func:`~winreg.DisableReflectionKey`, :func:`~winreg.EnableReflectionKey`,
+  and :func:`~winreg.QueryReflectionKey` functions, which enable and disable
   registry reflection for 32-bit processes running on 64-bit systems.
   (:issue:`1753245`)
 
-* The :mod:`!msilib` module's :class:`Record` object
-  gained :meth:`GetInteger` and :meth:`GetString` methods that
+* The :mod:`!msilib` module's :class:`!Record` object
+  gained :meth:`!GetInteger` and :meth:`!GetString` methods that
   return field values as an integer or a string.
   (Contributed by Floris Bruynooghe; :issue:`2125`.)
 
@@ -3151,49 +3151,49 @@ Port-Specific Changes: Mac OS X
   :option:`!--with-framework-name=` option to the
   :program:`configure` script.
 
-* The :mod:`macfs` module has been removed.  This in turn required the
-  :func:`macostools.touched` function to be removed because it depended on the
-  :mod:`macfs` module.  (:issue:`1490190`)
+* The :mod:`!macfs` module has been removed.  This in turn required the
+  :func:`!macostools.touched` function to be removed because it depended on the
+  :mod:`!macfs` module.  (:issue:`1490190`)
 
 * Many other Mac OS modules have been deprecated and will be removed in
   Python 3.0:
-  :mod:`_builtinSuites`,
-  :mod:`aepack`,
-  :mod:`aetools`,
-  :mod:`aetypes`,
-  :mod:`applesingle`,
-  :mod:`appletrawmain`,
-  :mod:`appletrunner`,
-  :mod:`argvemulator`,
-  :mod:`Audio_mac`,
-  :mod:`autoGIL`,
-  :mod:`Carbon`,
-  :mod:`cfmfile`,
-  :mod:`CodeWarrior`,
-  :mod:`ColorPicker`,
-  :mod:`EasyDialogs`,
-  :mod:`Explorer`,
-  :mod:`Finder`,
-  :mod:`FrameWork`,
-  :mod:`findertools`,
-  :mod:`ic`,
-  :mod:`icglue`,
-  :mod:`icopen`,
-  :mod:`macerrors`,
-  :mod:`MacOS`,
-  :mod:`macfs`,
-  :mod:`macostools`,
-  :mod:`macresource`,
-  :mod:`MiniAEFrame`,
-  :mod:`Nav`,
-  :mod:`Netscape`,
-  :mod:`OSATerminology`,
-  :mod:`pimp`,
-  :mod:`PixMapWrapper`,
-  :mod:`StdSuites`,
-  :mod:`SystemEvents`,
-  :mod:`Terminal`, and
-  :mod:`terminalcommand`.
+  :mod:`!_builtinSuites`,
+  :mod:`!aepack`,
+  :mod:`!aetools`,
+  :mod:`!aetypes`,
+  :mod:`!applesingle`,
+  :mod:`!appletrawmain`,
+  :mod:`!appletrunner`,
+  :mod:`!argvemulator`,
+  :mod:`!Audio_mac`,
+  :mod:`!autoGIL`,
+  :mod:`!Carbon`,
+  :mod:`!cfmfile`,
+  :mod:`!CodeWarrior`,
+  :mod:`!ColorPicker`,
+  :mod:`!EasyDialogs`,
+  :mod:`!Explorer`,
+  :mod:`!Finder`,
+  :mod:`!FrameWork`,
+  :mod:`!findertools`,
+  :mod:`!ic`,
+  :mod:`!icglue`,
+  :mod:`!icopen`,
+  :mod:`!macerrors`,
+  :mod:`!MacOS`,
+  :mod:`!macfs`,
+  :mod:`!macostools`,
+  :mod:`!macresource`,
+  :mod:`!MiniAEFrame`,
+  :mod:`!Nav`,
+  :mod:`!Netscape`,
+  :mod:`!OSATerminology`,
+  :mod:`!pimp`,
+  :mod:`!PixMapWrapper`,
+  :mod:`!StdSuites`,
+  :mod:`!SystemEvents`,
+  :mod:`!Terminal`, and
+  :mod:`!terminalcommand`.
 
 .. ======================================================================
 
@@ -3202,29 +3202,29 @@ Port-Specific Changes: IRIX
 
 A number of old IRIX-specific modules were deprecated and will
 be removed in Python 3.0:
-:mod:`al` and :mod:`AL`,
-:mod:`cd`,
-:mod:`cddb`,
-:mod:`cdplayer`,
-:mod:`CL` and :mod:`cl`,
-:mod:`DEVICE`,
-:mod:`ERRNO`,
-:mod:`FILE`,
-:mod:`FL` and :mod:`fl`,
-:mod:`flp`,
-:mod:`fm`,
-:mod:`GET`,
-:mod:`GLWS`,
-:mod:`GL` and :mod:`gl`,
-:mod:`IN`,
-:mod:`IOCTL`,
-:mod:`jpeg`,
-:mod:`panelparser`,
-:mod:`readcd`,
-:mod:`SV` and :mod:`sv`,
-:mod:`torgb`,
-:mod:`videoreader`, and
-:mod:`WAIT`.
+:mod:`!al` and :mod:`!AL`,
+:mod:`!cd`,
+:mod:`!cddb`,
+:mod:`!cdplayer`,
+:mod:`!CL` and :mod:`!cl`,
+:mod:`!DEVICE`,
+:mod:`!ERRNO`,
+:mod:`!FILE`,
+:mod:`!FL` and :mod:`!fl`,
+:mod:`!flp`,
+:mod:`!fm`,
+:mod:`!GET`,
+:mod:`!GLWS`,
+:mod:`!GL` and :mod:`!gl`,
+:mod:`!IN`,
+:mod:`!IOCTL`,
+:mod:`!jpeg`,
+:mod:`!panelparser`,
+:mod:`!readcd`,
+:mod:`!SV` and :mod:`!sv`,
+:mod:`!torgb`,
+:mod:`!videoreader`, and
+:mod:`!WAIT`.
 
 .. ======================================================================
 
