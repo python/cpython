@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 
 PyDoc_STRVAR(simplequeue_new__doc__,
 "SimpleQueue()\n"
@@ -330,4 +331,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c326e4c1f2a1ad7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=457310b20cb61cf8 input=a9049054013a1b77]*/

@@ -116,7 +116,7 @@ except ImportError:
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -876,6 +876,31 @@ class SSLObject:
         """
         return self._sslobj.getpeercert(binary_form)
 
+    def get_verified_chain(self):
+        """Returns verified certificate chain provided by the other
+        end of the SSL channel as a list of DER-encoded bytes.
+
+        If certificate verification was disabled method acts the same as
+        ``SSLSocket.get_unverified_chain``.
+        """
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
+
+    def get_unverified_chain(self):
+        """Returns raw certificate chain provided by the other
+        end of the SSL channel as a list of DER-encoded bytes.
+        """
+        chain = self._sslobj.get_unverified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
+
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``
         if a next protocol was not negotiated or if NPN is not supported by one
@@ -1130,6 +1155,14 @@ class SSLSocket(socket):
         return self._sslobj.getpeercert(binary_form)
 
     @_sslcopydoc
+    def get_verified_chain(self):
+        return self._sslobj.get_verified_chain()
+
+    @_sslcopydoc
+    def get_unverified_chain(self):
+        return self._sslobj.get_unverified_chain()
+
+    @_sslcopydoc
     def selected_npn_protocol(self):
         self._checkClosed()
         warnings.warn(
@@ -1237,10 +1270,14 @@ class SSLSocket(socket):
 
     def recv_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
-        if buffer and (nbytes is None):
-            nbytes = len(buffer)
-        elif nbytes is None:
-            nbytes = 1024
+        if nbytes is None:
+            if buffer is not None:
+                with memoryview(buffer) as view:
+                    nbytes = view.nbytes
+                if not nbytes:
+                    nbytes = 1024
+            else:
+                nbytes = 1024
         if self._sslobj is not None:
             if flags != 0:
                 raise ValueError(

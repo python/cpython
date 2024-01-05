@@ -10,7 +10,7 @@ import csv
 import gc
 import pickle
 from test import support
-from test.support import warnings_helper, import_helper, check_disallow_instantiation
+from test.support import import_helper, check_disallow_instantiation
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict

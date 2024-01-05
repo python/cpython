@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.0.10",
-              url="https://www.openssl.org/source/openssl-3.0.10.tar.gz",
-              checksum='1761d4f5b13a1028b9b6f3d4b8e17feb0cedc9370f6afe61d7193d2cdce83323',
+              name="OpenSSL 3.0.11",
+              url="https://www.openssl.org/source/openssl-3.0.11.tar.gz",
+              checksum='b3425d3bb4a2218d0697eb41f7fc0cdede016ed19ca49d168b78e8d947887f55',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -261,14 +261,14 @@ def library_recipes():
             tcl_checksum='81656d3367af032e0ae6157eff134f89'
 
             tk_checksum='5e0faecba458ee1386078fb228d008ba'
-            tk_patches = ['tk868_on_10_8_10_9.patch']
+            tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
             tcl_tk_ver='8.6.13'
             tcl_checksum='43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066'
 
             tk_checksum='2e65fa069a23365440a3c56c556b8673b5e32a283800d8d9b257e3f584ce0675'
-            tk_patches = [ ]
+            tk_patches = ['backport_gh92603_fix.patch', 'backport_gh71383_fix.patch', 'backport_gh110950_fix.patch']
 
 
         base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.42.0",
-              url="https://sqlite.org/2023/sqlite-autoconf-3420000.tar.gz",
-              checksum="0c5a92bc51cf07cae45b4a1e94653dea",
+              name="SQLite 3.44.2",
+              url="https://sqlite.org/2023/sqlite-autoconf-3440200.tar.gz",
+              checksum="c02f40fd4f809ced95096250adc5764a",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1147,7 +1147,9 @@ def buildPython():
     # will find them during its extension import sanity checks.
 
     print("Running configure...")
+    print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
+               "--with-mimalloc=no "
                "--with-universal-archs=%s "
                "%s "
                "%s "
@@ -1490,7 +1492,7 @@ def packageFromRecipe(targetDir, recipe):
                 IFPkgFlagRelocatable=False,
                 IFPkgFlagRestartAction="NoRestart",
                 IFPkgFlagRootVolumeOnly=True,
-                IFPkgFlagUpdateInstalledLangauges=False,
+                IFPkgFlagUpdateInstalledLanguages=False,
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 

@@ -1,0 +1,2 @@
+Correctly compute end column offsets for multiline tokens in the
+:mod:`tokenize` module. Patch by Pablo Galindo

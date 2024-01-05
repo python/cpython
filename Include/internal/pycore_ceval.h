@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "dynamic_annotations.h" // _Py_ANNOTATE_RWLOCK_CREATE
+
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -19,6 +21,8 @@ struct _ceval_runtime_state;
 PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 
 // Helper to look up a builtin object
 // Export for 'array' shared extension
@@ -37,16 +41,19 @@ PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
 #endif
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
-extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
-extern void _PyEval_FiniState(struct _ceval_state *ceval);
+extern void _PyEval_InitState(PyInterpreterState *);
 extern void _PyEval_SignalReceived(PyInterpreterState *interp);
+
+// bitwise flags:
+#define _Py_PENDING_MAINTHREADONLY 1
+#define _Py_PENDING_RAWFREE 2
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
-    int (*func)(void *),
+    _Py_pending_call_func func,
     void *arg,
-    int mainthreadonly);
+    int flags);
 
 extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
@@ -93,6 +100,7 @@ extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
 extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
+extern void _PyPerfTrampoline_FreeArenas(void);
 extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -116,12 +124,11 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject *kwnames);
 
 extern int _PyEval_ThreadsInitialized(void);
-extern PyStatus _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
+extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
 extern void _PyEval_AcquireLock(PyThreadState *tstate);
 extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
-extern PyThreadState * _PyThreadState_SwapNoGIL(PyThreadState *);
 
 extern void _PyEval_DeactivateOpCache(void);
 
@@ -191,6 +198,39 @@ PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject 
 PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
 void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+
+
+#define _PY_GIL_DROP_REQUEST_BIT 0
+#define _PY_SIGNALS_PENDING_BIT 1
+#define _PY_CALLS_TO_DO_BIT 2
+#define _PY_ASYNC_EXCEPTION_BIT 3
+#define _PY_GC_SCHEDULED_BIT 4
+
+/* Reserve a few bits for future use */
+#define _PY_EVAL_EVENTS_BITS 8
+#define _PY_EVAL_EVENTS_MASK ((1 << _PY_EVAL_EVENTS_BITS)-1)
+
+static inline void
+_Py_set_eval_breaker_bit(PyInterpreterState *interp, uint32_t bit, uint32_t set)
+{
+    assert(set == 0 || set == 1);
+    uintptr_t to_set = set << bit;
+    uintptr_t mask = ((uintptr_t)1) << bit;
+    uintptr_t old = _Py_atomic_load_uintptr(&interp->ceval.eval_breaker);
+    if ((old & mask) == to_set) {
+        return;
+    }
+    uintptr_t new;
+    do {
+        new = (old & ~mask) | to_set;
+    } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
+}
+
+static inline bool
+_Py_eval_breaker_bit_is_set(PyInterpreterState *interp, int32_t bit)
+{
+    return _Py_atomic_load_uintptr_relaxed(&interp->ceval.eval_breaker) & (((uintptr_t)1) << bit);
+}
 
 
 #ifdef __cplusplus

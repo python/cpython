@@ -1,1 +1,0 @@
-Suppress and assert expected RuntimeWarnings in test_sys_settrace.py

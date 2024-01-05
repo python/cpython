@@ -867,17 +867,18 @@ For example, if the first line of your script starts with
 
   #! /usr/bin/python
 
-The default Python will be located and used.  As many Python scripts written
-to work on Unix will already have this line, you should find these scripts can
-be used by the launcher without modification.  If you are writing a new script
-on Windows which you hope will be useful on Unix, you should use one of the
-shebang lines starting with ``/usr``.
+The default Python or an active virtual environment will be located and used.
+As many Python scripts written to work on Unix will already have this line,
+you should find these scripts can be used by the launcher without modification.
+If you are writing a new script on Windows which you hope will be useful on
+Unix, you should use one of the shebang lines starting with ``/usr``.
 
 Any of the above virtual commands can be suffixed with an explicit version
 (either just the major version, or the major and minor version).
 Furthermore the 32-bit version can be requested by adding "-32" after the
 minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
-32-bit python 3.7.
+32-bit Python 3.7. If a virtual environment is active, the version will be
+ignored and the environment will be used.
 
 .. versionadded:: 3.7
 
@@ -889,7 +890,14 @@ minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
 
    The "-64" suffix is deprecated, and now implies "any architecture that is
    not provably i386/32-bit". To request a specific environment, use the new
-   ``-V:<TAG>`` argument with the complete tag.
+   :samp:`-V:{TAG}` argument with the complete tag.
+
+.. versionchanged:: 3.13
+
+   Virtual commands referencing ``python`` now prefer an active virtual
+   environment rather than searching :envvar:`PATH`. This handles cases where
+   the shebang specifies ``/usr/bin/env python3`` but :file:`python3.exe` is
+   not present in the active environment.
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
@@ -1187,21 +1195,22 @@ Otherwise, your users may experience problems using your application. Note that
 the first suggestion is the best, as the others may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
-.. versionchanged::
-   3.6
+.. versionchanged:: 3.6
 
-      * Adds ``._pth`` file support and removes ``applocal`` option from
-        ``pyvenv.cfg``.
-      * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
-        to the executable.
+   Add ``._pth`` file support and removes ``applocal`` option from
+   ``pyvenv.cfg``.
 
-.. deprecated::
-   3.6
+.. versionchanged:: 3.6
 
-      Modules specified in the registry under ``Modules`` (not ``PythonPath``)
-      may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
-      This finder is enabled on Windows in 3.6.0 and earlier, but may need to
-      be explicitly added to :data:`sys.meta_path` in the future.
+   Add :file:`python{XX}.zip` as a potential landmark when directly adjacent
+   to the executable.
+
+.. deprecated:: 3.6
+
+   Modules specified in the registry under ``Modules`` (not ``PythonPath``)
+   may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
+   This finder is enabled on Windows in 3.6.0 and earlier, but may need to
+   be explicitly added to :data:`sys.meta_path` in the future.
 
 Additional modules
 ==================

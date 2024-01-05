@@ -17,7 +17,6 @@ import inspect
 import itertools
 import math
 import types
-import warnings
 import weakref
 from types import GenericAlias
 
@@ -74,15 +73,25 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     """A coroutine wrapped in a Future."""
 
     # An important invariant maintained while a Task not done:
+    # _fut_waiter is either None or a Future.  The Future
+    # can be either done() or not done().
+    # The task can be in any of 3 states:
     #
-    # - Either _fut_waiter is None, and _step() is scheduled;
-    # - or _fut_waiter is some Future, and _step() is *not* scheduled.
+    # - 1: _fut_waiter is not None and not _fut_waiter.done():
+    #      __step() is *not* scheduled and the Task is waiting for _fut_waiter.
+    # - 2: (_fut_waiter is None or _fut_waiter.done()) and __step() is scheduled:
+    #       the Task is waiting for __step() to be executed.
+    # - 3:  _fut_waiter is None and __step() is *not* scheduled:
+    #       the Task is currently executing (in __step()).
     #
-    # The only transition from the latter to the former is through
-    # _wakeup().  When _fut_waiter is not None, one of its callbacks
-    # must be _wakeup().
+    # * In state 1, one of the callbacks of __fut_waiter must be __wakeup().
+    # * The transition from 1 to 2 happens when _fut_waiter becomes done(),
+    #   as it schedules __wakeup() to be called (which calls __step() so
+    #   we way that __step() is scheduled).
+    # * It transitions from 2 to 3 when __step() is executed, and it clears
+    #   _fut_waiter to None.
 
-    # If False, don't log a message if the task is destroyed whereas its
+    # If False, don't log a message if the task is destroyed while its
     # status is still pending
     _log_destroy_pending = True
 
@@ -395,11 +404,10 @@ def create_task(coro, *, name=None, context=None):
     loop = events.get_running_loop()
     if context is None:
         # Use legacy API if context is not needed
-        task = loop.create_task(coro)
+        task = loop.create_task(coro, name=name)
     else:
-        task = loop.create_task(coro, context=context)
+        task = loop.create_task(coro, name=name, context=context)
 
-    task.set_name(name)
     return task
 
 
@@ -414,8 +422,6 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures or Tasks given by fs to complete.
 
     The fs iterable must not be empty.
-
-    Coroutines will be wrapped in Tasks.
 
     Returns two sets of Future: (done, pending).
 

@@ -874,7 +874,7 @@ class Shape(object):
             if isinstance(data, str):
                 if data.lower().endswith(".gif") and isfile(data):
                     data = TurtleScreen._image(data)
-                # else data assumed to be Photoimage
+                # else data assumed to be PhotoImage
         elif type_ == "compound":
             data = []
         else:

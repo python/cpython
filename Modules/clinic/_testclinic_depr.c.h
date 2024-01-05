@@ -7,6 +7,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
 
 PyDoc_STRVAR(depr_star_new__doc__,
@@ -2392,4 +2393,4 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=689b1e2d0872e413 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2c19d1804ba6e53b input=a9049054013a1b77]*/

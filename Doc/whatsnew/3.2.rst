@@ -183,7 +183,7 @@ PEP 391:  Dictionary Based Configuration for Logging
 
 The :mod:`logging` module provided two kinds of configuration, one style with
 function calls for each option or another style driven by an external file saved
-in a :mod:`ConfigParser` format.  Those options did not provide the flexibility
+in a :mod:`configparser` format.  Those options did not provide the flexibility
 to create configurations from JSON or YAML files, nor did they support
 incremental configuration, which is needed for specifying logger options from a
 command line.
@@ -791,8 +791,9 @@ functools
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
   pointing to the original callable function.  This allows wrapped functions to
-  be introspected.  It also copies :attr:`__annotations__` if defined.  And now
-  it also gracefully skips over missing attributes such as :attr:`__doc__` which
+  be introspected.  It also copies :attr:`~function.__annotations__` if
+  defined.  And now it also gracefully skips over missing attributes such as
+  :attr:`~function.__doc__` which
   might not be defined for the wrapped callable.
 
   In the above example, the cache can be removed by recovering the original
@@ -1857,12 +1858,12 @@ structure.
 asyncore
 --------
 
-:class:`asyncore.dispatcher` now provides a
-:meth:`~asyncore.dispatcher.handle_accepted()` method
+:class:`!asyncore.dispatcher` now provides a
+:meth:`!handle_accepted()` method
 returning a ``(sock, addr)`` pair which is called when a connection has actually
 been established with a new remote endpoint. This is supposed to be used as a
-replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
-the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
+replacement for old :meth:`!handle_accept()` and avoids
+the user  to call :meth:`!accept()` directly.
 
 (Contributed by Giampaolo Rodolà; :issue:`6706`.)
 
@@ -2133,7 +2134,7 @@ configparser
 
 The :mod:`configparser` module was modified to improve usability and
 predictability of the default parser and its supported INI syntax.  The old
-:class:`ConfigParser` class was removed in favor of :class:`SafeConfigParser`
+:class:`!ConfigParser` class was removed in favor of :class:`!SafeConfigParser`
 which has in turn been renamed to :class:`~configparser.ConfigParser`. Support
 for inline comments is now turned off by default and section or option
 duplicates are not allowed in a single configuration source.
@@ -2413,7 +2414,7 @@ when one operand is much larger than the other (patch by Andress Bennetts in
 (:issue:`1569291` by Alexander Belopolsky). The :class:`BaseHTTPRequestHandler`
 has more efficient buffering (:issue:`3709` by Andrew Schaaf).  The
 :func:`operator.attrgetter` function has been sped-up (:issue:`10160` by
-Christos Georgiou).  And :class:`ConfigParser` loads multi-line arguments a bit
+Christos Georgiou).  And :class:`~configparser.ConfigParser` loads multi-line arguments a bit
 faster (:issue:`7113` by Łukasz Langa).
 
 
@@ -2613,8 +2614,8 @@ This section lists previously described changes and other bugfixes that may
 require changes to your code:
 
 * The :mod:`configparser` module has a number of clean-ups.  The major change is
-  to replace the old :class:`ConfigParser` class with long-standing preferred
-  alternative :class:`SafeConfigParser`.  In addition there are a number of
+  to replace the old :class:`!ConfigParser` class with long-standing preferred
+  alternative :class:`!SafeConfigParser`.  In addition there are a number of
   smaller incompatibilities:
 
   * The interpolation syntax is now validated on
@@ -2736,8 +2737,8 @@ require changes to your code:
   thread-state aware APIs (such as :c:func:`PyEval_SaveThread`
   and :c:func:`PyEval_RestoreThread`) should be used instead.
 
-* Due to security risks, :func:`asyncore.handle_accept` has been deprecated, and
-  a new function, :func:`asyncore.handle_accepted`, was added to replace it.
+* Due to security risks, :func:`!asyncore.handle_accept` has been deprecated, and
+  a new function, :func:`!asyncore.handle_accepted`, was added to replace it.
 
   (Contributed by Giampaolo Rodola in :issue:`6706`.)
 

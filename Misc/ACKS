@@ -31,6 +31,7 @@ Farhan Ahmad
 Matthew Ahrens
 Nir Aides
 Akira
+Ege Akman
 Yaniv Aknin
 Jyrki Alakuijala
 Tatiana Al-Chueyr
@@ -254,6 +255,7 @@ Curtis Bucher
 Colm Buckley
 Erik de Bueger
 Jan-Hein Bührman
+Marc Bürg
 Lars Buitinck
 Artem Bulgakov
 Dick Bulterman
@@ -348,6 +350,7 @@ Robbie Clemons
 Steve Clift
 Hervé Coatanhay
 Riccardo Coccioli
+Jacob Coffee
 Nick Coghlan
 Josh Cogliati
 Noam Cohen
@@ -503,6 +506,7 @@ Daniel Ellis
 Phil Elson
 David Ely
 Victor van den Elzen
+Vlad Emelianov
 Jeff Epler
 Tom Epperly
 Gökcen Eraslan
@@ -627,6 +631,7 @@ Dinu Gherman
 Subhendu Ghosh
 Jonathan Giddy
 Johannes Gijsbers
+Stephen Gildea
 Michael Gilfix
 Julian Gindi
 Yannick Gingras
@@ -784,6 +789,7 @@ Thomas Holmes
 Craig Holmquist
 Philip Homburg
 Naofumi Honda
+Constantin Hong
 Weipeng Hong
 Jeffrey Honig
 Rob Hooft
@@ -1269,7 +1275,7 @@ R. David Murray
 Matti Mäki
 Jörg Müller
 Kaushik N
-Dong-hee Na
+Donghee Na
 Dale Nagata
 John Nagle
 Takahiro Nakayama
@@ -1331,6 +1337,7 @@ Ethan Onstott
 Ken Jin Ooi
 Piet van Oostrum
 Tomas Oppelstrup
+Itamar Oren
 Jason Orendorff
 Yan "yyyyyyyan" Orestes
 Bastien Orivel
@@ -1341,7 +1348,7 @@ Michele Orrù
 Tomáš Orsava
 Oleg Oshmyan
 Denis Osipov
-Itamar Ostricher
+Savannah Ostrowski
 Denis S. Otkidach
 Peter Otten
 Michael Otteneder
@@ -1370,6 +1377,7 @@ Peter Parente
 Alexandre Parenteau
 Dan Parisien
 HyeSoo Park
+Moonsik Park
 William Park
 Claude Paroz
 Heikki Partanen
@@ -1453,6 +1461,7 @@ Paul Prescod
 Donovan Preston
 Eric Price
 Paul Price
+Matt Prodani
 Iuliia Proskurnia
 Dorian Pula
 Jyrki Pulliainen
@@ -1476,6 +1485,7 @@ Ajith Ramachandran
 Dhushyanth Ramasamy
 Ashwin Ramaswami
 Jeff Ramnani
+Grant Ramsay
 Bayard Randel
 Varpu Rantala
 Brodie Rao
@@ -1564,6 +1574,7 @@ Liam Routt
 Todd Rovito
 Craig Rowland
 Clinton Roy
+Ujan RoyBandyopadhyay
 Paul Rubin
 Sam Ruby
 Demur Rumed
@@ -1869,6 +1880,7 @@ Steven Troxler
 Brent Tubbs
 Anthony Tuininga
 Erno Tukia
+Adam Turner
 David Turner
 Stephen Turner
 Itamar Turner-Trauring
@@ -2076,7 +2088,5 @@ Jelle Zijlstra
 Gennadiy Zlobin
 Doug Zongker
 Peter Åstrand
-Vlad Emelianov
-Andrey Doroschenko
 
 (Entries should be added in rough alphabetical order by last names)

@@ -2,11 +2,33 @@ import dataclasses
 import json
 from typing import Any
 
-from test.support import TestStats
-
 from .utils import (
     StrJSON, TestName, FilterTuple,
     format_duration, normalize_test_name, print_warning)
+
+
+@dataclasses.dataclass(slots=True)
+class TestStats:
+    tests_run: int = 0
+    failures: int = 0
+    skipped: int = 0
+
+    @staticmethod
+    def from_unittest(result):
+        return TestStats(result.testsRun,
+                         len(result.failures),
+                         len(result.skipped))
+
+    @staticmethod
+    def from_doctest(results):
+        return TestStats(results.attempted,
+                         results.failed,
+                         results.skipped)
+
+    def accumulate(self, stats):
+        self.tests_run += stats.tests_run
+        self.failures += stats.failures
+        self.skipped += stats.skipped
 
 
 # Avoid enum.Enum to reduce the number of imports when tests are run
@@ -19,7 +41,8 @@ class State:
     ENV_CHANGED = "ENV_CHANGED"
     RESOURCE_DENIED = "RESOURCE_DENIED"
     INTERRUPTED = "INTERRUPTED"
-    MULTIPROCESSING_ERROR = "MULTIPROCESSING_ERROR"
+    WORKER_FAILED = "WORKER_FAILED"   # non-zero worker process exit code
+    WORKER_BUG = "WORKER_BUG"         # exception when running a worker
     DID_NOT_RUN = "DID_NOT_RUN"
     TIMEOUT = "TIMEOUT"
 
@@ -29,7 +52,8 @@ class State:
             State.FAILED,
             State.UNCAUGHT_EXC,
             State.REFLEAK,
-            State.MULTIPROCESSING_ERROR,
+            State.WORKER_FAILED,
+            State.WORKER_BUG,
             State.TIMEOUT}
 
     @staticmethod
@@ -42,14 +66,21 @@ class State:
             State.SKIPPED,
             State.RESOURCE_DENIED,
             State.INTERRUPTED,
-            State.MULTIPROCESSING_ERROR,
+            State.WORKER_FAILED,
+            State.WORKER_BUG,
             State.DID_NOT_RUN}
 
     @staticmethod
     def must_stop(state):
         return state in {
             State.INTERRUPTED,
-            State.MULTIPROCESSING_ERROR}
+            State.WORKER_BUG,
+        }
+
+
+FileName = str
+LineNo = int
+Location = tuple[FileName, LineNo]
 
 
 @dataclasses.dataclass(slots=True)
@@ -64,6 +95,9 @@ class TestResult:
     # errors and failures copied from support.TestFailedWithDetails
     errors: list[tuple[str, str]] | None = None
     failures: list[tuple[str, str]] | None = None
+
+    # partial coverage in a worker run; not used by sequential in-process runs
+    covered_lines: list[Location] | None = None
 
     def is_failed(self, fail_env_changed: bool) -> bool:
         if self.state == State.ENV_CHANGED:
@@ -108,8 +142,10 @@ class TestResult:
                 return f"{self.test_name} skipped (resource denied)"
             case State.INTERRUPTED:
                 return f"{self.test_name} interrupted"
-            case State.MULTIPROCESSING_ERROR:
-                return f"{self.test_name} process crashed"
+            case State.WORKER_FAILED:
+                return f"{self.test_name} worker non-zero exit code"
+            case State.WORKER_BUG:
+                return f"{self.test_name} worker bug"
             case State.DID_NOT_RUN:
                 return f"{self.test_name} ran no tests"
             case State.TIMEOUT:
@@ -156,7 +192,7 @@ class TestResult:
             return None
         return tuple(match_tests)
 
-    def write_json(self, file) -> None:
+    def write_json_into(self, file) -> None:
         json.dump(self, file, cls=_EncodeTestResult)
 
     @staticmethod
@@ -179,6 +215,10 @@ def _decode_test_result(data: dict[str, Any]) -> TestResult | dict[str, Any]:
         data.pop('__test_result__')
         if data['stats'] is not None:
             data['stats'] = TestStats(**data['stats'])
+        if data['covered_lines'] is not None:
+            data['covered_lines'] = [
+                tuple(loc) for loc in data['covered_lines']
+            ]
         return TestResult(**data)
     else:
         return data

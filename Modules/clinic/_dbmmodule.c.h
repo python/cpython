@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -216,4 +218,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=972d221f9da819d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96fdd4bd7bd256c5 input=a9049054013a1b77]*/

@@ -1,2 +1,2 @@
 from test.libregrtest.main import main
-main()
+main(_add_python_opts=True)

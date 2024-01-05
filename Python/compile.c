@@ -34,7 +34,6 @@
 #include "pycore_flowgraph.h"
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
@@ -797,35 +796,12 @@ stack_effect(int opcode, int oparg, int jump)
             // Specialized instructions are not supported.
             return PY_INVALID_STACK_EFFECT;
         }
-        int popped, pushed;
-        if (jump > 0) {
-            popped = _PyOpcode_num_popped(opcode, oparg, true);
-            pushed = _PyOpcode_num_pushed(opcode, oparg, true);
-        }
-        else {
-            popped = _PyOpcode_num_popped(opcode, oparg, false);
-            pushed = _PyOpcode_num_pushed(opcode, oparg, false);
-        }
+        int popped = _PyOpcode_num_popped(opcode, oparg);
+        int pushed = _PyOpcode_num_pushed(opcode, oparg);
         if (popped < 0 || pushed < 0) {
             return PY_INVALID_STACK_EFFECT;
         }
-        if (jump >= 0) {
-            return pushed - popped;
-        }
-        if (jump < 0) {
-            // Compute max(pushed - popped, alt_pushed - alt_popped)
-            int alt_popped = _PyOpcode_num_popped(opcode, oparg, true);
-            int alt_pushed = _PyOpcode_num_pushed(opcode, oparg, true);
-            if (alt_popped < 0 || alt_pushed < 0) {
-                return PY_INVALID_STACK_EFFECT;
-            }
-            int diff = pushed - popped;
-            int alt_diff = alt_pushed - alt_popped;
-            if (alt_diff > diff) {
-                return alt_diff;
-            }
-            return diff;
-        }
+        return pushed - popped;
     }
 
     // Pseudo ops
@@ -884,49 +860,49 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 int
-PyUnstable_OpcodeIsValid(int opcode)
+_PyCompile_OpcodeIsValid(int opcode)
 {
     return IS_VALID_OPCODE(opcode);
 }
 
 int
-PyUnstable_OpcodeHasArg(int opcode)
+_PyCompile_OpcodeHasArg(int opcode)
 {
     return OPCODE_HAS_ARG(opcode);
 }
 
 int
-PyUnstable_OpcodeHasConst(int opcode)
+_PyCompile_OpcodeHasConst(int opcode)
 {
     return OPCODE_HAS_CONST(opcode);
 }
 
 int
-PyUnstable_OpcodeHasName(int opcode)
+_PyCompile_OpcodeHasName(int opcode)
 {
     return OPCODE_HAS_NAME(opcode);
 }
 
 int
-PyUnstable_OpcodeHasJump(int opcode)
+_PyCompile_OpcodeHasJump(int opcode)
 {
     return OPCODE_HAS_JUMP(opcode);
 }
 
 int
-PyUnstable_OpcodeHasFree(int opcode)
+_PyCompile_OpcodeHasFree(int opcode)
 {
     return OPCODE_HAS_FREE(opcode);
 }
 
 int
-PyUnstable_OpcodeHasLocal(int opcode)
+_PyCompile_OpcodeHasLocal(int opcode)
 {
     return OPCODE_HAS_LOCAL(opcode);
 }
 
 int
-PyUnstable_OpcodeHasExc(int opcode)
+_PyCompile_OpcodeHasExc(int opcode)
 {
     return IS_BLOCK_PUSH_OPCODE(opcode);
 }
@@ -1126,7 +1102,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
-        assert(SAME_OPCODE_METADATA(LOAD_METHOD, LOAD_ATTR));
+        assert(is_pseudo_target(LOAD_METHOD, LOAD_ATTR));
         opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
@@ -1136,18 +1112,18 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        assert(SAME_OPCODE_METADATA(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
+        assert(is_pseudo_target(LOAD_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
-        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
+        assert(is_pseudo_target(LOAD_ZERO_SUPER_ATTR, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        assert(SAME_OPCODE_METADATA(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
+        assert(is_pseudo_target(LOAD_ZERO_SUPER_METHOD, LOAD_SUPER_ATTR));
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 1;
@@ -1383,7 +1359,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     else {
         RETURN_IF_ERROR(compiler_set_qualname(c));
     }
-    ADDOP_I(c, loc, RESUME, 0);
+    ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = -1;
@@ -1407,8 +1383,8 @@ compiler_exit_scope(struct compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            _PyErr_WriteUnraisableMsg("on removing the last compiler "
-                                      "stack item", NULL);
+            PyErr_FormatUnraisable("Exception ignored on removing "
+                                   "the last compiler stack item");
         }
     }
     else {
@@ -1550,9 +1526,9 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     // Set up a virtual try/except to handle when StopIteration is raised during
     // a close or throw call. The only way YIELD_VALUE raises if they do!
     ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
-    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP_I(c, loc, YIELD_VALUE, 1);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
-    ADDOP_I(c, loc, RESUME, await ? 3 : 2);
+    ADDOP_I(c, loc, RESUME, await ? RESUME_AFTER_AWAIT : RESUME_AFTER_YIELD_FROM);
     ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, fail);
@@ -3261,18 +3237,6 @@ compiler_continue(struct compiler *c, location loc)
 }
 
 
-static location
-location_of_last_executing_statement(asdl_stmt_seq *stmts)
-{
-    for (Py_ssize_t i = asdl_seq_LEN(stmts) - 1; i >= 0; i++) {
-        location loc = LOC((stmt_ty)asdl_seq_GET(stmts, i));
-        if (loc.lineno > 0) {
-            return loc;
-        }
-    }
-    return NO_LOCATION;
-}
-
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
         SETUP_FINALLY           L
@@ -3341,9 +3305,9 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(
         compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    loc = location_of_last_executing_statement(s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
 
+    loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -3392,9 +3356,9 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
         compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
 
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
-    loc = location_of_last_executing_statement(s->v.Try.finalbody);
 
     compiler_pop_fblock(c, FINALLY_END, end);
+    loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -4173,7 +4137,7 @@ addop_yield(struct compiler *c, location loc) {
         ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_ASYNC_GEN_WRAP);
     }
     ADDOP_I(c, loc, YIELD_VALUE, 0);
-    ADDOP_I(c, loc, RESUME, 1);
+    ADDOP_I(c, loc, RESUME, RESUME_AFTER_YIELD);
     return SUCCESS;
 }
 
@@ -4868,7 +4832,7 @@ load_args_for_super(struct compiler *c, expr_ty e) {
 
     // load super() global
     PyObject *super_name = e->v.Call.func->v.Name.id;
-    RETURN_IF_ERROR(compiler_nameop(c, loc, super_name, Load));
+    RETURN_IF_ERROR(compiler_nameop(c, LOC(e->v.Call.func), super_name, Load));
 
     if (asdl_seq_LEN(e->v.Call.args) == 2) {
         VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 0));
@@ -4982,9 +4946,13 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         VISIT_SEQ(c, keyword, kwds);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, kwds, kwdsl));
+        loc = update_start_location_to_match_attr(c, LOC(e), meth);
+        ADDOP_I(c, loc, CALL_KW, argsl + kwdsl);
     }
-    loc = update_start_location_to_match_attr(c, LOC(e), meth);
-    ADDOP_I(c, loc, CALL, argsl + kwdsl);
+    else {
+        loc = update_start_location_to_match_attr(c, LOC(e), meth);
+        ADDOP_I(c, loc, CALL, argsl);
+    }
     return 1;
 }
 
@@ -5051,8 +5019,12 @@ compiler_joined_str(struct compiler *c, expr_ty e)
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
-        if (asdl_seq_LEN(e->v.JoinedStr.values) != 1) {
-            ADDOP_I(c, loc, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+        if (value_count > 1) {
+            ADDOP_I(c, loc, BUILD_STRING, value_count);
+        }
+        else if (value_count == 0) {
+            _Py_DECLARE_STR(empty, "");
+            ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
         }
     }
     return SUCCESS;
@@ -5150,7 +5122,7 @@ compiler_subkwargs(struct compiler *c, location loc,
 }
 
 /* Used by compiler_call_helper and maybe_optimize_method_call to emit
- * KW_NAMES before CALL.
+ * a tuple of keyword names before CALL.
  */
 static int
 compiler_call_simple_kw_helper(struct compiler *c, location loc,
@@ -5165,12 +5137,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
         keyword_ty kw = asdl_seq_GET(keywords, i);
         PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
-    Py_ssize_t arg = compiler_add_const(c->c_const_cache, c->u, names);
-    if (arg < 0) {
-        return ERROR;
-    }
-    Py_DECREF(names);
-    ADDOP_I(c, loc, KW_NAMES, arg);
+    ADDOP_LOAD_CONST_NEW(c, loc, names);
     return SUCCESS;
 }
 
@@ -5215,8 +5182,11 @@ compiler_call_helper(struct compiler *c, location loc,
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, keywords, nkwelts));
+        ADDOP_I(c, loc, CALL_KW, n + nelts + nkwelts);
     }
-    ADDOP_I(c, loc, CALL, n + nelts + nkwelts);
+    else {
+        ADDOP_I(c, loc, CALL, n + nelts);
+    }
     return SUCCESS;
 
 ex_call:

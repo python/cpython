@@ -84,10 +84,14 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
-Python/abstract_interp_cases.c.h
 
 # not actually source
 Python/bytecodes.c
+
+# mimalloc
+Objects/mimalloc/*.c
+Include/internal/mimalloc/*.h
+Include/internal/mimalloc/mimalloc/*.h
 
 # @end=conf@
 ''')
@@ -109,6 +113,7 @@ glob	dirname
 *	.
 *	./Include
 *	./Include/internal
+*   ./Include/internal/mimalloc
 
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 Modules/_elementtree.c	Modules/expat
@@ -314,6 +319,7 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (35_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
 

@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_call.h"          // _PyObject_MakeTpCall
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
@@ -6152,6 +6153,29 @@ int_is_integer_impl(PyObject *self)
     Py_RETURN_TRUE;
 }
 
+static PyObject *
+long_vectorcall(PyObject *type, PyObject * const*args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (kwnames != NULL) {
+        PyThreadState *tstate = PyThreadState_GET();
+        return _PyObject_MakeTpCall(tstate, type, args, nargs, kwnames);
+    }
+    switch (nargs) {
+        case 0:
+            return _PyLong_GetZero();
+        case 1:
+            return PyNumber_Long(args[0]);
+        case 2:
+            return long_new_impl(_PyType_CAST(type), args[0], args[1]);
+        default:
+            return PyErr_Format(PyExc_TypeError,
+                                "int expected at most 2 argument%s, got %zd",
+                                nargs);
+    }
+}
+
 static PyMethodDef long_methods[] = {
     {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
@@ -6289,6 +6313,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_alloc */
     long_new,                                   /* tp_new */
     PyObject_Free,                              /* tp_free */
+    .tp_vectorcall = long_vectorcall,
 };
 
 static PyTypeObject Int_InfoType;

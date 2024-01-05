@@ -100,7 +100,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/internal/mimalloc
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -336,6 +336,20 @@ IO_OBJS=	\
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
 
+
+##########################################################################
+# mimalloc
+
+MIMALLOC_HEADERS= \
+	$(srcdir)/Include/internal/pycore_mimalloc.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/atomic.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/internal.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/prim.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/track.h \
+	$(srcdir)/Include/internal/mimalloc/mimalloc/types.h
+
+
 ##########################################################################
 # Parser
 
@@ -347,20 +361,36 @@ PEGEN_OBJS=		\
 		Parser/string_parser.o \
 		Parser/peg_api.o
 
+TOKENIZER_OBJS=		\
+		Parser/lexer/buffer.o \
+		Parser/lexer/lexer.o \
+		Parser/lexer/state.o \
+		Parser/tokenizer/file_tokenizer.o \
+		Parser/tokenizer/readline_tokenizer.o \
+		Parser/tokenizer/string_tokenizer.o \
+		Parser/tokenizer/utf8_tokenizer.o \
+		Parser/tokenizer/helpers.o
 
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 
+TOKENIZER_HEADERS= \
+		Parser/lexer/buffer.h \
+		Parser/lexer/lexer.h \
+		Parser/lexer/state.h \
+		Parser/tokenizer/tokenizer.h \
+		Parser/tokenizer/helpers.h
+
 POBJS=		\
 		Parser/token.o \
 
-PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) Parser/myreadline.o Parser/tokenizer.o
+PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) $(TOKENIZER_OBJS) Parser/myreadline.o
 
 PARSER_HEADERS= \
 		$(PEGEN_HEADERS) \
-		$(srcdir)/Parser/tokenizer.h
+		$(TOKENIZER_HEADERS)
 
 ##########################################################################
 # Python
@@ -379,9 +409,10 @@ PYTHON_OBJS=	\
 		Python/codecs.o \
 		Python/compile.o \
 		Python/context.o \
+		Python/critical_section.o \
+		Python/crossinterp.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
-		Python/executor.o \
 		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
@@ -400,12 +431,14 @@ PYTHON_OBJS=	\
 		Python/instrumentation.o \
 		Python/intrinsics.o \
 		Python/legacy_tracing.o \
+		Python/lock.o \
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/optimizer.o \
 		Python/optimizer_analysis.o \
+		Python/parking_lot.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -489,9 +522,6 @@ OBJECT_OBJS=	\
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
-
-DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
-DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
 
 ##########################################################################
 # objects that get linked into the Python library
@@ -625,12 +655,15 @@ build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 .PHONY: check-clean-src
 check-clean-src:
 	@if test -n "$(VPATH)" -a \( \
-	    -f "$(srcdir)/Programs/python.o" \
-	    -o -f "$(srcdir)\Python/frozen_modules/importlib._bootstrap.h" \
+	    -f "$(srcdir)/$(BUILDPYTHON)" \
+	    -o -f "$(srcdir)/Programs/python.o" \
+	    -o -f "$(srcdir)/Python/frozen_modules/importlib._bootstrap.h" \
 	\); then \
 		echo "Error: The source directory ($(srcdir)) is not clean" ; \
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
-		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
+		echo "Build artifacts such as .o files, executables, and Python/frozen_modules/*.h must not exist within $(srcdir)." ; \
+		echo "Try to run:" ; \
+		echo "  (cd \"$(srcdir)\" && make clean || git clean -fdx -e Doc/venv)" ; \
 		exit 1; \
 	fi
 
@@ -658,7 +691,7 @@ profile-run-stamp:
 	$(MAKE) profile-gen-stamp
 	# Next, run the profile task to generate the profile information.
 	@ # FIXME: can't run for a cross build
-	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
+	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	$(LLVM_PROF_MERGER)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
@@ -707,7 +740,7 @@ profile-bolt-stamp: $(BUILDPYTHON)
 	  mv "$${bin}.bolt_inst" "$${bin}"; \
 	done
 	# Run instrumented binaries to collect data.
-	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
+	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	# Merge all the data files together.
 	for bin in $(BOLT_BINARIES); do \
 	  @MERGE_FDATA@ $${bin}.*.fdata > "$${bin}.fdata"; \
@@ -769,7 +802,7 @@ coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
-	$(TESTRUNNER) $(TESTOPTS) || true
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) || true
 	@ # build lcov report
 	$(MAKE) coverage-lcov
 
@@ -1250,9 +1283,7 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 ############################################################################
 # Deepfreeze targets
 
-.PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_C)
-
+DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
 DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
@@ -1292,10 +1323,9 @@ regen-importlib: regen-frozen
 # Global objects
 
 # Dependencies which can add and/or remove _Py_ID() identifiers:
-# - deepfreeze.c
 # - "make clinic"
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py $(DEEPFREEZE_C) clinic
+regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py clinic
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
 
 ############################################################################
@@ -1316,6 +1346,14 @@ regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
+# Regenerate Unicode Data
+
+.PHONY: regen-unicodedata
+regen-unicodedata:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/unicode/makeunicodedata.py
+
+
+############################################################################
 # Regenerate all generated files
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
@@ -1323,10 +1361,10 @@ regen-limited-abi: all
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects
+	regen-test-levenshtein regen-global-objects regen-sbom
 	@echo
-	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi"
-	@echo "and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
+	@echo "make regen-configure and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1400,11 +1438,13 @@ regen-pegen-metaparser:
 .PHONY: regen-pegen
 regen-pegen:
 	@$(MKDIR_P) $(srcdir)/Parser
+	@$(MKDIR_P) $(srcdir)/Parser/tokenizer
+	@$(MKDIR_P) $(srcdir)/Parser/lexer
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q c \
 		$(srcdir)/Grammar/python.gram \
 		$(srcdir)/Grammar/Tokens \
-		-o $(srcdir)/Parser/parser.new.c
-	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.new.c
+		-o $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
 
 .PHONY: regen-ast
 regen-ast:
@@ -1523,29 +1563,54 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
+Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
+		$(srcdir)/Objects/mimalloc/alloc-aligned.c \
+		$(srcdir)/Objects/mimalloc/alloc-posix.c \
+		$(srcdir)/Objects/mimalloc/arena.c \
+		$(srcdir)/Objects/mimalloc/bitmap.c \
+		$(srcdir)/Objects/mimalloc/heap.c \
+		$(srcdir)/Objects/mimalloc/init.c \
+		$(srcdir)/Objects/mimalloc/options.c \
+		$(srcdir)/Objects/mimalloc/os.c \
+		$(srcdir)/Objects/mimalloc/page.c \
+		$(srcdir)/Objects/mimalloc/random.c \
+		$(srcdir)/Objects/mimalloc/segment.c \
+		$(srcdir)/Objects/mimalloc/segment-map.c \
+		$(srcdir)/Objects/mimalloc/stats.c \
+		$(srcdir)/Objects/mimalloc/prim/prim.c \
+		$(srcdir)/Objects/mimalloc/prim/osx/prim.c \
+		$(srcdir)/Objects/mimalloc/prim/unix/prim.c \
+		$(srcdir)/Objects/mimalloc/prim/wasi/prim.c
+
+Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
 .PHONY: regen-cases
 regen-cases:
 	# Regenerate various files from Python/bytecodes.c
 	# Pass CASESFLAG=-l to insert #line directives in the output
-	PYTHONPATH=$(srcdir)/Tools/cases_generator \
-	$(PYTHON_FOR_REGEN) \
-	    $(srcdir)/Tools/cases_generator/generate_cases.py \
-		$(CASESFLAG) \
-		-o $(srcdir)/Python/generated_cases.c.h.new \
-		-n $(srcdir)/Include/opcode_ids.h.new \
-		-t $(srcdir)/Python/opcode_targets.h.new \
-		-m $(srcdir)/Include/internal/pycore_opcode_metadata.h.new \
-		-e $(srcdir)/Python/executor_cases.c.h.new \
-		-p $(srcdir)/Lib/_opcode_metadata.py.new \
-		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
-		$(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_id_generator.py \
+	    -o $(srcdir)/Include/opcode_ids.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/target_generator.py \
+	    -o $(srcdir)/Python/opcode_targets.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_id_generator.py \
+	    -o $(srcdir)/Include/internal/pycore_uop_ids.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/py_metadata_generator.py \
+	    -o $(srcdir)/Lib/_opcode_metadata.py.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
+	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
+	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_metadata_generator.py \
+	    -o $(srcdir)/Include/internal/pycore_opcode_metadata.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_metadata_generator.py -o \
+	    $(srcdir)/Include/internal/pycore_uop_metadata.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_ids.h $(srcdir)/Include/internal/pycore_uop_ids.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_metadata.h $(srcdir)/Include/internal/pycore_uop_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/abstract_interp_cases.c.h $(srcdir)/Python/abstract_interp_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
 Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1554,13 +1619,8 @@ Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
+		$(srcdir)/Python/executor_cases.c.h \
 		$(srcdir)/Python/opcode_targets.h
-
-Python/executor.o: \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
-		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/ceval_macros.h \
-		$(srcdir)/Python/executor_cases.c.h
 
 Python/flowgraph.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1705,7 +1765,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/longobject.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
-		$(srcdir)/Include/cpython/modsupport.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
@@ -1720,6 +1779,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pyframe.h \
+		$(srcdir)/Include/cpython/pyhash.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
@@ -1735,13 +1795,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/warnings.h \
 		$(srcdir)/Include/cpython/weakrefobject.h \
 		\
+		$(MIMALLOC_HEADERS) \
+		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_asdl.h \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atexit.h \
-		$(srcdir)/Include/internal/pycore_atomic.h \
-		$(srcdir)/Include/internal/pycore_atomic_funcs.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
@@ -1755,6 +1815,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_complexobject.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_critical_section.h \
+		$(srcdir)/Include/internal/pycore_crossinterp.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dict_state.h \
 		$(srcdir)/Include/internal/pycore_descrobject.h \
@@ -1779,6 +1841,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_list.h \
+		$(srcdir)/Include/internal/pycore_llist.h \
+		$(srcdir)/Include/internal/pycore_lock.h \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_modsupport.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
@@ -1790,8 +1854,10 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_opcode_utils.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h \
+		$(srcdir)/Include/internal/pycore_parking_lot.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
+		$(srcdir)/Include/internal/pycore_pybuffer.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \
 		$(srcdir)/Include/internal/pycore_pylifecycle.h \
@@ -1805,6 +1871,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
+		$(srcdir)/Include/internal/pycore_semaphore.h \
 		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
@@ -1816,6 +1883,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
+		$(srcdir)/Include/internal/pycore_tstate.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
@@ -1824,6 +1892,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject_generated.h \
 		$(srcdir)/Include/internal/pycore_uops.h \
+		$(srcdir)/Include/internal/pycore_uop_metadata.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(srcdir)/Include/internal/pycore_weakref.h \
 		$(DTRACE_HEADERS) \
@@ -1838,8 +1907,8 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
 TESTOPTS=	$(EXTRATESTOPTS)
 TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
-TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
-TESTTIMEOUT=	1200
+TESTRUNNER=	$(TESTPYTHON) -m test
+TESTTIMEOUT=
 
 # Remove "test_python_*" directories of previous failed test jobs.
 # Pass TESTOPTS options because it can contain --tempdir option.
@@ -1849,56 +1918,38 @@ cleantest: all
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
+# Similar to buildbottest, but use --fast-ci option, instead of --slow-ci.
 .PHONY: test
 test: all
-		$(TESTRUNNER) $(TESTOPTS)
-
-# Run the full test suite twice - once without .pyc files, and once with.
-# In the past, we've had problems where bugs in the marshalling or
-# elsewhere caused bytecode read from .pyc files to behave differently
-# than bytecode generated directly from a .py source file.  Sometimes
-# the bytecode read from a .pyc file had the bug, sometimes the directly
-# generated bytecode.  This is sometimes a very shy bug needing a lot of
-# sample data.
-.PHONY: testall
-testall: all
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTRUNNER) -u all $(TESTOPTS)
-		$(TESTRUNNER) -u all $(TESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
 .PHONY: testuniversal
 testuniversal: all
-		@if [ `arch` != 'i386' ]; then \
-			echo "This can only be used on OSX/i386" ;\
-			exit 1 ;\
-		fi
-		$(TESTRUNNER) -u all $(TESTOPTS)
-		$(RUNSHARED) /usr/libexec/oah/translate \
-			./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
+	@if [ `arch` != 'i386' ]; then \
+		echo "This can only be used on OSX/i386" ;\
+		exit 1 ;\
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+	$(RUNSHARED) /usr/libexec/oah/translate \
+		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Like testall, but with only one pass and without multiple processes.
-# Run an optional script to include information about the build environment.
+# Like test, but using --slow-ci which enables all test resources and use
+# longer timeout. Run an optional pybuildbot.identify script to include
+# information about the build environment.
 .PHONY: buildbottest
 buildbottest: all
-		-@if which pybuildbot.identify >/dev/null 2>&1; then \
-			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
-		fi
-		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
-
-# Like testall, but run Python tests with HOSTRUNNER directly.
-.PHONY: hostrunnertest
-hostrunnertest: all
-	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test -u all $(TESTOPTS)
+	-@if which pybuildbot.identify >/dev/null 2>&1; then \
+		pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 .PHONY: pythoninfo
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
-QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
+QUICKTESTOPTS=	-x test_subprocess test_io \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing_fork test_multiprocessing_spawn \
 		test_multiprocessing_forkserver \
@@ -1907,7 +1958,7 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
 
 .PHONY: quicktest
 quicktest: all
-		$(TESTRUNNER) $(QUICKTESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) $(QUICKTESTOPTS)
 
 # SSL tests
 .PHONY: multisslcompile
@@ -2122,10 +2173,12 @@ LIBSUBDIRS=	asyncio \
 		json \
 		logging \
 		multiprocessing multiprocessing/dummy \
+		pathlib \
 		pydoc_data \
 		re \
 		site-packages \
 		sqlite3 \
+		sysconfig \
 		tkinter \
 		tomllib \
 		turtledemo \
@@ -2141,15 +2194,22 @@ LIBSUBDIRS=	asyncio \
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/audiodata \
-		test/capath \
+		test/archivetestdata \
+		test/certdata \
+		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
+		test/configdata \
 		test/data \
 		test/decimaltestdata \
 		test/dtracedata \
 		test/encoded_modules \
 		test/leakers \
 		test/libregrtest \
+		test/mathdata \
+		test/regrtestdata \
+		test/regrtestdata/import_from_tests \
+		test/regrtestdata/import_from_tests/test_regrtest_b \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
@@ -2160,6 +2220,9 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_dataclasses \
 		test/test_email \
 		test/test_email/data \
+		test/test_future_stmt \
+		test/test_gdb \
+		test/test_inspect \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2214,6 +2277,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/source \
 		test/test_json \
 		test/test_module \
+		test/test_pathlib \
 		test/test_peg_generator \
 		test/test_sqlite3 \
 		test/test_tkinter \
@@ -2246,11 +2310,11 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
 		test/tkinterdata \
+		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
-		test/xmltestdata/c14n-20 \
-		test/ziptestdata
+		test/xmltestdata/c14n-20
 
 COMPILEALL_OPTS=-j0
 
@@ -2596,15 +2660,13 @@ recheck:
 autoconf:
 	(cd $(srcdir); autoreconf -ivf -Werror)
 
-# See https://github.com/tiran/cpython_autoconf container
 .PHONY: regen-configure
 regen-configure:
-	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
-	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
-	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
-	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:271"; \
-	echo $$CMD; \
-	$$CMD || exit $?
+	$(srcdir)/Tools/build/regen-configure.sh
+
+.PHONY: regen-sbom
+regen-sbom:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sbom.py
 
 # Create a tags file for vi
 tags::
@@ -2691,6 +2753,7 @@ clobber: clean
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -f python-config.py python-config
+	-rm -rf cross-build
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]

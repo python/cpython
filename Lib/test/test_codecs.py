@@ -1762,6 +1762,76 @@ class CodecsModuleTest(unittest.TestCase):
 
             file().close.assert_called()
 
+    def test_copy(self):
+        orig = codecs.lookup('utf-8')
+        dup = copy.copy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertTrue(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        orig = codecs.lookup("base64")
+        dup = copy.copy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertFalse(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+    def test_deepcopy(self):
+        orig = codecs.lookup('utf-8')
+        dup = copy.deepcopy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertTrue(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        orig = codecs.lookup("base64")
+        dup = copy.deepcopy(orig)
+        self.assertIsNot(dup, orig)
+        self.assertEqual(dup, orig)
+        self.assertFalse(orig._is_text_encoding)
+        self.assertEqual(dup.encode, orig.encode)
+        self.assertEqual(dup.name, orig.name)
+        self.assertEqual(dup.incrementalencoder, orig.incrementalencoder)
+
+    def test_pickle(self):
+        codec_info = codecs.lookup('utf-8')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled_codec_info = pickle.dumps(codec_info)
+                unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertIsNot(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info.name, unpickled_codec_info.name)
+                self.assertEqual(
+                     codec_info.incrementalencoder,
+                     unpickled_codec_info.incrementalencoder
+                )
+                self.assertTrue(unpickled_codec_info._is_text_encoding)
+
+        # Test a CodecInfo with _is_text_encoding equal to false.
+        codec_info = codecs.lookup('base64')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled_codec_info = pickle.dumps(codec_info)
+                unpickled_codec_info = pickle.loads(pickled_codec_info)
+                self.assertIsNot(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info, unpickled_codec_info)
+                self.assertEqual(codec_info.name, unpickled_codec_info.name)
+                self.assertEqual(
+                     codec_info.incrementalencoder,
+                     unpickled_codec_info.incrementalencoder
+                )
+                self.assertFalse(unpickled_codec_info._is_text_encoding)
+
 
 class StreamReaderTest(unittest.TestCase):
 
@@ -3567,9 +3637,10 @@ class Rot13UtilTest(unittest.TestCase):
     $ echo "Hello World" | python -m encodings.rot_13
     """
     def test_rot13_func(self):
+        from encodings.rot_13 import rot13
         infile = io.StringIO('Gb or, be abg gb or, gung vf gur dhrfgvba')
         outfile = io.StringIO()
-        encodings.rot_13.rot13(infile, outfile)
+        rot13(infile, outfile)
         outfile.seek(0)
         plain_text = outfile.read()
         self.assertEqual(

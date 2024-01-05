@@ -213,7 +213,7 @@ attribute.
 .. section: Core and Builtins
 
 Reduce object creation while calling callback function from gc. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -464,7 +464,7 @@ unpickled.
 .. section: Core and Builtins
 
 Migrate :meth:`~ssl.SSLContext.set_ecdh_curve` method not to use deprecated
-OpenSSL APIs. Patch by Dong-hee Na.
+OpenSSL APIs. Patch by Donghee Na.
 
 ..
 
@@ -880,7 +880,7 @@ Update the ``repr`` of :class:`typing.Unpack` according to :pep:`692`.
 .. section: Library
 
 Make :mod:`dis` display the names of the args for
-:opcode:`CALL_INTRINSIC_*`.
+:opcode:`!CALL_INTRINSIC_*`.
 
 ..
 
@@ -2073,7 +2073,7 @@ Define ``.PHONY`` / virtual make targets consistently and properly.
 .. nonce: -W9BJS
 .. section: Build
 
-Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Dong-hee Na.
+Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Donghee Na.
 
 ..
 
@@ -2372,7 +2372,7 @@ Add a new C-API function to eagerly assign a version tag to a PyTypeObject:
 .. section: C API
 
 :c:func:`PyObject_GC_Resize` should calculate preheader size if needed.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 

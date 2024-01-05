@@ -176,7 +176,7 @@ The special characters are:
   ``x*+``, ``x++`` and ``x?+`` are equivalent to ``(?>x*)``, ``(?>x+)``
   and ``(?>x?)`` correspondingly.
 
-   .. versionadded:: 3.11
+  .. versionadded:: 3.11
 
 .. index::
    single: {} (curly brackets); in regular expressions
@@ -660,7 +660,7 @@ three digits in length.
    Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
 
 .. versionchanged:: 3.8
-   The ``'\N{name}'`` escape sequence has been added. As in string literals,
+   The :samp:`'\\N\\{{name}\\}'` escape sequence has been added. As in string literals,
    it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
 
 
@@ -1093,12 +1093,12 @@ Functions
 Exceptions
 ^^^^^^^^^^
 
-.. exception:: error(msg, pattern=None, pos=None)
+.. exception:: PatternError(msg, pattern=None, pos=None)
 
    Exception raised when a string passed to one of the functions here is not a
    valid regular expression (for example, it might contain unmatched parentheses)
    or when some other error occurs during compilation or matching.  It is never an
-   error if a string contains no match for a pattern.  The error instance has
+   error if a string contains no match for a pattern.  The ``PatternError`` instance has
    the following additional attributes:
 
    .. attribute:: msg
@@ -1123,6 +1123,10 @@ Exceptions
 
    .. versionchanged:: 3.5
       Added additional attributes.
+
+   .. versionchanged:: 3.13
+      ``PatternError`` was originally named ``error``; the latter is kept as an alias for
+      backward compatibility.
 
 .. _re-objects:
 

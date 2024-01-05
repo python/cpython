@@ -117,7 +117,8 @@ A, L, and U are mutually exclusive.
     U  UNICODE     For compatibility only. Ignored for string patterns (it
                    is the default), and forbidden for bytes patterns.
 
-This module also defines an exception 'error'.
+This module also defines exception 'PatternError', aliased to 'error' for
+backward compatibility.
 
 """
 
@@ -133,7 +134,7 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE", "NOFLAG", "RegexFlag",
+    "UNICODE", "NOFLAG", "RegexFlag", "PatternError"
 ]
 
 __version__ = "2.2.1"
@@ -155,7 +156,7 @@ class RegexFlag:
     _numeric_repr_ = hex
 
 # sre exception
-error = _compiler.error
+PatternError = error = _compiler.PatternError
 
 # --------------------------------------------------------------------
 # public interface

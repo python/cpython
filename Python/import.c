@@ -1,7 +1,6 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -17,15 +16,12 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
-#include "importdl.h"             // _PyImport_DynLoadFiletab
+#include "pycore_importdl.h"      // _PyImport_DynLoadFiletab
 #include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
 #include <stdbool.h>              // bool
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 
@@ -256,18 +252,21 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
        NOTE: because of this, initializing must be set *before*
        stuffing the new module in sys.modules.
     */
-    spec = PyObject_GetAttr(mod, &_Py_ID(__spec__));
-    int busy = _PyModuleSpec_IsInitializing(spec);
-    Py_XDECREF(spec);
-    if (busy) {
-        /* Wait until module is done importing. */
-        PyObject *value = PyObject_CallMethodOneArg(
-            IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
-        if (value == NULL) {
-            return -1;
-        }
-        Py_DECREF(value);
+    int rc = PyObject_GetOptionalAttr(mod, &_Py_ID(__spec__), &spec);
+    if (rc > 0) {
+        rc = _PyModuleSpec_IsInitializing(spec);
+        Py_DECREF(spec);
     }
+    if (rc <= 0) {
+        return rc;
+    }
+    /* Wait until module is done importing. */
+    PyObject *value = PyObject_CallMethodOneArg(
+        IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
+    if (value == NULL) {
+        return -1;
+    }
+    Py_DECREF(value);
     return 0;
 }
 
@@ -399,8 +398,8 @@ remove_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *modules = MODULES(tstate->interp);
     if (PyDict_CheckExact(modules)) {
-        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
-        Py_XDECREF(mod);
+        // Error is reported to the caller
+        (void)PyDict_Pop(modules, name, NULL);
     }
     else if (PyMapping_DelItem(modules, name) < 0) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
@@ -419,11 +418,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
-    LAST_MODULE_INDEX++;
-    Py_ssize_t index = LAST_MODULE_INDEX;
-    PyThread_release_lock(EXTENSIONS.mutex);
-    return index;
+    return _Py_atomic_add_ssize(&LAST_MODULE_INDEX, 1) + 1;
 }
 
 static const char *
@@ -588,7 +583,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     if (PyList_SetSlice(MODULES_BY_INDEX(interp),
                         0, PyList_GET_SIZE(MODULES_BY_INDEX(interp)),
                         NULL)) {
-        PyErr_WriteUnraisable(MODULES_BY_INDEX(interp));
+        PyErr_FormatUnraisable("Exception ignored on clearing interpreters module list");
     }
 }
 
@@ -883,13 +878,13 @@ gets even messier.
 static inline void
 extensions_lock_acquire(void)
 {
-    PyThread_acquire_lock(_PyRuntime.imports.extensions.mutex, WAIT_LOCK);
+    PyMutex_Lock(&_PyRuntime.imports.extensions.mutex);
 }
 
 static inline void
 extensions_lock_release(void)
 {
-    PyThread_release_lock(_PyRuntime.imports.extensions.mutex);
+    PyMutex_Unlock(&_PyRuntime.imports.extensions.mutex);
 }
 
 /* Magic for extension modules (built-in as well as dynamically
@@ -2363,19 +2358,24 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
     PyObject *importer;
     Py_ssize_t j, nhooks;
 
-    /* These conditions are the caller's responsibility: */
-    assert(PyList_Check(path_hooks));
-    assert(PyDict_Check(path_importer_cache));
+    if (!PyList_Check(path_hooks)) {
+        PyErr_SetString(PyExc_RuntimeError, "sys.path_hooks is not a list");
+        return NULL;
+    }
+    if (!PyDict_Check(path_importer_cache)) {
+        PyErr_SetString(PyExc_RuntimeError, "sys.path_importer_cache is not a dict");
+        return NULL;
+    }
 
     nhooks = PyList_Size(path_hooks);
     if (nhooks < 0)
         return NULL; /* Shouldn't happen */
 
-    importer = PyDict_GetItemWithError(path_importer_cache, p);
-    if (importer != NULL || _PyErr_Occurred(tstate)) {
-        return Py_XNewRef(importer);
+    if (PyDict_GetItemRef(path_importer_cache, p, &importer) != 0) {
+        // found or error
+        return importer;
     }
-
+    // not found
     /* set path_importer_cache[p] to None to avoid recursion */
     if (PyDict_SetItem(path_importer_cache, p, Py_None) != 0)
         return NULL;
@@ -2408,11 +2408,22 @@ PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *path_importer_cache = PySys_GetObject("path_importer_cache");
-    PyObject *path_hooks = PySys_GetObject("path_hooks");
-    if (path_importer_cache == NULL || path_hooks == NULL) {
+    if (path_importer_cache == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_importer_cache");
         return NULL;
     }
-    return get_path_importer(tstate, path_importer_cache, path_hooks, path);
+    Py_INCREF(path_importer_cache);
+    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    if (path_hooks == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_hooks");
+        Py_DECREF(path_importer_cache);
+        return NULL;
+    }
+    Py_INCREF(path_hooks);
+    PyObject *importer = get_path_importer(tstate, path_importer_cache, path_hooks, path);
+    Py_DECREF(path_hooks);
+    Py_DECREF(path_importer_cache);
+    return importer;
 }
 
 
@@ -2553,7 +2564,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
 {
     PyObject *abs_name;
     PyObject *package = NULL;
-    PyObject *spec;
+    PyObject *spec = NULL;
     Py_ssize_t last_dot;
     PyObject *base;
     int level_up;
@@ -2566,20 +2577,18 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
         goto error;
     }
-    package = PyDict_GetItemWithError(globals, &_Py_ID(__package__));
-    if (package == Py_None) {
-        package = NULL;
-    }
-    else if (package == NULL && _PyErr_Occurred(tstate)) {
+    if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {
         goto error;
     }
-    spec = PyDict_GetItemWithError(globals, &_Py_ID(__spec__));
-    if (spec == NULL && _PyErr_Occurred(tstate)) {
+    if (package == Py_None) {
+        Py_DECREF(package);
+        package = NULL;
+    }
+    if (PyDict_GetItemRef(globals, &_Py_ID(__spec__), &spec) < 0) {
         goto error;
     }
 
     if (package != NULL) {
-        Py_INCREF(package);
         if (!PyUnicode_Check(package)) {
             _PyErr_SetString(tstate, PyExc_TypeError,
                              "package must be a string");
@@ -2623,16 +2632,15 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        package = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
+        if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &package) < 0) {
+            goto error;
+        }
         if (package == NULL) {
-            if (!_PyErr_Occurred(tstate)) {
-                _PyErr_SetString(tstate, PyExc_KeyError,
-                                 "'__name__' not in globals");
-            }
+            _PyErr_SetString(tstate, PyExc_KeyError,
+                             "'__name__' not in globals");
             goto error;
         }
 
-        Py_INCREF(package);
         if (!PyUnicode_Check(package)) {
             _PyErr_SetString(tstate, PyExc_TypeError,
                              "__name__ must be a string");
@@ -2680,6 +2688,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         }
     }
 
+    Py_XDECREF(spec);
     base = PyUnicode_Substring(package, 0, last_dot);
     Py_DECREF(package);
     if (base == NULL || PyUnicode_GET_LENGTH(name) == 0) {
@@ -2696,6 +2705,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                      "with no known parent package");
 
   error:
+    Py_XDECREF(spec);
     Py_XDECREF(package);
     return NULL;
 }
@@ -2887,12 +2897,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        PyObject *path;
-        if (PyObject_GetOptionalAttr(mod, &_Py_ID(__path__), &path) < 0) {
+        int has_path = PyObject_HasAttrWithError(mod, &_Py_ID(__path__));
+        if (has_path < 0) {
             goto error;
         }
-        if (path) {
-            Py_DECREF(path);
+        if (has_path) {
             final_mod = PyObject_CallMethodObjArgs(
                         IMPORTLIB(interp), &_Py_ID(_handle_fromlist),
                         mod, fromlist, IMPORT_FUNC(interp), NULL);
@@ -3145,13 +3154,13 @@ _PyImport_FiniCore(PyInterpreterState *interp)
     int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
     if (_PySys_ClearAttrString(interp, "meta_path", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on clearing sys.meta_path");
     }
 
     // XXX Pull in most of finalize_modules() in pylifecycle.c.
 
     if (_PySys_ClearAttrString(interp, "modules", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
     }
 
     if (IMPORT_LOCK(interp) != NULL) {
@@ -3231,10 +3240,10 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
     // XXX Uninstall importlib metapath importers here?
 
     if (_PySys_ClearAttrString(interp, "path_importer_cache", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_importer_cache");
     }
     if (_PySys_ClearAttrString(interp, "path_hooks", verbose) < 0) {
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_hooks");
     }
 }
 
@@ -3872,8 +3881,3 @@ PyInit__imp(void)
 {
     return PyModuleDef_Init(&imp_module);
 }
-
-
-#ifdef __cplusplus
-}
-#endif
