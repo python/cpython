@@ -1,1 +1,0 @@
-Add audit events to functions in `fcntl`, `msvcrt`, `os`, `resource`, `shutil`, `signal` and `syslog`.

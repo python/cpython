@@ -1,1 +1,0 @@
-Add :c:func:`Py_SET_SIZE` function to set the size of an object.

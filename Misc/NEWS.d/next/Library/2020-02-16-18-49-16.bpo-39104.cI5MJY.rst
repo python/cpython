@@ -1,2 +1,0 @@
-Fix hanging ProcessPoolExcutor on ``shutdown(wait=False)`` when a task has
-failed pickling.

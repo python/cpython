@@ -1,5 +1,0 @@
-Fix regression in :class:`fractions.Fraction` if the numerator and/or the
-denominator is an :class:`int` subclass. The :func:`math.gcd` function is now
-used to normalize the *numerator* and *denominator*. :func:`math.gcd` always
-return a :class:`int` type. Previously, the GCD type depended on *numerator*
-and *denominator*.
