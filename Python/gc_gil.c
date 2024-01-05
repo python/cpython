@@ -1,7 +1,7 @@
 #ifndef Py_GIL_DISABLED
 
 #include "Python.h"
-#include "pycore_pystate.h"   // _PyFreeListState_GET()
+#include "pycore_pystate.h"   // _Py_ClearFreeLists()
 
 /* Clear all free lists
  * All free lists are cleared during the collection of the highest generation.
@@ -17,8 +17,7 @@ _PyGC_Clear_FreeList(PyInterpreterState *interp)
     _PyAsyncGen_ClearFreeLists(interp);
     _PyContext_ClearFreeList(interp);
 
-    _PyFreeListState* state = _PyFreeListState_GET();
-    _Py_ClearFreeLists(state);
+    _Py_ClearFreeLists(&interp->freelist_state);
 }
 
 #endif
