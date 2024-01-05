@@ -10,6 +10,7 @@
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_object_stack.h"  // _PyObjectStackChunk_ClearFreeList()
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
@@ -1463,6 +1464,7 @@ _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
     _PyList_ClearFreeList(state, is_finalization);
     _PyContext_ClearFreeList(state, is_finalization);
     _PyAsyncGen_ClearFreeLists(state, is_finalization);
+    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
 }
 
 void

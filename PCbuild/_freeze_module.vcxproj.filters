@@ -289,6 +289,9 @@
     <ClCompile Include="..\Objects\object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\object_stack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\obmalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
