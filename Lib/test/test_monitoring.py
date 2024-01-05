@@ -750,7 +750,7 @@ class UnwindRecorder(ExceptionRecorder):
     event_type = E.PY_UNWIND
 
     def __call__(self, code, offset, exc):
-        self.events.append(("unwind", type(exc)))
+        self.events.append(("unwind", type(exc), code.co_name))
 
 class ExceptionHandledRecorder(ExceptionRecorder):
 
@@ -766,8 +766,27 @@ class ThrowRecorder(ExceptionRecorder):
     def __call__(self, code, offset, exc):
         self.events.append(("throw", type(exc)))
 
-class ExceptionMonitoringTest(CheckEvents):
+class CallRecorder:
 
+    event_type = E.CALL
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset, func, arg):
+        self.events.append(("call", func.__name__, arg))
+
+class ReturnRecorder:
+
+    event_type = E.PY_RETURN
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset, val):
+        self.events.append(("return", code.co_name, val))
+
+class ExceptionMonitoringTest(CheckEvents):
 
     exception_recorders = (
         ExceptionRecorder,
@@ -936,6 +955,38 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
+    def test_no_unwind_for_shim_frame(self):
+
+        class B:
+            def __init__(self):
+                raise ValueError()
+
+        def f():
+            try:
+                return B()
+            except ValueError:
+                pass
+
+        for _ in range(100):
+            f()
+        recorders = (
+            ReturnRecorder,
+            UnwindRecorder
+        )
+        events = self.get_events(f, TEST_TOOL, recorders)
+        adaptive_insts = dis.get_instructions(f, adaptive=True)
+        self.assertIn(
+            "CALL_ALLOC_AND_ENTER_INIT",
+            [i.opname for i in adaptive_insts]
+        )
+        #There should be only one unwind event
+        expected = [
+            ('unwind', ValueError, '__init__'),
+            ('return', 'f', None),
+        ]
+
+        self.assertEqual(events, expected)
+
 class LineRecorder:
 
     event_type = E.LINE
@@ -946,16 +997,6 @@ class LineRecorder:
 
     def __call__(self, code, line):
         self.events.append(("line", code.co_name, line - code.co_firstlineno))
-
-class CallRecorder:
-
-    event_type = E.CALL
-
-    def __init__(self, events):
-        self.events = events
-
-    def __call__(self, code, offset, func, arg):
-        self.events.append(("call", func.__name__, arg))
 
 class CEventRecorder:
 
@@ -1351,15 +1392,6 @@ class BranchRecorder(JumpRecorder):
     event_type = E.BRANCH
     name = "branch"
 
-class ReturnRecorder:
-
-    event_type = E.PY_RETURN
-
-    def __init__(self, events):
-        self.events = events
-
-    def __call__(self, code, offset, val):
-        self.events.append(("return", val))
 
 
 JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
@@ -1449,11 +1481,11 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 4, 4),
             ('line', 'func', 5),
             ('line', 'meth', 1),
-            ('return', None),
+            ('return', 'meth', None),
             ('jump', 'func', 5, 5),
             ('jump', 'func', 5, '[offset=114]'),
             ('branch', 'func', '[offset=120]', '[offset=124]'),
-            ('return', None),
+            ('return', 'func', None),
             ('line', 'get_events', 11)])
 
 class TestLoadSuperAttr(CheckEvents):
