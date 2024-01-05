@@ -205,7 +205,13 @@ _collections_deque_clear_impl(dequeobject *deque);
 static PyObject *
 _collections_deque_clear(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    return _collections_deque_clear_impl(deque);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque_clear_impl(deque);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_collections_deque_rotate__doc__,
@@ -605,4 +611,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9eb2569a0ac6fa76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29df3c964eaaab55 input=a9049054013a1b77]*/
