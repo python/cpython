@@ -2851,9 +2851,13 @@ f_string_middle:
             tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
-                return MAKE_TOKEN(syntaxerror(tok,
-                                    "unterminated triple-quoted f-string literal"
-                                    " (detected at line %d)", start));
+                syntaxerror(tok,
+                            "unterminated triple-quoted f-string literal"
+                            " (detected at line %d)", start);
+                if (c != '\n') {
+                    tok->done = E_EOFS;
+                }
+                return MAKE_TOKEN(ERRORTOKEN);
             }
             else {
                 return MAKE_TOKEN(syntaxerror(tok,

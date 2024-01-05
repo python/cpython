@@ -1369,9 +1369,9 @@ error.  (Contributed by Atsuo Ishimoto and Hynek Schlawack in
 smtpd
 -----
 
-The :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
+The :class:`!SMTPServer` and :class:`!SMTPChannel` classes now
 accept a *map* keyword argument which, if specified, is passed in to
-:class:`asynchat.async_chat` as its *map* argument.  This allows an application
+:class:`!asynchat.async_chat` as its *map* argument.  This allows an application
 to avoid affecting the global socket map.  (Contributed by Vinay Sajip in
 :issue:`11959`.)
 
