@@ -8,17 +8,13 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_opcode.h"        // _PyOpcode_Jump
-
+#include "opcode_ids.h"
 
 #define MAX_REAL_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
         (((opcode) >= 0 && (opcode) <= MAX_REAL_OPCODE) || \
-         IS_PSEUDO_OPCODE(opcode))
-
-#define IS_JUMP_OPCODE(opcode) \
-         is_bit_set_in_table(_PyOpcode_Jump, opcode)
+         IS_PSEUDO_INSTR(opcode))
 
 #define IS_BLOCK_PUSH_OPCODE(opcode) \
         ((opcode) == SETUP_FINALLY || \
@@ -26,11 +22,11 @@ extern "C" {
          (opcode) == SETUP_CLEANUP)
 
 #define HAS_TARGET(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode))
 
 /* opcodes that must be last in the basicblock */
 #define IS_TERMINATOR_OPCODE(opcode) \
-        (IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
+        (OPCODE_HAS_JUMP(opcode) || IS_SCOPE_EXIT_OPCODE(opcode))
 
 /* opcodes which are not emitted in codegen stage, only by the assembler */
 #define IS_ASSEMBLER_OPCODE(opcode) \
@@ -55,36 +51,21 @@ extern "C" {
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
-#define IS_SUPERINSTRUCTION_OPCODE(opcode) \
-        ((opcode) == LOAD_FAST__LOAD_FAST || \
-         (opcode) == LOAD_FAST__LOAD_CONST || \
-         (opcode) == LOAD_CONST__LOAD_FAST || \
-         (opcode) == STORE_FAST__LOAD_FAST || \
-         (opcode) == STORE_FAST__STORE_FAST)
 
+/* Flags used in the oparg for MAKE_FUNCTION */
+#define MAKE_FUNCTION_DEFAULTS    0x01
+#define MAKE_FUNCTION_KWDEFAULTS  0x02
+#define MAKE_FUNCTION_ANNOTATIONS 0x04
+#define MAKE_FUNCTION_CLOSURE     0x08
 
-#define LOG_BITS_PER_INT 5
-#define MASK_LOW_LOG_BITS 31
+/* Values used in the oparg for RESUME */
+#define RESUME_AT_FUNC_START 0
+#define RESUME_AFTER_YIELD 1
+#define RESUME_AFTER_YIELD_FROM 2
+#define RESUME_AFTER_AWAIT 3
 
-static inline int
-is_bit_set_in_table(const uint32_t *table, int bitindex) {
-    /* Is the relevant bit set in the relevant word? */
-    /* 512 bits fit into 9 32-bits words.
-     * Word is indexed by (bitindex>>ln(size of int in bits)).
-     * Bit within word is the low bits of bitindex.
-     */
-    if (bitindex >= 0 && bitindex < 512) {
-        uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
-        return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
-    }
-    else {
-        return 0;
-    }
-}
-
-#undef LOG_BITS_PER_INT
-#undef MASK_LOW_LOG_BITS
-
+#define RESUME_OPARG_LOCATION_MASK 0x3
+#define RESUME_OPARG_DEPTH1_MASK 0x4
 
 #ifdef __cplusplus
 }

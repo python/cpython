@@ -116,10 +116,12 @@ Some facts and figures:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
    object that processes its data as a stream of blocks.  No random seeking will
    be done on the file. If given, *fileobj* may be any object that has a
-   :meth:`read` or :meth:`write` method (depending on the *mode*). *bufsize*
-   specifies the blocksize and defaults to ``20 * 512`` bytes. Use this variant
-   in combination with e.g. ``sys.stdin``, a socket :term:`file object` or a tape
-   device. However, such a :class:`TarFile` object is limited in that it does
+   :meth:`~io.RawIOBase.read` or :meth:`~io.RawIOBase.write` method
+   (depending on the *mode*) that works with bytes.
+   *bufsize* specifies the blocksize and defaults to ``20 * 512`` bytes.
+   Use this variant in combination with e.g. ``sys.stdin.buffer``, a socket
+   :term:`file object` or a tape device.
+   However, such a :class:`TarFile` object is limited in that it does
    not allow random access, see :ref:`tar-examples`.  The currently
    possible modes:
 
@@ -255,6 +257,51 @@ The following constants are available at the module level:
    The default character encoding: ``'utf-8'`` on Windows, the value returned by
    :func:`sys.getfilesystemencoding` otherwise.
 
+.. data:: REGTYPE
+          AREGTYPE
+
+   A regular file :attr:`~TarInfo.type`.
+
+.. data:: LNKTYPE
+
+   A link (inside tarfile) :attr:`~TarInfo.type`.
+
+.. data:: SYMTYPE
+
+   A symbolic link :attr:`~TarInfo.type`.
+
+.. data:: CHRTYPE
+
+   A character special device :attr:`~TarInfo.type`.
+
+.. data:: BLKTYPE
+
+   A block special device :attr:`~TarInfo.type`.
+
+.. data:: DIRTYPE
+
+   A directory :attr:`~TarInfo.type`.
+
+.. data:: FIFOTYPE
+
+   A FIFO special device :attr:`~TarInfo.type`.
+
+.. data:: CONTTYPE
+
+   A contiguous file :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_LONGNAME
+
+   A GNU tar longname :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_LONGLINK
+
+   A GNU tar longlink :attr:`~TarInfo.type`.
+
+.. data:: GNUTYPE_SPARSE
+
+   A GNU tar sparse file :attr:`~TarInfo.type`.
+
 
 Each of the following constants defines a tar archive format that the
 :mod:`tarfile` module is able to create. See section :ref:`tar-formats` for
@@ -318,14 +365,14 @@ be finalized; only the internally used file object will be closed. See the
 .. versionadded:: 3.2
    Added support for the context management protocol.
 
-.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=1)
+.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=1, stream=False)
 
    All following arguments are optional and can be accessed as instance attributes
    as well.
 
    *name* is the pathname of the archive. *name* may be a :term:`path-like object`.
    It can be omitted if *fileobj* is given.
-   In this case, the file object's :attr:`name` attribute is used if it exists.
+   In this case, the file object's :attr:`!name` attribute is used if it exists.
 
    *mode* is either ``'r'`` to read from an existing archive, ``'a'`` to append
    data to an existing file, ``'w'`` to create a new file overwriting an existing
@@ -359,7 +406,7 @@ be finalized; only the internally used file object will be closed. See the
    messages). The messages are written to ``sys.stderr``.
 
    *errorlevel* controls how extraction errors are handled,
-   see :attr:`the corresponding attribute <~TarFile.errorlevel>`.
+   see :attr:`the corresponding attribute <TarFile.errorlevel>`.
 
    The *encoding* and *errors* arguments define the character encoding to be
    used for reading or writing the archive and how conversion errors are going
@@ -368,6 +415,9 @@ be finalized; only the internally used file object will be closed. See the
 
    The *pax_headers* argument is an optional dictionary of strings which
    will be added as a pax global header if *format* is :const:`PAX_FORMAT`.
+
+   If *stream* is set to :const:`True` then while reading the archive info about files
+   in the archive are not cached, saving memory.
 
    .. versionchanged:: 3.2
       Use ``'surrogateescape'`` as the default for the *errors* argument.
@@ -378,6 +428,8 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.13
+      Add the *stream* parameter.
 
 .. classmethod:: TarFile.open(...)
 
@@ -640,8 +692,8 @@ It does *not* contain the file's data itself.
 :meth:`~TarFile.getmember`, :meth:`~TarFile.getmembers` and
 :meth:`~TarFile.gettarinfo`.
 
-Modifying the objects returned by :meth:`~!TarFile.getmember` or
-:meth:`~!TarFile.getmembers` will affect all subsequent
+Modifying the objects returned by :meth:`~TarFile.getmember` or
+:meth:`~TarFile.getmembers` will affect all subsequent
 operations on the archive.
 For cases where this is unwanted, you can use :mod:`copy.copy() <copy>` or
 call the :meth:`~TarInfo.replace` method to create a modified copy in one step.
@@ -735,6 +787,11 @@ A ``TarInfo`` object has the following public data attributes:
    Name of the target file name, which is only present in :class:`TarInfo` objects
    of type :const:`LNKTYPE` and :const:`SYMTYPE`.
 
+   For symbolic links (``SYMTYPE``), the *linkname* is relative to the directory
+   that contains the link.
+   For hard links (``LNKTYPE``), the *linkname* is relative to the root of
+   the archive.
+
 
 .. attribute:: TarInfo.uid
    :type: int
@@ -785,8 +842,8 @@ A ``TarInfo`` object has the following public data attributes:
 
    A dictionary containing key-value pairs of an associated pax extended header.
 
-.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=...,
-                            uid=..., gid=..., uname=..., gname=...,
+.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=..., \
+                            uid=..., gid=..., uname=..., gname=..., \
                             deep=True)
 
    .. versionadded:: 3.12
@@ -806,7 +863,7 @@ A :class:`TarInfo` object also provides some convenient query methods:
 
 .. method:: TarInfo.isfile()
 
-   Return :const:`True` if the :class:`Tarinfo` object is a regular file.
+   Return :const:`True` if the :class:`TarInfo` object is a regular file.
 
 
 .. method:: TarInfo.isreg()
@@ -903,7 +960,7 @@ can be:
   path to where the archive is extracted (i.e. the same path is used for all
   members)::
 
-      filter(/, member: TarInfo, path: str) -> TarInfo | None
+      filter(member: TarInfo, path: str, /) -> TarInfo | None
 
   The callable is called just before each member is extracted, so it can
   take the current state of the disk into account.
@@ -923,17 +980,17 @@ Default named filters
 The pre-defined, named filters are available as functions, so they can be
 reused in custom filters:
 
-.. function:: fully_trusted_filter(/, member, path)
+.. function:: fully_trusted_filter(member, path)
 
    Return *member* unchanged.
 
    This implements the ``'fully_trusted'`` filter.
 
-.. function:: tar_filter(/, member, path)
+.. function:: tar_filter(member, path)
 
   Implements the ``'tar'`` filter.
 
-  - Strip leading slashes (``/`` and :attr:`os.sep`) from filenames.
+  - Strip leading slashes (``/`` and :data:`os.sep`) from filenames.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files with absolute
     paths (in case the name is absolute
     even after stripping slashes, e.g. ``C:/foo`` on Windows).
@@ -942,11 +999,11 @@ reused in custom filters:
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
   - Clear high mode bits (setuid, setgid, sticky) and group/other write bits
-    (:attr:`~stat.S_IWGRP`|:attr:`~stat.S_IWOTH`).
+    (:const:`~stat.S_IWGRP` | :const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
 
-.. function:: data_filter(/, member, path)
+.. function:: data_filter(member, path)
 
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
@@ -967,10 +1024,10 @@ reused in custom filters:
   - For regular files, including hard links:
 
     - Set the owner read and write permissions
-      (:attr:`~stat.S_IRUSR`|:attr:`~stat.S_IWUSR`).
+      (:const:`~stat.S_IRUSR` | :const:`~stat.S_IWUSR`).
     - Remove the group & other executable permission
-      (:attr:`~stat.S_IXGRP`|:attr:`~stat.S_IXOTH`)
-      if the owner doesn’t have it (:attr:`~stat.S_IXUSR`).
+      (:const:`~stat.S_IXGRP` | :const:`~stat.S_IXOTH`)
+      if the owner doesn’t have it (:const:`~stat.S_IXUSR`).
 
   - For other files (directories), set ``mode`` to ``None``, so
     that extraction methods skip applying permission bits.
@@ -1146,31 +1203,31 @@ For a list of the files in a tar archive, use the :option:`-l` option:
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
-.. cmdoption:: -l <tarfile>
-               --list <tarfile>
+.. option:: -l <tarfile>
+            --list <tarfile>
 
    List files in a tarfile.
 
-.. cmdoption:: -c <tarfile> <source1> ... <sourceN>
-               --create <tarfile> <source1> ... <sourceN>
+.. option:: -c <tarfile> <source1> ... <sourceN>
+            --create <tarfile> <source1> ... <sourceN>
 
    Create tarfile from source files.
 
-.. cmdoption:: -e <tarfile> [<output_dir>]
-               --extract <tarfile> [<output_dir>]
+.. option:: -e <tarfile> [<output_dir>]
+            --extract <tarfile> [<output_dir>]
 
    Extract tarfile into the current directory if *output_dir* is not specified.
 
-.. cmdoption:: -t <tarfile>
-               --test <tarfile>
+.. option:: -t <tarfile>
+            --test <tarfile>
 
    Test whether the tarfile is valid or not.
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output.
 
-.. cmdoption:: --filter <filtername>
+.. option:: --filter <filtername>
 
    Specifies the *filter* for ``--extract``.
    See :ref:`tarfile-extraction-filter` for details.

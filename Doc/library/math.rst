@@ -71,8 +71,8 @@ Number-theoretic and representation functions
    Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
    is negative.
 
-   .. deprecated:: 3.9
-      Accepting floats with integral values (like ``5.0``) is deprecated.
+   .. versionchanged:: 3.10
+      Floats with integral values (like ``5.0``) are no longer accepted.
 
 
 .. function:: floor(x)
@@ -224,11 +224,11 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
-.. function:: nextafter(x, y)
+.. function:: nextafter(x, y, steps=1)
 
-   Return the next floating-point value after *x* towards *y*.
+   Return the floating-point value *steps* steps after *x* towards *y*.
 
-   If *x* is equal to *y*, return *y*.
+   If *x* is equal to *y*, return *y*, unless *steps* is zero.
 
    Examples:
 
@@ -238,6 +238,9 @@ Number-theoretic and representation functions
    * ``math.nextafter(x, math.copysign(math.inf, x))`` goes away from zero.
 
    See also :func:`math.ulp`.
+
+   .. versionchanged:: 3.12
+      Added the *steps* argument.
 
    .. versionadded:: 3.9
 

@@ -157,8 +157,8 @@ and work with streams:
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
-  .. versionchanged:: 3.11
-     Added the *ssl_shutdown_timeout* parameter.
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
@@ -203,6 +203,10 @@ StreamReader
    It is not recommended to instantiate *StreamReader* objects
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
+
+   .. method:: feed_eof()
+
+      Acknowledge the EOF.
 
    .. coroutinemethod:: read(n=-1)
 
