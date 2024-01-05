@@ -1,0 +1,1 @@
+Do not mangle ``sys.path[0]`` in :mod:`pdb` if safe_path is set

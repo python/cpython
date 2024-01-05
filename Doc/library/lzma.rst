@@ -19,8 +19,8 @@ interface supporting the ``.xz`` and legacy ``.lzma`` file formats used by the
 :program:`xz` utility, as well as raw compressed streams.
 
 The interface provided by this module is very similar to that of the :mod:`bz2`
-module. However, note that :class:`LZMAFile` is *not* thread-safe, unlike
-:class:`bz2.BZ2File`, so if you need to use a single :class:`LZMAFile` instance
+module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
+thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
 
 
@@ -33,7 +33,7 @@ from multiple threads, it is necessary to protect it with a lock.
 Reading and writing compressed files
 ------------------------------------
 
-.. function:: open(filename, mode="rb", \*, format=None, check=-1, preset=None, filters=None, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode="rb", *, format=None, check=-1, preset=None, filters=None, encoding=None, errors=None, newline=None)
 
    Open an LZMA-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -69,7 +69,7 @@ Reading and writing compressed files
       Accepts a :term:`path-like object`.
 
 
-.. class:: LZMAFile(filename=None, mode="r", \*, format=None, check=-1, preset=None, filters=None)
+.. class:: LZMAFile(filename=None, mode="r", *, format=None, check=-1, preset=None, filters=None)
 
    Open an LZMA-compressed file in binary mode.
 
@@ -100,7 +100,8 @@ Reading and writing compressed files
    *filters* arguments have the same meanings as for :class:`LZMACompressor`.
 
    :class:`LZMAFile` supports all the members specified by
-   :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
+   :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
+   and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
    The following method is also provided:
@@ -258,7 +259,7 @@ Compressing and decompressing data in memory
       will be set to ``True``.
 
       Attempting to decompress data after the end of stream is reached
-      raises an `EOFError`.  Any data found after the end of the
+      raises an :exc:`EOFError`.  Any data found after the end of the
       stream is ignored and saved in the :attr:`~.unused_data` attribute.
 
       .. versionchanged:: 3.5
@@ -332,19 +333,22 @@ the key ``"id"``, and may contain additional keys to specify filter-dependent
 options. Valid filter IDs are as follows:
 
 * Compression filters:
-   * :const:`FILTER_LZMA1` (for use with :const:`FORMAT_ALONE`)
-   * :const:`FILTER_LZMA2` (for use with :const:`FORMAT_XZ` and :const:`FORMAT_RAW`)
+
+  * :const:`FILTER_LZMA1` (for use with :const:`FORMAT_ALONE`)
+  * :const:`FILTER_LZMA2` (for use with :const:`FORMAT_XZ` and :const:`FORMAT_RAW`)
 
 * Delta filter:
-   * :const:`FILTER_DELTA`
+
+  * :const:`FILTER_DELTA`
 
 * Branch-Call-Jump (BCJ) filters:
-   * :const:`FILTER_X86`
-   * :const:`FILTER_IA64`
-   * :const:`FILTER_ARM`
-   * :const:`FILTER_ARMTHUMB`
-   * :const:`FILTER_POWERPC`
-   * :const:`FILTER_SPARC`
+
+  * :const:`FILTER_X86`
+  * :const:`FILTER_IA64`
+  * :const:`FILTER_ARM`
+  * :const:`FILTER_ARMTHUMB`
+  * :const:`FILTER_POWERPC`
+  * :const:`FILTER_SPARC`
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
@@ -353,21 +357,21 @@ delta or BCJ filters.
 Compression filters support the following options (specified as additional
 entries in the dictionary representing the filter):
 
-   * ``preset``: A compression preset to use as a source of default values for
-     options that are not specified explicitly.
-   * ``dict_size``: Dictionary size in bytes. This should be between 4 KiB and
-     1.5 GiB (inclusive).
-   * ``lc``: Number of literal context bits.
-   * ``lp``: Number of literal position bits. The sum ``lc + lp`` must be at
-     most 4.
-   * ``pb``: Number of position bits; must be at most 4.
-   * ``mode``: :const:`MODE_FAST` or :const:`MODE_NORMAL`.
-   * ``nice_len``: What should be considered a "nice length" for a match.
-     This should be 273 or less.
-   * ``mf``: What match finder to use -- :const:`MF_HC3`, :const:`MF_HC4`,
-     :const:`MF_BT2`, :const:`MF_BT3`, or :const:`MF_BT4`.
-   * ``depth``: Maximum search depth used by match finder. 0 (default) means to
-     select automatically based on other filter options.
+* ``preset``: A compression preset to use as a source of default values for
+  options that are not specified explicitly.
+* ``dict_size``: Dictionary size in bytes. This should be between 4 KiB and
+  1.5 GiB (inclusive).
+* ``lc``: Number of literal context bits.
+* ``lp``: Number of literal position bits. The sum ``lc + lp`` must be at
+  most 4.
+* ``pb``: Number of position bits; must be at most 4.
+* ``mode``: :const:`MODE_FAST` or :const:`MODE_NORMAL`.
+* ``nice_len``: What should be considered a "nice length" for a match.
+  This should be 273 or less.
+* ``mf``: What match finder to use -- :const:`MF_HC3`, :const:`MF_HC4`,
+  :const:`MF_BT2`, :const:`MF_BT3`, or :const:`MF_BT4`.
+* ``depth``: Maximum search depth used by match finder. 0 (default) means to
+  select automatically based on other filter options.
 
 The delta filter stores the differences between bytes, producing more repetitive
 input for the compressor in certain circumstances. It supports one option,
