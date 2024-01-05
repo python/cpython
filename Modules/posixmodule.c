@@ -16330,6 +16330,7 @@ os__supports_virtual_terminal_impl(PyObject *module)
 }
 #endif
 
+
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -17422,12 +17423,15 @@ posixmodule_exec(PyObject *m)
     }
 
 #ifdef MS_WINDOWS
-    v = windows_namespace();
-    Py_XINCREF(v);
-    if (v == NULL || PyModule_AddObject(m, "windows", v) != 0) {
+    PyObject *v = Py_XNewRef(windows_namespace());
+    if (v == NULL) {
         return -1;
     }
+    int rc = PyModule_AddObjectRef(m, "windows", v);
     Py_DECREF(v);
+    if (rc < 0) {
+        return -1;
+    }
 #endif
 
     if (all_ins(m))
