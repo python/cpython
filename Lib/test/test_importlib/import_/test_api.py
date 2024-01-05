@@ -1,4 +1,4 @@
-from .. import util
+from test.test_importlib import util
 
 from importlib import machinery
 import sys
@@ -28,11 +28,6 @@ class BadSpecFinderLoader:
 
 
 class BadLoaderFinder:
-    @classmethod
-    def find_module(cls, fullname, path):
-        if fullname == SUBMOD_NAME:
-            return cls
-
     @classmethod
     def load_module(cls, fullname):
         if fullname == SUBMOD_NAME:

@@ -124,7 +124,6 @@ help_entries = (  # (help_label,  help_doc)
     )
 
 
-
 class DemoWindow(object):
 
     def __init__(self, filename=None):
@@ -162,7 +161,7 @@ class DemoWindow(object):
                               label='Help', underline=0)
         root['menu'] = self.mBar
 
-        pane = PanedWindow(orient=HORIZONTAL, sashwidth=5,
+        pane = PanedWindow(root, orient=HORIZONTAL, sashwidth=5,
                            sashrelief=SOLID, bg='#ddd')
         pane.add(self.makeTextFrame(pane))
         pane.add(self.makeGraphFrame(pane))
@@ -171,15 +170,23 @@ class DemoWindow(object):
         self.output_lbl = Label(root, height= 1, text=" --- ", bg="#ddf",
                                 font=("Arial", 16, 'normal'), borderwidth=2,
                                 relief=RIDGE)
-        self.start_btn = Button(root, text=" START ", font=btnfont,
-                                fg="white", disabledforeground = "#fed",
-                                command=self.startDemo)
-        self.stop_btn = Button(root, text=" STOP ", font=btnfont,
-                               fg="white", disabledforeground = "#fed",
-                               command=self.stopIt)
-        self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
-                                fg="white", disabledforeground="#fed",
-                                command = self.clearCanvas)
+        if darwin:  # Leave Mac button colors alone - #44254.
+            self.start_btn = Button(root, text=" START ", font=btnfont,
+                                    fg='#00cc22', command=self.startDemo)
+            self.stop_btn = Button(root, text=" STOP ", font=btnfont,
+                                   fg='#00cc22', command=self.stopIt)
+            self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
+                                    fg='#00cc22', command = self.clearCanvas)
+        else:
+            self.start_btn = Button(root, text=" START ", font=btnfont,
+                                    fg="white", disabledforeground = "#fed",
+                                    command=self.startDemo)
+            self.stop_btn = Button(root, text=" STOP ", font=btnfont,
+                                   fg="white", disabledforeground = "#fed",
+                                   command=self.stopIt)
+            self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
+                                    fg="white", disabledforeground="#fed",
+                                    command = self.clearCanvas)
         self.output_lbl.grid(row=1, column=0, sticky='news', padx=(0,5))
         self.start_btn.grid(row=1, column=1, sticky='ew')
         self.stop_btn.grid(row=1, column=2, sticky='ew')
@@ -196,10 +203,10 @@ class DemoWindow(object):
 
 
     def onResize(self, event):
-        cwidth = self._canvas.winfo_width()
-        cheight = self._canvas.winfo_height()
-        self._canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
-        self._canvas.yview_moveto(0.5*(self.canvheight-cheight)/self.canvheight)
+        cwidth = self.canvas.winfo_width()
+        cheight = self.canvas.winfo_height()
+        self.canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
+        self.canvas.yview_moveto(0.5*(self.canvheight-cheight)/self.canvheight)
 
     def makeTextFrame(self, root):
         self.text_frame = text_frame = Frame(root)
@@ -230,19 +237,23 @@ class DemoWindow(object):
         return text_frame
 
     def makeGraphFrame(self, root):
+        # t._Screen is a singleton class instantiated or retrieved
+        # by calling Screen.  Since tdemo canvas needs a different
+        # configuration, we manually set class attributes before
+        # calling Screen and manually call superclass init after.
         turtle._Screen._root = root
+
         self.canvwidth = 1000
         self.canvheight = 800
-        turtle._Screen._canvas = self._canvas = canvas = turtle.ScrolledCanvas(
+        turtle._Screen._canvas = self.canvas = canvas = turtle.ScrolledCanvas(
                 root, 800, 600, self.canvwidth, self.canvheight)
         canvas.adjustScrolls()
         canvas._rootwindow.bind('<Configure>', self.onResize)
         canvas._canvas['borderwidth'] = 0
 
-        self.screen = _s_ = turtle.Screen()
-        turtle.TurtleScreen.__init__(_s_, _s_._canvas)
-        self.scanvas = _s_._canvas
-        turtle.RawTurtle.screens = [_s_]
+        self.screen = screen = turtle.Screen()
+        turtle.TurtleScreen.__init__(screen, canvas)
+        turtle.RawTurtle.screens = [screen]
         return canvas
 
     def set_txtsize(self, size):
@@ -267,12 +278,17 @@ class DemoWindow(object):
             return self.increase_size()
 
     def configGUI(self, start, stop, clear, txt="", color="blue"):
-        self.start_btn.config(state=start,
-                              bg="#d00" if start == NORMAL else "#fca")
-        self.stop_btn.config(state=stop,
-                             bg="#d00" if stop == NORMAL else "#fca")
-        self.clear_btn.config(state=clear,
-                              bg="#d00" if clear == NORMAL else "#fca")
+        if darwin:  # Leave Mac button colors alone - #44254.
+            self.start_btn.config(state=start)
+            self.stop_btn.config(state=stop)
+            self.clear_btn.config(state=clear)
+        else:
+            self.start_btn.config(state=start,
+                                  bg="#d00" if start == NORMAL else "#fca")
+            self.stop_btn.config(state=stop,
+                                 bg="#d00" if stop == NORMAL else "#fca")
+            self.clear_btn.config(state=clear,
+                                  bg="#d00" if clear == NORMAL else "#fca")
         self.output_lbl.config(text=txt, fg=color)
 
     def makeLoadDemoMenu(self, master):
@@ -361,7 +377,7 @@ class DemoWindow(object):
     def clearCanvas(self):
         self.refreshCanvas()
         self.screen._delete("all")
-        self.scanvas.config(cursor="")
+        self.canvas.config(cursor="")
         self.configGUI(NORMAL, DISABLED, DISABLED)
 
     def stopIt(self):

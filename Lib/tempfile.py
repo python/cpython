@@ -88,6 +88,10 @@ def _infer_return_type(*args):
     for arg in args:
         if arg is None:
             continue
+
+        if isinstance(arg, _os.PathLike):
+            arg = _os.fspath(arg)
+
         if isinstance(arg, bytes):
             if return_type is str:
                 raise TypeError("Can't mix bytes and non-bytes in "
@@ -199,8 +203,7 @@ def _get_default_tempdir():
                 fd = _os.open(filename, _bin_openflags, 0o600)
                 try:
                     try:
-                        with _io.open(fd, 'wb', closefd=False) as fp:
-                            fp.write(b'blat')
+                        _os.write(fd, b'blat')
                     finally:
                         _os.close(fd)
                 finally:
@@ -240,6 +243,7 @@ def _get_candidate_names():
 def _mkstemp_inner(dir, pre, suf, flags, output_type):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
+    dir = _os.path.abspath(dir)
     names = _get_candidate_names()
     if output_type is bytes:
         names = map(_os.fsencode, names)
@@ -260,10 +264,26 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
                 continue
             else:
                 raise
-        return (fd, _os.path.abspath(file))
+        return fd, file
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary file name found")
+
+def _dont_follow_symlinks(func, path, *args):
+    # Pass follow_symlinks=False, unless not supported on this platform.
+    if func in _os.supports_follow_symlinks:
+        func(path, *args, follow_symlinks=False)
+    elif not _os.path.islink(path):
+        func(path, *args)
+
+def _resetperms(path):
+    try:
+        chflags = _os.chflags
+    except AttributeError:
+        pass
+    else:
+        _dont_follow_symlinks(chflags, path, 0)
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
 
 
 # User visible interfaces.
@@ -372,7 +392,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
                 continue
             else:
                 raise
-        return file
+        return _os.path.abspath(file)
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")
@@ -414,42 +434,42 @@ class _TemporaryFileCloser:
     underlying file object, without adding a __del__ method to the
     temporary file."""
 
-    file = None  # Set here since __del__ checks it
+    cleanup_called = False
     close_called = False
 
-    def __init__(self, file, name, delete=True):
+    def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
         self.delete = delete
+        self.delete_on_close = delete_on_close
 
-    # NT provides delete-on-close as a primitive, so we don't need
-    # the wrapper to do anything special.  We still use it so that
-    # file.name is useful (i.e. not "(fdopen)") with NamedTemporaryFile.
-    if _os.name != 'nt':
-        # Cache the unlinker so we don't get spurious errors at
-        # shutdown when the module-level "os" is None'd out.  Note
-        # that this must be referenced as self.unlink, because the
-        # name TemporaryFileWrapper may also get None'd out before
-        # __del__ is called.
-
-        def close(self, unlink=_os.unlink):
-            if not self.close_called and self.file is not None:
-                self.close_called = True
-                try:
+    def cleanup(self, windows=(_os.name == 'nt'), unlink=_os.unlink):
+        if not self.cleanup_called:
+            self.cleanup_called = True
+            try:
+                if not self.close_called:
+                    self.close_called = True
                     self.file.close()
-                finally:
-                    if self.delete:
+            finally:
+                # Windows provides delete-on-close as a primitive, in which
+                # case the file was deleted by self.file.close().
+                if self.delete and not (windows and self.delete_on_close):
+                    try:
                         unlink(self.name)
+                    except FileNotFoundError:
+                        pass
 
-        # Need to ensure the file is deleted on __del__
-        def __del__(self):
-            self.close()
-
-    else:
-        def close(self):
-            if not self.close_called:
-                self.close_called = True
+    def close(self):
+        if not self.close_called:
+            self.close_called = True
+            try:
                 self.file.close()
+            finally:
+                if self.delete and self.delete_on_close:
+                    self.cleanup()
+
+    def __del__(self):
+        self.cleanup()
 
 
 class _TemporaryFileWrapper:
@@ -460,11 +480,11 @@ class _TemporaryFileWrapper:
     remove the file when it is no longer needed.
     """
 
-    def __init__(self, file, name, delete=True):
+    def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
-        self.delete = delete
-        self._closer = _TemporaryFileCloser(file, name, delete)
+        self._closer = _TemporaryFileCloser(file, name, delete,
+                                            delete_on_close)
 
     def __getattr__(self, name):
         # Attribute lookups are delegated to the underlying file
@@ -495,7 +515,7 @@ class _TemporaryFileWrapper:
     # deleted when used in a with statement
     def __exit__(self, exc, value, tb):
         result = self.file.__exit__(exc, value, tb)
-        self.close()
+        self._closer.cleanup()
         return result
 
     def close(self):
@@ -514,10 +534,10 @@ class _TemporaryFileWrapper:
         for line in self.file:
             yield line
 
-
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
-                       dir=None, delete=True, *, errors=None):
+                       dir=None, delete=True, *, errors=None,
+                       delete_on_close=True):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -525,13 +545,20 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     'buffering' -- the buffer size argument to io.open (default -1).
     'encoding' -- the encoding argument to io.open (default None)
     'newline' -- the newline argument to io.open (default None)
-    'delete' -- whether the file is deleted on close (default True).
+    'delete' -- whether the file is automatically deleted (default True).
+    'delete_on_close' -- if 'delete', whether the file is deleted on close
+       (default True) or otherwise either on context manager exit
+       (if context manager was used) or on object finalization. .
     'errors' -- the errors argument to io.open (default None)
     The file is created as mkstemp() would do it.
 
     Returns an object with a file-like interface; the name of the file
     is accessible as its 'name' attribute.  The file will be automatically
     deleted when it is closed unless the 'delete' argument is set to False.
+
+    On POSIX, NamedTemporaryFiles cannot be automatically deleted if
+    the creating process is terminated abruptly with a SIGKILL signal.
+    Windows can delete the file even in this case.
     """
 
     prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
@@ -540,21 +567,33 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
 
     # Setting O_TEMPORARY in the flags causes the OS to delete
     # the file when it is closed.  This is only supported by Windows.
-    if _os.name == 'nt' and delete:
+    if _os.name == 'nt' and delete and delete_on_close:
         flags |= _os.O_TEMPORARY
 
     if "b" not in mode:
         encoding = _io.text_encoding(encoding)
 
-    (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+    name = None
+    def opener(*args):
+        nonlocal name
+        fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+        return fd
     try:
-        file = _io.open(fd, mode, buffering=buffering,
-                        newline=newline, encoding=encoding, errors=errors)
-
-        return _TemporaryFileWrapper(file, name, delete)
-    except BaseException:
-        _os.unlink(name)
-        _os.close(fd)
+        file = _io.open(dir, mode, buffering=buffering,
+                        newline=newline, encoding=encoding, errors=errors,
+                        opener=opener)
+        try:
+            raw = getattr(file, 'buffer', file)
+            raw = getattr(raw, 'raw', raw)
+            raw.name = name
+            return _TemporaryFileWrapper(file, name, delete, delete_on_close)
+        except:
+            file.close()
+            raise
+    except:
+        if name is not None and not (
+            _os.name == 'nt' and delete and delete_on_close):
+            _os.unlink(name)
         raise
 
 if _os.name != 'posix' or _sys.platform == 'cygwin':
@@ -593,9 +632,20 @@ else:
 
         flags = _bin_openflags
         if _O_TMPFILE_WORKS:
-            try:
+            fd = None
+            def opener(*args):
+                nonlocal fd
                 flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
                 fd = _os.open(dir, flags2, 0o600)
+                return fd
+            try:
+                file = _io.open(dir, mode, buffering=buffering,
+                                newline=newline, encoding=encoding,
+                                errors=errors, opener=opener)
+                raw = getattr(file, 'buffer', file)
+                raw = getattr(raw, 'raw', raw)
+                raw.name = fd
+                return file
             except IsADirectoryError:
                 # Linux kernel older than 3.11 ignores the O_TMPFILE flag:
                 # O_TMPFILE is read as O_DIRECTORY. Trying to open a directory
@@ -612,26 +662,27 @@ else:
                 # fails with NotADirectoryError, because O_TMPFILE is read as
                 # O_DIRECTORY.
                 pass
-            else:
-                try:
-                    return _io.open(fd, mode, buffering=buffering,
-                                    newline=newline, encoding=encoding,
-                                    errors=errors)
-                except:
-                    _os.close(fd)
-                    raise
             # Fallback to _mkstemp_inner().
 
-        (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
-        try:
-            _os.unlink(name)
-            return _io.open(fd, mode, buffering=buffering,
-                            newline=newline, encoding=encoding, errors=errors)
-        except:
-            _os.close(fd)
-            raise
+        fd = None
+        def opener(*args):
+            nonlocal fd
+            fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
+            try:
+                _os.unlink(name)
+            except BaseException as e:
+                _os.close(fd)
+                raise
+            return fd
+        file = _io.open(dir, mode, buffering=buffering,
+                        newline=newline, encoding=encoding, errors=errors,
+                        opener=opener)
+        raw = getattr(file, 'buffer', file)
+        raw = getattr(raw, 'raw', raw)
+        raw.name = fd
+        return file
 
-class SpooledTemporaryFile:
+class SpooledTemporaryFile(_io.IOBase):
     """Temporary file wrapper, specialized to switch from BytesIO
     or StringIO to a real file when it exceeds a certain size or
     when a fileno is needed.
@@ -696,6 +747,16 @@ class SpooledTemporaryFile:
     def __iter__(self):
         return self._file.__iter__()
 
+    def __del__(self):
+        if not self.closed:
+            _warnings.warn(
+                "Unclosed file {!r}".format(self),
+                ResourceWarning,
+                stacklevel=2,
+                source=self
+            )
+            self.close()
+
     def close(self):
         self._file.close()
 
@@ -739,14 +800,29 @@ class SpooledTemporaryFile:
     def newlines(self):
         return self._file.newlines
 
+    def readable(self):
+        return self._file.readable()
+
     def read(self, *args):
         return self._file.read(*args)
+
+    def read1(self, *args):
+        return self._file.read1(*args)
+
+    def readinto(self, b):
+        return self._file.readinto(b)
+
+    def readinto1(self, b):
+        return self._file.readinto1(b)
 
     def readline(self, *args):
         return self._file.readline(*args)
 
     def readlines(self, *args):
         return self._file.readlines(*args)
+
+    def seekable(self):
+        return self._file.seekable()
 
     def seek(self, *args):
         return self._file.seek(*args)
@@ -756,11 +832,14 @@ class SpooledTemporaryFile:
 
     def truncate(self, size=None):
         if size is None:
-            self._file.truncate()
+            return self._file.truncate()
         else:
             if size > self._max_size:
                 self.rollover()
-            self._file.truncate(size)
+            return self._file.truncate(size)
+
+    def writable(self):
+        return self._file.writable()
 
     def write(self, s):
         file = self._file
@@ -774,6 +853,9 @@ class SpooledTemporaryFile:
         self._check(file)
         return rv
 
+    def detach(self):
+        return self._file.detach()
+
 
 class TemporaryDirectory:
     """Create and return a temporary directory.  This has the same
@@ -784,53 +866,74 @@ class TemporaryDirectory:
             ...
 
     Upon exiting the context, the directory and everything contained
-    in it are removed.
+    in it are removed (unless delete=False is passed or an exception
+    is raised during cleanup and ignore_cleanup_errors is not True).
+
+    Optional Arguments:
+        suffix - A str suffix for the directory name.  (see mkdtemp)
+        prefix - A str prefix for the directory name.  (see mkdtemp)
+        dir - A directory to create this temp dir in.  (see mkdtemp)
+        ignore_cleanup_errors - False; ignore exceptions during cleanup?
+        delete - True; whether the directory is automatically deleted.
     """
 
     def __init__(self, suffix=None, prefix=None, dir=None,
-                 ignore_cleanup_errors=False):
+                 ignore_cleanup_errors=False, *, delete=True):
         self.name = mkdtemp(suffix, prefix, dir)
         self._ignore_cleanup_errors = ignore_cleanup_errors
+        self._delete = delete
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
             warn_message="Implicitly cleaning up {!r}".format(self),
-            ignore_errors=self._ignore_cleanup_errors)
+            ignore_errors=self._ignore_cleanup_errors, delete=self._delete)
 
     @classmethod
-    def _rmtree(cls, name, ignore_errors=False):
-        def onerror(func, path, exc_info):
-            if issubclass(exc_info[0], PermissionError):
-                def resetperms(path):
-                    try:
-                        _os.chflags(path, 0)
-                    except AttributeError:
-                        pass
-                    _os.chmod(path, 0o700)
+    def _rmtree(cls, name, ignore_errors=False, repeated=False):
+        def onexc(func, path, exc):
+            if isinstance(exc, PermissionError):
+                if repeated and path == name:
+                    if ignore_errors:
+                        return
+                    raise
 
                 try:
                     if path != name:
-                        resetperms(_os.path.dirname(path))
-                    resetperms(path)
+                        _resetperms(_os.path.dirname(path))
+                    _resetperms(path)
 
                     try:
                         _os.unlink(path)
-                    # PermissionError is raised on FreeBSD for directories
-                    except (IsADirectoryError, PermissionError):
+                    except IsADirectoryError:
                         cls._rmtree(path, ignore_errors=ignore_errors)
+                    except PermissionError:
+                        # The PermissionError handler was originally added for
+                        # FreeBSD in directories, but it seems that it is raised
+                        # on Windows too.
+                        # bpo-43153: Calling _rmtree again may
+                        # raise NotADirectoryError and mask the PermissionError.
+                        # So we must re-raise the current PermissionError if
+                        # path is not a directory.
+                        if not _os.path.isdir(path) or _os.path.isjunction(path):
+                            if ignore_errors:
+                                return
+                            raise
+                        cls._rmtree(path, ignore_errors=ignore_errors,
+                                    repeated=(path == name))
                 except FileNotFoundError:
                     pass
-            elif issubclass(exc_info[0], FileNotFoundError):
+            elif isinstance(exc, FileNotFoundError):
                 pass
             else:
                 if not ignore_errors:
                     raise
 
-        _shutil.rmtree(name, onerror=onerror)
+        _shutil.rmtree(name, onexc=onexc)
 
     @classmethod
-    def _cleanup(cls, name, warn_message, ignore_errors=False):
-        cls._rmtree(name, ignore_errors=ignore_errors)
-        _warnings.warn(warn_message, ResourceWarning)
+    def _cleanup(cls, name, warn_message, ignore_errors=False, delete=True):
+        if delete:
+            cls._rmtree(name, ignore_errors=ignore_errors)
+            _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
@@ -839,7 +942,8 @@ class TemporaryDirectory:
         return self.name
 
     def __exit__(self, exc, value, tb):
-        self.cleanup()
+        if self._delete:
+            self.cleanup()
 
     def cleanup(self):
         if self._finalizer.detach() or _os.path.exists(self.name):
