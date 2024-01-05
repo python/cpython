@@ -56,23 +56,32 @@
     <!-- VPATH definition (escaped) -->
     <PyVPath Condition="$(Configuration) != 'PGInstrument'">..\\..</PyVPath>
     <PyVPath Condition="$(Configuration) == 'PGInstrument'">..\\..\\..</PyVPath>
+  </PropertyGroup>
 
-    <!-- Directories of external projects. tcltk is handled in tcltk.props -->
-    <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
+  <!-- Directories of external projects. tcltk is handled in tcltk.props -->
+  <PropertyGroup>
+    <ExternalsDir Condition="$(ExternalsDir) == ''">$(EXTERNALS_DIR)</ExternalsDir>
     <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
     <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.39.4.0\</sqlite3Dir>
-    <bz2Dir>$(ExternalsDir)bzip2-1.0.8\</bz2Dir>
-    <lzmaDir>$(ExternalsDir)xz-5.2.5\</lzmaDir>
-    <libffiDir>$(ExternalsDir)libffi-3.4.3\</libffiDir>
-    <libffiOutDir>$(ExternalsDir)libffi-3.4.3\$(ArchName)\</libffiOutDir>
-    <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.1q\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1q\$(ArchName)\</opensslOutDir>
-    <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
-    <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
-    <zlibDir>$(ExternalsDir)\zlib-1.2.13\</zlibDir>
-    
+  </PropertyGroup>
+
+  <Import Project="$(ExternalProps)" Condition="$(ExternalProps) != '' and Exists('$(ExternalProps)')" />
+
+  <PropertyGroup>
+    <sqlite3Dir Condition="$(sqlite3Dir) == ''">$(ExternalsDir)sqlite-3.44.2.0\</sqlite3Dir>
+    <bz2Dir Condition="$(bz2Dir) == ''">$(ExternalsDir)bzip2-1.0.8\</bz2Dir>
+    <lzmaDir Condition="$(lzmaDir) == ''">$(ExternalsDir)xz-5.2.5\</lzmaDir>
+    <libffiDir Condition="$(libffiDir) == ''">$(ExternalsDir)libffi-3.4.4\</libffiDir>
+    <libffiOutDir Condition="$(libffiOutDir) == ''">$(libffiDir)$(ArchName)\</libffiOutDir>
+    <libffiIncludeDir Condition="$(libffiIncludeDir) == ''">$(libffiOutDir)include</libffiIncludeDir>
+    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.11\</opensslDir>
+    <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.11\$(ArchName)\</opensslOutDir>
+    <opensslIncludeDir Condition="$(opensslIncludeDir) == ''">$(opensslOutDir)include</opensslIncludeDir>
+    <nasmDir Condition="$(nasmDir) == ''">$(ExternalsDir)\nasm-2.11.06\</nasmDir>
+    <zlibDir Condition="$(zlibDir) == ''">$(ExternalsDir)\zlib-1.2.13\</zlibDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <!-- Suffix for all binaries when building for debug -->
     <PyDebugExt Condition="'$(PyDebugExt)' == '' and $(Configuration) == 'Debug'">_d</PyDebugExt>
     

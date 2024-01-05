@@ -380,7 +380,7 @@ Implement :pep:`572` (assignment expressions). Patch by Emily Morehouse.
 .. nonce: voIdcp
 .. section: Core and Builtins
 
-Speed up :class:`namedtuple` attribute access by 1.6x using a C fast-path
+Speed up :func:`namedtuple` attribute access by 1.6x using a C fast-path
 for the name descriptors. Patch by Pablo Galindo.
 
 ..
@@ -1934,7 +1934,7 @@ failure.
 .. nonce: _ct_0H
 .. section: Library
 
-The :data:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
+The :const:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
 
 ..
 
@@ -1965,7 +1965,7 @@ result of an internal future if it's already done.
 .. section: Library
 
 Add a deprecated warning for the :meth:`threading.Thread.isAlive` method.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -2006,8 +2006,8 @@ Improved support of custom data descriptors in :func:`help` and
 .. nonce: V4kNN3
 .. section: Library
 
-The `crypt` module now internally uses the `crypt_r()` library function
-instead of `crypt()` when available.
+The ``crypt`` module now internally uses the ``crypt_r()`` library function
+instead of ``crypt()`` when available.
 
 ..
 
@@ -2747,7 +2747,7 @@ smaller file). Also, change the default compression level to 6 (tradeoff).
 .. nonce: xo5LAr
 .. section: Library
 
-The :term:`2to3` :2to3fixer:`execfile` fixer now opens the file with mode
+The 2to3 ``execfile`` fixer now opens the file with mode
 ``'rb'``.  Patch by Zackery Spytz.
 
 ..
@@ -3592,7 +3592,7 @@ Python 3.5.
 .. nonce: V8Ou3K
 .. section: Library
 
-Deprecate :meth:`__getitem__` methods of
+Deprecate :meth:`~object.__getitem__` methods of
 :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
 and :class:`fileinput.FileInput`.
 
@@ -3817,8 +3817,8 @@ user.
 .. nonce: w6g7tn
 .. section: Library
 
-The :2to3fixer:`reload` fixer now uses :func:`importlib.reload` instead of
-deprecated :func:`imp.reload`.
+The ``reload`` fixer now uses :func:`importlib.reload` instead of
+deprecated :func:`!imp.reload`.
 
 ..
 
@@ -4974,7 +4974,7 @@ Enum members.
 .. section: Library
 
 Update error message when constructing invalid inspect.Parameters Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -5044,8 +5044,8 @@ functionality.
 .. nonce: C_K-J9
 .. section: Library
 
-`ConfigParser.items()` was fixed so that key-value pairs passed in via
-`vars` are not included in the resulting output.
+``ConfigParser.items()`` was fixed so that key-value pairs passed in via
+:func:`vars` are not included in the resulting output.
 
 ..
 
@@ -5576,8 +5576,8 @@ documentation.
 .. section: Library
 
 Improved exceptions raised for invalid number of channels and sample width
-when read an audio file in modules :mod:`aifc`, :mod:`wave` and
-:mod:`sunau`.
+when read an audio file in modules :mod:`!aifc`, :mod:`wave` and
+:mod:`!sunau`.
 
 ..
 
@@ -5951,7 +5951,7 @@ Wirtel
 
 Add TLSVersion constants and SSLContext.maximum_version / minimum_version
 attributes. The new API wraps OpenSSL 1.1
-https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_min_proto_version.html
+https://web.archive.org/web/20180309043602/https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_min_proto_version.html
 feature.
 
 ..
@@ -8253,7 +8253,7 @@ Explain how IDLE's Shell displays output.
 
 Improve the doc about IDLE running user code.   The section is renamed from
 "IDLE -- console differences" is renamed "Running user code". It mostly
-covers the implications of using custom sys.stdxxx objects.
+covers the implications of using custom :samp:`sys.std{xxx}` objects.
 
 ..
 
@@ -8765,7 +8765,7 @@ for relative path to files in current directory.
 .. nonce: fmehdG
 .. section: C API
 
-The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
 been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
 excluded from the limited API (stable ABI), and were not documented.
 
@@ -8836,7 +8836,7 @@ Py_LIMITED_API. Patch by Arthur Neufeld.
 .. nonce: gFd85N
 .. section: C API
 
-The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
+The :c:func:`!_PyObject_GC_TRACK` and :c:func:`!_PyObject_GC_UNTRACK` macros
 have been removed from the public C API.
 
 ..

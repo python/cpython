@@ -7,6 +7,7 @@ import numbers
 import operator
 import fractions
 import functools
+import os
 import sys
 import typing
 import unittest
@@ -15,6 +16,9 @@ import pickle
 from pickle import dumps, loads
 F = fractions.Fraction
 
+#locate file with float format test values
+test_dir = os.path.dirname(__file__) or os.curdir
+format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""
@@ -340,6 +344,19 @@ class FractionTest(unittest.TestCase):
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
 
+    def test_is_integer(self):
+        self.assertTrue(F(1, 1).is_integer())
+        self.assertTrue(F(-1, 1).is_integer())
+        self.assertTrue(F(1, -1).is_integer())
+        self.assertTrue(F(2, 2).is_integer())
+        self.assertTrue(F(-2, 2).is_integer())
+        self.assertTrue(F(2, -2).is_integer())
+
+        self.assertFalse(F(1, 2).is_integer())
+        self.assertFalse(F(-1, 2).is_integer())
+        self.assertFalse(F(1, -2).is_integer())
+        self.assertFalse(F(-1, -2).is_integer())
+
     def test_as_integer_ratio(self):
         self.assertEqual(F(4, 6).as_integer_ratio(), (2, 3))
         self.assertEqual(F(-4, 6).as_integer_ratio(), (-2, 3))
@@ -475,6 +492,7 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(5, 6), F(2, 3) * F(5, 4))
         self.assertEqual(F(1, 4), F(1, 10) / F(2, 5))
         self.assertEqual(F(-15, 8), F(3, 4) / F(-2, 5))
+        self.assertRaises(ZeroDivisionError, operator.truediv, F(1), F(0))
         self.assertTypedEquals(2, F(9, 10) // F(2, 5))
         self.assertTypedEquals(10**23, F(10**23, 1) // F(1))
         self.assertEqual(F(5, 6), F(7, 3) % F(3, 2))
@@ -829,6 +847,448 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(f.denominator, 2)
         self.assertEqual(type(f.numerator), myint)
         self.assertEqual(type(f.denominator), myint)
+
+    def test_format_no_presentation_type(self):
+        # Triples (fraction, specification, expected_result).
+        testcases = [
+            # Explicit sign handling
+            (F(2, 3), '+', '+2/3'),
+            (F(-2, 3), '+', '-2/3'),
+            (F(3), '+', '+3'),
+            (F(-3), '+', '-3'),
+            (F(2, 3), ' ', ' 2/3'),
+            (F(-2, 3), ' ', '-2/3'),
+            (F(3), ' ', ' 3'),
+            (F(-3), ' ', '-3'),
+            (F(2, 3), '-', '2/3'),
+            (F(-2, 3), '-', '-2/3'),
+            (F(3), '-', '3'),
+            (F(-3), '-', '-3'),
+            # Padding
+            (F(0), '5', '    0'),
+            (F(2, 3), '5', '  2/3'),
+            (F(-2, 3), '5', ' -2/3'),
+            (F(2, 3), '0', '2/3'),
+            (F(2, 3), '1', '2/3'),
+            (F(2, 3), '2', '2/3'),
+            # Alignment
+            (F(2, 3), '<5', '2/3  '),
+            (F(2, 3), '>5', '  2/3'),
+            (F(2, 3), '^5', ' 2/3 '),
+            (F(2, 3), '=5', '  2/3'),
+            (F(-2, 3), '<5', '-2/3 '),
+            (F(-2, 3), '>5', ' -2/3'),
+            (F(-2, 3), '^5', '-2/3 '),
+            (F(-2, 3), '=5', '- 2/3'),
+            # Fill
+            (F(2, 3), 'X>5', 'XX2/3'),
+            (F(-2, 3), '.<5', '-2/3.'),
+            (F(-2, 3), '\n^6', '\n-2/3\n'),
+            # Thousands separators
+            (F(1234, 5679), ',', '1,234/5,679'),
+            (F(-1234, 5679), '_', '-1_234/5_679'),
+            (F(1234567), '_', '1_234_567'),
+            (F(-1234567), ',', '-1,234,567'),
+            # Alternate form forces a slash in the output
+            (F(123), '#', '123/1'),
+            (F(-123), '#', '-123/1'),
+            (F(0), '#', '0/1'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
+    def test_format_e_presentation_type(self):
+        # Triples (fraction, specification, expected_result)
+        testcases = [
+            (F(2, 3), '.6e', '6.666667e-01'),
+            (F(3, 2), '.6e', '1.500000e+00'),
+            (F(2, 13), '.6e', '1.538462e-01'),
+            (F(2, 23), '.6e', '8.695652e-02'),
+            (F(2, 33), '.6e', '6.060606e-02'),
+            (F(13, 2), '.6e', '6.500000e+00'),
+            (F(20, 2), '.6e', '1.000000e+01'),
+            (F(23, 2), '.6e', '1.150000e+01'),
+            (F(33, 2), '.6e', '1.650000e+01'),
+            (F(2, 3), '.6e', '6.666667e-01'),
+            (F(3, 2), '.6e', '1.500000e+00'),
+            # Zero
+            (F(0), '.3e', '0.000e+00'),
+            # Powers of 10, to exercise the log10 boundary logic
+            (F(1, 1000), '.3e', '1.000e-03'),
+            (F(1, 100), '.3e', '1.000e-02'),
+            (F(1, 10), '.3e', '1.000e-01'),
+            (F(1, 1), '.3e', '1.000e+00'),
+            (F(10), '.3e', '1.000e+01'),
+            (F(100), '.3e', '1.000e+02'),
+            (F(1000), '.3e', '1.000e+03'),
+            # Boundary where we round up to the next power of 10
+            (F('99.999994999999'), '.6e', '9.999999e+01'),
+            (F('99.999995'), '.6e', '1.000000e+02'),
+            (F('99.999995000001'), '.6e', '1.000000e+02'),
+            # Negatives
+            (F(-2, 3), '.6e', '-6.666667e-01'),
+            (F(-3, 2), '.6e', '-1.500000e+00'),
+            (F(-100), '.6e', '-1.000000e+02'),
+            # Large and small
+            (F('1e1000'), '.3e', '1.000e+1000'),
+            (F('1e-1000'), '.3e', '1.000e-1000'),
+            # Using 'E' instead of 'e' should give us a capital 'E'
+            (F(2, 3), '.6E', '6.666667E-01'),
+            # Tiny precision
+            (F(2, 3), '.1e', '6.7e-01'),
+            (F('0.995'), '.0e', '1e+00'),
+            # Default precision is 6
+            (F(22, 7), 'e', '3.142857e+00'),
+            # Alternate form forces a decimal point
+            (F('0.995'), '#.0e', '1.e+00'),
+            # Check that padding takes the exponent into account.
+            (F(22, 7), '11.6e', '3.142857e+00'),
+            (F(22, 7), '12.6e', '3.142857e+00'),
+            (F(22, 7), '13.6e', ' 3.142857e+00'),
+            # Thousands separators
+            (F('1234567.123456'), ',.5e', '1.23457e+06'),
+            (F('123.123456'), '012_.2e', '0_001.23e+02'),
+            # z flag is legal, but never makes a difference to the output
+            (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
+    def test_format_f_presentation_type(self):
+        # Triples (fraction, specification, expected_result)
+        testcases = [
+            # Simple .f formatting
+            (F(0, 1), '.2f', '0.00'),
+            (F(1, 3), '.2f', '0.33'),
+            (F(2, 3), '.2f', '0.67'),
+            (F(4, 3), '.2f', '1.33'),
+            (F(1, 8), '.2f', '0.12'),
+            (F(3, 8), '.2f', '0.38'),
+            (F(1, 13), '.2f', '0.08'),
+            (F(1, 199), '.2f', '0.01'),
+            (F(1, 200), '.2f', '0.00'),
+            (F(22, 7), '.5f', '3.14286'),
+            (F('399024789'), '.2f', '399024789.00'),
+            # Large precision (more than float can provide)
+            (F(104348, 33215), '.50f',
+             '3.14159265392142104470871594159265392142104470871594'),
+            # Precision defaults to 6 if not given
+            (F(22, 7), 'f', '3.142857'),
+            (F(0), 'f', '0.000000'),
+            (F(-22, 7), 'f', '-3.142857'),
+            # Round-ties-to-even checks
+            (F('1.225'), '.2f', '1.22'),
+            (F('1.2250000001'), '.2f', '1.23'),
+            (F('1.2349999999'), '.2f', '1.23'),
+            (F('1.235'), '.2f', '1.24'),
+            (F('1.245'), '.2f', '1.24'),
+            (F('1.2450000001'), '.2f', '1.25'),
+            (F('1.2549999999'), '.2f', '1.25'),
+            (F('1.255'), '.2f', '1.26'),
+            (F('-1.225'), '.2f', '-1.22'),
+            (F('-1.2250000001'), '.2f', '-1.23'),
+            (F('-1.2349999999'), '.2f', '-1.23'),
+            (F('-1.235'), '.2f', '-1.24'),
+            (F('-1.245'), '.2f', '-1.24'),
+            (F('-1.2450000001'), '.2f', '-1.25'),
+            (F('-1.2549999999'), '.2f', '-1.25'),
+            (F('-1.255'), '.2f', '-1.26'),
+            # Negatives and sign handling
+            (F(2, 3), '.2f', '0.67'),
+            (F(2, 3), '-.2f', '0.67'),
+            (F(2, 3), '+.2f', '+0.67'),
+            (F(2, 3), ' .2f', ' 0.67'),
+            (F(-2, 3), '.2f', '-0.67'),
+            (F(-2, 3), '-.2f', '-0.67'),
+            (F(-2, 3), '+.2f', '-0.67'),
+            (F(-2, 3), ' .2f', '-0.67'),
+            # Formatting to zero places
+            (F(1, 2), '.0f', '0'),
+            (F(-1, 2), '.0f', '-0'),
+            (F(22, 7), '.0f', '3'),
+            (F(-22, 7), '.0f', '-3'),
+            # Formatting to zero places, alternate form
+            (F(1, 2), '#.0f', '0.'),
+            (F(-1, 2), '#.0f', '-0.'),
+            (F(22, 7), '#.0f', '3.'),
+            (F(-22, 7), '#.0f', '-3.'),
+            # z flag for suppressing negative zeros
+            (F('-0.001'), 'z.2f', '0.00'),
+            (F('-0.001'), '-z.2f', '0.00'),
+            (F('-0.001'), '+z.2f', '+0.00'),
+            (F('-0.001'), ' z.2f', ' 0.00'),
+            (F('0.001'), 'z.2f', '0.00'),
+            (F('0.001'), '-z.2f', '0.00'),
+            (F('0.001'), '+z.2f', '+0.00'),
+            (F('0.001'), ' z.2f', ' 0.00'),
+            # Specifying a minimum width
+            (F(2, 3), '6.2f', '  0.67'),
+            (F(12345), '6.2f', '12345.00'),
+            (F(12345), '12f', '12345.000000'),
+            # Fill and alignment
+            (F(2, 3), '>6.2f', '  0.67'),
+            (F(2, 3), '<6.2f', '0.67  '),
+            (F(2, 3), '^3.2f', '0.67'),
+            (F(2, 3), '^4.2f', '0.67'),
+            (F(2, 3), '^5.2f', '0.67 '),
+            (F(2, 3), '^6.2f', ' 0.67 '),
+            (F(2, 3), '^7.2f', ' 0.67  '),
+            (F(2, 3), '^8.2f', '  0.67  '),
+            # '=' alignment
+            (F(-2, 3), '=+8.2f', '-   0.67'),
+            (F(2, 3), '=+8.2f', '+   0.67'),
+            # Fill character
+            (F(-2, 3), 'X>3.2f', '-0.67'),
+            (F(-2, 3), 'X>7.2f', 'XX-0.67'),
+            (F(-2, 3), 'X<7.2f', '-0.67XX'),
+            (F(-2, 3), 'X^7.2f', 'X-0.67X'),
+            (F(-2, 3), 'X=7.2f', '-XX0.67'),
+            (F(-2, 3), ' >7.2f', '  -0.67'),
+            # Corner cases: weird fill characters
+            (F(-2, 3), '\x00>7.2f', '\x00\x00-0.67'),
+            (F(-2, 3), '\n>7.2f', '\n\n-0.67'),
+            (F(-2, 3), '\t>7.2f', '\t\t-0.67'),
+            (F(-2, 3), '>>7.2f', '>>-0.67'),
+            (F(-2, 3), '<>7.2f', '<<-0.67'),
+            (F(-2, 3), '→>7.2f', '→→-0.67'),
+            # Zero-padding
+            (F(-2, 3), '07.2f', '-000.67'),
+            (F(-2, 3), '-07.2f', '-000.67'),
+            (F(2, 3), '+07.2f', '+000.67'),
+            (F(2, 3), ' 07.2f', ' 000.67'),
+            # An isolated zero is a minimum width, not a zero-pad flag.
+            # So unlike zero-padding, it's legal in combination with alignment.
+            (F(2, 3), '0.2f', '0.67'),
+            (F(2, 3), '>0.2f', '0.67'),
+            (F(2, 3), '<0.2f', '0.67'),
+            (F(2, 3), '^0.2f', '0.67'),
+            (F(2, 3), '=0.2f', '0.67'),
+            # Corner case: zero-padding _and_ a zero minimum width.
+            (F(2, 3), '00.2f', '0.67'),
+            # Thousands separator (only affects portion before the point)
+            (F(2, 3), ',.2f', '0.67'),
+            (F(2, 3), ',.7f', '0.6666667'),
+            (F('123456.789'), ',.2f', '123,456.79'),
+            (F('1234567'), ',.2f', '1,234,567.00'),
+            (F('12345678'), ',.2f', '12,345,678.00'),
+            (F('12345678'), ',f', '12,345,678.000000'),
+            # Underscore as thousands separator
+            (F(2, 3), '_.2f', '0.67'),
+            (F(2, 3), '_.7f', '0.6666667'),
+            (F('123456.789'), '_.2f', '123_456.79'),
+            (F('1234567'), '_.2f', '1_234_567.00'),
+            (F('12345678'), '_.2f', '12_345_678.00'),
+            # Thousands and zero-padding
+            (F('1234.5678'), '07,.2f', '1,234.57'),
+            (F('1234.5678'), '08,.2f', '1,234.57'),
+            (F('1234.5678'), '09,.2f', '01,234.57'),
+            (F('1234.5678'), '010,.2f', '001,234.57'),
+            (F('1234.5678'), '011,.2f', '0,001,234.57'),
+            (F('1234.5678'), '012,.2f', '0,001,234.57'),
+            (F('1234.5678'), '013,.2f', '00,001,234.57'),
+            (F('1234.5678'), '014,.2f', '000,001,234.57'),
+            (F('1234.5678'), '015,.2f', '0,000,001,234.57'),
+            (F('1234.5678'), '016,.2f', '0,000,001,234.57'),
+            (F('-1234.5678'), '07,.2f', '-1,234.57'),
+            (F('-1234.5678'), '08,.2f', '-1,234.57'),
+            (F('-1234.5678'), '09,.2f', '-1,234.57'),
+            (F('-1234.5678'), '010,.2f', '-01,234.57'),
+            (F('-1234.5678'), '011,.2f', '-001,234.57'),
+            (F('-1234.5678'), '012,.2f', '-0,001,234.57'),
+            (F('-1234.5678'), '013,.2f', '-0,001,234.57'),
+            (F('-1234.5678'), '014,.2f', '-00,001,234.57'),
+            (F('-1234.5678'), '015,.2f', '-000,001,234.57'),
+            (F('-1234.5678'), '016,.2f', '-0,000,001,234.57'),
+            # Corner case: no decimal point
+            (F('-1234.5678'), '06,.0f', '-1,235'),
+            (F('-1234.5678'), '07,.0f', '-01,235'),
+            (F('-1234.5678'), '08,.0f', '-001,235'),
+            (F('-1234.5678'), '09,.0f', '-0,001,235'),
+            # Corner-case - zero-padding specified through fill and align
+            # instead of the zero-pad character - in this case, treat '0' as a
+            # regular fill character and don't attempt to insert commas into
+            # the filled portion. This differs from the int and float
+            # behaviour.
+            (F('1234.5678'), '0=12,.2f', '00001,234.57'),
+            # Corner case where it's not clear whether the '0' indicates zero
+            # padding or gives the minimum width, but there's still an obvious
+            # answer to give. We want this to work in case the minimum width
+            # is being inserted programmatically: spec = f'{width}.2f'.
+            (F('12.34'), '0.2f', '12.34'),
+            (F('12.34'), 'X>0.2f', '12.34'),
+            # 'F' should work identically to 'f'
+            (F(22, 7), '.5F', '3.14286'),
+            # %-specifier
+            (F(22, 7), '.2%', '314.29%'),
+            (F(1, 7), '.2%', '14.29%'),
+            (F(1, 70), '.2%', '1.43%'),
+            (F(1, 700), '.2%', '0.14%'),
+            (F(1, 7000), '.2%', '0.01%'),
+            (F(1, 70000), '.2%', '0.00%'),
+            (F(1, 7), '.0%', '14%'),
+            (F(1, 7), '#.0%', '14.%'),
+            (F(100, 7), ',.2%', '1,428.57%'),
+            (F(22, 7), '7.2%', '314.29%'),
+            (F(22, 7), '8.2%', ' 314.29%'),
+            (F(22, 7), '08.2%', '0314.29%'),
+            # Test cases from #67790 and discuss.python.org Ideas thread.
+            (F(1, 3), '.2f', '0.33'),
+            (F(1, 8), '.2f', '0.12'),
+            (F(3, 8), '.2f', '0.38'),
+            (F(2545, 1000), '.2f', '2.54'),
+            (F(2549, 1000), '.2f', '2.55'),
+            (F(2635, 1000), '.2f', '2.64'),
+            (F(1, 100), '.1f', '0.0'),
+            (F(49, 1000), '.1f', '0.0'),
+            (F(51, 1000), '.1f', '0.1'),
+            (F(149, 1000), '.1f', '0.1'),
+            (F(151, 1000), '.1f', '0.2'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
+    def test_format_g_presentation_type(self):
+        # Triples (fraction, specification, expected_result)
+        testcases = [
+            (F('0.000012345678'), '.6g', '1.23457e-05'),
+            (F('0.00012345678'), '.6g', '0.000123457'),
+            (F('0.0012345678'), '.6g', '0.00123457'),
+            (F('0.012345678'), '.6g', '0.0123457'),
+            (F('0.12345678'), '.6g', '0.123457'),
+            (F('1.2345678'), '.6g', '1.23457'),
+            (F('12.345678'), '.6g', '12.3457'),
+            (F('123.45678'), '.6g', '123.457'),
+            (F('1234.5678'), '.6g', '1234.57'),
+            (F('12345.678'), '.6g', '12345.7'),
+            (F('123456.78'), '.6g', '123457'),
+            (F('1234567.8'), '.6g', '1.23457e+06'),
+            # Rounding up cases
+            (F('9.99999e+2'), '.4g', '1000'),
+            (F('9.99999e-8'), '.4g', '1e-07'),
+            (F('9.99999e+8'), '.4g', '1e+09'),
+            # Check round-ties-to-even behaviour
+            (F('-0.115'), '.2g', '-0.12'),
+            (F('-0.125'), '.2g', '-0.12'),
+            (F('-0.135'), '.2g', '-0.14'),
+            (F('-0.145'), '.2g', '-0.14'),
+            (F('0.115'), '.2g', '0.12'),
+            (F('0.125'), '.2g', '0.12'),
+            (F('0.135'), '.2g', '0.14'),
+            (F('0.145'), '.2g', '0.14'),
+            # Trailing zeros and decimal point suppressed by default ...
+            (F(0), '.6g', '0'),
+            (F('123.400'), '.6g', '123.4'),
+            (F('123.000'), '.6g', '123'),
+            (F('120.000'), '.6g', '120'),
+            (F('12000000'), '.6g', '1.2e+07'),
+            # ... but not when alternate form is in effect
+            (F(0), '#.6g', '0.00000'),
+            (F('123.400'), '#.6g', '123.400'),
+            (F('123.000'), '#.6g', '123.000'),
+            (F('120.000'), '#.6g', '120.000'),
+            (F('12000000'), '#.6g', '1.20000e+07'),
+            # 'G' format (uses 'E' instead of 'e' for the exponent indicator)
+            (F('123.45678'), '.6G', '123.457'),
+            (F('1234567.8'), '.6G', '1.23457E+06'),
+            # Default precision is 6 significant figures
+            (F('3.1415926535'), 'g', '3.14159'),
+            # Precision 0 is treated the same as precision 1.
+            (F('0.000031415'), '.0g', '3e-05'),
+            (F('0.00031415'), '.0g', '0.0003'),
+            (F('0.31415'), '.0g', '0.3'),
+            (F('3.1415'), '.0g', '3'),
+            (F('3.1415'), '#.0g', '3.'),
+            (F('31.415'), '.0g', '3e+01'),
+            (F('31.415'), '#.0g', '3.e+01'),
+            (F('0.000031415'), '.1g', '3e-05'),
+            (F('0.00031415'), '.1g', '0.0003'),
+            (F('0.31415'), '.1g', '0.3'),
+            (F('3.1415'), '.1g', '3'),
+            (F('3.1415'), '#.1g', '3.'),
+            (F('31.415'), '.1g', '3e+01'),
+            # Thousands separator
+            (F(2**64), '_.25g', '18_446_744_073_709_551_616'),
+            # As with 'e' format, z flag is legal, but has no effect
+            (F(-1, 7**100), 'zg', '-3.09169e-85'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
+    def test_invalid_formats(self):
+        fraction = F(2, 3)
+        with self.assertRaises(TypeError):
+            format(fraction, None)
+
+        invalid_specs = [
+            'Q6f',  # regression test
+            # illegal to use fill or alignment when zero padding
+            'X>010f',
+            'X<010f',
+            'X^010f',
+            'X=010f',
+            '0>010f',
+            '0<010f',
+            '0^010f',
+            '0=010f',
+            '>010f',
+            '<010f',
+            '^010f',
+            '=010e',
+            '=010f',
+            '=010g',
+            '=010%',
+            '>00.2f',
+            '>00f',
+            # Too many zeros - minimum width should not have leading zeros
+            '006f',
+            # Leading zeros in precision
+            '.010f',
+            '.02f',
+            '.000f',
+            # Missing precision
+            '.e',
+            '.f',
+            '.g',
+            '.%',
+            # Z instead of z for negative zero suppression
+            'Z.2f'
+            # z flag not supported for general formatting
+            'z',
+            # zero padding not supported for general formatting
+            '05',
+        ]
+        for spec in invalid_specs:
+            with self.subTest(spec=spec):
+                with self.assertRaises(ValueError):
+                    format(fraction, spec)
+
+    @requires_IEEE_754
+    def test_float_format_testfile(self):
+        with open(format_testfile, encoding="utf-8") as testfile:
+            for line in testfile:
+                if line.startswith('--'):
+                    continue
+                line = line.strip()
+                if not line:
+                    continue
+
+                lhs, rhs = map(str.strip, line.split('->'))
+                fmt, arg = lhs.split()
+                if fmt == '%r':
+                    continue
+                fmt2 = fmt[1:]
+                with self.subTest(fmt=fmt, arg=arg):
+                    f = F(float(arg))
+                    self.assertEqual(format(f, fmt2), rhs)
+                    if f:  # skip negative zero
+                        self.assertEqual(format(-f, fmt2), '-' + rhs)
+                    f = F(arg)
+                    self.assertEqual(float(format(f, fmt2)), float(rhs))
+                    self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
 
 
 if __name__ == '__main__':

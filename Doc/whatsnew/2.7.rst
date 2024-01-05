@@ -287,7 +287,7 @@ remains O(1).
 The standard library now supports use of ordered dictionaries in several
 modules.
 
-* The :mod:`ConfigParser` module uses them by default, meaning that
+* The :mod:`ConfigParser <configparser>` module uses them by default, meaning that
   configuration files can now be read, modified, and then written back
   in their original order.
 
@@ -355,7 +355,7 @@ added as a more powerful replacement for the
 This means Python now supports three different modules for parsing
 command-line arguments: :mod:`getopt`, :mod:`optparse`, and
 :mod:`argparse`.  The :mod:`getopt` module closely resembles the C
-library's :c:func:`getopt` function, so it remains useful if you're writing a
+library's :c:func:`!getopt` function, so it remains useful if you're writing a
 Python prototype that will eventually be rewritten in C.
 :mod:`optparse` becomes redundant, but there are no plans to remove it
 because there are many scripts still using it, and there's no
@@ -858,9 +858,11 @@ Some smaller changes made to the core Python language are:
 
   .. XXX bytearray doesn't seem to be documented
 
-* When using ``@classmethod`` and ``@staticmethod`` to wrap
+* When using :class:`@classmethod <classmethod>` and
+  :class:`@staticmethod <staticmethod>` to wrap
   methods as class or static methods, the wrapper object now
-  exposes the wrapped function as their :attr:`__func__` attribute.
+  exposes the wrapped function as their :attr:`~method.__func__`
+  attribute.
   (Contributed by Amaury Forgeot d'Arc, after a suggestion by
   George Sakkis; :issue:`5982`.)
 
@@ -930,8 +932,8 @@ Optimizations
 Several performance enhancements have been added:
 
 * A new opcode was added to perform the initial setup for
-  :keyword:`with` statements, looking up the :meth:`__enter__` and
-  :meth:`__exit__` methods.  (Contributed by Benjamin Peterson.)
+  :keyword:`with` statements, looking up the :meth:`~object.__enter__` and
+  :meth:`~object.__exit__` methods.  (Contributed by Benjamin Peterson.)
 
 * The garbage collector now performs better for one common usage
   pattern: when many objects are being allocated without deallocating
@@ -1132,7 +1134,7 @@ changes, or look through the Subversion logs for all the details.
   another type that isn't a :class:`Mapping`.
   (Fixed by Daniel Stutzbach; :issue:`8729`.)
 
-* Constructors for the parsing classes in the :mod:`ConfigParser` module now
+* Constructors for the parsing classes in the :mod:`ConfigParser <configparser>` module now
   take an *allow_no_value* parameter, defaulting to false; if true,
   options without values will be allowed.  For example::
 
@@ -1313,9 +1315,9 @@ changes, or look through the Subversion logs for all the details.
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
 
-* The :mod:`ihooks` module now supports relative imports.  Note that
-  :mod:`ihooks` is an older module for customizing imports,
-  superseded by the :mod:`imputil` module added in Python 2.0.
+* The :mod:`!ihooks` module now supports relative imports.  Note that
+  :mod:`!ihooks` is an older module for customizing imports,
+  superseded by the :mod:`!imputil` module added in Python 2.0.
   (Relative import support added by Neil Schemenauer.)
 
   .. revision 75423
@@ -1415,7 +1417,7 @@ changes, or look through the Subversion logs for all the details.
   :func:`~math.lgamma` for the natural log of the Gamma function.
   (Contributed by Mark Dickinson and nirinA raseliarison; :issue:`3366`.)
 
-* The :mod:`multiprocessing` module's :class:`Manager*` classes
+* The :mod:`multiprocessing` module's :class:`!Manager*` classes
   can now be passed a callable that will be called whenever
   a subprocess is started, along with a set of arguments that will be
   passed to the callable.
@@ -1429,7 +1431,7 @@ changes, or look through the Subversion logs for all the details.
   become very large.
   (Contributed by Charles Cazabon; :issue:`6963`.)
 
-* The :mod:`nntplib` module now supports IPv6 addresses.
+* The :mod:`!nntplib` module now supports IPv6 addresses.
   (Contributed by Derek Morr; :issue:`1664`.)
 
 * New functions: the :mod:`os` module wraps the following POSIX system
@@ -1556,9 +1558,9 @@ changes, or look through the Subversion logs for all the details.
   :issue:`8484`.)
 
   The version of OpenSSL being used is now available as the module
-  attributes :data:`ssl.OPENSSL_VERSION` (a string),
-  :data:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
-  :data:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
+  attributes :const:`ssl.OPENSSL_VERSION` (a string),
+  :const:`ssl.OPENSSL_VERSION_INFO` (a 5-tuple), and
+  :const:`ssl.OPENSSL_VERSION_NUMBER` (an integer).  (Added by Antoine
   Pitrou; :issue:`8321`.)
 
 * The :mod:`struct` module will no longer silently ignore overflow
@@ -2104,7 +2106,7 @@ Changes to Python's build process and to the C API include:
 
 * The latest release of the GNU Debugger, GDB 7, can be `scripted
   using Python
-  <https://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
+  <https://web.archive.org/web/20110715084810/http://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
   When you begin debugging an executable program P, GDB will look for
   a file named ``P-gdb.py`` and automatically read it.  Dave Malcolm
   contributed a :file:`python-gdb.py` that adds a number of
@@ -2152,16 +2154,16 @@ Changes to Python's build process and to the C API include:
 
 * New function: stemming from the rewrite of string-to-float conversion,
   a new :c:func:`PyOS_string_to_double` function was added.  The old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions
   are now deprecated.
 
-* New function: :c:func:`PySys_SetArgvEx` sets the value of
+* New function: :c:func:`!PySys_SetArgvEx` sets the value of
   ``sys.argv`` and can optionally update ``sys.path`` to include the
   directory containing the script named by ``sys.argv[0]`` depending
   on the value of an *updatepath* parameter.
 
   This function was added to close a security hole for applications
-  that embed Python.  The old function, :c:func:`PySys_SetArgv`, would
+  that embed Python.  The old function, :c:func:`!PySys_SetArgv`, would
   always update ``sys.path``, and sometimes it would add the current
   directory.  This meant that, if you ran an application embedding
   Python in a directory controlled by someone else, attackers could
@@ -2169,8 +2171,8 @@ Changes to Python's build process and to the C API include:
   :file:`os.py`) that your application would then import and run.
 
   If you maintain a C/C++ application that embeds Python, check
-  whether you're calling :c:func:`PySys_SetArgv` and carefully consider
-  whether the application should be using :c:func:`PySys_SetArgvEx`
+  whether you're calling :c:func:`!PySys_SetArgv` and carefully consider
+  whether the application should be using :c:func:`!PySys_SetArgvEx`
   with *updatepath* set to false.
 
   Security issue reported as `CVE-2008-5983
@@ -2195,13 +2197,13 @@ Changes to Python's build process and to the C API include:
 
   .. XXX these macros don't seem to be described in the c-api docs.
 
-* Removed function: :c:macro:`PyEval_CallObject` is now only available
+* Removed function: :c:func:`!PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
   ABI linking compatibility, but that was in 1997; it can certainly be
   deleted by now.  (Removed by Antoine Pitrou; :issue:`8276`.)
 
-* New format codes: the :c:func:`PyFormat_FromString`,
-  :c:func:`PyFormat_FromStringV`, and :c:func:`PyErr_Format` functions now
+* New format codes: the :c:func:`!PyString_FromFormat`,
+  :c:func:`!PyString_FromFormatV`, and :c:func:`PyErr_Format` functions now
   accept ``%lld`` and ``%llu`` format codes for displaying
   C's :c:expr:`long long` types.
   (Contributed by Mark Dickinson; :issue:`7228`.)
@@ -2231,7 +2233,7 @@ Changes to Python's build process and to the C API include:
 
 * When using the :c:type:`PyMemberDef` structure to define attributes
   of a type, Python will no longer let you try to delete or set a
-  :const:`T_STRING_INPLACE` attribute.
+  :c:macro:`T_STRING_INPLACE` attribute.
 
   .. rev 79644
 
@@ -2287,10 +2289,10 @@ object, and then get the ``void *`` pointer, which will usually point
 to an array of pointers to the module's various API functions.
 
 There is an existing data type already used for this,
-:c:type:`PyCObject`, but it doesn't provide type safety.  Evil code
+:c:type:`!PyCObject`, but it doesn't provide type safety.  Evil code
 written in pure Python could cause a segmentation fault by taking a
-:c:type:`PyCObject` from module A and somehow substituting it for the
-:c:type:`PyCObject` in module B.   Capsules know their own name,
+:c:type:`!PyCObject` from module A and somehow substituting it for the
+:c:type:`!PyCObject` in module B.   Capsules know their own name,
 and getting the pointer requires providing the name:
 
 .. code-block:: c
@@ -2310,10 +2312,10 @@ detect the mismatched name and return false.  Refer to
 :ref:`using-capsules` for more information on using these objects.
 
 Python 2.7 now uses capsules internally to provide various
-extension-module APIs, but the :c:func:`PyCObject_AsVoidPtr` was
+extension-module APIs, but the :c:func:`!PyCObject_AsVoidPtr` was
 modified to handle capsules, preserving compile-time compatibility
-with the :c:type:`CObject` interface.  Use of
-:c:func:`PyCObject_AsVoidPtr` will signal a
+with the :c:type:`!PyCObject` interface.  Use of
+:c:func:`!PyCObject_AsVoidPtr` will signal a
 :exc:`PendingDeprecationWarning`, which is silent by default.
 
 Implemented in Python 3.1 and backported to 2.7 by Larry Hastings;
@@ -2368,7 +2370,7 @@ Port-Specific Changes: Mac OS X
   installation and a user-installed copy of the same version.
   (Changed by Ronald Oussoren; :issue:`4865`.)
 
-   .. versionchanged:: 2.7.13
+  .. versionchanged:: 2.7.13
 
      As of 2.7.13, this change was removed.
      ``/Library/Python/2.7/site-packages``, the site-packages directory
@@ -2383,8 +2385,8 @@ Port-Specific Changes: Mac OS X
 Port-Specific Changes: FreeBSD
 -----------------------------------
 
-* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with
-  :func:`~socket.getsockopt`/:func:`~socket.setsockopt` to select an
+* FreeBSD 7.1's :const:`SO_SETFIB` constant, used with the :func:`~socket.socket` methods
+  :func:`~socket.socket.getsockopt`/:func:`~socket.socket.setsockopt` to select an
   alternate routing table, is now available in the :mod:`socket`
   module.  (Added by Kyle VanderBeek; :issue:`8235`.)
 
@@ -2404,7 +2406,7 @@ Other Changes and Fixes
   :issue:`5464`.)
 
 * When importing a module from a :file:`.pyc` or :file:`.pyo` file
-  with an existing :file:`.py` counterpart, the :attr:`co_filename`
+  with an existing :file:`.py` counterpart, the :attr:`~codeobject.co_filename`
   attributes of the resulting code objects are overwritten when the
   original filename is obsolete.  This can happen if the file has been
   renamed, moved, or is accessed through different paths.  (Patch by
@@ -2449,13 +2451,13 @@ that may require changes to your code:
   (Changed by Eric Smith; :issue:`5920`.)
 
 * Because of an optimization for the :keyword:`with` statement, the special
-  methods :meth:`__enter__` and :meth:`__exit__` must belong to the object's
+  methods :meth:`~object.__enter__` and :meth:`~object.__exit__` must belong to the object's
   type, and cannot be directly attached to the object's instance.  This
   affects new-style classes (derived from :class:`object`) and C extension
   types.  (:issue:`6101`.)
 
 * Due to a bug in Python 2.6, the *exc_value* parameter to
-  :meth:`__exit__` methods was often the string representation of the
+  :meth:`~object.__exit__` methods was often the string representation of the
   exception, not an instance.  This was fixed in 2.7, so *exc_value*
   will be an instance as expected.  (Fixed by Florent Xicluna;
   :issue:`7853`.)
@@ -2540,16 +2542,16 @@ For C extensions:
   instead of triggering a :exc:`DeprecationWarning` (:issue:`5080`).
 
 * Use the new :c:func:`PyOS_string_to_double` function instead of the old
-  :c:func:`PyOS_ascii_strtod` and :c:func:`PyOS_ascii_atof` functions,
+  :c:func:`!PyOS_ascii_strtod` and :c:func:`!PyOS_ascii_atof` functions,
   which are now deprecated.
 
 For applications that embed Python:
 
-* The :c:func:`PySys_SetArgvEx` function was added, letting
+* The :c:func:`!PySys_SetArgvEx` function was added, letting
   applications close a security hole when the existing
-  :c:func:`PySys_SetArgv` function was used.  Check whether you're
-  calling :c:func:`PySys_SetArgv` and carefully consider whether the
-  application should be using :c:func:`PySys_SetArgvEx` with
+  :c:func:`!PySys_SetArgv` function was used.  Check whether you're
+  calling :c:func:`!PySys_SetArgv` and carefully consider whether the
+  application should be using :c:func:`!PySys_SetArgvEx` with
   *updatepath* set to false.
 
 .. ======================================================================

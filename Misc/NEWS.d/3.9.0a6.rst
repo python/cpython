@@ -343,7 +343,7 @@ https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=242274
 .. nonce: Er8sv-
 .. section: Library
 
-The :mod:`lib2to3` module is pending deprecation due to :pep:`617`.
+The :mod:`!lib2to3` module is pending deprecation due to :pep:`617`.
 
 ..
 
@@ -680,7 +680,7 @@ child process, reset the lock to the unlocked state. Rename also the private
 .. nonce: kIjVge
 .. section: Library
 
-Expose :data:`~socket.CAN_RAW_JOIN_FILTERS` in the :mod:`socket` module.
+Expose :const:`~socket.CAN_RAW_JOIN_FILTERS` in the :mod:`socket` module.
 
 ..
 
@@ -735,7 +735,7 @@ number of groups. For other implementations, double the group list size.
 .. nonce: HFpHZS
 .. section: Library
 
-Add :data:`time.CLOCK_TAI` constant if the operating system support it.
+Add :const:`time.CLOCK_TAI` constant if the operating system support it.
 
 ..
 
