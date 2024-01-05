@@ -3,7 +3,7 @@ from idlelib import colorizer
 from test.support import requires
 import unittest
 from unittest import mock
-from .tkinter_testing_utils import run_in_tk_mainloop
+from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from functools import partial
 import textwrap
@@ -551,7 +551,7 @@ class ColorDelegatorTest(unittest.TestCase):
             ''')
         self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop(delay=50)
     def test_incremental_editing(self):
         text = self.text
         eq = self.assertEqual

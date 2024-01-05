@@ -1,1 +1,0 @@
-Document that ``ConfigParser`` strips off comments when reading configuration files.

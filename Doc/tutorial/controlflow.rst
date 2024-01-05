@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python uses the usual
-flow control statements known from other languages, with some twists.
+As well as the :keyword:`while` statement just introduced, Python uses a few more
+that we will encounter in this chapter.
 
 
 .. _tut-if:
@@ -46,7 +46,7 @@ details see :ref:`tut-match`.
 ==========================
 
 .. index::
-   statement: for
+   pair: statement; for
 
 The :keyword:`for` statement in Python differs a bit from what you may be used
 to in C or Pascal.  Rather than always iterating over an arithmetic progression
@@ -110,14 +110,14 @@ The given end point is never part of the generated sequence; ``range(10)`` gener
 is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
-    range(5, 10)
-       5, 6, 7, 8, 9
+    >>> list(range(5, 10))
+    [5, 6, 7, 8, 9]
 
-    range(0, 10, 3)
-       0, 3, 6, 9
+    >>> list(range(0, 10, 3))
+    [0, 3, 6, 9]
 
-    range(-10, -100, -30)
-      -10, -40, -70
+    >>> list(range(-10, -100, -30))
+    [-10, -40, -70]
 
 To iterate over the indices of a sequence, you can combine :func:`range` and
 :func:`len` as follows::
@@ -137,7 +137,7 @@ function, see :ref:`tut-loopidioms`.
 
 A strange thing happens if you just print a range::
 
-   >>> print(range(10))
+   >>> range(10)
    range(0, 10)
 
 In many ways the object returned by :func:`range` behaves as if it is a list,
@@ -155,13 +155,7 @@ that takes an iterable is :func:`sum`::
     6
 
 Later we will see more functions that return iterables and take iterables as
-arguments.  Lastly, maybe you are curious about how to get a list from a range.
-Here is the solution::
-
-   >>> list(range(4))
-   [0, 1, 2, 3]
-
-In chapter :ref:`tut-structures`, we will discuss in more detail about
+arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail about
 :func:`list`.
 
 .. _tut-break:
@@ -169,14 +163,21 @@ In chapter :ref:`tut-structures`, we will discuss in more detail about
 :keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
 ============================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
+The :keyword:`break` statement breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the iterable (with :keyword:`for`) or when the
-condition becomes false (with :keyword:`while`), but not when the loop is
-terminated by a :keyword:`break` statement.  This is exemplified by the
-following loop, which searches for prime numbers::
+A :keyword:`!for` or :keyword:`!while` loop can include an :keyword:`!else` clause.
+
+In a :keyword:`for` loop, the :keyword:`!else` clause is executed
+after the loop reaches its final iteration.
+
+In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
+
+In either kind of loop, the :keyword:`!else` clause is **not** executed
+if the loop was terminated by a :keyword:`break`.
+
+This is exemplified in the following :keyword:`!for` loop,
+which searches for prime numbers::
 
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
@@ -256,11 +257,13 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
 :keyword:`!match` Statements
 ============================
 
-A match statement takes an expression and compares its value to successive
+A :keyword:`match` statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  This is superficially
 similar to a switch statement in C, Java or JavaScript (and many
-other languages), but it can also extract components (sequence elements or
-object attributes) from the value into variables.
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -273,7 +276,7 @@ The simplest form compares a subject value against one or more literals::
             case 418:
                 return "I'm a teapot"
             case _:
-                return "Something's wrong with the Internet"
+                return "Something's wrong with the internet"
 
 Note the last block: the "variable name" ``_`` acts as a *wildcard* and
 never fails to match. If no case matches, none of the branches is executed.
@@ -311,8 +314,9 @@ you can use the class name followed by an argument list resembling a
 constructor, but with the ability to capture attributes into variables::
 
     class Point:
-        x: int
-        y: int
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     def where_is(point):
         match point:
@@ -346,7 +350,13 @@ Dotted names (like ``foo.bar``), attribute names (the ``x=`` and ``y=`` above) o
 (recognized by the "(...)" next to them like ``Point`` above) are never assigned to.
 
 Patterns can be arbitrarily nested.  For example, if we have a short
-list of points, we could match it like this::
+list of Points, with ``__match_args__`` added, we could match it like this::
+
+    class Point:
+        __match_args__ = ('x', 'y')
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     match points:
         case []:
@@ -384,7 +394,7 @@ Several other key features of this statement:
 - Mapping patterns: ``{"bandwidth": b, "latency": l}`` captures the
   ``"bandwidth"`` and ``"latency"`` values from a dictionary.  Unlike sequence
   patterns, extra keys are ignored.  An unpacking like ``**rest`` is also
-  supported.  (But ``**_`` would be redundant, so it not allowed.)
+  supported.  (But ``**_`` would be redundant, so it is not allowed.)
 
 - Subpatterns may be captured using the ``as`` keyword::
 
@@ -401,9 +411,11 @@ Several other key features of this statement:
 
       from enum import Enum
       class Color(Enum):
-          RED = 0
-          GREEN = 1
-          BLUE = 2
+          RED = 'red'
+          GREEN = 'green'
+          BLUE = 'blue'
+
+      color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
 
       match color:
           case Color.RED:
@@ -522,7 +534,7 @@ This example, as usual, demonstrates some new Python features:
   Different types define different methods.  Methods of different types may have
   the same name without causing ambiguity.  (It is possible to define your own
   object types and methods, using *classes*, see :ref:`tut-classes`)
-  The method :meth:`append` shown in the example is defined for list objects; it
+  The method :meth:`!append` shown in the example is defined for list objects; it
   adds a new element at the end of the list.  In this example it is equivalent to
   ``result = result + [a]``, but more efficient.
 
@@ -547,10 +559,10 @@ defined to allow.  For example::
 
    def ask_ok(prompt, retries=4, reminder='Please try again!'):
        while True:
-           ok = input(prompt)
-           if ok in ('y', 'ye', 'yes'):
+           reply = input(prompt)
+           if reply in {'y', 'ye', 'yes'}:
                return True
-           if ok in ('n', 'no', 'nop', 'nope'):
+           if reply in {'n', 'no', 'nop', 'nope'}:
                return False
            retries = retries - 1
            if retries < 0:
@@ -657,7 +669,7 @@ Here's an example that fails due to this restriction::
    >>> function(0, a=0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: function() got multiple values for keyword argument 'a'
+   TypeError: function() got multiple values for argument 'a'
 
 When a final formal parameter of the form ``**name`` is present, it receives a
 dictionary (see :ref:`typesmapping`) containing all keyword arguments except for
@@ -793,7 +805,7 @@ parameters as there is a ``/`` in the function definition::
    >>> pos_only_arg(arg=1)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pos_only_arg() got an unexpected keyword argument 'arg'
+   TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
 The third function ``kwd_only_args`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
@@ -823,7 +835,7 @@ definition::
    >>> combined_example(pos_only=1, standard=2, kwd_only=3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: combined_example() got an unexpected keyword argument 'pos_only'
+   TypeError: combined_example() got some positional-only arguments passed as keyword arguments: 'pos_only'
 
 
 Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
@@ -842,8 +854,9 @@ will always bind to the first parameter. For example::
 
 But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
-    def foo(name, /, **kwds):
-        return 'name' in kwds
+    >>> def foo(name, /, **kwds):
+    ...     return 'name' in kwds
+    ...
     >>> foo(1, **{'name': 2})
     True
 
@@ -888,7 +901,7 @@ zero or more normal arguments may occur. ::
        file.write(separator.join(args))
 
 
-Normally, these ``variadic`` arguments will be last in the list of formal
+Normally, these *variadic* arguments will be last in the list of formal
 parameters, because they scoop up all remaining input arguments that are
 passed to the function. Any formal parameters which occur after the ``*args``
 parameter are 'keyword-only' arguments, meaning that they can only be used as
@@ -1033,7 +1046,7 @@ Function Annotations
 information about the types used by user-defined functions (see :pep:`3107` and
 :pep:`484` for more information).
 
-:term:`Annotations <function annotation>` are stored in the :attr:`__annotations__`
+:term:`Annotations <function annotation>` are stored in the :attr:`!__annotations__`
 attribute of the function as a dictionary and have no effect on any other part of the
 function.  Parameter annotations are defined by a colon after the parameter name, followed
 by an expression evaluating to the value of the annotation.  Return annotations are

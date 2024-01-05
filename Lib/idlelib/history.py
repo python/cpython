@@ -29,7 +29,7 @@ class History:
         text.bind("<<history-next>>", self.history_next)
 
     def history_next(self, event):
-        "Fetch later statement; start with ealiest if cyclic."
+        "Fetch later statement; start with earliest if cyclic."
         self.fetch(reverse=False)
         return "break"
 
@@ -65,7 +65,7 @@ class History:
                     self.text.bell()
                     return
         nprefix = len(prefix)
-        while 1:
+        while True:
             pointer += -1 if reverse else 1
             if pointer < 0 or pointer >= nhist:
                 self.text.bell()

@@ -4,14 +4,15 @@ import unittest
 import binascii
 import array
 import re
-from test.support import warnings_helper
+from test.support import bigmemtest, _1G, _4G
+from test.support.hypothesis_helper import hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
-b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_hqx', 'b2a_qp', 'b2a_uu',
-                 'hexlify', 'rlecode_hqx']
-a2b_functions = ['a2b_base64', 'a2b_hex', 'a2b_hqx', 'a2b_qp', 'a2b_uu',
-                 'unhexlify', 'rledecode_hqx']
+b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_qp', 'b2a_uu',
+                 'hexlify']
+a2b_functions = ['a2b_base64', 'a2b_hex', 'a2b_qp', 'a2b_uu',
+                 'unhexlify']
 all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
 
 
@@ -27,6 +28,14 @@ class BinASCIITest(unittest.TestCase):
     def setUp(self):
         self.data = self.type2test(self.rawdata)
 
+    def assertConversion(self, original, converted, restored, **kwargs):
+        self.assertIsInstance(original, bytes)
+        self.assertIsInstance(converted, bytes)
+        self.assertIsInstance(restored, bytes)
+        if converted:
+            self.assertLess(max(converted), 128)
+        self.assertEqual(original, restored, msg=f'{self.type2test=} {kwargs=}')
+
     def test_exceptions(self):
         # Check module exceptions
         self.assertTrue(issubclass(binascii.Error, Exception))
@@ -38,7 +47,6 @@ class BinASCIITest(unittest.TestCase):
             self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
             self.assertRaises(TypeError, getattr(binascii, name))
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_returned_value(self):
         # Limit to the minimum of all limits (b2a_uu)
         MAX_ALL = 45
@@ -51,14 +59,9 @@ class BinASCIITest(unittest.TestCase):
                 res = a2b(self.type2test(a))
             except Exception as err:
                 self.fail("{}/{} conversion raises {!r}".format(fb, fa, err))
-            if fb == 'b2a_hqx':
-                # b2a_hqx returns a tuple
-                res, _ = res
             self.assertEqual(res, raw, "{}/{} conversion: "
                              "{!r} != {!r}".format(fb, fa, res, raw))
-            self.assertIsInstance(res, bytes)
-            self.assertIsInstance(a, bytes)
-            self.assertLess(max(a), 128)
+            self.assertConversion(raw, a, res)
         self.assertIsInstance(binascii.crc_hqx(raw, 0), int)
         self.assertIsInstance(binascii.crc32(raw), int)
 
@@ -113,6 +116,50 @@ class BinASCIITest(unittest.TestCase):
         # Test base64 with just invalid characters, which should return
         # empty strings. TBD: shouldn't it raise an exception instead ?
         self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), b'')
+
+    def test_base64_strict_mode(self):
+        # Test base64 with strict mode on
+        def _assertRegexTemplate(assert_regex: str, data: bytes, non_strict_mode_expected_result: bytes):
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+            self.assertEqual(binascii.a2b_base64(self.type2test(data), strict_mode=False),
+                             non_strict_mode_expected_result)
+            self.assertEqual(binascii.a2b_base64(self.type2test(data)),
+                             non_strict_mode_expected_result)
+
+        def assertExcessData(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Excess data', data, non_strict_mode_expected_result)
+
+        def assertNonBase64Data(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Only base64 data', data, non_strict_mode_expected_result)
+
+        def assertLeadingPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Leading padding', data, non_strict_mode_expected_result)
+
+        def assertDiscontinuousPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Discontinuous padding', data, non_strict_mode_expected_result)
+
+        # Test excess data exceptions
+        assertExcessData(b'ab==a', b'i')
+        assertExcessData(b'ab===', b'i')
+        assertExcessData(b'ab==:', b'i')
+        assertExcessData(b'abc=a', b'i\xb7')
+        assertExcessData(b'abc=:', b'i\xb7')
+        assertExcessData(b'ab==\n', b'i')
+
+        # Test non-base64 data exceptions
+        assertNonBase64Data(b'\nab==', b'i')
+        assertNonBase64Data(b'ab:(){:|:&};:==', b'i')
+        assertNonBase64Data(b'a\nb==', b'i')
+        assertNonBase64Data(b'a\x00b==', b'i')
+
+        # Test malformed padding
+        assertLeadingPadding(b'=', b'')
+        assertLeadingPadding(b'==', b'')
+        assertLeadingPadding(b'===', b'')
+        assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
+        assertDiscontinuousPadding(b'ab=ab==', b'i\xb6\x9b')
+
 
     def test_base64errors(self):
         # Test base64 with invalid padding
@@ -182,7 +229,15 @@ class BinASCIITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             binascii.b2a_uu(b"", True)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    @hypothesis.given(
+        binary=hypothesis.strategies.binary(max_size=45),
+        backtick=hypothesis.strategies.booleans(),
+    )
+    def test_b2a_roundtrip(self, binary, backtick):
+        converted = binascii.b2a_uu(self.type2test(binary), backtick=backtick)
+        restored = binascii.a2b_uu(self.type2test(converted))
+        self.assertConversion(binary, converted, restored, backtick=backtick)
+
     def test_crc_hqx(self):
         crc = binascii.crc_hqx(self.type2test(b"Test the CRC-32 of"), 0)
         crc = binascii.crc_hqx(self.type2test(b" this string."), crc)
@@ -202,32 +257,6 @@ class BinASCIITest(unittest.TestCase):
 
         self.assertRaises(TypeError, binascii.crc32)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_hqx(self):
-        # Perform binhex4 style RLE-compression
-        # Then calculate the hexbin4 binary-to-ASCII translation
-        rle = binascii.rlecode_hqx(self.data)
-        a = binascii.b2a_hqx(self.type2test(rle))
-
-        b, _ = binascii.a2b_hqx(self.type2test(a))
-        res = binascii.rledecode_hqx(b)
-        self.assertEqual(res, self.rawdata)
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_rle(self):
-        # test repetition with a repetition longer than the limit of 255
-        data = (b'a' * 100 + b'b' + b'c' * 300)
-
-        encoded = binascii.rlecode_hqx(data)
-        self.assertEqual(encoded,
-                         (b'a\x90d'      # 'a' * 100
-                          b'b'           # 'b'
-                          b'c\x90\xff'   # 'c' * 255
-                          b'c\x90-'))    # 'c' * 45
-
-        decoded = binascii.rledecode_hqx(encoded)
-        self.assertEqual(decoded, data)
-
     def test_hex(self):
         # test hexlification
         s = b'{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
@@ -245,6 +274,12 @@ class BinASCIITest(unittest.TestCase):
         # Confirm that b2a_hex == hexlify and a2b_hex == unhexlify
         self.assertEqual(binascii.hexlify(self.type2test(s)), t)
         self.assertEqual(binascii.unhexlify(self.type2test(t)), u)
+
+    @hypothesis.given(binary=hypothesis.strategies.binary())
+    def test_hex_roundtrip(self, binary):
+        converted = binascii.hexlify(self.type2test(binary))
+        restored = binascii.unhexlify(self.type2test(converted))
+        self.assertConversion(binary, converted, restored)
 
     def test_hex_separator(self):
         """Test that hexlify and b2a_hex are binary versions of bytes.hex."""
@@ -360,7 +395,21 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(b2a_qp(type2test(b'a.\n')), b'a.\n')
         self.assertEqual(b2a_qp(type2test(b'.a')[:-1]), b'=2E')
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    @hypothesis.given(
+        binary=hypothesis.strategies.binary(),
+        quotetabs=hypothesis.strategies.booleans(),
+        istext=hypothesis.strategies.booleans(),
+        header=hypothesis.strategies.booleans(),
+    )
+    def test_b2a_qp_a2b_qp_round_trip(self, binary, quotetabs, istext, header):
+        converted = binascii.b2a_qp(
+            self.type2test(binary),
+            quotetabs=quotetabs, istext=istext, header=header,
+        )
+        restored = binascii.a2b_qp(self.type2test(converted), header=header)
+        self.assertConversion(binary, converted, restored,
+                              quotetabs=quotetabs, istext=istext, header=header)
+
     def test_empty_string(self):
         # A test for SF bug #1022953.  Make sure SystemError is not raised.
         empty = self.type2test(b'')
@@ -377,7 +426,7 @@ class BinASCIITest(unittest.TestCase):
 
     def test_unicode_b2a(self):
         # Unicode strings are not accepted by b2a_* functions.
-        for func in set(all_functions) - set(a2b_functions) | {'rledecode_hqx'}:
+        for func in set(all_functions) - set(a2b_functions):
             try:
                 self.assertRaises(TypeError, getattr(binascii, func), "test")
             except Exception as err:
@@ -385,15 +434,11 @@ class BinASCIITest(unittest.TestCase):
         # crc_hqx needs 2 arguments
         self.assertRaises(TypeError, binascii.crc_hqx, "test", 0)
 
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_unicode_a2b(self):
         # Unicode strings are accepted by a2b_* functions.
         MAX_ALL = 45
         raw = self.rawdata[:MAX_ALL]
         for fa, fb in zip(a2b_functions, b2a_functions):
-            if fa == 'rledecode_hqx':
-                # Takes non-ASCII data
-                continue
             a2b = getattr(binascii, fa)
             b2a = getattr(binascii, fb)
             try:
@@ -403,10 +448,6 @@ class BinASCIITest(unittest.TestCase):
                 res = a2b(a)
             except Exception as err:
                 self.fail("{}/{} conversion raises {!r}".format(fb, fa, err))
-            if fb == 'b2a_hqx':
-                # b2a_hqx returns a tuple
-                res, _ = res
-                binary_res, _ = binary_res
             self.assertEqual(res, raw, "{}/{} conversion: "
                              "{!r} != {!r}".format(fb, fa, res, raw))
             self.assertEqual(res, binary_res)
@@ -424,17 +465,20 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_base64(b, newline=False),
                          b'aGVsbG8=')
 
-    def test_deprecated_warnings(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(binascii.b2a_hqx(b'abc'), b'B@*M')
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(binascii.a2b_hqx(b'B@*M'), (b'abc', 0))
+    @hypothesis.given(
+        binary=hypothesis.strategies.binary(),
+        newline=hypothesis.strategies.booleans(),
+    )
+    def test_base64_roundtrip(self, binary, newline):
+        converted = binascii.b2a_base64(self.type2test(binary), newline=newline)
+        restored = binascii.a2b_base64(self.type2test(converted))
+        self.assertConversion(binary, converted, restored, newline=newline)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(binascii.rlecode_hqx(b'a' * 10), b'a\x90\n')
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(binascii.rledecode_hqx(b'a\x90\n'), b'a' * 10)
+    def test_c_contiguity(self):
+        m = memoryview(bytearray(b'noncontig'))
+        noncontig_writable = m[::-2]
+        with self.assertRaises(BufferError):
+            binascii.b2a_hex(noncontig_writable)
 
 
 class ArrayBinASCIITest(BinASCIITest):
@@ -448,6 +492,14 @@ class BytearrayBinASCIITest(BinASCIITest):
 
 class MemoryviewBinASCIITest(BinASCIITest):
     type2test = memoryview
+
+class ChecksumBigBufferTestCase(unittest.TestCase):
+    """bpo-38256 - check that inputs >=4 GiB are handled correctly."""
+
+    @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
+    def test_big_buffer(self, size):
+        data = b"nyan" * (_1G + 1)
+        self.assertEqual(binascii.crc32(data), 1044521549)
 
 
 if __name__ == "__main__":

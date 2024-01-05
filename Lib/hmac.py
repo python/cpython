@@ -53,7 +53,7 @@ class HMAC:
             raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
 
         if not digestmod:
-            raise TypeError("Missing required parameter 'digestmod'.")
+            raise TypeError("Missing required argument 'digestmod'.")
 
         if _hashopenssl and isinstance(digestmod, (str, _functype)):
             try:

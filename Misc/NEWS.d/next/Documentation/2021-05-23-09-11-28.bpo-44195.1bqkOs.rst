@@ -1,2 +1,0 @@
-Corrected references to ``TraversableResources`` in docs. There is no
-``TraversableReader``.
