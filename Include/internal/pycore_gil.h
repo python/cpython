@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"    /* _Py_atomic_address */
-#include "pycore_condvar.h"   /* PyCOND_T */
+#include "pycore_condvar.h"       // PyCOND_T
 
 #ifndef Py_HAVE_CONDVAR
 #  error You need either a POSIX-compatible or a Windows system!
@@ -25,10 +24,10 @@ struct _gil_runtime_state {
     unsigned long interval;
     /* Last PyThreadState holding / having held the GIL. This helps us
        know whether anyone else was scheduled after we dropped the GIL. */
-    _Py_atomic_address last_holder;
+    PyThreadState* last_holder;
     /* Whether the GIL is already taken (-1 if uninitialized). This is
        atomic because it can be read without any lock taken in ceval.c. */
-    _Py_atomic_int locked;
+    int locked;
     /* Number of GIL switches since the beginning. */
     unsigned long switch_number;
     /* This condition variable allows one or several threads to wait
