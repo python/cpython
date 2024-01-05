@@ -87,14 +87,14 @@ Function Objects
 
    .. attribute:: parent
 
-      For top-level functions, None.  For nested functions, the parent.
+      For top-level functions, ``None``.  For nested functions, the parent.
 
       .. versionadded:: 3.7
 
 
    .. attribute:: children
 
-      A dictionary mapping names to descriptors for nested functions and
+      A :class:`dictionary <dict>` mapping names to descriptors for nested functions and
       classes.
 
       .. versionadded:: 3.7
@@ -102,7 +102,8 @@ Function Objects
 
    .. attribute:: is_async
 
-      ``True`` for functions that are defined with the ``async`` prefix, ``False`` otherwise.
+      ``True`` for functions that are defined with the
+      :keyword:`async <async def>` prefix, ``False`` otherwise.
 
       .. versionadded:: 3.10
 
@@ -115,7 +116,8 @@ Class Objects
 .. class:: Class
 
    Class :class:`!Class` instances describe classes defined by class
-   statements.  They have the same attributes as Functions and two more.
+   statements.  They have the same attributes as :class:`Functions <Function>`
+   and two more.
 
 
    .. attribute:: file
@@ -164,6 +166,7 @@ Class Objects
 
    .. attribute:: methods
 
-      A dictionary mapping method names to line numbers.  This can be
-      derived from the newer children dictionary, but remains for
+      A :class:`dictionary <dict>` mapping method names to line numbers.
+      This can be derived from the newer :attr:`children` dictionary,
+      but remains for
       back-compatibility.
